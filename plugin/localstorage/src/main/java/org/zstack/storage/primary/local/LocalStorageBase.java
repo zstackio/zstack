@@ -1110,7 +1110,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 .eq(LocalStorageResourceRefVO_.resourceUuid, resUuid)
                 .findValue();
         if (huuid == null){
-            throw new OperationFailureException(operr("cannot find any host which has resource[uuid:%s]"));
+            throw new OperationFailureException(operr("cannot find any host which has resource[uuid:%s]", resUuid));
         } else if (!Q.New(HostVO.class).eq(HostVO_.uuid, huuid).isExists()){
             throw new OperationFailureException(
                     operr("Resource[uuid:%s] can only be operated on host[uuid:%s], but the host has been deleted",
