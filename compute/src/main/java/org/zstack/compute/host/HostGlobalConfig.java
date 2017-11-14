@@ -20,6 +20,8 @@ public class HostGlobalConfig {
     public static GlobalConfig HOST_TRACK_PARALLELISM_DEGREE = new GlobalConfig(CATEGORY, "ping.parallelismDegree");
     @GlobalConfigValidation(numberGreaterThan = 0)
     public static GlobalConfig PING_HOST_INTERVAL = new GlobalConfig(CATEGORY, "ping.interval");
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    public static GlobalConfig MAXIMUM_PING_FAILURE = new GlobalConfig(CATEGORY, "ping.maxFailure");
     @GlobalConfigValidation
     public static GlobalConfig IGNORE_ERROR_ON_MAINTENANCE_MODE = new GlobalConfig(CATEGORY, "maintenanceMode.ignoreError");
     @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = Integer.MAX_VALUE)

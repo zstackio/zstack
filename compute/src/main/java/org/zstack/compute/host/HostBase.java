@@ -3,6 +3,7 @@ package org.zstack.compute.host;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.*;
@@ -48,6 +49,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.operr;
 
@@ -78,6 +80,8 @@ public abstract class HostBase extends AbstractHost {
     protected PluginRegistry pluginRgty;
     @Autowired
     protected EventFacade evtf;
+
+    final private static Integer MAX_PING_CNT = HostGlobalConfig.MAXIMUM_PING_FAILURE.value(Integer.class);
 
     protected final String id;
 
@@ -572,35 +576,61 @@ public abstract class HostBase extends AbstractHost {
             return;
         }
 
-        pingHook(new Completion(msg) {
-            @Override
-            public void success() {
-                reply.setConnected(true);
-                reply.setCurrentHostStatus(self.getStatus().toString());
-                bus.reply(msg, reply);
+        final List<Integer> stepCount = new ArrayList<>();
+        for(int i = 1; i <= MAX_PING_CNT; i ++){
+            stepCount.add(i);
+        }
 
-                extpEmitter.hostPingTask(HypervisorType.valueOf(self.getHypervisorType()), getSelfInventory());
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                reply.setConnected(false);
-                reply.setCurrentHostStatus(self.getStatus().toString());
-                reply.setError(errorCode);
-                reply.setSuccess(true);
-
-                Boolean noReconnect = (Boolean) errorCode.getFromOpaque(Opaque.NO_RECONNECT_AFTER_PING_FAILURE.toString());
-                reply.setNoReconnect(noReconnect != null && noReconnect);
-
-                if(!Q.New(HostVO.class).eq(HostVO_.uuid, msg.getHostUuid()).isExists()){
-                    reply.setNoReconnect(true);
-                    bus.reply(msg, reply);
-                    return;
+        final List<ErrorCode> errs = new ArrayList<>();
+        new While<>(stepCount).each((currentStep, compl) -> {
+            pingHook(new Completion(compl) {
+                @Override
+                public void success() {
+                    compl.allDone();
                 }
 
-                changeConnectionState(HostStatusEvent.disconnected);
-                
-                bus.reply(msg, reply);
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    logger.warn(String.format("ping host failed (retryCnt=%d): %s", currentStep, errorCode.toString()));
+                    errs.add(errorCode);
+                    if (errs.size() != stepCount.size()) {
+                        try {
+                            TimeUnit.SECONDS.sleep(1);
+                        } catch (InterruptedException ignored) {
+                        }
+                    }
+                    compl.done();
+                }
+            });
+        }).run(new NoErrorCompletion(msg) {
+            @Override
+            public void done() {
+                if (errs.size() == stepCount.size()){
+                    final ErrorCode errorCode = errs.get(0);
+                    reply.setConnected(false);
+                    reply.setCurrentHostStatus(self.getStatus().toString());
+                    reply.setError(errorCode);
+                    reply.setSuccess(true);
+
+                    Boolean noReconnect = (Boolean) errorCode.getFromOpaque(Opaque.NO_RECONNECT_AFTER_PING_FAILURE.toString());
+                    reply.setNoReconnect(noReconnect != null && noReconnect);
+
+                    if(!Q.New(HostVO.class).eq(HostVO_.uuid, msg.getHostUuid()).isExists()){
+                        reply.setNoReconnect(true);
+                        bus.reply(msg, reply);
+                        return;
+                    }
+
+                    changeConnectionState(HostStatusEvent.disconnected);
+
+                    bus.reply(msg, reply);
+                } else {
+                    reply.setConnected(true);
+                    reply.setCurrentHostStatus(self.getStatus().toString());
+                    bus.reply(msg, reply);
+
+                    extpEmitter.hostPingTask(HypervisorType.valueOf(self.getHypervisorType()), getSelfInventory());
+                }
             }
         });
     }
