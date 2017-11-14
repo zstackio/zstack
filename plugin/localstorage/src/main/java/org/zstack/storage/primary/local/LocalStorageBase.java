@@ -556,7 +556,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
                                     String vmUuid = tuple.get(1,String.class);
                                     String clusterUuid = Q.New(HostVO.class).select(HostVO_.clusterUuid)
                                             .eq(HostVO_.uuid,msg.getDestHostUuid()).findValue();
-
                                     if(!originClusterUuid.equals(clusterUuid)){
                                         sql("update  VmInstanceEO" +
                                                 " set clusterUuid = :clusterUuid" +
