@@ -633,7 +633,7 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
         }
     }
 
-    protected static void expect(exceptions, Closure c) {
+    static void expect(exceptions, Closure c) {
         List<Class> lst = []
         if (exceptions instanceof Collection) {
             lst.addAll(exceptions)

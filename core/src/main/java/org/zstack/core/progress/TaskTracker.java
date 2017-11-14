@@ -43,7 +43,7 @@ public abstract class TaskTracker {
     protected abstract String getTaskName();
 
     public void track(String info, Map<String, Object> params) {
-        List<Consumer> consumers = taskConsumers.get(getResourceType());
+        List<Consumer> consumers = taskConsumers.get(getTaskName());
         if (consumers == null || consumers.isEmpty()) {
             return;
         }

@@ -350,6 +350,8 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
             }
 
             if (msg instanceof MessageReply) {
+                beforeDeliverMessage(msg);
+
                 MessageReply r = (MessageReply) msg;
                 String correlationId = r.getHeaderEntry(CORRELATION_ID);
                 Envelope e = envelopes.get(correlationId);
@@ -1693,7 +1695,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
 
     @Override
     public void reply(Message request, MessageReply reply) {
-        if (Boolean.valueOf((String) request.getHeaderEntry(NO_NEED_REPLY_MSG))) {
+        if (Boolean.valueOf(request.getHeaderEntry(NO_NEED_REPLY_MSG))) {
             if (logger.isTraceEnabled()) {
                 logger.trace(String.format("%s in message%s is set, drop reply%s", NO_NEED_REPLY_MSG,
                         wire.dumpMessage(request), wire.dumpMessage(reply)));
@@ -1962,6 +1964,19 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         }
     }
 
+    private void beforeDeliverMessage(Message msg) {
+        List<BeforeDeliveryMessageInterceptor> is = beforeDeliveryMessageInterceptors.get(msg.getClass());
+        if (is != null) {
+            for (BeforeDeliveryMessageInterceptor i : is) {
+                i.beforeDeliveryMessage(msg);
+            }
+        }
+
+        for (BeforeDeliveryMessageInterceptor i : beforeDeliveryMessageInterceptorsForAll) {
+            i.beforeDeliveryMessage(msg);
+        }
+    }
+
     @Override
     public void registerService(final Service serv) throws CloudConfigureFailException {
         final List<String> alias = serv.getAliasIds();
@@ -2012,28 +2027,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                                     setThreadLoggingContext(msg);
 
                                     try {
-                                        List<BeforeDeliveryMessageInterceptor> is = beforeDeliveryMessageInterceptors.get(msg.getClass());
-                                        if (is != null) {
-                                            for (BeforeDeliveryMessageInterceptor i : is) {
-                                                i.beforeDeliveryMessage(msg);
-
-                                                /*
-                                                if (logger.isTraceEnabled()) {
-                                                    logger.trace(String.format("called BeforeDeliveryMessageInterceptor[%s] for message[%s]", i.getClass(), msg.getClass()));
-                                                }
-                                                */
-                                            }
-                                        }
-
-                                        for (BeforeDeliveryMessageInterceptor i : beforeDeliveryMessageInterceptorsForAll) {
-                                            i.beforeDeliveryMessage(msg);
-
-                                            /*
-                                            if (logger.isTraceEnabled()) {
-                                                logger.trace(String.format("called BeforeDeliveryMessageInterceptor[%s] for message[%s]", i.getClass(), msg.getClass()));
-                                            }
-                                            */
-                                        }
+                                        beforeDeliverMessage(msg);
 
                                         serv.handleMessage(msg);
                                     } catch (Throwable t) {
