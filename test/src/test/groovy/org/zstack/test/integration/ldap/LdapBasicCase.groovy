@@ -6,6 +6,10 @@ import com.unboundid.ldap.sdk.SearchScope
 import org.junit.Rule
 import org.zapodot.junit.ldap.EmbeddedLdapRule
 import org.zapodot.junit.ldap.EmbeddedLdapRuleBuilder
+import org.zstack.core.db.Q
+import org.zstack.identity.Account
+import org.zstack.ldap.LdapAccountRefVO
+import org.zstack.ldap.LdapSystemTags
 import org.zstack.sdk.AddLdapServerAction
 import org.zstack.sdk.AddLdapServerResult
 import org.zstack.sdk.ApiResult
@@ -61,6 +65,8 @@ class LdapBasicCase extends SubCase {
             testCreateLdapBinding()
 
             testLoginByLdap()
+
+            testCleanInvalidLdapBinding()
 
             testDeleteLdapServer()
         }
@@ -119,6 +125,15 @@ class LdapBasicCase extends SubCase {
         }
     }
 
+    void testCleanInvalidLdapBinding(){
+        assert Q.New(LdapAccountRefVO.class).exists
+
+        cleanInvalidLdapBinding {
+        }
+
+        assert !Q.New(LdapAccountRefVO.class).exists
+    }
+
     void testGetLdapEntry(){
 
         List result = getLdapEntry {
@@ -159,10 +174,10 @@ class LdapBasicCase extends SubCase {
             assert true
         }
 
-        String cn = "Micha Kops"
+        String dn = "cn=Micha Kops,ou=Users,dc=example,dc=com"
         createLdapBinding {
             accountUuid = Test.currentEnvSpec.session.accountUuid
-            ldapUid = cn
+            ldapUid = dn
         }
     }
 
@@ -179,6 +194,7 @@ class LdapBasicCase extends SubCase {
             username = ""
             password = ""
             encryption = "None"
+            systemTags = [LdapSystemTags.LDAP_CLEAN_BINDING_FILTER.instantiateTag([(LdapSystemTags.LDAP_CLEAN_BINDING_FILTER_TOKEN): "(cn=Micha Kops)"])]
             sessionId = Test.currentEnvSpec.session.uuid
         } as LdapServerInventory
         LdapUuid = result.uuid
