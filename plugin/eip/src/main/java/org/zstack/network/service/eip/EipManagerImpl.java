@@ -200,8 +200,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                         .select(VmNicVO_.l3NetworkUuid)
                         .eq(VmNicVO_.vmInstanceUuid, rnic.getVmInstanceUuid())
                         .listValues();
-                Set l3UuidSet = new HashSet<>(peerL3NetworkUuids);
-                l3UuidSet.addAll(vrAttachedL3Uuids);
+                Set l3UuidSet = new HashSet<>(vrAttachedL3Uuids);
                 l3Uuids = l3Uuids.stream().filter(l -> l3UuidSet.contains(l)).collect(Collectors.toList());
             }
         }
