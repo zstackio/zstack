@@ -37,6 +37,7 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
 import org.zstack.header.vm.*;
+import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.volume.*;
 import org.zstack.compute.host.VolumeMigrationTargetHostFilter;
 import org.zstack.storage.primary.PrimaryStorageBase;
@@ -1109,7 +1110,13 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 .eq(LocalStorageResourceRefVO_.resourceUuid, resUuid)
                 .findValue();
         if (huuid == null){
-            throw new OperationFailureException(operr("cannot find any host which has resource[uuid:%s]", resUuid));
+            ResourceVO vo = dbf.findByUuid(resUuid, ResourceVO.class);
+            if (vo != null) {
+                throw new OperationFailureException(operr("cannot find any host which has resource[uuid:%s], name :[%s], type :[%s]"
+                        , resUuid, vo.getResourceName(), vo.getResourceType()));
+            } else {
+                throw new OperationFailureException(operr("cannot find any host which has resource[uuid:%s]", resUuid));
+            }
         } else if (!Q.New(HostVO.class).eq(HostVO_.uuid, huuid).isExists()){
             throw new OperationFailureException(
                     operr("Resource[uuid:%s] can only be operated on host[uuid:%s], but the host has been deleted",
