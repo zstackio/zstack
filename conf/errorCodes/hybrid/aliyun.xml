@@ -91,5 +91,13 @@
         <id>1019</id>
         <description>Current resource status not support the operation</description>
     </code>
+    <code>
+        <id>1020</id>
+        <description>Import ecs image task status not "Success"</description>
+    </code>
+    <code>
+        <id>1021</id>
+        <description>Current action is not a support ecs action</description>
+    </code>
 </error>
 
