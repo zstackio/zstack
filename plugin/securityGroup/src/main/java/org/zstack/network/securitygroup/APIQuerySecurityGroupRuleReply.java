@@ -33,8 +33,8 @@ public class APIQuerySecurityGroupRuleReply extends APIQueryReply {
         rule.setSecurityGroupUuid(uuid());
         rule.setState(SecurityGroupRuleState.Enabled.toString());
         rule.setType("Ingress");
-        rule.setCreateDate(new Timestamp(System.currentTimeMillis()));
-        rule.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        rule.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        rule.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         reply.setInventories(asList(rule));
         reply.setSuccess(true);
         return reply;

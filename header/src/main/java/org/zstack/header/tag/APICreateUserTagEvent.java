@@ -35,8 +35,8 @@ public class APICreateUserTagEvent extends APIEvent {
         tag.setResourceType("DiskOfferingVO");
         tag.setTag("for-large-DB");
         tag.setUuid(uuid()  );
-        tag.setCreateDate(new Timestamp(System.currentTimeMillis()));
-        tag.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        tag.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        tag.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         event.setSuccess(true);
         event.setInventory(tag);
 

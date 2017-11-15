@@ -56,8 +56,8 @@ public class APIGetVmStartingCandidateClustersHostsReply extends APIReply {
         hi.setTotalMemoryCapacity(4L);
         hi.setHypervisorType("KVM");
         hi.setDescription("example");
-        hi.setCreateDate(new Timestamp(System.currentTimeMillis()));
-        hi.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        hi.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        hi.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
 
         reply.setHostInventories(asList(hi));
 
@@ -65,8 +65,8 @@ public class APIGetVmStartingCandidateClustersHostsReply extends APIReply {
         cl.setName("cluster1");
         cl.setUuid(clusterUuid);
         cl.setZoneUuid(uuid());
-        cl.setCreateDate(new Timestamp(System.currentTimeMillis()));
-        cl.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        cl.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        cl.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         cl.setHypervisorType("KVM");
 
         reply.setClusterInventories(asList(cl));

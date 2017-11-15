@@ -581,7 +581,7 @@ class RestDocumentationGenerator implements DocumentGenerator {
             List<String> conds = getQueryConditionExampleOfTheClass(clz)
             conds = conds.collect { return "\"" + it + "\""}
             cols.add("action.conditions = asList(${conds.join(",")});")
-            cols.add("""action.sessionUuid = "${Platform.getUuid()}";""")
+            cols.add("""action.sessionUuid = "b86c9016b4f24953a9edefb53ca0678c\";""")
             cols.add("${actionName}.Result res = action.call();")
 
             return """\
@@ -601,7 +601,7 @@ ${cols.join("\n")}
             List<String> conds = getQueryConditionExampleOfTheClass(clz)
             conds = conds.collect { return "\"" + it + "\""}
             cols.add("action.conditions = [${conds.join(",")}]")
-            cols.add("""action.sessionUuid = "${Platform.getUuid()}\"""")
+            cols.add("""action.sessionUuid = "b86c9016b4f24953a9edefb53ca0678c\"""")
             cols.add("${actionName}.Result res = action.call()")
 
             return """\
@@ -627,14 +627,14 @@ ${cols.join("\n")}
 
             List<String> examples = paths.collect {
                 def curl = ["curl -H \"Content-Type: application/json\""]
-                curl.add("-H \"Authorization: ${RestConstants.HEADER_OAUTH} ${Platform.getUuid()}\"")
+                curl.add("-H \"Authorization: ${RestConstants.HEADER_OAUTH} b86c9016b4f24953a9edefb53ca0678c\"")
 
                 curl.add("-X ${at.method()}")
 
                 if (it.contains("uuid")) {
                     // for "GET /v1/xxx/{uuid}, because the query example
                     // may not have uuid field specified
-                    String urlPath = substituteUrl("${RestConstants.API_VERSION}${it}", ["uuid": Platform.getUuid()])
+                    String urlPath = substituteUrl("${RestConstants.API_VERSION}${it}", ["uuid": UUID.nameUUIDFromBytes(it.getBytes()).toString().replaceAll("-", "")])
                     curl.add("http://localhost:8080${urlPath}")
                 } else {
                     List<String> qstr = getQueryConditionExampleOfTheClass(clz)
@@ -860,7 +860,7 @@ ${table.join("\n")}
             List<String> examples = paths.collect {
                 def curl = ["curl -H \"Content-Type: application/json\""]
                 if (!clz.isAnnotationPresent(SuppressCredentialCheck.class)) {
-                    curl.add("-H \"Authorization: ${RestConstants.HEADER_OAUTH} ${Platform.getUuid()}\"")
+                    curl.add("-H \"Authorization: ${RestConstants.HEADER_OAUTH} b86c9016b4f24953a9edefb53ca0678c\"")
                 }
 
                 boolean queryString = at.method() == HttpMethod.GET || HttpMethod.DELETE
@@ -1056,7 +1056,7 @@ ${dmd.generate()}
             })
 
             if (!clz.isAnnotationPresent(SuppressCredentialCheck.class)) {
-                cols.add("""action.sessionUuid = "${Platform.getUuid()}\"""")
+                cols.add("""action.sessionUuid = "b86c9016b4f24953a9edefb53ca0678c\"""")
             }
 
             cols.add("${actionName}.Result res = action.call()")
@@ -1111,7 +1111,7 @@ ${cols.join("\n")}
             })
 
             if (!clz.isAnnotationPresent(SuppressCredentialCheck.class)) {
-                cols.add("""action.sessionUuid = "${Platform.getUuid()}";""")
+                cols.add("""action.sessionUuid = "b86c9016b4f24953a9edefb53ca0678c";""")
             }
 
             cols.add("${actionName}.Result res = action.call();")

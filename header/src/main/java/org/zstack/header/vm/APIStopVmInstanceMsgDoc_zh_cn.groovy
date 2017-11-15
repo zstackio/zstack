@@ -62,6 +62,16 @@ doc {
 					since "0.6"
 					
 				}
+				column {
+					name "stopHA"
+					enclosedIn "stopVmInstance"
+					desc ""
+					location "body"
+					type "Boolean"
+					optional true
+					since "0.6"
+					
+				}
 			}
         }
 

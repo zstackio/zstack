@@ -34,7 +34,7 @@ public class APILogInByLdapReply extends APIReply {
         SessionInventory inventory = new SessionInventory();
         inventory.setUuid(uuid());
         inventory.setAccountUuid(uuid());
-        inventory.setExpiredDate(new Timestamp(System.currentTimeMillis()));
+        inventory.setExpiredDate(new Timestamp(org.zstack.header.message.DocUtils.date));
 
         AccountInventory accountInventory = new AccountInventory();
         accountInventory.setName("test");

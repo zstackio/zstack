@@ -28,8 +28,8 @@ public class APIQueryVmNicInSecurityGroupReply extends APIQueryReply {
         secRefInv.setSecurityGroupUuid(uuid());
         secRefInv.setVmInstanceUuid(uuid());
         secRefInv.setVmNicUuid(uuid());
-        secRefInv.setCreateDate(new Timestamp(System.currentTimeMillis()));
-        secRefInv.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        secRefInv.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        secRefInv.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         reply.setInventories(asList(secRefInv));
         reply.setSuccess(true);
         return reply;

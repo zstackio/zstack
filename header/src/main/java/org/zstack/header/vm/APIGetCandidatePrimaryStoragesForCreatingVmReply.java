@@ -55,8 +55,8 @@ public class APIGetCandidatePrimaryStoragesForCreatingVmReply extends APIReply {
         lsInv.setState(PrimaryStorageState.Enabled.toString());
         lsInv.setStatus(PrimaryStorageStatus.Connected.toString());
         lsInv.setType("LocalStorage");
-        lsInv.setCreateDate(new Timestamp(System.currentTimeMillis()));
-        lsInv.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        lsInv.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        lsInv.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         lsInv.setUrl("/zstack_ps");
 
         PrimaryStorageInventory nfsInv = new PrimaryStorageInventory();
@@ -72,8 +72,8 @@ public class APIGetCandidatePrimaryStoragesForCreatingVmReply extends APIReply {
         nfsInv.setState(PrimaryStorageState.Enabled.toString());
         nfsInv.setStatus(PrimaryStorageStatus.Connected.toString());
         nfsInv.setType("NFS");
-        nfsInv.setCreateDate(new Timestamp(System.currentTimeMillis()));
-        nfsInv.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        nfsInv.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        nfsInv.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         nfsInv.setUrl("/opt/zstack/nfsprimarystorage/prim-" + uuid);
 
         reply.getDataVolumePrimaryStorages().put(uuid(), asList(nfsInv));

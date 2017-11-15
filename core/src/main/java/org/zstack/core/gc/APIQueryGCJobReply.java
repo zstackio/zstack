@@ -29,8 +29,8 @@ public class APIQueryGCJobReply extends APIQueryReply {
         gc.setName("TestGC");
         gc.setUuid(uuid());
         gc.setType("TimeBased");
-        gc.setCreateDate(new Timestamp(System.currentTimeMillis()));
-        gc.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        gc.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        gc.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         reply.setSuccess(true);
         reply.setInventories(asList(gc));
         return reply;

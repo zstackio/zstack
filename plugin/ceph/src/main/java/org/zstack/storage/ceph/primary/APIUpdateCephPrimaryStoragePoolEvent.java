@@ -36,8 +36,8 @@ public class APIUpdateCephPrimaryStoragePoolEvent extends APIEvent{
         inv.setAliasName("alias name");
         inv.setDescription("description");
         inv.setType(CephPrimaryStoragePoolType.Data.toString());
-        inv.setCreateDate(new Timestamp(System.currentTimeMillis()));
-        inv.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        inv.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        inv.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         inv.setPrimaryStorageUuid(uuid());
         event.setInventory(inv);
         return event;

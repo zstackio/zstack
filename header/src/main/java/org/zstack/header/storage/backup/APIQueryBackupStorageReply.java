@@ -25,8 +25,8 @@ public class APIQueryBackupStorageReply extends APIQueryReply {
         BackupStorageInventory bs = new BackupStorageInventory();
         bs.setName("My Backup Storage");
         bs.setDescription("Public Backup Storage");
-        bs.setCreateDate(new Timestamp(System.currentTimeMillis()));
-        bs.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        bs.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        bs.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         bs.setType("Ceph");
         bs.setState(BackupStorageState.Enabled.toString());
         bs.setStatus(BackupStorageStatus.Connected.toString());

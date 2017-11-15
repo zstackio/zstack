@@ -37,8 +37,8 @@ public class APIQueryPortForwardingRuleReply extends APIQueryReply {
         rule.setVipIp("192.168.0.187");
         rule.setVipUuid(uuid());
         rule.setVmNicUuid(uuid());
-        rule.setCreateDate(new Timestamp(System.currentTimeMillis()));
-        rule.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        rule.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        rule.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         reply.setInventories(asList(rule));
         reply.setSuccess(true);
         return reply;

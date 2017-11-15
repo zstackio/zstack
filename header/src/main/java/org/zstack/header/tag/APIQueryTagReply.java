@@ -32,8 +32,8 @@ public class APIQueryTagReply extends APIQueryReply {
         tag.setResourceType("HostVO");
         tag.setTag("reservedMemory::1G");
         tag.setUuid(uuid()  );
-        tag.setCreateDate(new Timestamp(System.currentTimeMillis()));
-        tag.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        tag.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        tag.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         reply.setInventories(asList(tag));
         reply.setSuccess(true);
         return reply;

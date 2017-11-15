@@ -34,7 +34,7 @@ public class APIGetVmAttachableL3NetworkReply extends APIReply {
         L3NetworkInventory l3 = new L3NetworkInventory();
         l3.setName("private L3");
 
-        Timestamp time = new Timestamp(System.currentTimeMillis());
+        Timestamp time = new Timestamp(org.zstack.header.message.DocUtils.date);
 
         String l3Uuid = uuid();
         l3.setUuid(l3Uuid);

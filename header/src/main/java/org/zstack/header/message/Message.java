@@ -1,7 +1,7 @@
 package org.zstack.header.message;
 
 import com.rabbitmq.client.AMQP.BasicProperties;
-import org.apache.logging.log4j.ThreadContext;
+import org.zstack.header.Constants;
 import org.zstack.header.core.AsyncBackup;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.utils.DebugUtils;
@@ -44,12 +44,17 @@ public abstract class Message implements Serializable, AsyncBackup {
     private long createdTime;
 
     protected static String uuid() {
-        return UUID.randomUUID().toString().replace("-", "");
+        String uuidForExample = System.getProperty(Constants.UUID_FOR_EXAMPLE);
+        if(uuidForExample != null){
+            return DocUtils.uuidForAPIDoc();
+        }else{
+            return UUID.randomUUID().toString().replace("-", "");
+        }
     }
 
     public Message() {
         createdTime = System.currentTimeMillis();
-        id = uuid();
+        id = UUID.randomUUID().toString().replace("-", "");
     }
 
     public Map<String, Object> getHeaders() {

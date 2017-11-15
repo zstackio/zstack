@@ -41,7 +41,7 @@ public class APIGetDataVolumeAttachableVmReply extends APIReply {
         vm.setAllocatorStrategy(HostAllocatorConstant.LAST_HOST_PREFERRED_ALLOCATOR_STRATEGY_TYPE);
         vm.setClusterUuid(uuid());
         vm.setCpuNum(1);
-        vm.setCreateDate(new Timestamp(System.currentTimeMillis()));
+        vm.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         vm.setDefaultL3NetworkUuid(defaultL3Uuid);
         vm.setDescription("web server VM");
         vm.setHostUuid(uuid());
@@ -54,13 +54,13 @@ public class APIGetDataVolumeAttachableVmReply extends APIReply {
         vm.setRootVolumeUuid(rootVolumeUuid);
         vm.setState(VmInstanceState.Running.toString());
         vm.setType(VmInstanceConstant.USER_VM_TYPE);
-        vm.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        vm.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         vm.setZoneUuid(uuid());
 
         VolumeInventory vol = new VolumeInventory();
         vol.setName(String.format("Root-Volume-For-VM-%s", vm.getUuid()));
-        vol.setCreateDate(new Timestamp(System.currentTimeMillis()));
-        vol.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        vol.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        vol.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         vol.setType(VolumeType.Root.toString());
         vol.setUuid(rootVolumeUuid);
         vol.setSize(SizeUnit.GIGABYTE.toByte(100));

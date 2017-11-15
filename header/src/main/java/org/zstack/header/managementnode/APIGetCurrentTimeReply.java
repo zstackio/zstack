@@ -24,8 +24,8 @@ public class APIGetCurrentTimeReply extends APIReply {
     public static APIGetCurrentTimeReply __example__() {
         APIGetCurrentTimeReply reply = new APIGetCurrentTimeReply();
         Map<String, Long> ret = new HashMap<String, Long>();
-        long currentTimeMillis = System.currentTimeMillis();
-        long currentTimeSeconds = System.currentTimeMillis() / 1000;
+        long currentTimeMillis = org.zstack.header.message.DocUtils.date;
+        long currentTimeSeconds = org.zstack.header.message.DocUtils.date / 1000;
         ret.put("MillionSeconds", currentTimeMillis);
         ret.put("Seconds", currentTimeSeconds);
 

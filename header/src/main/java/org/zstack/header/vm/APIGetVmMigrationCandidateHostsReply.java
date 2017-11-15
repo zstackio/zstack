@@ -43,8 +43,8 @@ public class APIGetVmMigrationCandidateHostsReply extends APIReply {
         hi.setTotalMemoryCapacity(4L);
         hi.setHypervisorType("KVM");
         hi.setDescription("example");
-        hi.setCreateDate(new Timestamp(System.currentTimeMillis()));
-        hi.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        hi.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        hi.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
 
         reply.setInventories(asList(hi));
 

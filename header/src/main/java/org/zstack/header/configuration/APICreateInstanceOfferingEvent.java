@@ -38,8 +38,8 @@ public class APICreateInstanceOfferingEvent extends APIEvent {
         inventory.setAllocatorStrategy("Mevoco");
         inventory.setType(USER_VM_INSTANCE_OFFERING_TYPE);
         inventory.setState(InstanceOfferingState.Enabled.toString());
-        inventory.setCreateDate(new Timestamp(System.currentTimeMillis()));
-        inventory.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        inventory.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        inventory.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
 
         event.setInventory(inventory);
         return event;
