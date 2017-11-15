@@ -12,6 +12,7 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.cluster.ClusterConnectionStatus;
 import org.zstack.header.core.*;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.core.workflow.*;
@@ -295,7 +296,22 @@ public class KvmBackend extends HypervisorBackend {
 
     @Override
     public void attachHook(final String clusterUuid, final Completion completion) {
-        connectByClusterUuid(clusterUuid, completion);
+        connectByClusterUuid(clusterUuid, new ReturnValueCompletion<ClusterConnectionStatus>(completion) {
+            @Override
+            public void success(ClusterConnectionStatus clusterStatus) {
+                if (clusterStatus == ClusterConnectionStatus.PartiallyConnected || clusterStatus == ClusterConnectionStatus.FullyConnected){
+                    changeStatus(PrimaryStorageStatus.Connected);
+                } else if (self.getStatus() == PrimaryStorageStatus.Disconnected && clusterStatus == ClusterConnectionStatus.Disconnected){
+                    hookToKVMHostConnectedEventToChangeStatusToConnected();
+                }
+                completion.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
     }
 
     @Override
@@ -1364,11 +1380,11 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     @Override
-    void connectByClusterUuid(final String clusterUuid, final Completion completion) {
+    void connectByClusterUuid(final String clusterUuid, final ReturnValueCompletion<ClusterConnectionStatus> completion) {
         List<String> huuids = findConnectedHostByClusterUuid(clusterUuid, false);
         if (huuids.isEmpty()) {
             // no host in the cluster
-            completion.success();
+            completion.success(ClusterConnectionStatus.Disconnected);
             return;
         }
 
@@ -1402,7 +1418,7 @@ public class KvmBackend extends HypervisorBackend {
                             new ArrayList<>(ret.errorCodes)
                     ));
                 } else {
-                    completion.success();
+                    completion.success(ClusterConnectionStatus.FullyConnected);
                 }
             }
         });
