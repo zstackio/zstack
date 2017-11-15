@@ -2,8 +2,7 @@ package org.zstack.compute.allocator;
 
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.header.allocator.*;
-import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.allocator.AbstractHostAllocatorFlow;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.utils.CollectionUtils;
@@ -11,8 +10,12 @@ import org.zstack.utils.function.Function;
 
 import java.util.ArrayList;
 import java.util.List;
+
+/**
+ * Created by mingjian.deng on 2017/11/8.
+ */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class LastHostPreferredAllocatorFlow extends AbstractHostAllocatorFlow {
+public class LastHostAllocatorFlow extends AbstractHostAllocatorFlow {
     @Override
     public void allocate() {
         throwExceptionIfIAmTheFirstFlow();
@@ -34,7 +37,7 @@ public class LastHostPreferredAllocatorFlow extends AbstractHostAllocatorFlow {
         });
 
         if (vo != null) {
-            ArrayList<HostVO> vos = new ArrayList<HostVO>();
+            List<HostVO> vos = new ArrayList<>();
             vos.add(vo);
             next(vos);
         } else {

@@ -31,7 +31,6 @@ import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.configuration.DiskOfferingVO_;
 import org.zstack.header.configuration.InstanceOfferingVO;
-import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -47,8 +46,11 @@ import org.zstack.header.host.HostStatus;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.Quota.QuotaOperator;
 import org.zstack.header.identity.Quota.QuotaPair;
-import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
+import org.zstack.header.image.ImageInventory;
+import org.zstack.header.image.ImagePlatform;
+import org.zstack.header.image.ImageVO;
+import org.zstack.header.image.ImageVO_;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
@@ -75,14 +77,12 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.TagUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Tuple;
-import javax.persistence.TupleElement;
 import javax.persistence.TypedQuery;
 import java.sql.Timestamp;
 import java.util.*;
@@ -818,7 +818,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
     private CreateVmInstanceMsg fromAPICreateVmInstanceMsg(APICreateVmInstanceMsg msg) {
         CreateVmInstanceMsg cmsg = new CreateVmInstanceMsg();
-
 
         if(msg.getZoneUuid() != null){
             cmsg.setZoneUuid(msg.getZoneUuid());

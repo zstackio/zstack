@@ -201,6 +201,7 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
 
             amsg.setRequiredPrimaryStorageTypes(primaryStorageTypes);
             amsg.setDiskOfferingUuid(dinv.getUuid());
+            amsg.setImageUuid(spec.getImageSpec().getInventory().getUuid());
             bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
             msgs.add(amsg);
         }

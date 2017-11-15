@@ -456,6 +456,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
                 msg.setPrimaryStorageInstallPath(paramIn.getSnapshot().getPrimaryStorageInstallPath());
                 msg.setBackupStorageUuid(paramIn.getBackupStorageUuid());
                 msg.setBackupStorageInstallPath(bsInstallPath);
+                msg.setImageUuid(paramIn.getImage().getUuid());
                 bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, paramIn.getPrimaryStorageUuid());
 
                 bus.send(msg, new CloudBusCallBack(trigger) {
@@ -464,7 +465,8 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
                         if (!reply.isSuccess()) {
                             trigger.fail(reply.getError());
                         } else {
-                            out.setBackupStorageInstallPath(bsInstallPath);
+                            UploadBitsToBackupStorageReply reply1 = reply.castReply();
+                            out.setBackupStorageInstallPath(reply1.getInstallPath() == null? bsInstallPath : reply1.getInstallPath());
                             trigger.next();
                         }
                     }

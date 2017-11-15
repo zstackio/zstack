@@ -10,7 +10,7 @@ import org.zstack.utils.data.SizeUnit
 /**
  * Created by lining on 2017-06-23.
  */
-class CreateVmAssignPsCase extends SubCase{
+class CreateVmAssignNfsPsCase extends SubCase{
     EnvSpec env
 
     @Override
@@ -20,7 +20,7 @@ class CreateVmAssignPsCase extends SubCase{
 
     @Override
     void environment() {
-        env = env{
+        env = env {
             instanceOffering {
                 name = "instanceOffering"
                 memory = SizeUnit.GIGABYTE.toByte(1)

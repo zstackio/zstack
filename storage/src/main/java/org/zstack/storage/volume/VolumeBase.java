@@ -37,7 +37,10 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.OverlayMessage;
 import org.zstack.header.storage.primary.*;
-import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.storage.snapshot.CreateVolumeSnapshotMsg;
+import org.zstack.header.storage.snapshot.CreateVolumeSnapshotReply;
+import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
 import org.zstack.header.volume.VolumeConstant.Capability;
@@ -50,12 +53,11 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.operr;
-
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -186,6 +188,7 @@ public class VolumeBase implements Volume {
                             AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
                             amsg.setRequiredPrimaryStorageUuid(msg.getPrimaryStorageUuid());
                             amsg.setSize(self.getSize());
+
                             bus.makeTargetServiceIdByResourceUuid(amsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
                             bus.send(amsg, new CloudBusCallBack(trigger) {
                                 @Override

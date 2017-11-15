@@ -21,7 +21,10 @@ import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_;
 import org.zstack.header.storage.primary.PrimaryStorageHostStatus;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
@@ -50,6 +53,7 @@ public class VmAllocateHostForStoppedVmFlow implements Flow {
         msg.setCpuCapacity(spec.getVmInventory().getCpuNum());
         msg.setMemoryCapacity(spec.getVmInventory().getMemorySize());
         msg.setVmOperation(spec.getCurrentVmOperation().toString());
+        msg.setImage(spec.getImageSpec().getInventory());
         if ((spec.getRequiredClusterUuid() != null &&
                 !spec.getRequiredClusterUuid().equals(msg.getVmInstance().getClusterUuid()))
                 || spec.getRequiredHostUuid() != null) {

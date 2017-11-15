@@ -107,5 +107,11 @@
                 <value>org.zstack.compute.allocator.HostOsVersionAllocatorFlow</value>
             </list>
         </property>
+        <property name="sortFlowNames">
+            <list>
+                <value>org.zstack.compute.allocator.PrimaryStoragePrioritySortFlow</value>
+                <value>org.zstack.compute.allocator.LeastVmPreferredSortFlow</value>
+            </list>
+        </property>
     </bean>
 </beans>

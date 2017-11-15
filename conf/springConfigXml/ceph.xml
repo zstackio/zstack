@@ -59,4 +59,10 @@
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
         </zstack:plugin>
     </bean>
+
+    <bean id="CephBackupStoragePrimaryStorageExtension" class="org.zstack.storage.ceph.backup.CephBackupStoragePrimaryStorageExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.storage.backup.BackupStoragePrimaryStorageExtensionPoint" />
+        </zstack:plugin>
+    </bean>
 </beans>
