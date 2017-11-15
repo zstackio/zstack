@@ -28,6 +28,7 @@ public class APIUpdateGlobalConfigEvent extends APIEvent {
         inventory.setValue("90");
         inventory.setDescription("default quota for scheduler.num");
         inventory.setDefaultValue("80");
+        event.setInventory(inventory);
         return event;
     }
 

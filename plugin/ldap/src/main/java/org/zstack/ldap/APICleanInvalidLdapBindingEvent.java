@@ -3,8 +3,9 @@ package org.zstack.ldap;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountType;
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.message.DocUtils;
 import org.zstack.header.rest.RestResponse;
-
+import java.sql.Timestamp;
 import java.util.List;
 
 import static org.zstack.utils.CollectionDSL.list;
@@ -35,9 +36,11 @@ public class APICleanInvalidLdapBindingEvent extends APIEvent {
     public static APICleanInvalidLdapBindingEvent __example__() {
         APICleanInvalidLdapBindingEvent event = new APICleanInvalidLdapBindingEvent();
         AccountInventory inventory = new AccountInventory();
-        inventory.setName("test");
+        inventory.setName("admin");
         inventory.setUuid(uuid());
         inventory.setType(AccountType.Normal.toString());
+        inventory.setCreateDate(new Timestamp(DocUtils.date));
+        inventory.setLastOpDate(new Timestamp(DocUtils.date));
 
         event.setInventories(list(inventory));
         return event;

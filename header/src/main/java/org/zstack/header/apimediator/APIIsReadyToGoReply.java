@@ -20,7 +20,7 @@ public class APIIsReadyToGoReply extends APIReply {
  
     public static APIIsReadyToGoReply __example__() {
         APIIsReadyToGoReply reply = new APIIsReadyToGoReply();
-
+        reply.setManagementNodeId(uuid());
 
         return reply;
     }
