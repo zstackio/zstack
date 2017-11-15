@@ -5,15 +5,21 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SQL;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.storage.primary.PrimaryStorageInventory;
+import org.zstack.header.storage.primary.PrimaryStorageStatus;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.kvm.KVMHostConnectExtensionPoint;
 import org.zstack.kvm.KVMHostConnectedContext;
+import org.zstack.storage.primary.ChangePrimaryStorageStatusMsg;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
 import java.util.List;
@@ -23,6 +29,7 @@ import java.util.Map;
  * Created by xing5 on 2016/3/26.
  */
 public class KvmFactory implements HypervisorFactory, KVMHostConnectExtensionPoint {
+    private static final CLogger logger = Utils.getLogger(KvmFactory.class);
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
@@ -40,13 +47,16 @@ public class KvmFactory implements HypervisorFactory, KVMHostConnectExtensionPoi
 
 
     @Transactional(readOnly = true)
-    private String findLocalStorageUuidByHostUuid(String clusterUuid) {
-        String sql = "select pri.uuid from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref where pri.uuid = ref.primaryStorageUuid and ref.clusterUuid = :cuuid and pri.type = :ptype";
-        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-        q.setParameter("cuuid", clusterUuid);
-        q.setParameter("ptype", SMPConstants.SMP_TYPE);
-        List<String> ret = q.getResultList();
-        return ret.isEmpty() ? null : ret.get(0);
+    private PrimaryStorageInventory findSMPByHostUuid(String clusterUuid) {
+        List<PrimaryStorageVO> ret = SQL.New("select pri from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref" +
+                " where pri.uuid = ref.primaryStorageUuid" +
+                " and ref.clusterUuid = :cuuid" +
+                " and pri.type = :ptype", PrimaryStorageVO.class)
+                .param("cuuid", clusterUuid)
+                .param("ptype", SMPConstants.SMP_TYPE)
+                .limit(1)
+                .list();
+        return ret.isEmpty() ? null : PrimaryStorageInventory.valueOf(ret.get(0));
     }
 
     @Override
@@ -56,8 +66,8 @@ public class KvmFactory implements HypervisorFactory, KVMHostConnectExtensionPoi
 
             @Override
             public void run(final FlowTrigger trigger, Map data) {
-                String psUuid = findLocalStorageUuidByHostUuid(context.getInventory().getClusterUuid());
-                if (psUuid == null) {
+                PrimaryStorageInventory ps = findSMPByHostUuid(context.getInventory().getClusterUuid());
+                if (ps == null) {
                     trigger.next();
                     return;
                 }
@@ -65,16 +75,22 @@ public class KvmFactory implements HypervisorFactory, KVMHostConnectExtensionPoi
                 InitKvmHostMsg msg = new InitKvmHostMsg();
                 msg.setHypervisorType(context.getInventory().getHypervisorType());
                 msg.setHostUuid(context.getInventory().getUuid());
-                msg.setPrimaryStorageUuid(psUuid);
-                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, psUuid);
+                msg.setPrimaryStorageUuid(ps.getUuid());
+                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, ps.getUuid());
                 bus.send(msg, new CloudBusCallBack(trigger) {
                     @Override
                     public void run(MessageReply reply) {
                         if (!reply.isSuccess()) {
                             trigger.fail(reply.getError());
-                        } else {
-                            trigger.next();
+                            return;
                         }
+
+                        SMPRecalculatePrimaryStorageCapacityMsg msg = new SMPRecalculatePrimaryStorageCapacityMsg();
+                        msg.setPrimaryStorageUuid(ps.getUuid());
+                        msg.setRelease(false);
+                        bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, ps.getUuid());
+                        bus.send(msg);
+                        trigger.next();
                     }
                 });
             }

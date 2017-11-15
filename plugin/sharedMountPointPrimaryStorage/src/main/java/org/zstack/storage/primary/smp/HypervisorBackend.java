@@ -1,5 +1,6 @@
 package org.zstack.storage.primary.smp;
 
+import org.zstack.header.cluster.ClusterConnectionStatus;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.image.ImageInventory;
@@ -45,7 +46,7 @@ public abstract class HypervisorBackend extends SMPPrimaryStorageBase {
 
     abstract void handleHypervisorSpecificMessage(SMPPrimaryStorageHypervisorSpecificMessage msg);
 
-    abstract void connectByClusterUuid(String clusterUuid, Completion completion);
+    abstract void connectByClusterUuid(String clusterUuid, ReturnValueCompletion<ClusterConnectionStatus> completion);
 
     abstract void handle(SyncVolumeSizeOnPrimaryStorageMsg msg, ReturnValueCompletion<SyncVolumeSizeOnPrimaryStorageReply> completion);
 

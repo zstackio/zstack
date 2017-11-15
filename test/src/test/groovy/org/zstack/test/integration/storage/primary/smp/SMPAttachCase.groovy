@@ -9,6 +9,7 @@ import org.zstack.sdk.AttachPrimaryStorageToClusterAction
 import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.PrimaryStorageInventory
+import org.zstack.sdk.ReconnectPrimaryStorageAction
 import org.zstack.storage.primary.smp.KvmBackend
 import org.zstack.test.integration.storage.SMPEnv
 import org.zstack.test.integration.storage.StorageTest
@@ -53,6 +54,7 @@ class SMPAttachCase extends SubCase{
             testAttachSmpOccupiedByOtherSmp()
             testAttachSameMountPointSmp()
             testReconnectHost()
+            testReconnectSmpWhenNoHostInCluster()
         }
     }
 
@@ -117,7 +119,6 @@ class SMPAttachCase extends SubCase{
         AtomicInteger callCount = new AtomicInteger(0)
         env.simulator(KvmBackend.DELETE_BITS_PATH){
             logger.debug(String.format("callCount %d", callCount.incrementAndGet()))
-
             return new KvmBackend.AgentRsp()
         }
 
@@ -183,6 +184,25 @@ class SMPAttachCase extends SubCase{
         reconnectHost {
             uuid = host1.uuid
         }
+    }
+
+    void testReconnectSmpWhenNoHostInCluster(){
+        deleteHost {
+            uuid = host1.uuid
+        }
+
+        deleteHost {
+            uuid = host2.uuid
+        }
+
+        deleteHost {
+            uuid = host3.uuid
+        }
+
+        ReconnectPrimaryStorageAction a = new ReconnectPrimaryStorageAction()
+        a.uuid = primaryStorageInventory.uuid
+        a.sessionId = currentEnvSpec.session.uuid
+        assert a.call().error != null
     }
 
     @Override
