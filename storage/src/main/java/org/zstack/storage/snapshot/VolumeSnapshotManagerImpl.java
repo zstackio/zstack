@@ -464,7 +464,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             @Override
             public void setup() {
                 flow(new NoRollbackFlow() {
-                    String _name_ = "ask-volume-snapshot-capability";
+                    String __name__ = "ask-volume-snapshot-capability";
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         final String primaryStorageUuid = msg.getVolume().getPrimaryStorageUuid();
@@ -496,10 +496,9 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 });
 
                 flow(new NoRollbackFlow() {
-                    String _name_ = "mark-rootVolume-as-snapshot";
+                    String __name__ = "mark-rootVolume-as-snapshot";
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-
                         vo.setUuid(Platform.getUuid());
                         vo.setName(vol.getName());
                         vo.setDescription(vol.getDescription());
@@ -510,7 +509,6 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                         vo.setSize(vol.getSize());
                         vo.setState(VolumeSnapshotState.Enabled);
                         vo.setStatus(VolumeSnapshotStatus.Creating);
-
 
                         if (VolumeSnapshotArrangementType.CHAIN == capability.getArrangementType()) {
                             saveChainTypeSnapshot(vo);
@@ -526,7 +524,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 });
 
                 flow(new NoRollbackFlow() {
-                    String _name_ = "post-mark-rootVolume-as-snapshot";
+                    String __name__ = "post-mark-rootVolume-as-snapshot";
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
