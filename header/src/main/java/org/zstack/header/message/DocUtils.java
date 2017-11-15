@@ -8,22 +8,26 @@ import java.util.UUID;
  * Created by lining on 2017/11/14.
  */
 public class DocUtils {
-    public static Map<String, Integer> apiUuidMap = new HashMap<>();
+    private static Map<String, Integer> apiUuidMap = new HashMap<>();
 
     public static final long date = 1510669257141L;
 
     public static String uuidForAPIDoc(){
-        String apiName = new Throwable().getStackTrace()[1].getClassName();
+        String apiName = new Throwable().getStackTrace()[2].getClassName();
 
         if(!apiUuidMap.containsKey(apiName)){
             apiUuidMap.put(apiName, 0);
         }
 
         Integer index = apiUuidMap.get(apiName);
-        String key = apiName + index;
-        String uuid = UUID.nameUUIDFromBytes(key.getBytes()).toString().replaceAll("-", "");
+        String uuidKey = apiName + index;
+        String uuid = UUID.nameUUIDFromBytes(uuidKey.getBytes()).toString().replaceAll("-", "");
 
         apiUuidMap.put(apiName, ++index);
         return uuid;
+    }
+
+    public static void removeApiUuidMap(String apiName){
+        apiUuidMap.remove(apiName);
     }
 }
