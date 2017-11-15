@@ -347,6 +347,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
         ret.put(ApplianceVmConstant.BootstrapParams.publicKey.toString(), publicKey);
         ret.put(BootstrapParams.sshPort.toString(), sshPort);
         ret.put(BootstrapParams.uuid.toString(), spec.getVmInventory().getUuid());
+        ret.put(BootstrapParams.managementNodeIp.toString(), Platform.getManagementServerIp());
 
         for (ApplianceVmPrepareBootstrapInfoExtensionPoint ext : pluginRgty.getExtensionList(ApplianceVmPrepareBootstrapInfoExtensionPoint.class)) {
             ext.applianceVmPrepareBootstrapInfo(spec, ret);
