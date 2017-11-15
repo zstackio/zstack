@@ -1,12 +1,17 @@
 package org.zstack.core.progress;
 
+import org.zstack.header.errorcode.ErrorCode;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public abstract class TaskTracker {
+    public static final String PARAM_ERROR = "error";
+
     private String resourceUuid;
     private Map<String, Object> params = new HashMap<>();
 
@@ -29,8 +34,8 @@ public abstract class TaskTracker {
         lst.add(consumer);
     }
 
-    public void track(String info) {
-        track(info, null);
+    public TaskTracker track(String info) {
+        return track(info, null);
     }
 
     public TaskTracker param(String name, Object value) {
@@ -38,14 +43,31 @@ public abstract class TaskTracker {
         return this;
     }
 
+    public TaskTracker error(ErrorCode err) {
+        if (err != null) {
+            params.put(PARAM_ERROR, err.getReadableDetails());
+        }
+
+        return this;
+    }
+
+    public TaskTracker error(List<ErrorCode> errs) {
+        if (errs != null) {
+            List<String> errStrings = errs.stream().map(ErrorCode::getReadableDetails).collect(Collectors.toList());
+            params.put(PARAM_ERROR, String.format("%s", errStrings));
+        }
+
+        return this;
+    }
+
     protected abstract String getResourceType();
 
     protected abstract String getTaskName();
 
-    public void track(String info, Map<String, Object> params) {
+    public TaskTracker track(String info, Map<String, Object> params) {
         List<Consumer> consumers = taskConsumers.get(getTaskName());
         if (consumers == null || consumers.isEmpty()) {
-            return;
+            return this;
         }
 
         Task task = new Task();
@@ -59,5 +81,6 @@ public abstract class TaskTracker {
         task.parameters = this.params;
 
         consumers.forEach(c -> c.accept(task));
+        return this;
     }
 }
