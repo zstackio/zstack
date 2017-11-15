@@ -388,6 +388,7 @@ public class VirtualRouter extends ApplianceVmBase {
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
+                fireDisconnectedCanonicalEvent(errCode);
                 completion.fail(errCode);
             }
         }).start();

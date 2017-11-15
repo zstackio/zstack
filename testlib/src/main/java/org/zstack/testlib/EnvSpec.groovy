@@ -40,6 +40,8 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.function.Function
+import java.util.function.Supplier
 
 /**
  * Created by xing5 on 2017/2/12.
@@ -62,6 +64,8 @@ class EnvSpec implements Node {
     private ConcurrentHashMap<Class, List<Tuple>> defaultMessageHandlers = [:]
     private static RestTemplate restTemplate
     private static Set<Class> simulatorClasses = Platform.reflections.getSubTypesOf(Simulator.class)
+
+    private Function<Supplier, Object> functionForMockTestObject
 
     static List deletionMethods = [
             [CreateZoneAction.metaClass, CreateZoneAction.Result.metaClass, DeleteZoneAction.class],
@@ -158,7 +162,7 @@ class EnvSpec implements Node {
         return httpHandlers[path]
     }
 
-    public Closure getPostSimulator(String path) {
+    Closure getPostSimulator(String path) {
         return httpPostHandlers[path]
     }
 
@@ -272,6 +276,7 @@ class EnvSpec implements Node {
     def inventoryByName(String name) {
         def spec = specByName(name)
 
+        assert spec != null : "cannot find spec[${name}]"
         assert spec.hasProperty("inventory"): "${spec.class} doesn't have inventory"
         return spec.inventory
     }
@@ -436,6 +441,8 @@ class EnvSpec implements Node {
         assert Test.currentEnvSpec == null: "There is another EnvSpec created but not deleted. There can be only one EnvSpec" +
                 " in used, you must delete the previous one"
 
+        functionForMockTestObject = Platform.functionForMockTestObject
+
         hasCreated = true
         Test.currentEnvSpec = this
 
@@ -583,6 +590,8 @@ class EnvSpec implements Node {
 
     void delete() {
         try {
+            Platform.functionForMockTestObject = functionForMockTestObject
+
             ImageGlobalConfig.DELETION_POLICY.updateValue(ImageDeletionPolicyManager.ImageDeletionPolicy.Direct.toString())
             VolumeGlobalConfig.VOLUME_DELETION_POLICY.updateValue(VolumeDeletionPolicyManager.VolumeDeletionPolicy.Direct.toString())
             VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy.Direct.toString())

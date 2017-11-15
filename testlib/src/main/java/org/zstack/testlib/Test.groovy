@@ -16,6 +16,7 @@ import org.zstack.sdk.SessionInventory
 import org.zstack.sdk.ZSClient
 import org.zstack.testlib.collectstrategy.SubCaseCollectionStrategyFactory
 import org.zstack.testlib.collectstrategy.SubCaseCollectionStrategy
+import org.zstack.testlib.util.Retry
 import org.zstack.utils.ShellUtils
 import org.zstack.utils.Utils
 import org.zstack.utils.gson.JSONObjectUtil
@@ -30,7 +31,7 @@ import java.util.logging.Logger
 /**
  * Created by xing5 on 2017/2/12.
  */
-abstract class Test implements ApiHelper {
+abstract class Test implements ApiHelper, Retry {
     final CLogger logger = Utils.getLogger(this.getClass())
 
     static Object deployer
@@ -553,33 +554,6 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
         }
 
         return getRetryReturnValue(ret, true)
-    }
-
-    protected boolean retryInSecs(int total = 8, int interval = 1, Closure c) {
-        int count = 0
-        def ret = false
-
-        while (count < total) {
-            try {
-                def r = c()
-                ret = r == null || (r != null && r instanceof Boolean && r)
-            } catch (StopTestSuiteException e) {
-                throw e
-            } catch (Throwable t) {
-                logger.debug("[retryInSecs:${count + 1}/${total}]", t)
-                if (total - count == 1) {
-                    throw t
-                }
-            }
-
-            if (ret) {
-                return ret
-            }
-            TimeUnit.SECONDS.sleep(interval)
-            count ++
-        }
-
-        return false
     }
 
     protected long costMillis(Closure c){

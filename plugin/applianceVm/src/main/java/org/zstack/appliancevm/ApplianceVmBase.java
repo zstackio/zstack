@@ -434,6 +434,15 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
         return chain;
     }
 
+    protected void fireDisconnectedCanonicalEvent(ErrorCode err) {
+        ApplianceVmCanonicalEvents.DisconnectedData data = new ApplianceVmCanonicalEvents.DisconnectedData();
+        data.setApplianceVmType(self.getType());
+        data.setApplianceVmUuid(self.getUuid());
+        data.setReason(err);
+
+        evtf.fire(ApplianceVmCanonicalEvents.DISCONNECTED_PATH, data);
+    }
+
     @Override
     protected FlowChain getDestroyVmWorkFlowChain(VmInstanceInventory inv) {
         FlowChain chain = super.getDestroyVmWorkFlowChain(inv);
