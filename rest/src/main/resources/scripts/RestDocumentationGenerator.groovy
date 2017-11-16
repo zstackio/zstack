@@ -13,6 +13,7 @@ import org.zstack.header.identity.SuppressCredentialCheck
 import org.zstack.header.message.APIMessage
 import org.zstack.header.message.APIMessage.InvalidApiMessageException
 import org.zstack.header.message.APIParam
+import org.zstack.header.message.DocUtils
 import org.zstack.header.message.OverriddenApiParams
 import org.zstack.header.query.APIQueryMessage
 import org.zstack.header.query.AutoQuery
@@ -815,6 +816,8 @@ ${table.join("\n")}
                 }
 
                 def example = m.invoke(null)
+                DocUtils.removeApiUuidMap(example.class.name)
+
 
                 if (example instanceof APIMessage) {
                     example.validate()
