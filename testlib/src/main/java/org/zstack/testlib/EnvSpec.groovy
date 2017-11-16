@@ -40,8 +40,6 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-import java.util.function.Function
-import java.util.function.Supplier
 
 /**
  * Created by xing5 on 2017/2/12.
@@ -65,7 +63,7 @@ class EnvSpec implements Node {
     private static RestTemplate restTemplate
     private static Set<Class> simulatorClasses = Platform.reflections.getSubTypesOf(Simulator.class)
 
-    private Function<Supplier, Object> functionForMockTestObject
+    private Set<Closure> cleanupClosures = []
 
     static List deletionMethods = [
             [CreateZoneAction.metaClass, CreateZoneAction.Result.metaClass, DeleteZoneAction.class],
@@ -158,7 +156,7 @@ class EnvSpec implements Node {
         restTemplate = new RestTemplate(factory)
     }
 
-    public Closure getSimulator(String path) {
+    Closure getSimulator(String path) {
         return httpHandlers[path]
     }
 
@@ -441,8 +439,6 @@ class EnvSpec implements Node {
         assert Test.currentEnvSpec == null: "There is another EnvSpec created but not deleted. There can be only one EnvSpec" +
                 " in used, you must delete the previous one"
 
-        functionForMockTestObject = Platform.functionForMockTestObject
-
         hasCreated = true
         Test.currentEnvSpec = this
 
@@ -590,12 +586,11 @@ class EnvSpec implements Node {
 
     void delete() {
         try {
-            Platform.functionForMockTestObject = functionForMockTestObject
-
             ImageGlobalConfig.DELETION_POLICY.updateValue(ImageDeletionPolicyManager.ImageDeletionPolicy.Direct.toString())
             VolumeGlobalConfig.VOLUME_DELETION_POLICY.updateValue(VolumeDeletionPolicyManager.VolumeDeletionPolicy.Direct.toString())
             VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy.Direct.toString())
 
+            cleanupClosures.each { it() }
             cleanSimulatorAndMessageHandlers()
 
             destroy(session.uuid)
@@ -662,6 +657,11 @@ class EnvSpec implements Node {
 
     void afterSimulator(String path, Closure c) {
         httpPostHandlers[path] = c
+    }
+
+    void mockFactory(Class clz, Closure c) {
+        Test.functionForMockTestObjectFactory.put(clz, c)
+        cleanupClosures.add({ Test.functionForMockTestObjectFactory.remove(clz) })
     }
 
     void handleSimulatorHttpRequests(HttpServletRequest req, HttpServletResponse rsp) {

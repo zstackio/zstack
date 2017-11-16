@@ -38,6 +38,26 @@ abstract class Test implements ApiHelper, Retry {
     static Map<String, String> apiPaths = new ConcurrentHashMap<>()
 
     private final static long DEFAULT_MESSAGE_TIMEOUT_SECS = TimeUnit.SECONDS.toMillis(25)
+    static Map<Class, Closure> functionForMockTestObjectFactory = new ConcurrentHashMap<>()
+
+    static {
+        Platform.functionForMockTestObject = { supplier ->
+            def obj = supplier.get()
+            if (obj == null) {
+                return obj
+            }
+
+            def entry = functionForMockTestObjectFactory.find {
+                return it.key.isAssignableFrom(obj.getClass())
+            }
+
+            if (entry == null) {
+                return obj
+            }
+
+            return entry.value(obj)
+        }
+    }
 
     static long getMessageTimeoutMillsConfig(){
         String msgTimeoutStr = System.getProperty("msgTimeoutMins")

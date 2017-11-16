@@ -28,13 +28,8 @@ class PrimaryStorageController {
         this.env = env
         sessionUuid = env.session.uuid
 
-        Platform.functionForMockTestObject =  { Supplier t ->
-            Object obj = t.get()
-            if (!(obj instanceof PrimaryStorageBase)) {
-                return obj
-            }
-
-            PrimaryStorageBase ps = obj
+        env.mockFactory(PrimaryStorageBase.class) {
+            PrimaryStorageBase ps = it
             TProxy proxy = new TProxy(ps)
             proxy.hookMethod("connectHook") { Closure invokeSuper,  PrimaryStorageBase.ConnectParam param, Completion completion ->
                 if (disconnectedUuids.contains(ps.self.uuid)) {
