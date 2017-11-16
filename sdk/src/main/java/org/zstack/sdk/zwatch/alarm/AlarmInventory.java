@@ -45,14 +45,6 @@ public class AlarmInventory  {
         return this.period;
     }
 
-    public java.lang.Integer periodNumber;
-    public void setPeriodNumber(java.lang.Integer periodNumber) {
-        this.periodNumber = periodNumber;
-    }
-    public java.lang.Integer getPeriodNumber() {
-        return this.periodNumber;
-    }
-
     public java.lang.String namespace;
     public void setNamespace(java.lang.String namespace) {
         this.namespace = namespace;

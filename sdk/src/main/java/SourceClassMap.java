@@ -205,11 +205,13 @@ public class SourceClassMap {
 			put("org.zstack.zwatch.alarm.EventSubscriptionLabelInventory", "org.zstack.sdk.zwatch.alarm.EventSubscriptionLabelInventory");
 			put("org.zstack.zwatch.alarm.EventSubscriptionState", "org.zstack.sdk.zwatch.alarm.EventSubscriptionState");
 			put("org.zstack.zwatch.alarm.sns.SNSTextTemplateInventory", "org.zstack.sdk.zwatch.alarm.sns.SNSTextTemplateInventory");
+			put("org.zstack.zwatch.datatype.AuditData", "org.zstack.sdk.zwatch.datatype.AuditData");
 			put("org.zstack.zwatch.datatype.Datapoint", "org.zstack.sdk.zwatch.datatype.Datapoint");
 			put("org.zstack.zwatch.datatype.EventData", "org.zstack.sdk.zwatch.datatype.EventData");
 			put("org.zstack.zwatch.datatype.EventFamily$EmergencyLevel", "org.zstack.sdk.zwatch.datatype.EmergencyLevel");
 			put("org.zstack.zwatch.datatype.Label", "org.zstack.sdk.zwatch.datatype.Label");
 			put("org.zstack.zwatch.datatype.Label$Operator", "org.zstack.sdk.zwatch.datatype.Operator");
+			put("org.zstack.zwatch.influxdb.InfluxEventData", "org.zstack.sdk.zwatch.influxdb.InfluxEventData");
 			put("org.zstack.zwatch.ruleengine.ComparisonOperator", "org.zstack.sdk.zwatch.ruleengine.ComparisonOperator");
         }
     };
@@ -416,11 +418,13 @@ public class SourceClassMap {
 			put("org.zstack.sdk.zwatch.alarm.EventSubscriptionLabelInventory", "org.zstack.zwatch.alarm.EventSubscriptionLabelInventory");
 			put("org.zstack.sdk.zwatch.alarm.EventSubscriptionState", "org.zstack.zwatch.alarm.EventSubscriptionState");
 			put("org.zstack.sdk.zwatch.alarm.sns.SNSTextTemplateInventory", "org.zstack.zwatch.alarm.sns.SNSTextTemplateInventory");
+			put("org.zstack.sdk.zwatch.datatype.AuditData", "org.zstack.zwatch.datatype.AuditData");
 			put("org.zstack.sdk.zwatch.datatype.Datapoint", "org.zstack.zwatch.datatype.Datapoint");
 			put("org.zstack.sdk.zwatch.datatype.EmergencyLevel", "org.zstack.zwatch.datatype.EventFamily$EmergencyLevel");
 			put("org.zstack.sdk.zwatch.datatype.EventData", "org.zstack.zwatch.datatype.EventData");
 			put("org.zstack.sdk.zwatch.datatype.Label", "org.zstack.zwatch.datatype.Label");
 			put("org.zstack.sdk.zwatch.datatype.Operator", "org.zstack.zwatch.datatype.Label$Operator");
+			put("org.zstack.sdk.zwatch.influxdb.InfluxEventData", "org.zstack.zwatch.influxdb.InfluxEventData");
 			put("org.zstack.sdk.zwatch.ruleengine.ComparisonOperator", "org.zstack.zwatch.ruleengine.ComparisonOperator");
         }
     };

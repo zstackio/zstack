@@ -20,12 +20,12 @@ public class EventData  {
         return this.LABEL_EMERGENCY_LEVEL;
     }
 
-    public java.lang.String LABEL_IS_API;
-    public void setLABEL_IS_API(java.lang.String LABEL_IS_API) {
-        this.LABEL_IS_API = LABEL_IS_API;
+    public java.lang.String FIELD_NONE;
+    public void setFIELD_NONE(java.lang.String FIELD_NONE) {
+        this.FIELD_NONE = FIELD_NONE;
     }
-    public java.lang.String getLABEL_IS_API() {
-        return this.LABEL_IS_API;
+    public java.lang.String getFIELD_NONE() {
+        return this.FIELD_NONE;
     }
 
     public java.lang.String namespace;
@@ -68,20 +68,20 @@ public class EventData  {
         return this.resourceId;
     }
 
+    public java.lang.String resourceName;
+    public void setResourceName(java.lang.String resourceName) {
+        this.resourceName = resourceName;
+    }
+    public java.lang.String getResourceName() {
+        return this.resourceName;
+    }
+
     public java.lang.String error;
     public void setError(java.lang.String error) {
         this.error = error;
     }
     public java.lang.String getError() {
         return this.error;
-    }
-
-    public boolean api;
-    public void setApi(boolean api) {
-        this.api = api;
-    }
-    public boolean getApi() {
-        return this.api;
     }
 
     public long time;
