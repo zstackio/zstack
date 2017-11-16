@@ -58,6 +58,9 @@ public class CreateVmInstanceAction extends AbstractAction {
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
+    @Param(required = false, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String affinityGroupUuid;
+
     @Param(required = false)
     public java.lang.String defaultL3NetworkUuid;
 

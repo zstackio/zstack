@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CloneVmInstanceAction extends AbstractAction {
+public class RemoveVmFromAffinityGroupAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public CloneVmInstanceResult value;
+        public RemoveVmFromAffinityGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -23,16 +23,10 @@ public class CloneVmInstanceAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vmInstanceUuid;
-
-    @Param(required = false, validValues = {"InstantStart","JustCreate"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String strategy = "InstantStart";
-
-    @Param(required = false, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String affinityGroupUuid;
 
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List names;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String uuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -55,8 +49,8 @@ public class CloneVmInstanceAction extends AbstractAction {
             return ret;
         }
         
-        CloneVmInstanceResult value = res.getResult(CloneVmInstanceResult.class);
-        ret.value = value == null ? new CloneVmInstanceResult() : value; 
+        RemoveVmFromAffinityGroupResult value = res.getResult(RemoveVmFromAffinityGroupResult.class);
+        ret.value = value == null ? new RemoveVmFromAffinityGroupResult() : value; 
 
         return ret;
     }
@@ -81,11 +75,11 @@ public class CloneVmInstanceAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/vm-instances/{vmInstanceUuid}/actions";
+        info.httpMethod = "DELETE";
+        info.path = "/affinity-groups/{uuid}/vm-instances";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "cloneVmInstance";
+        info.parameterName = "";
         return info;
     }
 
