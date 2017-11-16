@@ -9,11 +9,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SQL;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SQLBatch;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.Component;
@@ -36,6 +32,7 @@ import org.zstack.header.storage.backup.DeleteBitsOnBackupStorageMsg;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.volume.*;
@@ -984,7 +981,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                 LocalStorageResourceRefVO ref = new LocalStorageResourceRefVO();
                 ref.setPrimaryStorageUuid(snapshot.getPrimaryStorageUuid());
                 ref.setSize(snapshot.getSize());
-                ref.setResourceType(snapshot.getType());
+                ref.setResourceType(VolumeSnapshotVO.class.getSimpleName());
                 ref.setResourceUuid(snapshot.getUuid());
                 ref.setHostUuid(Q.New(LocalStorageResourceRefVO.class)
                         .select(LocalStorageResourceRefVO_.hostUuid)
