@@ -12,8 +12,6 @@ import org.zstack.testlib.Test
 import org.zstack.testlib.util.Retry
 import org.zstack.testlib.util.TProxy
 
-import java.util.function.Supplier
-
 class PrimaryStorageController {
     class API implements ApiHelper, Retry {
     }
@@ -31,7 +29,7 @@ class PrimaryStorageController {
         env.mockFactory(PrimaryStorageBase.class) {
             PrimaryStorageBase ps = it
             TProxy proxy = new TProxy(ps)
-            proxy.hookMethod("connectHook") { Closure invokeSuper,  PrimaryStorageBase.ConnectParam param, Completion completion ->
+            proxy.mockMethod("connectHook") { Closure invokeSuper, PrimaryStorageBase.ConnectParam param, Completion completion ->
                 if (disconnectedUuids.contains(ps.self.uuid)) {
                     completion.fail(Platform.operr("PrimaryStorageController puts it down"))
                 } else {

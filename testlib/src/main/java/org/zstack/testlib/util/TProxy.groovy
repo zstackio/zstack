@@ -65,7 +65,7 @@ class TProxy {
         }
     }
 
-    void hookMethod(String name, Closure c) {
+    void mockMethod(String name, Closure c) {
         self[name] = c
     }
 
