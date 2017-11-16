@@ -1,7 +1,9 @@
 package org.zstack.storage.volume;
 
 import org.zstack.header.tag.TagDefinition;
+import org.zstack.header.volume.VolumeVO;
 import org.zstack.tag.EphemeralSystemTag;
+import org.zstack.tag.PatternedSystemTag;
 
 /**
  * Created by miao on 12/23/16.
@@ -9,4 +11,8 @@ import org.zstack.tag.EphemeralSystemTag;
 @TagDefinition
 public class VolumeSystemTags {
     public static EphemeralSystemTag SHAREABLE = new EphemeralSystemTag("shareable");
+
+    public static String VOLUME_MAX_INCREMENTAL_SNAPSHOT_NUM_TOKEN = "volumeSnapshotMaxNum";
+    public static PatternedSystemTag VOLUME_MAX_INCREMENTAL_SNAPSHOT_NUM = new PatternedSystemTag(String.format("volumeMaxIncrementalSnapshotNum::{%s}", VOLUME_MAX_INCREMENTAL_SNAPSHOT_NUM_TOKEN), VolumeVO.class);
+
 }

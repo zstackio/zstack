@@ -379,8 +379,6 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((ReimageVmInstanceMsg) msg);
         } else if (msg instanceof GetVmStartingCandidateClustersHostsMsg) {
             handle((GetVmStartingCandidateClustersHostsMsg) msg);
-        } else if (msg instanceof GetVmSnapshotMaxNumMsg) {
-            handle((GetVmSnapshotMaxNumMsg) msg);
         } else {
             VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
             if (ext != null) {
@@ -509,14 +507,6 @@ public class VmInstanceBase extends AbstractVmInstance {
                 }
             }
         });
-    }
-
-    private void handle(final GetVmSnapshotMaxNumMsg msg) {
-        GetVmSnapshotMaxNumReply reply = new GetVmSnapshotMaxNumReply();
-        String value = VmSystemTags.VM_MAX_INCREMENTAL_SNAPSHOT_NUM.getTokenByResourceUuid(msg.getVmInstanceUuid(),
-                VmSystemTags.VM_MAX_INCREMENTAL_SNAPSHOT_NUM_TOKEN);
-        reply.setMaxNum(value == null ? null : Integer.valueOf(value));
-        bus.reply(msg, reply);
     }
 
     private void handle(final HaStartVmInstanceMsg msg) {
