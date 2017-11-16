@@ -91,6 +91,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     @Autowired
     private AccountManager acntMgr;
 
+    public CephPrimaryStorageBase() {
+    }
+
     class ReconnectMonLock {
         AtomicBoolean hold = new AtomicBoolean(false);
 

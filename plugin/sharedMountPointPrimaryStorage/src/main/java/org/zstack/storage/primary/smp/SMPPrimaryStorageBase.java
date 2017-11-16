@@ -50,6 +50,9 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
     @Autowired
     private PluginRegistry pluginRgty;
 
+    public SMPPrimaryStorageBase() {
+    }
+
     public SMPPrimaryStorageBase(PrimaryStorageVO self) {
         super(self);
     }

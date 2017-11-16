@@ -1,53 +1,75 @@
 package org.zstack.testlib.util
 
-import java.lang.reflect.InvocationHandler
+import net.sf.cglib.proxy.Enhancer
+import net.sf.cglib.proxy.MethodInterceptor
+import net.sf.cglib.proxy.MethodProxy
+import org.zstack.utils.FieldUtils
+import org.zstack.utils.Utils
+import org.zstack.utils.logging.CLogger
+
 import java.lang.reflect.Method
+import java.lang.reflect.Modifier
 
 class TProxy {
-    private Map self = [:]
-    private Object adaptee
+    CLogger logger = Utils.getLogger(TProxy.class)
 
-    class ProxyHandler implements InvocationHandler {
+    private Map self = [:]
+    private Object proxyedObject
+
+    class ProxyHandler implements MethodInterceptor {
         @Override
-        Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        Object intercept(Object o, Method method, Object[] objects, MethodProxy methodProxy) throws Throwable {
             Closure call = self[method.name] as Closure
 
             if (call != null) {
-                return call(*args)
+                return call({
+                    return methodProxy.invokeSuper(o, objects)
+                }, *objects)
             } else {
-                return method.invoke(adaptee, args)
+                return methodProxy.invokeSuper(o, objects)
             }
         }
     }
 
-    TProxy(Object adaptee) {
-        this.adaptee = adaptee
-        /*
-        self["methodMissing"] = { String name, args ->
-            return adaptee.invokeMethod(name, args)
-        }
-        self["propertyMissing"] = { String name ->
-            return adaptee[name]
-        }
-        */
+    TProxy(Class adapteeClass) {
+        Enhancer enhancer = new Enhancer()
+        enhancer.setSuperclass(adapteeClass)
+        enhancer.setCallback(new ProxyHandler())
+        proxyedObject = enhancer.create()
     }
 
-    void passThrough(String name, Object...args) {
-        adaptee.invokeMethod(name, args)
+    TProxy(Object adaptee) {
+        assert adaptee != null : "call TProxy(Class adapteeClass) instead"
+
+        Enhancer enhancer = new Enhancer()
+        enhancer.setSuperclass(adaptee.getClass())
+        enhancer.setCallback(new ProxyHandler())
+        try {
+            proxyedObject = enhancer.create()
+            if (adaptee != null) {
+                FieldUtils.getAllFields(adaptee.getClass()).each { f ->
+                    if (Modifier.isStatic(f.modifiers) || Modifier.isFinal(f.modifiers)) {
+                        return
+                    }
+
+                    f.setAccessible(true)
+                    f.set(proxyedObject, f.get(adaptee))
+                }
+            }
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage().contains("Superclass has no null constructors" )) {
+                throw new Exception("the class ${adaptee.getClass()} has no non-argument constructor", e)
+            }
+
+            throw e
+        }
     }
 
     void hookMethod(String name, Closure c) {
         self[name] = c
-        //c.delegate = self
-        //c.resolveStrategy = Closure.DELEGATE_FIRST
-    }
-
-    Object toProxy() {
-        return java.lang.reflect.Proxy.newProxyInstance(adaptee.getClass().getClassLoader(), [adaptee.getClass()] as Class<?>[], new ProxyHandler())
     }
 
     Object asType(Class clz) {
-        return java.lang.reflect.Proxy.newProxyInstance(adaptee.getClass().getClassLoader(), [clz] as Class<?>[], new ProxyHandler())
-        //return self.asType(clz)
+        return proxyedObject
     }
 }

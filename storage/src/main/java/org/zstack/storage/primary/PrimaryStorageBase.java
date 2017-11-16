@@ -83,6 +83,9 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     @Autowired
     protected PrimaryStoragePingTracker tracker;
 
+    public PrimaryStorageBase() {
+    }
+
     public static class PhysicalCapacityUsage {
         public long totalPhysicalSize;
         public long availablePhysicalSize;

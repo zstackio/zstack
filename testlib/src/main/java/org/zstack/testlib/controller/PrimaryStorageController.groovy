@@ -1,10 +1,8 @@
 package org.zstack.testlib.controller
 
 import org.zstack.core.Platform
-import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.Q
 import org.zstack.header.core.Completion
-import org.zstack.header.storage.backup.ConnectBackupStorageReply
 import org.zstack.header.storage.primary.*
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.storage.primary.PrimaryStorageBase
@@ -38,11 +36,11 @@ class PrimaryStorageController {
 
             PrimaryStorageBase ps = obj
             TProxy proxy = new TProxy(ps)
-            proxy.hookMethod("connectHook") { PrimaryStorageBase.ConnectParam param, Completion completion ->
+            proxy.hookMethod("connectHook") { Closure invokeSuper,  PrimaryStorageBase.ConnectParam param, Completion completion ->
                 if (disconnectedUuids.contains(ps.self.uuid)) {
                     completion.fail(Platform.operr("PrimaryStorageController puts it down"))
                 } else {
-                    proxy.passThrough("connectHook", param, completion)
+                    return invokeSuper()
                 }
             }
 

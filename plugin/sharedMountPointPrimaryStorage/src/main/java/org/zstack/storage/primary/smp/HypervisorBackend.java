@@ -9,6 +9,9 @@ import org.zstack.header.storage.primary.*;
  * Created by frank on 6/30/2015.
  */
 public abstract class HypervisorBackend extends SMPPrimaryStorageBase {
+    public HypervisorBackend() {
+    }
+
     public HypervisorBackend(PrimaryStorageVO self) {
         super(self);
     }

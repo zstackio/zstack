@@ -80,6 +80,9 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     @Autowired
     private NfsPrimaryStorageImageCacheCleaner imageCacheCleaner;
 
+    public NfsPrimaryStorage() {
+    }
+
     public NfsPrimaryStorage(PrimaryStorageVO vo) {
         super(vo);
     }
