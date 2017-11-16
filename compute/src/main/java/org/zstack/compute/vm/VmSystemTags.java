@@ -63,8 +63,4 @@ public class VmSystemTags {
 
     public static String PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN = "primaryStorageUuidForDataVolume";
     public static PatternedSystemTag PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME = new PatternedSystemTag(String.format("primaryStorageUuidForDataVolume::{%s}", PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN), VmInstanceVO.class);
-
-    public static String VM_MAX_INCREMENTAL_SNAPSHOT_NUM_TOKEN = "vmSnapshotMaxNum";
-    public static PatternedSystemTag VM_MAX_INCREMENTAL_SNAPSHOT_NUM = new PatternedSystemTag(String.format("vmMaxIncrementalSnapshotNum::{%s}", VM_MAX_INCREMENTAL_SNAPSHOT_NUM_TOKEN), VmInstanceVO.class);
-
 }

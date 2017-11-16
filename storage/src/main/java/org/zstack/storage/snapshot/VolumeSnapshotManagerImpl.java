@@ -34,6 +34,7 @@ import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.volume.FireSnapShotCanonicalEvent;
+import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.Utils;
@@ -253,16 +254,9 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
     }
 
     private Integer getMaxIncrementalSnapshotNum(String volumeUuid) {
-        Integer result = null;
-        String vmUuid = Q.New(VolumeVO.class).select(VolumeVO_.vmInstanceUuid).eq(VolumeVO_.uuid, volumeUuid).findValue();
-        if (vmUuid != null) {
-            GetVmSnapshotMaxNumMsg smsg = new GetVmSnapshotMaxNumMsg();
-            smsg.setVmInstanceUuid(vmUuid);
-            bus.makeTargetServiceIdByResourceUuid(smsg, VmInstanceConstant.SERVICE_ID, vmUuid);
-            GetVmSnapshotMaxNumReply r = (GetVmSnapshotMaxNumReply)bus.call(smsg);
-            result = r.getMaxNum();
-        }
-        return result != null ? result : VolumeSnapshotGlobalConfig.MAX_INCREMENTAL_SNAPSHOT_NUM.value(Integer.class);
+        String systemTagValue = VolumeSystemTags.VOLUME_MAX_INCREMENTAL_SNAPSHOT_NUM.getTokenByResourceUuid(volumeUuid,
+                VolumeSystemTags.VOLUME_MAX_INCREMENTAL_SNAPSHOT_NUM_TOKEN);
+        return systemTagValue != null ? Integer.valueOf(systemTagValue) : VolumeSnapshotGlobalConfig.MAX_INCREMENTAL_SNAPSHOT_NUM.value(Integer.class);
     }
 
     @Transactional
