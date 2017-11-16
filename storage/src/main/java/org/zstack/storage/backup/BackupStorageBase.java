@@ -98,6 +98,9 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         this.self = self;
     }
 
+    public BackupStorageBase() {
+    }
+
     @Override
     public void deleteHook() {
     }

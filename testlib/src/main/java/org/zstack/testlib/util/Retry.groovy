@@ -1,6 +1,7 @@
 package org.zstack.testlib.util
 
 import org.zstack.testlib.StopTestSuiteException
+import org.zstack.utils.Utils
 
 import java.util.concurrent.TimeUnit
 
@@ -16,7 +17,7 @@ trait Retry {
             } catch (StopTestSuiteException e) {
                 throw e
             } catch (Throwable t) {
-                logger.debug("[retryInSecs:${count + 1}/${total}]", t)
+                Utils.getLogger(Retry.class).debug("[retryInSecs:${count + 1}/${total}]", t)
                 if (total - count == 1) {
                     throw t
                 }

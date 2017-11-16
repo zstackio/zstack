@@ -57,6 +57,9 @@ import static org.zstack.utils.URLBuilder.buildUrl;
 public class CephBackupStorageBase extends BackupStorageBase {
     private static final CLogger logger = Utils.getLogger(CephBackupStorageBase.class);
 
+    public CephBackupStorageBase() {
+    }
+
     class ReconnectMonLock {
         AtomicBoolean hold = new AtomicBoolean(false);
 
