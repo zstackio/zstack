@@ -16,6 +16,7 @@ trait Retry {
             } catch (StopTestSuiteException e) {
                 throw e
             } catch (Throwable t) {
+                logger.debug("[retryInSecs:${count + 1}/${total}]", t)
                 if (total - count == 1) {
                     throw t
                 }
