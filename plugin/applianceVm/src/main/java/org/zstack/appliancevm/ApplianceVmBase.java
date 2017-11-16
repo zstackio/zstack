@@ -436,7 +436,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
 
     protected void fireDisconnectedCanonicalEvent(ErrorCode err) {
         ApplianceVmCanonicalEvents.DisconnectedData data = new ApplianceVmCanonicalEvents.DisconnectedData();
-        data.setApplianceVmType(self.getType());
+        data.setApplianceVmType(getSelf().getApplianceVmType());
         data.setApplianceVmUuid(self.getUuid());
         data.setReason(err);
 
