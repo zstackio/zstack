@@ -1,16 +1,16 @@
-package org.zstack.sdk;
+package org.zstack.sdk.zwatch.alarm.sns;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateSNSEmailEndpointAction extends AbstractAction {
+public class QuerySNSTextTemplateAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public CreateSNSApplicationEndpointResult value;
+        public QuerySNSTextTemplateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -23,33 +23,6 @@ public class CreateSNSEmailEndpointAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String email;
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String platformUuid;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = true)
-    public String sessionId;
-
-    public long timeout;
-    
-    public long pollingInterval;
 
 
     private Result makeResult(ApiResult res) {
@@ -59,8 +32,8 @@ public class CreateSNSEmailEndpointAction extends AbstractAction {
             return ret;
         }
         
-        CreateSNSApplicationEndpointResult value = res.getResult(CreateSNSApplicationEndpointResult.class);
-        ret.value = value == null ? new CreateSNSApplicationEndpointResult() : value; 
+        QuerySNSTextTemplateResult value = res.getResult(QuerySNSTextTemplateResult.class);
+        ret.value = value == null ? new QuerySNSTextTemplateResult() : value; 
 
         return ret;
     }
@@ -85,10 +58,10 @@ public class CreateSNSEmailEndpointAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/sns/application-endpoints/emails";
+        info.httpMethod = "GET";
+        info.path = "/zwatch/alarms/sns/text-templates";
         info.needSession = true;
-        info.needPoll = true;
+        info.needPoll = false;
         info.parameterName = "";
         return info;
     }

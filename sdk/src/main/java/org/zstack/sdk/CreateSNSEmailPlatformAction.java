@@ -92,7 +92,7 @@ public class CreateSNSEmailPlatformAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/sns/application-platforms/email";
+        info.path = "/sns/application-platforms/emails";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";
