@@ -3,7 +3,7 @@ package org.zstack.ldap;
 import org.zstack.header.message.APIReply;
 import org.zstack.header.message.NoJsonSchema;
 import org.zstack.header.rest.RestResponse;
-
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -24,7 +24,7 @@ public class APIGetLdapEntryReply extends APIReply {
  
     public static APIGetLdapEntryReply __example__() {
         APIGetLdapEntryReply reply = new APIGetLdapEntryReply();
-
+        reply.setInventories(new ArrayList());
         return reply;
     }
 
