@@ -231,7 +231,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             q.setParameter("chainUuid", chain.getUuid());
             VolumeSnapshotVO latest = q.getSingleResult();
 
-            if (getMaxIncrementalSnapshotNum(vo.getVolumeUuid()) == latest.getDistance()) {
+            if (getMaxIncrementalSnapshotNum(vo.getVolumeUuid()) <= latest.getDistance()) {
                 chain.setCurrent(false);
                 dbf.getEntityManager().merge(chain);
                 return newChain(vo, true);
