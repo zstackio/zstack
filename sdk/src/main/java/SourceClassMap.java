@@ -211,7 +211,6 @@ public class SourceClassMap {
 			put("org.zstack.zwatch.datatype.EventFamily$EmergencyLevel", "org.zstack.sdk.zwatch.datatype.EmergencyLevel");
 			put("org.zstack.zwatch.datatype.Label", "org.zstack.sdk.zwatch.datatype.Label");
 			put("org.zstack.zwatch.datatype.Label$Operator", "org.zstack.sdk.zwatch.datatype.Operator");
-			put("org.zstack.zwatch.influxdb.InfluxEventData", "org.zstack.sdk.zwatch.influxdb.InfluxEventData");
 			put("org.zstack.zwatch.ruleengine.ComparisonOperator", "org.zstack.sdk.zwatch.ruleengine.ComparisonOperator");
         }
     };
@@ -424,7 +423,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.zwatch.datatype.EventData", "org.zstack.zwatch.datatype.EventData");
 			put("org.zstack.sdk.zwatch.datatype.Label", "org.zstack.zwatch.datatype.Label");
 			put("org.zstack.sdk.zwatch.datatype.Operator", "org.zstack.zwatch.datatype.Label$Operator");
-			put("org.zstack.sdk.zwatch.influxdb.InfluxEventData", "org.zstack.zwatch.influxdb.InfluxEventData");
 			put("org.zstack.sdk.zwatch.ruleengine.ComparisonOperator", "org.zstack.zwatch.ruleengine.ComparisonOperator");
         }
     };

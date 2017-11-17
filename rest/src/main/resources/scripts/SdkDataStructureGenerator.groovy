@@ -7,6 +7,7 @@ import org.zstack.header.exception.CloudRuntimeException
 import org.zstack.header.message.Message
 import org.zstack.header.query.APIQueryReply
 import org.zstack.header.rest.APINoSee
+import org.zstack.header.rest.NoSDK
 import org.zstack.header.rest.RestResponse
 import org.zstack.header.rest.SDK
 import org.zstack.rest.sdk.SdkFile
@@ -124,6 +125,10 @@ ${dstToSrc.join("\n")}
     def resolveClass(Class clz) {
         if (clz.getName().contains("\$") && !Modifier.isStatic(clz.modifiers)) {
             // ignore anonymous class
+            return
+        }
+
+        if (clz.isAnnotationPresent(NoSDK.class)) {
             return
         }
 
