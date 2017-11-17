@@ -2,7 +2,6 @@ package org.zstack.test.integration.storage.volume
 
 import org.zstack.core.db.Q
 import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO
-import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.volume.VolumeVO
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
@@ -37,9 +36,10 @@ class PerVolumeSnapshotMaxNumCase extends SubCase{
         env.create {
             vm1 = env.inventoryByName("vm") as VmInstanceInventory
             testSnapshotGlobalConfig()
-            testVmSnapshotMaxNumSystemTag()
+            testVolumeSnapshotMaxNumSystemTag()
             testNoSystemTagCreateSnapshot()
-            testPerVmSystemTagCreateSnapshot()
+            testPerVolumeSystemTagCreateSnapshot()
+            testAddVolumeSystemTagAfterCreateSnapshot()
         }
     }
 
@@ -58,7 +58,7 @@ class PerVolumeSnapshotMaxNumCase extends SubCase{
         assert VolumeSnapshotGlobalConfig.MAX_INCREMENTAL_SNAPSHOT_NUM.value() == "2"
     }
 
-    void testVmSnapshotMaxNumSystemTag(){
+    void testVolumeSnapshotMaxNumSystemTag(){
         createSystemTag {
             resourceType = VolumeVO.getSimpleName()
             resourceUuid = vm1.rootVolumeUuid
@@ -83,40 +83,48 @@ class PerVolumeSnapshotMaxNumCase extends SubCase{
         // MaxNum for vm2 is not set, global config is 2
         assert Q.New(VolumeSnapshotTreeVO.class).count() == 0
 
-        createVolumeSnapshot {
-            volumeUuid = vm2.rootVolumeUuid
-            name = "testVmSnapshot1"
-        }
-
-        createVolumeSnapshot {
-            volumeUuid = vm2.rootVolumeUuid
-            name = "testVmSnapshot2"
-        }
+        createSnapshots(vm2.rootVolumeUuid, 2)
 
         assert Q.New(VolumeSnapshotTreeVO.class).count() == 1
 
-        createVolumeSnapshot {
-            volumeUuid = vm2.rootVolumeUuid
-            name = "testVmSnapshot2"
-        }
+        createSnapshots(vm2.rootVolumeUuid, 1)
 
         assert Q.New(VolumeSnapshotTreeVO.class).count() == 2
     }
 
-    void testPerVmSystemTagCreateSnapshot(){
+    void testPerVolumeSystemTagCreateSnapshot(){
         // MaxNum for vm1 is 1, global config is 2
         int nowCount = Q.New(VolumeSnapshotTreeVO.class).count()
 
-        createVolumeSnapshot {
-            volumeUuid = vm1.rootVolumeUuid
-            name = "testVmSnapshot1"
-        }
-
-        createVolumeSnapshot {
-            volumeUuid = vm1.rootVolumeUuid
-            name = "testVmSnapshot2"
-        }
+        createSnapshots(vm1.rootVolumeUuid, 2)
 
         assert Q.New(VolumeSnapshotTreeVO.class).count() == nowCount + 2
+    }
+
+    void testAddVolumeSystemTagAfterCreateSnapshot(){
+        int nowCount = Q.New(VolumeSnapshotTreeVO.class).count()
+
+        createSnapshots(vm2.rootVolumeUuid, 1)
+
+        assert Q.New(VolumeSnapshotTreeVO.class).count() == nowCount
+
+        createSystemTag {
+            resourceType = VolumeVO.getSimpleName()
+            resourceUuid = vm2.rootVolumeUuid
+            tag = "volumeMaxIncrementalSnapshotNum::1"
+        }
+
+        createSnapshots(vm2.rootVolumeUuid, 1)
+
+        assert Q.New(VolumeSnapshotTreeVO.class).count() == nowCount + 1
+    }
+
+    private void createSnapshots(String volUuid, int count){
+        for (int i = 0; i < count; i++) {
+            createVolumeSnapshot {
+                volumeUuid = volUuid
+                name = "testVmSnapshot"
+            }
+        }
     }
 }
