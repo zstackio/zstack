@@ -29,6 +29,20 @@ CREATE TABLE  `zstack`.`SNSHttpEndpointVO` (
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE  `zstack`.`SNSDingTalkEndpointVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `url` varchar(1024) NOT NULL,
+    `atAll` int(1) unsigned NOT NULL,
+    PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE  `zstack`.`SNSDingTalkAtPersonVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `phoneNumber` varchar(64) NOT NULL,
+    `endpointUuid` varchar(32) NOT NULL,
+    PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE  `zstack`.`SNSApplicationPlatformVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
     `name` varchar(255) NOT NULL,

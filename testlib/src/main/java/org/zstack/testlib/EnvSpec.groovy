@@ -116,6 +116,8 @@ class EnvSpec implements Node {
             [CreateSNSTopicAction.metaClass, CreateSNSTopicAction.Result.metaClass, DeleteSNSTopicAction.class],
             [CreateAlarmAction.metaClass, CreateAlarmAction.Result.metaClass, DeleteAlarmAction.class],
             [SubscribeEventAction.metaClass, SubscribeEventAction.Result.metaClass, UnsubscribeEventAction.class],
+            [CreateSNSHttpEndpointAction.metaClass, CreateSNSHttpEndpointAction.Result.metaClass, DeleteSNSApplicationEndpointAction.class],
+            [CreateSNSDingTalkEndpointAction.metaClass, CreateSNSDingTalkEndpointAction.Result.metaClass, DeleteSNSApplicationEndpointAction.class],
     ]
 
     static Closure GLOBAL_DELETE_HOOK
