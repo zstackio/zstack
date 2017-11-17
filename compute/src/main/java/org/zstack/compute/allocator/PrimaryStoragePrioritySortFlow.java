@@ -79,6 +79,14 @@ public class PrimaryStoragePrioritySortFlow extends AbstractHostSortorFlow {
         return res;
     }
 
+    private void addAll(final List<HostInventory> list) {
+        for (HostInventory host: list) {
+            if (candidates.indexOf(host) == -1) {
+                candidates.add(host);
+            }
+        }
+    }
+
     private void adjustCandidates(Map<String, Integer> priMap) {
         if (priMap.size() == 0) {
             subCandidates.addAll(candidates);
@@ -103,7 +111,7 @@ public class PrimaryStoragePrioritySortFlow extends AbstractHostSortorFlow {
         }
 
         candidates.clear();
-        sorted.forEach(list -> candidates.addAll(list));
+        sorted.forEach(list -> addAll(list));
         logger.debug(String.format("after PrimaryStoragePrioritySortFlow adjustCandidates: %s", candidates.stream().map(HostInventory::getName).collect(Collectors.toList())));
     }
 
