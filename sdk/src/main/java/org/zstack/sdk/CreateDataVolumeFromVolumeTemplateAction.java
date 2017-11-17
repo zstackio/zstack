@@ -10,7 +10,7 @@ public class CreateDataVolumeFromVolumeTemplateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateDataVolumeFromVolumeTemplateResult value;
+        public org.zstack.sdk.CreateDataVolumeFromVolumeTemplateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -62,8 +62,8 @@ public class CreateDataVolumeFromVolumeTemplateAction extends AbstractAction {
             return ret;
         }
         
-        CreateDataVolumeFromVolumeTemplateResult value = res.getResult(CreateDataVolumeFromVolumeTemplateResult.class);
-        ret.value = value == null ? new CreateDataVolumeFromVolumeTemplateResult() : value; 
+        org.zstack.sdk.CreateDataVolumeFromVolumeTemplateResult value = res.getResult(org.zstack.sdk.CreateDataVolumeFromVolumeTemplateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateDataVolumeFromVolumeTemplateResult() : value; 
 
         return ret;
     }

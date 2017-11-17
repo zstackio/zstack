@@ -10,7 +10,7 @@ public class UpdateLoadBalancerListenerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateLoadBalancerListenerResult value;
+        public org.zstack.sdk.UpdateLoadBalancerListenerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class UpdateLoadBalancerListenerAction extends AbstractAction {
             return ret;
         }
         
-        UpdateLoadBalancerListenerResult value = res.getResult(UpdateLoadBalancerListenerResult.class);
-        ret.value = value == null ? new UpdateLoadBalancerListenerResult() : value; 
+        org.zstack.sdk.UpdateLoadBalancerListenerResult value = res.getResult(org.zstack.sdk.UpdateLoadBalancerListenerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateLoadBalancerListenerResult() : value; 
 
         return ret;
     }

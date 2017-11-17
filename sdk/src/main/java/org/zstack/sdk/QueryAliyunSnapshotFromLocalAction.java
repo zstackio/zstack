@@ -10,7 +10,7 @@ public class QueryAliyunSnapshotFromLocalAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryAliyunSnapshotFromLocalResult value;
+        public org.zstack.sdk.QueryAliyunSnapshotFromLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryAliyunSnapshotFromLocalAction extends QueryAction {
             return ret;
         }
         
-        QueryAliyunSnapshotFromLocalResult value = res.getResult(QueryAliyunSnapshotFromLocalResult.class);
-        ret.value = value == null ? new QueryAliyunSnapshotFromLocalResult() : value; 
+        org.zstack.sdk.QueryAliyunSnapshotFromLocalResult value = res.getResult(org.zstack.sdk.QueryAliyunSnapshotFromLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryAliyunSnapshotFromLocalResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class UpdateAliyunDiskAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateAliyunDiskResult value;
+        public org.zstack.sdk.UpdateAliyunDiskResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -62,8 +62,8 @@ public class UpdateAliyunDiskAction extends AbstractAction {
             return ret;
         }
         
-        UpdateAliyunDiskResult value = res.getResult(UpdateAliyunDiskResult.class);
-        ret.value = value == null ? new UpdateAliyunDiskResult() : value; 
+        org.zstack.sdk.UpdateAliyunDiskResult value = res.getResult(org.zstack.sdk.UpdateAliyunDiskResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateAliyunDiskResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class SetVipQosAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SetVipQosResult value;
+        public org.zstack.sdk.SetVipQosResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class SetVipQosAction extends AbstractAction {
             return ret;
         }
         
-        SetVipQosResult value = res.getResult(SetVipQosResult.class);
-        ret.value = value == null ? new SetVipQosResult() : value; 
+        org.zstack.sdk.SetVipQosResult value = res.getResult(org.zstack.sdk.SetVipQosResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SetVipQosResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class DeleteLdapServerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteLdapServerResult value;
+        public org.zstack.sdk.DeleteLdapServerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteLdapServerAction extends AbstractAction {
             return ret;
         }
         
-        DeleteLdapServerResult value = res.getResult(DeleteLdapServerResult.class);
-        ret.value = value == null ? new DeleteLdapServerResult() : value; 
+        org.zstack.sdk.DeleteLdapServerResult value = res.getResult(org.zstack.sdk.DeleteLdapServerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteLdapServerResult() : value; 
 
         return ret;
     }

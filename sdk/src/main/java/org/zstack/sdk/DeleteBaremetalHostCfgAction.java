@@ -10,7 +10,7 @@ public class DeleteBaremetalHostCfgAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteBaremetalHostCfgResult value;
+        public org.zstack.sdk.DeleteBaremetalHostCfgResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteBaremetalHostCfgAction extends AbstractAction {
             return ret;
         }
         
-        DeleteBaremetalHostCfgResult value = res.getResult(DeleteBaremetalHostCfgResult.class);
-        ret.value = value == null ? new DeleteBaremetalHostCfgResult() : value; 
+        org.zstack.sdk.DeleteBaremetalHostCfgResult value = res.getResult(org.zstack.sdk.DeleteBaremetalHostCfgResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteBaremetalHostCfgResult() : value; 
 
         return ret;
     }

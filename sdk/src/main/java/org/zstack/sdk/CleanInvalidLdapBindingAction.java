@@ -10,7 +10,7 @@ public class CleanInvalidLdapBindingAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CleanInvalidLdapBindingResult value;
+        public org.zstack.sdk.CleanInvalidLdapBindingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -44,8 +44,8 @@ public class CleanInvalidLdapBindingAction extends AbstractAction {
             return ret;
         }
         
-        CleanInvalidLdapBindingResult value = res.getResult(CleanInvalidLdapBindingResult.class);
-        ret.value = value == null ? new CleanInvalidLdapBindingResult() : value; 
+        org.zstack.sdk.CleanInvalidLdapBindingResult value = res.getResult(org.zstack.sdk.CleanInvalidLdapBindingResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CleanInvalidLdapBindingResult() : value; 
 
         return ret;
     }

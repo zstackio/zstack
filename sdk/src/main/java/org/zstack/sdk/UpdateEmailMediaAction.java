@@ -10,7 +10,7 @@ public class UpdateEmailMediaAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateEmailMediaResult value;
+        public org.zstack.sdk.UpdateEmailMediaResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -65,8 +65,8 @@ public class UpdateEmailMediaAction extends AbstractAction {
             return ret;
         }
         
-        UpdateEmailMediaResult value = res.getResult(UpdateEmailMediaResult.class);
-        ret.value = value == null ? new UpdateEmailMediaResult() : value; 
+        org.zstack.sdk.UpdateEmailMediaResult value = res.getResult(org.zstack.sdk.UpdateEmailMediaResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateEmailMediaResult() : value; 
 
         return ret;
     }

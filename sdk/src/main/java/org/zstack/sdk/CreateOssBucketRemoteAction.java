@@ -10,7 +10,7 @@ public class CreateOssBucketRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateOssBucketRemoteResult value;
+        public org.zstack.sdk.CreateOssBucketRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +56,8 @@ public class CreateOssBucketRemoteAction extends AbstractAction {
             return ret;
         }
         
-        CreateOssBucketRemoteResult value = res.getResult(CreateOssBucketRemoteResult.class);
-        ret.value = value == null ? new CreateOssBucketRemoteResult() : value; 
+        org.zstack.sdk.CreateOssBucketRemoteResult value = res.getResult(org.zstack.sdk.CreateOssBucketRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateOssBucketRemoteResult() : value; 
 
         return ret;
     }

@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class EmailMediaInventory extends MediaInventory {
+public class EmailMediaInventory extends org.zstack.sdk.MediaInventory {
 
     public java.lang.String smtpServer;
     public void setSmtpServer(java.lang.String smtpServer) {

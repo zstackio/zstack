@@ -10,7 +10,7 @@ public class QueryVmInstanceAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryVmInstanceResult value;
+        public org.zstack.sdk.QueryVmInstanceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryVmInstanceAction extends QueryAction {
             return ret;
         }
         
-        QueryVmInstanceResult value = res.getResult(QueryVmInstanceResult.class);
-        ret.value = value == null ? new QueryVmInstanceResult() : value; 
+        org.zstack.sdk.QueryVmInstanceResult value = res.getResult(org.zstack.sdk.QueryVmInstanceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryVmInstanceResult() : value; 
 
         return ret;
     }

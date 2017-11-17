@@ -10,7 +10,7 @@ public class UpdateGlobalConfigAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateGlobalConfigResult value;
+        public org.zstack.sdk.UpdateGlobalConfigResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class UpdateGlobalConfigAction extends AbstractAction {
             return ret;
         }
         
-        UpdateGlobalConfigResult value = res.getResult(UpdateGlobalConfigResult.class);
-        ret.value = value == null ? new UpdateGlobalConfigResult() : value; 
+        org.zstack.sdk.UpdateGlobalConfigResult value = res.getResult(org.zstack.sdk.UpdateGlobalConfigResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateGlobalConfigResult() : value; 
 
         return ret;
     }

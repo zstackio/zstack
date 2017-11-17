@@ -10,7 +10,7 @@ public class ExportImageFromBackupStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ExportImageFromBackupStorageResult value;
+        public org.zstack.sdk.ExportImageFromBackupStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class ExportImageFromBackupStorageAction extends AbstractAction {
             return ret;
         }
         
-        ExportImageFromBackupStorageResult value = res.getResult(ExportImageFromBackupStorageResult.class);
-        ret.value = value == null ? new ExportImageFromBackupStorageResult() : value; 
+        org.zstack.sdk.ExportImageFromBackupStorageResult value = res.getResult(org.zstack.sdk.ExportImageFromBackupStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ExportImageFromBackupStorageResult() : value; 
 
         return ret;
     }

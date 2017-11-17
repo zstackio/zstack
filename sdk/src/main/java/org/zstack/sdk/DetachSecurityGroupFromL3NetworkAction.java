@@ -10,7 +10,7 @@ public class DetachSecurityGroupFromL3NetworkAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DetachSecurityGroupFromL3NetworkResult value;
+        public org.zstack.sdk.DetachSecurityGroupFromL3NetworkResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DetachSecurityGroupFromL3NetworkAction extends AbstractAction {
             return ret;
         }
         
-        DetachSecurityGroupFromL3NetworkResult value = res.getResult(DetachSecurityGroupFromL3NetworkResult.class);
-        ret.value = value == null ? new DetachSecurityGroupFromL3NetworkResult() : value; 
+        org.zstack.sdk.DetachSecurityGroupFromL3NetworkResult value = res.getResult(org.zstack.sdk.DetachSecurityGroupFromL3NetworkResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DetachSecurityGroupFromL3NetworkResult() : value; 
 
         return ret;
     }

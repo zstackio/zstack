@@ -10,7 +10,7 @@ public class GetDataVolumeAttachableVmAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetDataVolumeAttachableVmResult value;
+        public org.zstack.sdk.GetDataVolumeAttachableVmResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -43,8 +43,8 @@ public class GetDataVolumeAttachableVmAction extends AbstractAction {
             return ret;
         }
         
-        GetDataVolumeAttachableVmResult value = res.getResult(GetDataVolumeAttachableVmResult.class);
-        ret.value = value == null ? new GetDataVolumeAttachableVmResult() : value; 
+        org.zstack.sdk.GetDataVolumeAttachableVmResult value = res.getResult(org.zstack.sdk.GetDataVolumeAttachableVmResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetDataVolumeAttachableVmResult() : value; 
 
         return ret;
     }

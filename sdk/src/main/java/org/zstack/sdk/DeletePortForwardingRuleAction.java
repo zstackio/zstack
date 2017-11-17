@@ -10,7 +10,7 @@ public class DeletePortForwardingRuleAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeletePortForwardingRuleResult value;
+        public org.zstack.sdk.DeletePortForwardingRuleResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeletePortForwardingRuleAction extends AbstractAction {
             return ret;
         }
         
-        DeletePortForwardingRuleResult value = res.getResult(DeletePortForwardingRuleResult.class);
-        ret.value = value == null ? new DeletePortForwardingRuleResult() : value; 
+        org.zstack.sdk.DeletePortForwardingRuleResult value = res.getResult(org.zstack.sdk.DeletePortForwardingRuleResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeletePortForwardingRuleResult() : value; 
 
         return ret;
     }

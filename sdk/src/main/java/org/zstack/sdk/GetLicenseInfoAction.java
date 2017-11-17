@@ -10,7 +10,7 @@ public class GetLicenseInfoAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetLicenseInfoResult value;
+        public org.zstack.sdk.GetLicenseInfoResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -37,8 +37,8 @@ public class GetLicenseInfoAction extends AbstractAction {
             return ret;
         }
         
-        GetLicenseInfoResult value = res.getResult(GetLicenseInfoResult.class);
-        ret.value = value == null ? new GetLicenseInfoResult() : value; 
+        org.zstack.sdk.GetLicenseInfoResult value = res.getResult(org.zstack.sdk.GetLicenseInfoResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetLicenseInfoResult() : value; 
 
         return ret;
     }

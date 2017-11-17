@@ -10,7 +10,7 @@ public class PrometheusQueryVmMonitoringDataAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public PrometheusQueryVmMonitoringDataResult value;
+        public org.zstack.sdk.PrometheusQueryVmMonitoringDataResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -61,8 +61,8 @@ public class PrometheusQueryVmMonitoringDataAction extends AbstractAction {
             return ret;
         }
         
-        PrometheusQueryVmMonitoringDataResult value = res.getResult(PrometheusQueryVmMonitoringDataResult.class);
-        ret.value = value == null ? new PrometheusQueryVmMonitoringDataResult() : value; 
+        org.zstack.sdk.PrometheusQueryVmMonitoringDataResult value = res.getResult(org.zstack.sdk.PrometheusQueryVmMonitoringDataResult.class);
+        ret.value = value == null ? new org.zstack.sdk.PrometheusQueryVmMonitoringDataResult() : value; 
 
         return ret;
     }

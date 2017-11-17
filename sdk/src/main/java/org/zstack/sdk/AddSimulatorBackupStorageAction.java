@@ -10,7 +10,7 @@ public class AddSimulatorBackupStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AddBackupStorageResult value;
+        public org.zstack.sdk.AddBackupStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -68,8 +68,8 @@ public class AddSimulatorBackupStorageAction extends AbstractAction {
             return ret;
         }
         
-        AddBackupStorageResult value = res.getResult(AddBackupStorageResult.class);
-        ret.value = value == null ? new AddBackupStorageResult() : value; 
+        org.zstack.sdk.AddBackupStorageResult value = res.getResult(org.zstack.sdk.AddBackupStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddBackupStorageResult() : value; 
 
         return ret;
     }

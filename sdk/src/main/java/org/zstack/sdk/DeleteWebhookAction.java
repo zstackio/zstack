@@ -10,7 +10,7 @@ public class DeleteWebhookAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteWebhookResult value;
+        public org.zstack.sdk.DeleteWebhookResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteWebhookAction extends AbstractAction {
             return ret;
         }
         
-        DeleteWebhookResult value = res.getResult(DeleteWebhookResult.class);
-        ret.value = value == null ? new DeleteWebhookResult() : value; 
+        org.zstack.sdk.DeleteWebhookResult value = res.getResult(org.zstack.sdk.DeleteWebhookResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteWebhookResult() : value; 
 
         return ret;
     }

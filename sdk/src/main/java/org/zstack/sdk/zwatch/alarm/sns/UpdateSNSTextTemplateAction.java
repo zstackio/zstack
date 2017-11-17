@@ -10,7 +10,7 @@ public class UpdateSNSTextTemplateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateSNSTextTemplateResult value;
+        public org.zstack.sdk.zwatch.alarm.sns.UpdateSNSTextTemplateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -59,8 +59,8 @@ public class UpdateSNSTextTemplateAction extends AbstractAction {
             return ret;
         }
         
-        UpdateSNSTextTemplateResult value = res.getResult(UpdateSNSTextTemplateResult.class);
-        ret.value = value == null ? new UpdateSNSTextTemplateResult() : value; 
+        org.zstack.sdk.zwatch.alarm.sns.UpdateSNSTextTemplateResult value = res.getResult(org.zstack.sdk.zwatch.alarm.sns.UpdateSNSTextTemplateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.zwatch.alarm.sns.UpdateSNSTextTemplateResult() : value; 
 
         return ret;
     }

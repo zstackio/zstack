@@ -10,7 +10,7 @@ public class RevokeResourceSharingAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public RevokeResourceSharingResult value;
+        public org.zstack.sdk.RevokeResourceSharingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +56,8 @@ public class RevokeResourceSharingAction extends AbstractAction {
             return ret;
         }
         
-        RevokeResourceSharingResult value = res.getResult(RevokeResourceSharingResult.class);
-        ret.value = value == null ? new RevokeResourceSharingResult() : value; 
+        org.zstack.sdk.RevokeResourceSharingResult value = res.getResult(org.zstack.sdk.RevokeResourceSharingResult.class);
+        ret.value = value == null ? new org.zstack.sdk.RevokeResourceSharingResult() : value; 
 
         return ret;
     }

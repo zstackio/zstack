@@ -10,7 +10,7 @@ public class QueryInstanceOfferingAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryInstanceOfferingResult value;
+        public org.zstack.sdk.QueryInstanceOfferingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryInstanceOfferingAction extends QueryAction {
             return ret;
         }
         
-        QueryInstanceOfferingResult value = res.getResult(QueryInstanceOfferingResult.class);
-        ret.value = value == null ? new QueryInstanceOfferingResult() : value; 
+        org.zstack.sdk.QueryInstanceOfferingResult value = res.getResult(org.zstack.sdk.QueryInstanceOfferingResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryInstanceOfferingResult() : value; 
 
         return ret;
     }

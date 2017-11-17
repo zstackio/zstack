@@ -10,7 +10,7 @@ public class QueryWebhookAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryWebhookResult value;
+        public org.zstack.sdk.QueryWebhookResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryWebhookAction extends QueryAction {
             return ret;
         }
         
-        QueryWebhookResult value = res.getResult(QueryWebhookResult.class);
-        ret.value = value == null ? new QueryWebhookResult() : value; 
+        org.zstack.sdk.QueryWebhookResult value = res.getResult(org.zstack.sdk.QueryWebhookResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryWebhookResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class UpdateEmailMonitorTriggerActionAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateMonitorTriggerActionResult value;
+        public org.zstack.sdk.UpdateMonitorTriggerActionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -59,8 +59,8 @@ public class UpdateEmailMonitorTriggerActionAction extends AbstractAction {
             return ret;
         }
         
-        UpdateMonitorTriggerActionResult value = res.getResult(UpdateMonitorTriggerActionResult.class);
-        ret.value = value == null ? new UpdateMonitorTriggerActionResult() : value; 
+        org.zstack.sdk.UpdateMonitorTriggerActionResult value = res.getResult(org.zstack.sdk.UpdateMonitorTriggerActionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateMonitorTriggerActionResult() : value; 
 
         return ret;
     }

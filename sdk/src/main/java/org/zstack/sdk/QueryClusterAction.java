@@ -10,7 +10,7 @@ public class QueryClusterAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryClusterResult value;
+        public org.zstack.sdk.QueryClusterResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryClusterAction extends QueryAction {
             return ret;
         }
         
-        QueryClusterResult value = res.getResult(QueryClusterResult.class);
-        ret.value = value == null ? new QueryClusterResult() : value; 
+        org.zstack.sdk.QueryClusterResult value = res.getResult(org.zstack.sdk.QueryClusterResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryClusterResult() : value; 
 
         return ret;
     }

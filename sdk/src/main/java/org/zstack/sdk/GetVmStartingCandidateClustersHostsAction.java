@@ -10,7 +10,7 @@ public class GetVmStartingCandidateClustersHostsAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetVmStartingCandidateClustersHostsResult value;
+        public org.zstack.sdk.GetVmStartingCandidateClustersHostsResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -43,8 +43,8 @@ public class GetVmStartingCandidateClustersHostsAction extends AbstractAction {
             return ret;
         }
         
-        GetVmStartingCandidateClustersHostsResult value = res.getResult(GetVmStartingCandidateClustersHostsResult.class);
-        ret.value = value == null ? new GetVmStartingCandidateClustersHostsResult() : value; 
+        org.zstack.sdk.GetVmStartingCandidateClustersHostsResult value = res.getResult(org.zstack.sdk.GetVmStartingCandidateClustersHostsResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetVmStartingCandidateClustersHostsResult() : value; 
 
         return ret;
     }

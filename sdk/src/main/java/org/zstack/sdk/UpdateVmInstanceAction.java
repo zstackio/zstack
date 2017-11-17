@@ -10,7 +10,7 @@ public class UpdateVmInstanceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateVmInstanceResult value;
+        public org.zstack.sdk.UpdateVmInstanceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -68,8 +68,8 @@ public class UpdateVmInstanceAction extends AbstractAction {
             return ret;
         }
         
-        UpdateVmInstanceResult value = res.getResult(UpdateVmInstanceResult.class);
-        ret.value = value == null ? new UpdateVmInstanceResult() : value; 
+        org.zstack.sdk.UpdateVmInstanceResult value = res.getResult(org.zstack.sdk.UpdateVmInstanceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateVmInstanceResult() : value; 
 
         return ret;
     }

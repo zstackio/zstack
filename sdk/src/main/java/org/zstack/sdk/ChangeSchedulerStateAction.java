@@ -10,7 +10,7 @@ public class ChangeSchedulerStateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ChangeSchedulerStateResult value;
+        public org.zstack.sdk.ChangeSchedulerStateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class ChangeSchedulerStateAction extends AbstractAction {
             return ret;
         }
         
-        ChangeSchedulerStateResult value = res.getResult(ChangeSchedulerStateResult.class);
-        ret.value = value == null ? new ChangeSchedulerStateResult() : value; 
+        org.zstack.sdk.ChangeSchedulerStateResult value = res.getResult(org.zstack.sdk.ChangeSchedulerStateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ChangeSchedulerStateResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class ExpungeVmInstanceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ExpungeVmInstanceResult value;
+        public org.zstack.sdk.ExpungeVmInstanceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class ExpungeVmInstanceAction extends AbstractAction {
             return ret;
         }
         
-        ExpungeVmInstanceResult value = res.getResult(ExpungeVmInstanceResult.class);
-        ret.value = value == null ? new ExpungeVmInstanceResult() : value; 
+        org.zstack.sdk.ExpungeVmInstanceResult value = res.getResult(org.zstack.sdk.ExpungeVmInstanceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ExpungeVmInstanceResult() : value; 
 
         return ret;
     }

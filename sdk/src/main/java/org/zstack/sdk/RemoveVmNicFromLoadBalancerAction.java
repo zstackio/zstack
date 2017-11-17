@@ -10,7 +10,7 @@ public class RemoveVmNicFromLoadBalancerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public RemoveVmNicFromLoadBalancerResult value;
+        public org.zstack.sdk.RemoveVmNicFromLoadBalancerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class RemoveVmNicFromLoadBalancerAction extends AbstractAction {
             return ret;
         }
         
-        RemoveVmNicFromLoadBalancerResult value = res.getResult(RemoveVmNicFromLoadBalancerResult.class);
-        ret.value = value == null ? new RemoveVmNicFromLoadBalancerResult() : value; 
+        org.zstack.sdk.RemoveVmNicFromLoadBalancerResult value = res.getResult(org.zstack.sdk.RemoveVmNicFromLoadBalancerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.RemoveVmNicFromLoadBalancerResult() : value; 
 
         return ret;
     }

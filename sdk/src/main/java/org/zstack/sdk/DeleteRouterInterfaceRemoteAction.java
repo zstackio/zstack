@@ -10,7 +10,7 @@ public class DeleteRouterInterfaceRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteRouterInterfaceRemoteResult value;
+        public org.zstack.sdk.DeleteRouterInterfaceRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class DeleteRouterInterfaceRemoteAction extends AbstractAction {
             return ret;
         }
         
-        DeleteRouterInterfaceRemoteResult value = res.getResult(DeleteRouterInterfaceRemoteResult.class);
-        ret.value = value == null ? new DeleteRouterInterfaceRemoteResult() : value; 
+        org.zstack.sdk.DeleteRouterInterfaceRemoteResult value = res.getResult(org.zstack.sdk.DeleteRouterInterfaceRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteRouterInterfaceRemoteResult() : value; 
 
         return ret;
     }

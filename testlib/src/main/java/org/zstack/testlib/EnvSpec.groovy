@@ -25,6 +25,14 @@ import org.zstack.header.vo.EO
 import org.zstack.header.volume.VolumeDeletionPolicyManager
 import org.zstack.image.ImageGlobalConfig
 import org.zstack.sdk.*
+import org.zstack.sdk.sns.CreateSNSTopicAction
+import org.zstack.sdk.sns.DeleteSNSApplicationEndpointAction
+import org.zstack.sdk.sns.DeleteSNSApplicationPlatformAction
+import org.zstack.sdk.sns.DeleteSNSTopicAction
+import org.zstack.sdk.sns.platform.dingtalk.CreateSNSDingTalkEndpointAction
+import org.zstack.sdk.sns.platform.email.CreateSNSEmailEndpointAction
+import org.zstack.sdk.sns.platform.email.CreateSNSEmailPlatformAction
+import org.zstack.sdk.sns.platform.http.CreateSNSHttpEndpointAction
 import org.zstack.sdk.zwatch.alarm.CreateAlarmAction
 import org.zstack.sdk.zwatch.alarm.DeleteAlarmAction
 import org.zstack.sdk.zwatch.alarm.SubscribeEventAction

@@ -10,7 +10,7 @@ public class GetBackupStorageForCreatingImageFromVolumeSnapshotAction extends Ab
 
     public static class Result {
         public ErrorCode error;
-        public GetCandidateBackupStorageForCreatingImageResult value;
+        public org.zstack.sdk.GetCandidateBackupStorageForCreatingImageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -46,8 +46,8 @@ public class GetBackupStorageForCreatingImageFromVolumeSnapshotAction extends Ab
             return ret;
         }
         
-        GetCandidateBackupStorageForCreatingImageResult value = res.getResult(GetCandidateBackupStorageForCreatingImageResult.class);
-        ret.value = value == null ? new GetCandidateBackupStorageForCreatingImageResult() : value; 
+        org.zstack.sdk.GetCandidateBackupStorageForCreatingImageResult value = res.getResult(org.zstack.sdk.GetCandidateBackupStorageForCreatingImageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetCandidateBackupStorageForCreatingImageResult() : value; 
 
         return ret;
     }

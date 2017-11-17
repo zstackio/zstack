@@ -10,7 +10,7 @@ public class QueryBaremetalChassisAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryBaremetalChassisResult value;
+        public org.zstack.sdk.QueryBaremetalChassisResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryBaremetalChassisAction extends QueryAction {
             return ret;
         }
         
-        QueryBaremetalChassisResult value = res.getResult(QueryBaremetalChassisResult.class);
-        ret.value = value == null ? new QueryBaremetalChassisResult() : value; 
+        org.zstack.sdk.QueryBaremetalChassisResult value = res.getResult(org.zstack.sdk.QueryBaremetalChassisResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryBaremetalChassisResult() : value; 
 
         return ret;
     }

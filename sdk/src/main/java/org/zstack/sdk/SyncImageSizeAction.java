@@ -10,7 +10,7 @@ public class SyncImageSizeAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SyncImageSizeResult value;
+        public org.zstack.sdk.SyncImageSizeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class SyncImageSizeAction extends AbstractAction {
             return ret;
         }
         
-        SyncImageSizeResult value = res.getResult(SyncImageSizeResult.class);
-        ret.value = value == null ? new SyncImageSizeResult() : value; 
+        org.zstack.sdk.SyncImageSizeResult value = res.getResult(org.zstack.sdk.SyncImageSizeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SyncImageSizeResult() : value; 
 
         return ret;
     }

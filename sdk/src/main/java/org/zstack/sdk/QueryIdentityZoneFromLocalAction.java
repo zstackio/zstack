@@ -10,7 +10,7 @@ public class QueryIdentityZoneFromLocalAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryIdentityZoneFromLocalResult value;
+        public org.zstack.sdk.QueryIdentityZoneFromLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryIdentityZoneFromLocalAction extends QueryAction {
             return ret;
         }
         
-        QueryIdentityZoneFromLocalResult value = res.getResult(QueryIdentityZoneFromLocalResult.class);
-        ret.value = value == null ? new QueryIdentityZoneFromLocalResult() : value; 
+        org.zstack.sdk.QueryIdentityZoneFromLocalResult value = res.getResult(org.zstack.sdk.QueryIdentityZoneFromLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryIdentityZoneFromLocalResult() : value; 
 
         return ret;
     }

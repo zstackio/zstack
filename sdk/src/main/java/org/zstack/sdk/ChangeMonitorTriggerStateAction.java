@@ -10,7 +10,7 @@ public class ChangeMonitorTriggerStateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ChangeMonitorTriggerStateResult value;
+        public org.zstack.sdk.ChangeMonitorTriggerStateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class ChangeMonitorTriggerStateAction extends AbstractAction {
             return ret;
         }
         
-        ChangeMonitorTriggerStateResult value = res.getResult(ChangeMonitorTriggerStateResult.class);
-        ret.value = value == null ? new ChangeMonitorTriggerStateResult() : value; 
+        org.zstack.sdk.ChangeMonitorTriggerStateResult value = res.getResult(org.zstack.sdk.ChangeMonitorTriggerStateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ChangeMonitorTriggerStateResult() : value; 
 
         return ret;
     }

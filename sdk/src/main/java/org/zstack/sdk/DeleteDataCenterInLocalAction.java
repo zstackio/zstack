@@ -10,7 +10,7 @@ public class DeleteDataCenterInLocalAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteDataCenterInLocalResult value;
+        public org.zstack.sdk.DeleteDataCenterInLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteDataCenterInLocalAction extends AbstractAction {
             return ret;
         }
         
-        DeleteDataCenterInLocalResult value = res.getResult(DeleteDataCenterInLocalResult.class);
-        ret.value = value == null ? new DeleteDataCenterInLocalResult() : value; 
+        org.zstack.sdk.DeleteDataCenterInLocalResult value = res.getResult(org.zstack.sdk.DeleteDataCenterInLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteDataCenterInLocalResult() : value; 
 
         return ret;
     }

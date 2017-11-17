@@ -10,7 +10,7 @@ public class DeleteEcsVSwitchInLocalAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteEcsVSwitchInLocalResult value;
+        public org.zstack.sdk.DeleteEcsVSwitchInLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteEcsVSwitchInLocalAction extends AbstractAction {
             return ret;
         }
         
-        DeleteEcsVSwitchInLocalResult value = res.getResult(DeleteEcsVSwitchInLocalResult.class);
-        ret.value = value == null ? new DeleteEcsVSwitchInLocalResult() : value; 
+        org.zstack.sdk.DeleteEcsVSwitchInLocalResult value = res.getResult(org.zstack.sdk.DeleteEcsVSwitchInLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteEcsVSwitchInLocalResult() : value; 
 
         return ret;
     }

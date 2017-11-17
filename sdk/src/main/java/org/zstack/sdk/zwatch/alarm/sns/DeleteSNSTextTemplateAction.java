@@ -10,7 +10,7 @@ public class DeleteSNSTextTemplateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteSNSTextTemplateResult value;
+        public org.zstack.sdk.zwatch.alarm.sns.DeleteSNSTextTemplateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteSNSTextTemplateAction extends AbstractAction {
             return ret;
         }
         
-        DeleteSNSTextTemplateResult value = res.getResult(DeleteSNSTextTemplateResult.class);
-        ret.value = value == null ? new DeleteSNSTextTemplateResult() : value; 
+        org.zstack.sdk.zwatch.alarm.sns.DeleteSNSTextTemplateResult value = res.getResult(org.zstack.sdk.zwatch.alarm.sns.DeleteSNSTextTemplateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.zwatch.alarm.sns.DeleteSNSTextTemplateResult() : value; 
 
         return ret;
     }

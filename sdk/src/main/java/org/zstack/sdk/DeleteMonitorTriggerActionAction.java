@@ -10,7 +10,7 @@ public class DeleteMonitorTriggerActionAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteMonitorTriggerActionResult value;
+        public org.zstack.sdk.DeleteMonitorTriggerActionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteMonitorTriggerActionAction extends AbstractAction {
             return ret;
         }
         
-        DeleteMonitorTriggerActionResult value = res.getResult(DeleteMonitorTriggerActionResult.class);
-        ret.value = value == null ? new DeleteMonitorTriggerActionResult() : value; 
+        org.zstack.sdk.DeleteMonitorTriggerActionResult value = res.getResult(org.zstack.sdk.DeleteMonitorTriggerActionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteMonitorTriggerActionResult() : value; 
 
         return ret;
     }

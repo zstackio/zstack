@@ -10,7 +10,7 @@ public class QueryOssBucketFileNameAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryOssBucketFileNameResult value;
+        public org.zstack.sdk.QueryOssBucketFileNameResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryOssBucketFileNameAction extends QueryAction {
             return ret;
         }
         
-        QueryOssBucketFileNameResult value = res.getResult(QueryOssBucketFileNameResult.class);
-        ret.value = value == null ? new QueryOssBucketFileNameResult() : value; 
+        org.zstack.sdk.QueryOssBucketFileNameResult value = res.getResult(org.zstack.sdk.QueryOssBucketFileNameResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryOssBucketFileNameResult() : value; 
 
         return ret;
     }

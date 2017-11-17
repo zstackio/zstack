@@ -10,7 +10,7 @@ public class RecoverVmInstanceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public RecoverVmInstanceResult value;
+        public org.zstack.sdk.RecoverVmInstanceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class RecoverVmInstanceAction extends AbstractAction {
             return ret;
         }
         
-        RecoverVmInstanceResult value = res.getResult(RecoverVmInstanceResult.class);
-        ret.value = value == null ? new RecoverVmInstanceResult() : value; 
+        org.zstack.sdk.RecoverVmInstanceResult value = res.getResult(org.zstack.sdk.RecoverVmInstanceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.RecoverVmInstanceResult() : value; 
 
         return ret;
     }

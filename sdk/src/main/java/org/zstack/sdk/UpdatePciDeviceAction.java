@@ -10,7 +10,7 @@ public class UpdatePciDeviceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdatePciDeviceResult value;
+        public org.zstack.sdk.UpdatePciDeviceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +56,8 @@ public class UpdatePciDeviceAction extends AbstractAction {
             return ret;
         }
         
-        UpdatePciDeviceResult value = res.getResult(UpdatePciDeviceResult.class);
-        ret.value = value == null ? new UpdatePciDeviceResult() : value; 
+        org.zstack.sdk.UpdatePciDeviceResult value = res.getResult(org.zstack.sdk.UpdatePciDeviceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdatePciDeviceResult() : value; 
 
         return ret;
     }

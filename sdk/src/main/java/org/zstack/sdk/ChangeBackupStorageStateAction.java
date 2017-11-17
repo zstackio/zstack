@@ -10,7 +10,7 @@ public class ChangeBackupStorageStateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ChangeBackupStorageStateResult value;
+        public org.zstack.sdk.ChangeBackupStorageStateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class ChangeBackupStorageStateAction extends AbstractAction {
             return ret;
         }
         
-        ChangeBackupStorageStateResult value = res.getResult(ChangeBackupStorageStateResult.class);
-        ret.value = value == null ? new ChangeBackupStorageStateResult() : value; 
+        org.zstack.sdk.ChangeBackupStorageStateResult value = res.getResult(org.zstack.sdk.ChangeBackupStorageStateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ChangeBackupStorageStateResult() : value; 
 
         return ret;
     }

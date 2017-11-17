@@ -10,7 +10,7 @@ public class CreateUserAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateUserResult value;
+        public org.zstack.sdk.CreateUserResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +56,8 @@ public class CreateUserAction extends AbstractAction {
             return ret;
         }
         
-        CreateUserResult value = res.getResult(CreateUserResult.class);
-        ret.value = value == null ? new CreateUserResult() : value; 
+        org.zstack.sdk.CreateUserResult value = res.getResult(org.zstack.sdk.CreateUserResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateUserResult() : value; 
 
         return ret;
     }

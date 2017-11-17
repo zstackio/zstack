@@ -10,7 +10,7 @@ public class ShareResourceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ShareResourceResult value;
+        public org.zstack.sdk.ShareResourceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class ShareResourceAction extends AbstractAction {
             return ret;
         }
         
-        ShareResourceResult value = res.getResult(ShareResourceResult.class);
-        ret.value = value == null ? new ShareResourceResult() : value; 
+        org.zstack.sdk.ShareResourceResult value = res.getResult(org.zstack.sdk.ShareResourceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ShareResourceResult() : value; 
 
         return ret;
     }

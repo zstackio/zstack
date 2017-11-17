@@ -10,7 +10,7 @@ public class DeletePciDeviceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeletePciDeviceResult value;
+        public org.zstack.sdk.DeletePciDeviceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeletePciDeviceAction extends AbstractAction {
             return ret;
         }
         
-        DeletePciDeviceResult value = res.getResult(DeletePciDeviceResult.class);
-        ret.value = value == null ? new DeletePciDeviceResult() : value; 
+        org.zstack.sdk.DeletePciDeviceResult value = res.getResult(org.zstack.sdk.DeletePciDeviceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeletePciDeviceResult() : value; 
 
         return ret;
     }

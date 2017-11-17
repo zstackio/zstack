@@ -10,7 +10,7 @@ public class RevertVolumeFromSnapshotAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public RevertVolumeFromSnapshotResult value;
+        public org.zstack.sdk.RevertVolumeFromSnapshotResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class RevertVolumeFromSnapshotAction extends AbstractAction {
             return ret;
         }
         
-        RevertVolumeFromSnapshotResult value = res.getResult(RevertVolumeFromSnapshotResult.class);
-        ret.value = value == null ? new RevertVolumeFromSnapshotResult() : value; 
+        org.zstack.sdk.RevertVolumeFromSnapshotResult value = res.getResult(org.zstack.sdk.RevertVolumeFromSnapshotResult.class);
+        ret.value = value == null ? new org.zstack.sdk.RevertVolumeFromSnapshotResult() : value; 
 
         return ret;
     }

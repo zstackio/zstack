@@ -10,7 +10,7 @@ public class AttachNetworkServiceToL3NetworkAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AttachNetworkServiceToL3NetworkResult value;
+        public org.zstack.sdk.AttachNetworkServiceToL3NetworkResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class AttachNetworkServiceToL3NetworkAction extends AbstractAction {
             return ret;
         }
         
-        AttachNetworkServiceToL3NetworkResult value = res.getResult(AttachNetworkServiceToL3NetworkResult.class);
-        ret.value = value == null ? new AttachNetworkServiceToL3NetworkResult() : value; 
+        org.zstack.sdk.AttachNetworkServiceToL3NetworkResult value = res.getResult(org.zstack.sdk.AttachNetworkServiceToL3NetworkResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AttachNetworkServiceToL3NetworkResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class PrometheusQueryLabelValuesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public PrometheusQueryLabelValuesResult value;
+        public org.zstack.sdk.PrometheusQueryLabelValuesResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -43,8 +43,8 @@ public class PrometheusQueryLabelValuesAction extends AbstractAction {
             return ret;
         }
         
-        PrometheusQueryLabelValuesResult value = res.getResult(PrometheusQueryLabelValuesResult.class);
-        ret.value = value == null ? new PrometheusQueryLabelValuesResult() : value; 
+        org.zstack.sdk.PrometheusQueryLabelValuesResult value = res.getResult(org.zstack.sdk.PrometheusQueryLabelValuesResult.class);
+        ret.value = value == null ? new org.zstack.sdk.PrometheusQueryLabelValuesResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class DeleteVpcUserVpnGatewayRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteVpcUserVpnGatewayRemoteResult value;
+        public org.zstack.sdk.DeleteVpcUserVpnGatewayRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteVpcUserVpnGatewayRemoteAction extends AbstractAction {
             return ret;
         }
         
-        DeleteVpcUserVpnGatewayRemoteResult value = res.getResult(DeleteVpcUserVpnGatewayRemoteResult.class);
-        ret.value = value == null ? new DeleteVpcUserVpnGatewayRemoteResult() : value; 
+        org.zstack.sdk.DeleteVpcUserVpnGatewayRemoteResult value = res.getResult(org.zstack.sdk.DeleteVpcUserVpnGatewayRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteVpcUserVpnGatewayRemoteResult() : value; 
 
         return ret;
     }

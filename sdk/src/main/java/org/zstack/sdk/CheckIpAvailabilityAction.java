@@ -10,7 +10,7 @@ public class CheckIpAvailabilityAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CheckIpAvailabilityResult value;
+        public org.zstack.sdk.CheckIpAvailabilityResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -46,8 +46,8 @@ public class CheckIpAvailabilityAction extends AbstractAction {
             return ret;
         }
         
-        CheckIpAvailabilityResult value = res.getResult(CheckIpAvailabilityResult.class);
-        ret.value = value == null ? new CheckIpAvailabilityResult() : value; 
+        org.zstack.sdk.CheckIpAvailabilityResult value = res.getResult(org.zstack.sdk.CheckIpAvailabilityResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CheckIpAvailabilityResult() : value; 
 
         return ret;
     }

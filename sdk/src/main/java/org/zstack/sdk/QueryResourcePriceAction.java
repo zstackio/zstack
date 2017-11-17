@@ -10,7 +10,7 @@ public class QueryResourcePriceAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryResourcePriceResult value;
+        public org.zstack.sdk.QueryResourcePriceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryResourcePriceAction extends QueryAction {
             return ret;
         }
         
-        QueryResourcePriceResult value = res.getResult(QueryResourcePriceResult.class);
-        ret.value = value == null ? new QueryResourcePriceResult() : value; 
+        org.zstack.sdk.QueryResourcePriceResult value = res.getResult(org.zstack.sdk.QueryResourcePriceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryResourcePriceResult() : value; 
 
         return ret;
     }

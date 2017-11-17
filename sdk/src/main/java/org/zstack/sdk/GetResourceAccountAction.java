@@ -10,7 +10,7 @@ public class GetResourceAccountAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetResourceAccountResult value;
+        public org.zstack.sdk.GetResourceAccountResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -43,8 +43,8 @@ public class GetResourceAccountAction extends AbstractAction {
             return ret;
         }
         
-        GetResourceAccountResult value = res.getResult(GetResourceAccountResult.class);
-        ret.value = value == null ? new GetResourceAccountResult() : value; 
+        org.zstack.sdk.GetResourceAccountResult value = res.getResult(org.zstack.sdk.GetResourceAccountResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetResourceAccountResult() : value; 
 
         return ret;
     }

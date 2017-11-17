@@ -10,7 +10,7 @@ public class ChangeResourceOwnerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ChangeResourceOwnerResult value;
+        public org.zstack.sdk.ChangeResourceOwnerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class ChangeResourceOwnerAction extends AbstractAction {
             return ret;
         }
         
-        ChangeResourceOwnerResult value = res.getResult(ChangeResourceOwnerResult.class);
-        ret.value = value == null ? new ChangeResourceOwnerResult() : value; 
+        org.zstack.sdk.ChangeResourceOwnerResult value = res.getResult(org.zstack.sdk.ChangeResourceOwnerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ChangeResourceOwnerResult() : value; 
 
         return ret;
     }

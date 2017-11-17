@@ -10,7 +10,7 @@ public class QueryShareableVolumeVmInstanceRefAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryShareableVolumeVmInstanceRefResult value;
+        public org.zstack.sdk.QueryShareableVolumeVmInstanceRefResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryShareableVolumeVmInstanceRefAction extends QueryAction {
             return ret;
         }
         
-        QueryShareableVolumeVmInstanceRefResult value = res.getResult(QueryShareableVolumeVmInstanceRefResult.class);
-        ret.value = value == null ? new QueryShareableVolumeVmInstanceRefResult() : value; 
+        org.zstack.sdk.QueryShareableVolumeVmInstanceRefResult value = res.getResult(org.zstack.sdk.QueryShareableVolumeVmInstanceRefResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryShareableVolumeVmInstanceRefResult() : value; 
 
         return ret;
     }

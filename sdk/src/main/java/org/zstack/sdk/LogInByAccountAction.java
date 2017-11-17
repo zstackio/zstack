@@ -10,7 +10,7 @@ public class LogInByAccountAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public LogInResult value;
+        public org.zstack.sdk.LogInResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -43,8 +43,8 @@ public class LogInByAccountAction extends AbstractAction {
             return ret;
         }
         
-        LogInResult value = res.getResult(LogInResult.class);
-        ret.value = value == null ? new LogInResult() : value; 
+        org.zstack.sdk.LogInResult value = res.getResult(org.zstack.sdk.LogInResult.class);
+        ret.value = value == null ? new org.zstack.sdk.LogInResult() : value; 
 
         return ret;
     }

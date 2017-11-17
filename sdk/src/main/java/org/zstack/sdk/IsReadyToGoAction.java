@@ -10,7 +10,7 @@ public class IsReadyToGoAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public IsReadyToGoResult value;
+        public org.zstack.sdk.IsReadyToGoResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -40,8 +40,8 @@ public class IsReadyToGoAction extends AbstractAction {
             return ret;
         }
         
-        IsReadyToGoResult value = res.getResult(IsReadyToGoResult.class);
-        ret.value = value == null ? new IsReadyToGoResult() : value; 
+        org.zstack.sdk.IsReadyToGoResult value = res.getResult(org.zstack.sdk.IsReadyToGoResult.class);
+        ret.value = value == null ? new org.zstack.sdk.IsReadyToGoResult() : value; 
 
         return ret;
     }

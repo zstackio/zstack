@@ -10,7 +10,7 @@ public class SetL3NetworkRouterInterfaceIpAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SetL3NetworkRouterInterfaceIpResult value;
+        public org.zstack.sdk.SetL3NetworkRouterInterfaceIpResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class SetL3NetworkRouterInterfaceIpAction extends AbstractAction {
             return ret;
         }
         
-        SetL3NetworkRouterInterfaceIpResult value = res.getResult(SetL3NetworkRouterInterfaceIpResult.class);
-        ret.value = value == null ? new SetL3NetworkRouterInterfaceIpResult() : value; 
+        org.zstack.sdk.SetL3NetworkRouterInterfaceIpResult value = res.getResult(org.zstack.sdk.SetL3NetworkRouterInterfaceIpResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SetL3NetworkRouterInterfaceIpResult() : value; 
 
         return ret;
     }

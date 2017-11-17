@@ -10,7 +10,7 @@ public class SetVmBootOrderAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SetVmBootOrderResult value;
+        public org.zstack.sdk.SetVmBootOrderResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class SetVmBootOrderAction extends AbstractAction {
             return ret;
         }
         
-        SetVmBootOrderResult value = res.getResult(SetVmBootOrderResult.class);
-        ret.value = value == null ? new SetVmBootOrderResult() : value; 
+        org.zstack.sdk.SetVmBootOrderResult value = res.getResult(org.zstack.sdk.SetVmBootOrderResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SetVmBootOrderResult() : value; 
 
         return ret;
     }

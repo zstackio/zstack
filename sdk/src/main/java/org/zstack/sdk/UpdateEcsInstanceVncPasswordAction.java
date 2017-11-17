@@ -10,7 +10,7 @@ public class UpdateEcsInstanceVncPasswordAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateEcsInstanceVncPasswordResult value;
+        public org.zstack.sdk.UpdateEcsInstanceVncPasswordResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class UpdateEcsInstanceVncPasswordAction extends AbstractAction {
             return ret;
         }
         
-        UpdateEcsInstanceVncPasswordResult value = res.getResult(UpdateEcsInstanceVncPasswordResult.class);
-        ret.value = value == null ? new UpdateEcsInstanceVncPasswordResult() : value; 
+        org.zstack.sdk.UpdateEcsInstanceVncPasswordResult value = res.getResult(org.zstack.sdk.UpdateEcsInstanceVncPasswordResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateEcsInstanceVncPasswordResult() : value; 
 
         return ret;
     }

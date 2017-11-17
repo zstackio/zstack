@@ -10,7 +10,7 @@ public class QueryL3NetworkAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryL3NetworkResult value;
+        public org.zstack.sdk.QueryL3NetworkResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryL3NetworkAction extends QueryAction {
             return ret;
         }
         
-        QueryL3NetworkResult value = res.getResult(QueryL3NetworkResult.class);
-        ret.value = value == null ? new QueryL3NetworkResult() : value; 
+        org.zstack.sdk.QueryL3NetworkResult value = res.getResult(org.zstack.sdk.QueryL3NetworkResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryL3NetworkResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class DeleteLdapBindingAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteLdapBindingResult value;
+        public org.zstack.sdk.DeleteLdapBindingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class DeleteLdapBindingAction extends AbstractAction {
             return ret;
         }
         
-        DeleteLdapBindingResult value = res.getResult(DeleteLdapBindingResult.class);
-        ret.value = value == null ? new DeleteLdapBindingResult() : value; 
+        org.zstack.sdk.DeleteLdapBindingResult value = res.getResult(org.zstack.sdk.DeleteLdapBindingResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteLdapBindingResult() : value; 
 
         return ret;
     }

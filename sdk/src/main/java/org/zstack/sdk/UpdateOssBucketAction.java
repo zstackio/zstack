@@ -10,7 +10,7 @@ public class UpdateOssBucketAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateOssBucketResult value;
+        public org.zstack.sdk.UpdateOssBucketResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class UpdateOssBucketAction extends AbstractAction {
             return ret;
         }
         
-        UpdateOssBucketResult value = res.getResult(UpdateOssBucketResult.class);
-        ret.value = value == null ? new UpdateOssBucketResult() : value; 
+        org.zstack.sdk.UpdateOssBucketResult value = res.getResult(org.zstack.sdk.UpdateOssBucketResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateOssBucketResult() : value; 
 
         return ret;
     }

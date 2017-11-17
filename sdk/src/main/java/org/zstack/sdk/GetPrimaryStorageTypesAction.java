@@ -10,7 +10,7 @@ public class GetPrimaryStorageTypesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetPrimaryStorageTypesResult value;
+        public org.zstack.sdk.GetPrimaryStorageTypesResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -40,8 +40,8 @@ public class GetPrimaryStorageTypesAction extends AbstractAction {
             return ret;
         }
         
-        GetPrimaryStorageTypesResult value = res.getResult(GetPrimaryStorageTypesResult.class);
-        ret.value = value == null ? new GetPrimaryStorageTypesResult() : value; 
+        org.zstack.sdk.GetPrimaryStorageTypesResult value = res.getResult(org.zstack.sdk.GetPrimaryStorageTypesResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetPrimaryStorageTypesResult() : value; 
 
         return ret;
     }

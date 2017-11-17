@@ -10,7 +10,7 @@ public class GetVolumeFormatAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetVolumeFormatResult value;
+        public org.zstack.sdk.GetVolumeFormatResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -40,8 +40,8 @@ public class GetVolumeFormatAction extends AbstractAction {
             return ret;
         }
         
-        GetVolumeFormatResult value = res.getResult(GetVolumeFormatResult.class);
-        ret.value = value == null ? new GetVolumeFormatResult() : value; 
+        org.zstack.sdk.GetVolumeFormatResult value = res.getResult(org.zstack.sdk.GetVolumeFormatResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetVolumeFormatResult() : value; 
 
         return ret;
     }

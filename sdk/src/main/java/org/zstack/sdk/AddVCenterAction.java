@@ -10,7 +10,7 @@ public class AddVCenterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AddVCenterResult value;
+        public org.zstack.sdk.AddVCenterResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -71,8 +71,8 @@ public class AddVCenterAction extends AbstractAction {
             return ret;
         }
         
-        AddVCenterResult value = res.getResult(AddVCenterResult.class);
-        ret.value = value == null ? new AddVCenterResult() : value; 
+        org.zstack.sdk.AddVCenterResult value = res.getResult(org.zstack.sdk.AddVCenterResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddVCenterResult() : value; 
 
         return ret;
     }

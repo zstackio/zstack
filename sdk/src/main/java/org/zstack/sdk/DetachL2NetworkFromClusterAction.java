@@ -10,7 +10,7 @@ public class DetachL2NetworkFromClusterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DetachL2NetworkFromClusterResult value;
+        public org.zstack.sdk.DetachL2NetworkFromClusterResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DetachL2NetworkFromClusterAction extends AbstractAction {
             return ret;
         }
         
-        DetachL2NetworkFromClusterResult value = res.getResult(DetachL2NetworkFromClusterResult.class);
-        ret.value = value == null ? new DetachL2NetworkFromClusterResult() : value; 
+        org.zstack.sdk.DetachL2NetworkFromClusterResult value = res.getResult(org.zstack.sdk.DetachL2NetworkFromClusterResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DetachL2NetworkFromClusterResult() : value; 
 
         return ret;
     }

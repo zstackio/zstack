@@ -10,7 +10,7 @@ public class DownloadBackupFileFromPublicCloudAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DownloadBackupFileFromPublicCloudResult value;
+        public org.zstack.sdk.DownloadBackupFileFromPublicCloudResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class DownloadBackupFileFromPublicCloudAction extends AbstractAction {
             return ret;
         }
         
-        DownloadBackupFileFromPublicCloudResult value = res.getResult(DownloadBackupFileFromPublicCloudResult.class);
-        ret.value = value == null ? new DownloadBackupFileFromPublicCloudResult() : value; 
+        org.zstack.sdk.DownloadBackupFileFromPublicCloudResult value = res.getResult(org.zstack.sdk.DownloadBackupFileFromPublicCloudResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DownloadBackupFileFromPublicCloudResult() : value; 
 
         return ret;
     }

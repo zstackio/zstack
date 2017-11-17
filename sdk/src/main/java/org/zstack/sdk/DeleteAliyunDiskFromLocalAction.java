@@ -10,7 +10,7 @@ public class DeleteAliyunDiskFromLocalAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteAliyunDiskFromLocalResult value;
+        public org.zstack.sdk.DeleteAliyunDiskFromLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteAliyunDiskFromLocalAction extends AbstractAction {
             return ret;
         }
         
-        DeleteAliyunDiskFromLocalResult value = res.getResult(DeleteAliyunDiskFromLocalResult.class);
-        ret.value = value == null ? new DeleteAliyunDiskFromLocalResult() : value; 
+        org.zstack.sdk.DeleteAliyunDiskFromLocalResult value = res.getResult(org.zstack.sdk.DeleteAliyunDiskFromLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteAliyunDiskFromLocalResult() : value; 
 
         return ret;
     }

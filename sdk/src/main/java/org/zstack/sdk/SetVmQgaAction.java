@@ -10,7 +10,7 @@ public class SetVmQgaAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SetVmQgaResult value;
+        public org.zstack.sdk.SetVmQgaResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class SetVmQgaAction extends AbstractAction {
             return ret;
         }
         
-        SetVmQgaResult value = res.getResult(SetVmQgaResult.class);
-        ret.value = value == null ? new SetVmQgaResult() : value; 
+        org.zstack.sdk.SetVmQgaResult value = res.getResult(org.zstack.sdk.SetVmQgaResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SetVmQgaResult() : value; 
 
         return ret;
     }

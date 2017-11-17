@@ -10,7 +10,7 @@ public class UpdateEcsVpcAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateEcsVpcResult value;
+        public org.zstack.sdk.UpdateEcsVpcResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class UpdateEcsVpcAction extends AbstractAction {
             return ret;
         }
         
-        UpdateEcsVpcResult value = res.getResult(UpdateEcsVpcResult.class);
-        ret.value = value == null ? new UpdateEcsVpcResult() : value; 
+        org.zstack.sdk.UpdateEcsVpcResult value = res.getResult(org.zstack.sdk.UpdateEcsVpcResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateEcsVpcResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class QueryVpcIpSecConfigFromLocalAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryVpcIpSecConfigFromLocalResult value;
+        public org.zstack.sdk.QueryVpcIpSecConfigFromLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryVpcIpSecConfigFromLocalAction extends QueryAction {
             return ret;
         }
         
-        QueryVpcIpSecConfigFromLocalResult value = res.getResult(QueryVpcIpSecConfigFromLocalResult.class);
-        ret.value = value == null ? new QueryVpcIpSecConfigFromLocalResult() : value; 
+        org.zstack.sdk.QueryVpcIpSecConfigFromLocalResult value = res.getResult(org.zstack.sdk.QueryVpcIpSecConfigFromLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryVpcIpSecConfigFromLocalResult() : value; 
 
         return ret;
     }

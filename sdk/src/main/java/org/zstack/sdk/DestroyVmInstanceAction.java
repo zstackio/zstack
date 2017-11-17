@@ -10,7 +10,7 @@ public class DestroyVmInstanceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DestroyVmInstanceResult value;
+        public org.zstack.sdk.DestroyVmInstanceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DestroyVmInstanceAction extends AbstractAction {
             return ret;
         }
         
-        DestroyVmInstanceResult value = res.getResult(DestroyVmInstanceResult.class);
-        ret.value = value == null ? new DestroyVmInstanceResult() : value; 
+        org.zstack.sdk.DestroyVmInstanceResult value = res.getResult(org.zstack.sdk.DestroyVmInstanceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DestroyVmInstanceResult() : value; 
 
         return ret;
     }

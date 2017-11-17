@@ -10,7 +10,7 @@ public class RequestBaremetalConsoleAccessAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public RequestBaremetalConsoleAccessResult value;
+        public org.zstack.sdk.RequestBaremetalConsoleAccessResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class RequestBaremetalConsoleAccessAction extends AbstractAction {
             return ret;
         }
         
-        RequestBaremetalConsoleAccessResult value = res.getResult(RequestBaremetalConsoleAccessResult.class);
-        ret.value = value == null ? new RequestBaremetalConsoleAccessResult() : value; 
+        org.zstack.sdk.RequestBaremetalConsoleAccessResult value = res.getResult(org.zstack.sdk.RequestBaremetalConsoleAccessResult.class);
+        ret.value = value == null ? new org.zstack.sdk.RequestBaremetalConsoleAccessResult() : value; 
 
         return ret;
     }

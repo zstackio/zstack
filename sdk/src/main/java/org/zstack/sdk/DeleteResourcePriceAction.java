@@ -10,7 +10,7 @@ public class DeleteResourcePriceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteResourcePriceResult value;
+        public org.zstack.sdk.DeleteResourcePriceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteResourcePriceAction extends AbstractAction {
             return ret;
         }
         
-        DeleteResourcePriceResult value = res.getResult(DeleteResourcePriceResult.class);
-        ret.value = value == null ? new DeleteResourcePriceResult() : value; 
+        org.zstack.sdk.DeleteResourcePriceResult value = res.getResult(org.zstack.sdk.DeleteResourcePriceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteResourcePriceResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class AddLdapServerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AddLdapServerResult value;
+        public org.zstack.sdk.AddLdapServerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -65,8 +65,8 @@ public class AddLdapServerAction extends AbstractAction {
             return ret;
         }
         
-        AddLdapServerResult value = res.getResult(AddLdapServerResult.class);
-        ret.value = value == null ? new AddLdapServerResult() : value; 
+        org.zstack.sdk.AddLdapServerResult value = res.getResult(org.zstack.sdk.AddLdapServerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddLdapServerResult() : value; 
 
         return ret;
     }

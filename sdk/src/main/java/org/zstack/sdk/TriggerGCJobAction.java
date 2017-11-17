@@ -10,7 +10,7 @@ public class TriggerGCJobAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public TriggerGCJobResult value;
+        public org.zstack.sdk.TriggerGCJobResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class TriggerGCJobAction extends AbstractAction {
             return ret;
         }
         
-        TriggerGCJobResult value = res.getResult(TriggerGCJobResult.class);
-        ret.value = value == null ? new TriggerGCJobResult() : value; 
+        org.zstack.sdk.TriggerGCJobResult value = res.getResult(org.zstack.sdk.TriggerGCJobResult.class);
+        ret.value = value == null ? new org.zstack.sdk.TriggerGCJobResult() : value; 
 
         return ret;
     }

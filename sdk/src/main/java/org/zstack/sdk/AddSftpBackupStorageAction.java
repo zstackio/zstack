@@ -10,7 +10,7 @@ public class AddSftpBackupStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AddSftpBackupStorageResult value;
+        public org.zstack.sdk.AddSftpBackupStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -74,8 +74,8 @@ public class AddSftpBackupStorageAction extends AbstractAction {
             return ret;
         }
         
-        AddSftpBackupStorageResult value = res.getResult(AddSftpBackupStorageResult.class);
-        ret.value = value == null ? new AddSftpBackupStorageResult() : value; 
+        org.zstack.sdk.AddSftpBackupStorageResult value = res.getResult(org.zstack.sdk.AddSftpBackupStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddSftpBackupStorageResult() : value; 
 
         return ret;
     }

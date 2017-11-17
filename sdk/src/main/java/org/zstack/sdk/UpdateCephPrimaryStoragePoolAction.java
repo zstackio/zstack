@@ -10,7 +10,7 @@ public class UpdateCephPrimaryStoragePoolAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateCephPrimaryStoragePoolResult value;
+        public org.zstack.sdk.UpdateCephPrimaryStoragePoolResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class UpdateCephPrimaryStoragePoolAction extends AbstractAction {
             return ret;
         }
         
-        UpdateCephPrimaryStoragePoolResult value = res.getResult(UpdateCephPrimaryStoragePoolResult.class);
-        ret.value = value == null ? new UpdateCephPrimaryStoragePoolResult() : value; 
+        org.zstack.sdk.UpdateCephPrimaryStoragePoolResult value = res.getResult(org.zstack.sdk.UpdateCephPrimaryStoragePoolResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateCephPrimaryStoragePoolResult() : value; 
 
         return ret;
     }

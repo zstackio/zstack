@@ -10,7 +10,7 @@ public class DeleteNotificationsAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteNotificationsResult value;
+        public org.zstack.sdk.DeleteNotificationsResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class DeleteNotificationsAction extends AbstractAction {
             return ret;
         }
         
-        DeleteNotificationsResult value = res.getResult(DeleteNotificationsResult.class);
-        ret.value = value == null ? new DeleteNotificationsResult() : value; 
+        org.zstack.sdk.DeleteNotificationsResult value = res.getResult(org.zstack.sdk.DeleteNotificationsResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteNotificationsResult() : value; 
 
         return ret;
     }

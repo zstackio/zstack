@@ -10,7 +10,7 @@ public class DetachEipAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DetachEipResult value;
+        public org.zstack.sdk.DetachEipResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class DetachEipAction extends AbstractAction {
             return ret;
         }
         
-        DetachEipResult value = res.getResult(DetachEipResult.class);
-        ret.value = value == null ? new DetachEipResult() : value; 
+        org.zstack.sdk.DetachEipResult value = res.getResult(org.zstack.sdk.DetachEipResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DetachEipResult() : value; 
 
         return ret;
     }

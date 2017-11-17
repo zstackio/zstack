@@ -10,7 +10,7 @@ public class DeleteNicQosAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteNicQosResult value;
+        public org.zstack.sdk.DeleteNicQosResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteNicQosAction extends AbstractAction {
             return ret;
         }
         
-        DeleteNicQosResult value = res.getResult(DeleteNicQosResult.class);
-        ret.value = value == null ? new DeleteNicQosResult() : value; 
+        org.zstack.sdk.DeleteNicQosResult value = res.getResult(org.zstack.sdk.DeleteNicQosResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteNicQosResult() : value; 
 
         return ret;
     }

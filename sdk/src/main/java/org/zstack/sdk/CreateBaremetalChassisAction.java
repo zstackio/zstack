@@ -10,7 +10,7 @@ public class CreateBaremetalChassisAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateBaremetalChassisResult value;
+        public org.zstack.sdk.CreateBaremetalChassisResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -65,8 +65,8 @@ public class CreateBaremetalChassisAction extends AbstractAction {
             return ret;
         }
         
-        CreateBaremetalChassisResult value = res.getResult(CreateBaremetalChassisResult.class);
-        ret.value = value == null ? new CreateBaremetalChassisResult() : value; 
+        org.zstack.sdk.CreateBaremetalChassisResult value = res.getResult(org.zstack.sdk.CreateBaremetalChassisResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateBaremetalChassisResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class CreateL2VxlanNetworkAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateL2VxlanNetworkResult value;
+        public org.zstack.sdk.CreateL2VxlanNetworkResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -68,8 +68,8 @@ public class CreateL2VxlanNetworkAction extends AbstractAction {
             return ret;
         }
         
-        CreateL2VxlanNetworkResult value = res.getResult(CreateL2VxlanNetworkResult.class);
-        ret.value = value == null ? new CreateL2VxlanNetworkResult() : value; 
+        org.zstack.sdk.CreateL2VxlanNetworkResult value = res.getResult(org.zstack.sdk.CreateL2VxlanNetworkResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateL2VxlanNetworkResult() : value; 
 
         return ret;
     }

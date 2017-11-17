@@ -10,7 +10,7 @@ public class DeleteVmHostnameAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteVmHostnameResult value;
+        public org.zstack.sdk.DeleteVmHostnameResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteVmHostnameAction extends AbstractAction {
             return ret;
         }
         
-        DeleteVmHostnameResult value = res.getResult(DeleteVmHostnameResult.class);
-        ret.value = value == null ? new DeleteVmHostnameResult() : value; 
+        org.zstack.sdk.DeleteVmHostnameResult value = res.getResult(org.zstack.sdk.DeleteVmHostnameResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteVmHostnameResult() : value; 
 
         return ret;
     }

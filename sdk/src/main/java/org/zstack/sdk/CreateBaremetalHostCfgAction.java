@@ -10,7 +10,7 @@ public class CreateBaremetalHostCfgAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateBaremetalHostCfgResult value;
+        public org.zstack.sdk.CreateBaremetalHostCfgResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -65,8 +65,8 @@ public class CreateBaremetalHostCfgAction extends AbstractAction {
             return ret;
         }
         
-        CreateBaremetalHostCfgResult value = res.getResult(CreateBaremetalHostCfgResult.class);
-        ret.value = value == null ? new CreateBaremetalHostCfgResult() : value; 
+        org.zstack.sdk.CreateBaremetalHostCfgResult value = res.getResult(org.zstack.sdk.CreateBaremetalHostCfgResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateBaremetalHostCfgResult() : value; 
 
         return ret;
     }

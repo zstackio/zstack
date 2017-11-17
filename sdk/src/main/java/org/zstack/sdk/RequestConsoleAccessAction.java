@@ -10,7 +10,7 @@ public class RequestConsoleAccessAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public RequestConsoleAccessResult value;
+        public org.zstack.sdk.RequestConsoleAccessResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class RequestConsoleAccessAction extends AbstractAction {
             return ret;
         }
         
-        RequestConsoleAccessResult value = res.getResult(RequestConsoleAccessResult.class);
-        ret.value = value == null ? new RequestConsoleAccessResult() : value; 
+        org.zstack.sdk.RequestConsoleAccessResult value = res.getResult(org.zstack.sdk.RequestConsoleAccessResult.class);
+        ret.value = value == null ? new org.zstack.sdk.RequestConsoleAccessResult() : value; 
 
         return ret;
     }

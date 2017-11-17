@@ -10,7 +10,7 @@ public class UnsubscribeEventAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UnsubscribeEventResult value;
+        public org.zstack.sdk.zwatch.alarm.UnsubscribeEventResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class UnsubscribeEventAction extends AbstractAction {
             return ret;
         }
         
-        UnsubscribeEventResult value = res.getResult(UnsubscribeEventResult.class);
-        ret.value = value == null ? new UnsubscribeEventResult() : value; 
+        org.zstack.sdk.zwatch.alarm.UnsubscribeEventResult value = res.getResult(org.zstack.sdk.zwatch.alarm.UnsubscribeEventResult.class);
+        ret.value = value == null ? new org.zstack.sdk.zwatch.alarm.UnsubscribeEventResult() : value; 
 
         return ret;
     }

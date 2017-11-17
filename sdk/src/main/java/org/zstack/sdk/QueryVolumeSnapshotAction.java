@@ -10,7 +10,7 @@ public class QueryVolumeSnapshotAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryVolumeSnapshotResult value;
+        public org.zstack.sdk.QueryVolumeSnapshotResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryVolumeSnapshotAction extends QueryAction {
             return ret;
         }
         
-        QueryVolumeSnapshotResult value = res.getResult(QueryVolumeSnapshotResult.class);
-        ret.value = value == null ? new QueryVolumeSnapshotResult() : value; 
+        org.zstack.sdk.QueryVolumeSnapshotResult value = res.getResult(org.zstack.sdk.QueryVolumeSnapshotResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryVolumeSnapshotResult() : value; 
 
         return ret;
     }

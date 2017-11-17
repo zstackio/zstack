@@ -10,7 +10,7 @@ public class AttachVRouterRouteTableToVRouterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AttachVRouterRouteTableToVRouterResult value;
+        public org.zstack.sdk.AttachVRouterRouteTableToVRouterResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class AttachVRouterRouteTableToVRouterAction extends AbstractAction {
             return ret;
         }
         
-        AttachVRouterRouteTableToVRouterResult value = res.getResult(AttachVRouterRouteTableToVRouterResult.class);
-        ret.value = value == null ? new AttachVRouterRouteTableToVRouterResult() : value; 
+        org.zstack.sdk.AttachVRouterRouteTableToVRouterResult value = res.getResult(org.zstack.sdk.AttachVRouterRouteTableToVRouterResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AttachVRouterRouteTableToVRouterResult() : value; 
 
         return ret;
     }

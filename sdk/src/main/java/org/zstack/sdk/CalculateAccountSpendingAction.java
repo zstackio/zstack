@@ -10,7 +10,7 @@ public class CalculateAccountSpendingAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CalculateAccountSpendingResult value;
+        public org.zstack.sdk.CalculateAccountSpendingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -49,8 +49,8 @@ public class CalculateAccountSpendingAction extends AbstractAction {
             return ret;
         }
         
-        CalculateAccountSpendingResult value = res.getResult(CalculateAccountSpendingResult.class);
-        ret.value = value == null ? new CalculateAccountSpendingResult() : value; 
+        org.zstack.sdk.CalculateAccountSpendingResult value = res.getResult(org.zstack.sdk.CalculateAccountSpendingResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CalculateAccountSpendingResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class RecoverImageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public RecoverImageResult value;
+        public org.zstack.sdk.RecoverImageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class RecoverImageAction extends AbstractAction {
             return ret;
         }
         
-        RecoverImageResult value = res.getResult(RecoverImageResult.class);
-        ret.value = value == null ? new RecoverImageResult() : value; 
+        org.zstack.sdk.RecoverImageResult value = res.getResult(org.zstack.sdk.RecoverImageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.RecoverImageResult() : value; 
 
         return ret;
     }

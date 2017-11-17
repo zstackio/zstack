@@ -10,7 +10,7 @@ public class DeleteBaremetalPxeServerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteBaremetalPxeServerResult value;
+        public org.zstack.sdk.DeleteBaremetalPxeServerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteBaremetalPxeServerAction extends AbstractAction {
             return ret;
         }
         
-        DeleteBaremetalPxeServerResult value = res.getResult(DeleteBaremetalPxeServerResult.class);
-        ret.value = value == null ? new DeleteBaremetalPxeServerResult() : value; 
+        org.zstack.sdk.DeleteBaremetalPxeServerResult value = res.getResult(org.zstack.sdk.DeleteBaremetalPxeServerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteBaremetalPxeServerResult() : value; 
 
         return ret;
     }

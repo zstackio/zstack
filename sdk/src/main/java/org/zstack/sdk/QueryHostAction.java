@@ -10,7 +10,7 @@ public class QueryHostAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryHostResult value;
+        public org.zstack.sdk.QueryHostResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryHostAction extends QueryAction {
             return ret;
         }
         
-        QueryHostResult value = res.getResult(QueryHostResult.class);
-        ret.value = value == null ? new QueryHostResult() : value; 
+        org.zstack.sdk.QueryHostResult value = res.getResult(org.zstack.sdk.QueryHostResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryHostResult() : value; 
 
         return ret;
     }

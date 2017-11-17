@@ -10,7 +10,7 @@ public class CreateDataVolumeAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateDataVolumeResult value;
+        public org.zstack.sdk.CreateDataVolumeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -59,8 +59,8 @@ public class CreateDataVolumeAction extends AbstractAction {
             return ret;
         }
         
-        CreateDataVolumeResult value = res.getResult(CreateDataVolumeResult.class);
-        ret.value = value == null ? new CreateDataVolumeResult() : value; 
+        org.zstack.sdk.CreateDataVolumeResult value = res.getResult(org.zstack.sdk.CreateDataVolumeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateDataVolumeResult() : value; 
 
         return ret;
     }

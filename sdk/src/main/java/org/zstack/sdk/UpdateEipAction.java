@@ -10,7 +10,7 @@ public class UpdateEipAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateEipResult value;
+        public org.zstack.sdk.UpdateEipResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class UpdateEipAction extends AbstractAction {
             return ret;
         }
         
-        UpdateEipResult value = res.getResult(UpdateEipResult.class);
-        ret.value = value == null ? new UpdateEipResult() : value; 
+        org.zstack.sdk.UpdateEipResult value = res.getResult(org.zstack.sdk.UpdateEipResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateEipResult() : value; 
 
         return ret;
     }

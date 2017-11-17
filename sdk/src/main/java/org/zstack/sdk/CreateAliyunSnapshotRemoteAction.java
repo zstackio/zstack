@@ -10,7 +10,7 @@ public class CreateAliyunSnapshotRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateAliyunSnapshotRemoteResult value;
+        public org.zstack.sdk.CreateAliyunSnapshotRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +56,8 @@ public class CreateAliyunSnapshotRemoteAction extends AbstractAction {
             return ret;
         }
         
-        CreateAliyunSnapshotRemoteResult value = res.getResult(CreateAliyunSnapshotRemoteResult.class);
-        ret.value = value == null ? new CreateAliyunSnapshotRemoteResult() : value; 
+        org.zstack.sdk.CreateAliyunSnapshotRemoteResult value = res.getResult(org.zstack.sdk.CreateAliyunSnapshotRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateAliyunSnapshotRemoteResult() : value; 
 
         return ret;
     }

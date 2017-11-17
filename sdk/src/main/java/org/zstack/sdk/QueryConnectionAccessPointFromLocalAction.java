@@ -10,7 +10,7 @@ public class QueryConnectionAccessPointFromLocalAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryConnectionAccessPointFromLocalResult value;
+        public org.zstack.sdk.QueryConnectionAccessPointFromLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryConnectionAccessPointFromLocalAction extends QueryAction {
             return ret;
         }
         
-        QueryConnectionAccessPointFromLocalResult value = res.getResult(QueryConnectionAccessPointFromLocalResult.class);
-        ret.value = value == null ? new QueryConnectionAccessPointFromLocalResult() : value; 
+        org.zstack.sdk.QueryConnectionAccessPointFromLocalResult value = res.getResult(org.zstack.sdk.QueryConnectionAccessPointFromLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryConnectionAccessPointFromLocalResult() : value; 
 
         return ret;
     }

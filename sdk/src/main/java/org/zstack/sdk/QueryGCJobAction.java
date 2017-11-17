@@ -10,7 +10,7 @@ public class QueryGCJobAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryGCJobResult value;
+        public org.zstack.sdk.QueryGCJobResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryGCJobAction extends QueryAction {
             return ret;
         }
         
-        QueryGCJobResult value = res.getResult(QueryGCJobResult.class);
-        ret.value = value == null ? new QueryGCJobResult() : value; 
+        org.zstack.sdk.QueryGCJobResult value = res.getResult(org.zstack.sdk.QueryGCJobResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryGCJobResult() : value; 
 
         return ret;
     }

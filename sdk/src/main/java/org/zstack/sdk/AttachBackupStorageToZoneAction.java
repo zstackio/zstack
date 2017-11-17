@@ -10,7 +10,7 @@ public class AttachBackupStorageToZoneAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AttachBackupStorageToZoneResult value;
+        public org.zstack.sdk.AttachBackupStorageToZoneResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class AttachBackupStorageToZoneAction extends AbstractAction {
             return ret;
         }
         
-        AttachBackupStorageToZoneResult value = res.getResult(AttachBackupStorageToZoneResult.class);
-        ret.value = value == null ? new AttachBackupStorageToZoneResult() : value; 
+        org.zstack.sdk.AttachBackupStorageToZoneResult value = res.getResult(org.zstack.sdk.AttachBackupStorageToZoneResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AttachBackupStorageToZoneResult() : value; 
 
         return ret;
     }

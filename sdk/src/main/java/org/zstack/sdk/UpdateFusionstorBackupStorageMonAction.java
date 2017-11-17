@@ -10,7 +10,7 @@ public class UpdateFusionstorBackupStorageMonAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateMonToFusionstorBackupStorageResult value;
+        public org.zstack.sdk.UpdateMonToFusionstorBackupStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -62,8 +62,8 @@ public class UpdateFusionstorBackupStorageMonAction extends AbstractAction {
             return ret;
         }
         
-        UpdateMonToFusionstorBackupStorageResult value = res.getResult(UpdateMonToFusionstorBackupStorageResult.class);
-        ret.value = value == null ? new UpdateMonToFusionstorBackupStorageResult() : value; 
+        org.zstack.sdk.UpdateMonToFusionstorBackupStorageResult value = res.getResult(org.zstack.sdk.UpdateMonToFusionstorBackupStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateMonToFusionstorBackupStorageResult() : value; 
 
         return ret;
     }

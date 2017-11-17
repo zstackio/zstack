@@ -10,7 +10,7 @@ public class AddSecurityGroupRuleAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AddSecurityGroupRuleResult value;
+        public org.zstack.sdk.AddSecurityGroupRuleResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class AddSecurityGroupRuleAction extends AbstractAction {
             return ret;
         }
         
-        AddSecurityGroupRuleResult value = res.getResult(AddSecurityGroupRuleResult.class);
-        ret.value = value == null ? new AddSecurityGroupRuleResult() : value; 
+        org.zstack.sdk.AddSecurityGroupRuleResult value = res.getResult(org.zstack.sdk.AddSecurityGroupRuleResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddSecurityGroupRuleResult() : value; 
 
         return ret;
     }

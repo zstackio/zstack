@@ -10,7 +10,7 @@ public class GetVmConsoleAddressAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetVmConsoleAddressResult value;
+        public org.zstack.sdk.GetVmConsoleAddressResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -43,8 +43,8 @@ public class GetVmConsoleAddressAction extends AbstractAction {
             return ret;
         }
         
-        GetVmConsoleAddressResult value = res.getResult(GetVmConsoleAddressResult.class);
-        ret.value = value == null ? new GetVmConsoleAddressResult() : value; 
+        org.zstack.sdk.GetVmConsoleAddressResult value = res.getResult(org.zstack.sdk.GetVmConsoleAddressResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetVmConsoleAddressResult() : value; 
 
         return ret;
     }

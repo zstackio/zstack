@@ -10,7 +10,7 @@ public class QueryEcsSecurityGroupRuleFromLocalAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryEcsSecurityGroupRuleFromLocalResult value;
+        public org.zstack.sdk.QueryEcsSecurityGroupRuleFromLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryEcsSecurityGroupRuleFromLocalAction extends QueryAction {
             return ret;
         }
         
-        QueryEcsSecurityGroupRuleFromLocalResult value = res.getResult(QueryEcsSecurityGroupRuleFromLocalResult.class);
-        ret.value = value == null ? new QueryEcsSecurityGroupRuleFromLocalResult() : value; 
+        org.zstack.sdk.QueryEcsSecurityGroupRuleFromLocalResult value = res.getResult(org.zstack.sdk.QueryEcsSecurityGroupRuleFromLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryEcsSecurityGroupRuleFromLocalResult() : value; 
 
         return ret;
     }

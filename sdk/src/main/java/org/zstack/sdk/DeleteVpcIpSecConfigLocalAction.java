@@ -10,7 +10,7 @@ public class DeleteVpcIpSecConfigLocalAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteVpcIpSecConfigLocalResult value;
+        public org.zstack.sdk.DeleteVpcIpSecConfigLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteVpcIpSecConfigLocalAction extends AbstractAction {
             return ret;
         }
         
-        DeleteVpcIpSecConfigLocalResult value = res.getResult(DeleteVpcIpSecConfigLocalResult.class);
-        ret.value = value == null ? new DeleteVpcIpSecConfigLocalResult() : value; 
+        org.zstack.sdk.DeleteVpcIpSecConfigLocalResult value = res.getResult(org.zstack.sdk.DeleteVpcIpSecConfigLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteVpcIpSecConfigLocalResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class GetVmBootOrderAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetVmBootOrderResult value;
+        public org.zstack.sdk.GetVmBootOrderResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -43,8 +43,8 @@ public class GetVmBootOrderAction extends AbstractAction {
             return ret;
         }
         
-        GetVmBootOrderResult value = res.getResult(GetVmBootOrderResult.class);
-        ret.value = value == null ? new GetVmBootOrderResult() : value; 
+        org.zstack.sdk.GetVmBootOrderResult value = res.getResult(org.zstack.sdk.GetVmBootOrderResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetVmBootOrderResult() : value; 
 
         return ret;
     }

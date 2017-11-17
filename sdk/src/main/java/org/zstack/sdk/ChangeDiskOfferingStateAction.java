@@ -10,7 +10,7 @@ public class ChangeDiskOfferingStateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ChangeDiskOfferingStateResult value;
+        public org.zstack.sdk.ChangeDiskOfferingStateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class ChangeDiskOfferingStateAction extends AbstractAction {
             return ret;
         }
         
-        ChangeDiskOfferingStateResult value = res.getResult(ChangeDiskOfferingStateResult.class);
-        ret.value = value == null ? new ChangeDiskOfferingStateResult() : value; 
+        org.zstack.sdk.ChangeDiskOfferingStateResult value = res.getResult(org.zstack.sdk.ChangeDiskOfferingStateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ChangeDiskOfferingStateResult() : value; 
 
         return ret;
     }

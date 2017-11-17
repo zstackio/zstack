@@ -10,7 +10,7 @@ public class DeleteHostAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteHostResult value;
+        public org.zstack.sdk.DeleteHostResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteHostAction extends AbstractAction {
             return ret;
         }
         
-        DeleteHostResult value = res.getResult(DeleteHostResult.class);
-        ret.value = value == null ? new DeleteHostResult() : value; 
+        org.zstack.sdk.DeleteHostResult value = res.getResult(org.zstack.sdk.DeleteHostResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteHostResult() : value; 
 
         return ret;
     }

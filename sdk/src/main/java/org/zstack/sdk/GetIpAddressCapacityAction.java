@@ -10,7 +10,7 @@ public class GetIpAddressCapacityAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetIpAddressCapacityResult value;
+        public org.zstack.sdk.GetIpAddressCapacityResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -52,8 +52,8 @@ public class GetIpAddressCapacityAction extends AbstractAction {
             return ret;
         }
         
-        GetIpAddressCapacityResult value = res.getResult(GetIpAddressCapacityResult.class);
-        ret.value = value == null ? new GetIpAddressCapacityResult() : value; 
+        org.zstack.sdk.GetIpAddressCapacityResult value = res.getResult(org.zstack.sdk.GetIpAddressCapacityResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetIpAddressCapacityResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class DeleteVmNicFromSecurityGroupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteVmNicFromSecurityGroupResult value;
+        public org.zstack.sdk.DeleteVmNicFromSecurityGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteVmNicFromSecurityGroupAction extends AbstractAction {
             return ret;
         }
         
-        DeleteVmNicFromSecurityGroupResult value = res.getResult(DeleteVmNicFromSecurityGroupResult.class);
-        ret.value = value == null ? new DeleteVmNicFromSecurityGroupResult() : value; 
+        org.zstack.sdk.DeleteVmNicFromSecurityGroupResult value = res.getResult(org.zstack.sdk.DeleteVmNicFromSecurityGroupResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteVmNicFromSecurityGroupResult() : value; 
 
         return ret;
     }

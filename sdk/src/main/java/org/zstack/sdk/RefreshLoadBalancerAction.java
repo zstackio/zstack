@@ -10,7 +10,7 @@ public class RefreshLoadBalancerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public RefreshLoadBalancerResult value;
+        public org.zstack.sdk.RefreshLoadBalancerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class RefreshLoadBalancerAction extends AbstractAction {
             return ret;
         }
         
-        RefreshLoadBalancerResult value = res.getResult(RefreshLoadBalancerResult.class);
-        ret.value = value == null ? new RefreshLoadBalancerResult() : value; 
+        org.zstack.sdk.RefreshLoadBalancerResult value = res.getResult(org.zstack.sdk.RefreshLoadBalancerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.RefreshLoadBalancerResult() : value; 
 
         return ret;
     }

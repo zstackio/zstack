@@ -10,7 +10,7 @@ public class GetHypervisorTypesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetHypervisorTypesResult value;
+        public org.zstack.sdk.GetHypervisorTypesResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -40,8 +40,8 @@ public class GetHypervisorTypesAction extends AbstractAction {
             return ret;
         }
         
-        GetHypervisorTypesResult value = res.getResult(GetHypervisorTypesResult.class);
-        ret.value = value == null ? new GetHypervisorTypesResult() : value; 
+        org.zstack.sdk.GetHypervisorTypesResult value = res.getResult(org.zstack.sdk.GetHypervisorTypesResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetHypervisorTypesResult() : value; 
 
         return ret;
     }

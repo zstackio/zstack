@@ -10,7 +10,7 @@ public class CreateVpnIpsecConfigAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateVpnIpsecConfigResult value;
+        public org.zstack.sdk.CreateVpnIpsecConfigResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -65,8 +65,8 @@ public class CreateVpnIpsecConfigAction extends AbstractAction {
             return ret;
         }
         
-        CreateVpnIpsecConfigResult value = res.getResult(CreateVpnIpsecConfigResult.class);
-        ret.value = value == null ? new CreateVpnIpsecConfigResult() : value; 
+        org.zstack.sdk.CreateVpnIpsecConfigResult value = res.getResult(org.zstack.sdk.CreateVpnIpsecConfigResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateVpnIpsecConfigResult() : value; 
 
         return ret;
     }

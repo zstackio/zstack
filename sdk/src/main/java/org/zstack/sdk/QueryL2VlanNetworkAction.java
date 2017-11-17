@@ -10,7 +10,7 @@ public class QueryL2VlanNetworkAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryL2VlanNetworkResult value;
+        public org.zstack.sdk.QueryL2VlanNetworkResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryL2VlanNetworkAction extends QueryAction {
             return ret;
         }
         
-        QueryL2VlanNetworkResult value = res.getResult(QueryL2VlanNetworkResult.class);
-        ret.value = value == null ? new QueryL2VlanNetworkResult() : value; 
+        org.zstack.sdk.QueryL2VlanNetworkResult value = res.getResult(org.zstack.sdk.QueryL2VlanNetworkResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryL2VlanNetworkResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class DeleteIPsecConnectionAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteIPsecConnectionResult value;
+        public org.zstack.sdk.DeleteIPsecConnectionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteIPsecConnectionAction extends AbstractAction {
             return ret;
         }
         
-        DeleteIPsecConnectionResult value = res.getResult(DeleteIPsecConnectionResult.class);
-        ret.value = value == null ? new DeleteIPsecConnectionResult() : value; 
+        org.zstack.sdk.DeleteIPsecConnectionResult value = res.getResult(org.zstack.sdk.DeleteIPsecConnectionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteIPsecConnectionResult() : value; 
 
         return ret;
     }

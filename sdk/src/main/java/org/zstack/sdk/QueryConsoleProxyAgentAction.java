@@ -10,7 +10,7 @@ public class QueryConsoleProxyAgentAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryConsoleProxyAgentResult value;
+        public org.zstack.sdk.QueryConsoleProxyAgentResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryConsoleProxyAgentAction extends QueryAction {
             return ret;
         }
         
-        QueryConsoleProxyAgentResult value = res.getResult(QueryConsoleProxyAgentResult.class);
-        ret.value = value == null ? new QueryConsoleProxyAgentResult() : value; 
+        org.zstack.sdk.QueryConsoleProxyAgentResult value = res.getResult(org.zstack.sdk.QueryConsoleProxyAgentResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryConsoleProxyAgentResult() : value; 
 
         return ret;
     }

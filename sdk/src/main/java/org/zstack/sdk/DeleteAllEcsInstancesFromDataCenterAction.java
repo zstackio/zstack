@@ -10,7 +10,7 @@ public class DeleteAllEcsInstancesFromDataCenterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteAllEcsInstancesFromDataCenterResult value;
+        public org.zstack.sdk.DeleteAllEcsInstancesFromDataCenterResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteAllEcsInstancesFromDataCenterAction extends AbstractAction {
             return ret;
         }
         
-        DeleteAllEcsInstancesFromDataCenterResult value = res.getResult(DeleteAllEcsInstancesFromDataCenterResult.class);
-        ret.value = value == null ? new DeleteAllEcsInstancesFromDataCenterResult() : value; 
+        org.zstack.sdk.DeleteAllEcsInstancesFromDataCenterResult value = res.getResult(org.zstack.sdk.DeleteAllEcsInstancesFromDataCenterResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteAllEcsInstancesFromDataCenterResult() : value; 
 
         return ret;
     }

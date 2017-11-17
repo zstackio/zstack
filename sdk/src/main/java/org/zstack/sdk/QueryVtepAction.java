@@ -10,7 +10,7 @@ public class QueryVtepAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryVtepResult value;
+        public org.zstack.sdk.QueryVtepResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryVtepAction extends QueryAction {
             return ret;
         }
         
-        QueryVtepResult value = res.getResult(QueryVtepResult.class);
-        ret.value = value == null ? new QueryVtepResult() : value; 
+        org.zstack.sdk.QueryVtepResult value = res.getResult(org.zstack.sdk.QueryVtepResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryVtepResult() : value; 
 
         return ret;
     }

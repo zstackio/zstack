@@ -10,7 +10,7 @@ public class CreateVniRangeAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateVniRangeResult value;
+        public org.zstack.sdk.CreateVniRangeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -62,8 +62,8 @@ public class CreateVniRangeAction extends AbstractAction {
             return ret;
         }
         
-        CreateVniRangeResult value = res.getResult(CreateVniRangeResult.class);
-        ret.value = value == null ? new CreateVniRangeResult() : value; 
+        org.zstack.sdk.CreateVniRangeResult value = res.getResult(org.zstack.sdk.CreateVniRangeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateVniRangeResult() : value; 
 
         return ret;
     }

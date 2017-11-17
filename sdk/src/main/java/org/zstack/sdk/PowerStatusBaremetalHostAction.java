@@ -10,7 +10,7 @@ public class PowerStatusBaremetalHostAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public PowerStatusBaremetalHostResult value;
+        public org.zstack.sdk.PowerStatusBaremetalHostResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class PowerStatusBaremetalHostAction extends AbstractAction {
             return ret;
         }
         
-        PowerStatusBaremetalHostResult value = res.getResult(PowerStatusBaremetalHostResult.class);
-        ret.value = value == null ? new PowerStatusBaremetalHostResult() : value; 
+        org.zstack.sdk.PowerStatusBaremetalHostResult value = res.getResult(org.zstack.sdk.PowerStatusBaremetalHostResult.class);
+        ret.value = value == null ? new org.zstack.sdk.PowerStatusBaremetalHostResult() : value; 
 
         return ret;
     }

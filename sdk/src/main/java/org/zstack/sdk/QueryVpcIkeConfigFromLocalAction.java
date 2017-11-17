@@ -10,7 +10,7 @@ public class QueryVpcIkeConfigFromLocalAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryVpcIkeConfigFromLocalResult value;
+        public org.zstack.sdk.QueryVpcIkeConfigFromLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryVpcIkeConfigFromLocalAction extends QueryAction {
             return ret;
         }
         
-        QueryVpcIkeConfigFromLocalResult value = res.getResult(QueryVpcIkeConfigFromLocalResult.class);
-        ret.value = value == null ? new QueryVpcIkeConfigFromLocalResult() : value; 
+        org.zstack.sdk.QueryVpcIkeConfigFromLocalResult value = res.getResult(org.zstack.sdk.QueryVpcIkeConfigFromLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryVpcIkeConfigFromLocalResult() : value; 
 
         return ret;
     }

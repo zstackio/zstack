@@ -10,7 +10,7 @@ public class GetResourceNamesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetResourceNamesResult value;
+        public org.zstack.sdk.GetResourceNamesResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -43,8 +43,8 @@ public class GetResourceNamesAction extends AbstractAction {
             return ret;
         }
         
-        GetResourceNamesResult value = res.getResult(GetResourceNamesResult.class);
-        ret.value = value == null ? new GetResourceNamesResult() : value; 
+        org.zstack.sdk.GetResourceNamesResult value = res.getResult(org.zstack.sdk.GetResourceNamesResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetResourceNamesResult() : value; 
 
         return ret;
     }

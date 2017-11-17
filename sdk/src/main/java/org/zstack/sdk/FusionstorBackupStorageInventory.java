@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class FusionstorBackupStorageInventory extends BackupStorageInventory {
+public class FusionstorBackupStorageInventory extends org.zstack.sdk.BackupStorageInventory {
 
     public java.util.List mons;
     public void setMons(java.util.List mons) {

@@ -10,7 +10,7 @@ public class CreateEcsSecurityGroupRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateEcsSecurityGroupRemoteResult value;
+        public org.zstack.sdk.CreateEcsSecurityGroupRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -59,8 +59,8 @@ public class CreateEcsSecurityGroupRemoteAction extends AbstractAction {
             return ret;
         }
         
-        CreateEcsSecurityGroupRemoteResult value = res.getResult(CreateEcsSecurityGroupRemoteResult.class);
-        ret.value = value == null ? new CreateEcsSecurityGroupRemoteResult() : value; 
+        org.zstack.sdk.CreateEcsSecurityGroupRemoteResult value = res.getResult(org.zstack.sdk.CreateEcsSecurityGroupRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateEcsSecurityGroupRemoteResult() : value; 
 
         return ret;
     }

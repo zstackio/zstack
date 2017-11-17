@@ -10,7 +10,7 @@ public class SyncVirtualBorderRouterFromRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SyncVirtualBorderRouterFromRemoteResult value;
+        public org.zstack.sdk.SyncVirtualBorderRouterFromRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class SyncVirtualBorderRouterFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        SyncVirtualBorderRouterFromRemoteResult value = res.getResult(SyncVirtualBorderRouterFromRemoteResult.class);
-        ret.value = value == null ? new SyncVirtualBorderRouterFromRemoteResult() : value; 
+        org.zstack.sdk.SyncVirtualBorderRouterFromRemoteResult value = res.getResult(org.zstack.sdk.SyncVirtualBorderRouterFromRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SyncVirtualBorderRouterFromRemoteResult() : value; 
 
         return ret;
     }

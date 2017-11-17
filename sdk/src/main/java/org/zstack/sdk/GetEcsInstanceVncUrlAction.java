@@ -10,7 +10,7 @@ public class GetEcsInstanceVncUrlAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetEcsInstanceVncUrlResult value;
+        public org.zstack.sdk.GetEcsInstanceVncUrlResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -43,8 +43,8 @@ public class GetEcsInstanceVncUrlAction extends AbstractAction {
             return ret;
         }
         
-        GetEcsInstanceVncUrlResult value = res.getResult(GetEcsInstanceVncUrlResult.class);
-        ret.value = value == null ? new GetEcsInstanceVncUrlResult() : value; 
+        org.zstack.sdk.GetEcsInstanceVncUrlResult value = res.getResult(org.zstack.sdk.GetEcsInstanceVncUrlResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetEcsInstanceVncUrlResult() : value; 
 
         return ret;
     }

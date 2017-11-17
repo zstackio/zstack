@@ -10,7 +10,7 @@ public class QueryConnectionBetweenL3NetworkAndAliyunVSwitchAction extends Query
 
     public static class Result {
         public ErrorCode error;
-        public QueryConnectionBetweenL3NetworkAndAliyunVSwitchResult value;
+        public org.zstack.sdk.QueryConnectionBetweenL3NetworkAndAliyunVSwitchResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryConnectionBetweenL3NetworkAndAliyunVSwitchAction extends Query
             return ret;
         }
         
-        QueryConnectionBetweenL3NetworkAndAliyunVSwitchResult value = res.getResult(QueryConnectionBetweenL3NetworkAndAliyunVSwitchResult.class);
-        ret.value = value == null ? new QueryConnectionBetweenL3NetworkAndAliyunVSwitchResult() : value; 
+        org.zstack.sdk.QueryConnectionBetweenL3NetworkAndAliyunVSwitchResult value = res.getResult(org.zstack.sdk.QueryConnectionBetweenL3NetworkAndAliyunVSwitchResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryConnectionBetweenL3NetworkAndAliyunVSwitchResult() : value; 
 
         return ret;
     }

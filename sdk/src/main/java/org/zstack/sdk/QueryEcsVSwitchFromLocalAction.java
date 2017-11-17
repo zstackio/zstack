@@ -10,7 +10,7 @@ public class QueryEcsVSwitchFromLocalAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryEcsVSwitchFromLocalResult value;
+        public org.zstack.sdk.QueryEcsVSwitchFromLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryEcsVSwitchFromLocalAction extends QueryAction {
             return ret;
         }
         
-        QueryEcsVSwitchFromLocalResult value = res.getResult(QueryEcsVSwitchFromLocalResult.class);
-        ret.value = value == null ? new QueryEcsVSwitchFromLocalResult() : value; 
+        org.zstack.sdk.QueryEcsVSwitchFromLocalResult value = res.getResult(org.zstack.sdk.QueryEcsVSwitchFromLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryEcsVSwitchFromLocalResult() : value; 
 
         return ret;
     }

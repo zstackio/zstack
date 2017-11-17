@@ -10,7 +10,7 @@ public class ChangeInstanceOfferingAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ChangeInstanceOfferingResult value;
+        public org.zstack.sdk.ChangeInstanceOfferingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class ChangeInstanceOfferingAction extends AbstractAction {
             return ret;
         }
         
-        ChangeInstanceOfferingResult value = res.getResult(ChangeInstanceOfferingResult.class);
-        ret.value = value == null ? new ChangeInstanceOfferingResult() : value; 
+        org.zstack.sdk.ChangeInstanceOfferingResult value = res.getResult(org.zstack.sdk.ChangeInstanceOfferingResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ChangeInstanceOfferingResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class QuerySharedResourceAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QuerySharedResourceResult value;
+        public org.zstack.sdk.QuerySharedResourceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QuerySharedResourceAction extends QueryAction {
             return ret;
         }
         
-        QuerySharedResourceResult value = res.getResult(QuerySharedResourceResult.class);
-        ret.value = value == null ? new QuerySharedResourceResult() : value; 
+        org.zstack.sdk.QuerySharedResourceResult value = res.getResult(org.zstack.sdk.QuerySharedResourceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QuerySharedResourceResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class CreateIPsecConnectionAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateIPsecConnectionResult value;
+        public org.zstack.sdk.CreateIPsecConnectionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -95,8 +95,8 @@ public class CreateIPsecConnectionAction extends AbstractAction {
             return ret;
         }
         
-        CreateIPsecConnectionResult value = res.getResult(CreateIPsecConnectionResult.class);
-        ret.value = value == null ? new CreateIPsecConnectionResult() : value; 
+        org.zstack.sdk.CreateIPsecConnectionResult value = res.getResult(org.zstack.sdk.CreateIPsecConnectionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateIPsecConnectionResult() : value; 
 
         return ret;
     }

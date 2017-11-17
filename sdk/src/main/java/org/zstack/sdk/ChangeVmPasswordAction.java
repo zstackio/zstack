@@ -10,7 +10,7 @@ public class ChangeVmPasswordAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ChangeVmPasswordResult value;
+        public org.zstack.sdk.ChangeVmPasswordResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class ChangeVmPasswordAction extends AbstractAction {
             return ret;
         }
         
-        ChangeVmPasswordResult value = res.getResult(ChangeVmPasswordResult.class);
-        ret.value = value == null ? new ChangeVmPasswordResult() : value; 
+        org.zstack.sdk.ChangeVmPasswordResult value = res.getResult(org.zstack.sdk.ChangeVmPasswordResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ChangeVmPasswordResult() : value; 
 
         return ret;
     }

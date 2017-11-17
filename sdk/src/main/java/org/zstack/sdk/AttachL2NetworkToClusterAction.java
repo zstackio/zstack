@@ -10,7 +10,7 @@ public class AttachL2NetworkToClusterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AttachL2NetworkToClusterResult value;
+        public org.zstack.sdk.AttachL2NetworkToClusterResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class AttachL2NetworkToClusterAction extends AbstractAction {
             return ret;
         }
         
-        AttachL2NetworkToClusterResult value = res.getResult(AttachL2NetworkToClusterResult.class);
-        ret.value = value == null ? new AttachL2NetworkToClusterResult() : value; 
+        org.zstack.sdk.AttachL2NetworkToClusterResult value = res.getResult(org.zstack.sdk.AttachL2NetworkToClusterResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AttachL2NetworkToClusterResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class GetMetricDataAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetMetricDataResult value;
+        public org.zstack.sdk.zwatch.api.GetMetricDataResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -58,8 +58,8 @@ public class GetMetricDataAction extends AbstractAction {
             return ret;
         }
         
-        GetMetricDataResult value = res.getResult(GetMetricDataResult.class);
-        ret.value = value == null ? new GetMetricDataResult() : value; 
+        org.zstack.sdk.zwatch.api.GetMetricDataResult value = res.getResult(org.zstack.sdk.zwatch.api.GetMetricDataResult.class);
+        ret.value = value == null ? new org.zstack.sdk.zwatch.api.GetMetricDataResult() : value; 
 
         return ret;
     }

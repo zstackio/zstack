@@ -10,7 +10,7 @@ public class DeleteSecurityGroupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteSecurityGroupResult value;
+        public org.zstack.sdk.DeleteSecurityGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteSecurityGroupAction extends AbstractAction {
             return ret;
         }
         
-        DeleteSecurityGroupResult value = res.getResult(DeleteSecurityGroupResult.class);
-        ret.value = value == null ? new DeleteSecurityGroupResult() : value; 
+        org.zstack.sdk.DeleteSecurityGroupResult value = res.getResult(org.zstack.sdk.DeleteSecurityGroupResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteSecurityGroupResult() : value; 
 
         return ret;
     }

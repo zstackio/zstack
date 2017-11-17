@@ -10,7 +10,7 @@ public class SetVmUsbRedirectAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SetVmUsbRedirectResult value;
+        public org.zstack.sdk.SetVmUsbRedirectResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class SetVmUsbRedirectAction extends AbstractAction {
             return ret;
         }
         
-        SetVmUsbRedirectResult value = res.getResult(SetVmUsbRedirectResult.class);
-        ret.value = value == null ? new SetVmUsbRedirectResult() : value; 
+        org.zstack.sdk.SetVmUsbRedirectResult value = res.getResult(org.zstack.sdk.SetVmUsbRedirectResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SetVmUsbRedirectResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class GetImageQgaAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetImageQgaResult value;
+        public org.zstack.sdk.GetImageQgaResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -43,8 +43,8 @@ public class GetImageQgaAction extends AbstractAction {
             return ret;
         }
         
-        GetImageQgaResult value = res.getResult(GetImageQgaResult.class);
-        ret.value = value == null ? new GetImageQgaResult() : value; 
+        org.zstack.sdk.GetImageQgaResult value = res.getResult(org.zstack.sdk.GetImageQgaResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetImageQgaResult() : value; 
 
         return ret;
     }

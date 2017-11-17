@@ -10,7 +10,7 @@ public class DeleteVolumeQosAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteVolumeQosResult value;
+        public org.zstack.sdk.DeleteVolumeQosResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class DeleteVolumeQosAction extends AbstractAction {
             return ret;
         }
         
-        DeleteVolumeQosResult value = res.getResult(DeleteVolumeQosResult.class);
-        ret.value = value == null ? new DeleteVolumeQosResult() : value; 
+        org.zstack.sdk.DeleteVolumeQosResult value = res.getResult(org.zstack.sdk.DeleteVolumeQosResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteVolumeQosResult() : value; 
 
         return ret;
     }

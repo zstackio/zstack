@@ -10,7 +10,7 @@ public class ProvisionBaremetalHostAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ProvisionBaremetalHostResult value;
+        public org.zstack.sdk.ProvisionBaremetalHostResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class ProvisionBaremetalHostAction extends AbstractAction {
             return ret;
         }
         
-        ProvisionBaremetalHostResult value = res.getResult(ProvisionBaremetalHostResult.class);
-        ret.value = value == null ? new ProvisionBaremetalHostResult() : value; 
+        org.zstack.sdk.ProvisionBaremetalHostResult value = res.getResult(org.zstack.sdk.ProvisionBaremetalHostResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ProvisionBaremetalHostResult() : value; 
 
         return ret;
     }

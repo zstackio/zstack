@@ -10,7 +10,7 @@ public class CreateRootVolumeTemplateFromVolumeSnapshotAction extends AbstractAc
 
     public static class Result {
         public ErrorCode error;
-        public CreateRootVolumeTemplateFromVolumeSnapshotResult value;
+        public org.zstack.sdk.CreateRootVolumeTemplateFromVolumeSnapshotResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -68,8 +68,8 @@ public class CreateRootVolumeTemplateFromVolumeSnapshotAction extends AbstractAc
             return ret;
         }
         
-        CreateRootVolumeTemplateFromVolumeSnapshotResult value = res.getResult(CreateRootVolumeTemplateFromVolumeSnapshotResult.class);
-        ret.value = value == null ? new CreateRootVolumeTemplateFromVolumeSnapshotResult() : value; 
+        org.zstack.sdk.CreateRootVolumeTemplateFromVolumeSnapshotResult value = res.getResult(org.zstack.sdk.CreateRootVolumeTemplateFromVolumeSnapshotResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateRootVolumeTemplateFromVolumeSnapshotResult() : value; 
 
         return ret;
     }

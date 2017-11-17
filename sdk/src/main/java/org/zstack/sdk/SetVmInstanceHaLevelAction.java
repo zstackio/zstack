@@ -10,7 +10,7 @@ public class SetVmInstanceHaLevelAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SetVmInstanceHaLevelResult value;
+        public org.zstack.sdk.SetVmInstanceHaLevelResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class SetVmInstanceHaLevelAction extends AbstractAction {
             return ret;
         }
         
-        SetVmInstanceHaLevelResult value = res.getResult(SetVmInstanceHaLevelResult.class);
-        ret.value = value == null ? new SetVmInstanceHaLevelResult() : value; 
+        org.zstack.sdk.SetVmInstanceHaLevelResult value = res.getResult(org.zstack.sdk.SetVmInstanceHaLevelResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SetVmInstanceHaLevelResult() : value; 
 
         return ret;
     }

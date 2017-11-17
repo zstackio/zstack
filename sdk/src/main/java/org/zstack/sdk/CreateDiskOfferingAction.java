@@ -10,7 +10,7 @@ public class CreateDiskOfferingAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateDiskOfferingResult value;
+        public org.zstack.sdk.CreateDiskOfferingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -65,8 +65,8 @@ public class CreateDiskOfferingAction extends AbstractAction {
             return ret;
         }
         
-        CreateDiskOfferingResult value = res.getResult(CreateDiskOfferingResult.class);
-        ret.value = value == null ? new CreateDiskOfferingResult() : value; 
+        org.zstack.sdk.CreateDiskOfferingResult value = res.getResult(org.zstack.sdk.CreateDiskOfferingResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateDiskOfferingResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class QueryVmNicInSecurityGroupAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryVmNicInSecurityGroupResult value;
+        public org.zstack.sdk.QueryVmNicInSecurityGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryVmNicInSecurityGroupAction extends QueryAction {
             return ret;
         }
         
-        QueryVmNicInSecurityGroupResult value = res.getResult(QueryVmNicInSecurityGroupResult.class);
-        ret.value = value == null ? new QueryVmNicInSecurityGroupResult() : value; 
+        org.zstack.sdk.QueryVmNicInSecurityGroupResult value = res.getResult(org.zstack.sdk.QueryVmNicInSecurityGroupResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryVmNicInSecurityGroupResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class SyncEcsInstanceFromRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SyncEcsInstanceFromRemoteResult value;
+        public org.zstack.sdk.SyncEcsInstanceFromRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class SyncEcsInstanceFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        SyncEcsInstanceFromRemoteResult value = res.getResult(SyncEcsInstanceFromRemoteResult.class);
-        ret.value = value == null ? new SyncEcsInstanceFromRemoteResult() : value; 
+        org.zstack.sdk.SyncEcsInstanceFromRemoteResult value = res.getResult(org.zstack.sdk.SyncEcsInstanceFromRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SyncEcsInstanceFromRemoteResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class LogOutAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public LogOutResult value;
+        public org.zstack.sdk.LogOutResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -40,8 +40,8 @@ public class LogOutAction extends AbstractAction {
             return ret;
         }
         
-        LogOutResult value = res.getResult(LogOutResult.class);
-        ret.value = value == null ? new LogOutResult() : value; 
+        org.zstack.sdk.LogOutResult value = res.getResult(org.zstack.sdk.LogOutResult.class);
+        ret.value = value == null ? new org.zstack.sdk.LogOutResult() : value; 
 
         return ret;
     }

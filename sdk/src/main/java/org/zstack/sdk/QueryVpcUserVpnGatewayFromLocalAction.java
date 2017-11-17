@@ -10,7 +10,7 @@ public class QueryVpcUserVpnGatewayFromLocalAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryVpcUserVpnGatewayFromLocalResult value;
+        public org.zstack.sdk.QueryVpcUserVpnGatewayFromLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryVpcUserVpnGatewayFromLocalAction extends QueryAction {
             return ret;
         }
         
-        QueryVpcUserVpnGatewayFromLocalResult value = res.getResult(QueryVpcUserVpnGatewayFromLocalResult.class);
-        ret.value = value == null ? new QueryVpcUserVpnGatewayFromLocalResult() : value; 
+        org.zstack.sdk.QueryVpcUserVpnGatewayFromLocalResult value = res.getResult(org.zstack.sdk.QueryVpcUserVpnGatewayFromLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryVpcUserVpnGatewayFromLocalResult() : value; 
 
         return ret;
     }

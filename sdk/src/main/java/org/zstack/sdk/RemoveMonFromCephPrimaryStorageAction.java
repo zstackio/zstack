@@ -10,7 +10,7 @@ public class RemoveMonFromCephPrimaryStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public RemoveMonFromCephPrimaryStorageResult value;
+        public org.zstack.sdk.RemoveMonFromCephPrimaryStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class RemoveMonFromCephPrimaryStorageAction extends AbstractAction {
             return ret;
         }
         
-        RemoveMonFromCephPrimaryStorageResult value = res.getResult(RemoveMonFromCephPrimaryStorageResult.class);
-        ret.value = value == null ? new RemoveMonFromCephPrimaryStorageResult() : value; 
+        org.zstack.sdk.RemoveMonFromCephPrimaryStorageResult value = res.getResult(org.zstack.sdk.RemoveMonFromCephPrimaryStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.RemoveMonFromCephPrimaryStorageResult() : value; 
 
         return ret;
     }

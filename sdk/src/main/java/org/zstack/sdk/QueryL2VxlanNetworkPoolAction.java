@@ -10,7 +10,7 @@ public class QueryL2VxlanNetworkPoolAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryL2VxlanNetworkPoolResult value;
+        public org.zstack.sdk.QueryL2VxlanNetworkPoolResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryL2VxlanNetworkPoolAction extends QueryAction {
             return ret;
         }
         
-        QueryL2VxlanNetworkPoolResult value = res.getResult(QueryL2VxlanNetworkPoolResult.class);
-        ret.value = value == null ? new QueryL2VxlanNetworkPoolResult() : value; 
+        org.zstack.sdk.QueryL2VxlanNetworkPoolResult value = res.getResult(org.zstack.sdk.QueryL2VxlanNetworkPoolResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryL2VxlanNetworkPoolResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class ChangeClusterStateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ChangeClusterStateResult value;
+        public org.zstack.sdk.ChangeClusterStateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class ChangeClusterStateAction extends AbstractAction {
             return ret;
         }
         
-        ChangeClusterStateResult value = res.getResult(ChangeClusterStateResult.class);
-        ret.value = value == null ? new ChangeClusterStateResult() : value; 
+        org.zstack.sdk.ChangeClusterStateResult value = res.getResult(org.zstack.sdk.ChangeClusterStateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ChangeClusterStateResult() : value; 
 
         return ret;
     }

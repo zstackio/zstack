@@ -10,7 +10,7 @@ public class QueryBaremetalHostCfgAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryBaremetalHostCfgResult value;
+        public org.zstack.sdk.QueryBaremetalHostCfgResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryBaremetalHostCfgAction extends QueryAction {
             return ret;
         }
         
-        QueryBaremetalHostCfgResult value = res.getResult(QueryBaremetalHostCfgResult.class);
-        ret.value = value == null ? new QueryBaremetalHostCfgResult() : value; 
+        org.zstack.sdk.QueryBaremetalHostCfgResult value = res.getResult(org.zstack.sdk.QueryBaremetalHostCfgResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryBaremetalHostCfgResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class GetBackupStorageCandidatesForImageMigrationAction extends AbstractA
 
     public static class Result {
         public ErrorCode error;
-        public GetBackupStorageCandidatesForImageMigrationResult value;
+        public org.zstack.sdk.GetBackupStorageCandidatesForImageMigrationResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -43,8 +43,8 @@ public class GetBackupStorageCandidatesForImageMigrationAction extends AbstractA
             return ret;
         }
         
-        GetBackupStorageCandidatesForImageMigrationResult value = res.getResult(GetBackupStorageCandidatesForImageMigrationResult.class);
-        ret.value = value == null ? new GetBackupStorageCandidatesForImageMigrationResult() : value; 
+        org.zstack.sdk.GetBackupStorageCandidatesForImageMigrationResult value = res.getResult(org.zstack.sdk.GetBackupStorageCandidatesForImageMigrationResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetBackupStorageCandidatesForImageMigrationResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class DeleteRouterInterfaceLocalAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteRouterInterfaceLocalResult value;
+        public org.zstack.sdk.DeleteRouterInterfaceLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteRouterInterfaceLocalAction extends AbstractAction {
             return ret;
         }
         
-        DeleteRouterInterfaceLocalResult value = res.getResult(DeleteRouterInterfaceLocalResult.class);
-        ret.value = value == null ? new DeleteRouterInterfaceLocalResult() : value; 
+        org.zstack.sdk.DeleteRouterInterfaceLocalResult value = res.getResult(org.zstack.sdk.DeleteRouterInterfaceLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteRouterInterfaceLocalResult() : value; 
 
         return ret;
     }

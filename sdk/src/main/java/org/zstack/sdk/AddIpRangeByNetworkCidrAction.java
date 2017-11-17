@@ -10,7 +10,7 @@ public class AddIpRangeByNetworkCidrAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AddIpRangeByNetworkCidrResult value;
+        public org.zstack.sdk.AddIpRangeByNetworkCidrResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -59,8 +59,8 @@ public class AddIpRangeByNetworkCidrAction extends AbstractAction {
             return ret;
         }
         
-        AddIpRangeByNetworkCidrResult value = res.getResult(AddIpRangeByNetworkCidrResult.class);
-        ret.value = value == null ? new AddIpRangeByNetworkCidrResult() : value; 
+        org.zstack.sdk.AddIpRangeByNetworkCidrResult value = res.getResult(org.zstack.sdk.AddIpRangeByNetworkCidrResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddIpRangeByNetworkCidrResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class ChangeL3NetworkStateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ChangeL3NetworkStateResult value;
+        public org.zstack.sdk.ChangeL3NetworkStateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class ChangeL3NetworkStateAction extends AbstractAction {
             return ret;
         }
         
-        ChangeL3NetworkStateResult value = res.getResult(ChangeL3NetworkStateResult.class);
-        ret.value = value == null ? new ChangeL3NetworkStateResult() : value; 
+        org.zstack.sdk.ChangeL3NetworkStateResult value = res.getResult(org.zstack.sdk.ChangeL3NetworkStateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ChangeL3NetworkStateResult() : value; 
 
         return ret;
     }

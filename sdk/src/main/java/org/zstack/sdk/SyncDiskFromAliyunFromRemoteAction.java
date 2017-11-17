@@ -10,7 +10,7 @@ public class SyncDiskFromAliyunFromRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SyncDiskFromAliyunFromRemoteResult value;
+        public org.zstack.sdk.SyncDiskFromAliyunFromRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class SyncDiskFromAliyunFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        SyncDiskFromAliyunFromRemoteResult value = res.getResult(SyncDiskFromAliyunFromRemoteResult.class);
-        ret.value = value == null ? new SyncDiskFromAliyunFromRemoteResult() : value; 
+        org.zstack.sdk.SyncDiskFromAliyunFromRemoteResult value = res.getResult(org.zstack.sdk.SyncDiskFromAliyunFromRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SyncDiskFromAliyunFromRemoteResult() : value; 
 
         return ret;
     }

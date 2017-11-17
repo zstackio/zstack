@@ -10,7 +10,7 @@ public class QueryAliyunVirtualRouterFromLocalAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryAliyunVirtualRouterFromLocalResult value;
+        public org.zstack.sdk.QueryAliyunVirtualRouterFromLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryAliyunVirtualRouterFromLocalAction extends QueryAction {
             return ret;
         }
         
-        QueryAliyunVirtualRouterFromLocalResult value = res.getResult(QueryAliyunVirtualRouterFromLocalResult.class);
-        ret.value = value == null ? new QueryAliyunVirtualRouterFromLocalResult() : value; 
+        org.zstack.sdk.QueryAliyunVirtualRouterFromLocalResult value = res.getResult(org.zstack.sdk.QueryAliyunVirtualRouterFromLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryAliyunVirtualRouterFromLocalResult() : value; 
 
         return ret;
     }

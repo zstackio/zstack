@@ -10,7 +10,7 @@ public class QueryRouterInterfaceFromLocalAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryRouterInterfaceFromLocalResult value;
+        public org.zstack.sdk.QueryRouterInterfaceFromLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryRouterInterfaceFromLocalAction extends QueryAction {
             return ret;
         }
         
-        QueryRouterInterfaceFromLocalResult value = res.getResult(QueryRouterInterfaceFromLocalResult.class);
-        ret.value = value == null ? new QueryRouterInterfaceFromLocalResult() : value; 
+        org.zstack.sdk.QueryRouterInterfaceFromLocalResult value = res.getResult(org.zstack.sdk.QueryRouterInterfaceFromLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryRouterInterfaceFromLocalResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class RemoveSchedulerJobFromSchedulerTriggerAction extends AbstractAction
 
     public static class Result {
         public ErrorCode error;
-        public RemoveSchedulerJobFromSchedulerTriggerResult value;
+        public org.zstack.sdk.RemoveSchedulerJobFromSchedulerTriggerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class RemoveSchedulerJobFromSchedulerTriggerAction extends AbstractAction
             return ret;
         }
         
-        RemoveSchedulerJobFromSchedulerTriggerResult value = res.getResult(RemoveSchedulerJobFromSchedulerTriggerResult.class);
-        ret.value = value == null ? new RemoveSchedulerJobFromSchedulerTriggerResult() : value; 
+        org.zstack.sdk.RemoveSchedulerJobFromSchedulerTriggerResult value = res.getResult(org.zstack.sdk.RemoveSchedulerJobFromSchedulerTriggerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.RemoveSchedulerJobFromSchedulerTriggerResult() : value; 
 
         return ret;
     }

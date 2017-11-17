@@ -10,7 +10,7 @@ public class ReconnectPrimaryStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ReconnectPrimaryStorageResult value;
+        public org.zstack.sdk.ReconnectPrimaryStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class ReconnectPrimaryStorageAction extends AbstractAction {
             return ret;
         }
         
-        ReconnectPrimaryStorageResult value = res.getResult(ReconnectPrimaryStorageResult.class);
-        ret.value = value == null ? new ReconnectPrimaryStorageResult() : value; 
+        org.zstack.sdk.ReconnectPrimaryStorageResult value = res.getResult(org.zstack.sdk.ReconnectPrimaryStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ReconnectPrimaryStorageResult() : value; 
 
         return ret;
     }

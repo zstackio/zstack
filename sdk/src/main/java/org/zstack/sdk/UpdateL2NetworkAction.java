@@ -10,7 +10,7 @@ public class UpdateL2NetworkAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateL2NetworkResult value;
+        public org.zstack.sdk.UpdateL2NetworkResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class UpdateL2NetworkAction extends AbstractAction {
             return ret;
         }
         
-        UpdateL2NetworkResult value = res.getResult(UpdateL2NetworkResult.class);
-        ret.value = value == null ? new UpdateL2NetworkResult() : value; 
+        org.zstack.sdk.UpdateL2NetworkResult value = res.getResult(org.zstack.sdk.UpdateL2NetworkResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateL2NetworkResult() : value; 
 
         return ret;
     }

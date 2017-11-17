@@ -10,7 +10,7 @@ public class CloneVmInstanceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CloneVmInstanceResult value;
+        public org.zstack.sdk.CloneVmInstanceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class CloneVmInstanceAction extends AbstractAction {
             return ret;
         }
         
-        CloneVmInstanceResult value = res.getResult(CloneVmInstanceResult.class);
-        ret.value = value == null ? new CloneVmInstanceResult() : value; 
+        org.zstack.sdk.CloneVmInstanceResult value = res.getResult(org.zstack.sdk.CloneVmInstanceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CloneVmInstanceResult() : value; 
 
         return ret;
     }

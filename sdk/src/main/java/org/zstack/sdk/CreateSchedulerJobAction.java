@@ -10,7 +10,7 @@ public class CreateSchedulerJobAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateSchedulerJobResult value;
+        public org.zstack.sdk.CreateSchedulerJobResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -62,8 +62,8 @@ public class CreateSchedulerJobAction extends AbstractAction {
             return ret;
         }
         
-        CreateSchedulerJobResult value = res.getResult(CreateSchedulerJobResult.class);
-        ret.value = value == null ? new CreateSchedulerJobResult() : value; 
+        org.zstack.sdk.CreateSchedulerJobResult value = res.getResult(org.zstack.sdk.CreateSchedulerJobResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateSchedulerJobResult() : value; 
 
         return ret;
     }

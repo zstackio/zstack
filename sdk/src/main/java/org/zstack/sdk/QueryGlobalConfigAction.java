@@ -10,7 +10,7 @@ public class QueryGlobalConfigAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryGlobalConfigResult value;
+        public org.zstack.sdk.QueryGlobalConfigResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryGlobalConfigAction extends QueryAction {
             return ret;
         }
         
-        QueryGlobalConfigResult value = res.getResult(QueryGlobalConfigResult.class);
-        ret.value = value == null ? new QueryGlobalConfigResult() : value; 
+        org.zstack.sdk.QueryGlobalConfigResult value = res.getResult(org.zstack.sdk.QueryGlobalConfigResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryGlobalConfigResult() : value; 
 
         return ret;
     }

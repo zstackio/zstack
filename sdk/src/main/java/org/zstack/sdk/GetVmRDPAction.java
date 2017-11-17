@@ -10,7 +10,7 @@ public class GetVmRDPAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetVmRDPResult value;
+        public org.zstack.sdk.GetVmRDPResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -43,8 +43,8 @@ public class GetVmRDPAction extends AbstractAction {
             return ret;
         }
         
-        GetVmRDPResult value = res.getResult(GetVmRDPResult.class);
-        ret.value = value == null ? new GetVmRDPResult() : value; 
+        org.zstack.sdk.GetVmRDPResult value = res.getResult(org.zstack.sdk.GetVmRDPResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetVmRDPResult() : value; 
 
         return ret;
     }

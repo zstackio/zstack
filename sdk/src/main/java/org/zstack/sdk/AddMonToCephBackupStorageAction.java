@@ -10,7 +10,7 @@ public class AddMonToCephBackupStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AddMonToCephBackupStorageResult value;
+        public org.zstack.sdk.AddMonToCephBackupStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class AddMonToCephBackupStorageAction extends AbstractAction {
             return ret;
         }
         
-        AddMonToCephBackupStorageResult value = res.getResult(AddMonToCephBackupStorageResult.class);
-        ret.value = value == null ? new AddMonToCephBackupStorageResult() : value; 
+        org.zstack.sdk.AddMonToCephBackupStorageResult value = res.getResult(org.zstack.sdk.AddMonToCephBackupStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddMonToCephBackupStorageResult() : value; 
 
         return ret;
     }

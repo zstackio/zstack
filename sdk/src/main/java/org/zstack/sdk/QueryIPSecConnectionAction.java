@@ -10,7 +10,7 @@ public class QueryIPSecConnectionAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryIPSecConnectionResult value;
+        public org.zstack.sdk.QueryIPSecConnectionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryIPSecConnectionAction extends QueryAction {
             return ret;
         }
         
-        QueryIPSecConnectionResult value = res.getResult(QueryIPSecConnectionResult.class);
-        ret.value = value == null ? new QueryIPSecConnectionResult() : value; 
+        org.zstack.sdk.QueryIPSecConnectionResult value = res.getResult(org.zstack.sdk.QueryIPSecConnectionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryIPSecConnectionResult() : value; 
 
         return ret;
     }

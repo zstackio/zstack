@@ -10,7 +10,7 @@ public class UpdateVipAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateVipResult value;
+        public org.zstack.sdk.UpdateVipResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class UpdateVipAction extends AbstractAction {
             return ret;
         }
         
-        UpdateVipResult value = res.getResult(UpdateVipResult.class);
-        ret.value = value == null ? new UpdateVipResult() : value; 
+        org.zstack.sdk.UpdateVipResult value = res.getResult(org.zstack.sdk.UpdateVipResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateVipResult() : value; 
 
         return ret;
     }

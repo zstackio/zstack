@@ -10,7 +10,7 @@ public class CreateVpnIkeConfigAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateVpnIkeConfigResult value;
+        public org.zstack.sdk.CreateVpnIkeConfigResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -80,8 +80,8 @@ public class CreateVpnIkeConfigAction extends AbstractAction {
             return ret;
         }
         
-        CreateVpnIkeConfigResult value = res.getResult(CreateVpnIkeConfigResult.class);
-        ret.value = value == null ? new CreateVpnIkeConfigResult() : value; 
+        org.zstack.sdk.CreateVpnIkeConfigResult value = res.getResult(org.zstack.sdk.CreateVpnIkeConfigResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateVpnIkeConfigResult() : value; 
 
         return ret;
     }

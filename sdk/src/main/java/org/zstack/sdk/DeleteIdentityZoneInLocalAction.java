@@ -10,7 +10,7 @@ public class DeleteIdentityZoneInLocalAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteIdentityZoneInLocalResult value;
+        public org.zstack.sdk.DeleteIdentityZoneInLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteIdentityZoneInLocalAction extends AbstractAction {
             return ret;
         }
         
-        DeleteIdentityZoneInLocalResult value = res.getResult(DeleteIdentityZoneInLocalResult.class);
-        ret.value = value == null ? new DeleteIdentityZoneInLocalResult() : value; 
+        org.zstack.sdk.DeleteIdentityZoneInLocalResult value = res.getResult(org.zstack.sdk.DeleteIdentityZoneInLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteIdentityZoneInLocalResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class DeleteVniRangeAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteVniRangeResult value;
+        public org.zstack.sdk.DeleteVniRangeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteVniRangeAction extends AbstractAction {
             return ret;
         }
         
-        DeleteVniRangeResult value = res.getResult(DeleteVniRangeResult.class);
-        ret.value = value == null ? new DeleteVniRangeResult() : value; 
+        org.zstack.sdk.DeleteVniRangeResult value = res.getResult(org.zstack.sdk.DeleteVniRangeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteVniRangeResult() : value; 
 
         return ret;
     }

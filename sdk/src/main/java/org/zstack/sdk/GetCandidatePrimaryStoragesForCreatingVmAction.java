@@ -10,7 +10,7 @@ public class GetCandidatePrimaryStoragesForCreatingVmAction extends AbstractActi
 
     public static class Result {
         public ErrorCode error;
-        public GetCandidatePrimaryStoragesForCreatingVmResult value;
+        public org.zstack.sdk.GetCandidatePrimaryStoragesForCreatingVmResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -61,8 +61,8 @@ public class GetCandidatePrimaryStoragesForCreatingVmAction extends AbstractActi
             return ret;
         }
         
-        GetCandidatePrimaryStoragesForCreatingVmResult value = res.getResult(GetCandidatePrimaryStoragesForCreatingVmResult.class);
-        ret.value = value == null ? new GetCandidatePrimaryStoragesForCreatingVmResult() : value; 
+        org.zstack.sdk.GetCandidatePrimaryStoragesForCreatingVmResult value = res.getResult(org.zstack.sdk.GetCandidatePrimaryStoragesForCreatingVmResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetCandidatePrimaryStoragesForCreatingVmResult() : value; 
 
         return ret;
     }

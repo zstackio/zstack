@@ -10,7 +10,7 @@ public class ReconnectVirtualRouterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ReconnectVirtualRouterResult value;
+        public org.zstack.sdk.ReconnectVirtualRouterResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class ReconnectVirtualRouterAction extends AbstractAction {
             return ret;
         }
         
-        ReconnectVirtualRouterResult value = res.getResult(ReconnectVirtualRouterResult.class);
-        ret.value = value == null ? new ReconnectVirtualRouterResult() : value; 
+        org.zstack.sdk.ReconnectVirtualRouterResult value = res.getResult(org.zstack.sdk.ReconnectVirtualRouterResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ReconnectVirtualRouterResult() : value; 
 
         return ret;
     }

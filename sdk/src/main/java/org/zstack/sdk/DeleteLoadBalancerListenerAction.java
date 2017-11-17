@@ -10,7 +10,7 @@ public class DeleteLoadBalancerListenerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteLoadBalancerListenerResult value;
+        public org.zstack.sdk.DeleteLoadBalancerListenerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class DeleteLoadBalancerListenerAction extends AbstractAction {
             return ret;
         }
         
-        DeleteLoadBalancerListenerResult value = res.getResult(DeleteLoadBalancerListenerResult.class);
-        ret.value = value == null ? new DeleteLoadBalancerListenerResult() : value; 
+        org.zstack.sdk.DeleteLoadBalancerListenerResult value = res.getResult(org.zstack.sdk.DeleteLoadBalancerListenerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteLoadBalancerListenerResult() : value; 
 
         return ret;
     }

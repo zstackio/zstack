@@ -10,7 +10,7 @@ public class QueryNotificationSubscriptionAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryNotificationSubscriptionResult value;
+        public org.zstack.sdk.QueryNotificationSubscriptionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryNotificationSubscriptionAction extends QueryAction {
             return ret;
         }
         
-        QueryNotificationSubscriptionResult value = res.getResult(QueryNotificationSubscriptionResult.class);
-        ret.value = value == null ? new QueryNotificationSubscriptionResult() : value; 
+        org.zstack.sdk.QueryNotificationSubscriptionResult value = res.getResult(org.zstack.sdk.QueryNotificationSubscriptionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryNotificationSubscriptionResult() : value; 
 
         return ret;
     }

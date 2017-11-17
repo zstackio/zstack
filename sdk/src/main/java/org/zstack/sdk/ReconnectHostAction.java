@@ -10,7 +10,7 @@ public class ReconnectHostAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ReconnectHostResult value;
+        public org.zstack.sdk.ReconnectHostResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class ReconnectHostAction extends AbstractAction {
             return ret;
         }
         
-        ReconnectHostResult value = res.getResult(ReconnectHostResult.class);
-        ret.value = value == null ? new ReconnectHostResult() : value; 
+        org.zstack.sdk.ReconnectHostResult value = res.getResult(org.zstack.sdk.ReconnectHostResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ReconnectHostResult() : value; 
 
         return ret;
     }

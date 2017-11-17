@@ -10,7 +10,7 @@ public class DeleteCephPrimaryStoragePoolAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteCephPrimaryStoragePoolResult value;
+        public org.zstack.sdk.DeleteCephPrimaryStoragePoolResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class DeleteCephPrimaryStoragePoolAction extends AbstractAction {
             return ret;
         }
         
-        DeleteCephPrimaryStoragePoolResult value = res.getResult(DeleteCephPrimaryStoragePoolResult.class);
-        ret.value = value == null ? new DeleteCephPrimaryStoragePoolResult() : value; 
+        org.zstack.sdk.DeleteCephPrimaryStoragePoolResult value = res.getResult(org.zstack.sdk.DeleteCephPrimaryStoragePoolResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteCephPrimaryStoragePoolResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class AddDnsToL3NetworkAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AddDnsToL3NetworkResult value;
+        public org.zstack.sdk.AddDnsToL3NetworkResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class AddDnsToL3NetworkAction extends AbstractAction {
             return ret;
         }
         
-        AddDnsToL3NetworkResult value = res.getResult(AddDnsToL3NetworkResult.class);
-        ret.value = value == null ? new AddDnsToL3NetworkResult() : value; 
+        org.zstack.sdk.AddDnsToL3NetworkResult value = res.getResult(org.zstack.sdk.AddDnsToL3NetworkResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddDnsToL3NetworkResult() : value; 
 
         return ret;
     }

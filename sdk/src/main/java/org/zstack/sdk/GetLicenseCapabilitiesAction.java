@@ -10,7 +10,7 @@ public class GetLicenseCapabilitiesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetLicenseCapabilitiesResult value;
+        public org.zstack.sdk.GetLicenseCapabilitiesResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -40,8 +40,8 @@ public class GetLicenseCapabilitiesAction extends AbstractAction {
             return ret;
         }
         
-        GetLicenseCapabilitiesResult value = res.getResult(GetLicenseCapabilitiesResult.class);
-        ret.value = value == null ? new GetLicenseCapabilitiesResult() : value; 
+        org.zstack.sdk.GetLicenseCapabilitiesResult value = res.getResult(org.zstack.sdk.GetLicenseCapabilitiesResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetLicenseCapabilitiesResult() : value; 
 
         return ret;
     }

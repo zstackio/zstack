@@ -10,7 +10,7 @@ public class AttachPrimaryStorageToClusterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AttachPrimaryStorageToClusterResult value;
+        public org.zstack.sdk.AttachPrimaryStorageToClusterResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class AttachPrimaryStorageToClusterAction extends AbstractAction {
             return ret;
         }
         
-        AttachPrimaryStorageToClusterResult value = res.getResult(AttachPrimaryStorageToClusterResult.class);
-        ret.value = value == null ? new AttachPrimaryStorageToClusterResult() : value; 
+        org.zstack.sdk.AttachPrimaryStorageToClusterResult value = res.getResult(org.zstack.sdk.AttachPrimaryStorageToClusterResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AttachPrimaryStorageToClusterResult() : value; 
 
         return ret;
     }

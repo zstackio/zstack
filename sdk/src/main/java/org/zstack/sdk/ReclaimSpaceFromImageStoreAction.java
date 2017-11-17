@@ -10,7 +10,7 @@ public class ReclaimSpaceFromImageStoreAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ReclaimSpaceFromImageStoreResult value;
+        public org.zstack.sdk.ReclaimSpaceFromImageStoreResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class ReclaimSpaceFromImageStoreAction extends AbstractAction {
             return ret;
         }
         
-        ReclaimSpaceFromImageStoreResult value = res.getResult(ReclaimSpaceFromImageStoreResult.class);
-        ret.value = value == null ? new ReclaimSpaceFromImageStoreResult() : value; 
+        org.zstack.sdk.ReclaimSpaceFromImageStoreResult value = res.getResult(org.zstack.sdk.ReclaimSpaceFromImageStoreResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ReclaimSpaceFromImageStoreResult() : value; 
 
         return ret;
     }

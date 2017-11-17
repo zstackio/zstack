@@ -10,7 +10,7 @@ public class GetInterdependentL3NetworksImagesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetInterdependentL3NetworkImageResult value;
+        public org.zstack.sdk.GetInterdependentL3NetworkImageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -49,8 +49,8 @@ public class GetInterdependentL3NetworksImagesAction extends AbstractAction {
             return ret;
         }
         
-        GetInterdependentL3NetworkImageResult value = res.getResult(GetInterdependentL3NetworkImageResult.class);
-        ret.value = value == null ? new GetInterdependentL3NetworkImageResult() : value; 
+        org.zstack.sdk.GetInterdependentL3NetworkImageResult value = res.getResult(org.zstack.sdk.GetInterdependentL3NetworkImageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetInterdependentL3NetworkImageResult() : value; 
 
         return ret;
     }

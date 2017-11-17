@@ -10,7 +10,7 @@ public class CreateUserTagAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateUserTagResult value;
+        public org.zstack.sdk.CreateUserTagResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class CreateUserTagAction extends AbstractAction {
             return ret;
         }
         
-        CreateUserTagResult value = res.getResult(CreateUserTagResult.class);
-        ret.value = value == null ? new CreateUserTagResult() : value; 
+        org.zstack.sdk.CreateUserTagResult value = res.getResult(org.zstack.sdk.CreateUserTagResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateUserTagResult() : value; 
 
         return ret;
     }

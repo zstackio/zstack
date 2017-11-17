@@ -10,7 +10,7 @@ public class CreateEcsImageFromEcsSnapshotAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateEcsImageFromEcsSnapshotResult value;
+        public org.zstack.sdk.CreateEcsImageFromEcsSnapshotResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +56,8 @@ public class CreateEcsImageFromEcsSnapshotAction extends AbstractAction {
             return ret;
         }
         
-        CreateEcsImageFromEcsSnapshotResult value = res.getResult(CreateEcsImageFromEcsSnapshotResult.class);
-        ret.value = value == null ? new CreateEcsImageFromEcsSnapshotResult() : value; 
+        org.zstack.sdk.CreateEcsImageFromEcsSnapshotResult value = res.getResult(org.zstack.sdk.CreateEcsImageFromEcsSnapshotResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateEcsImageFromEcsSnapshotResult() : value; 
 
         return ret;
     }

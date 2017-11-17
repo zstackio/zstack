@@ -10,7 +10,7 @@ public class UpdateIpRangeAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateIpRangeResult value;
+        public org.zstack.sdk.UpdateIpRangeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class UpdateIpRangeAction extends AbstractAction {
             return ret;
         }
         
-        UpdateIpRangeResult value = res.getResult(UpdateIpRangeResult.class);
-        ret.value = value == null ? new UpdateIpRangeResult() : value; 
+        org.zstack.sdk.UpdateIpRangeResult value = res.getResult(org.zstack.sdk.UpdateIpRangeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateIpRangeResult() : value; 
 
         return ret;
     }

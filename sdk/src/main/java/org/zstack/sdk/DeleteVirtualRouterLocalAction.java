@@ -10,7 +10,7 @@ public class DeleteVirtualRouterLocalAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteVirtualRouterLocalResult value;
+        public org.zstack.sdk.DeleteVirtualRouterLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteVirtualRouterLocalAction extends AbstractAction {
             return ret;
         }
         
-        DeleteVirtualRouterLocalResult value = res.getResult(DeleteVirtualRouterLocalResult.class);
-        ret.value = value == null ? new DeleteVirtualRouterLocalResult() : value; 
+        org.zstack.sdk.DeleteVirtualRouterLocalResult value = res.getResult(org.zstack.sdk.DeleteVirtualRouterLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteVirtualRouterLocalResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class SetVmMonitorNumberAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SetVmMonitorNumberResult value;
+        public org.zstack.sdk.SetVmMonitorNumberResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class SetVmMonitorNumberAction extends AbstractAction {
             return ret;
         }
         
-        SetVmMonitorNumberResult value = res.getResult(SetVmMonitorNumberResult.class);
-        ret.value = value == null ? new SetVmMonitorNumberResult() : value; 
+        org.zstack.sdk.SetVmMonitorNumberResult value = res.getResult(org.zstack.sdk.SetVmMonitorNumberResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SetVmMonitorNumberResult() : value; 
 
         return ret;
     }

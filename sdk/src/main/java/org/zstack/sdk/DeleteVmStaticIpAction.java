@@ -10,7 +10,7 @@ public class DeleteVmStaticIpAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteVmStaticIpResult value;
+        public org.zstack.sdk.DeleteVmStaticIpResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class DeleteVmStaticIpAction extends AbstractAction {
             return ret;
         }
         
-        DeleteVmStaticIpResult value = res.getResult(DeleteVmStaticIpResult.class);
-        ret.value = value == null ? new DeleteVmStaticIpResult() : value; 
+        org.zstack.sdk.DeleteVmStaticIpResult value = res.getResult(org.zstack.sdk.DeleteVmStaticIpResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteVmStaticIpResult() : value; 
 
         return ret;
     }

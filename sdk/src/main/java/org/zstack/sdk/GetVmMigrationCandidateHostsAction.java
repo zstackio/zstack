@@ -10,7 +10,7 @@ public class GetVmMigrationCandidateHostsAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetVmMigrationCandidateHostsResult value;
+        public org.zstack.sdk.GetVmMigrationCandidateHostsResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -43,8 +43,8 @@ public class GetVmMigrationCandidateHostsAction extends AbstractAction {
             return ret;
         }
         
-        GetVmMigrationCandidateHostsResult value = res.getResult(GetVmMigrationCandidateHostsResult.class);
-        ret.value = value == null ? new GetVmMigrationCandidateHostsResult() : value; 
+        org.zstack.sdk.GetVmMigrationCandidateHostsResult value = res.getResult(org.zstack.sdk.GetVmMigrationCandidateHostsResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetVmMigrationCandidateHostsResult() : value; 
 
         return ret;
     }

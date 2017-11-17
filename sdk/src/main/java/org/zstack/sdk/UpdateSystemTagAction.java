@@ -10,7 +10,7 @@ public class UpdateSystemTagAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateSystemTagResult value;
+        public org.zstack.sdk.UpdateSystemTagResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class UpdateSystemTagAction extends AbstractAction {
             return ret;
         }
         
-        UpdateSystemTagResult value = res.getResult(UpdateSystemTagResult.class);
-        ret.value = value == null ? new UpdateSystemTagResult() : value; 
+        org.zstack.sdk.UpdateSystemTagResult value = res.getResult(org.zstack.sdk.UpdateSystemTagResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateSystemTagResult() : value; 
 
         return ret;
     }

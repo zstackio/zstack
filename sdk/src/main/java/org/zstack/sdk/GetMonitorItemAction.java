@@ -10,7 +10,7 @@ public class GetMonitorItemAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetMonitorItemResult value;
+        public org.zstack.sdk.GetMonitorItemResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -43,8 +43,8 @@ public class GetMonitorItemAction extends AbstractAction {
             return ret;
         }
         
-        GetMonitorItemResult value = res.getResult(GetMonitorItemResult.class);
-        ret.value = value == null ? new GetMonitorItemResult() : value; 
+        org.zstack.sdk.GetMonitorItemResult value = res.getResult(org.zstack.sdk.GetMonitorItemResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetMonitorItemResult() : value; 
 
         return ret;
     }

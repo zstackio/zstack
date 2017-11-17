@@ -10,7 +10,7 @@ public class QueryLdapServerAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryLdapServerResult value;
+        public org.zstack.sdk.QueryLdapServerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryLdapServerAction extends QueryAction {
             return ret;
         }
         
-        QueryLdapServerResult value = res.getResult(QueryLdapServerResult.class);
-        ret.value = value == null ? new QueryLdapServerResult() : value; 
+        org.zstack.sdk.QueryLdapServerResult value = res.getResult(org.zstack.sdk.QueryLdapServerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryLdapServerResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class PowerOffBaremetalHostAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public PowerOffBaremetalHostResult value;
+        public org.zstack.sdk.PowerOffBaremetalHostResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class PowerOffBaremetalHostAction extends AbstractAction {
             return ret;
         }
         
-        PowerOffBaremetalHostResult value = res.getResult(PowerOffBaremetalHostResult.class);
-        ret.value = value == null ? new PowerOffBaremetalHostResult() : value; 
+        org.zstack.sdk.PowerOffBaremetalHostResult value = res.getResult(org.zstack.sdk.PowerOffBaremetalHostResult.class);
+        ret.value = value == null ? new org.zstack.sdk.PowerOffBaremetalHostResult() : value; 
 
         return ret;
     }

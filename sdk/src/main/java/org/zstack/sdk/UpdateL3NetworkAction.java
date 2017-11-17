@@ -10,7 +10,7 @@ public class UpdateL3NetworkAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateL3NetworkResult value;
+        public org.zstack.sdk.UpdateL3NetworkResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -59,8 +59,8 @@ public class UpdateL3NetworkAction extends AbstractAction {
             return ret;
         }
         
-        UpdateL3NetworkResult value = res.getResult(UpdateL3NetworkResult.class);
-        ret.value = value == null ? new UpdateL3NetworkResult() : value; 
+        org.zstack.sdk.UpdateL3NetworkResult value = res.getResult(org.zstack.sdk.UpdateL3NetworkResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateL3NetworkResult() : value; 
 
         return ret;
     }

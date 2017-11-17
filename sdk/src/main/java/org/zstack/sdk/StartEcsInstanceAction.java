@@ -10,7 +10,7 @@ public class StartEcsInstanceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public StartEcsInstanceResult value;
+        public org.zstack.sdk.StartEcsInstanceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class StartEcsInstanceAction extends AbstractAction {
             return ret;
         }
         
-        StartEcsInstanceResult value = res.getResult(StartEcsInstanceResult.class);
-        ret.value = value == null ? new StartEcsInstanceResult() : value; 
+        org.zstack.sdk.StartEcsInstanceResult value = res.getResult(org.zstack.sdk.StartEcsInstanceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.StartEcsInstanceResult() : value; 
 
         return ret;
     }

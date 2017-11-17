@@ -10,7 +10,7 @@ public class CreatePciDeviceOfferingAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreatePciDeviceOfferingResult value;
+        public org.zstack.sdk.CreatePciDeviceOfferingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -68,8 +68,8 @@ public class CreatePciDeviceOfferingAction extends AbstractAction {
             return ret;
         }
         
-        CreatePciDeviceOfferingResult value = res.getResult(CreatePciDeviceOfferingResult.class);
-        ret.value = value == null ? new CreatePciDeviceOfferingResult() : value; 
+        org.zstack.sdk.CreatePciDeviceOfferingResult value = res.getResult(org.zstack.sdk.CreatePciDeviceOfferingResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreatePciDeviceOfferingResult() : value; 
 
         return ret;
     }

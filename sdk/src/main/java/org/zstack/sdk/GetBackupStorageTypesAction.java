@@ -10,7 +10,7 @@ public class GetBackupStorageTypesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetBackupStorageTypesResult value;
+        public org.zstack.sdk.GetBackupStorageTypesResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -40,8 +40,8 @@ public class GetBackupStorageTypesAction extends AbstractAction {
             return ret;
         }
         
-        GetBackupStorageTypesResult value = res.getResult(GetBackupStorageTypesResult.class);
-        ret.value = value == null ? new GetBackupStorageTypesResult() : value; 
+        org.zstack.sdk.GetBackupStorageTypesResult value = res.getResult(org.zstack.sdk.GetBackupStorageTypesResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetBackupStorageTypesResult() : value; 
 
         return ret;
     }

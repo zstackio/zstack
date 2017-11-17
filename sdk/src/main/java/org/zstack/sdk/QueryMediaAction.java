@@ -10,7 +10,7 @@ public class QueryMediaAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryMediaResult value;
+        public org.zstack.sdk.QueryMediaResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryMediaAction extends QueryAction {
             return ret;
         }
         
-        QueryMediaResult value = res.getResult(QueryMediaResult.class);
-        ret.value = value == null ? new QueryMediaResult() : value; 
+        org.zstack.sdk.QueryMediaResult value = res.getResult(org.zstack.sdk.QueryMediaResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryMediaResult() : value; 
 
         return ret;
     }

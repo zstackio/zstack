@@ -10,7 +10,7 @@ public class QueryQuotaAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryQuotaResult value;
+        public org.zstack.sdk.QueryQuotaResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryQuotaAction extends QueryAction {
             return ret;
         }
         
-        QueryQuotaResult value = res.getResult(QueryQuotaResult.class);
-        ret.value = value == null ? new QueryQuotaResult() : value; 
+        org.zstack.sdk.QueryQuotaResult value = res.getResult(org.zstack.sdk.QueryQuotaResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryQuotaResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class QueryImageStoreBackupStorageAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryImageStoreBackupStorageResult value;
+        public org.zstack.sdk.QueryImageStoreBackupStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryImageStoreBackupStorageAction extends QueryAction {
             return ret;
         }
         
-        QueryImageStoreBackupStorageResult value = res.getResult(QueryImageStoreBackupStorageResult.class);
-        ret.value = value == null ? new QueryImageStoreBackupStorageResult() : value; 
+        org.zstack.sdk.QueryImageStoreBackupStorageResult value = res.getResult(org.zstack.sdk.QueryImageStoreBackupStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryImageStoreBackupStorageResult() : value; 
 
         return ret;
     }

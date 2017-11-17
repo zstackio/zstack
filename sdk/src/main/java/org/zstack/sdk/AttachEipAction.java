@@ -10,7 +10,7 @@ public class AttachEipAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AttachEipResult value;
+        public org.zstack.sdk.AttachEipResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class AttachEipAction extends AbstractAction {
             return ret;
         }
         
-        AttachEipResult value = res.getResult(AttachEipResult.class);
-        ret.value = value == null ? new AttachEipResult() : value; 
+        org.zstack.sdk.AttachEipResult value = res.getResult(org.zstack.sdk.AttachEipResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AttachEipResult() : value; 
 
         return ret;
     }

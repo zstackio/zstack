@@ -10,7 +10,7 @@ public class QueryVCenterPrimaryStorageAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryVCenterPrimaryStorageResult value;
+        public org.zstack.sdk.QueryVCenterPrimaryStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryVCenterPrimaryStorageAction extends QueryAction {
             return ret;
         }
         
-        QueryVCenterPrimaryStorageResult value = res.getResult(QueryVCenterPrimaryStorageResult.class);
-        ret.value = value == null ? new QueryVCenterPrimaryStorageResult() : value; 
+        org.zstack.sdk.QueryVCenterPrimaryStorageResult value = res.getResult(org.zstack.sdk.QueryVCenterPrimaryStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryVCenterPrimaryStorageResult() : value; 
 
         return ret;
     }

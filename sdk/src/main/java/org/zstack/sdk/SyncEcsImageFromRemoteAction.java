@@ -10,7 +10,7 @@ public class SyncEcsImageFromRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SyncEcsImageFromRemoteResult value;
+        public org.zstack.sdk.SyncEcsImageFromRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class SyncEcsImageFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        SyncEcsImageFromRemoteResult value = res.getResult(SyncEcsImageFromRemoteResult.class);
-        ret.value = value == null ? new SyncEcsImageFromRemoteResult() : value; 
+        org.zstack.sdk.SyncEcsImageFromRemoteResult value = res.getResult(org.zstack.sdk.SyncEcsImageFromRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SyncEcsImageFromRemoteResult() : value; 
 
         return ret;
     }

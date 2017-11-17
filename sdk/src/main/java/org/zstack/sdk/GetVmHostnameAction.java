@@ -10,7 +10,7 @@ public class GetVmHostnameAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetVmHostnameResult value;
+        public org.zstack.sdk.GetVmHostnameResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -43,8 +43,8 @@ public class GetVmHostnameAction extends AbstractAction {
             return ret;
         }
         
-        GetVmHostnameResult value = res.getResult(GetVmHostnameResult.class);
-        ret.value = value == null ? new GetVmHostnameResult() : value; 
+        org.zstack.sdk.GetVmHostnameResult value = res.getResult(org.zstack.sdk.GetVmHostnameResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetVmHostnameResult() : value; 
 
         return ret;
     }

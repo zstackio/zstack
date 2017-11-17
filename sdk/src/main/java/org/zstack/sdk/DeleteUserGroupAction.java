@@ -10,7 +10,7 @@ public class DeleteUserGroupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteUserGroupResult value;
+        public org.zstack.sdk.DeleteUserGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteUserGroupAction extends AbstractAction {
             return ret;
         }
         
-        DeleteUserGroupResult value = res.getResult(DeleteUserGroupResult.class);
-        ret.value = value == null ? new DeleteUserGroupResult() : value; 
+        org.zstack.sdk.DeleteUserGroupResult value = res.getResult(org.zstack.sdk.DeleteUserGroupResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteUserGroupResult() : value; 
 
         return ret;
     }

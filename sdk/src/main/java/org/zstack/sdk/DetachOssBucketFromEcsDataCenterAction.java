@@ -10,7 +10,7 @@ public class DetachOssBucketFromEcsDataCenterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DetachOssBucketFromEcsDataCenterResult value;
+        public org.zstack.sdk.DetachOssBucketFromEcsDataCenterResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class DetachOssBucketFromEcsDataCenterAction extends AbstractAction {
             return ret;
         }
         
-        DetachOssBucketFromEcsDataCenterResult value = res.getResult(DetachOssBucketFromEcsDataCenterResult.class);
-        ret.value = value == null ? new DetachOssBucketFromEcsDataCenterResult() : value; 
+        org.zstack.sdk.DetachOssBucketFromEcsDataCenterResult value = res.getResult(org.zstack.sdk.DetachOssBucketFromEcsDataCenterResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DetachOssBucketFromEcsDataCenterResult() : value; 
 
         return ret;
     }

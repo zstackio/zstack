@@ -10,7 +10,7 @@ public class ChangeImageStateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ChangeImageStateResult value;
+        public org.zstack.sdk.ChangeImageStateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class ChangeImageStateAction extends AbstractAction {
             return ret;
         }
         
-        ChangeImageStateResult value = res.getResult(ChangeImageStateResult.class);
-        ret.value = value == null ? new ChangeImageStateResult() : value; 
+        org.zstack.sdk.ChangeImageStateResult value = res.getResult(org.zstack.sdk.ChangeImageStateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ChangeImageStateResult() : value; 
 
         return ret;
     }

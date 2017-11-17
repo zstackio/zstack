@@ -10,7 +10,7 @@ public class GetNetworkServiceTypesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetNetworkServiceTypesResult value;
+        public org.zstack.sdk.GetNetworkServiceTypesResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -40,8 +40,8 @@ public class GetNetworkServiceTypesAction extends AbstractAction {
             return ret;
         }
         
-        GetNetworkServiceTypesResult value = res.getResult(GetNetworkServiceTypesResult.class);
-        ret.value = value == null ? new GetNetworkServiceTypesResult() : value; 
+        org.zstack.sdk.GetNetworkServiceTypesResult value = res.getResult(org.zstack.sdk.GetNetworkServiceTypesResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetNetworkServiceTypesResult() : value; 
 
         return ret;
     }

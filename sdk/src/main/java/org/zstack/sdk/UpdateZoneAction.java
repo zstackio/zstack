@@ -10,7 +10,7 @@ public class UpdateZoneAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateZoneResult value;
+        public org.zstack.sdk.UpdateZoneResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class UpdateZoneAction extends AbstractAction {
             return ret;
         }
         
-        UpdateZoneResult value = res.getResult(UpdateZoneResult.class);
-        ret.value = value == null ? new UpdateZoneResult() : value; 
+        org.zstack.sdk.UpdateZoneResult value = res.getResult(org.zstack.sdk.UpdateZoneResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateZoneResult() : value; 
 
         return ret;
     }

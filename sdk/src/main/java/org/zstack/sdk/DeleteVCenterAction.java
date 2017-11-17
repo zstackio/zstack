@@ -10,7 +10,7 @@ public class DeleteVCenterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteVCenterResult value;
+        public org.zstack.sdk.DeleteVCenterResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteVCenterAction extends AbstractAction {
             return ret;
         }
         
-        DeleteVCenterResult value = res.getResult(DeleteVCenterResult.class);
-        ret.value = value == null ? new DeleteVCenterResult() : value; 
+        org.zstack.sdk.DeleteVCenterResult value = res.getResult(org.zstack.sdk.DeleteVCenterResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteVCenterResult() : value; 
 
         return ret;
     }

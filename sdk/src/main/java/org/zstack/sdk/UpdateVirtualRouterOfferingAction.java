@@ -10,7 +10,7 @@ public class UpdateVirtualRouterOfferingAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateInstanceOfferingResult value;
+        public org.zstack.sdk.UpdateInstanceOfferingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -59,8 +59,8 @@ public class UpdateVirtualRouterOfferingAction extends AbstractAction {
             return ret;
         }
         
-        UpdateInstanceOfferingResult value = res.getResult(UpdateInstanceOfferingResult.class);
-        ret.value = value == null ? new UpdateInstanceOfferingResult() : value; 
+        org.zstack.sdk.UpdateInstanceOfferingResult value = res.getResult(org.zstack.sdk.UpdateInstanceOfferingResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateInstanceOfferingResult() : value; 
 
         return ret;
     }

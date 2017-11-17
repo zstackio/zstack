@@ -10,7 +10,7 @@ public class ChangeIPSecConnectionStateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ChangeIPSecConnectionStateResult value;
+        public org.zstack.sdk.ChangeIPSecConnectionStateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class ChangeIPSecConnectionStateAction extends AbstractAction {
             return ret;
         }
         
-        ChangeIPSecConnectionStateResult value = res.getResult(ChangeIPSecConnectionStateResult.class);
-        ret.value = value == null ? new ChangeIPSecConnectionStateResult() : value; 
+        org.zstack.sdk.ChangeIPSecConnectionStateResult value = res.getResult(org.zstack.sdk.ChangeIPSecConnectionStateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ChangeIPSecConnectionStateResult() : value; 
 
         return ret;
     }

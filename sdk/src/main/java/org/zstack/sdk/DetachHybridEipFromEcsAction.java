@@ -10,7 +10,7 @@ public class DetachHybridEipFromEcsAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DetachHybridEipFromEcsResult value;
+        public org.zstack.sdk.DetachHybridEipFromEcsResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DetachHybridEipFromEcsAction extends AbstractAction {
             return ret;
         }
         
-        DetachHybridEipFromEcsResult value = res.getResult(DetachHybridEipFromEcsResult.class);
-        ret.value = value == null ? new DetachHybridEipFromEcsResult() : value; 
+        org.zstack.sdk.DetachHybridEipFromEcsResult value = res.getResult(org.zstack.sdk.DetachHybridEipFromEcsResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DetachHybridEipFromEcsResult() : value; 
 
         return ret;
     }

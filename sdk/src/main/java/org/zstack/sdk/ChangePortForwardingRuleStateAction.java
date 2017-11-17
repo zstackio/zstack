@@ -10,7 +10,7 @@ public class ChangePortForwardingRuleStateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ChangePortForwardingRuleStateResult value;
+        public org.zstack.sdk.ChangePortForwardingRuleStateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class ChangePortForwardingRuleStateAction extends AbstractAction {
             return ret;
         }
         
-        ChangePortForwardingRuleStateResult value = res.getResult(ChangePortForwardingRuleStateResult.class);
-        ret.value = value == null ? new ChangePortForwardingRuleStateResult() : value; 
+        org.zstack.sdk.ChangePortForwardingRuleStateResult value = res.getResult(org.zstack.sdk.ChangePortForwardingRuleStateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ChangePortForwardingRuleStateResult() : value; 
 
         return ret;
     }

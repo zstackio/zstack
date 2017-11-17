@@ -10,7 +10,7 @@ public class QueryDataCenterFromLocalAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryDataCenterFromLocalResult value;
+        public org.zstack.sdk.QueryDataCenterFromLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryDataCenterFromLocalAction extends QueryAction {
             return ret;
         }
         
-        QueryDataCenterFromLocalResult value = res.getResult(QueryDataCenterFromLocalResult.class);
-        ret.value = value == null ? new QueryDataCenterFromLocalResult() : value; 
+        org.zstack.sdk.QueryDataCenterFromLocalResult value = res.getResult(org.zstack.sdk.QueryDataCenterFromLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryDataCenterFromLocalResult() : value; 
 
         return ret;
     }

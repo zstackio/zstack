@@ -10,7 +10,7 @@ public class QueryMonitorTriggerAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryMonitorTriggerResult value;
+        public org.zstack.sdk.QueryMonitorTriggerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryMonitorTriggerAction extends QueryAction {
             return ret;
         }
         
-        QueryMonitorTriggerResult value = res.getResult(QueryMonitorTriggerResult.class);
-        ret.value = value == null ? new QueryMonitorTriggerResult() : value; 
+        org.zstack.sdk.QueryMonitorTriggerResult value = res.getResult(org.zstack.sdk.QueryMonitorTriggerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryMonitorTriggerResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class QueryPortForwardingRuleAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryPortForwardingRuleResult value;
+        public org.zstack.sdk.QueryPortForwardingRuleResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryPortForwardingRuleAction extends QueryAction {
             return ret;
         }
         
-        QueryPortForwardingRuleResult value = res.getResult(QueryPortForwardingRuleResult.class);
-        ret.value = value == null ? new QueryPortForwardingRuleResult() : value; 
+        org.zstack.sdk.QueryPortForwardingRuleResult value = res.getResult(org.zstack.sdk.QueryPortForwardingRuleResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryPortForwardingRuleResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class UpdateMonitorTriggerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateMonitorTriggerResult value;
+        public org.zstack.sdk.UpdateMonitorTriggerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -59,8 +59,8 @@ public class UpdateMonitorTriggerAction extends AbstractAction {
             return ret;
         }
         
-        UpdateMonitorTriggerResult value = res.getResult(UpdateMonitorTriggerResult.class);
-        ret.value = value == null ? new UpdateMonitorTriggerResult() : value; 
+        org.zstack.sdk.UpdateMonitorTriggerResult value = res.getResult(org.zstack.sdk.UpdateMonitorTriggerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateMonitorTriggerResult() : value; 
 
         return ret;
     }

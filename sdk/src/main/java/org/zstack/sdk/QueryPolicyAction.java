@@ -10,7 +10,7 @@ public class QueryPolicyAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryPolicyResult value;
+        public org.zstack.sdk.QueryPolicyResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryPolicyAction extends QueryAction {
             return ret;
         }
         
-        QueryPolicyResult value = res.getResult(QueryPolicyResult.class);
-        ret.value = value == null ? new QueryPolicyResult() : value; 
+        org.zstack.sdk.QueryPolicyResult value = res.getResult(org.zstack.sdk.QueryPolicyResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryPolicyResult() : value; 
 
         return ret;
     }

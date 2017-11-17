@@ -10,7 +10,7 @@ public class DeleteImageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteImageResult value;
+        public org.zstack.sdk.DeleteImageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class DeleteImageAction extends AbstractAction {
             return ret;
         }
         
-        DeleteImageResult value = res.getResult(DeleteImageResult.class);
-        ret.value = value == null ? new DeleteImageResult() : value; 
+        org.zstack.sdk.DeleteImageResult value = res.getResult(org.zstack.sdk.DeleteImageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteImageResult() : value; 
 
         return ret;
     }

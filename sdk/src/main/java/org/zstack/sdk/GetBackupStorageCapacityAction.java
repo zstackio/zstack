@@ -10,7 +10,7 @@ public class GetBackupStorageCapacityAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetBackupStorageCapacityResult value;
+        public org.zstack.sdk.GetBackupStorageCapacityResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -49,8 +49,8 @@ public class GetBackupStorageCapacityAction extends AbstractAction {
             return ret;
         }
         
-        GetBackupStorageCapacityResult value = res.getResult(GetBackupStorageCapacityResult.class);
-        ret.value = value == null ? new GetBackupStorageCapacityResult() : value; 
+        org.zstack.sdk.GetBackupStorageCapacityResult value = res.getResult(org.zstack.sdk.GetBackupStorageCapacityResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetBackupStorageCapacityResult() : value; 
 
         return ret;
     }

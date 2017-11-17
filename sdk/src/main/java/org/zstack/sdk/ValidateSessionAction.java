@@ -10,7 +10,7 @@ public class ValidateSessionAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ValidateSessionResult value;
+        public org.zstack.sdk.ValidateSessionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -40,8 +40,8 @@ public class ValidateSessionAction extends AbstractAction {
             return ret;
         }
         
-        ValidateSessionResult value = res.getResult(ValidateSessionResult.class);
-        ret.value = value == null ? new ValidateSessionResult() : value; 
+        org.zstack.sdk.ValidateSessionResult value = res.getResult(org.zstack.sdk.ValidateSessionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ValidateSessionResult() : value; 
 
         return ret;
     }

@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class FusionstorPrimaryStorageInventory extends PrimaryStorageInventory {
+public class FusionstorPrimaryStorageInventory extends org.zstack.sdk.PrimaryStorageInventory {
 
     public java.util.List mons;
     public void setMons(java.util.List mons) {

@@ -10,7 +10,7 @@ public class GetHostIommuStateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetHostIommuStateResult value;
+        public org.zstack.sdk.GetHostIommuStateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -43,8 +43,8 @@ public class GetHostIommuStateAction extends AbstractAction {
             return ret;
         }
         
-        GetHostIommuStateResult value = res.getResult(GetHostIommuStateResult.class);
-        ret.value = value == null ? new GetHostIommuStateResult() : value; 
+        org.zstack.sdk.GetHostIommuStateResult value = res.getResult(org.zstack.sdk.GetHostIommuStateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetHostIommuStateResult() : value; 
 
         return ret;
     }

@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class SecurityGroupIngressRuleTO extends SecurityGroupRuleInventory {
+public class SecurityGroupIngressRuleTO extends org.zstack.sdk.SecurityGroupRuleInventory {
 
     public java.util.List friendCidrs;
     public void setFriendCidrs(java.util.List friendCidrs) {

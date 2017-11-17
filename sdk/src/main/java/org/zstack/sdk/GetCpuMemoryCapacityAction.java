@@ -10,7 +10,7 @@ public class GetCpuMemoryCapacityAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetCpuMemoryCapacityResult value;
+        public org.zstack.sdk.GetCpuMemoryCapacityResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -52,8 +52,8 @@ public class GetCpuMemoryCapacityAction extends AbstractAction {
             return ret;
         }
         
-        GetCpuMemoryCapacityResult value = res.getResult(GetCpuMemoryCapacityResult.class);
-        ret.value = value == null ? new GetCpuMemoryCapacityResult() : value; 
+        org.zstack.sdk.GetCpuMemoryCapacityResult value = res.getResult(org.zstack.sdk.GetCpuMemoryCapacityResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetCpuMemoryCapacityResult() : value; 
 
         return ret;
     }

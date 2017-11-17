@@ -10,7 +10,7 @@ public class DeleteTagAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteTagResult value;
+        public org.zstack.sdk.DeleteTagResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteTagAction extends AbstractAction {
             return ret;
         }
         
-        DeleteTagResult value = res.getResult(DeleteTagResult.class);
-        ret.value = value == null ? new DeleteTagResult() : value; 
+        org.zstack.sdk.DeleteTagResult value = res.getResult(org.zstack.sdk.DeleteTagResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteTagResult() : value; 
 
         return ret;
     }

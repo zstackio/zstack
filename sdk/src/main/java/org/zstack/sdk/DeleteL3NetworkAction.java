@@ -10,7 +10,7 @@ public class DeleteL3NetworkAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteL3NetworkResult value;
+        public org.zstack.sdk.DeleteL3NetworkResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteL3NetworkAction extends AbstractAction {
             return ret;
         }
         
-        DeleteL3NetworkResult value = res.getResult(DeleteL3NetworkResult.class);
-        ret.value = value == null ? new DeleteL3NetworkResult() : value; 
+        org.zstack.sdk.DeleteL3NetworkResult value = res.getResult(org.zstack.sdk.DeleteL3NetworkResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteL3NetworkResult() : value; 
 
         return ret;
     }

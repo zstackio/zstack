@@ -10,7 +10,7 @@ public class DetachIsoFromVmInstanceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DetachIsoFromVmInstanceResult value;
+        public org.zstack.sdk.DetachIsoFromVmInstanceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class DetachIsoFromVmInstanceAction extends AbstractAction {
             return ret;
         }
         
-        DetachIsoFromVmInstanceResult value = res.getResult(DetachIsoFromVmInstanceResult.class);
-        ret.value = value == null ? new DetachIsoFromVmInstanceResult() : value; 
+        org.zstack.sdk.DetachIsoFromVmInstanceResult value = res.getResult(org.zstack.sdk.DetachIsoFromVmInstanceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DetachIsoFromVmInstanceResult() : value; 
 
         return ret;
     }

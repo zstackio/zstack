@@ -10,7 +10,7 @@ public class ChangeEipStateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ChangeEipStateResult value;
+        public org.zstack.sdk.ChangeEipStateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class ChangeEipStateAction extends AbstractAction {
             return ret;
         }
         
-        ChangeEipStateResult value = res.getResult(ChangeEipStateResult.class);
-        ret.value = value == null ? new ChangeEipStateResult() : value; 
+        org.zstack.sdk.ChangeEipStateResult value = res.getResult(org.zstack.sdk.ChangeEipStateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ChangeEipStateResult() : value; 
 
         return ret;
     }

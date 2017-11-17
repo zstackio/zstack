@@ -10,7 +10,7 @@ public class UpdateNotificationsStatusAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateNotificationsStatusResult value;
+        public org.zstack.sdk.UpdateNotificationsStatusResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class UpdateNotificationsStatusAction extends AbstractAction {
             return ret;
         }
         
-        UpdateNotificationsStatusResult value = res.getResult(UpdateNotificationsStatusResult.class);
-        ret.value = value == null ? new UpdateNotificationsStatusResult() : value; 
+        org.zstack.sdk.UpdateNotificationsStatusResult value = res.getResult(org.zstack.sdk.UpdateNotificationsStatusResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateNotificationsStatusResult() : value; 
 
         return ret;
     }

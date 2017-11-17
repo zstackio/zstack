@@ -10,7 +10,7 @@ public class QueryEcsVpcFromLocalAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryEcsVpcFromLocalResult value;
+        public org.zstack.sdk.QueryEcsVpcFromLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryEcsVpcFromLocalAction extends QueryAction {
             return ret;
         }
         
-        QueryEcsVpcFromLocalResult value = res.getResult(QueryEcsVpcFromLocalResult.class);
-        ret.value = value == null ? new QueryEcsVpcFromLocalResult() : value; 
+        org.zstack.sdk.QueryEcsVpcFromLocalResult value = res.getResult(org.zstack.sdk.QueryEcsVpcFromLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryEcsVpcFromLocalResult() : value; 
 
         return ret;
     }

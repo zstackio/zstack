@@ -10,7 +10,7 @@ public class QueryLoadBalancerListenerAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryLoadBalancerListenerResult value;
+        public org.zstack.sdk.QueryLoadBalancerListenerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryLoadBalancerListenerAction extends QueryAction {
             return ret;
         }
         
-        QueryLoadBalancerListenerResult value = res.getResult(QueryLoadBalancerListenerResult.class);
-        ret.value = value == null ? new QueryLoadBalancerListenerResult() : value; 
+        org.zstack.sdk.QueryLoadBalancerListenerResult value = res.getResult(org.zstack.sdk.QueryLoadBalancerListenerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryLoadBalancerListenerResult() : value; 
 
         return ret;
     }

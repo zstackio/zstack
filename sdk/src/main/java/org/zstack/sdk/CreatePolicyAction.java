@@ -10,7 +10,7 @@ public class CreatePolicyAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreatePolicyResult value;
+        public org.zstack.sdk.CreatePolicyResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +56,8 @@ public class CreatePolicyAction extends AbstractAction {
             return ret;
         }
         
-        CreatePolicyResult value = res.getResult(CreatePolicyResult.class);
-        ret.value = value == null ? new CreatePolicyResult() : value; 
+        org.zstack.sdk.CreatePolicyResult value = res.getResult(org.zstack.sdk.CreatePolicyResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreatePolicyResult() : value; 
 
         return ret;
     }

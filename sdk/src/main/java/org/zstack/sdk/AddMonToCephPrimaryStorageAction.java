@@ -10,7 +10,7 @@ public class AddMonToCephPrimaryStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AddMonToCephPrimaryStorageResult value;
+        public org.zstack.sdk.AddMonToCephPrimaryStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class AddMonToCephPrimaryStorageAction extends AbstractAction {
             return ret;
         }
         
-        AddMonToCephPrimaryStorageResult value = res.getResult(AddMonToCephPrimaryStorageResult.class);
-        ret.value = value == null ? new AddMonToCephPrimaryStorageResult() : value; 
+        org.zstack.sdk.AddMonToCephPrimaryStorageResult value = res.getResult(org.zstack.sdk.AddMonToCephPrimaryStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddMonToCephPrimaryStorageResult() : value; 
 
         return ret;
     }

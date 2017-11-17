@@ -10,7 +10,7 @@ public class PrimaryStorageMigrateDataVolumeAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public PrimaryStorageMigrateDataVolumeResult value;
+        public org.zstack.sdk.PrimaryStorageMigrateDataVolumeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class PrimaryStorageMigrateDataVolumeAction extends AbstractAction {
             return ret;
         }
         
-        PrimaryStorageMigrateDataVolumeResult value = res.getResult(PrimaryStorageMigrateDataVolumeResult.class);
-        ret.value = value == null ? new PrimaryStorageMigrateDataVolumeResult() : value; 
+        org.zstack.sdk.PrimaryStorageMigrateDataVolumeResult value = res.getResult(org.zstack.sdk.PrimaryStorageMigrateDataVolumeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.PrimaryStorageMigrateDataVolumeResult() : value; 
 
         return ret;
     }

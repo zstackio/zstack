@@ -10,7 +10,7 @@ public class QueryIpRangeAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryIpRangeResult value;
+        public org.zstack.sdk.QueryIpRangeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryIpRangeAction extends QueryAction {
             return ret;
         }
         
-        QueryIpRangeResult value = res.getResult(QueryIpRangeResult.class);
-        ret.value = value == null ? new QueryIpRangeResult() : value; 
+        org.zstack.sdk.QueryIpRangeResult value = res.getResult(org.zstack.sdk.QueryIpRangeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryIpRangeResult() : value; 
 
         return ret;
     }

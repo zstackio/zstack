@@ -10,7 +10,7 @@ public class GetL2NetworkTypesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetL2NetworkTypesResult value;
+        public org.zstack.sdk.GetL2NetworkTypesResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -40,8 +40,8 @@ public class GetL2NetworkTypesAction extends AbstractAction {
             return ret;
         }
         
-        GetL2NetworkTypesResult value = res.getResult(GetL2NetworkTypesResult.class);
-        ret.value = value == null ? new GetL2NetworkTypesResult() : value; 
+        org.zstack.sdk.GetL2NetworkTypesResult value = res.getResult(org.zstack.sdk.GetL2NetworkTypesResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetL2NetworkTypesResult() : value; 
 
         return ret;
     }

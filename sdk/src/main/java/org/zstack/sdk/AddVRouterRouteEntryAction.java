@@ -10,7 +10,7 @@ public class AddVRouterRouteEntryAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AddVRouterRouteEntryResult value;
+        public org.zstack.sdk.AddVRouterRouteEntryResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -65,8 +65,8 @@ public class AddVRouterRouteEntryAction extends AbstractAction {
             return ret;
         }
         
-        AddVRouterRouteEntryResult value = res.getResult(AddVRouterRouteEntryResult.class);
-        ret.value = value == null ? new AddVRouterRouteEntryResult() : value; 
+        org.zstack.sdk.AddVRouterRouteEntryResult value = res.getResult(org.zstack.sdk.AddVRouterRouteEntryResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddVRouterRouteEntryResult() : value; 
 
         return ret;
     }

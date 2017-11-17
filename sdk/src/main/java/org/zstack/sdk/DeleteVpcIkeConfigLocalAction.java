@@ -10,7 +10,7 @@ public class DeleteVpcIkeConfigLocalAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteVpcIkeConfigLocalResult value;
+        public org.zstack.sdk.DeleteVpcIkeConfigLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteVpcIkeConfigLocalAction extends AbstractAction {
             return ret;
         }
         
-        DeleteVpcIkeConfigLocalResult value = res.getResult(DeleteVpcIkeConfigLocalResult.class);
-        ret.value = value == null ? new DeleteVpcIkeConfigLocalResult() : value; 
+        org.zstack.sdk.DeleteVpcIkeConfigLocalResult value = res.getResult(org.zstack.sdk.DeleteVpcIkeConfigLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteVpcIkeConfigLocalResult() : value; 
 
         return ret;
     }

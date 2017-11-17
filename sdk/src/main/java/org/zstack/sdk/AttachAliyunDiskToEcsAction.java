@@ -10,7 +10,7 @@ public class AttachAliyunDiskToEcsAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AttachAliyunDiskToEcsResult value;
+        public org.zstack.sdk.AttachAliyunDiskToEcsResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +56,8 @@ public class AttachAliyunDiskToEcsAction extends AbstractAction {
             return ret;
         }
         
-        AttachAliyunDiskToEcsResult value = res.getResult(AttachAliyunDiskToEcsResult.class);
-        ret.value = value == null ? new AttachAliyunDiskToEcsResult() : value; 
+        org.zstack.sdk.AttachAliyunDiskToEcsResult value = res.getResult(org.zstack.sdk.AttachAliyunDiskToEcsResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AttachAliyunDiskToEcsResult() : value; 
 
         return ret;
     }

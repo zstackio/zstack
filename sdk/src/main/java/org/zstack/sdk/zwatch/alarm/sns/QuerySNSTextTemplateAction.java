@@ -10,7 +10,7 @@ public class QuerySNSTextTemplateAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QuerySNSTextTemplateResult value;
+        public org.zstack.sdk.zwatch.alarm.sns.QuerySNSTextTemplateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QuerySNSTextTemplateAction extends QueryAction {
             return ret;
         }
         
-        QuerySNSTextTemplateResult value = res.getResult(QuerySNSTextTemplateResult.class);
-        ret.value = value == null ? new QuerySNSTextTemplateResult() : value; 
+        org.zstack.sdk.zwatch.alarm.sns.QuerySNSTextTemplateResult value = res.getResult(org.zstack.sdk.zwatch.alarm.sns.QuerySNSTextTemplateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.zwatch.alarm.sns.QuerySNSTextTemplateResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class SubscribeEventAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SubscribeEventResult value;
+        public org.zstack.sdk.zwatch.alarm.SubscribeEventResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -59,8 +59,8 @@ public class SubscribeEventAction extends AbstractAction {
             return ret;
         }
         
-        SubscribeEventResult value = res.getResult(SubscribeEventResult.class);
-        ret.value = value == null ? new SubscribeEventResult() : value; 
+        org.zstack.sdk.zwatch.alarm.SubscribeEventResult value = res.getResult(org.zstack.sdk.zwatch.alarm.SubscribeEventResult.class);
+        ret.value = value == null ? new org.zstack.sdk.zwatch.alarm.SubscribeEventResult() : value; 
 
         return ret;
     }

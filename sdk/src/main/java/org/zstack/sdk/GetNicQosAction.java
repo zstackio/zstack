@@ -10,7 +10,7 @@ public class GetNicQosAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetNicQosResult value;
+        public org.zstack.sdk.GetNicQosResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -43,8 +43,8 @@ public class GetNicQosAction extends AbstractAction {
             return ret;
         }
         
-        GetNicQosResult value = res.getResult(GetNicQosResult.class);
-        ret.value = value == null ? new GetNicQosResult() : value; 
+        org.zstack.sdk.GetNicQosResult value = res.getResult(org.zstack.sdk.GetNicQosResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetNicQosResult() : value; 
 
         return ret;
     }

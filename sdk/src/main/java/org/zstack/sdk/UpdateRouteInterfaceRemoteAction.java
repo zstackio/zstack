@@ -10,7 +10,7 @@ public class UpdateRouteInterfaceRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateRouteInterfaceRemoteResult value;
+        public org.zstack.sdk.UpdateRouteInterfaceRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class UpdateRouteInterfaceRemoteAction extends AbstractAction {
             return ret;
         }
         
-        UpdateRouteInterfaceRemoteResult value = res.getResult(UpdateRouteInterfaceRemoteResult.class);
-        ret.value = value == null ? new UpdateRouteInterfaceRemoteResult() : value; 
+        org.zstack.sdk.UpdateRouteInterfaceRemoteResult value = res.getResult(org.zstack.sdk.UpdateRouteInterfaceRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateRouteInterfaceRemoteResult() : value; 
 
         return ret;
     }

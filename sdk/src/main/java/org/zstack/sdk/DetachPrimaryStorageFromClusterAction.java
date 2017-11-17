@@ -10,7 +10,7 @@ public class DetachPrimaryStorageFromClusterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DetachPrimaryStorageFromClusterResult value;
+        public org.zstack.sdk.DetachPrimaryStorageFromClusterResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DetachPrimaryStorageFromClusterAction extends AbstractAction {
             return ret;
         }
         
-        DetachPrimaryStorageFromClusterResult value = res.getResult(DetachPrimaryStorageFromClusterResult.class);
-        ret.value = value == null ? new DetachPrimaryStorageFromClusterResult() : value; 
+        org.zstack.sdk.DetachPrimaryStorageFromClusterResult value = res.getResult(org.zstack.sdk.DetachPrimaryStorageFromClusterResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DetachPrimaryStorageFromClusterResult() : value; 
 
         return ret;
     }

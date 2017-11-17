@@ -10,7 +10,7 @@ public class UpdateHybridEipAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateHybridEipResult value;
+        public org.zstack.sdk.UpdateHybridEipResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +56,8 @@ public class UpdateHybridEipAction extends AbstractAction {
             return ret;
         }
         
-        UpdateHybridEipResult value = res.getResult(UpdateHybridEipResult.class);
-        ret.value = value == null ? new UpdateHybridEipResult() : value; 
+        org.zstack.sdk.UpdateHybridEipResult value = res.getResult(org.zstack.sdk.UpdateHybridEipResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateHybridEipResult() : value; 
 
         return ret;
     }

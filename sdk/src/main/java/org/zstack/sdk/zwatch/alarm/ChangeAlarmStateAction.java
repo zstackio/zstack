@@ -10,7 +10,7 @@ public class ChangeAlarmStateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ChangeAlarmStateResult value;
+        public org.zstack.sdk.zwatch.alarm.ChangeAlarmStateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class ChangeAlarmStateAction extends AbstractAction {
             return ret;
         }
         
-        ChangeAlarmStateResult value = res.getResult(ChangeAlarmStateResult.class);
-        ret.value = value == null ? new ChangeAlarmStateResult() : value; 
+        org.zstack.sdk.zwatch.alarm.ChangeAlarmStateResult value = res.getResult(org.zstack.sdk.zwatch.alarm.ChangeAlarmStateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.zwatch.alarm.ChangeAlarmStateResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class DetachL3NetworkFromVmAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DetachL3NetworkFromVmResult value;
+        public org.zstack.sdk.DetachL3NetworkFromVmResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class DetachL3NetworkFromVmAction extends AbstractAction {
             return ret;
         }
         
-        DetachL3NetworkFromVmResult value = res.getResult(DetachL3NetworkFromVmResult.class);
-        ret.value = value == null ? new DetachL3NetworkFromVmResult() : value; 
+        org.zstack.sdk.DetachL3NetworkFromVmResult value = res.getResult(org.zstack.sdk.DetachL3NetworkFromVmResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DetachL3NetworkFromVmResult() : value; 
 
         return ret;
     }

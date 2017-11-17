@@ -10,7 +10,7 @@ public class SyncHybridEipFromRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SyncHybridEipFromRemoteResult value;
+        public org.zstack.sdk.SyncHybridEipFromRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class SyncHybridEipFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        SyncHybridEipFromRemoteResult value = res.getResult(SyncHybridEipFromRemoteResult.class);
-        ret.value = value == null ? new SyncHybridEipFromRemoteResult() : value; 
+        org.zstack.sdk.SyncHybridEipFromRemoteResult value = res.getResult(org.zstack.sdk.SyncHybridEipFromRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SyncHybridEipFromRemoteResult() : value; 
 
         return ret;
     }

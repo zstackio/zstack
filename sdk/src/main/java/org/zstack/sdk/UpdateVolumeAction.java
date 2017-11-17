@@ -10,7 +10,7 @@ public class UpdateVolumeAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateVolumeResult value;
+        public org.zstack.sdk.UpdateVolumeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class UpdateVolumeAction extends AbstractAction {
             return ret;
         }
         
-        UpdateVolumeResult value = res.getResult(UpdateVolumeResult.class);
-        ret.value = value == null ? new UpdateVolumeResult() : value; 
+        org.zstack.sdk.UpdateVolumeResult value = res.getResult(org.zstack.sdk.UpdateVolumeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateVolumeResult() : value; 
 
         return ret;
     }

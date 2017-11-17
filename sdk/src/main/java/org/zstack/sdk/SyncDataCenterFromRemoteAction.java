@@ -10,7 +10,7 @@ public class SyncDataCenterFromRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SyncDataCenterFromRemoteResult value;
+        public org.zstack.sdk.SyncDataCenterFromRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class SyncDataCenterFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        SyncDataCenterFromRemoteResult value = res.getResult(SyncDataCenterFromRemoteResult.class);
-        ret.value = value == null ? new SyncDataCenterFromRemoteResult() : value; 
+        org.zstack.sdk.SyncDataCenterFromRemoteResult value = res.getResult(org.zstack.sdk.SyncDataCenterFromRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SyncDataCenterFromRemoteResult() : value; 
 
         return ret;
     }

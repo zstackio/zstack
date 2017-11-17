@@ -10,7 +10,7 @@ public class ChangePrimaryStorageStateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ChangePrimaryStorageStateResult value;
+        public org.zstack.sdk.ChangePrimaryStorageStateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class ChangePrimaryStorageStateAction extends AbstractAction {
             return ret;
         }
         
-        ChangePrimaryStorageStateResult value = res.getResult(ChangePrimaryStorageStateResult.class);
-        ret.value = value == null ? new ChangePrimaryStorageStateResult() : value; 
+        org.zstack.sdk.ChangePrimaryStorageStateResult value = res.getResult(org.zstack.sdk.ChangePrimaryStorageStateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ChangePrimaryStorageStateResult() : value; 
 
         return ret;
     }

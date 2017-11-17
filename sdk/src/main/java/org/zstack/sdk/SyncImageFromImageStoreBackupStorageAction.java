@@ -10,7 +10,7 @@ public class SyncImageFromImageStoreBackupStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SyncImageFromImageStoreBackupStorageResult value;
+        public org.zstack.sdk.SyncImageFromImageStoreBackupStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -59,8 +59,8 @@ public class SyncImageFromImageStoreBackupStorageAction extends AbstractAction {
             return ret;
         }
         
-        SyncImageFromImageStoreBackupStorageResult value = res.getResult(SyncImageFromImageStoreBackupStorageResult.class);
-        ret.value = value == null ? new SyncImageFromImageStoreBackupStorageResult() : value; 
+        org.zstack.sdk.SyncImageFromImageStoreBackupStorageResult value = res.getResult(org.zstack.sdk.SyncImageFromImageStoreBackupStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SyncImageFromImageStoreBackupStorageResult() : value; 
 
         return ret;
     }

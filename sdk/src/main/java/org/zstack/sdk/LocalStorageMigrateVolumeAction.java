@@ -10,7 +10,7 @@ public class LocalStorageMigrateVolumeAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public LocalStorageMigrateVolumeResult value;
+        public org.zstack.sdk.LocalStorageMigrateVolumeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class LocalStorageMigrateVolumeAction extends AbstractAction {
             return ret;
         }
         
-        LocalStorageMigrateVolumeResult value = res.getResult(LocalStorageMigrateVolumeResult.class);
-        ret.value = value == null ? new LocalStorageMigrateVolumeResult() : value; 
+        org.zstack.sdk.LocalStorageMigrateVolumeResult value = res.getResult(org.zstack.sdk.LocalStorageMigrateVolumeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.LocalStorageMigrateVolumeResult() : value; 
 
         return ret;
     }

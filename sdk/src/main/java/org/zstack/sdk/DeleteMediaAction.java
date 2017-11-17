@@ -10,7 +10,7 @@ public class DeleteMediaAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteMediaResult value;
+        public org.zstack.sdk.DeleteMediaResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteMediaAction extends AbstractAction {
             return ret;
         }
         
-        DeleteMediaResult value = res.getResult(DeleteMediaResult.class);
-        ret.value = value == null ? new DeleteMediaResult() : value; 
+        org.zstack.sdk.DeleteMediaResult value = res.getResult(org.zstack.sdk.DeleteMediaResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteMediaResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class QueryEventSubscriptionAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryEventSubscriptionResult value;
+        public org.zstack.sdk.zwatch.alarm.QueryEventSubscriptionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryEventSubscriptionAction extends QueryAction {
             return ret;
         }
         
-        QueryEventSubscriptionResult value = res.getResult(QueryEventSubscriptionResult.class);
-        ret.value = value == null ? new QueryEventSubscriptionResult() : value; 
+        org.zstack.sdk.zwatch.alarm.QueryEventSubscriptionResult value = res.getResult(org.zstack.sdk.zwatch.alarm.QueryEventSubscriptionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.zwatch.alarm.QueryEventSubscriptionResult() : value; 
 
         return ret;
     }

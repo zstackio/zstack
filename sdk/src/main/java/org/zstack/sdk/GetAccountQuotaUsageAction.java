@@ -10,7 +10,7 @@ public class GetAccountQuotaUsageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetAccountQuotaUsageResult value;
+        public org.zstack.sdk.GetAccountQuotaUsageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -43,8 +43,8 @@ public class GetAccountQuotaUsageAction extends AbstractAction {
             return ret;
         }
         
-        GetAccountQuotaUsageResult value = res.getResult(GetAccountQuotaUsageResult.class);
-        ret.value = value == null ? new GetAccountQuotaUsageResult() : value; 
+        org.zstack.sdk.GetAccountQuotaUsageResult value = res.getResult(org.zstack.sdk.GetAccountQuotaUsageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetAccountQuotaUsageResult() : value; 
 
         return ret;
     }

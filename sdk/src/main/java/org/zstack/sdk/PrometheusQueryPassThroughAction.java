@@ -10,7 +10,7 @@ public class PrometheusQueryPassThroughAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public PrometheusQueryPassThroughResult value;
+        public org.zstack.sdk.PrometheusQueryPassThroughResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -58,8 +58,8 @@ public class PrometheusQueryPassThroughAction extends AbstractAction {
             return ret;
         }
         
-        PrometheusQueryPassThroughResult value = res.getResult(PrometheusQueryPassThroughResult.class);
-        ret.value = value == null ? new PrometheusQueryPassThroughResult() : value; 
+        org.zstack.sdk.PrometheusQueryPassThroughResult value = res.getResult(org.zstack.sdk.PrometheusQueryPassThroughResult.class);
+        ret.value = value == null ? new org.zstack.sdk.PrometheusQueryPassThroughResult() : value; 
 
         return ret;
     }

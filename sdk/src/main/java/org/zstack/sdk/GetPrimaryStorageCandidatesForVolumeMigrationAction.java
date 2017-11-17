@@ -10,7 +10,7 @@ public class GetPrimaryStorageCandidatesForVolumeMigrationAction extends Abstrac
 
     public static class Result {
         public ErrorCode error;
-        public GetPrimaryStorageCandidatesForVolumeMigrationResult value;
+        public org.zstack.sdk.GetPrimaryStorageCandidatesForVolumeMigrationResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -43,8 +43,8 @@ public class GetPrimaryStorageCandidatesForVolumeMigrationAction extends Abstrac
             return ret;
         }
         
-        GetPrimaryStorageCandidatesForVolumeMigrationResult value = res.getResult(GetPrimaryStorageCandidatesForVolumeMigrationResult.class);
-        ret.value = value == null ? new GetPrimaryStorageCandidatesForVolumeMigrationResult() : value; 
+        org.zstack.sdk.GetPrimaryStorageCandidatesForVolumeMigrationResult value = res.getResult(org.zstack.sdk.GetPrimaryStorageCandidatesForVolumeMigrationResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetPrimaryStorageCandidatesForVolumeMigrationResult() : value; 
 
         return ret;
     }

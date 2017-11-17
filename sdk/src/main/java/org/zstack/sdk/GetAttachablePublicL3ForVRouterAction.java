@@ -10,7 +10,7 @@ public class GetAttachablePublicL3ForVRouterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetAttachablePublicL3ForVRouterResult value;
+        public org.zstack.sdk.GetAttachablePublicL3ForVRouterResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -43,8 +43,8 @@ public class GetAttachablePublicL3ForVRouterAction extends AbstractAction {
             return ret;
         }
         
-        GetAttachablePublicL3ForVRouterResult value = res.getResult(GetAttachablePublicL3ForVRouterResult.class);
-        ret.value = value == null ? new GetAttachablePublicL3ForVRouterResult() : value; 
+        org.zstack.sdk.GetAttachablePublicL3ForVRouterResult value = res.getResult(org.zstack.sdk.GetAttachablePublicL3ForVRouterResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetAttachablePublicL3ForVRouterResult() : value; 
 
         return ret;
     }

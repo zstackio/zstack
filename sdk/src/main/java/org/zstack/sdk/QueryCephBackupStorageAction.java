@@ -10,7 +10,7 @@ public class QueryCephBackupStorageAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryBackupStorageResult value;
+        public org.zstack.sdk.QueryBackupStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryCephBackupStorageAction extends QueryAction {
             return ret;
         }
         
-        QueryBackupStorageResult value = res.getResult(QueryBackupStorageResult.class);
-        ret.value = value == null ? new QueryBackupStorageResult() : value; 
+        org.zstack.sdk.QueryBackupStorageResult value = res.getResult(org.zstack.sdk.QueryBackupStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryBackupStorageResult() : value; 
 
         return ret;
     }

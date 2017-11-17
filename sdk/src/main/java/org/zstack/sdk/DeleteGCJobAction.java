@@ -10,7 +10,7 @@ public class DeleteGCJobAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteGCJobResult value;
+        public org.zstack.sdk.DeleteGCJobResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class DeleteGCJobAction extends AbstractAction {
             return ret;
         }
         
-        DeleteGCJobResult value = res.getResult(DeleteGCJobResult.class);
-        ret.value = value == null ? new DeleteGCJobResult() : value; 
+        org.zstack.sdk.DeleteGCJobResult value = res.getResult(org.zstack.sdk.DeleteGCJobResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteGCJobResult() : value; 
 
         return ret;
     }

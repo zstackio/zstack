@@ -10,7 +10,7 @@ public class GetVmConsolePasswordAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetVmConsolePasswordResult value;
+        public org.zstack.sdk.GetVmConsolePasswordResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -43,8 +43,8 @@ public class GetVmConsolePasswordAction extends AbstractAction {
             return ret;
         }
         
-        GetVmConsolePasswordResult value = res.getResult(GetVmConsolePasswordResult.class);
-        ret.value = value == null ? new GetVmConsolePasswordResult() : value; 
+        org.zstack.sdk.GetVmConsolePasswordResult value = res.getResult(org.zstack.sdk.GetVmConsolePasswordResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetVmConsolePasswordResult() : value; 
 
         return ret;
     }

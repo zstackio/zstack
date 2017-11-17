@@ -10,7 +10,7 @@ public class AttachAliyunKeyAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AttachAliyunKeyResult value;
+        public org.zstack.sdk.AttachAliyunKeyResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class AttachAliyunKeyAction extends AbstractAction {
             return ret;
         }
         
-        AttachAliyunKeyResult value = res.getResult(AttachAliyunKeyResult.class);
-        ret.value = value == null ? new AttachAliyunKeyResult() : value; 
+        org.zstack.sdk.AttachAliyunKeyResult value = res.getResult(org.zstack.sdk.AttachAliyunKeyResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AttachAliyunKeyResult() : value; 
 
         return ret;
     }

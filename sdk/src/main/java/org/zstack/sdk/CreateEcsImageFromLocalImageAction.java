@@ -10,7 +10,7 @@ public class CreateEcsImageFromLocalImageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateEcsImageFromLocalImageResult value;
+        public org.zstack.sdk.CreateEcsImageFromLocalImageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -62,8 +62,8 @@ public class CreateEcsImageFromLocalImageAction extends AbstractAction {
             return ret;
         }
         
-        CreateEcsImageFromLocalImageResult value = res.getResult(CreateEcsImageFromLocalImageResult.class);
-        ret.value = value == null ? new CreateEcsImageFromLocalImageResult() : value; 
+        org.zstack.sdk.CreateEcsImageFromLocalImageResult value = res.getResult(org.zstack.sdk.CreateEcsImageFromLocalImageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateEcsImageFromLocalImageResult() : value; 
 
         return ret;
     }

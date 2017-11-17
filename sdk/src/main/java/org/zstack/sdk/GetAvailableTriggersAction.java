@@ -10,7 +10,7 @@ public class GetAvailableTriggersAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetAvailableTriggersResult value;
+        public org.zstack.sdk.GetAvailableTriggersResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -40,8 +40,8 @@ public class GetAvailableTriggersAction extends AbstractAction {
             return ret;
         }
         
-        GetAvailableTriggersResult value = res.getResult(GetAvailableTriggersResult.class);
-        ret.value = value == null ? new GetAvailableTriggersResult() : value; 
+        org.zstack.sdk.GetAvailableTriggersResult value = res.getResult(org.zstack.sdk.GetAvailableTriggersResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetAvailableTriggersResult() : value; 
 
         return ret;
     }

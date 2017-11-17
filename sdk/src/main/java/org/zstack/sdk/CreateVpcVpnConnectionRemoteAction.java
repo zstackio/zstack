@@ -10,7 +10,7 @@ public class CreateVpcVpnConnectionRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateVpcVpnConnectionRemoteResult value;
+        public org.zstack.sdk.CreateVpcVpnConnectionRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -71,8 +71,8 @@ public class CreateVpcVpnConnectionRemoteAction extends AbstractAction {
             return ret;
         }
         
-        CreateVpcVpnConnectionRemoteResult value = res.getResult(CreateVpcVpnConnectionRemoteResult.class);
-        ret.value = value == null ? new CreateVpcVpnConnectionRemoteResult() : value; 
+        org.zstack.sdk.CreateVpcVpnConnectionRemoteResult value = res.getResult(org.zstack.sdk.CreateVpcVpnConnectionRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateVpcVpnConnectionRemoteResult() : value; 
 
         return ret;
     }

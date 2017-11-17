@@ -10,7 +10,7 @@ public class DeleteUserAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteUserResult value;
+        public org.zstack.sdk.DeleteUserResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteUserAction extends AbstractAction {
             return ret;
         }
         
-        DeleteUserResult value = res.getResult(DeleteUserResult.class);
-        ret.value = value == null ? new DeleteUserResult() : value; 
+        org.zstack.sdk.DeleteUserResult value = res.getResult(org.zstack.sdk.DeleteUserResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteUserResult() : value; 
 
         return ret;
     }

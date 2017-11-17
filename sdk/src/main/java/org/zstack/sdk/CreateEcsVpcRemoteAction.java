@@ -10,7 +10,7 @@ public class CreateEcsVpcRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateEcsVpcRemoteResult value;
+        public org.zstack.sdk.CreateEcsVpcRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -62,8 +62,8 @@ public class CreateEcsVpcRemoteAction extends AbstractAction {
             return ret;
         }
         
-        CreateEcsVpcRemoteResult value = res.getResult(CreateEcsVpcRemoteResult.class);
-        ret.value = value == null ? new CreateEcsVpcRemoteResult() : value; 
+        org.zstack.sdk.CreateEcsVpcRemoteResult value = res.getResult(org.zstack.sdk.CreateEcsVpcRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateEcsVpcRemoteResult() : value; 
 
         return ret;
     }

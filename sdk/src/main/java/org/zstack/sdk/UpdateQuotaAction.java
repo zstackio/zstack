@@ -10,7 +10,7 @@ public class UpdateQuotaAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateQuotaResult value;
+        public org.zstack.sdk.UpdateQuotaResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class UpdateQuotaAction extends AbstractAction {
             return ret;
         }
         
-        UpdateQuotaResult value = res.getResult(UpdateQuotaResult.class);
-        ret.value = value == null ? new UpdateQuotaResult() : value; 
+        org.zstack.sdk.UpdateQuotaResult value = res.getResult(org.zstack.sdk.UpdateQuotaResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateQuotaResult() : value; 
 
         return ret;
     }

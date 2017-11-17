@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class L2VxlanNetworkPoolInventory extends L2NetworkInventory {
+public class L2VxlanNetworkPoolInventory extends org.zstack.sdk.L2NetworkInventory {
 
     public java.util.List attachedVtepRefs;
     public void setAttachedVtepRefs(java.util.List attachedVtepRefs) {

@@ -10,7 +10,7 @@ public class DeletePolicyAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeletePolicyResult value;
+        public org.zstack.sdk.DeletePolicyResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeletePolicyAction extends AbstractAction {
             return ret;
         }
         
-        DeletePolicyResult value = res.getResult(DeletePolicyResult.class);
-        ret.value = value == null ? new DeletePolicyResult() : value; 
+        org.zstack.sdk.DeletePolicyResult value = res.getResult(org.zstack.sdk.DeletePolicyResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeletePolicyResult() : value; 
 
         return ret;
     }

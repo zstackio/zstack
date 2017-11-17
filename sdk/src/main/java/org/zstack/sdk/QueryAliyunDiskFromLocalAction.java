@@ -10,7 +10,7 @@ public class QueryAliyunDiskFromLocalAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryAliyunDiskFromLocalResult value;
+        public org.zstack.sdk.QueryAliyunDiskFromLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryAliyunDiskFromLocalAction extends QueryAction {
             return ret;
         }
         
-        QueryAliyunDiskFromLocalResult value = res.getResult(QueryAliyunDiskFromLocalResult.class);
-        ret.value = value == null ? new QueryAliyunDiskFromLocalResult() : value; 
+        org.zstack.sdk.QueryAliyunDiskFromLocalResult value = res.getResult(org.zstack.sdk.QueryAliyunDiskFromLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryAliyunDiskFromLocalResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class GetConnectionAccessPointFromRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetConnectionAccessPointFromRemoteResult value;
+        public org.zstack.sdk.GetConnectionAccessPointFromRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -43,8 +43,8 @@ public class GetConnectionAccessPointFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        GetConnectionAccessPointFromRemoteResult value = res.getResult(GetConnectionAccessPointFromRemoteResult.class);
-        ret.value = value == null ? new GetConnectionAccessPointFromRemoteResult() : value; 
+        org.zstack.sdk.GetConnectionAccessPointFromRemoteResult value = res.getResult(org.zstack.sdk.GetConnectionAccessPointFromRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetConnectionAccessPointFromRemoteResult() : value; 
 
         return ret;
     }

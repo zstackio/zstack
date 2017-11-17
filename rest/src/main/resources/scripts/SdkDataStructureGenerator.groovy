@@ -172,7 +172,7 @@ ${dstToSrc.join("\n")}
 
 ${imports.collect { "import ${it};" }.join("\n")}
 
-public class ${getTargetClassName(clz)} ${Object.class == clz.superclass ? "" : "extends " + clz.superclass.simpleName} {
+public class ${getTargetClassName(clz)} ${Object.class == clz.superclass ? "" : "extends " + SdkApiTemplate.getPackageName(clz.superclass) + "." + clz.superclass.simpleName} {
 
 ${output.join("\n")}
 }

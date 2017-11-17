@@ -10,7 +10,7 @@ public class QueryBaremetalHardwareInfoAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryBaremetalHardwareInfoResult value;
+        public org.zstack.sdk.QueryBaremetalHardwareInfoResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryBaremetalHardwareInfoAction extends QueryAction {
             return ret;
         }
         
-        QueryBaremetalHardwareInfoResult value = res.getResult(QueryBaremetalHardwareInfoResult.class);
-        ret.value = value == null ? new QueryBaremetalHardwareInfoResult() : value; 
+        org.zstack.sdk.QueryBaremetalHardwareInfoResult value = res.getResult(org.zstack.sdk.QueryBaremetalHardwareInfoResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryBaremetalHardwareInfoResult() : value; 
 
         return ret;
     }

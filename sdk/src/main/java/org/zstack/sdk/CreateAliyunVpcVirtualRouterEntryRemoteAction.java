@@ -10,7 +10,7 @@ public class CreateAliyunVpcVirtualRouterEntryRemoteAction extends AbstractActio
 
     public static class Result {
         public ErrorCode error;
-        public CreateAliyunVpcVirtualRouterEntryRemoteResult value;
+        public org.zstack.sdk.CreateAliyunVpcVirtualRouterEntryRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -62,8 +62,8 @@ public class CreateAliyunVpcVirtualRouterEntryRemoteAction extends AbstractActio
             return ret;
         }
         
-        CreateAliyunVpcVirtualRouterEntryRemoteResult value = res.getResult(CreateAliyunVpcVirtualRouterEntryRemoteResult.class);
-        ret.value = value == null ? new CreateAliyunVpcVirtualRouterEntryRemoteResult() : value; 
+        org.zstack.sdk.CreateAliyunVpcVirtualRouterEntryRemoteResult value = res.getResult(org.zstack.sdk.CreateAliyunVpcVirtualRouterEntryRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateAliyunVpcVirtualRouterEntryRemoteResult() : value; 
 
         return ret;
     }

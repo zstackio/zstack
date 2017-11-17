@@ -10,7 +10,7 @@ public class RemoveUserFromGroupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public RemoveUserFromGroupResult value;
+        public org.zstack.sdk.RemoveUserFromGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class RemoveUserFromGroupAction extends AbstractAction {
             return ret;
         }
         
-        RemoveUserFromGroupResult value = res.getResult(RemoveUserFromGroupResult.class);
-        ret.value = value == null ? new RemoveUserFromGroupResult() : value; 
+        org.zstack.sdk.RemoveUserFromGroupResult value = res.getResult(org.zstack.sdk.RemoveUserFromGroupResult.class);
+        ret.value = value == null ? new org.zstack.sdk.RemoveUserFromGroupResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class UpdateEcsVSwitchAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateEcsVSwitchResult value;
+        public org.zstack.sdk.UpdateEcsVSwitchResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class UpdateEcsVSwitchAction extends AbstractAction {
             return ret;
         }
         
-        UpdateEcsVSwitchResult value = res.getResult(UpdateEcsVSwitchResult.class);
-        ret.value = value == null ? new UpdateEcsVSwitchResult() : value; 
+        org.zstack.sdk.UpdateEcsVSwitchResult value = res.getResult(org.zstack.sdk.UpdateEcsVSwitchResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateEcsVSwitchResult() : value; 
 
         return ret;
     }

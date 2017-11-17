@@ -10,7 +10,7 @@ public class TerminateVirtualBorderRouterRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public TerminateVirtualBorderRouterRemoteResult value;
+        public org.zstack.sdk.TerminateVirtualBorderRouterRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class TerminateVirtualBorderRouterRemoteAction extends AbstractAction {
             return ret;
         }
         
-        TerminateVirtualBorderRouterRemoteResult value = res.getResult(TerminateVirtualBorderRouterRemoteResult.class);
-        ret.value = value == null ? new TerminateVirtualBorderRouterRemoteResult() : value; 
+        org.zstack.sdk.TerminateVirtualBorderRouterRemoteResult value = res.getResult(org.zstack.sdk.TerminateVirtualBorderRouterRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.TerminateVirtualBorderRouterRemoteResult() : value; 
 
         return ret;
     }

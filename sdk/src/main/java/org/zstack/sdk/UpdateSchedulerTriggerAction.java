@@ -10,7 +10,7 @@ public class UpdateSchedulerTriggerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateSchedulerTriggerResult value;
+        public org.zstack.sdk.UpdateSchedulerTriggerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class UpdateSchedulerTriggerAction extends AbstractAction {
             return ret;
         }
         
-        UpdateSchedulerTriggerResult value = res.getResult(UpdateSchedulerTriggerResult.class);
-        ret.value = value == null ? new UpdateSchedulerTriggerResult() : value; 
+        org.zstack.sdk.UpdateSchedulerTriggerResult value = res.getResult(org.zstack.sdk.UpdateSchedulerTriggerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateSchedulerTriggerResult() : value; 
 
         return ret;
     }

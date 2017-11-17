@@ -10,7 +10,7 @@ public class GCAliyunSnapshotRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GCAliyunSnapshotRemoteResult value;
+        public org.zstack.sdk.GCAliyunSnapshotRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class GCAliyunSnapshotRemoteAction extends AbstractAction {
             return ret;
         }
         
-        GCAliyunSnapshotRemoteResult value = res.getResult(GCAliyunSnapshotRemoteResult.class);
-        ret.value = value == null ? new GCAliyunSnapshotRemoteResult() : value; 
+        org.zstack.sdk.GCAliyunSnapshotRemoteResult value = res.getResult(org.zstack.sdk.GCAliyunSnapshotRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GCAliyunSnapshotRemoteResult() : value; 
 
         return ret;
     }

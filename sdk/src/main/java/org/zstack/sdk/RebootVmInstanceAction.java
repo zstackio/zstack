@@ -10,7 +10,7 @@ public class RebootVmInstanceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public RebootVmInstanceResult value;
+        public org.zstack.sdk.RebootVmInstanceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class RebootVmInstanceAction extends AbstractAction {
             return ret;
         }
         
-        RebootVmInstanceResult value = res.getResult(RebootVmInstanceResult.class);
-        ret.value = value == null ? new RebootVmInstanceResult() : value; 
+        org.zstack.sdk.RebootVmInstanceResult value = res.getResult(org.zstack.sdk.RebootVmInstanceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.RebootVmInstanceResult() : value; 
 
         return ret;
     }

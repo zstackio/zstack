@@ -10,7 +10,7 @@ public class DeleteDiskOfferingAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteDiskOfferingResult value;
+        public org.zstack.sdk.DeleteDiskOfferingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteDiskOfferingAction extends AbstractAction {
             return ret;
         }
         
-        DeleteDiskOfferingResult value = res.getResult(DeleteDiskOfferingResult.class);
-        ret.value = value == null ? new DeleteDiskOfferingResult() : value; 
+        org.zstack.sdk.DeleteDiskOfferingResult value = res.getResult(org.zstack.sdk.DeleteDiskOfferingResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteDiskOfferingResult() : value; 
 
         return ret;
     }

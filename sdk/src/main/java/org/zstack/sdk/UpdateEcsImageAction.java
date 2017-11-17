@@ -10,7 +10,7 @@ public class UpdateEcsImageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateEcsImageResult value;
+        public org.zstack.sdk.UpdateEcsImageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class UpdateEcsImageAction extends AbstractAction {
             return ret;
         }
         
-        UpdateEcsImageResult value = res.getResult(UpdateEcsImageResult.class);
-        ret.value = value == null ? new UpdateEcsImageResult() : value; 
+        org.zstack.sdk.UpdateEcsImageResult value = res.getResult(org.zstack.sdk.UpdateEcsImageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateEcsImageResult() : value; 
 
         return ret;
     }

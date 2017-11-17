@@ -10,7 +10,7 @@ public class UpdateEcsInstanceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateEcsInstanceResult value;
+        public org.zstack.sdk.UpdateEcsInstanceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +56,8 @@ public class UpdateEcsInstanceAction extends AbstractAction {
             return ret;
         }
         
-        UpdateEcsInstanceResult value = res.getResult(UpdateEcsInstanceResult.class);
-        ret.value = value == null ? new UpdateEcsInstanceResult() : value; 
+        org.zstack.sdk.UpdateEcsInstanceResult value = res.getResult(org.zstack.sdk.UpdateEcsInstanceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateEcsInstanceResult() : value; 
 
         return ret;
     }

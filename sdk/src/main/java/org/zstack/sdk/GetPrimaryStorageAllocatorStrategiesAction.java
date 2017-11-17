@@ -10,7 +10,7 @@ public class GetPrimaryStorageAllocatorStrategiesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetPrimaryStorageAllocatorStrategiesResult value;
+        public org.zstack.sdk.GetPrimaryStorageAllocatorStrategiesResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -40,8 +40,8 @@ public class GetPrimaryStorageAllocatorStrategiesAction extends AbstractAction {
             return ret;
         }
         
-        GetPrimaryStorageAllocatorStrategiesResult value = res.getResult(GetPrimaryStorageAllocatorStrategiesResult.class);
-        ret.value = value == null ? new GetPrimaryStorageAllocatorStrategiesResult() : value; 
+        org.zstack.sdk.GetPrimaryStorageAllocatorStrategiesResult value = res.getResult(org.zstack.sdk.GetPrimaryStorageAllocatorStrategiesResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetPrimaryStorageAllocatorStrategiesResult() : value; 
 
         return ret;
     }

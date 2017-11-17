@@ -10,7 +10,7 @@ public class SetVmSshKeyAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SetVmSshKeyResult value;
+        public org.zstack.sdk.SetVmSshKeyResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class SetVmSshKeyAction extends AbstractAction {
             return ret;
         }
         
-        SetVmSshKeyResult value = res.getResult(SetVmSshKeyResult.class);
-        ret.value = value == null ? new SetVmSshKeyResult() : value; 
+        org.zstack.sdk.SetVmSshKeyResult value = res.getResult(org.zstack.sdk.SetVmSshKeyResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SetVmSshKeyResult() : value; 
 
         return ret;
     }

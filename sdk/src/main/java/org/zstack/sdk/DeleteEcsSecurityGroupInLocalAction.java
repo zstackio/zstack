@@ -10,7 +10,7 @@ public class DeleteEcsSecurityGroupInLocalAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteEcsSecurityGroupInLocalResult value;
+        public org.zstack.sdk.DeleteEcsSecurityGroupInLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteEcsSecurityGroupInLocalAction extends AbstractAction {
             return ret;
         }
         
-        DeleteEcsSecurityGroupInLocalResult value = res.getResult(DeleteEcsSecurityGroupInLocalResult.class);
-        ret.value = value == null ? new DeleteEcsSecurityGroupInLocalResult() : value; 
+        org.zstack.sdk.DeleteEcsSecurityGroupInLocalResult value = res.getResult(org.zstack.sdk.DeleteEcsSecurityGroupInLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteEcsSecurityGroupInLocalResult() : value; 
 
         return ret;
     }

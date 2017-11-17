@@ -10,7 +10,7 @@ public class CreateWebhookAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateWebhookResult value;
+        public org.zstack.sdk.CreateWebhookResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -62,8 +62,8 @@ public class CreateWebhookAction extends AbstractAction {
             return ret;
         }
         
-        CreateWebhookResult value = res.getResult(CreateWebhookResult.class);
-        ret.value = value == null ? new CreateWebhookResult() : value; 
+        org.zstack.sdk.CreateWebhookResult value = res.getResult(org.zstack.sdk.CreateWebhookResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateWebhookResult() : value; 
 
         return ret;
     }

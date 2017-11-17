@@ -10,7 +10,7 @@ public class GetCurrentTimeAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetCurrentTimeResult value;
+        public org.zstack.sdk.GetCurrentTimeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -37,8 +37,8 @@ public class GetCurrentTimeAction extends AbstractAction {
             return ret;
         }
         
-        GetCurrentTimeResult value = res.getResult(GetCurrentTimeResult.class);
-        ret.value = value == null ? new GetCurrentTimeResult() : value; 
+        org.zstack.sdk.GetCurrentTimeResult value = res.getResult(org.zstack.sdk.GetCurrentTimeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetCurrentTimeResult() : value; 
 
         return ret;
     }

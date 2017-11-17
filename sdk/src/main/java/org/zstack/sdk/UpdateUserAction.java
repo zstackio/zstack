@@ -10,7 +10,7 @@ public class UpdateUserAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateUserResult value;
+        public org.zstack.sdk.UpdateUserResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +56,8 @@ public class UpdateUserAction extends AbstractAction {
             return ret;
         }
         
-        UpdateUserResult value = res.getResult(UpdateUserResult.class);
-        ret.value = value == null ? new UpdateUserResult() : value; 
+        org.zstack.sdk.UpdateUserResult value = res.getResult(org.zstack.sdk.UpdateUserResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateUserResult() : value; 
 
         return ret;
     }

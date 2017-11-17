@@ -10,7 +10,7 @@ public class CreateSNSTextTemplateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateSNSTextTemplateResult value;
+        public org.zstack.sdk.zwatch.alarm.sns.CreateSNSTextTemplateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -62,8 +62,8 @@ public class CreateSNSTextTemplateAction extends AbstractAction {
             return ret;
         }
         
-        CreateSNSTextTemplateResult value = res.getResult(CreateSNSTextTemplateResult.class);
-        ret.value = value == null ? new CreateSNSTextTemplateResult() : value; 
+        org.zstack.sdk.zwatch.alarm.sns.CreateSNSTextTemplateResult value = res.getResult(org.zstack.sdk.zwatch.alarm.sns.CreateSNSTextTemplateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.zwatch.alarm.sns.CreateSNSTextTemplateResult() : value; 
 
         return ret;
     }

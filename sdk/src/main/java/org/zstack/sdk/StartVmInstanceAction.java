@@ -10,7 +10,7 @@ public class StartVmInstanceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public StartVmInstanceResult value;
+        public org.zstack.sdk.StartVmInstanceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class StartVmInstanceAction extends AbstractAction {
             return ret;
         }
         
-        StartVmInstanceResult value = res.getResult(StartVmInstanceResult.class);
-        ret.value = value == null ? new StartVmInstanceResult() : value; 
+        org.zstack.sdk.StartVmInstanceResult value = res.getResult(org.zstack.sdk.StartVmInstanceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.StartVmInstanceResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class GetCreateEcsImageProgressAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetCreateEcsImageProgressResult value;
+        public org.zstack.sdk.GetCreateEcsImageProgressResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -46,8 +46,8 @@ public class GetCreateEcsImageProgressAction extends AbstractAction {
             return ret;
         }
         
-        GetCreateEcsImageProgressResult value = res.getResult(GetCreateEcsImageProgressResult.class);
-        ret.value = value == null ? new GetCreateEcsImageProgressResult() : value; 
+        org.zstack.sdk.GetCreateEcsImageProgressResult value = res.getResult(org.zstack.sdk.GetCreateEcsImageProgressResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetCreateEcsImageProgressResult() : value; 
 
         return ret;
     }

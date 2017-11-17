@@ -10,7 +10,7 @@ public class CreateVipAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateVipResult value;
+        public org.zstack.sdk.CreateVipResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -62,8 +62,8 @@ public class CreateVipAction extends AbstractAction {
             return ret;
         }
         
-        CreateVipResult value = res.getResult(CreateVipResult.class);
-        ret.value = value == null ? new CreateVipResult() : value; 
+        org.zstack.sdk.CreateVipResult value = res.getResult(org.zstack.sdk.CreateVipResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateVipResult() : value; 
 
         return ret;
     }

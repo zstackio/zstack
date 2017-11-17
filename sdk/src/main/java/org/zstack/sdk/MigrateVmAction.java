@@ -10,7 +10,7 @@ public class MigrateVmAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public MigrateVmResult value;
+        public org.zstack.sdk.MigrateVmResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class MigrateVmAction extends AbstractAction {
             return ret;
         }
         
-        MigrateVmResult value = res.getResult(MigrateVmResult.class);
-        ret.value = value == null ? new MigrateVmResult() : value; 
+        org.zstack.sdk.MigrateVmResult value = res.getResult(org.zstack.sdk.MigrateVmResult.class);
+        ret.value = value == null ? new org.zstack.sdk.MigrateVmResult() : value; 
 
         return ret;
     }

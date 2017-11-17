@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class ErrorCodeList extends ErrorCode {
+public class ErrorCodeList extends org.zstack.sdk.ErrorCode {
 
     public java.util.List causes;
     public void setCauses(java.util.List causes) {

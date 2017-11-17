@@ -10,7 +10,7 @@ public class SyncAliyunVirtualRouterFromRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SyncAliyunVirtualRouterFromRemoteResult value;
+        public org.zstack.sdk.SyncAliyunVirtualRouterFromRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class SyncAliyunVirtualRouterFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        SyncAliyunVirtualRouterFromRemoteResult value = res.getResult(SyncAliyunVirtualRouterFromRemoteResult.class);
-        ret.value = value == null ? new SyncAliyunVirtualRouterFromRemoteResult() : value; 
+        org.zstack.sdk.SyncAliyunVirtualRouterFromRemoteResult value = res.getResult(org.zstack.sdk.SyncAliyunVirtualRouterFromRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SyncAliyunVirtualRouterFromRemoteResult() : value; 
 
         return ret;
     }

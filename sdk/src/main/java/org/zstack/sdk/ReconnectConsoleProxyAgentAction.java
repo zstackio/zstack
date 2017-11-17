@@ -10,7 +10,7 @@ public class ReconnectConsoleProxyAgentAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ReconnectConsoleProxyAgentResult value;
+        public org.zstack.sdk.ReconnectConsoleProxyAgentResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class ReconnectConsoleProxyAgentAction extends AbstractAction {
             return ret;
         }
         
-        ReconnectConsoleProxyAgentResult value = res.getResult(ReconnectConsoleProxyAgentResult.class);
-        ret.value = value == null ? new ReconnectConsoleProxyAgentResult() : value; 
+        org.zstack.sdk.ReconnectConsoleProxyAgentResult value = res.getResult(org.zstack.sdk.ReconnectConsoleProxyAgentResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ReconnectConsoleProxyAgentResult() : value; 
 
         return ret;
     }

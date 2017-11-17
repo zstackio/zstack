@@ -10,7 +10,7 @@ public class DeleteIpRangeAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteIpRangeResult value;
+        public org.zstack.sdk.DeleteIpRangeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteIpRangeAction extends AbstractAction {
             return ret;
         }
         
-        DeleteIpRangeResult value = res.getResult(DeleteIpRangeResult.class);
-        ret.value = value == null ? new DeleteIpRangeResult() : value; 
+        org.zstack.sdk.DeleteIpRangeResult value = res.getResult(org.zstack.sdk.DeleteIpRangeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteIpRangeResult() : value; 
 
         return ret;
     }

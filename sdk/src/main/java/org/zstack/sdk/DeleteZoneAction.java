@@ -10,7 +10,7 @@ public class DeleteZoneAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteZoneResult value;
+        public org.zstack.sdk.DeleteZoneResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteZoneAction extends AbstractAction {
             return ret;
         }
         
-        DeleteZoneResult value = res.getResult(DeleteZoneResult.class);
-        ret.value = value == null ? new DeleteZoneResult() : value; 
+        org.zstack.sdk.DeleteZoneResult value = res.getResult(org.zstack.sdk.DeleteZoneResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteZoneResult() : value; 
 
         return ret;
     }

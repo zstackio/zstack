@@ -10,7 +10,7 @@ public class GetAuditDataAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetAuditDataResult value;
+        public org.zstack.sdk.zwatch.api.GetAuditDataResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -52,8 +52,8 @@ public class GetAuditDataAction extends AbstractAction {
             return ret;
         }
         
-        GetAuditDataResult value = res.getResult(GetAuditDataResult.class);
-        ret.value = value == null ? new GetAuditDataResult() : value; 
+        org.zstack.sdk.zwatch.api.GetAuditDataResult value = res.getResult(org.zstack.sdk.zwatch.api.GetAuditDataResult.class);
+        ret.value = value == null ? new org.zstack.sdk.zwatch.api.GetAuditDataResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class AddIdentityZoneFromRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AddIdentityZoneFromRemoteResult value;
+        public org.zstack.sdk.AddIdentityZoneFromRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -59,8 +59,8 @@ public class AddIdentityZoneFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        AddIdentityZoneFromRemoteResult value = res.getResult(AddIdentityZoneFromRemoteResult.class);
-        ret.value = value == null ? new AddIdentityZoneFromRemoteResult() : value; 
+        org.zstack.sdk.AddIdentityZoneFromRemoteResult value = res.getResult(org.zstack.sdk.AddIdentityZoneFromRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddIdentityZoneFromRemoteResult() : value; 
 
         return ret;
     }

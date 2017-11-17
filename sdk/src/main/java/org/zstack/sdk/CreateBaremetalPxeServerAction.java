@@ -10,7 +10,7 @@ public class CreateBaremetalPxeServerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateBaremetalPxeServerResult value;
+        public org.zstack.sdk.CreateBaremetalPxeServerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -62,8 +62,8 @@ public class CreateBaremetalPxeServerAction extends AbstractAction {
             return ret;
         }
         
-        CreateBaremetalPxeServerResult value = res.getResult(CreateBaremetalPxeServerResult.class);
-        ret.value = value == null ? new CreateBaremetalPxeServerResult() : value; 
+        org.zstack.sdk.CreateBaremetalPxeServerResult value = res.getResult(org.zstack.sdk.CreateBaremetalPxeServerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateBaremetalPxeServerResult() : value; 
 
         return ret;
     }

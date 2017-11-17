@@ -10,7 +10,7 @@ public class QueryPciDevicePciDeviceOfferingAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryPciDevicePciDeviceOfferingResult value;
+        public org.zstack.sdk.QueryPciDevicePciDeviceOfferingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryPciDevicePciDeviceOfferingAction extends QueryAction {
             return ret;
         }
         
-        QueryPciDevicePciDeviceOfferingResult value = res.getResult(QueryPciDevicePciDeviceOfferingResult.class);
-        ret.value = value == null ? new QueryPciDevicePciDeviceOfferingResult() : value; 
+        org.zstack.sdk.QueryPciDevicePciDeviceOfferingResult value = res.getResult(org.zstack.sdk.QueryPciDevicePciDeviceOfferingResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryPciDevicePciDeviceOfferingResult() : value; 
 
         return ret;
     }

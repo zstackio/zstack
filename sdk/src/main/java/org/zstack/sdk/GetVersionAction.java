@@ -10,7 +10,7 @@ public class GetVersionAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetVersionResult value;
+        public org.zstack.sdk.GetVersionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -37,8 +37,8 @@ public class GetVersionAction extends AbstractAction {
             return ret;
         }
         
-        GetVersionResult value = res.getResult(GetVersionResult.class);
-        ret.value = value == null ? new GetVersionResult() : value; 
+        org.zstack.sdk.GetVersionResult value = res.getResult(org.zstack.sdk.GetVersionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetVersionResult() : value; 
 
         return ret;
     }

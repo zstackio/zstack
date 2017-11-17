@@ -10,7 +10,7 @@ public class AddKVMHostAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AddHostResult value;
+        public org.zstack.sdk.AddHostResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -68,8 +68,8 @@ public class AddKVMHostAction extends AbstractAction {
             return ret;
         }
         
-        AddHostResult value = res.getResult(AddHostResult.class);
-        ret.value = value == null ? new AddHostResult() : value; 
+        org.zstack.sdk.AddHostResult value = res.getResult(org.zstack.sdk.AddHostResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddHostResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class AddLocalPrimaryStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AddPrimaryStorageResult value;
+        public org.zstack.sdk.AddPrimaryStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -62,8 +62,8 @@ public class AddLocalPrimaryStorageAction extends AbstractAction {
             return ret;
         }
         
-        AddPrimaryStorageResult value = res.getResult(AddPrimaryStorageResult.class);
-        ret.value = value == null ? new AddPrimaryStorageResult() : value; 
+        org.zstack.sdk.AddPrimaryStorageResult value = res.getResult(org.zstack.sdk.AddPrimaryStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddPrimaryStorageResult() : value; 
 
         return ret;
     }

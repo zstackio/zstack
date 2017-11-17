@@ -10,7 +10,7 @@ public class GetPrimaryStorageCapacityAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetPrimaryStorageCapacityResult value;
+        public org.zstack.sdk.GetPrimaryStorageCapacityResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -52,8 +52,8 @@ public class GetPrimaryStorageCapacityAction extends AbstractAction {
             return ret;
         }
         
-        GetPrimaryStorageCapacityResult value = res.getResult(GetPrimaryStorageCapacityResult.class);
-        ret.value = value == null ? new GetPrimaryStorageCapacityResult() : value; 
+        org.zstack.sdk.GetPrimaryStorageCapacityResult value = res.getResult(org.zstack.sdk.GetPrimaryStorageCapacityResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetPrimaryStorageCapacityResult() : value; 
 
         return ret;
     }

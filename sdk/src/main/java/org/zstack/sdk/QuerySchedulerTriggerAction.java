@@ -10,7 +10,7 @@ public class QuerySchedulerTriggerAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QuerySchedulerTriggerResult value;
+        public org.zstack.sdk.QuerySchedulerTriggerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QuerySchedulerTriggerAction extends QueryAction {
             return ret;
         }
         
-        QuerySchedulerTriggerResult value = res.getResult(QuerySchedulerTriggerResult.class);
-        ret.value = value == null ? new QuerySchedulerTriggerResult() : value; 
+        org.zstack.sdk.QuerySchedulerTriggerResult value = res.getResult(org.zstack.sdk.QuerySchedulerTriggerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QuerySchedulerTriggerResult() : value; 
 
         return ret;
     }

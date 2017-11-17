@@ -10,7 +10,7 @@ public class RecoverDataVolumeAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public RecoverDataVolumeResult value;
+        public org.zstack.sdk.RecoverDataVolumeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class RecoverDataVolumeAction extends AbstractAction {
             return ret;
         }
         
-        RecoverDataVolumeResult value = res.getResult(RecoverDataVolumeResult.class);
-        ret.value = value == null ? new RecoverDataVolumeResult() : value; 
+        org.zstack.sdk.RecoverDataVolumeResult value = res.getResult(org.zstack.sdk.RecoverDataVolumeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.RecoverDataVolumeResult() : value; 
 
         return ret;
     }

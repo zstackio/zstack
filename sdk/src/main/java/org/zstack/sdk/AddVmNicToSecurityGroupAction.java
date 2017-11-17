@@ -10,7 +10,7 @@ public class AddVmNicToSecurityGroupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AddVmNicToSecurityGroupResult value;
+        public org.zstack.sdk.AddVmNicToSecurityGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class AddVmNicToSecurityGroupAction extends AbstractAction {
             return ret;
         }
         
-        AddVmNicToSecurityGroupResult value = res.getResult(AddVmNicToSecurityGroupResult.class);
-        ret.value = value == null ? new AddVmNicToSecurityGroupResult() : value; 
+        org.zstack.sdk.AddVmNicToSecurityGroupResult value = res.getResult(org.zstack.sdk.AddVmNicToSecurityGroupResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddVmNicToSecurityGroupResult() : value; 
 
         return ret;
     }

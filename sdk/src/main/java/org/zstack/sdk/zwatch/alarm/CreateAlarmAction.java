@@ -10,7 +10,7 @@ public class CreateAlarmAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateAlarmResult value;
+        public org.zstack.sdk.zwatch.alarm.CreateAlarmResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -77,8 +77,8 @@ public class CreateAlarmAction extends AbstractAction {
             return ret;
         }
         
-        CreateAlarmResult value = res.getResult(CreateAlarmResult.class);
-        ret.value = value == null ? new CreateAlarmResult() : value; 
+        org.zstack.sdk.zwatch.alarm.CreateAlarmResult value = res.getResult(org.zstack.sdk.zwatch.alarm.CreateAlarmResult.class);
+        ret.value = value == null ? new org.zstack.sdk.zwatch.alarm.CreateAlarmResult() : value; 
 
         return ret;
     }

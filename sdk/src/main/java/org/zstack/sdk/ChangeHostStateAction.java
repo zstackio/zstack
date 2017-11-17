@@ -10,7 +10,7 @@ public class ChangeHostStateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ChangeHostStateResult value;
+        public org.zstack.sdk.ChangeHostStateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class ChangeHostStateAction extends AbstractAction {
             return ret;
         }
         
-        ChangeHostStateResult value = res.getResult(ChangeHostStateResult.class);
-        ret.value = value == null ? new ChangeHostStateResult() : value; 
+        org.zstack.sdk.ChangeHostStateResult value = res.getResult(org.zstack.sdk.ChangeHostStateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ChangeHostStateResult() : value; 
 
         return ret;
     }

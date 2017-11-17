@@ -10,7 +10,7 @@ public class CreateLdapBindingAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateLdapBindingResult value;
+        public org.zstack.sdk.CreateLdapBindingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class CreateLdapBindingAction extends AbstractAction {
             return ret;
         }
         
-        CreateLdapBindingResult value = res.getResult(CreateLdapBindingResult.class);
-        ret.value = value == null ? new CreateLdapBindingResult() : value; 
+        org.zstack.sdk.CreateLdapBindingResult value = res.getResult(org.zstack.sdk.CreateLdapBindingResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateLdapBindingResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class ChangeZoneStateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ChangeZoneStateResult value;
+        public org.zstack.sdk.ChangeZoneStateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class ChangeZoneStateAction extends AbstractAction {
             return ret;
         }
         
-        ChangeZoneStateResult value = res.getResult(ChangeZoneStateResult.class);
-        ret.value = value == null ? new ChangeZoneStateResult() : value; 
+        org.zstack.sdk.ChangeZoneStateResult value = res.getResult(org.zstack.sdk.ChangeZoneStateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ChangeZoneStateResult() : value; 
 
         return ret;
     }

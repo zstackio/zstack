@@ -10,7 +10,7 @@ public class RemoveMonFromFusionstorBackupStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public RemoveMonFromFusionstorBackupStorageResult value;
+        public org.zstack.sdk.RemoveMonFromFusionstorBackupStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class RemoveMonFromFusionstorBackupStorageAction extends AbstractAction {
             return ret;
         }
         
-        RemoveMonFromFusionstorBackupStorageResult value = res.getResult(RemoveMonFromFusionstorBackupStorageResult.class);
-        ret.value = value == null ? new RemoveMonFromFusionstorBackupStorageResult() : value; 
+        org.zstack.sdk.RemoveMonFromFusionstorBackupStorageResult value = res.getResult(org.zstack.sdk.RemoveMonFromFusionstorBackupStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.RemoveMonFromFusionstorBackupStorageResult() : value; 
 
         return ret;
     }

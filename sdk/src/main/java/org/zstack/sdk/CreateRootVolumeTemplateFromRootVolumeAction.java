@@ -10,7 +10,7 @@ public class CreateRootVolumeTemplateFromRootVolumeAction extends AbstractAction
 
     public static class Result {
         public ErrorCode error;
-        public CreateRootVolumeTemplateFromRootVolumeResult value;
+        public org.zstack.sdk.CreateRootVolumeTemplateFromRootVolumeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -68,8 +68,8 @@ public class CreateRootVolumeTemplateFromRootVolumeAction extends AbstractAction
             return ret;
         }
         
-        CreateRootVolumeTemplateFromRootVolumeResult value = res.getResult(CreateRootVolumeTemplateFromRootVolumeResult.class);
-        ret.value = value == null ? new CreateRootVolumeTemplateFromRootVolumeResult() : value; 
+        org.zstack.sdk.CreateRootVolumeTemplateFromRootVolumeResult value = res.getResult(org.zstack.sdk.CreateRootVolumeTemplateFromRootVolumeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateRootVolumeTemplateFromRootVolumeResult() : value; 
 
         return ret;
     }

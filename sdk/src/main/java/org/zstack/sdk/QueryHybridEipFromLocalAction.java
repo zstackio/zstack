@@ -10,7 +10,7 @@ public class QueryHybridEipFromLocalAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryHybridEipFromLocalResult value;
+        public org.zstack.sdk.QueryHybridEipFromLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryHybridEipFromLocalAction extends QueryAction {
             return ret;
         }
         
-        QueryHybridEipFromLocalResult value = res.getResult(QueryHybridEipFromLocalResult.class);
-        ret.value = value == null ? new QueryHybridEipFromLocalResult() : value; 
+        org.zstack.sdk.QueryHybridEipFromLocalResult value = res.getResult(org.zstack.sdk.QueryHybridEipFromLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryHybridEipFromLocalResult() : value; 
 
         return ret;
     }

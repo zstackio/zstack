@@ -10,7 +10,7 @@ public class SetVmConsolePasswordAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SetVmConsolePasswordResult value;
+        public org.zstack.sdk.SetVmConsolePasswordResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class SetVmConsolePasswordAction extends AbstractAction {
             return ret;
         }
         
-        SetVmConsolePasswordResult value = res.getResult(SetVmConsolePasswordResult.class);
-        ret.value = value == null ? new SetVmConsolePasswordResult() : value; 
+        org.zstack.sdk.SetVmConsolePasswordResult value = res.getResult(org.zstack.sdk.SetVmConsolePasswordResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SetVmConsolePasswordResult() : value; 
 
         return ret;
     }

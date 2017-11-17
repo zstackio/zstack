@@ -10,7 +10,7 @@ public class CreateInstanceOfferingAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateInstanceOfferingResult value;
+        public org.zstack.sdk.CreateInstanceOfferingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -68,8 +68,8 @@ public class CreateInstanceOfferingAction extends AbstractAction {
             return ret;
         }
         
-        CreateInstanceOfferingResult value = res.getResult(CreateInstanceOfferingResult.class);
-        ret.value = value == null ? new CreateInstanceOfferingResult() : value; 
+        org.zstack.sdk.CreateInstanceOfferingResult value = res.getResult(org.zstack.sdk.CreateInstanceOfferingResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateInstanceOfferingResult() : value; 
 
         return ret;
     }

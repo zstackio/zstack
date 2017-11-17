@@ -10,7 +10,7 @@ public class CreateConnectionBetweenL3NetworkAndAliyunVSwitchAction extends Abst
 
     public static class Result {
         public ErrorCode error;
-        public CreateConnectionBetweenL3NetworkAndAliyunVSwitchResult value;
+        public org.zstack.sdk.CreateConnectionBetweenL3NetworkAndAliyunVSwitchResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -68,8 +68,8 @@ public class CreateConnectionBetweenL3NetworkAndAliyunVSwitchAction extends Abst
             return ret;
         }
         
-        CreateConnectionBetweenL3NetworkAndAliyunVSwitchResult value = res.getResult(CreateConnectionBetweenL3NetworkAndAliyunVSwitchResult.class);
-        ret.value = value == null ? new CreateConnectionBetweenL3NetworkAndAliyunVSwitchResult() : value; 
+        org.zstack.sdk.CreateConnectionBetweenL3NetworkAndAliyunVSwitchResult value = res.getResult(org.zstack.sdk.CreateConnectionBetweenL3NetworkAndAliyunVSwitchResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateConnectionBetweenL3NetworkAndAliyunVSwitchResult() : value; 
 
         return ret;
     }

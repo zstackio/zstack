@@ -10,7 +10,7 @@ public class QueryVRouterRouteTableAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryVRouterRouteTableResult value;
+        public org.zstack.sdk.QueryVRouterRouteTableResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryVRouterRouteTableAction extends QueryAction {
             return ret;
         }
         
-        QueryVRouterRouteTableResult value = res.getResult(QueryVRouterRouteTableResult.class);
-        ret.value = value == null ? new QueryVRouterRouteTableResult() : value; 
+        org.zstack.sdk.QueryVRouterRouteTableResult value = res.getResult(org.zstack.sdk.QueryVRouterRouteTableResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryVRouterRouteTableResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class DeleteAliyunRouteEntryRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteAliyunRouteEntryRemoteResult value;
+        public org.zstack.sdk.DeleteAliyunRouteEntryRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteAliyunRouteEntryRemoteAction extends AbstractAction {
             return ret;
         }
         
-        DeleteAliyunRouteEntryRemoteResult value = res.getResult(DeleteAliyunRouteEntryRemoteResult.class);
-        ret.value = value == null ? new DeleteAliyunRouteEntryRemoteResult() : value; 
+        org.zstack.sdk.DeleteAliyunRouteEntryRemoteResult value = res.getResult(org.zstack.sdk.DeleteAliyunRouteEntryRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteAliyunRouteEntryRemoteResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class QuerySystemTagAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QuerySystemTagResult value;
+        public org.zstack.sdk.QuerySystemTagResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QuerySystemTagAction extends QueryAction {
             return ret;
         }
         
-        QuerySystemTagResult value = res.getResult(QuerySystemTagResult.class);
-        ret.value = value == null ? new QuerySystemTagResult() : value; 
+        org.zstack.sdk.QuerySystemTagResult value = res.getResult(org.zstack.sdk.QuerySystemTagResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QuerySystemTagResult() : value; 
 
         return ret;
     }

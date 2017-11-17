@@ -10,7 +10,7 @@ public class ExpungeImageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ExpungeImageResult value;
+        public org.zstack.sdk.ExpungeImageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class ExpungeImageAction extends AbstractAction {
             return ret;
         }
         
-        ExpungeImageResult value = res.getResult(ExpungeImageResult.class);
-        ret.value = value == null ? new ExpungeImageResult() : value; 
+        org.zstack.sdk.ExpungeImageResult value = res.getResult(org.zstack.sdk.ExpungeImageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ExpungeImageResult() : value; 
 
         return ret;
     }

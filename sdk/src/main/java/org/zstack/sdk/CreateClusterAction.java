@@ -10,7 +10,7 @@ public class CreateClusterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateClusterResult value;
+        public org.zstack.sdk.CreateClusterResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -62,8 +62,8 @@ public class CreateClusterAction extends AbstractAction {
             return ret;
         }
         
-        CreateClusterResult value = res.getResult(CreateClusterResult.class);
-        ret.value = value == null ? new CreateClusterResult() : value; 
+        org.zstack.sdk.CreateClusterResult value = res.getResult(org.zstack.sdk.CreateClusterResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateClusterResult() : value; 
 
         return ret;
     }

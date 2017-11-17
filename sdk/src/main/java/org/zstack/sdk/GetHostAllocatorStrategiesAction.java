@@ -10,7 +10,7 @@ public class GetHostAllocatorStrategiesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetHostAllocatorStrategiesResult value;
+        public org.zstack.sdk.GetHostAllocatorStrategiesResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -40,8 +40,8 @@ public class GetHostAllocatorStrategiesAction extends AbstractAction {
             return ret;
         }
         
-        GetHostAllocatorStrategiesResult value = res.getResult(GetHostAllocatorStrategiesResult.class);
-        ret.value = value == null ? new GetHostAllocatorStrategiesResult() : value; 
+        org.zstack.sdk.GetHostAllocatorStrategiesResult value = res.getResult(org.zstack.sdk.GetHostAllocatorStrategiesResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetHostAllocatorStrategiesResult() : value; 
 
         return ret;
     }

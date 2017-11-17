@@ -10,7 +10,7 @@ public class GetEventDataAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetEventDataResult value;
+        public org.zstack.sdk.zwatch.api.GetEventDataResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -55,8 +55,8 @@ public class GetEventDataAction extends AbstractAction {
             return ret;
         }
         
-        GetEventDataResult value = res.getResult(GetEventDataResult.class);
-        ret.value = value == null ? new GetEventDataResult() : value; 
+        org.zstack.sdk.zwatch.api.GetEventDataResult value = res.getResult(org.zstack.sdk.zwatch.api.GetEventDataResult.class);
+        ret.value = value == null ? new org.zstack.sdk.zwatch.api.GetEventDataResult() : value; 
 
         return ret;
     }

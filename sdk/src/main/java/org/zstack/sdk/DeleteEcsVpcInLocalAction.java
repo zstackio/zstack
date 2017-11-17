@@ -10,7 +10,7 @@ public class DeleteEcsVpcInLocalAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteEcsVpcInLocalResult value;
+        public org.zstack.sdk.DeleteEcsVpcInLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteEcsVpcInLocalAction extends AbstractAction {
             return ret;
         }
         
-        DeleteEcsVpcInLocalResult value = res.getResult(DeleteEcsVpcInLocalResult.class);
-        ret.value = value == null ? new DeleteEcsVpcInLocalResult() : value; 
+        org.zstack.sdk.DeleteEcsVpcInLocalResult value = res.getResult(org.zstack.sdk.DeleteEcsVpcInLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteEcsVpcInLocalResult() : value; 
 
         return ret;
     }

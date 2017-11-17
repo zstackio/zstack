@@ -10,7 +10,7 @@ public class ChangeVolumeStateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ChangeVolumeStateResult value;
+        public org.zstack.sdk.ChangeVolumeStateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class ChangeVolumeStateAction extends AbstractAction {
             return ret;
         }
         
-        ChangeVolumeStateResult value = res.getResult(ChangeVolumeStateResult.class);
-        ret.value = value == null ? new ChangeVolumeStateResult() : value; 
+        org.zstack.sdk.ChangeVolumeStateResult value = res.getResult(org.zstack.sdk.ChangeVolumeStateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ChangeVolumeStateResult() : value; 
 
         return ret;
     }

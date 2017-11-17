@@ -10,7 +10,7 @@ public class QueryVipAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryVipResult value;
+        public org.zstack.sdk.QueryVipResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryVipAction extends QueryAction {
             return ret;
         }
         
-        QueryVipResult value = res.getResult(QueryVipResult.class);
-        ret.value = value == null ? new QueryVipResult() : value; 
+        org.zstack.sdk.QueryVipResult value = res.getResult(org.zstack.sdk.QueryVipResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryVipResult() : value; 
 
         return ret;
     }

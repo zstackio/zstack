@@ -10,7 +10,7 @@ public class UpdateVpcVpnGatewayAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateVpcVpnGatewayResult value;
+        public org.zstack.sdk.UpdateVpcVpnGatewayResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class UpdateVpcVpnGatewayAction extends AbstractAction {
             return ret;
         }
         
-        UpdateVpcVpnGatewayResult value = res.getResult(UpdateVpcVpnGatewayResult.class);
-        ret.value = value == null ? new UpdateVpcVpnGatewayResult() : value; 
+        org.zstack.sdk.UpdateVpcVpnGatewayResult value = res.getResult(org.zstack.sdk.UpdateVpcVpnGatewayResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateVpcVpnGatewayResult() : value; 
 
         return ret;
     }

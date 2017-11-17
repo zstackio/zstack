@@ -10,7 +10,7 @@ public class GetLocalStorageHostDiskCapacityAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetLocalStorageHostDiskCapacityResult value;
+        public org.zstack.sdk.GetLocalStorageHostDiskCapacityResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -46,8 +46,8 @@ public class GetLocalStorageHostDiskCapacityAction extends AbstractAction {
             return ret;
         }
         
-        GetLocalStorageHostDiskCapacityResult value = res.getResult(GetLocalStorageHostDiskCapacityResult.class);
-        ret.value = value == null ? new GetLocalStorageHostDiskCapacityResult() : value; 
+        org.zstack.sdk.GetLocalStorageHostDiskCapacityResult value = res.getResult(org.zstack.sdk.GetLocalStorageHostDiskCapacityResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetLocalStorageHostDiskCapacityResult() : value; 
 
         return ret;
     }

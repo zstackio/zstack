@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class CephBackupStorageInventory extends BackupStorageInventory {
+public class CephBackupStorageInventory extends org.zstack.sdk.BackupStorageInventory {
 
     public java.util.List mons;
     public void setMons(java.util.List mons) {

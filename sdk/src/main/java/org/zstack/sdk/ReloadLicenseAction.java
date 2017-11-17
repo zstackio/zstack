@@ -10,7 +10,7 @@ public class ReloadLicenseAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ReloadLicenseResult value;
+        public org.zstack.sdk.ReloadLicenseResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -43,8 +43,8 @@ public class ReloadLicenseAction extends AbstractAction {
             return ret;
         }
         
-        ReloadLicenseResult value = res.getResult(ReloadLicenseResult.class);
-        ret.value = value == null ? new ReloadLicenseResult() : value; 
+        org.zstack.sdk.ReloadLicenseResult value = res.getResult(org.zstack.sdk.ReloadLicenseResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ReloadLicenseResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class DeleteVmInstanceHaLevelAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteVmInstanceHaLevelResult value;
+        public org.zstack.sdk.DeleteVmInstanceHaLevelResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class DeleteVmInstanceHaLevelAction extends AbstractAction {
             return ret;
         }
         
-        DeleteVmInstanceHaLevelResult value = res.getResult(DeleteVmInstanceHaLevelResult.class);
-        ret.value = value == null ? new DeleteVmInstanceHaLevelResult() : value; 
+        org.zstack.sdk.DeleteVmInstanceHaLevelResult value = res.getResult(org.zstack.sdk.DeleteVmInstanceHaLevelResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteVmInstanceHaLevelResult() : value; 
 
         return ret;
     }

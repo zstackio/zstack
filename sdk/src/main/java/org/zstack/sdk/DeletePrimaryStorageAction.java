@@ -10,7 +10,7 @@ public class DeletePrimaryStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeletePrimaryStorageResult value;
+        public org.zstack.sdk.DeletePrimaryStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeletePrimaryStorageAction extends AbstractAction {
             return ret;
         }
         
-        DeletePrimaryStorageResult value = res.getResult(DeletePrimaryStorageResult.class);
-        ret.value = value == null ? new DeletePrimaryStorageResult() : value; 
+        org.zstack.sdk.DeletePrimaryStorageResult value = res.getResult(org.zstack.sdk.DeletePrimaryStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeletePrimaryStorageResult() : value; 
 
         return ret;
     }

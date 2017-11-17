@@ -10,7 +10,7 @@ public class DeleteEcsInstanceLocalAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteEcsInstanceLocalResult value;
+        public org.zstack.sdk.DeleteEcsInstanceLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteEcsInstanceLocalAction extends AbstractAction {
             return ret;
         }
         
-        DeleteEcsInstanceLocalResult value = res.getResult(DeleteEcsInstanceLocalResult.class);
-        ret.value = value == null ? new DeleteEcsInstanceLocalResult() : value; 
+        org.zstack.sdk.DeleteEcsInstanceLocalResult value = res.getResult(org.zstack.sdk.DeleteEcsInstanceLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteEcsInstanceLocalResult() : value; 
 
         return ret;
     }

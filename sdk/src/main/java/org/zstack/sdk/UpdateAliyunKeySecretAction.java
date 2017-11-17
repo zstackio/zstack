@@ -10,7 +10,7 @@ public class UpdateAliyunKeySecretAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateAliyunKeySecretResult value;
+        public org.zstack.sdk.UpdateAliyunKeySecretResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class UpdateAliyunKeySecretAction extends AbstractAction {
             return ret;
         }
         
-        UpdateAliyunKeySecretResult value = res.getResult(UpdateAliyunKeySecretResult.class);
-        ret.value = value == null ? new UpdateAliyunKeySecretResult() : value; 
+        org.zstack.sdk.UpdateAliyunKeySecretResult value = res.getResult(org.zstack.sdk.UpdateAliyunKeySecretResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateAliyunKeySecretResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class DeleteVpcUserVpnGatewayLocalAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteVpcUserVpnGatewayLocalResult value;
+        public org.zstack.sdk.DeleteVpcUserVpnGatewayLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteVpcUserVpnGatewayLocalAction extends AbstractAction {
             return ret;
         }
         
-        DeleteVpcUserVpnGatewayLocalResult value = res.getResult(DeleteVpcUserVpnGatewayLocalResult.class);
-        ret.value = value == null ? new DeleteVpcUserVpnGatewayLocalResult() : value; 
+        org.zstack.sdk.DeleteVpcUserVpnGatewayLocalResult value = res.getResult(org.zstack.sdk.DeleteVpcUserVpnGatewayLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteVpcUserVpnGatewayLocalResult() : value; 
 
         return ret;
     }

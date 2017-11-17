@@ -10,7 +10,7 @@ public class QueryCephPrimaryStorageAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryPrimaryStorageResult value;
+        public org.zstack.sdk.QueryPrimaryStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryCephPrimaryStorageAction extends QueryAction {
             return ret;
         }
         
-        QueryPrimaryStorageResult value = res.getResult(QueryPrimaryStorageResult.class);
-        ret.value = value == null ? new QueryPrimaryStorageResult() : value; 
+        org.zstack.sdk.QueryPrimaryStorageResult value = res.getResult(org.zstack.sdk.QueryPrimaryStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryPrimaryStorageResult() : value; 
 
         return ret;
     }

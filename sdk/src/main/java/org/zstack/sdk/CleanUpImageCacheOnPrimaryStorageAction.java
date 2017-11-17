@@ -10,7 +10,7 @@ public class CleanUpImageCacheOnPrimaryStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CleanUpImageCacheOnPrimaryStorageResult value;
+        public org.zstack.sdk.CleanUpImageCacheOnPrimaryStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class CleanUpImageCacheOnPrimaryStorageAction extends AbstractAction {
             return ret;
         }
         
-        CleanUpImageCacheOnPrimaryStorageResult value = res.getResult(CleanUpImageCacheOnPrimaryStorageResult.class);
-        ret.value = value == null ? new CleanUpImageCacheOnPrimaryStorageResult() : value; 
+        org.zstack.sdk.CleanUpImageCacheOnPrimaryStorageResult value = res.getResult(org.zstack.sdk.CleanUpImageCacheOnPrimaryStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CleanUpImageCacheOnPrimaryStorageResult() : value; 
 
         return ret;
     }

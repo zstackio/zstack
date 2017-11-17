@@ -10,7 +10,7 @@ public class IsOpensourceVersionAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public IsOpensourceVersionResult value;
+        public org.zstack.sdk.IsOpensourceVersionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -37,8 +37,8 @@ public class IsOpensourceVersionAction extends AbstractAction {
             return ret;
         }
         
-        IsOpensourceVersionResult value = res.getResult(IsOpensourceVersionResult.class);
-        ret.value = value == null ? new IsOpensourceVersionResult() : value; 
+        org.zstack.sdk.IsOpensourceVersionResult value = res.getResult(org.zstack.sdk.IsOpensourceVersionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.IsOpensourceVersionResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class DeleteAliyunSnapshotFromLocalAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteAliyunSnapshotFromLocalResult value;
+        public org.zstack.sdk.DeleteAliyunSnapshotFromLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteAliyunSnapshotFromLocalAction extends AbstractAction {
             return ret;
         }
         
-        DeleteAliyunSnapshotFromLocalResult value = res.getResult(DeleteAliyunSnapshotFromLocalResult.class);
-        ret.value = value == null ? new DeleteAliyunSnapshotFromLocalResult() : value; 
+        org.zstack.sdk.DeleteAliyunSnapshotFromLocalResult value = res.getResult(org.zstack.sdk.DeleteAliyunSnapshotFromLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteAliyunSnapshotFromLocalResult() : value; 
 
         return ret;
     }

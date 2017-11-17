@@ -10,7 +10,7 @@ public class QueryVirtualBorderRouterFromLocalAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryVirtualBorderRouterFromLocalResult value;
+        public org.zstack.sdk.QueryVirtualBorderRouterFromLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryVirtualBorderRouterFromLocalAction extends QueryAction {
             return ret;
         }
         
-        QueryVirtualBorderRouterFromLocalResult value = res.getResult(QueryVirtualBorderRouterFromLocalResult.class);
-        ret.value = value == null ? new QueryVirtualBorderRouterFromLocalResult() : value; 
+        org.zstack.sdk.QueryVirtualBorderRouterFromLocalResult value = res.getResult(org.zstack.sdk.QueryVirtualBorderRouterFromLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryVirtualBorderRouterFromLocalResult() : value; 
 
         return ret;
     }

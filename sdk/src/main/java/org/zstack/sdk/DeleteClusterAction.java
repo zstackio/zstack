@@ -10,7 +10,7 @@ public class DeleteClusterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteClusterResult value;
+        public org.zstack.sdk.DeleteClusterResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteClusterAction extends AbstractAction {
             return ret;
         }
         
-        DeleteClusterResult value = res.getResult(DeleteClusterResult.class);
-        ret.value = value == null ? new DeleteClusterResult() : value; 
+        org.zstack.sdk.DeleteClusterResult value = res.getResult(org.zstack.sdk.DeleteClusterResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteClusterResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class ReconnectImageStoreBackupStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ReconnectImageStoreBackupStorageResult value;
+        public org.zstack.sdk.ReconnectImageStoreBackupStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class ReconnectImageStoreBackupStorageAction extends AbstractAction {
             return ret;
         }
         
-        ReconnectImageStoreBackupStorageResult value = res.getResult(ReconnectImageStoreBackupStorageResult.class);
-        ret.value = value == null ? new ReconnectImageStoreBackupStorageResult() : value; 
+        org.zstack.sdk.ReconnectImageStoreBackupStorageResult value = res.getResult(org.zstack.sdk.ReconnectImageStoreBackupStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ReconnectImageStoreBackupStorageResult() : value; 
 
         return ret;
     }

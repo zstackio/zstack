@@ -10,7 +10,7 @@ public class ChangeMediaStateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ChangeMediaStateResult value;
+        public org.zstack.sdk.ChangeMediaStateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class ChangeMediaStateAction extends AbstractAction {
             return ret;
         }
         
-        ChangeMediaStateResult value = res.getResult(ChangeMediaStateResult.class);
-        ret.value = value == null ? new ChangeMediaStateResult() : value; 
+        org.zstack.sdk.ChangeMediaStateResult value = res.getResult(org.zstack.sdk.ChangeMediaStateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ChangeMediaStateResult() : value; 
 
         return ret;
     }

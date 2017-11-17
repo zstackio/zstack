@@ -10,7 +10,7 @@ public class DeleteAlarmAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteAlarmResult value;
+        public org.zstack.sdk.zwatch.alarm.DeleteAlarmResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteAlarmAction extends AbstractAction {
             return ret;
         }
         
-        DeleteAlarmResult value = res.getResult(DeleteAlarmResult.class);
-        ret.value = value == null ? new DeleteAlarmResult() : value; 
+        org.zstack.sdk.zwatch.alarm.DeleteAlarmResult value = res.getResult(org.zstack.sdk.zwatch.alarm.DeleteAlarmResult.class);
+        ret.value = value == null ? new org.zstack.sdk.zwatch.alarm.DeleteAlarmResult() : value; 
 
         return ret;
     }

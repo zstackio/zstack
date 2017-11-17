@@ -10,7 +10,7 @@ public class CreateEcsVSwitchRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateEcsVSwitchRemoteResult value;
+        public org.zstack.sdk.CreateEcsVSwitchRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -62,8 +62,8 @@ public class CreateEcsVSwitchRemoteAction extends AbstractAction {
             return ret;
         }
         
-        CreateEcsVSwitchRemoteResult value = res.getResult(CreateEcsVSwitchRemoteResult.class);
-        ret.value = value == null ? new CreateEcsVSwitchRemoteResult() : value; 
+        org.zstack.sdk.CreateEcsVSwitchRemoteResult value = res.getResult(org.zstack.sdk.CreateEcsVSwitchRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateEcsVSwitchRemoteResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class SetVmStaticIpAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SetVmStaticIpResult value;
+        public org.zstack.sdk.SetVmStaticIpResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class SetVmStaticIpAction extends AbstractAction {
             return ret;
         }
         
-        SetVmStaticIpResult value = res.getResult(SetVmStaticIpResult.class);
-        ret.value = value == null ? new SetVmStaticIpResult() : value; 
+        org.zstack.sdk.SetVmStaticIpResult value = res.getResult(org.zstack.sdk.SetVmStaticIpResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SetVmStaticIpResult() : value; 
 
         return ret;
     }

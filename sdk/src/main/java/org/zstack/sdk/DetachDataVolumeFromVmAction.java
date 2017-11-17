@@ -10,7 +10,7 @@ public class DetachDataVolumeFromVmAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DetachDataVolumeFromVmResult value;
+        public org.zstack.sdk.DetachDataVolumeFromVmResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DetachDataVolumeFromVmAction extends AbstractAction {
             return ret;
         }
         
-        DetachDataVolumeFromVmResult value = res.getResult(DetachDataVolumeFromVmResult.class);
-        ret.value = value == null ? new DetachDataVolumeFromVmResult() : value; 
+        org.zstack.sdk.DetachDataVolumeFromVmResult value = res.getResult(org.zstack.sdk.DetachDataVolumeFromVmResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DetachDataVolumeFromVmResult() : value; 
 
         return ret;
     }

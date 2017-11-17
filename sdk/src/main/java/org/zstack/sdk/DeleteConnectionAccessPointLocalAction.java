@@ -10,7 +10,7 @@ public class DeleteConnectionAccessPointLocalAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteConnectionAccessPointLocalResult value;
+        public org.zstack.sdk.DeleteConnectionAccessPointLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteConnectionAccessPointLocalAction extends AbstractAction {
             return ret;
         }
         
-        DeleteConnectionAccessPointLocalResult value = res.getResult(DeleteConnectionAccessPointLocalResult.class);
-        ret.value = value == null ? new DeleteConnectionAccessPointLocalResult() : value; 
+        org.zstack.sdk.DeleteConnectionAccessPointLocalResult value = res.getResult(org.zstack.sdk.DeleteConnectionAccessPointLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteConnectionAccessPointLocalResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class AddDataCenterFromRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AddDataCenterFromRemoteResult value;
+        public org.zstack.sdk.AddDataCenterFromRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +56,8 @@ public class AddDataCenterFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        AddDataCenterFromRemoteResult value = res.getResult(AddDataCenterFromRemoteResult.class);
-        ret.value = value == null ? new AddDataCenterFromRemoteResult() : value; 
+        org.zstack.sdk.AddDataCenterFromRemoteResult value = res.getResult(org.zstack.sdk.AddDataCenterFromRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddDataCenterFromRemoteResult() : value; 
 
         return ret;
     }

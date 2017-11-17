@@ -10,7 +10,7 @@ public class GetCandidateVmNicsForLoadBalancerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetCandidateVmNicsForLoadBalancerResult value;
+        public org.zstack.sdk.GetCandidateVmNicsForLoadBalancerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -43,8 +43,8 @@ public class GetCandidateVmNicsForLoadBalancerAction extends AbstractAction {
             return ret;
         }
         
-        GetCandidateVmNicsForLoadBalancerResult value = res.getResult(GetCandidateVmNicsForLoadBalancerResult.class);
-        ret.value = value == null ? new GetCandidateVmNicsForLoadBalancerResult() : value; 
+        org.zstack.sdk.GetCandidateVmNicsForLoadBalancerResult value = res.getResult(org.zstack.sdk.GetCandidateVmNicsForLoadBalancerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetCandidateVmNicsForLoadBalancerResult() : value; 
 
         return ret;
     }

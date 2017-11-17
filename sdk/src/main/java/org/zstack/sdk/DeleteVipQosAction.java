@@ -10,7 +10,7 @@ public class DeleteVipQosAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteVipQosResult value;
+        public org.zstack.sdk.DeleteVipQosResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteVipQosAction extends AbstractAction {
             return ret;
         }
         
-        DeleteVipQosResult value = res.getResult(DeleteVipQosResult.class);
-        ret.value = value == null ? new DeleteVipQosResult() : value; 
+        org.zstack.sdk.DeleteVipQosResult value = res.getResult(org.zstack.sdk.DeleteVipQosResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteVipQosResult() : value; 
 
         return ret;
     }

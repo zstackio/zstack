@@ -10,7 +10,7 @@ public class GetCandidateVmForAttachingIsoAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetCandidateVmForAttachingIsoResult value;
+        public org.zstack.sdk.GetCandidateVmForAttachingIsoResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -43,8 +43,8 @@ public class GetCandidateVmForAttachingIsoAction extends AbstractAction {
             return ret;
         }
         
-        GetCandidateVmForAttachingIsoResult value = res.getResult(GetCandidateVmForAttachingIsoResult.class);
-        ret.value = value == null ? new GetCandidateVmForAttachingIsoResult() : value; 
+        org.zstack.sdk.GetCandidateVmForAttachingIsoResult value = res.getResult(org.zstack.sdk.GetCandidateVmForAttachingIsoResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetCandidateVmForAttachingIsoResult() : value; 
 
         return ret;
     }

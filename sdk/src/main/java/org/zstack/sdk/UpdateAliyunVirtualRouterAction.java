@@ -10,7 +10,7 @@ public class UpdateAliyunVirtualRouterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateAliyunVirtualRouterResult value;
+        public org.zstack.sdk.UpdateAliyunVirtualRouterResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class UpdateAliyunVirtualRouterAction extends AbstractAction {
             return ret;
         }
         
-        UpdateAliyunVirtualRouterResult value = res.getResult(UpdateAliyunVirtualRouterResult.class);
-        ret.value = value == null ? new UpdateAliyunVirtualRouterResult() : value; 
+        org.zstack.sdk.UpdateAliyunVirtualRouterResult value = res.getResult(org.zstack.sdk.UpdateAliyunVirtualRouterResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateAliyunVirtualRouterResult() : value; 
 
         return ret;
     }

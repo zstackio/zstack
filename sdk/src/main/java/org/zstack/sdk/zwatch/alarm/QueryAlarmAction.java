@@ -10,7 +10,7 @@ public class QueryAlarmAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryAlarmResult value;
+        public org.zstack.sdk.zwatch.alarm.QueryAlarmResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryAlarmAction extends QueryAction {
             return ret;
         }
         
-        QueryAlarmResult value = res.getResult(QueryAlarmResult.class);
-        ret.value = value == null ? new QueryAlarmResult() : value; 
+        org.zstack.sdk.zwatch.alarm.QueryAlarmResult value = res.getResult(org.zstack.sdk.zwatch.alarm.QueryAlarmResult.class);
+        ret.value = value == null ? new org.zstack.sdk.zwatch.alarm.QueryAlarmResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class ExpungeDataVolumeAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ExpungeDataVolumeResult value;
+        public org.zstack.sdk.ExpungeDataVolumeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class ExpungeDataVolumeAction extends AbstractAction {
             return ret;
         }
         
-        ExpungeDataVolumeResult value = res.getResult(ExpungeDataVolumeResult.class);
-        ret.value = value == null ? new ExpungeDataVolumeResult() : value; 
+        org.zstack.sdk.ExpungeDataVolumeResult value = res.getResult(org.zstack.sdk.ExpungeDataVolumeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ExpungeDataVolumeResult() : value; 
 
         return ret;
     }

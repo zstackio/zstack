@@ -10,7 +10,7 @@ public class DeleteOssBucketRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteOssBucketRemoteResult value;
+        public org.zstack.sdk.DeleteOssBucketRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteOssBucketRemoteAction extends AbstractAction {
             return ret;
         }
         
-        DeleteOssBucketRemoteResult value = res.getResult(DeleteOssBucketRemoteResult.class);
-        ret.value = value == null ? new DeleteOssBucketRemoteResult() : value; 
+        org.zstack.sdk.DeleteOssBucketRemoteResult value = res.getResult(org.zstack.sdk.DeleteOssBucketRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteOssBucketRemoteResult() : value; 
 
         return ret;
     }

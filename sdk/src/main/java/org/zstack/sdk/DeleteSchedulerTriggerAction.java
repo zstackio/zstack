@@ -10,7 +10,7 @@ public class DeleteSchedulerTriggerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteSchedulerTriggerResult value;
+        public org.zstack.sdk.DeleteSchedulerTriggerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteSchedulerTriggerAction extends AbstractAction {
             return ret;
         }
         
-        DeleteSchedulerTriggerResult value = res.getResult(DeleteSchedulerTriggerResult.class);
-        ret.value = value == null ? new DeleteSchedulerTriggerResult() : value; 
+        org.zstack.sdk.DeleteSchedulerTriggerResult value = res.getResult(org.zstack.sdk.DeleteSchedulerTriggerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteSchedulerTriggerResult() : value; 
 
         return ret;
     }

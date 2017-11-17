@@ -10,7 +10,7 @@ public class DeleteBackupFileInPublicAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteBackupDatabaseInPublicResult value;
+        public org.zstack.sdk.DeleteBackupDatabaseInPublicResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +56,8 @@ public class DeleteBackupFileInPublicAction extends AbstractAction {
             return ret;
         }
         
-        DeleteBackupDatabaseInPublicResult value = res.getResult(DeleteBackupDatabaseInPublicResult.class);
-        ret.value = value == null ? new DeleteBackupDatabaseInPublicResult() : value; 
+        org.zstack.sdk.DeleteBackupDatabaseInPublicResult value = res.getResult(org.zstack.sdk.DeleteBackupDatabaseInPublicResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteBackupDatabaseInPublicResult() : value; 
 
         return ret;
     }

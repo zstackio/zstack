@@ -10,7 +10,7 @@ public class DeleteVolumeSnapshotAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteVolumeSnapshotResult value;
+        public org.zstack.sdk.DeleteVolumeSnapshotResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteVolumeSnapshotAction extends AbstractAction {
             return ret;
         }
         
-        DeleteVolumeSnapshotResult value = res.getResult(DeleteVolumeSnapshotResult.class);
-        ret.value = value == null ? new DeleteVolumeSnapshotResult() : value; 
+        org.zstack.sdk.DeleteVolumeSnapshotResult value = res.getResult(org.zstack.sdk.DeleteVolumeSnapshotResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteVolumeSnapshotResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class DeleteVirtualBorderRouterLocalAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteVirtualBorderRouterLocalResult value;
+        public org.zstack.sdk.DeleteVirtualBorderRouterLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteVirtualBorderRouterLocalAction extends AbstractAction {
             return ret;
         }
         
-        DeleteVirtualBorderRouterLocalResult value = res.getResult(DeleteVirtualBorderRouterLocalResult.class);
-        ret.value = value == null ? new DeleteVirtualBorderRouterLocalResult() : value; 
+        org.zstack.sdk.DeleteVirtualBorderRouterLocalResult value = res.getResult(org.zstack.sdk.DeleteVirtualBorderRouterLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteVirtualBorderRouterLocalResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class GetPortForwardingAttachableVmNicsAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetPortForwardingAttachableVmNicsResult value;
+        public org.zstack.sdk.GetPortForwardingAttachableVmNicsResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -43,8 +43,8 @@ public class GetPortForwardingAttachableVmNicsAction extends AbstractAction {
             return ret;
         }
         
-        GetPortForwardingAttachableVmNicsResult value = res.getResult(GetPortForwardingAttachableVmNicsResult.class);
-        ret.value = value == null ? new GetPortForwardingAttachableVmNicsResult() : value; 
+        org.zstack.sdk.GetPortForwardingAttachableVmNicsResult value = res.getResult(org.zstack.sdk.GetPortForwardingAttachableVmNicsResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetPortForwardingAttachableVmNicsResult() : value; 
 
         return ret;
     }

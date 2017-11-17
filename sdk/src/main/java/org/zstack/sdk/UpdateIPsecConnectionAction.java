@@ -10,7 +10,7 @@ public class UpdateIPsecConnectionAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateIPsecConnectionResult value;
+        public org.zstack.sdk.UpdateIPsecConnectionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class UpdateIPsecConnectionAction extends AbstractAction {
             return ret;
         }
         
-        UpdateIPsecConnectionResult value = res.getResult(UpdateIPsecConnectionResult.class);
-        ret.value = value == null ? new UpdateIPsecConnectionResult() : value; 
+        org.zstack.sdk.UpdateIPsecConnectionResult value = res.getResult(org.zstack.sdk.UpdateIPsecConnectionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateIPsecConnectionResult() : value; 
 
         return ret;
     }

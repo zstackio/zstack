@@ -10,7 +10,7 @@ public class GetPciDeviceCandidatesForAttachingVmAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetPciDeviceCandidatesForAttachingVmResult value;
+        public org.zstack.sdk.GetPciDeviceCandidatesForAttachingVmResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -46,8 +46,8 @@ public class GetPciDeviceCandidatesForAttachingVmAction extends AbstractAction {
             return ret;
         }
         
-        GetPciDeviceCandidatesForAttachingVmResult value = res.getResult(GetPciDeviceCandidatesForAttachingVmResult.class);
-        ret.value = value == null ? new GetPciDeviceCandidatesForAttachingVmResult() : value; 
+        org.zstack.sdk.GetPciDeviceCandidatesForAttachingVmResult value = res.getResult(org.zstack.sdk.GetPciDeviceCandidatesForAttachingVmResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetPciDeviceCandidatesForAttachingVmResult() : value; 
 
         return ret;
     }

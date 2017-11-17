@@ -10,7 +10,7 @@ public class QueryLdapBindingAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryLdapBindingResult value;
+        public org.zstack.sdk.QueryLdapBindingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryLdapBindingAction extends QueryAction {
             return ret;
         }
         
-        QueryLdapBindingResult value = res.getResult(QueryLdapBindingResult.class);
-        ret.value = value == null ? new QueryLdapBindingResult() : value; 
+        org.zstack.sdk.QueryLdapBindingResult value = res.getResult(org.zstack.sdk.QueryLdapBindingResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryLdapBindingResult() : value; 
 
         return ret;
     }

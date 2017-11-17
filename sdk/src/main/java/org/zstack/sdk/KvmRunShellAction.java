@@ -10,7 +10,7 @@ public class KvmRunShellAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public KvmRunShellResult value;
+        public org.zstack.sdk.KvmRunShellResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class KvmRunShellAction extends AbstractAction {
             return ret;
         }
         
-        KvmRunShellResult value = res.getResult(KvmRunShellResult.class);
-        ret.value = value == null ? new KvmRunShellResult() : value; 
+        org.zstack.sdk.KvmRunShellResult value = res.getResult(org.zstack.sdk.KvmRunShellResult.class);
+        ret.value = value == null ? new org.zstack.sdk.KvmRunShellResult() : value; 
 
         return ret;
     }

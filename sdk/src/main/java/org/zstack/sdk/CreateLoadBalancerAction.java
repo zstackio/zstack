@@ -10,7 +10,7 @@ public class CreateLoadBalancerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateLoadBalancerResult value;
+        public org.zstack.sdk.CreateLoadBalancerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +56,8 @@ public class CreateLoadBalancerAction extends AbstractAction {
             return ret;
         }
         
-        CreateLoadBalancerResult value = res.getResult(CreateLoadBalancerResult.class);
-        ret.value = value == null ? new CreateLoadBalancerResult() : value; 
+        org.zstack.sdk.CreateLoadBalancerResult value = res.getResult(org.zstack.sdk.CreateLoadBalancerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateLoadBalancerResult() : value; 
 
         return ret;
     }

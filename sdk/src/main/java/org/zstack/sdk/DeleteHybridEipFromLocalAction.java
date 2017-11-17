@@ -10,7 +10,7 @@ public class DeleteHybridEipFromLocalAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteHybridEipFromLocalResult value;
+        public org.zstack.sdk.DeleteHybridEipFromLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class DeleteHybridEipFromLocalAction extends AbstractAction {
             return ret;
         }
         
-        DeleteHybridEipFromLocalResult value = res.getResult(DeleteHybridEipFromLocalResult.class);
-        ret.value = value == null ? new DeleteHybridEipFromLocalResult() : value; 
+        org.zstack.sdk.DeleteHybridEipFromLocalResult value = res.getResult(org.zstack.sdk.DeleteHybridEipFromLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteHybridEipFromLocalResult() : value; 
 
         return ret;
     }

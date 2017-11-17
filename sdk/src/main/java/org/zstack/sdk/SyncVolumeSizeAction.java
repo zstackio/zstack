@@ -10,7 +10,7 @@ public class SyncVolumeSizeAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SyncVolumeSizeResult value;
+        public org.zstack.sdk.SyncVolumeSizeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class SyncVolumeSizeAction extends AbstractAction {
             return ret;
         }
         
-        SyncVolumeSizeResult value = res.getResult(SyncVolumeSizeResult.class);
-        ret.value = value == null ? new SyncVolumeSizeResult() : value; 
+        org.zstack.sdk.SyncVolumeSizeResult value = res.getResult(org.zstack.sdk.SyncVolumeSizeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SyncVolumeSizeResult() : value; 
 
         return ret;
     }

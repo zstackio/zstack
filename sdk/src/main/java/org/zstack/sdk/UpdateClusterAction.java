@@ -10,7 +10,7 @@ public class UpdateClusterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateClusterResult value;
+        public org.zstack.sdk.UpdateClusterResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class UpdateClusterAction extends AbstractAction {
             return ret;
         }
         
-        UpdateClusterResult value = res.getResult(UpdateClusterResult.class);
-        ret.value = value == null ? new UpdateClusterResult() : value; 
+        org.zstack.sdk.UpdateClusterResult value = res.getResult(org.zstack.sdk.UpdateClusterResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateClusterResult() : value; 
 
         return ret;
     }

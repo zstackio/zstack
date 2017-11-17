@@ -10,7 +10,7 @@ public class QuerySchedulerJobAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QuerySchedulerJobResult value;
+        public org.zstack.sdk.QuerySchedulerJobResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QuerySchedulerJobAction extends QueryAction {
             return ret;
         }
         
-        QuerySchedulerJobResult value = res.getResult(QuerySchedulerJobResult.class);
-        ret.value = value == null ? new QuerySchedulerJobResult() : value; 
+        org.zstack.sdk.QuerySchedulerJobResult value = res.getResult(org.zstack.sdk.QuerySchedulerJobResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QuerySchedulerJobResult() : value; 
 
         return ret;
     }

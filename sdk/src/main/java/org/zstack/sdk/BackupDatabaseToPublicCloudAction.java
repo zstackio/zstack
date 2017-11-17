@@ -10,7 +10,7 @@ public class BackupDatabaseToPublicCloudAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public BackupDatabaseToPublicCloudResult value;
+        public org.zstack.sdk.BackupDatabaseToPublicCloudResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class BackupDatabaseToPublicCloudAction extends AbstractAction {
             return ret;
         }
         
-        BackupDatabaseToPublicCloudResult value = res.getResult(BackupDatabaseToPublicCloudResult.class);
-        ret.value = value == null ? new BackupDatabaseToPublicCloudResult() : value; 
+        org.zstack.sdk.BackupDatabaseToPublicCloudResult value = res.getResult(org.zstack.sdk.BackupDatabaseToPublicCloudResult.class);
+        ret.value = value == null ? new org.zstack.sdk.BackupDatabaseToPublicCloudResult() : value; 
 
         return ret;
     }

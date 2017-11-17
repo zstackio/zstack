@@ -10,7 +10,7 @@ public class AddDisasterImageStoreBackupStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AddImageStoreBackupStorageResult value;
+        public org.zstack.sdk.AddImageStoreBackupStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -80,8 +80,8 @@ public class AddDisasterImageStoreBackupStorageAction extends AbstractAction {
             return ret;
         }
         
-        AddImageStoreBackupStorageResult value = res.getResult(AddImageStoreBackupStorageResult.class);
-        ret.value = value == null ? new AddImageStoreBackupStorageResult() : value; 
+        org.zstack.sdk.AddImageStoreBackupStorageResult value = res.getResult(org.zstack.sdk.AddImageStoreBackupStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddImageStoreBackupStorageResult() : value; 
 
         return ret;
     }

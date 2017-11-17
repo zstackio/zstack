@@ -10,7 +10,7 @@ public class GetTaskProgressAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetTaskProgressResult value;
+        public org.zstack.sdk.GetTaskProgressResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -46,8 +46,8 @@ public class GetTaskProgressAction extends AbstractAction {
             return ret;
         }
         
-        GetTaskProgressResult value = res.getResult(GetTaskProgressResult.class);
-        ret.value = value == null ? new GetTaskProgressResult() : value; 
+        org.zstack.sdk.GetTaskProgressResult value = res.getResult(org.zstack.sdk.GetTaskProgressResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetTaskProgressResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class DeleteVmSshKeyAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteVmSshKeyResult value;
+        public org.zstack.sdk.DeleteVmSshKeyResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class DeleteVmSshKeyAction extends AbstractAction {
             return ret;
         }
         
-        DeleteVmSshKeyResult value = res.getResult(DeleteVmSshKeyResult.class);
-        ret.value = value == null ? new DeleteVmSshKeyResult() : value; 
+        org.zstack.sdk.DeleteVmSshKeyResult value = res.getResult(org.zstack.sdk.DeleteVmSshKeyResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteVmSshKeyResult() : value; 
 
         return ret;
     }

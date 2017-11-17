@@ -10,7 +10,7 @@ public class AttachPoliciesToUserAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AttachPoliciesToUserResult value;
+        public org.zstack.sdk.AttachPoliciesToUserResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class AttachPoliciesToUserAction extends AbstractAction {
             return ret;
         }
         
-        AttachPoliciesToUserResult value = res.getResult(AttachPoliciesToUserResult.class);
-        ret.value = value == null ? new AttachPoliciesToUserResult() : value; 
+        org.zstack.sdk.AttachPoliciesToUserResult value = res.getResult(org.zstack.sdk.AttachPoliciesToUserResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AttachPoliciesToUserResult() : value; 
 
         return ret;
     }

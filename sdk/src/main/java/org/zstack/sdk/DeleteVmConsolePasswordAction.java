@@ -10,7 +10,7 @@ public class DeleteVmConsolePasswordAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteVmConsolePasswordResult value;
+        public org.zstack.sdk.DeleteVmConsolePasswordResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class DeleteVmConsolePasswordAction extends AbstractAction {
             return ret;
         }
         
-        DeleteVmConsolePasswordResult value = res.getResult(DeleteVmConsolePasswordResult.class);
-        ret.value = value == null ? new DeleteVmConsolePasswordResult() : value; 
+        org.zstack.sdk.DeleteVmConsolePasswordResult value = res.getResult(org.zstack.sdk.DeleteVmConsolePasswordResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteVmConsolePasswordResult() : value; 
 
         return ret;
     }

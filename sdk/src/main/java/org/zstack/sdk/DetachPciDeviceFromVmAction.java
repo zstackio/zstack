@@ -10,7 +10,7 @@ public class DetachPciDeviceFromVmAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DetachPciDeviceFromVmResult value;
+        public org.zstack.sdk.DetachPciDeviceFromVmResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DetachPciDeviceFromVmAction extends AbstractAction {
             return ret;
         }
         
-        DetachPciDeviceFromVmResult value = res.getResult(DetachPciDeviceFromVmResult.class);
-        ret.value = value == null ? new DetachPciDeviceFromVmResult() : value; 
+        org.zstack.sdk.DetachPciDeviceFromVmResult value = res.getResult(org.zstack.sdk.DetachPciDeviceFromVmResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DetachPciDeviceFromVmResult() : value; 
 
         return ret;
     }

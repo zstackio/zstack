@@ -10,7 +10,7 @@ public class AddVmNicToLoadBalancerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AddVmNicToLoadBalancerResult value;
+        public org.zstack.sdk.AddVmNicToLoadBalancerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class AddVmNicToLoadBalancerAction extends AbstractAction {
             return ret;
         }
         
-        AddVmNicToLoadBalancerResult value = res.getResult(AddVmNicToLoadBalancerResult.class);
-        ret.value = value == null ? new AddVmNicToLoadBalancerResult() : value; 
+        org.zstack.sdk.AddVmNicToLoadBalancerResult value = res.getResult(org.zstack.sdk.AddVmNicToLoadBalancerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddVmNicToLoadBalancerResult() : value; 
 
         return ret;
     }

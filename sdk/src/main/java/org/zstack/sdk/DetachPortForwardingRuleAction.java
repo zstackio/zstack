@@ -10,7 +10,7 @@ public class DetachPortForwardingRuleAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DetachPortForwardingRuleResult value;
+        public org.zstack.sdk.DetachPortForwardingRuleResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class DetachPortForwardingRuleAction extends AbstractAction {
             return ret;
         }
         
-        DetachPortForwardingRuleResult value = res.getResult(DetachPortForwardingRuleResult.class);
-        ret.value = value == null ? new DetachPortForwardingRuleResult() : value; 
+        org.zstack.sdk.DetachPortForwardingRuleResult value = res.getResult(org.zstack.sdk.DetachPortForwardingRuleResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DetachPortForwardingRuleResult() : value; 
 
         return ret;
     }

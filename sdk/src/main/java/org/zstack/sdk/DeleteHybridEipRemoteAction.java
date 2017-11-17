@@ -10,7 +10,7 @@ public class DeleteHybridEipRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteHybridEipRemoteResult value;
+        public org.zstack.sdk.DeleteHybridEipRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class DeleteHybridEipRemoteAction extends AbstractAction {
             return ret;
         }
         
-        DeleteHybridEipRemoteResult value = res.getResult(DeleteHybridEipRemoteResult.class);
-        ret.value = value == null ? new DeleteHybridEipRemoteResult() : value; 
+        org.zstack.sdk.DeleteHybridEipRemoteResult value = res.getResult(org.zstack.sdk.DeleteHybridEipRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteHybridEipRemoteResult() : value; 
 
         return ret;
     }

@@ -10,7 +10,7 @@ public class QueryLocalStorageResourceRefAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryLocalStorageResourceRefResult value;
+        public org.zstack.sdk.QueryLocalStorageResourceRefResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryLocalStorageResourceRefAction extends QueryAction {
             return ret;
         }
         
-        QueryLocalStorageResourceRefResult value = res.getResult(QueryLocalStorageResourceRefResult.class);
-        ret.value = value == null ? new QueryLocalStorageResourceRefResult() : value; 
+        org.zstack.sdk.QueryLocalStorageResourceRefResult value = res.getResult(org.zstack.sdk.QueryLocalStorageResourceRefResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryLocalStorageResourceRefResult() : value; 
 
         return ret;
     }

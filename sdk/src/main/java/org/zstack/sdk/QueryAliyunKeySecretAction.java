@@ -10,7 +10,7 @@ public class QueryAliyunKeySecretAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryAliyunKeySecretResult value;
+        public org.zstack.sdk.QueryAliyunKeySecretResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryAliyunKeySecretAction extends QueryAction {
             return ret;
         }
         
-        QueryAliyunKeySecretResult value = res.getResult(QueryAliyunKeySecretResult.class);
-        ret.value = value == null ? new QueryAliyunKeySecretResult() : value; 
+        org.zstack.sdk.QueryAliyunKeySecretResult value = res.getResult(org.zstack.sdk.QueryAliyunKeySecretResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryAliyunKeySecretResult() : value; 
 
         return ret;
     }

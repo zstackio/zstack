@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class ImageStoreBackupStorageInventory extends BackupStorageInventory {
+public class ImageStoreBackupStorageInventory extends org.zstack.sdk.BackupStorageInventory {
 
     public java.lang.String hostname;
     public void setHostname(java.lang.String hostname) {

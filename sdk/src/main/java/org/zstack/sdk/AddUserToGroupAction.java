@@ -10,7 +10,7 @@ public class AddUserToGroupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AddUserToGroupResult value;
+        public org.zstack.sdk.AddUserToGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class AddUserToGroupAction extends AbstractAction {
             return ret;
         }
         
-        AddUserToGroupResult value = res.getResult(AddUserToGroupResult.class);
-        ret.value = value == null ? new AddUserToGroupResult() : value; 
+        org.zstack.sdk.AddUserToGroupResult value = res.getResult(org.zstack.sdk.AddUserToGroupResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddUserToGroupResult() : value; 
 
         return ret;
     }

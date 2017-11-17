@@ -10,7 +10,7 @@ public class ReimageVmInstanceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ReimageVmInstanceResult value;
+        public org.zstack.sdk.ReimageVmInstanceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +47,8 @@ public class ReimageVmInstanceAction extends AbstractAction {
             return ret;
         }
         
-        ReimageVmInstanceResult value = res.getResult(ReimageVmInstanceResult.class);
-        ret.value = value == null ? new ReimageVmInstanceResult() : value; 
+        org.zstack.sdk.ReimageVmInstanceResult value = res.getResult(org.zstack.sdk.ReimageVmInstanceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ReimageVmInstanceResult() : value; 
 
         return ret;
     }

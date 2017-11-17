@@ -53,7 +53,7 @@ class SdkApiTemplate implements SdkTemplate {
             baseName = StringUtils.removeEnd(baseName, "Reply")
 
             resultClassName = StringUtils.capitalize(baseName)
-            resultClassName = "${resultClassName}Result"
+            resultClassName = "${getPackageName(requestAnnotation.responseClass())}.${resultClassName}Result"
 
             isQueryApi = APIQueryMessage.class.isAssignableFrom(apiMessageClass)
         } catch (Throwable t) {

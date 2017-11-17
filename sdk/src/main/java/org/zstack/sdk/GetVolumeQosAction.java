@@ -10,7 +10,7 @@ public class GetVolumeQosAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetVolumeQosResult value;
+        public org.zstack.sdk.GetVolumeQosResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -43,8 +43,8 @@ public class GetVolumeQosAction extends AbstractAction {
             return ret;
         }
         
-        GetVolumeQosResult value = res.getResult(GetVolumeQosResult.class);
-        ret.value = value == null ? new GetVolumeQosResult() : value; 
+        org.zstack.sdk.GetVolumeQosResult value = res.getResult(org.zstack.sdk.GetVolumeQosResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetVolumeQosResult() : value; 
 
         return ret;
     }

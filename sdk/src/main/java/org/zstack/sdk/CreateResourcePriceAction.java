@@ -10,7 +10,7 @@ public class CreateResourcePriceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateResourcePriceResult value;
+        public org.zstack.sdk.CreateResourcePriceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -62,8 +62,8 @@ public class CreateResourcePriceAction extends AbstractAction {
             return ret;
         }
         
-        CreateResourcePriceResult value = res.getResult(CreateResourcePriceResult.class);
-        ret.value = value == null ? new CreateResourcePriceResult() : value; 
+        org.zstack.sdk.CreateResourcePriceResult value = res.getResult(org.zstack.sdk.CreateResourcePriceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateResourcePriceResult() : value; 
 
         return ret;
     }

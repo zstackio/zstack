@@ -10,7 +10,7 @@ public class DeleteBackupStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteBackupStorageResult value;
+        public org.zstack.sdk.DeleteBackupStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteBackupStorageAction extends AbstractAction {
             return ret;
         }
         
-        DeleteBackupStorageResult value = res.getResult(DeleteBackupStorageResult.class);
-        ret.value = value == null ? new DeleteBackupStorageResult() : value; 
+        org.zstack.sdk.DeleteBackupStorageResult value = res.getResult(org.zstack.sdk.DeleteBackupStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteBackupStorageResult() : value; 
 
         return ret;
     }

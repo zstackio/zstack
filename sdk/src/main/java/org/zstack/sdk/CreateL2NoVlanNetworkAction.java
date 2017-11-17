@@ -10,7 +10,7 @@ public class CreateL2NoVlanNetworkAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateL2NetworkResult value;
+        public org.zstack.sdk.CreateL2NetworkResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -62,8 +62,8 @@ public class CreateL2NoVlanNetworkAction extends AbstractAction {
             return ret;
         }
         
-        CreateL2NetworkResult value = res.getResult(CreateL2NetworkResult.class);
-        ret.value = value == null ? new CreateL2NetworkResult() : value; 
+        org.zstack.sdk.CreateL2NetworkResult value = res.getResult(org.zstack.sdk.CreateL2NetworkResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateL2NetworkResult() : value; 
 
         return ret;
     }

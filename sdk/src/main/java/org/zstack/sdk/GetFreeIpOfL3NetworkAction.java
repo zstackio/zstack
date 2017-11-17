@@ -10,7 +10,7 @@ public class GetFreeIpOfL3NetworkAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetFreeIpResult value;
+        public org.zstack.sdk.GetFreeIpResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -52,8 +52,8 @@ public class GetFreeIpOfL3NetworkAction extends AbstractAction {
             return ret;
         }
         
-        GetFreeIpResult value = res.getResult(GetFreeIpResult.class);
-        ret.value = value == null ? new GetFreeIpResult() : value; 
+        org.zstack.sdk.GetFreeIpResult value = res.getResult(org.zstack.sdk.GetFreeIpResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetFreeIpResult() : value; 
 
         return ret;
     }

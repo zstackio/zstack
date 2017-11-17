@@ -10,7 +10,7 @@ public class SyncRouterInterfaceFromRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SyncRouterInterfaceFromRemoteResult value;
+        public org.zstack.sdk.SyncRouterInterfaceFromRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class SyncRouterInterfaceFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        SyncRouterInterfaceFromRemoteResult value = res.getResult(SyncRouterInterfaceFromRemoteResult.class);
-        ret.value = value == null ? new SyncRouterInterfaceFromRemoteResult() : value; 
+        org.zstack.sdk.SyncRouterInterfaceFromRemoteResult value = res.getResult(org.zstack.sdk.SyncRouterInterfaceFromRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SyncRouterInterfaceFromRemoteResult() : value; 
 
         return ret;
     }

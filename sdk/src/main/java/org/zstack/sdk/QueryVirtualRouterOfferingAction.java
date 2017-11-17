@@ -10,7 +10,7 @@ public class QueryVirtualRouterOfferingAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryVirtualRouterOfferingResult value;
+        public org.zstack.sdk.QueryVirtualRouterOfferingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,8 +32,8 @@ public class QueryVirtualRouterOfferingAction extends QueryAction {
             return ret;
         }
         
-        QueryVirtualRouterOfferingResult value = res.getResult(QueryVirtualRouterOfferingResult.class);
-        ret.value = value == null ? new QueryVirtualRouterOfferingResult() : value; 
+        org.zstack.sdk.QueryVirtualRouterOfferingResult value = res.getResult(org.zstack.sdk.QueryVirtualRouterOfferingResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryVirtualRouterOfferingResult() : value; 
 
         return ret;
     }

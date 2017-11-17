@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class VmSpending extends SpendingDetails {
+public class VmSpending extends org.zstack.sdk.SpendingDetails {
 
     public java.util.List cpuInventory;
     public void setCpuInventory(java.util.List cpuInventory) {

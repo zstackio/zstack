@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class AliyunException extends ErrorCode {
+public class AliyunException extends org.zstack.sdk.ErrorCode {
 
     public java.lang.String ResourceNotFound;
     public void setResourceNotFound(java.lang.String ResourceNotFound) {

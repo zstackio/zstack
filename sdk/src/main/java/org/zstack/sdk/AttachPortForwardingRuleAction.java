@@ -10,7 +10,7 @@ public class AttachPortForwardingRuleAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AttachPortForwardingRuleResult value;
+        public org.zstack.sdk.AttachPortForwardingRuleResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class AttachPortForwardingRuleAction extends AbstractAction {
             return ret;
         }
         
-        AttachPortForwardingRuleResult value = res.getResult(AttachPortForwardingRuleResult.class);
-        ret.value = value == null ? new AttachPortForwardingRuleResult() : value; 
+        org.zstack.sdk.AttachPortForwardingRuleResult value = res.getResult(org.zstack.sdk.AttachPortForwardingRuleResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AttachPortForwardingRuleResult() : value; 
 
         return ret;
     }

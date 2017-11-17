@@ -10,7 +10,7 @@ public class GetOssBucketFileFromRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetOssBucketFileFromRemoteResult value;
+        public org.zstack.sdk.GetOssBucketFileFromRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -43,8 +43,8 @@ public class GetOssBucketFileFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        GetOssBucketFileFromRemoteResult value = res.getResult(GetOssBucketFileFromRemoteResult.class);
-        ret.value = value == null ? new GetOssBucketFileFromRemoteResult() : value; 
+        org.zstack.sdk.GetOssBucketFileFromRemoteResult value = res.getResult(org.zstack.sdk.GetOssBucketFileFromRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetOssBucketFileFromRemoteResult() : value; 
 
         return ret;
     }

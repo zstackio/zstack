@@ -10,7 +10,7 @@ public class GetL3NetworkMtuAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetL3NetworkMtuResult value;
+        public org.zstack.sdk.GetL3NetworkMtuResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -43,8 +43,8 @@ public class GetL3NetworkMtuAction extends AbstractAction {
             return ret;
         }
         
-        GetL3NetworkMtuResult value = res.getResult(GetL3NetworkMtuResult.class);
-        ret.value = value == null ? new GetL3NetworkMtuResult() : value; 
+        org.zstack.sdk.GetL3NetworkMtuResult value = res.getResult(org.zstack.sdk.GetL3NetworkMtuResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetL3NetworkMtuResult() : value; 
 
         return ret;
     }

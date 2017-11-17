@@ -10,7 +10,7 @@ public class DeleteVRouterRouteTableAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteVRouterRouteTableResult value;
+        public org.zstack.sdk.DeleteVRouterRouteTableResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +50,8 @@ public class DeleteVRouterRouteTableAction extends AbstractAction {
             return ret;
         }
         
-        DeleteVRouterRouteTableResult value = res.getResult(DeleteVRouterRouteTableResult.class);
-        ret.value = value == null ? new DeleteVRouterRouteTableResult() : value; 
+        org.zstack.sdk.DeleteVRouterRouteTableResult value = res.getResult(org.zstack.sdk.DeleteVRouterRouteTableResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteVRouterRouteTableResult() : value; 
 
         return ret;
     }
