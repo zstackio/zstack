@@ -88,7 +88,7 @@ public abstract class HostBase extends AbstractHost {
             data.reason = reason;
         }
 
-        void fire() {
+        public void fire() {
             fire(HostCanonicalEvents.HOST_DISCONNECTED_PATH, data);
         }
     }

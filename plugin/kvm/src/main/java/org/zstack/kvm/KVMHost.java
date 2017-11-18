@@ -69,6 +69,8 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.i18n;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
@@ -2263,9 +2265,13 @@ public class KVMHost extends HostBase implements Host {
                                 if (ret.isSuccess()) {
                                     if (!self.getUuid().equals(ret.getHostUuid())) {
                                         afterDone.add(() -> {
-                                            String info = String.format("detected abnormal status[host uuid change, expected: %s but: %s] of kvmagent," +
+                                            String info = i18n("detected abnormal status[host uuid change, expected: %s but: %s] of kvmagent," +
                                                     "it's mainly caused by kvmagent restarts behind zstack management server. Report this to ping task, it will issue a reconnect soon", self.getUuid(), ret.getHostUuid());
                                             logger.warn(info);
+
+                                            changeConnectionState(HostStatusEvent.disconnected);
+                                            new HostDisconnectedCanonicalEvent(self.getUuid(), argerr(info)).fire();
+
                                             ReconnectHostMsg rmsg = new ReconnectHostMsg();
                                             rmsg.setHostUuid(self.getUuid());
                                             bus.makeTargetServiceIdByResourceUuid(rmsg, HostConstant.SERVICE_ID, self.getUuid());
