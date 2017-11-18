@@ -3,7 +3,6 @@ package org.zstack.network.service.vip;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.springframework.security.access.method.P;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
@@ -19,7 +18,6 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -33,22 +31,20 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkConstant;
 import org.zstack.header.network.l3.ReturnIpMsg;
 import org.zstack.header.network.service.NetworkServiceType;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.VmNicVO_;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.VipUseForList;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.utils.VipUseForList;
-
-import javax.persistence.PersistenceException;
-
-import static org.zstack.core.Platform.getReflections;
-import static org.zstack.core.Platform.operr;
 
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created by xing5 on 2016/11/19.
@@ -705,7 +701,8 @@ public class VipBase {
         VmNicVO nnic = Q.New(VmNicVO.class).eq(VmNicVO_.l3NetworkUuid, peerL3NetworkUuid)
                 .notNull(VmNicVO_.metaData).limit(1).find();
         if (nnic == null) {
-            logger.debug(String.format("add peer l3[uuid:%s] to vip[uuid:%s], the l3 has no vr attached now"));
+            logger.debug(String.format("add peer l3[uuid:%s] to vip[uuid:%s], the l3 has no vr attached now",
+                    peerL3NetworkUuid, self.getUuid()));
             return true;
         }
 
@@ -716,7 +713,7 @@ public class VipBase {
                 continue;
             }
             throw new CloudRuntimeException(String.format("the request to add peer l3[uuid:%s] with vip[uuid:%s] has " +
-                            "attched vr[uuid:%s] and is not vr[uuid:%s] which exists peer l3 attached", self.getUuid(), peerL3NetworkUuid,
+                            "attched vr[uuid:%s] and is not vr[uuid:%s] which exists peer l3 attached", peerL3NetworkUuid, self.getUuid(),
                     nnic.getVmInstanceUuid(), enic.getVmInstanceUuid()));
         }
 
