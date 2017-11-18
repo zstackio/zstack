@@ -30,9 +30,9 @@ public class GetEventDataAction extends AbstractAction {
     public java.lang.Long endTime;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,2147483647L}, noTrim = false)
-    public java.lang.Integer limit;
+    public java.lang.Integer limit = 100;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false)
     public java.util.List labels;
 
     @Param(required = false)

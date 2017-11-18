@@ -1,16 +1,16 @@
-package org.zstack.sdk.zwatch.api;
+package org.zstack.sdk.sns.platform.dingtalk;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetAuditDataAction extends AbstractAction {
+public class RemoveSNSDingTalkAtPersonAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.zwatch.api.GetAuditDataResult value;
+        public org.zstack.sdk.sns.platform.dingtalk.RemoveSNSDingTalkAtPersonResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -23,17 +23,11 @@ public class GetAuditDataAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,9223372036854775807L}, noTrim = false)
-    public java.lang.Long startTime;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String uuid;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,9223372036854775807L}, noTrim = false)
-    public java.lang.Long endTime;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,2147483647L}, noTrim = false)
-    public java.lang.Integer limit = 100;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List labels;
+    @Param(required = false)
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -44,6 +38,10 @@ public class GetAuditDataAction extends AbstractAction {
     @Param(required = true)
     public String sessionId;
 
+    public long timeout;
+    
+    public long pollingInterval;
+
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -52,8 +50,8 @@ public class GetAuditDataAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.zwatch.api.GetAuditDataResult value = res.getResult(org.zstack.sdk.zwatch.api.GetAuditDataResult.class);
-        ret.value = value == null ? new org.zstack.sdk.zwatch.api.GetAuditDataResult() : value; 
+        org.zstack.sdk.sns.platform.dingtalk.RemoveSNSDingTalkAtPersonResult value = res.getResult(org.zstack.sdk.sns.platform.dingtalk.RemoveSNSDingTalkAtPersonResult.class);
+        ret.value = value == null ? new org.zstack.sdk.sns.platform.dingtalk.RemoveSNSDingTalkAtPersonResult() : value; 
 
         return ret;
     }
@@ -78,10 +76,10 @@ public class GetAuditDataAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/zwatch/audits";
+        info.httpMethod = "DELETE";
+        info.path = "/sns/application-endpoints/ding-talk/at-persons/{uuid}";
         info.needSession = true;
-        info.needPoll = false;
+        info.needPoll = true;
         info.parameterName = "";
         return info;
     }
