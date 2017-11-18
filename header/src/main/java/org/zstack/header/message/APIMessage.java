@@ -32,9 +32,9 @@ public abstract class APIMessage extends NeedReplyMessage {
         this.session = session;
     }
 
-    private static class FieldParam {
-        Field field;
-        APIParam param;
+    public static class FieldParam {
+        public Field field;
+        public APIParam param;
     }
 
     @NoJsonSchema
@@ -44,6 +44,10 @@ public abstract class APIMessage extends NeedReplyMessage {
 
     static {
         collectApiParams();
+    }
+
+    public static Map<Class, Collection<FieldParam>> getApiParams() {
+        return apiParams;
     }
 
     private static void collectApiParams() {
