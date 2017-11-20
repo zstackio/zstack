@@ -16,6 +16,16 @@
     "fileName": "src/main/java/org/zstack/aliyun/core/AliyunClient.java"
   },
   {
+    "raw": "Bucket name is already existed (maybe created by other user), Please select a different name and try again.(aliyun request-id: %s)",
+    "en_US": "Bucket name is already existed (maybe created by other user), Please select a different name and try again.(aliyun request-id: {0})",
+    "zh_CN": "对象存储名已经存在（有可能被别的用户使用了），请使用一个新的命名来尝试",
+    "arguments": [
+      "e.getRequestId()"
+    ],
+    "line": 1475,
+    "fileName": "src/main/java/org/zstack/aliyun/core/AliyunSdkImpl.java"
+  },
+  {
     "raw": "entry is still existed after %s ms",
     "en_US": "entry is still existed after {0} ms",
     "zh_CN": "",
@@ -876,44 +886,6 @@
     "fileName": "src/main/java/org/zstack/baremetal/console/BaremetalConsoleProxyImpl.java"
   },
   {
-    "raw": "failed to create HardwareInfo using the sended hardware info",
-    "en_US": "failed to create HardwareInfo using the sended hardware info",
-    "zh_CN": "",
-    "arguments": [],
-    "line": 89,
-    "fileName": "src/main/java/org/zstack/baremetal/hardwareinfo/BaremetalHardwareInfoImpl.java"
-  },
-  {
-    "raw": "successfully created HardwareInfo using the sended hardware info",
-    "en_US": "successfully created HardwareInfo using the sended hardware info",
-    "zh_CN": "",
-    "arguments": [],
-    "line": 85,
-    "fileName": "src/main/java/org/zstack/baremetal/hardwareinfo/BaremetalHardwareInfoImpl.java"
-  },
-  {
-    "raw": "failed to deleted %s hardwareInfo of chassis %s",
-    "en_US": "failed to deleted {0} hardwareInfo of chassis {1}",
-    "zh_CN": "",
-    "arguments": [
-      "dMsg.getType()",
-      "chassis.getUuid()"
-    ],
-    "line": 73,
-    "fileName": "src/main/java/org/zstack/baremetal/hardwareinfo/BaremetalHardwareInfoImpl.java"
-  },
-  {
-    "raw": "successfully deleted %s hardwareInfo of chassis %s",
-    "en_US": "successfully deleted {0} hardwareInfo of chassis {1}",
-    "zh_CN": "",
-    "arguments": [
-      "dMsg.getType()",
-      "chassis.getUuid()"
-    ],
-    "line": 68,
-    "fileName": "src/main/java/org/zstack/baremetal/hardwareinfo/BaremetalHardwareInfoImpl.java"
-  },
-  {
     "raw": "IP/Netmask should be all empty or all exists.",
     "en_US": "IP/Netmask should be all empty or all exists.",
     "zh_CN": "",
@@ -1164,32 +1136,6 @@
     "arguments": [],
     "line": 203,
     "fileName": "src/main/java/org/zstack/baremetal/host/BaremetalHostApiInterceptor.java"
-  },
-  {
-    "raw": "failed to set status \u003d Provisioned after baremetal host provisioning",
-    "en_US": "failed to set status \u003d Provisioned after baremetal host provisioning",
-    "zh_CN": "",
-    "arguments": [],
-    "line": 88,
-    "fileName": "src/main/java/org/zstack/baremetal/host/BaremetalHostImpl.java"
-  },
-  {
-    "raw": "failed to clean up baremetal hostcfg after baremetal host provisioning",
-    "en_US": "failed to clean up baremetal hostcfg after baremetal host provisioning",
-    "zh_CN": "",
-    "arguments": [],
-    "line": 89,
-    "fileName": "src/main/java/org/zstack/baremetal/host/BaremetalHostImpl.java"
-  },
-  {
-    "raw": "successfully provisioned baremetal host %s",
-    "en_US": "successfully provisioned baremetal host {0}",
-    "zh_CN": "",
-    "arguments": [
-      "cmd.chassisUuid"
-    ],
-    "line": 132,
-    "fileName": "src/main/java/org/zstack/baremetal/host/BaremetalHostImpl.java"
   },
   {
     "raw": "IPMI Address %s is not valid",
@@ -2421,6 +2367,35 @@
     ],
     "line": 2038,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
+  },
+  {
+    "raw": "user has no privilege to change image of vm %s",
+    "en_US": "user has no privilege to change image of vm {0}",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getVmInstanceUuid()"
+    ],
+    "line": 55,
+    "fileName": "src/main/java/org/zstack/compute/vm/VmMevocoApiInterceptor.java"
+  },
+  {
+    "raw": "do not change vm image when it\u0027s not stopped",
+    "en_US": "do not change vm image when it\u0027s not stopped",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 67,
+    "fileName": "src/main/java/org/zstack/compute/vm/VmMevocoApiInterceptor.java"
+  },
+  {
+    "raw": "user has no privilege to change root volume of vm %s using image %s",
+    "en_US": "user has no privilege to change root volume of vm {0} using image {1}",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getVmInstanceUuid()",
+      "msg.getImageUuid()"
+    ],
+    "line": 85,
+    "fileName": "src/main/java/org/zstack/compute/vm/VmMevocoApiInterceptor.java"
   },
   {
     "raw": "either uuid or account or password must be set",
@@ -3992,14 +3967,14 @@
     "fileName": "src/main/java/org/zstack/ipsec/IPsecApiInterceptor.java"
   },
   {
-    "raw": "there has been a connection[uuid:%s, name:%s] has the same L3NetworkUuid, peerAddress, and peerCidrs",
-    "en_US": "there has been a connection[uuid:{0}, name:{1}] has the same L3NetworkUuid, peerAddress, and peerCidrs",
-    "zh_CN": "已经存在一个连接[uuid:{0}, 名称:{1}]拥有相同的三层网络、对端地址和对端CIDR",
+    "raw": "there has been a connection[uuid:%s, name:%s] has the same L3NetworkUuid, peerAddress",
+    "en_US": "there has been a connection[uuid:{0}, name:{1}] has the same L3NetworkUuid, peerAddress",
+    "zh_CN": "",
     "arguments": [
       "inv.getUuid()",
       "inv.getName()"
     ],
-    "line": 69,
+    "line": 64,
     "fileName": "src/main/java/org/zstack/ipsec/IPsecApiInterceptor.java"
   },
   {
@@ -4489,6 +4464,46 @@
     "fileName": "src/main/java/org/zstack/kvm/KvmVmSyncPingTask.java"
   },
   {
+    "raw": "Wrong LdapServerType[%s], valid values: [%,%s]",
+    "en_US": "Wrong LdapServerType[{0}], valid values: [%,{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "type",
+      "LdapConstant.OpenLdap.TYPE",
+      "LdapConstant.WindowsAD.TYPE"
+    ],
+    "line": 102,
+    "fileName": "src/main/java/org/zstack/ldap/LdapApiInterceptor.java"
+  },
+  {
+    "raw": "There is no ldap server in the system, Please add a ldap server first.",
+    "en_US": "There is no ldap server in the system, Please add a ldap server first.",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 109,
+    "fileName": "src/main/java/org/zstack/ldap/LdapApiInterceptor.java"
+  },
+  {
+    "raw": "Cannot connect to LDAP server, %s",
+    "en_US": "Cannot connect to LDAP server, {0}",
+    "zh_CN": "",
+    "arguments": [
+      "e.toString()"
+    ],
+    "line": 124,
+    "fileName": "src/main/java/org/zstack/ldap/LdapApiInterceptor.java"
+  },
+  {
+    "raw": "query ldap entry fail, %s",
+    "en_US": "query ldap entry fail, {0}",
+    "zh_CN": "",
+    "arguments": [
+      "e.toString()"
+    ],
+    "line": 521,
+    "fileName": "src/main/java/org/zstack/ldap/LdapManagerImpl.java"
+  },
+  {
     "raw": "Decode fail because %s",
     "en_US": "Decode fail because {0}",
     "zh_CN": "",
@@ -4557,6 +4572,17 @@
       "StringUtils.join(eipStr, \",\")"
     ],
     "line": 115,
+    "fileName": "src/main/java/org/zstack/mediator/ApiValidator.java"
+  },
+  {
+    "raw": "the vip[uuid:%s] already has bound to other service[%s]",
+    "en_US": "the vip[uuid:{0}] already has bound to other service[{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getVipUuid()",
+      "vipUseForList.toString()"
+    ],
+    "line": 183,
     "fileName": "src/main/java/org/zstack/mediator/ApiValidator.java"
   },
   {
@@ -6239,19 +6265,6 @@
     "fileName": "src/main/java/org/zstack/network/service/portforwarding/PortForwardingApiInterceptor.java"
   },
   {
-    "raw": "the VIP[uuid:%s] is already bound the a guest L3 network[uuid:%s], but the VM nic[uuid:%s] is on another guest L3 network[uuid:%s]",
-    "en_US": "the VIP[uuid:{0}] is already bound the a guest L3 network[uuid:{1}], but the VM nic[uuid:{2}] is on another guest L3 network[uuid:{3}]",
-    "zh_CN": "VIP[uuid:{0}]已经绑定到一个用户L3网络[uuid:{1}]，但是虚拟机网卡[uuid:{2}]在另一个L3网络[uuid:{3}]上。",
-    "arguments": [
-      "msg.getVipUuid()",
-      "peerL3Uuid",
-      "msg.getVmNicUuid()",
-      "nicL3Uuid"
-    ],
-    "line": 197,
-    "fileName": "src/main/java/org/zstack/network/service/portforwarding/PortForwardingApiInterceptor.java"
-  },
-  {
     "raw": "for range port forwarding, the port range size must match; vip range[%s, %s]\u0027s size doesn\u0027t match range[%s, %s]\u0027s size",
     "en_US": "for range port forwarding, the port range size must match; vip range[{0}, {1}]\u0027s size doesn\u0027t match range[{2}, {3}]\u0027s size",
     "zh_CN": "对于范围端口转发，端口范围大小必须匹配；VIP范围[{0}, {1}]的大小不匹配范围[{2}, {3}]的大小。",
@@ -6332,16 +6345,6 @@
     "fileName": "src/main/java/org/zstack/network/service/vip/VipApiInterceptor.java"
   },
   {
-    "raw": "can not modify vip[%s] attributes, it has been deleted",
-    "en_US": "can not modify vip[{0}] attributes, it has been deleted",
-    "zh_CN": "",
-    "arguments": [
-      "self.getUuid()"
-    ],
-    "line": 184,
-    "fileName": "src/main/java/org/zstack/network/service/vip/VipBase.java"
-  },
-  {
     "raw": "service provider of the vip[uuid:%s, name:%s, ip: %s] has been set to %s",
     "en_US": "service provider of the vip[uuid:{0}, name:{1}, ip: {2}] has been set to {3}",
     "zh_CN": "vip[uuid:{0}, name:{1}, ip: {2}]的服务提供器已经被设置成[{3}]。",
@@ -6352,29 +6355,6 @@
       "self.getServiceProvider()"
     ],
     "line": 179,
-    "fileName": "src/main/java/org/zstack/network/service/vip/VipBase.java"
-  },
-  {
-    "raw": "the field \u0027useFor\u0027[%s] in the msg is conflicted",
-    "en_US": "the field \u0027useFor\u0027[{0}] in the msg is conflicted",
-    "zh_CN": "",
-    "arguments": [
-      "s.getUseFor()"
-    ],
-    "line": 208,
-    "fileName": "src/main/java/org/zstack/network/service/vip/VipBase.java"
-  },
-  {
-    "raw": "the field \u0027peerL3NetworkUuid\u0027 of the vip[uuid:%s, name:%s, ip: %s] has been set to %s",
-    "en_US": "the field \u0027peerL3NetworkUuid\u0027 of the vip[uuid:{0}, name:{1}, ip: {2}] has been set to {3}",
-    "zh_CN": "vip[uuid:{0}, name:{1}, ip: {2}]的peerL3NetworkUuid字段已经被设置成[{3}]。",
-    "arguments": [
-      "self.getUuid()",
-      "self.getName()",
-      "self.getIp()",
-      "self.getPeerL3NetworkUuid()"
-    ],
-    "line": 199,
     "fileName": "src/main/java/org/zstack/network/service/vip/VipBase.java"
   },
   {
@@ -6964,6 +6944,27 @@
     "fileName": "src/main/java/org/zstack/pciDevice/PciDeviceManager.java"
   },
   {
+    "raw": "cannot migrate root volume[uuid:%s] because there are pci devices attached",
+    "en_US": "cannot migrate root volume[uuid:{0}] because there are pci devices attached",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getVolumeUuid()"
+    ],
+    "line": 567,
+    "fileName": "src/main/java/org/zstack/pciDevice/PciDeviceManager.java"
+  },
+  {
+    "raw": "The host [%s] has failed to enter the maintenance, The vm [%s] cannot migrate automatically because it contains the PCI device",
+    "en_US": "The host [{0}] has failed to enter the maintenance, The vm [{1}] cannot migrate automatically because it contains the PCI device",
+    "zh_CN": "",
+    "arguments": [
+      "inventory.getUuid()",
+      "hasPciVmUuids.toString()"
+    ],
+    "line": 68,
+    "fileName": "src/main/java/org/zstack/pciDevice/PciHostChangeStateExtension.java"
+  },
+  {
     "raw": "resourceUuid[%s] is not a valid uuid. A valid uuid is a UUID(v4 recommended) with \u0027-\u0027 stripped. see http://en.wikipedia.org/wiki/Universally_unique_identifier for format of UUID, the regular expression ZStack uses to validate a UUID is \u0027[0-9a-f]{8}[0-9a-f]{4}[1-5][0-9a-f]{3}[89ab][0-9a-f]{3}[0-9a-f]{12}\u0027",
     "en_US": "resourceUuid[{0}] is not a valid uuid. A valid uuid is a UUID(v4 recommended) with \u0027-\u0027 stripped. see http://en.wikipedia.org/wiki/Universally_unique_identifier for format of UUID, the regular expression ZStack uses to validate a UUID is \u0027[0-9a-f]{8}[0-9a-f]{4}[1-5][0-9a-f]{3}[89ab][0-9a-f]{3}[0-9a-f]{12}\u0027",
     "zh_CN": "资源UUID（）不是一个有效的uuid。一个有效的UUID是一个没有-的UUID（建议为UUIDv4）.格式参见http://en.wikipedia.org/wiki/Universally_unique_identifier，ZStack中验证一个UUID的正则表达式为：[0-9a-f]{8}[0-9a-f]{4}[1-5][0-9a-f]{3}[89ab][0-9a-f]{3}[0-9a-f]{12}。",
@@ -7073,19 +7074,19 @@
     "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostCpuUtilAlertWriter.java"
   },
   {
-    "raw": "CPU utilization type",
-    "en_US": "CPU utilization type",
-    "zh_CN": "",
-    "arguments": [],
-    "line": 98,
-    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostCpuUtilAlertWriter.java"
-  },
-  {
     "raw": "CPU number",
     "en_US": "CPU number",
     "zh_CN": "",
     "arguments": [],
     "line": 96,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostCpuUtilAlertWriter.java"
+  },
+  {
+    "raw": "CPU utilization type",
+    "en_US": "CPU utilization type",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 98,
     "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostCpuUtilAlertWriter.java"
   },
   {
@@ -7157,6 +7158,14 @@
     "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostMemUtilAlertWriter.java"
   },
   {
+    "raw": "Host",
+    "en_US": "Host",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 79,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostNetworkIOAlertWriter.java"
+  },
+  {
     "raw": "Network IO",
     "en_US": "Network IO",
     "zh_CN": "",
@@ -7170,14 +7179,6 @@
     "zh_CN": "",
     "arguments": [],
     "line": 91,
-    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostNetworkIOAlertWriter.java"
-  },
-  {
-    "raw": "Host",
-    "en_US": "Host",
-    "zh_CN": "",
-    "arguments": [],
-    "line": 79,
     "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusHostNetworkIOAlertWriter.java"
   },
   {
@@ -7230,6 +7231,16 @@
     "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmNetworkIOAlertWriter.java"
   },
   {
+    "raw": "invalid right value[%s], it must be a number(int, long, float, double)",
+    "en_US": "invalid right value[{0}], it must be a number(int, long, float, double)",
+    "zh_CN": "",
+    "arguments": [
+      "expression.getConstant()"
+    ],
+    "line": 24,
+    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmNetworkIOItem.java"
+  },
+  {
     "raw": "invalid direction[%s], only %s are allowed",
     "en_US": "invalid direction[{0}], only {1} are allowed",
     "zh_CN": "",
@@ -7238,16 +7249,6 @@
       "ALLOWED_DIRECTION"
     ],
     "line": 20,
-    "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmNetworkIOItem.java"
-  },
-  {
-    "raw": "invalid right value[%s], it must be a number(int, long, float, double)",
-    "en_US": "invalid right value[{0}], it must be a number(int, long, float, double)",
-    "zh_CN": "",
-    "arguments": [
-      "expression.getConstant()"
-    ],
-    "line": 24,
     "fileName": "src/main/java/org/zstack/prometheus/monitoring/PrometheusVmNetworkIOItem.java"
   },
   {
@@ -7593,6 +7594,16 @@
     "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorage.java"
   },
   {
+    "raw": "Missing cert file for downloading image: %s",
+    "en_US": "Missing cert file for downloading image: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "iinv.getName()"
+    ],
+    "line": 317,
+    "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorage.java"
+  },
+  {
     "raw": "No response",
     "en_US": "No response",
     "zh_CN": "",
@@ -7748,14 +7759,6 @@
     "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorageFactory.java"
   },
   {
-    "raw": "sync status failed.",
-    "en_US": "sync status failed.",
-    "zh_CN": "",
-    "arguments": [],
-    "line": 152,
-    "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorageManagerImpl.java"
-  },
-  {
     "raw": "create tmp file [%s] failed, due to: %s",
     "en_US": "create tmp file [{0}] failed, due to: {1}",
     "zh_CN": "",
@@ -7764,6 +7767,14 @@
       "result.getStderr()"
     ],
     "line": 313,
+    "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorageManagerImpl.java"
+  },
+  {
+    "raw": "sync status failed.",
+    "en_US": "sync status failed.",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 152,
     "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorageManagerImpl.java"
   },
   {
@@ -8727,18 +8738,6 @@
     "fileName": "src/main/java/org/zstack/storage/primary/imagestore/smp/KvmAgentCommandDispatcher.java"
   },
   {
-    "raw": "There is no LocalStorage primary storage[state\u003d%s,status\u003d%s] on the cluster[%s]. Check the state/status of primary storage and make sure they have been attached to clusters",
-    "en_US": "There is no LocalStorage primary storage[state\u003d{0},status\u003d{1}] on the cluster[{2}]. Check the state/status of primary storage and make sure they have been attached to clusters",
-    "zh_CN": "",
-    "arguments": [
-      "PrimaryStorageState.Enabled",
-      "PrimaryStorageStatus.Connected",
-      "clusterUuid"
-    ],
-    "line": 95,
-    "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageAllocateCapacityFlow.java"
-  },
-  {
     "raw": "the type of primary storage[uuid:%s] chosen is not local storage, check if the resource can be created on other storage when cluster has attached local primary storage",
     "en_US": "the type of primary storage[uuid:{0}] chosen is not local storage, check if the resource can be created on other storage when cluster has attached local primary storage",
     "zh_CN": "被选择的主存储[uuid:{0}]的类型不是本地存储，检查该资源能否在其他存储上被创建当集群已经挂载了本地存储。",
@@ -8933,6 +8932,18 @@
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageBase.java"
   },
   {
+    "raw": "cannot find any host which has resource[uuid:%s], name :[%s], type :[%s]",
+    "en_US": "cannot find any host which has resource[uuid:{0}], name :[{1}], type :[{2}]",
+    "zh_CN": "",
+    "arguments": [
+      "resUuid",
+      "vo.getResourceName()",
+      "vo.getResourceType()"
+    ],
+    "line": 1115,
+    "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageBase.java"
+  },
+  {
     "raw": "host[uuid: %s] of local primary storage[uuid: %s] doesn\u0027t have enough capacity[current: %s bytes, needed: %s]",
     "en_US": "host[uuid: {0}] of local primary storage[uuid: {1}] doesn\u0027t have enough capacity[current: {2} bytes, needed: {3}]",
     "zh_CN": "主存储[uuid:{1}]上的物理机[uuid:{0}]没有足够的容量[现在: {2} bytes, 需要: {3}]",
@@ -8955,6 +8966,18 @@
     ],
     "line": 1556,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageBase.java"
+  },
+  {
+    "raw": "There is no LocalStorage primary storage[state\u003d%s,status\u003d%s] on the cluster[%s], when the cluster mounts multiple primary storage, the system uses the local primary storage by default. Check the state/status of primary storage and make sure they have been attached to clusters",
+    "en_US": "There is no LocalStorage primary storage[state\u003d{0},status\u003d{1}] on the cluster[{2}], when the cluster mounts multiple primary storage, the system uses the local primary storage by default. Check the state/status of primary storage and make sure they have been attached to clusters",
+    "zh_CN": "",
+    "arguments": [
+      "PrimaryStorageState.Enabled",
+      "PrimaryStorageStatus.Connected",
+      "clusterUuid"
+    ],
+    "line": 103,
+    "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageDefaultAllocateCapacityFlow.java"
   },
   {
     "raw": "The cluster[uuid\u003d%s] mounts multiple primary storage[LocalStorage, other non-LocalStorage primary storage], You must specify the primary storage where the root disk is located",
@@ -9141,6 +9164,17 @@
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsApiParamChecker.java"
   },
   {
+    "raw": "there are %s running VMs on the NFS primary storage, please stop them and try again:\n%s\n",
+    "en_US": "there are {0} running VMs on the NFS primary storage, please stop them and try again:\n{1}\n",
+    "zh_CN": "在NFS主存储上有{0}个运行中的VM，请先手动关闭再尝试：\n{1}\n。",
+    "arguments": [
+      "vms.size()",
+      "StringUtils.join(vms, \"\\n\")"
+    ],
+    "line": 232,
+    "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorage.java"
+  },
+  {
     "raw": "cannot find usable backend",
     "en_US": "cannot find usable backend",
     "zh_CN": "无法找到可用的NFS主存储后端。",
@@ -9262,17 +9296,6 @@
       "self.getName()"
     ],
     "line": 1209,
-    "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorage.java"
-  },
-  {
-    "raw": "there are %s running VMs on the NFS primary storage, please stop them and try again:\n%s\n",
-    "en_US": "there are {0} running VMs on the NFS primary storage, please stop them and try again:\n{1}\n",
-    "zh_CN": "在NFS主存储上有{0}个运行中的VM，请先手动关闭再尝试：\n{1}\n。",
-    "arguments": [
-      "vms.size()",
-      "StringUtils.join(vms, \"\\n\")"
-    ],
-    "line": 232,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorage.java"
   },
   {
@@ -10514,6 +10537,17 @@
     "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
   },
   {
+    "raw": "the gateway[uuid:%s] of l3[uuid:%s] has been occupied",
+    "en_US": "the gateway[uuid:{0}] of l3[uuid:{1}] has been occupied",
+    "zh_CN": "",
+    "arguments": [
+      "gateway",
+      "msg.getL3NetworkUuid()"
+    ],
+    "line": 152,
+    "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
+  },
+  {
     "raw": "the static ip[%s] specified in message not equals to gateway ip[%s] of l3 network[uuid:%s]",
     "en_US": "the static ip[{0}] specified in message not equals to gateway ip[{1}] of l3 network[uuid:{2}]",
     "zh_CN": "",
@@ -10523,6 +10557,27 @@
       "l3NetworkVO.getUuid()"
     ],
     "line": 151,
+    "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
+  },
+  {
+    "raw": "VPC L3Network [uuid: %s] must be bound to VPC router before creating ipsec",
+    "en_US": "VPC L3Network [uuid: {0}] must be bound to VPC router before creating ipsec",
+    "zh_CN": "",
+    "arguments": [
+      "localL3NetworlUuid"
+    ],
+    "line": 177,
+    "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
+  },
+  {
+    "raw": "there are %s IPsecConnections to peerAddr [ip:%s] already created",
+    "en_US": "there are {0} IPsecConnections to peerAddr [ip:{1}] already created",
+    "zh_CN": "",
+    "arguments": [
+      "Long.toString(count)",
+      "msg.getPeerAddress()"
+    ],
+    "line": 184,
     "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
   },
   {
