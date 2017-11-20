@@ -9,7 +9,7 @@ public class QueryUserTagAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryUserResult value;
+        public QueryUserTagResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -31,8 +31,8 @@ public class QueryUserTagAction extends QueryAction {
             return ret;
         }
         
-        QueryUserResult value = res.getResult(QueryUserResult.class);
-        ret.value = value == null ? new QueryUserResult() : value; 
+        QueryUserTagResult value = res.getResult(QueryUserTagResult.class);
+        ret.value = value == null ? new QueryUserTagResult() : value; 
 
         return ret;
     }
