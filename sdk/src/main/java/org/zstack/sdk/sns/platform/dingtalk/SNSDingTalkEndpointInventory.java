@@ -20,12 +20,12 @@ public class SNSDingTalkEndpointInventory extends org.zstack.sdk.sns.SNSApplicat
         return this.atAll;
     }
 
-    public java.util.List atPersons;
-    public void setAtPersons(java.util.List atPersons) {
-        this.atPersons = atPersons;
+    public java.util.List atPersonPhoneNumbers;
+    public void setAtPersonPhoneNumbers(java.util.List atPersonPhoneNumbers) {
+        this.atPersonPhoneNumbers = atPersonPhoneNumbers;
     }
-    public java.util.List getAtPersons() {
-        return this.atPersons;
+    public java.util.List getAtPersonPhoneNumbers() {
+        return this.atPersonPhoneNumbers;
     }
 
 }

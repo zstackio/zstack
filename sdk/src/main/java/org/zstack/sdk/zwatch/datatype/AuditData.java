@@ -148,12 +148,4 @@ public class AuditData  {
         return this.time;
     }
 
-    public boolean $assertionsDisabled;
-    public void set$assertionsDisabled(boolean $assertionsDisabled) {
-        this.$assertionsDisabled = $assertionsDisabled;
-    }
-    public boolean get$assertionsDisabled() {
-        return this.$assertionsDisabled;
-    }
-
 }

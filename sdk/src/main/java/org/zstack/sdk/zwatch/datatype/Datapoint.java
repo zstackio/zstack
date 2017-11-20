@@ -12,11 +12,11 @@ public class Datapoint  {
         return this.value;
     }
 
-    public float time;
-    public void setTime(float time) {
+    public long time;
+    public void setTime(long time) {
         this.time = time;
     }
-    public float getTime() {
+    public long getTime() {
         return this.time;
     }
 
