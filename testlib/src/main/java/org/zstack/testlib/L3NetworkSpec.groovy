@@ -11,6 +11,8 @@ class L3NetworkSpec extends Spec implements HasSession {
     boolean system = false
     @SpecParam
     String category
+    @SpecParam
+    String type = "L3BasicNetwork"
 
     L3NetworkInventory inventory
 
@@ -28,6 +30,7 @@ class L3NetworkSpec extends Spec implements HasSession {
             delegate.systemTags = systemTags
             delegate.system = system
             delegate.category = category
+            delegate.type = type
             delegate.l2NetworkUuid = (parent as L2NetworkSpec).inventory.uuid
         }
 
