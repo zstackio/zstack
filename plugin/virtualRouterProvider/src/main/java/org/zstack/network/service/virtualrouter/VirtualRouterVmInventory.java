@@ -2,10 +2,7 @@ package org.zstack.network.service.virtualrouter;
 
 import org.zstack.appliancevm.ApplianceVmInventory;
 import org.zstack.header.configuration.PythonClassInventory;
-import org.zstack.header.query.ExpandedQueries;
-import org.zstack.header.query.ExpandedQuery;
-import org.zstack.header.query.ExpandedQueryAlias;
-import org.zstack.header.query.ExpandedQueryAliases;
+import org.zstack.header.query.*;
 import org.zstack.header.search.Inventory;
 import org.zstack.header.search.Parent;
 import org.zstack.header.vm.VmNicInventory;
@@ -13,9 +10,11 @@ import org.zstack.network.service.virtualrouter.eip.VirtualRouterEipRefInventory
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefInventory;
 import org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterPortForwardingRuleRefInventory;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipInventory;
+import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipVO;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
+import javax.persistence.JoinColumn;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -45,10 +44,17 @@ import java.util.Optional;
 public class VirtualRouterVmInventory extends ApplianceVmInventory {
     private String publicNetworkUuid;
 
+    @Queryable(mappingClass = VirtualRouterVipVO.class,
+            joinColumn = @JoinColumn(name = "virtualRouterVmUuid", referencedColumnName = "uuid"))
+    private List<String> virtualRouterVips;
+
     protected VirtualRouterVmInventory(VirtualRouterVmVO vo) {
         super(vo);
         publicNetworkUuid = vo.getPublicNetworkUuid();
-
+        virtualRouterVips = new ArrayList<>();
+        for (VirtualRouterVipVO ref : vo.getVirtualRouterVips()) {
+            virtualRouterVips.add(ref.getUuid());
+        }
     }
 
     public VirtualRouterVmInventory() {
@@ -143,5 +149,13 @@ public class VirtualRouterVmInventory extends ApplianceVmInventory {
                 return VirtualRouterNicMetaData.isGuestNic(arg) ? arg.getL3NetworkUuid() : null;
             }
         });
+    }
+
+    public List<String> getVirtualRouterVips() {
+        return virtualRouterVips;
+    }
+
+    public void setVirtualRouterVips(List<String> virtualRouterVips) {
+        this.virtualRouterVips = virtualRouterVips;
     }
 }
