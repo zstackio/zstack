@@ -65,6 +65,12 @@ doc {
 		since "0.6"
 	}
 	field {
+		name "category"
+		desc ""
+		type "String"
+		since "0.6"
+	}
+	field {
 		name "createDate"
 		desc "创建时间"
 		type "Timestamp"
