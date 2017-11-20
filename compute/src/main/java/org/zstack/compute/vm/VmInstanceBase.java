@@ -8,10 +8,7 @@ import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SQLBatch;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
@@ -42,6 +39,7 @@ import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
+import org.zstack.header.notification.NotificationConstant;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.MarkRootVolumeAsSnapshotMsg;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
@@ -292,7 +290,14 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         self.setState(state);
-        self = dbf.updateAndRefresh(self);
+
+        new SQLBatch(){
+            @Override
+            protected void scripts() {
+                self.setLastHostUuid(q(HostVO.class).eq(HostVO_.uuid, self.getLastHostUuid()).isExists() ? self.getLastHostUuid() : null);
+                self = merge(self);
+            }
+        }.execute();
 
         if (bs != state) {
             logger.debug(String.format("vm[uuid:%s] changed state from %s to %s in db", self.getUuid(), bs, self.getState()));
@@ -537,8 +542,9 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                 logger.debug(String.format("HaStartVmJudger[%s] says the VM[uuid:%s, name:%s] is qualified for HA start, now we are starting it",
                         judger.getClass(), self.getUuid(), self.getName()));
-                self.setState(VmInstanceState.Stopped);
-                dbf.update(self);
+                SQL.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, self.getUuid())
+                        .set(VmInstanceVO_.state, VmInstanceState.Stopped)
+                        .update();
                 startVm(msg, new Completion(msg, chain) {
                     @Override
                     public void success() {
@@ -3979,13 +3985,19 @@ public class VmInstanceBase extends AbstractVmInstance {
                             completion.fail(errCode);
                         }
                     });
-                } else {
-                    self.setState(originState);
-                    self.setHostUuid(vmHostUuid);
-                    self.setLastHostUuid(vmLastHostUuid);
-                    self = dbf.updateAndRefresh(self);
-                    completion.fail(errCode);
+                    return;
                 }
+
+                new SQLBatch() {
+                    @Override
+                    protected void scripts() {
+                        self.setState(originState);
+                        self.setHostUuid(vmHostUuid);
+                        self.setLastHostUuid(q(HostVO.class).eq(HostVO_.uuid, vmLastHostUuid).isExists() ? vmLastHostUuid : null);
+                        self = merge(self);
+                    }
+                }.execute();
+                completion.fail(errCode);
             }
         }).start();
     }
