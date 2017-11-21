@@ -3048,7 +3048,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 ));
             } else {
                 path = exts.get(0).getCommitAgentPath(self.getType());
-                hostname = exts.get(0).getCommitAgentPath(msg.getBackupStorageUuid());
+                hostname = exts.get(0).getHostName(msg.getBackupStorageUuid());
                 DebugUtils.Assert(path != null, String.format("found the extension point: [%s], but return null path",
                         exts.get(0).getClass().getSimpleName()));
             }
