@@ -1,6 +1,7 @@
 package org.zstack.network.service.virtualrouter;
 
 import org.zstack.appliancevm.ApplianceVmVO;
+import org.zstack.header.identity.HasAccountResourceRef;
 import org.zstack.header.tag.AutoDeleteTag;
 import org.zstack.header.vm.VmInstanceEO;
 import org.zstack.header.vo.EO;
@@ -18,6 +19,7 @@ import java.util.List;
 @PrimaryKeyJoinColumn(name="uuid", referencedColumnName="uuid")
 @EO(EOClazz = VmInstanceEO.class, needView = false)
 @AutoDeleteTag
+@HasAccountResourceRef
 public class VirtualRouterVmVO extends ApplianceVmVO {
     private String publicNetworkUuid;
 
