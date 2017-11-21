@@ -6,16 +6,15 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.UpdateQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.allocator.*;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO;
@@ -77,24 +76,30 @@ public class VmAllocateHostForStoppedVmFlow implements Flow {
         bus.send(amsg, new CloudBusCallBack(chain) {
             @Override
             public void run(MessageReply reply) {
-                if (reply.isSuccess()) {
-                    AllocateHostReply areply = (AllocateHostReply) reply;
-                    spec.setDestHost(areply.getHost());
-                    String oldHostUuid = spec.getVmInventory().getHostUuid() == null ?
-                            spec.getVmInventory().getLastHostUuid() : spec.getVmInventory().getHostUuid();
-
-                    UpdateQuery q = UpdateQuery.New(VmInstanceVO.class);
-                    q.condAnd(VmInstanceVO_.uuid, SimpleQuery.Op.EQ, spec.getVmInventory().getUuid());
-                    q.set(VmInstanceVO_.lastHostUuid, oldHostUuid);
-                    q.set(VmInstanceVO_.hostUuid, areply.getHost().getUuid());
-                    q.set(VmInstanceVO_.clusterUuid, areply.getHost().getClusterUuid());
-                    q.update();
-
-                    data.put(SUCCESS, true);
-                    chain.next();
-                } else {
+                if (!reply.isSuccess()) {
                     chain.fail(reply.getError());
+                    return;
                 }
+
+                AllocateHostReply areply = (AllocateHostReply) reply;
+                spec.setDestHost(areply.getHost());
+
+                new SQLBatch(){
+                    @Override
+                    protected void scripts() {
+                        String oldHostUuid = spec.getVmInventory().getHostUuid() == null ?
+                                spec.getVmInventory().getLastHostUuid() : spec.getVmInventory().getHostUuid();
+                        oldHostUuid = q(HostVO.class).eq(HostVO_.uuid, oldHostUuid).isExists() ? oldHostUuid : null;
+                        sql(VmInstanceVO.class).eq(VmInstanceVO_.uuid, spec.getVmInventory().getLastHostUuid())
+                                .set(VmInstanceVO_.lastHostUuid, oldHostUuid)
+                                .set(VmInstanceVO_.hostUuid, areply.getHost().getUuid())
+                                .set(VmInstanceVO_.clusterUuid, areply.getHost().getClusterUuid())
+                                .update();
+                    }
+                }.execute();
+
+                data.put(SUCCESS, true);
+                chain.next();
             }
         });
     }
