@@ -19,7 +19,7 @@
     <config>
         <name>agent.deployOnStart</name>
         <description>A boolean value. When set to true, management server will deploy appliance vm agent every time an appliance vm being created/started/reboot, using ansible. The appliance vm image has agent built in by default, so in most of time this value never needs setting to true, as it will significantly increase boot time of appliance vm; however, in case you have a new agent needed deploying in an existing appliance vm, set this value to true and reboot appliance vm will do the work.</description>
-        <defaultValue>false</defaultValue>
+        <defaultValue>true</defaultValue>
         <category>applianceVm</category>
         <type>java.lang.Boolean</type>
     </config>
