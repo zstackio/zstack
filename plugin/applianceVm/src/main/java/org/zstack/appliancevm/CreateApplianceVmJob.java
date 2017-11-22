@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatchWithReturn;
@@ -13,6 +14,7 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.job.Job;
 import org.zstack.core.job.JobContext;
+import org.zstack.header.allocator.SetApplianceVmSystemTags;
 import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.image.ImagePlatform;
@@ -50,6 +52,10 @@ public class CreateApplianceVmJob implements Job {
     private ApplianceVmFactory apvmFactory;
     @Autowired
     private TagManager tagMgr;
+    @Autowired
+    private PluginRegistry pluginRgty;
+    @Autowired
+    private ApplianceVmFacade apvf;
 
     @Override
     public void run(final ReturnValueCompletion<Object> complete) {
@@ -125,6 +131,7 @@ public class CreateApplianceVmJob implements Job {
         if (spec.getNonInherentSystemTags() != null && !spec.getNonInherentSystemTags().isEmpty()) {
             tagMgr.createNonInherentSystemTags(spec.getNonInherentSystemTags(), avo.getUuid(), VmInstanceVO.class.getSimpleName());
         }
+        apvf.setApplianceVmSystemTags(avo.getUuid(), avo.getApplianceVmType());
 
         final ApplianceVmInventory inv = ApplianceVmInventory.valueOf(avo);
         StartNewCreatedApplianceVmMsg msg = new StartNewCreatedApplianceVmMsg();

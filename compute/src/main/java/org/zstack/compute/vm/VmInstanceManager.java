@@ -35,4 +35,6 @@ public interface VmInstanceManager {
     VmInstanceFactory getVmInstanceFactory(VmInstanceType vmType);
 
     VmInstanceBaseExtensionFactory getVmInstanceBaseExtensionFactory(Message msg);
+
+    String getVmInstanceSyncSignature(String vmUuid);
 }

@@ -518,7 +518,12 @@ public class VmInstanceBase extends AbstractVmInstance {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                return syncThreadName;
+                String signature = vmMgr.getVmInstanceSyncSignature(self.getUuid());
+                if (signature != null) {
+                    return signature;
+                } else {
+                    return syncThreadName;
+                }
             }
 
             @Override
@@ -1275,6 +1280,12 @@ public class VmInstanceBase extends AbstractVmInstance {
             if (gmsg.getAvoidHostUuids() != null) {
                 amsg.getAvoidHostUuids().addAll(gmsg.getAvoidHostUuids());
             }
+        } else {
+            if (msg instanceof APIMessage){
+                if (((APIMessage) msg).getSystemTags() != null){
+                    amsg.setSystemTags(new ArrayList<String>(((APIMessage) msg).getSystemTags()));
+                }
+            }
         }
         amsg.setVmInstance(VmInstanceInventory.valueOf(self));
         amsg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
@@ -1393,7 +1404,12 @@ public class VmInstanceBase extends AbstractVmInstance {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                return syncThreadName;
+                String signature = vmMgr.getVmInstanceSyncSignature(self.getUuid());
+                if (signature != null) {
+                    return signature;
+                } else {
+                    return syncThreadName;
+                }
             }
 
             @Override
@@ -1793,7 +1809,12 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public String getSyncSignature() {
-                return syncThreadName;
+                String signature = vmMgr.getVmInstanceSyncSignature(self.getUuid());
+                if (signature != null) {
+                    return signature;
+                } else {
+                    return syncThreadName;
+                }
             }
 
             @Override
@@ -2064,7 +2085,12 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public String getSyncSignature() {
-                return syncThreadName;
+                String signature = vmMgr.getVmInstanceSyncSignature(self.getUuid());
+                if (signature != null) {
+                    return signature;
+                } else {
+                    return syncThreadName;
+                }
             }
 
             @Override
@@ -3874,7 +3900,12 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public String getSyncSignature() {
-                return syncThreadName;
+                String signature = vmMgr.getVmInstanceSyncSignature(self.getUuid());
+                if (signature != null) {
+                    return signature;
+                } else {
+                    return syncThreadName;
+                }
             }
 
             @Override
@@ -4186,7 +4217,12 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public String getSyncSignature() {
-                return syncThreadName;
+                String signature = vmMgr.getVmInstanceSyncSignature(self.getUuid());
+                if (signature != null) {
+                    return signature;
+                } else {
+                    return syncThreadName;
+                }
             }
 
             @Override
