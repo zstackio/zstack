@@ -326,6 +326,11 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
             strategy.dryRun(spec, new ReturnValueCompletion<List<HostInventory>>(msg) {
                 @Override
                 public void success(List<HostInventory> hosts) {
+                    if (hosts.isEmpty()){
+                        reply.setHosts(new ArrayList<>());
+                        bus.reply(msg, reply);
+                        return;
+                    }
                     sortors.dryRunSort(spec, hosts, new ReturnValueCompletion<List<HostInventory>>(msg) {
                         @Override
                         public void success(List<HostInventory> returnValue) {
