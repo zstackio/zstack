@@ -160,6 +160,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
     private EventFacade evtf;
     @Autowired
     private HostAllocatorManager hostAllocatorMgr;
+    @Autowired
+    protected VmInstanceExtensionPointEmitter extEmitter;
 
     @Override
     @MessageSafe
@@ -763,9 +765,10 @@ public class VmInstanceManagerImpl extends AbstractService implements
         }
 
         if (msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()) {
-            for (PreCloneVmInstanceSystemTagsExtensionPoint ext : pluginRgty.getExtensionList(PreCloneVmInstanceSystemTagsExtensionPoint.class)){
-                ext.cloneVmInstanceSystemTag(vo.getUuid(), msg.getSystemTags());
-            }
+            extEmitter.handleSystemTag(vo.getUuid(), msg.getSystemTags());
+        }
+        if (cmsg != null && cmsg.getSystemTags() != null && !cmsg.getSystemTags().isEmpty()) {
+            extEmitter.handleSystemTag(vo.getUuid(), cmsg.getSystemTags());
         }
 
         if (VmCreationStrategy.JustCreate == VmCreationStrategy.valueOf(msg.getStrategy())) {
