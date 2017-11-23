@@ -1103,25 +1103,36 @@ public class LocalStorageBase extends PrimaryStorageBase {
         });
     }
 
-    @Transactional(readOnly = true)
     protected String getHostUuidByResourceUuid(String resUuid) {
-        String huuid = Q.New(LocalStorageResourceRefVO.class)
-                .select(LocalStorageResourceRefVO_.hostUuid)
-                .eq(LocalStorageResourceRefVO_.resourceUuid, resUuid)
-                .findValue();
-        if (huuid == null){
-            ResourceVO vo = dbf.findByUuid(resUuid, ResourceVO.class);
-            if (vo != null) {
-                throw new OperationFailureException(operr("cannot find any host which has resource[uuid:%s], name :[%s], type :[%s]"
-                        , resUuid, vo.getResourceName(), vo.getResourceType()));
-            } else {
-                throw new OperationFailureException(operr("cannot find any host which has resource[uuid:%s]", resUuid));
+        String huuid;
+        huuid = new SQLBatchWithReturn<String>() {
+            private String findHostByUuid(String uuid) {
+                return sql("select uuid from HostVO where uuid = :uuid", String.class).param("uuid", uuid).find();
             }
-        } else if (!Q.New(HostVO.class).eq(HostVO_.uuid, huuid).isExists()){
-            throw new OperationFailureException(
-                    operr("Resource[uuid:%s] can only be operated on host[uuid:%s], but the host has been deleted",
-                            resUuid, huuid));
-        }
+
+            @Override
+            protected String scripts() {
+                String uuid = sql("select hostUuid from LocalStorageResourceRefVO where resourceUuid = :resUuid", String.class)
+                        .param("resUuid", resUuid)
+                        .find();
+                if (uuid == null) {
+                    ResourceVO vo = sql("select hostUuid from ResourceVO where uuid = :resUuid", String.class)
+                            .param("resUuid", resUuid)
+                            .find();
+                    if (vo != null) {
+                        throw new OperationFailureException(operr("cannot find any host which has resource[uuid:%s], name :[%s], type :[%s]"
+                                , resUuid, vo.getResourceName(), vo.getResourceType()));
+                    } else {
+                        throw new OperationFailureException(operr("cannot find any host which has resource[uuid:%s]", resUuid));
+                    }
+                } else if (findHostByUuid(uuid) == null) {
+                    throw new OperationFailureException(
+                            operr("Resource[uuid:%s] can only be operated on host[uuid:%s], but the host has been deleted",
+                                    resUuid, uuid));
+                }
+                return uuid;
+            }
+        }.execute();
         return huuid;
     }
 
