@@ -10456,12 +10456,10 @@
     "fileName": "src/main/java/org/zstack/usbDevice/UsbDeviceManager.java"
   },
   {
-    "raw": "vCenter login name expected, got: %s",
-    "en_US": "vCenter login name expected, got: {0}",
-    "zh_CN": "vCenter需要登录名字，得到：{0}",
-    "arguments": [
-      "msg.getUsername()"
-    ],
+    "raw": "vCenter login name expected",
+    "en_US": "vCenter login name expected",
+    "zh_CN": "缺少vCenter登录用户名",
+    "arguments": [],
     "line": 35,
     "fileName": "src/main/java/org/zstack/vmware/VCenterApiInterceptor.java"
   },
