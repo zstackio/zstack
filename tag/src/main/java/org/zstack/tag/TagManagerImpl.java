@@ -663,7 +663,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
     @Override
     public List<Class> getEntityClassForSoftDeleteEntityExtension() {
-        return autoDeleteTagClasses;
+        return null;
     }
 
     private List<String> getResourceTypes(Class entityClass) {
