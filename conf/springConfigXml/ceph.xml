@@ -65,4 +65,10 @@
             <zstack:extension interface="org.zstack.header.storage.backup.BackupStoragePrimaryStorageExtensionPoint" />
         </zstack:plugin>
     </bean>
+
+    <bean id="CephSystemTagLifeCycleExtension" class="org.zstack.storage.ceph.primary.CephSystemTagLifeCycleExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.tag.SystemTagLifeCycleExtension" />
+        </zstack:plugin>
+    </bean>
 </beans>
