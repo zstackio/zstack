@@ -3290,7 +3290,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                 msg.setMemoryCapacity(struct.alignedMemory - oldMemorySize);
                 msg.setAllocatorStrategy(HostAllocatorConstant.DESIGNATED_HOST_ALLOCATOR_STRATEGY_TYPE);
                 msg.setVmInstance(VmInstanceInventory.valueOf(self));
-                msg.setImage(ImageInventory.valueOf(dbf.findByUuid(self.getImageUuid(), ImageVO.class)));
+                if (self.getImageUuid() != null) {
+                    msg.setImage(ImageInventory.valueOf(dbf.findByUuid(self.getImageUuid(), ImageVO.class)));
+                }
                 msg.setHostUuid(self.getHostUuid());
                 msg.setL3NetworkUuids(CollectionUtils.transformToList(self.getVmNics(), new Function<String, VmNicVO>() {
                     @Override
