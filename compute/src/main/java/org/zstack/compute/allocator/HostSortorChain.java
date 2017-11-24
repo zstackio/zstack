@@ -43,7 +43,8 @@ public class HostSortorChain implements HostSortorStrategy {
         sort(hosts);
     }
 
-    private void reSortHosts(List<HostInventory> sub, List<HostInventory> hosts) {
+    // adjust hosts
+    private void reSortHosts(final List<HostInventory> sub, List<HostInventory> hosts) {
         if (sub.size() == hosts.size()) {
             hosts.clear();
             hosts.addAll(sub);

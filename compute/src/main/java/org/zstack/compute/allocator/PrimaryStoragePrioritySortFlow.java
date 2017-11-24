@@ -11,6 +11,7 @@ import org.zstack.header.allocator.AbstractHostSortorFlow;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.image.ImageBackupStorageRefVO;
 import org.zstack.header.image.ImageBackupStorageRefVO_;
+import org.zstack.header.image.ImageVO;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.backup.BackupStoragePrimaryStorageExtensionPoint;
 import org.zstack.header.storage.backup.BackupStorageVO;
@@ -41,6 +42,11 @@ public class PrimaryStoragePrioritySortFlow extends AbstractHostSortorFlow {
     public void sort() {
         DebugUtils.Assert(candidates != null && !candidates.isEmpty(), "HostInventory cannot be none");
 
+        if (spec.getImage() == null || dbf.findByUuid(spec.getImage().getUuid(), ImageVO.class) == null) {
+            prepareForNext(candidates);
+            return;
+        }
+
         List<String> bsUuids = Q.New(ImageBackupStorageRefVO.class).eq(ImageBackupStorageRefVO_.imageUuid, spec.getImage().getUuid()).
                 select(ImageBackupStorageRefVO_.backupStorageUuid).listValues();
 
@@ -53,9 +59,6 @@ public class PrimaryStoragePrioritySortFlow extends AbstractHostSortorFlow {
         extenstions.forEach(ext -> priMap.putAll(formatPriority(ext.getPrimaryStoragePriorityMap(bs))));
 
         adjustCandidates(priMap);
-        if (subCandidates.size() > 0) {
-            skip = false;
-        }
     }
 
     // get ps type from hostuuid
@@ -89,7 +92,7 @@ public class PrimaryStoragePrioritySortFlow extends AbstractHostSortorFlow {
 
     private void adjustCandidates(Map<String, Integer> priMap) {
         if (priMap.size() == 0) {
-            subCandidates.addAll(candidates);
+            prepareForNext(candidates);
             return;
         }
         logger.debug(String.format("before PrimaryStoragePrioritySortFlow adjustCandidates: %s", candidates.stream().map(HostInventory::getName).collect(Collectors.toList())));
@@ -104,7 +107,7 @@ public class PrimaryStoragePrioritySortFlow extends AbstractHostSortorFlow {
         for (List<HostInventory> sub: sorted) {
             if (sub.size() > 0) {
                 // we choose the first ps type as sub candidates
-                subCandidates.addAll(sub);
+                prepareForNext(sub);
                 logger.debug(String.format("subCandidates: %s",candidates.stream().map(HostInventory::getName).collect(Collectors.toList()).toString()));
                 break;
             }
@@ -129,5 +132,13 @@ public class PrimaryStoragePrioritySortFlow extends AbstractHostSortorFlow {
             maps.forEach(map -> priMap.put(map.PS.toLowerCase(), map.priority));
         }
         return priMap;
+    }
+
+    private void prepareForNext(List<HostInventory> hosts) {
+        if (hosts != null && hosts.size() > 0) {
+            subCandidates.clear();
+            subCandidates.addAll(hosts);
+            skip = false;
+        }
     }
 }
