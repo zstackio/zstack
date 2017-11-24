@@ -329,9 +329,9 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                         ref.setStatus(newStatus);
                         dbf.getEntityManager().merge(ref);
 
-                        N.New().info_("From agent report: change status between primary storage[uuid:%s]" +
+                        logger.debug(String.format("change status between primary storage[uuid:%s]" +
                                         " and host[uuid:%s] from %s to %s in db",
-                                psUuid, hostUuid, oldStatus == null ? "unknown" : oldStatus.toString(), newStatus);
+                                psUuid, hostUuid, oldStatus == null ? "unknown" : oldStatus.toString(), newStatus));
 
                         PrimaryStorageCanonicalEvent.PrimaryStorageHostStatusChangeData data =
                                 new PrimaryStorageCanonicalEvent.PrimaryStorageHostStatusChangeData();
