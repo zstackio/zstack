@@ -164,10 +164,9 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
             return;
         }
 
-        VipInventory v = (VipInventory) data.get(VipConstant.Params.VIP.toString());
         ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
         struct.setUseFor(NetworkServiceType.SNAT.toString());
-        Vip vip = new Vip(v.getUuid());
+        Vip vip = new Vip(vipUuid);
         vip.setStruct(struct);
         vip.release(new Completion(chain) {
             @Override
