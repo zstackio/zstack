@@ -1,5 +1,6 @@
 package org.zstack.storage.primary.local;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
@@ -24,9 +25,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Callable;
 
 /**
@@ -83,12 +82,10 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     @Override
     public List<HostVO> filterHostCandidates(List<HostVO> candidates, HostAllocatorSpec spec) {
         if (VmOperation.NewCreate.toString().equals(spec.getVmOperation())) {
-            List<String> huuids = CollectionUtils.transformToList(candidates, new Function<String, HostVO>() {
-                @Override
-                public String call(HostVO arg) {
-                    return arg.getUuid();
-                }
-            });
+            List<String> huuids = getNeedCheckHostLocalStorageList(candidates, spec);
+            if(huuids.isEmpty()){
+                return candidates;
+            }
 
             SimpleQuery<LocalStorageHostRefVO> q = dbf.createQuery(LocalStorageHostRefVO.class);
             q.select(LocalStorageHostRefVO_.hostUuid, LocalStorageHostRefVO_.availableCapacity, LocalStorageResourceRefVO_.primaryStorageUuid);
@@ -101,6 +98,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                 long cap = t.get(1, Long.class);
                 String psUuid = t.get(2, String.class);
                 if (cap < ratioMgr.calculateByRatio(psUuid, spec.getDiskSize())) {
+                    addHostPrimaryStorageBlacklist(huuid, psUuid, spec);
                     toRemoveHuuids.add(huuid);
                 }
             }
@@ -170,6 +168,53 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
         */
 
         return candidates;
+    }
+
+    /**
+     * @return hostUuid list
+     *
+     * Just check it :
+     * The current cluster is mounted only local storage
+     * Specified local storage
+     *
+     * Negative impact
+     * In the case of local + non-local and no ps specified (non-local is Disconnected/Disabled, or non-local capacity not enough), the allocated host may not have enough disks
+     */
+    private List<String> getNeedCheckHostLocalStorageList(List<HostVO> candidates, HostAllocatorSpec spec){
+        String requiredPrimaryStorageUuid = spec.getRequiredPrimaryStorageUuid();
+        boolean isRequireNonLocalStorage = false;
+        if(StringUtils.isNotEmpty(requiredPrimaryStorageUuid)){
+            isRequireNonLocalStorage = !LocalStorageUtils.isLocalStorage(requiredPrimaryStorageUuid);
+        }
+
+        List<String> result = new ArrayList<>();
+        for(HostVO hostVO : candidates){
+            boolean isOnlyAttachedLocalStorage = LocalStorageUtils.isOnlyAttachedLocalStorage(hostVO.getClusterUuid());
+
+            if(!isOnlyAttachedLocalStorage && isRequireNonLocalStorage){
+                continue;
+            }
+
+            if(!isOnlyAttachedLocalStorage && spec.isDryRun()){
+                continue;
+            }
+
+            result.add(hostVO.getUuid());
+        }
+
+        return result;
+    }
+
+    private void addHostPrimaryStorageBlacklist(String hostUuid, String psUuid, HostAllocatorSpec spec){
+        Map<String, Set<String>> host2PrimaryStorageBlacklist = spec.getHost2PrimaryStorageBlacklist();
+        Set<String> psList = host2PrimaryStorageBlacklist.get(hostUuid);
+
+        if(psList == null){
+            psList = new HashSet<>();
+        }
+
+        psList.add(psUuid);
+        host2PrimaryStorageBlacklist.put(hostUuid, psList);
     }
 
     @Override
