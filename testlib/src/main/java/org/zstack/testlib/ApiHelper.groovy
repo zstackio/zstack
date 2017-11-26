@@ -18399,6 +18399,33 @@ trait ApiHelper {
     }
 
 
+    def getAllMetricMetadata(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.zwatch.api.GetAllMetricMetadataAction.class) Closure c) {
+        def a = new org.zstack.sdk.zwatch.api.GetAllMetricMetadataAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def getAuditData(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.zwatch.api.GetAuditDataAction.class) Closure c) {
         def a = new org.zstack.sdk.zwatch.api.GetAuditDataAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
