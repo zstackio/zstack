@@ -87,6 +87,16 @@
                 </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
+                    <artifactId>external-service</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>premium-external-service</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
                     <artifactId>compute</artifactId>
                     <version>${project.version}</version>
                 </dependency>
@@ -322,6 +332,11 @@
         <dependency>
             <groupId>org.zstack</groupId>
             <artifactId>core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>external-service</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

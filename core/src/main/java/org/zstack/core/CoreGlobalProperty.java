@@ -42,4 +42,6 @@ public class CoreGlobalProperty {
     public static int CONSOLE_PROXY_PORT;
     @GlobalProperty(name = "dataDir", defaultValue = "/var/lib/zstack")
     public static String DATA_DIR;
+    @GlobalProperty(name = "logDir", defaultValue = "{catalina.home}/logs/")
+    public static String LOG_DIR;
 }
