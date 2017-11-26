@@ -100,12 +100,12 @@ CREATE TABLE  `zstack`.`AlarmActionVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `zstack`.`AlarmLabelVO` (
-    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+    `uuid` varchar(32) NOT NULL UNIQUE,
     `key` varchar(1024) NOT NULL,
     `value` text NOT NULL,
     `operator` varchar(128) NOT NULL,
     `alarmUuid` varchar(32) NOT NULL,
-    PRIMARY KEY  (`id`)
+    PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `zstack`.`AlarmVO` (
@@ -143,10 +143,10 @@ CREATE TABLE  `zstack`.`EventSubscriptionActionVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `zstack`.`EventSubscriptionLabelVO` (
-    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+    `uuid` varchar(32) NOT NULL UNIQUE,
     `key` varchar(1024) NOT NULL,
     `value` text NOT NULL,
     `operator` varchar(128) NOT NULL,
     `subscriptionUuid` varchar(32) NOT NULL,
-    PRIMARY KEY  (`id`)
+    PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

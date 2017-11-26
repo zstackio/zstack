@@ -1,8 +1,16 @@
 package org.zstack.sdk.zwatch.alarm;
 
-import org.zstack.sdk.zwatch.datatype.Operator;
+
 
 public class AlarmLabelInventory  {
+
+    public java.lang.String uuid;
+    public void setUuid(java.lang.String uuid) {
+        this.uuid = uuid;
+    }
+    public java.lang.String getUuid() {
+        return this.uuid;
+    }
 
     public java.lang.String key;
     public void setKey(java.lang.String key) {
@@ -12,11 +20,11 @@ public class AlarmLabelInventory  {
         return this.key;
     }
 
-    public Operator operator;
-    public void setOperator(Operator operator) {
+    public java.lang.String operator;
+    public void setOperator(java.lang.String operator) {
         this.operator = operator;
     }
-    public Operator getOperator() {
+    public java.lang.String getOperator() {
         return this.operator;
     }
 
