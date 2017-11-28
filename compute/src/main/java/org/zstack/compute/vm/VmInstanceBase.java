@@ -2116,6 +2116,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     " where ref.imageUuid = img.uuid" +
                     " and img.mediaType = :imgType" +
                     " and img.status = :status" +
+                    " and img.system = :system" +
                     " and bs.uuid = ref.backupStorageUuid" +
                     " and bs.type in (:bsTypes)" +
                     " and bs.uuid = bsRef.backupStorageUuid" +
@@ -2126,6 +2127,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 q.setParameter("imgType", type);
             }
             q.setParameter("status", ImageStatus.Ready);
+            q.setParameter("system", false);
             q.setParameter("bsTypes", hostAllocatorMgr.getBackupStorageTypesByPrimaryStorageTypeFromMetrics(ps.getType()));
             return ImageInventory.valueOf(q.getResultList());
         } else if (!bsUuids.isEmpty()) {
@@ -2134,6 +2136,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     " where ref.imageUuid = img.uuid" +
                     " and img.mediaType = :imgType" +
                     " and img.status = :status" +
+                    " and img.system = :system" +
                     " and bs.uuid = ref.backupStorageUuid" +
                     " and bs.uuid in (:bsUuids)" +
                     " and bs.uuid = bsRef.backupStorageUuid" +
@@ -2144,6 +2147,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 q.setParameter("imgType", type);
             }
             q.setParameter("status", ImageStatus.Ready);
+            q.setParameter("system", false);
             q.setParameter("bsUuids", bsUuids);
             return ImageInventory.valueOf(q.getResultList());
         } else {
