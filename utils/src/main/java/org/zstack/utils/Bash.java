@@ -1,6 +1,10 @@
 package org.zstack.utils;
 
+import org.apache.commons.io.FileUtils;
 import org.zstack.utils.logging.CLogger;
+
+import java.io.File;
+import java.io.IOException;
 
 public abstract class Bash {
     private static final CLogger logger = Utils.getLogger(Bash.class);
@@ -45,6 +49,20 @@ public abstract class Bash {
         }
     }
 
+    protected void mkdirs(String path) {
+        File f = new File(path);
+        if (!f.exists()) {
+            f.mkdirs();
+        }
+    }
+
+    protected void copyDir(String src, String dst) {
+        try {
+            FileUtils.copyDirectory(new File(src), new File(dst));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     protected BashBuilder bash() {
         return new BashBuilder();
