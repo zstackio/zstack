@@ -41,3 +41,21 @@ SET FOREIGN_KEY_CHECKS = 0;
 ALTER TABLE AliyunSnapshotVO DROP FOREIGN KEY fkAliyunSnapshotVOAliyunDiskVO;
 ALTER TABLE AliyunSnapshotVO ADD CONSTRAINT fkAliyunSnapshotVOAliyunDiskVO FOREIGN KEY (diskUuid) REFERENCES AliyunDiskVO (uuid) ON DELETE SET NULL;
 SET FOREIGN_KEY_CHECKS = 1;
+
+DELIMITER $$
+CREATE PROCEDURE cleanDeprecatedGlobalConfig()
+    BEGIN
+        DECLARE config_value VARCHAR(32) DEFAULT 'vnc';
+        SELECT `value` into config_value FROM `zstack`.`GlobalConfigVO` WHERE `name`='vm.consoleMode' and `category`='kvm';
+        UPDATE `zstack`.`GlobalConfigVO` SET `value`=config_value WHERE `name`='vm.consoleMode' and `category`='mevoco';
+        DELETE FROM `zstack`.`GlobalConfigVO` WHERE `name`='vm.consoleMode' and `category`='kvm';
+    END $$
+DELIMITER ;
+
+call cleanDeprecatedGlobalConfig();
+DROP PROCEDURE IF EXISTS cleanDeprecatedGlobalConfig;
+
+
+
+
+
