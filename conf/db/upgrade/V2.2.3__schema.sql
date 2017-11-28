@@ -55,7 +55,8 @@ DELIMITER ;
 call cleanDeprecatedGlobalConfig();
 DROP PROCEDURE IF EXISTS cleanDeprecatedGlobalConfig;
 
-
+ALTER TABLE `UserTagVO` MODIFY `tag` TEXT NOT NULL;
+ALTER TABLE `SystemTagVO` MODIFY `tag` TEXT NOT NULL;
 
 
 
