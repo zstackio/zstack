@@ -803,4 +803,11 @@ public class Platform {
     public static <T> T New(Supplier supplier) {
         return (T) functionForMockTestObject.apply(supplier);
     }
+
+    public static final String EXIT_REASON = "zstack.quit.reason";
+
+    public static void exit(String reason) {
+        System.setProperty(EXIT_REASON, reason);
+        System.exit(1);
+    }
 }

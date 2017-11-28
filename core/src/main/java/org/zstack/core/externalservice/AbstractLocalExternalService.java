@@ -1,10 +1,13 @@
 package org.zstack.core.externalservice;
 
+import org.springframework.beans.factory.annotation.Autowire;
+import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
 import org.zstack.utils.ProcessFinder;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+@Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public abstract class AbstractLocalExternalService implements LocalExternalService {
     protected static final CLogger logger = Utils.getLogger(AbstractLocalExternalService.class);
 
@@ -14,6 +17,10 @@ public abstract class AbstractLocalExternalService implements LocalExternalServi
 
     public Integer getPID() {
         return processFinder.findByCommandLineKeywords(getCommandLineKeywords());
+    }
+
+    public void abortManagementNode(String error) {
+        Platform.exit(error);
     }
 
     public void stop() {
