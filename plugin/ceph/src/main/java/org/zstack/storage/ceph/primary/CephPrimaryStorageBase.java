@@ -3241,10 +3241,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         final FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("reimage-vm-root-volume-%s", msg.getVolume().getUuid()));
         chain.then(new ShareFlow() {
-            String cloneInstallPath;
             String originalVolumePath = msg.getVolume().getInstallPath();
             String volumePath = makeResetImageRootVolumeInstallPath(msg.getVolume().getUuid());
-            ImageCacheVO cache;
 
             @Override
             public void setup() {
