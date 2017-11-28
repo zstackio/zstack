@@ -6,7 +6,6 @@ import org.zstack.header.core.progress.TaskProgressVO
 import org.zstack.header.volume.VolumeConstant
 import org.zstack.sdk.AddCephPrimaryStorageAction
 import org.zstack.sdk.ImageInventory
-import org.zstack.sdk.SystemTagInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
 import org.zstack.test.integration.storage.CephEnv
@@ -100,32 +99,6 @@ class CephStorageOneVmAndImageCase extends SubCase{
         assert res != null
         assert nocephx
         assert res.error == null
-
-        List<SystemTagInventory> tags = querySystemTag {
-            delegate.conditions = [ "resourceUuid=${res.value.inventory.uuid}".toString()]
-        }
-
-        assert tags != null
-        assert !tags.isEmpty()
-        def tag =  tags.find { it -> it.tag == "ceph::nocephx" }
-        assert tag != null
-
-        env.simulator(CephPrimaryStorageBase.CHECK_POOL_PATH) {HttpEntity<String> e, EnvSpec spec ->
-            def rsp = new CephPrimaryStorageBase.CheckRsp()
-            rsp.success = true
-            rsp.totalCapacity = 400000000
-            rsp.availableCapacity = 400000000
-            return rsp
-        }
-
-        nocephx = true
-        deleteTag {
-            delegate.uuid = tag.uuid
-        }
-
-        retryInSecs {
-            assert !nocephx
-        }
     }
     
     @Override
