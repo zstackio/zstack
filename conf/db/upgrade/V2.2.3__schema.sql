@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS `AffinityGroupVO` (
     `policy` VARCHAR(255) NOT NULL,
     `version` VARCHAR(255) NOT NULL,
     `type` VARCHAR(255) NOT NULL,
+    `appliance` VARCHAR(255) NOT NULL,
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY (`uuid`)
@@ -28,8 +29,8 @@ CREATE PROCEDURE insertApplianceVmAffinityGroup()
     BEGIN
         DECLARE applianceVmAffinityGroupUuid VARCHAR(32);
         SET applianceVmAffinityGroupUuid = REPLACE(UUID(), '-', '');
-        INSERT INTO zstack.AffinityGroupVO (uuid, name, description, policy, version, type, lastOpDate, createDate)
-            values(applianceVmAffinityGroupUuid, 'zstack.affinity.group.for.virtual.router', 'zstack.affinity.group.for.virtual.router', 'ANTIAFFINITYSOFT', '1.0', 'HOST', CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
+        INSERT INTO zstack.AffinityGroupVO (uuid, name, description, policy, version, type, appliance, lastOpDate, createDate)
+            values(applianceVmAffinityGroupUuid, 'zstack.affinity.group.for.virtual.router', 'zstack.affinity.group.for.virtual.router', 'ANTIAFFINITYSOFT', '1.0', 'HOST', 'VROUTER', CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
         INSERT INTO zstack.ResourceVO(uuid, resourceName, resourceType) values(applianceVmAffinityGroupUuid, 'zstack.affinity.group.for.virtual.router', 'AffinityGroupVO');
     END $$
 DELIMITER ;
