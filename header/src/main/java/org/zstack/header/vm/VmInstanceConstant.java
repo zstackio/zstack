@@ -47,7 +47,6 @@ public interface VmInstanceConstant {
     enum Capability {
         LiveMigration,
         VolumeMigration,
-        Reimage,
-        ChangeImage
+        Reimage
     }
 }

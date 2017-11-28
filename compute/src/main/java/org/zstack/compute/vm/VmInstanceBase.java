@@ -35,11 +35,13 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
-import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
+import org.zstack.header.image.ImageEO;
+import org.zstack.header.image.ImageInventory;
+import org.zstack.header.image.ImageStatus;
+import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
-import org.zstack.header.notification.NotificationConstant;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.MarkRootVolumeAsSnapshotMsg;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
@@ -2288,10 +2290,8 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         if (imageMediaType == ImageMediaType.ISO || imageMediaType == null) {
             ret.put(Capability.Reimage.toString(), false);
-            ret.put(Capability.ChangeImage.toString(), false);
         } else {
             ret.put(Capability.Reimage.toString(), true);
-            ret.put(Capability.ChangeImage.toString(), true);
         }
     }
 
