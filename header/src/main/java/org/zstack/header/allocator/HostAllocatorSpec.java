@@ -6,10 +6,7 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeFormat;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  */
@@ -33,6 +30,7 @@ public class HostAllocatorSpec {
     private Map<String, List<String>> backupStoragePrimaryStorageMetrics;
     private boolean dryRun;
     private List<String> systemTags;
+    private Map<String, Set<String>> host2PrimaryStorageBlacklist = new HashMap<>();
 
     public List<String> getSystemTags() {
         return systemTags;
@@ -225,5 +223,13 @@ public class HostAllocatorSpec {
 
     public void setBackupStoragePrimaryStorageMetrics(Map<String, List<String>> backupStoragePrimaryStorageMetrics) {
         this.backupStoragePrimaryStorageMetrics = backupStoragePrimaryStorageMetrics;
+    }
+
+    public Map<String, Set<String>> getHost2PrimaryStorageBlacklist() {
+        return host2PrimaryStorageBlacklist;
+    }
+
+    public void setHost2PrimaryStorageBlacklist(Map<String, Set<String>> host2PrimaryStorageBlacklist) {
+        this.host2PrimaryStorageBlacklist = host2PrimaryStorageBlacklist;
     }
 }
