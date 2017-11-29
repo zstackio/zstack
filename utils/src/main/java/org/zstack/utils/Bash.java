@@ -56,6 +56,10 @@ public abstract class Bash {
         }
     }
 
+    protected String dirname(String path) {
+        return new File(path).getParentFile().getPath();
+    }
+
     protected void copyDir(String src, String dst) {
         try {
             FileUtils.copyDirectory(new File(src), new File(dst));
