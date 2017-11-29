@@ -685,7 +685,6 @@ public abstract class HostBase extends AbstractHost {
                     return;
                 }
 
-                changeConnectionState(HostStatusEvent.disconnected);
                 ConnectHostMsg connectMsg = new ConnectHostMsg(self.getUuid());
                 connectMsg.setNewAdd(false);
                 bus.makeTargetServiceIdByResourceUuid(connectMsg, HostConstant.SERVICE_ID, self.getUuid());
