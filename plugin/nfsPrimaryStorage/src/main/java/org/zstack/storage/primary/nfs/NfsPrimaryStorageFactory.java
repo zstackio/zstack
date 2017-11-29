@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.VmExpungeRootVolumeValidator;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.EventCallback;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfigException;
@@ -33,6 +34,7 @@ import org.zstack.header.volume.VolumeFormat;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
 import org.zstack.kvm.KVMConstant;
+import org.zstack.storage.primary.ChangePrimaryStorageStatusMsg;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStorageSystemTags;
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands.NfsPrimaryStorageAgentResponse;
@@ -189,6 +191,7 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
     @Override
     public boolean start() {
         populateExtensions();
+        setupCanonicalEvents();
         NfsPrimaryStorageGlobalConfig.MOUNT_BASE.installValidateExtension(new GlobalConfigValidatorExtensionPoint() {
             @Override
             public void validateGlobalConfig(String category, String name, String oldValue, String value) throws GlobalConfigException {
@@ -197,8 +200,46 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
                 }
             }
         });
-
         return true;
+    }
+
+    private void setupCanonicalEvents(){
+        evtf.on(PrimaryStorageCanonicalEvent.PRIMARY_STORAGE_HOST_STATUS_CHANGED_PATH, new EventCallback() {
+            @Override
+            protected void run(Map tokens, Object data) {
+                PrimaryStorageCanonicalEvent.PrimaryStorageHostStatusChangeData d =
+                        (PrimaryStorageCanonicalEvent.PrimaryStorageHostStatusChangeData)data;
+                PrimaryStorageStatus nfsStatus = Q.New(PrimaryStorageVO.class)
+                        .eq(PrimaryStorageVO_.uuid, d.getPrimaryStorageUuid())
+                        .eq(PrimaryStorageVO_.type, NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE)
+                        .select(PrimaryStorageVO_.status)
+                        .findValue();
+
+                boolean recoverConnection = d.getNewStatus() == PrimaryStorageHostStatus.Connected &&
+                        d.getOldStatus() != PrimaryStorageHostStatus.Connected;
+
+                if (nfsStatus == null || !recoverConnection) {
+                    return;
+                }
+
+                logger.debug("NFS[uuid:%s] recover connection to host[uuid:%s]");
+                if (nfsStatus != PrimaryStorageStatus.Connected) {
+                    // use sync call here to make sure the NFS primary storage connected before continue to the next step
+                    ChangePrimaryStorageStatusMsg cmsg = new ChangePrimaryStorageStatusMsg();
+                    cmsg.setPrimaryStorageUuid(d.getPrimaryStorageUuid());
+                    cmsg.setStatus(PrimaryStorageStatus.Connected.toString());
+                    bus.makeTargetServiceIdByResourceUuid(cmsg, PrimaryStorageConstant.SERVICE_ID, d.getPrimaryStorageUuid());
+                    bus.call(cmsg);
+                    logger.debug(String.format("connect nfs[uuid:%s] completed", d.getPrimaryStorageUuid()));
+                }
+
+                NfsRecalculatePrimaryStorageCapacityMsg msg = new NfsRecalculatePrimaryStorageCapacityMsg();
+                msg.setPrimaryStorageUuid(d.getPrimaryStorageUuid());
+                msg.setRelease(false);
+                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, d.getPrimaryStorageUuid());
+                bus.send(msg);
+            }
+        });
     }
 
     @Override

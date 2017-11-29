@@ -3,10 +3,7 @@ package org.zstack.storage.primary;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
-import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.cloudbus.MessageSafe;
-import org.zstack.core.cloudbus.ResourceDestinationMaker;
+import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
@@ -59,6 +56,8 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     private DbEntityLister dl;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private EventFacade evtf;
     @Autowired
     private TagManager tagMgr;
     @Autowired

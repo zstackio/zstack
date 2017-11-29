@@ -1217,23 +1217,6 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                             nfsFactory.updateNfsHostStatus(inv.getUuid(), huuid, PrimaryStorageHostStatus.Connected);
                             logger.debug(String.format("succeed to mount nfs[uuid:%s] from host[uuid:%s]"
                                     , inv.getUuid(), huuid));
-
-                            if (!PrimaryStorageStatus.Connected.toString().equals(inv.getStatus())) {
-                                // use sync call here to make sure the NFS primary storage connected before continue to the next step
-                                ChangePrimaryStorageStatusMsg cmsg = new ChangePrimaryStorageStatusMsg();
-                                cmsg.setPrimaryStorageUuid(inv.getUuid());
-                                cmsg.setStatus(PrimaryStorageStatus.Connected.toString());
-                                bus.makeTargetServiceIdByResourceUuid(cmsg, PrimaryStorageConstant.SERVICE_ID, inv.getUuid());
-                                bus.call(cmsg);
-                                logger.debug(String.format("connect nfs[uuid:%s] completed", inv.getUuid()));
-                            }
-
-                            NfsRecalculatePrimaryStorageCapacityMsg msg = new NfsRecalculatePrimaryStorageCapacityMsg();
-                            msg.setPrimaryStorageUuid(inv.getUuid());
-                            msg.setRelease(false);
-                            bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, inv.getUuid());
-                            bus.send(msg);
-
                             completion.done();
                         }
 
