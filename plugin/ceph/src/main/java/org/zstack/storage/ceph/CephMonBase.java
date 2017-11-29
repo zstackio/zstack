@@ -3,6 +3,7 @@ package org.zstack.storage.ceph;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.Platform;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
@@ -67,6 +68,50 @@ public abstract class CephMonBase {
             @Override
             public Class<T> getReturnClass() {
                 return retClass;
+            }
+        });
+    }
+
+    private static class AgentResponse {
+        String error;
+        boolean success = true;
+
+        public String getError() {
+            return error;
+        }
+
+        public void setError(String error) {
+            this.error = error;
+        }
+
+        public boolean isSuccess() {
+            return success;
+        }
+
+        public void setSuccess(boolean success) {
+            this.success = success;
+        }
+    }
+
+    public void httpCall(final String path, final Object cmd, final Completion completion) {
+        restf.asyncJsonPost(makeHttpPath(self.getHostname(), path), cmd, new JsonAsyncRESTCallback<AgentResponse>(completion) {
+            @Override
+            public void fail(ErrorCode err) {
+                completion.fail(err);
+            }
+
+            @Override
+            public void success(AgentResponse ret) {
+                if (ret.isSuccess()) {
+                    completion.success();
+                } else {
+                    completion.fail(Platform.operr(ret.getError()));
+                }
+            }
+
+            @Override
+            public Class<AgentResponse> getReturnClass() {
+                return AgentResponse.class;
             }
         });
     }

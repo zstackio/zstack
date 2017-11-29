@@ -963,12 +963,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         exts.forEach(ext -> backupStorageMediators.putAll(ext.getBackupStorageMediators()));
     }
 
-
-    class DownloadParam implements MediatorParam {
-        ImageSpec image;
-        String installPath;
-    }
-
     class UploadParam implements MediatorParam {
         ImageInventory image;
         String primaryStorageInstallPath;
@@ -995,10 +989,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         @Override
         public void download(final ReturnValueCompletion<String> completion) {
             checkParam();
-            final DownloadParam dparam = (DownloadParam) param;
+            final MediatorDowloadParam dparam = (MediatorDowloadParam) param;
 
             FlowChain chain = FlowChainBuilder.newShareFlowChain();
-            chain.setName(String.format("download-image-from-sftp-%s-to-ceph-%s", backupStorage.getUuid(), self.getUuid()));
+            chain.setName(String.format("download-image-from-sftp-%s-to-ceph-%s", backupStorage.getUuid(), dparam.getPrimaryStorageUuid()));
             chain.then(new ShareFlow() {
                 String sshkey;
                 int sshport;
@@ -1036,12 +1030,12 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
                             SftpDownloadCmd cmd = new SftpDownloadCmd();
-                            cmd.backupStorageInstallPath = dparam.image.getSelectedBackupStorage().getInstallPath();
+                            cmd.backupStorageInstallPath = dparam.getImage().getSelectedBackupStorage().getInstallPath();
                             cmd.hostname = sftpHostname;
                             cmd.username = username;
                             cmd.sshKey = sshkey;
                             cmd.sshPort = sshport;
-                            cmd.primaryStorageInstallPath = dparam.installPath;
+                            cmd.primaryStorageInstallPath = dparam.getInstallPath();
 
                             httpCall(SFTP_DOWNLOAD_PATH, cmd, SftpDownloadRsp.class, new ReturnValueCompletion<SftpDownloadRsp>(trigger) {
                                 @Override
@@ -1060,7 +1054,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     done(new FlowDoneHandler(completion) {
                         @Override
                         public void handle(Map data) {
-                            completion.success(dparam.installPath);
+                            completion.success(dparam.getInstallPath());
                         }
                     });
 
@@ -1211,15 +1205,15 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public void download(final ReturnValueCompletion<String> completion) {
             checkParam();
 
-            final DownloadParam dparam = (DownloadParam) param;
-            if (ImageMediaType.DataVolumeTemplate.toString().equals(dparam.image.getInventory().getMediaType())) {
+            final MediatorDowloadParam dparam = (MediatorDowloadParam) param;
+            if (ImageMediaType.DataVolumeTemplate.toString().equals(dparam.getImage().getInventory().getMediaType())) {
                 CpCmd cmd = new CpCmd();
-                cmd.srcPath = dparam.image.getSelectedBackupStorage().getInstallPath();
-                cmd.dstPath = dparam.installPath;
+                cmd.srcPath = dparam.getImage().getSelectedBackupStorage().getInstallPath();
+                cmd.dstPath = dparam.getInstallPath();
                 httpCall(CP_PATH, cmd, CpRsp.class, new ReturnValueCompletion<CpRsp>(completion) {
                     @Override
                     public void success(CpRsp returnValue) {
-                        completion.success(dparam.installPath);
+                        completion.success(dparam.getInstallPath());
                     }
 
                     @Override
@@ -1228,7 +1222,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     }
                 });
             } else {
-                completion.success(dparam.image.getSelectedBackupStorage().getInstallPath());
+                completion.success(dparam.getImage().getSelectedBackupStorage().getInstallPath());
             }
         }
 
@@ -1506,9 +1500,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
-                            DownloadParam param = new DownloadParam();
-                            param.image = image;
-                            param.installPath = makeCacheInstallPath(image.getInventory().getUuid());
+                            MediatorDowloadParam param = new MediatorDowloadParam();
+                            param.setImage(image);
+                            param.setInstallPath(makeCacheInstallPath(image.getInventory().getUuid()));
+                            param.setPrimaryStorageUuid(self.getUuid());
                             BackupStorageMediator mediator = getBackupStorageMediator(image.getSelectedBackupStorage().getBackupStorageUuid());
                             mediator.param = param;
 
@@ -1958,9 +1953,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         ImageSpec spec = new ImageSpec();
         spec.setInventory(msg.getImage());
         spec.setSelectedBackupStorage(msg.getBackupStorageRef());
-        DownloadParam param = new DownloadParam();
-        param.image = spec;
-        param.installPath = makeDataVolumeInstallPath(msg.getVolumeUuid());
+        MediatorDowloadParam param = new MediatorDowloadParam();
+        param.setImage(spec);
+        param.setInstallPath(makeDataVolumeInstallPath(msg.getVolumeUuid()));
+        param.setPrimaryStorageUuid(self.getUuid());
         mediator.param = param;
         mediator.download(new ReturnValueCompletion<String>(msg) {
             @Override
@@ -2085,10 +2081,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         Collections.shuffle(mons);
 
         class HttpCaller {
-            Iterator<CephPrimaryStorageMonBase> it = mons.iterator();
-            List<ErrorCode> errorCodes = new ArrayList<ErrorCode>();
+            private Iterator<CephPrimaryStorageMonBase> it = mons.iterator();
+            private List<ErrorCode> errorCodes = new ArrayList<ErrorCode>();
 
-            void call() {
+            private void call() {
                 if (!it.hasNext()) {
                     callback.fail(operr(
                             "all mons failed to execute http call[%s], errors are %s", path, JSONObjectUtil.toJsonString(errorCodes))
