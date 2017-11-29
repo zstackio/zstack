@@ -194,9 +194,10 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
             TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
             q.setParameter("vmType", VmInstanceConstant.USER_VM_TYPE);
             q.setParameter("vmStates", Arrays.asList(
-                    VmInstanceState.Stopped,
                     VmInstanceState.Unknown,
-                    VmInstanceState.Running));
+                    VmInstanceState.Running,
+                    VmInstanceState.Pausing,
+                    VmInstanceState.Paused));
             q.setParameter("clusterUuid", s.getClusterUuid());
             q.setParameter("psUuid", s.getPrimaryStorageUuid());
             vmUuids.addAll(q.getResultList());
@@ -213,14 +214,11 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
             return;
         }
 
-        List<StopVmInstanceMsg> msgs = CollectionUtils.transformToList(vmUuids, new Function<StopVmInstanceMsg, String>() {
-            @Override
-            public StopVmInstanceMsg call(String arg) {
-                StopVmInstanceMsg msg = new StopVmInstanceMsg();
-                msg.setVmInstanceUuid(arg);
-                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, arg);
-                return msg;
-            }
+        List<StopVmInstanceMsg> msgs = CollectionUtils.transformToList(vmUuids, (Function<StopVmInstanceMsg, String>) arg -> {
+            StopVmInstanceMsg msg = new StopVmInstanceMsg();
+            msg.setVmInstanceUuid(arg);
+            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, arg);
+            return msg;
         });
 
         bus.send(msgs, 20, new CloudBusListCallBack(completion) {
