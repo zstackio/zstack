@@ -1,6 +1,7 @@
 package org.zstack.test.integration.storage.primary.local
 
 import org.zstack.core.db.DatabaseFacade
+import org.zstack.core.db.SQL
 import org.zstack.core.db.SimpleQuery
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.securitygroup.SecurityGroupConstant
@@ -197,12 +198,19 @@ class DetachedLocalStorageAvailableCapacityCase extends SubCase{
             clusterUuid = cluster.uuid
         }
 
+        Long used = SQL.New("select sum(ref.size)" +
+                " from LocalStorageResourceRefVO ref" +
+                " where ref.primaryStorageUuid = :psUuid")
+                .param("psUuid", ps.uuid).find()
+
+        assert null != used
+
         // check PrimaryStorageCapacityVO capacity = 0
         retryInSecs(2) {
             ps = queryPrimaryStorage {
                 conditions=["uuid=${ps.uuid}".toString()]
             }[0]
-            assert 0 == ps.availableCapacity
+            assert 0 - used == ps.availableCapacity
             assert 0 == ps.availablePhysicalCapacity
             assert 0 == ps.totalCapacity
             assert 0 == ps.totalPhysicalCapacity
