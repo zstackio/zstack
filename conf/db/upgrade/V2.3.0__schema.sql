@@ -74,6 +74,7 @@ CREATE TABLE  `zstack`.`SNSSubscriberVO` (
 CREATE TABLE  `zstack`.`SNSTopicVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
     `name` varchar(255) NOT NULL,
+    `state` varchar(64) NOT NULL,
     `description` varchar(2048) DEFAULT NULL,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp,
