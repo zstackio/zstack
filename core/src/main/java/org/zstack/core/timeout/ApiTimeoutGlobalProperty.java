@@ -12,6 +12,10 @@ public class ApiTimeoutGlobalProperty {
     public static String APIAddImageMsg;
     @GlobalProperty(name="ApiTimeout.org.zstack.header.image.APICreateRootVolumeTemplateFromRootVolumeMsg", defaultValue = "timeout::3h")
     public static String APICreateRootVolumeTemplateFromRootVolumeMsg;
+
+    @GlobalProperty(name="ApiTimeout.org.zstack.header.volume.APICreateDataVolumeFromVolumeTemplateMsg", defaultValue = "timeout::3h")
+    public static String APICreateDataVolumeFromVolumeTemplateMsg;
+
     @GlobalProperty(name="ApiTimeout.org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeMsg", defaultValue = "timeout::3h")
     public static String APICreateDataVolumeTemplateFromVolumeMsg;
     @GlobalProperty(name="ApiTimeout.org.zstack.header.volume.APICreateDataVolumeFromVolumeSnapshotMsg", defaultValue = "timeout::3h")
