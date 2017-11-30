@@ -262,7 +262,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
                                         for (BackupStorageInventory bs: backupStorages) {
                                             for (CreateImageExtensionPoint ext : pluginRgty.getExtensionList(CreateImageExtensionPoint.class)) {
-                                                ext.beforeCreateImage(ImageInventory.valueOf(image), bs.getUuid());
+                                                VolumeVO volume = dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class);
+                                                ext.beforeCreateImage(ImageInventory.valueOf(image), bs.getUuid(), volume.getPrimaryStorageUuid());
                                             }
                                         }
                                         trigger.next();
@@ -303,7 +304,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                         saveRefVOByBsInventorys(backupStorages, image.getUuid());
                                         for (BackupStorageInventory bs: backupStorages) {
                                             for (CreateImageExtensionPoint ext : pluginRgty.getExtensionList(CreateImageExtensionPoint.class)) {
-                                                ext.beforeCreateImage(ImageInventory.valueOf(image), bs.getUuid());
+                                                VolumeVO volume = dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class);
+
+                                                ext.beforeCreateImage(ImageInventory.valueOf(image), bs.getUuid(), volume.getPrimaryStorageUuid());
                                             }
                                         }
                                         trigger.next();
