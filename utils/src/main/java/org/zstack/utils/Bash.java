@@ -49,6 +49,16 @@ public abstract class Bash {
         }
     }
 
+    protected void writeFile(String filePath, String content) {
+        mkdirs(dirname(filePath));
+
+        try {
+            FileUtils.writeStringToFile(new File(filePath), content);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     protected void mkdirs(String path) {
         File f = new File(path);
         if (!f.exists()) {
