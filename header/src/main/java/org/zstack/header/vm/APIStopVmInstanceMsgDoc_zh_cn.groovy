@@ -67,7 +67,7 @@ doc {
 					enclosedIn "stopVmInstance"
 					desc ""
 					location "body"
-					type "Boolean"
+					type "String"
 					optional true
 					since "0.6"
 					
