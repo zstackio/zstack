@@ -15,7 +15,7 @@ import org.zstack.header.rest.RestRequest;
 )
 public class APIGetLdapEntryMsg extends APISyncCallMessage {
 
-    @APIParam(maxLength = 1024)
+    @APIParam
     private String ldapFilter;
 
     public String getLdapFilter() {

@@ -22,7 +22,7 @@ public class GetLdapEntryAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String ldapFilter;
 
     @Param(required = false)
