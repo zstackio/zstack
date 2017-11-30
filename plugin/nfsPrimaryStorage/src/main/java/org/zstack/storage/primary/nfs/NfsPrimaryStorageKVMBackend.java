@@ -42,7 +42,6 @@ import org.zstack.header.volume.VolumeInventory;
 import org.zstack.identity.AccountManager;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
 import org.zstack.kvm.*;
-import org.zstack.storage.primary.ChangePrimaryStorageStatusMsg;
 import org.zstack.storage.primary.PrimaryStorageBase.PhysicalCapacityUsage;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands.*;

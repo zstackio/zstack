@@ -4,9 +4,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.asyncbatch.AsyncBatchRunner;
 import org.zstack.core.asyncbatch.LoopAsyncBatch;
-import org.zstack.core.cloudbus.AutoOffEventCallback;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -21,7 +21,6 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.*;
-import org.zstack.header.host.HostCanonicalEvents.HostStatusChangedData;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.Message;
@@ -79,6 +78,8 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     private EventFacade evtf;
     @Autowired
     private NfsPrimaryStorageImageCacheCleaner imageCacheCleaner;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     public NfsPrimaryStorage(PrimaryStorageVO vo) {
         super(vo);
@@ -109,7 +110,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         }
     }
 
-    protected void updateMountPoint(PrimaryStorageVO vo, String newUrl, Completion completion) {
+    protected void updateMountPoint(String newUrl, Completion completion) {
         String oldUrl = self.getUrl();
 
         SimpleQuery<PrimaryStorageClusterRefVO> q = dbf.createQuery(PrimaryStorageClusterRefVO.class);
@@ -117,13 +118,14 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         q.add(PrimaryStorageClusterRefVO_.primaryStorageUuid, Op.EQ, self.getUuid());
         List<String> cuuids = q.listValue();
         if (cuuids.isEmpty()) {
-            vo.setUrl(newUrl);
-            dbf.update(vo);
             completion.success();
         }
 
-        PrimaryStorageInventory psinv = getSelfInventory();
+        for (UpdatePrimaryStorageExtensionPoint ext : pluginRgty.getExtensionList(UpdatePrimaryStorageExtensionPoint.class)){
+            ext.beforeUpdatePrimaryStorage(PrimaryStorageInventory.valueOf(self));
+        }
 
+        PrimaryStorageInventory psinv = getSelfInventory();
         new LoopAsyncBatch<String>(completion) {
             @Override
             protected Collection<String> collect() {
@@ -160,8 +162,6 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                 if (errors.size() == cuuids.size()){
                     completion.fail(errors.get(0));
                 }else {
-                    vo.setUrl(newUrl);
-                    dbf.update(vo);
                     completion.success();
                 }
             }
@@ -181,10 +181,14 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         }
 
         if (msg.getUrl() != null && !self.getUrl().equals(msg.getUrl())){
-            updateMountPoint(self, msg.getUrl(), new Completion(completion) {
+            updateMountPoint(msg.getUrl(), new Completion(completion) {
                 @Override
                 public void success() {
                     self.setUrl(msg.getUrl());
+                    self = dbf.updateAndRefresh(self);
+                    for (UpdatePrimaryStorageExtensionPoint ext : pluginRgty.getExtensionList(UpdatePrimaryStorageExtensionPoint.class)){
+                        ext.afterUpdatePrimaryStorage(PrimaryStorageInventory.valueOf(self));
+                    }
                     completion.success(self);
                 }
 
