@@ -14,7 +14,6 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.job.Job;
 import org.zstack.core.job.JobContext;
-import org.zstack.header.allocator.SetApplianceVmSystemTags;
 import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.image.ImagePlatform;
@@ -124,7 +123,7 @@ public class CreateApplianceVmJob implements Job {
             }
         }.execute();
 
-        tagMgr.copySystemTag(iovo.getUuid(), InstanceOfferingVO.class.getSimpleName(), avo.getUuid(), VmInstanceVO.class.getSimpleName());
+        tagMgr.copySystemTag(iovo.getUuid(), InstanceOfferingVO.class.getSimpleName(), avo.getUuid(), VmInstanceVO.class.getSimpleName(), false);
         if (spec.getInherentSystemTags() != null && !spec.getInherentSystemTags().isEmpty()) {
             tagMgr.createInherentSystemTags(spec.getInherentSystemTags(), avo.getUuid(), VmInstanceVO.class.getSimpleName());
         }

@@ -753,7 +753,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     instanceOfferingUuid,
                     InstanceOfferingVO.class.getSimpleName(),
                     vo.getUuid(),
-                    VmInstanceVO.class.getSimpleName());
+                    VmInstanceVO.class.getSimpleName(), false);
         }
 
         if (msg.getImageUuid() != null) {
@@ -761,7 +761,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     msg.getImageUuid(),
                     ImageVO.class.getSimpleName(),
                     vo.getUuid(),
-                    VmInstanceVO.class.getSimpleName());
+                    VmInstanceVO.class.getSimpleName(), false);
         }
 
         if (msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()) {

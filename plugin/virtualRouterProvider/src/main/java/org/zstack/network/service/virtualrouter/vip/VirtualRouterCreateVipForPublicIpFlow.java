@@ -100,7 +100,7 @@ public class VirtualRouterCreateVipForPublicIpFlow implements Flow {
                 persist(vrvip);
                 acntMgr.createAccountResourceRef(vrAccount, vipvo.getUuid(), VipVO.class);
                 tagMgr.copySystemTag(vr.getUuid(), VirtualRouterVmVO.class.getSimpleName(),
-                        vipvo.getUuid(), VipVO.class.getSimpleName());
+                        vipvo.getUuid(), VipVO.class.getSimpleName(), false);
             }
         }.execute();
 
