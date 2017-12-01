@@ -50,6 +50,14 @@ public class AffinityGroupInventory  {
         return this.type;
     }
 
+    public java.lang.String appliance;
+    public void setAppliance(java.lang.String appliance) {
+        this.appliance = appliance;
+    }
+    public java.lang.String getAppliance() {
+        return this.appliance;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
