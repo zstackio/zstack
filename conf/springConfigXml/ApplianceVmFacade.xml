@@ -18,7 +18,6 @@
             <list>
 		        <value>org.zstack.compute.vm.VmImageSelectBackupStorageFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateHostFlow</value>
-                <value>org.zstack.compute.vm.VmImageSelectBackupStorageFlow</value>
                 <value>org.zstack.compute.vm.ApplianceVmAllocatePrimaryStorageFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateVolumeFlow</value>
                 <value>org.zstack.appliancevm.ApplianceVmAllocateNicFlow</value>

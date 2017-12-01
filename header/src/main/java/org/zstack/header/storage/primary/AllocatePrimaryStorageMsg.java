@@ -11,6 +11,7 @@ public class AllocatePrimaryStorageMsg extends NeedReplyMessage {
     private String requiredHostUuid;
     private String requiredPrimaryStorageUuid;
     private List<String> requiredPrimaryStorageTypes;
+    private List<String> excludePrimaryStorageTypes;
 
     private long size;
     private boolean dryRun;
@@ -23,6 +24,14 @@ public class AllocatePrimaryStorageMsg extends NeedReplyMessage {
     private String imageUuid;
     private boolean noOverProvisioning;
     private String purpose;
+
+    public List<String> getExcludePrimaryStorageTypes() {
+        return excludePrimaryStorageTypes;
+    }
+
+    public void setExcludePrimaryStorageTypes(List<String> excludePrimaryStorageTypes) {
+        this.excludePrimaryStorageTypes = excludePrimaryStorageTypes;
+    }
 
     public List<String> getRequiredPrimaryStorageTypes() {
         return requiredPrimaryStorageTypes;

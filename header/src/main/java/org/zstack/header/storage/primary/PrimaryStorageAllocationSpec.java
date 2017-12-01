@@ -19,6 +19,24 @@ public class PrimaryStorageAllocationSpec {
     private boolean noOverProvisioning;
     private String purpose;
     private List<String> requiredPrimaryStorageTypes;
+    private List<String> excludePrimaryStorageTypes;
+    private String backupStorageUuid;
+
+    public List<String> getExcludePrimaryStorageTypes() {
+        return excludePrimaryStorageTypes;
+    }
+
+    public void setExcludePrimaryStorageTypes(List<String> excludePrimaryStorageTypes) {
+        this.excludePrimaryStorageTypes = excludePrimaryStorageTypes;
+    }
+
+    public String getBackupStorageUuid() {
+        return backupStorageUuid;
+    }
+
+    public void setBackupStorageUuid(String backupStorageUuid) {
+        this.backupStorageUuid = backupStorageUuid;
+    }
 
     public List<String> getRequiredPrimaryStorageTypes() {
         return requiredPrimaryStorageTypes;

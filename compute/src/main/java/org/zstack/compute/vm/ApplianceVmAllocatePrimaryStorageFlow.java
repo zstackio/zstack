@@ -12,7 +12,6 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.workflow.WorkFlowChain;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
@@ -71,6 +70,9 @@ public class ApplianceVmAllocatePrimaryStorageFlow implements Flow {
 
         for (PrimaryStorageAllocatorStrategyExtensionPoint ext : pluginRgty.getExtensionList(PrimaryStorageAllocatorStrategyExtensionPoint.class)) {
             String allocatorStrategyType = ext.getAllocatorStrategy();
+            if (allocatorStrategyType == null) {
+                continue;
+            }
 
             AllocatePrimaryStorageMsg rmsg = new AllocatePrimaryStorageMsg();
             rmsg.setRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForRootVolume());

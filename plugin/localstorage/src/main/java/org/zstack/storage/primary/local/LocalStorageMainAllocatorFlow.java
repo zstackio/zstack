@@ -18,11 +18,11 @@ import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.operr;
-
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created by frank on 7/1/2015.
@@ -219,6 +219,18 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
                 if (!spec.getRequiredPrimaryStorageTypes().contains(psvo.getType())) {
                     logger.debug(String.format("the primary storage[name:%s, uuid:%s, type:%s] is not in required primary storage types[%s]," +
                             " remove it", psvo.getName(), psvo.getUuid(), psvo.getType(), spec.getRequiredPrimaryStorageTypes()));
+                    it.remove();
+                }
+            }
+        }
+
+        if (spec.getExcludePrimaryStorageTypes() != null && !spec.getExcludePrimaryStorageTypes().isEmpty()) {
+            Iterator<PrimaryStorageVO> it = res.iterator();
+            while (it.hasNext()) {
+                PrimaryStorageVO psvo = it.next();
+                if (spec.getExcludePrimaryStorageTypes().contains(psvo.getType())) {
+                    logger.debug(String.format("the primary storage[name:%s, uuid:%s, type:%s] is in exclude primary storage types[%s]," +
+                            " remove it", psvo.getName(), psvo.getUuid(), psvo.getType(), spec.getExcludePrimaryStorageTypes()));
                     it.remove();
                 }
             }

@@ -5,5 +5,6 @@ package org.zstack.header.image;
  */
 public interface CreateImageExtensionPoint {
     void beforeCreateImage(ImageInventory img, String bsUuid, String psUuid);
+    void beforeSyncImage(ImageInventory img, String bsUuid);
     String getImageDescription(ImageInventory img);
 }

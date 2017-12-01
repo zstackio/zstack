@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -13,6 +14,9 @@ import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.ImageBackupStorageRefInventory;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
+import org.zstack.header.storage.backup.BackupStorageInventory;
+import org.zstack.header.storage.backup.BackupStoragePrimaryStorageExtensionPoint;
+import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.primary.ImageCacheVO;
 import org.zstack.header.storage.primary.ImageCacheVO_;
 import org.zstack.header.vm.VmInstanceConstant;
@@ -23,12 +27,11 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.function.Function;
 
-import static org.zstack.core.Platform.operr;
-
 import javax.persistence.TypedQuery;
 import java.util.List;
 import java.util.Map;
 
+import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.taskProgress;
 
 /**
@@ -39,6 +42,8 @@ public class VmImageSelectBackupStorageFlow extends NoRollbackFlow {
     private DatabaseFacade dbf;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     private String findBackupStorage(VmInstanceSpec spec, String imageUuid) {
         taskProgress("Choose backup storage for downloading the image");
@@ -131,6 +136,7 @@ public class VmImageSelectBackupStorageFlow extends NoRollbackFlow {
                         }
                     }));
 
+            addExcludePrimaryStorageForImage(spec);
             if (ImageMediaType.ISO.toString().equals(spec.getImageSpec().getInventory().getMediaType())) {
                 spec.getDestIso().setBackupStorageUuid(bsUuid);
             }
@@ -143,5 +149,21 @@ public class VmImageSelectBackupStorageFlow extends NoRollbackFlow {
         }
 
         trigger.next();
+    }
+
+    private void addExcludePrimaryStorageForImage(VmInstanceSpec spec) {
+        DebugUtils.Assert(spec.getImageSpec().getSelectedBackupStorage() != null, "select backup storage couldn't be null");
+        BackupStorageInventory bs = BackupStorageInventory.valueOf(
+                dbf.findByUuid(spec.getImageSpec().getSelectedBackupStorage().getBackupStorageUuid(), BackupStorageVO.class));
+
+        List<BackupStoragePrimaryStorageExtensionPoint> exts =
+                pluginRgty.getExtensionList(BackupStoragePrimaryStorageExtensionPoint.class);
+        exts.forEach(ext -> {
+            List<String> excludePsTypes = ext.getExcludePrimaryStorageTypeList(bs, spec.getImageSpec().getInventory());
+            if (!excludePsTypes.isEmpty()) {
+                spec.addExcludePrimaryStorageUuidsForRootVolume(excludePsTypes);
+                spec.addExcludePrimaryStorageUuidsForDataVolume(excludePsTypes);
+            }
+        });
     }
 }
