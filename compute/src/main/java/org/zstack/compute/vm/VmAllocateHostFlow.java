@@ -66,6 +66,11 @@ public class VmAllocateHostFlow implements Flow {
 
         DesignatedAllocateHostMsg msg = new DesignatedAllocateHostMsg();
 
+        // if ChangeImage, then only dry run AllocateHostMsg
+        if (spec.getCurrentVmOperation() == VmOperation.ChangeImage) {
+            msg.setDryRun(true);
+        }
+
         List<DiskOfferingInventory> diskOfferings = new ArrayList<>();
         ImageInventory image = spec.getImageSpec().getInventory();
         long diskSize;
@@ -133,6 +138,11 @@ public class VmAllocateHostFlow implements Flow {
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
+                    if (reply instanceof AllocateHostDryRunReply) {
+                        chain.next();
+                        return;
+                    }
+
                     AllocateHostReply areply = (AllocateHostReply) reply;
                     spec.setDestHost(areply.getHost());
 
@@ -140,7 +150,9 @@ public class VmAllocateHostFlow implements Flow {
                     // is stuck in Starting, we know which host it's created on and can check its state on the host
                     VmInstanceVO vmvo = dbf.findByUuid(spec.getVmInventory().getUuid(), VmInstanceVO.class);
                     vmvo.setClusterUuid(spec.getDestHost().getClusterUuid());
-                    vmvo.setLastHostUuid(vmvo.getHostUuid());
+                    if (spec.getCurrentVmOperation() != VmOperation.ChangeImage) {
+                        vmvo.setLastHostUuid(vmvo.getHostUuid());
+                    }
                     vmvo.setHostUuid(spec.getDestHost().getUuid());
                     vmvo.setHypervisorType(spec.getDestHost().getHypervisorType());
                     dbf.update(vmvo);
@@ -157,7 +169,15 @@ public class VmAllocateHostFlow implements Flow {
     public void rollback(FlowRollback chain, Map data) {
         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         HostInventory host = spec.getDestHost();
-        if (host != null) {
+
+        // if ChangeImage, then no need to ReturnHostCapacity, and resume vm info
+        if (spec.getCurrentVmOperation() == VmOperation.ChangeImage) {
+            VmInstanceVO vmvo = dbf.findByUuid(spec.getVmInventory().getUuid(), VmInstanceVO.class);
+            vmvo.setClusterUuid(spec.getVmInventory().getClusterUuid());
+            vmvo.setLastHostUuid(spec.getVmInventory().getLastHostUuid());
+            vmvo.setHypervisorType(spec.getVmInventory().getHypervisorType());
+            dbf.update(vmvo);
+        } else if (host != null) {
             ReturnHostCapacityMsg msg = new ReturnHostCapacityMsg();
             msg.setCpuCapacity(spec.getVmInventory().getCpuNum());
             msg.setMemoryCapacity(spec.getVmInventory().getMemorySize());
