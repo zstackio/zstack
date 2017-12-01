@@ -16,6 +16,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static org.codehaus.groovy.runtime.InvokerHelper.asList;
+
 public abstract class APIMessage extends NeedReplyMessage {
     /**
      * @ignore
@@ -171,13 +173,17 @@ public abstract class APIMessage extends NeedReplyMessage {
             }
 
             if (value != null && at.validValues().length > 0) {
-                List<String> vals = new ArrayList<>();
-                for (String val: at.validValues()) {
-                    vals.add(val.toLowerCase());
+                boolean found = false;
+                for (String val : at.validValues()) {
+                    if (val.equals(value.toString())) {
+                        found = true;
+                        break;
+                    }
                 }
-                if (!vals.contains(value.toString().toLowerCase())) {
+
+                if (!found) {
                     throw new InvalidApiMessageException("valid value for field[%s] of message[%s] are %s, but %s found", f.getName(),
-                            getClass().getName(), vals, value);
+                            getClass().getName(), asList(at.validValues()), value);
                 }
             }
 
