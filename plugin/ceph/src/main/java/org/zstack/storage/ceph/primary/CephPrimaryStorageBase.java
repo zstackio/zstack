@@ -584,8 +584,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         String resourceUuid;
         String srcPath;
         String dstPath;
+    }
+
+    public static class UploadCmd extends AgentCommand {
         String imageUuid;
         String hostname;
+        String srcPath;
+        String description;
     }
 
     public static class CpRsp extends AgentResponse {
@@ -3050,12 +3055,22 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             }
         }
 
-        CpCmd cmd = new CpCmd();
+        UploadCmd cmd = new UploadCmd();
         cmd.fsId = getSelf().getFsid();
         cmd.srcPath = msg.getPrimaryStorageInstallPath();
-        cmd.dstPath = msg.getBackupStorageInstallPath();
+
         if (msg.getImageUuid() != null) {
             cmd.imageUuid = msg.getImageUuid();
+            ImageInventory inv = ImageInventory.valueOf(dbf.findByUuid(msg.getImageUuid(), ImageVO.class));
+
+            StringBuilder desc = new StringBuilder();
+            for (CreateImageExtensionPoint ext : pluginRgty.getExtensionList(CreateImageExtensionPoint.class)) {
+                String tmp = ext.getImageDescription(inv);
+                if (tmp != null && !tmp.trim().equals("")) {
+                    desc.append(tmp);
+                }
+            }
+            cmd.description = desc.toString();
         }
         if (hostname != null) {
             // imagestore hostname

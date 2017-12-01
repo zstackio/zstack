@@ -26,4 +26,7 @@ public class ImageSystemTags {
             String.format("image::cert::{%s}", IMAGE_SEVER_CERT_TOKEN),
             ImageVO.class
     );
+
+    public static String IMAGE_SOURCE_TYPE_TOKEN = "sourceType";
+    public static PatternedSystemTag IMAGE_SOURCE_TYPE = new PatternedSystemTag(String.format("sourceType::{%s}", IMAGE_SOURCE_TYPE_TOKEN), ImageVO.class);
 }

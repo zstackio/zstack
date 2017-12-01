@@ -348,7 +348,8 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
     @Override
     @Transactional
-    public void copySystemTag(String srcResourceUuid, String srcResourceType, String dstResourceUuid, String dstResourceType) {
+    public void copySystemTag(String srcResourceUuid, String srcResourceType,
+                              String dstResourceUuid, String dstResourceType, boolean inherent) {
         String sql = "select stag" +
                 " from SystemTagVO stag" +
                 " where stag.resourceUuid = :ruuid" +
@@ -357,7 +358,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         TypedQuery<SystemTagVO> srcq = dbf.getEntityManager().createQuery(sql, SystemTagVO.class);
         srcq.setParameter("ruuid", srcResourceUuid);
         srcq.setParameter("rtype", srcResourceType);
-        srcq.setParameter("ih", false);
+        srcq.setParameter("ih", inherent);
         List<SystemTagVO> srctags = srcq.getResultList();
         if (srctags.isEmpty()) {
             return;

@@ -29,7 +29,7 @@ public interface TagManager {
 
     TagInventory createUserTag(String resourceUuid, Enum tag, String resourceType);
 
-    void copySystemTag(String srcResourceUuid, String srcResourceType, String dstResourceUuid, String dstResourceType);
+    void copySystemTag(String srcResourceUuid, String srcResourceType, String dstResourceUuid, String dstResourceType, boolean inherent);
 
     SystemTagInventory updateSystemTag(String tagUuid, String newTag);
 
