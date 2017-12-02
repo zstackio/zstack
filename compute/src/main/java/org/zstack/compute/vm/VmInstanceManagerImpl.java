@@ -20,7 +20,10 @@ import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
-import org.zstack.header.allocator.*;
+import org.zstack.header.allocator.AllocateHostDryRunReply;
+import org.zstack.header.allocator.DesignatedAllocateHostMsg;
+import org.zstack.header.allocator.HostAllocatorConstant;
+import org.zstack.header.allocator.getVmInstanceSyncSignatureExtensionPoint;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.cluster.ClusterInventory;
@@ -54,6 +57,8 @@ import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.quota.QuotaConstant;
 import org.zstack.header.search.SearchOp;
+import org.zstack.header.storage.backup.BackupStorageInventory;
+import org.zstack.header.storage.backup.BackupStoragePrimaryStorageExtensionPoint;
 import org.zstack.header.storage.backup.BackupStorageType;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.primary.*;
@@ -69,13 +74,9 @@ import org.zstack.header.zone.ZoneVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.search.SearchQuery;
-import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.ObjectUtils;
-import org.zstack.utils.TagUtils;
-import org.zstack.utils.Utils;
+import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -595,14 +596,26 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     ));
                 }
 
-                ImageVO imageVO = q(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).find();
-                return ImageInventory.valueOf(imageVO);
+                return ImageInventory.valueOf(dbf.findByUuid(msg.getImageUuid(), ImageVO.class));
             }
         }.execute();
 
 
         // allocate ps for root volume
         AllocatePrimaryStorageMsg rmsg = new AllocatePrimaryStorageMsg();
+
+        DebugUtils.Assert(imageInv.getBackupStorageRefs().size() == 1, "image must existed in only 1 backupStorage");
+        List<BackupStoragePrimaryStorageExtensionPoint> exts =
+                pluginRgty.getExtensionList(BackupStoragePrimaryStorageExtensionPoint.class);
+        exts.forEach(ext -> {
+            List<String> excludePsTypes = ext.getExcludePrimaryStorageTypeList(BackupStorageInventory.valueOf(
+                            dbf.findByUuid(imageInv.getBackupStorageRefs().get(0).getBackupStorageUuid(), BackupStorageVO.class)),
+                    imageInv);
+            if (excludePsTypes != null && !excludePsTypes.isEmpty()) {
+                rmsg.addExcludePrimaryStorageTypes(excludePsTypes);
+            }
+        });
+
         rmsg.setDryRun(true);
         rmsg.setImageUuid(msg.getImageUuid());
         rmsg.setRequiredClusterUuids(clusterUuids);

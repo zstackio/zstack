@@ -1,6 +1,7 @@
 package org.zstack.header.storage.primary;
 
 import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.utils.CollectionDSL;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +28,13 @@ public class AllocatePrimaryStorageMsg extends NeedReplyMessage {
 
     public List<String> getExcludePrimaryStorageTypes() {
         return excludePrimaryStorageTypes;
+    }
+
+    public void addExcludePrimaryStorageTypes(List<String> excludePrimaryStorageTypes) {
+        if (this.excludePrimaryStorageTypes == null) {
+            this.excludePrimaryStorageTypes = CollectionDSL.list();
+        }
+        this.excludePrimaryStorageTypes.addAll(excludePrimaryStorageTypes);
     }
 
     public void setExcludePrimaryStorageTypes(List<String> excludePrimaryStorageTypes) {

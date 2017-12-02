@@ -4,7 +4,10 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQLBatch;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
@@ -19,23 +22,22 @@ import org.zstack.header.host.HostState;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
+import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
-import org.zstack.header.image.ImageState;
-import org.zstack.header.image.ImageVO;
-import org.zstack.header.image.ImageVO_;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l3.*;
-import org.zstack.header.storage.primary.PrimaryStorageState;
 import org.zstack.header.vm.*;
 import org.zstack.header.zone.ZoneState;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
-import org.zstack.utils.DebugUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -94,10 +96,22 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APIChangeInstanceOfferingMsg) msg);
         } else if (msg instanceof APIMigrateVmMsg) {
             validate((APIMigrateVmMsg) msg);
+        } else if (msg instanceof APIGetCandidatePrimaryStoragesForCreatingVmMsg) {
+            validate((APIGetCandidatePrimaryStoragesForCreatingVmMsg) msg);
         }
 
         setServiceId(msg);
         return msg;
+    }
+
+    private void validate(final APIGetCandidatePrimaryStoragesForCreatingVmMsg msg) {
+        if (msg.getBackupStorageUuid() == null) {
+            Long refSize = Q.New(ImageBackupStorageRefVO.class).eq(ImageBackupStorageRefVO_.imageUuid, msg.getImageUuid()).count();
+            if (refSize > 1) {
+                throw new ApiMessageInterceptionException(argerr("imageUuid: %s is in more than one backupStorage, " +
+                        "so user must indict the backupStorageUuid", msg.getImageUuid()));
+            }
+        }
     }
 
     private void validate(APIMigrateVmMsg msg) {

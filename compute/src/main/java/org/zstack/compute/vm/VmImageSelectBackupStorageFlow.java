@@ -160,7 +160,7 @@ public class VmImageSelectBackupStorageFlow extends NoRollbackFlow {
                 pluginRgty.getExtensionList(BackupStoragePrimaryStorageExtensionPoint.class);
         exts.forEach(ext -> {
             List<String> excludePsTypes = ext.getExcludePrimaryStorageTypeList(bs, spec.getImageSpec().getInventory());
-            if (!excludePsTypes.isEmpty()) {
+            if (excludePsTypes != null && !excludePsTypes.isEmpty()) {
                 spec.addExcludePrimaryStorageUuidsForRootVolume(excludePsTypes);
                 spec.addExcludePrimaryStorageUuidsForDataVolume(excludePsTypes);
             }
