@@ -16,7 +16,10 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
-import org.zstack.header.core.*;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.NopeCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -52,11 +55,6 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
-import static org.zstack.core.Platform.operr;
-import static org.zstack.core.progress.ProgressReportService.reportProgress;
-import static org.zstack.header.storage.backup.BackupStorageConstant.*;
-import static org.zstack.utils.ProgressUtils.getEndFromStage;
-
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.io.File;
@@ -64,6 +62,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import static org.zstack.core.Platform.operr;
+import static org.zstack.core.progress.ProgressReportService.reportProgress;
+import static org.zstack.header.storage.backup.BackupStorageConstant.CREATE_ROOT_VOLUME_TEMPLATE_CREATE_TEMPORARY_TEMPLATE_STAGE;
+import static org.zstack.header.storage.backup.BackupStorageConstant.CREATE_ROOT_VOLUME_TEMPLATE_UPLOAD_STAGE;
+import static org.zstack.utils.ProgressUtils.getEndFromStage;
 
 public class NfsPrimaryStorage extends PrimaryStorageBase {
     private static final CLogger logger = Utils.getLogger(NfsPrimaryStorage.class);
@@ -105,6 +109,10 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             handle((DeleteImageCacheOnPrimaryStorageMsg) msg);
         } else if (msg instanceof NfsRecalculatePrimaryStorageCapacityMsg) {
             handle((NfsRecalculatePrimaryStorageCapacityMsg) msg);
+        } else if (msg instanceof NfsToNfsMigrateVolumeMsg) {
+            handle((NfsToNfsMigrateVolumeMsg) msg);
+        } else if (msg instanceof NfsRebaseVolumeBackingFileMsg) {
+            handle((NfsRebaseVolumeBackingFileMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -1005,6 +1013,49 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             @Override
             public void fail(ErrorCode errorCode) {
                 SyncVolumeSizeOnPrimaryStorageReply reply = new SyncVolumeSizeOnPrimaryStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(NfsToNfsMigrateVolumeMsg msg) {
+        NfsPrimaryStorageBackend backend = getUsableBackend();
+        if (backend == null) {
+            throw new OperationFailureException(operr("the NFS primary storage[uuid:%s, name:%s] cannot find hosts in attached clusters to perform the operation",
+                    self.getUuid(), self.getName()));
+        }
+
+        backend.handle(getSelfInventory(), msg, new ReturnValueCompletion<NfsToNfsMigrateVolumeReply>(msg) {
+            @Override
+            public void success(NfsToNfsMigrateVolumeReply reply) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                NfsToNfsMigrateVolumeReply reply = new NfsToNfsMigrateVolumeReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(NfsRebaseVolumeBackingFileMsg msg) {
+        NfsPrimaryStorageBackend backend = getUsableBackend();
+        if (backend == null) {
+            throw new OperationFailureException(operr("the NFS primary storage[uuid:%s, name:%s] cannot find hosts in attached clusters to perform the operation",
+                    self.getUuid(), self.getName()));
+        }
+        backend.handle(getSelfInventory(), msg, new ReturnValueCompletion<NfsRebaseVolumeBackingFileReply>(msg) {
+            @Override
+            public void success(NfsRebaseVolumeBackingFileReply reply) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                NfsRebaseVolumeBackingFileReply reply = new NfsRebaseVolumeBackingFileReply();
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }

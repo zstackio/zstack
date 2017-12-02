@@ -640,4 +640,23 @@ public class NfsPrimaryStorageKVMBackendCommands {
 
     public static class UpdateMountPointRsp extends NfsPrimaryStorageAgentResponse {
     }
+
+    public static class NfsToNfsMigrateVolumeCmd extends NfsPrimaryStorageAgentCommand {
+        public String srcVolumeFolderPath;
+        public String dstVolumeFolderPath;
+    }
+
+    public static class NfsToNfsMigrateVolumeRsp extends NfsPrimaryStorageAgentResponse {
+
+    }
+
+    public static class NfsRebaseVolumeBackingFileCmd extends NfsPrimaryStorageAgentCommand {
+        public String srcPsMountPath;
+        public String dstPsMountPath;
+        public String dstVolumeFolderPath;
+    }
+
+    public static class NfsRebaseVolumeBackingFileRsp extends NfsPrimaryStorageAgentResponse {
+
+    }
 }

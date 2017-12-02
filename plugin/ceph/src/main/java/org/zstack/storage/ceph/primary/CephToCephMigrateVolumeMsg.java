@@ -15,7 +15,7 @@ public class CephToCephMigrateVolumeMsg extends NeedReplyMessage implements Prim
     private String dstMonSshUsername;
     private String dstMonSshPassword;
     private int dstMonSshPort;
-    private String primaryStorageuuid;
+    private String primaryStorageUuid;
 
     public String getVolumeUuid() {
         return volumeUuid;
@@ -83,10 +83,10 @@ public class CephToCephMigrateVolumeMsg extends NeedReplyMessage implements Prim
 
     @Override
     public String getPrimaryStorageUuid() {
-        return primaryStorageuuid;
+        return primaryStorageUuid;
     }
 
-    public void setPrimaryStorageuuid(String primaryStorageuuid) {
-        this.primaryStorageuuid = primaryStorageuuid;
+    public void setPrimaryStorageUuid(String primaryStorageUuid) {
+        this.primaryStorageUuid = primaryStorageUuid;
     }
 }
