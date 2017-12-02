@@ -6,14 +6,14 @@ import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.header.rest.RestRequest;
 
 /**
- * Created by lining on 2017/11/03.
+ * Created by lining on 2017/12/03.
  */
 @RestRequest(
-        path = "/ldap/entry",
+        path = "/ldap/entries/candidates",
         method = HttpMethod.GET,
         responseClass = APIGetLdapEntryReply.class
 )
-public class APIGetLdapEntryMsg extends APISyncCallMessage {
+public class APIGetCandidateLdapEntryForBindingMsg extends APISyncCallMessage {
 
     @APIParam
     private String ldapFilter;
@@ -37,8 +37,8 @@ public class APIGetLdapEntryMsg extends APISyncCallMessage {
         this.limit = limit;
     }
 
-    public static APIGetLdapEntryMsg __example__() {
-        APIGetLdapEntryMsg msg = new APIGetLdapEntryMsg();
+    public static APIGetCandidateLdapEntryForBindingMsg __example__() {
+        APIGetCandidateLdapEntryForBindingMsg msg = new APIGetCandidateLdapEntryForBindingMsg();
         msg.setLdapFilter("(cn=user_xxx)");
 
         return msg;

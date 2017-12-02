@@ -3,7 +3,7 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class GetLdapEntryAction extends AbstractAction {
+public class GetCandidateLdapEntryForBindingAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -72,7 +72,7 @@ public class GetLdapEntryAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/ldap/entry";
+        info.path = "/ldap/entries/candidates";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

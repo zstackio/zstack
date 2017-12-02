@@ -89,4 +89,20 @@ class LdapUtil {
 
         return tag.getTokenByResourceUuid(ldapServerUuid, LdapSystemTags.LDAP_USE_AS_LOGIN_NAME_TOKEN);
     }
+
+    public static String getDnKey(){
+        String ldapServerUuid = Q.New(LdapServerVO.class).select(LdapServerVO_.uuid).findValue();
+        String type = LdapSystemTags.LDAP_SERVER_TYPE.getTokenByResourceUuid(ldapServerUuid, LdapSystemTags.LDAP_SERVER_TYPE_TOKEN);
+
+        if(LdapConstant.WindowsAD.TYPE.equals(type)){
+            return LdapConstant.WindowsAD.DN_KEY;
+        }
+
+        if(LdapConstant.OpenLdap.TYPE.equals(type)){
+            return LdapConstant.OpenLdap.DN_KEY;
+        }
+
+        // default WindowsAD
+        return LdapConstant.WindowsAD.DN_KEY;
+    }
 }
