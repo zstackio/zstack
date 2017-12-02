@@ -281,6 +281,10 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     protected VmInstanceVO changeVmStateInDb(VmInstanceStateEvent stateEvent) {
+        return changeVmStateInDb(stateEvent, null);
+    }
+
+    protected VmInstanceVO changeVmStateInDb(VmInstanceStateEvent stateEvent, Runnable runnable) {
         VmInstanceState bs = self.getState();
         final VmInstanceState state = self.getState().nextState(stateEvent);
 
@@ -297,7 +301,10 @@ public class VmInstanceBase extends AbstractVmInstance {
         new SQLBatch(){
             @Override
             protected void scripts() {
-                self.setLastHostUuid(q(HostVO.class).eq(HostVO_.uuid, self.getLastHostUuid()).isExists() ? self.getLastHostUuid() : null);
+                if (runnable != null) {
+                    runnable.run();
+                }
+
                 self = merge(self);
             }
         }.execute();
@@ -3995,14 +4002,22 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void handle(final Map data) {
                 VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-                // reload self because some nics may have been deleted in start phase because a former L3Network deletion.
-                // reload to avoid JPA EntityNotFoundException
-                self = dbf.reload(self);
-                self.setLastHostUuid(recentHostUuid);
-                self.setHostUuid(spec.getDestHost().getUuid());
-                self.setClusterUuid(spec.getDestHost().getClusterUuid());
-                self.setZoneUuid(spec.getDestHost().getZoneUuid());
-                self = changeVmStateInDb(VmInstanceStateEvent.running);
+                self = changeVmStateInDb(VmInstanceStateEvent.running, ()-> new SQLBatch() {
+                    @Override
+                    protected void scripts() {
+                        // reload self because some nics may have been deleted in start phase because a former L3Network deletion.
+                        // reload to avoid JPA EntityNotFoundException
+                        self = reload(self);
+                        if (q(HostVO.class).eq(HostVO_.uuid, recentHostUuid).isExists()) {
+                            self.setLastHostUuid(recentHostUuid);
+                        } else {
+                            self.setLastHostUuid(null);
+                        }
+                        self.setHostUuid(spec.getDestHost().getUuid());
+                        self.setClusterUuid(spec.getDestHost().getClusterUuid());
+                        self.setZoneUuid(spec.getDestHost().getZoneUuid());
+                    }
+                }.execute());
                 logger.debug(String.format("vm[uuid:%s] is running ..", self.getUuid()));
                 VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
                 extEmitter.afterStartVm(inv);
