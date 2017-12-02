@@ -1,8 +1,10 @@
 package org.zstack.compute.allocator;
 
 import org.springframework.beans.factory.annotation.Autowire;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.header.allocator.*;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.host.HostInventory;
@@ -19,6 +21,8 @@ import java.util.List;
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class HostSortorChain implements HostSortorStrategy {
     private static final CLogger logger = Utils.getLogger(HostSortorChain.class);
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     private HostAllocatorSpec allocationSpec;
 
@@ -106,10 +110,7 @@ public class HostSortorChain implements HostSortorStrategy {
             try {
                 for (HostInventory h : hosts) {
                     try {
-                        new HostAllocatorChain().reserveCapacity(h.getUuid(), allocationSpec.getCpuCapacity(), allocationSpec.getMemoryCapacity());
-                        logger.debug(String.format("[Host Allocation]: successfully reserved cpu[%s], memory[%s bytes] on host[uuid:%s] for vm[uuid:%s]",
-                                allocationSpec.getCpuCapacity(), allocationSpec.getMemoryCapacity(), h.getUuid(),
-                                allocationSpec.getVmInstance().getUuid()));
+                        reserveCapacity(h);
                         completion.success(h);
                         return;
                     } catch (UnableToReserveHostCapacityException e) {
@@ -123,5 +124,12 @@ public class HostSortorChain implements HostSortorStrategy {
                 completion.fail(Platform.inerr(t.getMessage()));
             }
         }
+    }
+
+    private void reserveCapacity(final HostInventory host) {
+        new HostAllocatorChain().reserveCapacity(host.getUuid(), allocationSpec.getCpuCapacity(), allocationSpec.getMemoryCapacity());
+        logger.debug(String.format("[Host Allocation]: successfully reserved cpu[%s], memory[%s bytes] on host[uuid:%s] for vm[uuid:%s]",
+                allocationSpec.getCpuCapacity(), allocationSpec.getMemoryCapacity(), host.getUuid(),
+                allocationSpec.getVmInstance().getUuid()));
     }
 }

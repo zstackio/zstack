@@ -61,9 +61,7 @@ public class VmAllocateHostFlow implements Flow {
                 .listValues();
     }
 
-    private AllocateHostMsg prepareMsg(Map<String, Object> ctx) {
-        VmInstanceSpec spec = (VmInstanceSpec) ctx.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-
+    private AllocateHostMsg prepareMsg(VmInstanceSpec spec) {
         DesignatedAllocateHostMsg msg = new DesignatedAllocateHostMsg();
 
         // if ChangeImage, then only dry run AllocateHostMsg
@@ -132,7 +130,7 @@ public class VmAllocateHostFlow implements Flow {
             throw new CloudRuntimeException("VmAllocateHostFlow is only for creating new VM or changing image");
         }
 
-        AllocateHostMsg msg = this.prepareMsg(data);
+        AllocateHostMsg msg = this.prepareMsg(spec);
 
         bus.send(msg, new CloudBusCallBack(chain) {
             @Override

@@ -28,6 +28,8 @@ import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceSpec.VolumeSpec;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -36,6 +38,7 @@ import java.util.Map;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmAllocatePrimaryStorageFlow implements Flow {
+    private static final CLogger logger = Utils.getLogger(VmAllocatePrimaryStorageFlow.class);
     @Autowired
     protected DatabaseFacade dbf;
     @Autowired
@@ -77,6 +80,7 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
         }
         rmsg.setPurpose(PrimaryStorageAllocationPurpose.CreateNewVm.toString());
         rmsg.setRequiredPrimaryStorageTypes(primaryStorageTypes);
+        rmsg.setExcludePrimaryStorageTypes(spec.getExcludePrimaryStorageTypeForRootVolume());
         bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
         msgs.add(rmsg);
 
@@ -90,6 +94,7 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
             amsg.setAllocationStrategy(dinv.getAllocatorStrategy());
             amsg.setDiskOfferingUuid(dinv.getUuid());
             amsg.setRequiredPrimaryStorageTypes(primaryStorageTypes);
+            amsg.setExcludePrimaryStorageTypes(spec.getExcludePrimaryStorageTypeForDataVolume());
             bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
             msgs.add(amsg);
         }

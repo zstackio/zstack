@@ -128,6 +128,18 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
             }
         }
 
+        if (spec.getExcludePrimaryStorageTypes() != null && !spec.getExcludePrimaryStorageTypes().isEmpty()) {
+            Iterator<PrimaryStorageVO> it = vos.iterator();
+            while (it.hasNext()) {
+                PrimaryStorageVO psvo = it.next();
+                if (spec.getExcludePrimaryStorageTypes().contains(psvo.getType())) {
+                    logger.debug(String.format("the primary storage[name:%s, uuid:%s, type:%s] is in exclude primary storage types[%s]," +
+                            " remove it", psvo.getName(), psvo.getUuid(), psvo.getType(), spec.getExcludePrimaryStorageTypes()));
+                    it.remove();
+                }
+            }
+        }
+
 
         List<PrimaryStorageVO> res = new ArrayList<>();
         if (PrimaryStorageAllocationPurpose.CreateNewVm.toString().equals(spec.getPurpose())) {

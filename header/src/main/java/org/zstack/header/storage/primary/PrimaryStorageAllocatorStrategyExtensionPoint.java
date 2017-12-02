@@ -13,8 +13,7 @@ public interface PrimaryStorageAllocatorStrategyExtensionPoint {
 
 
     /**
-     * Implementation methods must follow the rules:
-     *      Can not return null
+     * return the allocator rules
      */
     String getAllocatorStrategy();
 }

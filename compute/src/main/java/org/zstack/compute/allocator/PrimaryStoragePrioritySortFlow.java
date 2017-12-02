@@ -56,7 +56,7 @@ public class PrimaryStoragePrioritySortFlow extends AbstractHostSortorFlow {
 
         List<BackupStoragePrimaryStorageExtensionPoint> extenstions = pluginRgty.getExtensionList(BackupStoragePrimaryStorageExtensionPoint.class);
         Map<String, Integer> priMap = new HashMap<>();
-        extenstions.forEach(ext -> priMap.putAll(formatPriority(ext.getPrimaryStoragePriorityMap(bs))));
+        extenstions.forEach(ext -> priMap.putAll(formatPriority(ext.getPrimaryStoragePriorityMap(bs, spec.getImage()))));
 
         adjustCandidates(priMap);
     }
