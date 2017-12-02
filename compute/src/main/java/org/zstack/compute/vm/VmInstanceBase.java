@@ -4007,7 +4007,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     protected void scripts() {
                         // reload self because some nics may have been deleted in start phase because a former L3Network deletion.
                         // reload to avoid JPA EntityNotFoundException
-                        self = reload(self);
+                        self = findByUuid(self.getUuid(), VmInstanceVO.class);
                         if (q(HostVO.class).eq(HostVO_.uuid, recentHostUuid).isExists()) {
                             self.setLastHostUuid(recentHostUuid);
                         } else {
