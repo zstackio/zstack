@@ -6,6 +6,7 @@ import org.zstack.core.cascade.*;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.db.UpdateQuery;
@@ -171,20 +172,17 @@ public class VolumeCascadeExtension extends AbstractAsyncCascadeExtension {
         }
     }
 
-    @Transactional
     private void updateDiskOfferingColumn(CascadeAction action, Completion completion) {
-        List<DiskOfferingInventory> diskOfferingInventories = action.getParentIssuerContext();
-        List<String> diskOfferingUuids = CollectionUtils.transformToList(diskOfferingInventories, new Function<String, DiskOfferingInventory>() {
+        new SQLBatch() {
             @Override
-            public String call(DiskOfferingInventory arg) {
-                return arg.getUuid();
+            protected void scripts() {
+                List<DiskOfferingInventory> diskOfferingInventories = action.getParentIssuerContext();
+                sql(VolumeVO.class).set(VolumeVO_.diskOfferingUuid, null)
+                        .in(VolumeVO_.uuid, diskOfferingInventories.stream().map(DiskOfferingInventory::getUuid).collect(Collectors.toList()))
+                        .update();
             }
-        });
+        }.execute();
 
-        String sql = "update VolumeVO vol set vol.diskOfferingUuid = null where vol.diskOfferingUuid in (:uuids)";
-        Query q = dbf.getEntityManager().createQuery(sql);
-        q.setParameter("uuids", diskOfferingUuids);
-        q.executeUpdate();
         completion.success();
     }
 
