@@ -590,6 +590,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         String imageUuid;
         String hostname;
         String srcPath;
+        String dstPath;
         String description;
     }
 
@@ -3058,6 +3059,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         UploadCmd cmd = new UploadCmd();
         cmd.fsId = getSelf().getFsid();
         cmd.srcPath = msg.getPrimaryStorageInstallPath();
+        cmd.dstPath = msg.getBackupStorageInstallPath();
 
         if (msg.getImageUuid() != null) {
             cmd.imageUuid = msg.getImageUuid();
