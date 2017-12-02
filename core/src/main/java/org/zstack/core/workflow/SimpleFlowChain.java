@@ -4,8 +4,10 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
+import org.zstack.core.StaticInit;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -275,6 +277,17 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
 
     private void runFlow(Flow flow) {
         try {
+            if (TransactionSynchronizationManager.isActualTransactionActive()) {
+                String flowName = null;
+                String flowClassName = null;
+                if (currentFlow != null) {
+                    flowName = getFlowName(currentFlow);
+                    flowClassName = currentFlow.getClass().getName();
+                }
+
+                throw new CloudRuntimeException(String.format("flow[%s:%s] opened a transaction but forgot closing it", flowClassName, flowName));
+            }
+
             Flow toRun = null;
             if (flowMarshaller != null) {
                 toRun = flowMarshaller.marshalTheNextFlow(currentFlow == null ? null : currentFlow.getClass().getName(),

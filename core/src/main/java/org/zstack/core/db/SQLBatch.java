@@ -19,8 +19,7 @@ public abstract class SQLBatch {
     }
 
     protected <K> K merge(K k) {
-        databaseFacade.getEntityManager().merge(k);
-        return k;
+        return databaseFacade.getEntityManager().merge(k);
     }
 
     protected void remove(Object k) {
