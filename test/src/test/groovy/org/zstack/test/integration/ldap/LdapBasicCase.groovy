@@ -9,6 +9,7 @@ import org.zapodot.junit.ldap.EmbeddedLdapRuleBuilder
 import org.zstack.core.db.Q
 import org.zstack.identity.Account
 import org.zstack.ldap.LdapAccountRefVO
+import org.zstack.ldap.LdapConstant
 import org.zstack.ldap.LdapSystemTags
 import org.zstack.sdk.AddLdapServerAction
 import org.zstack.sdk.AddLdapServerResult
@@ -61,6 +62,8 @@ class LdapBasicCase extends SubCase {
             testRepeatToAddLdapServer()
 
             testGetLdapEntry()
+
+            testGetCandidateLdapEntryForBinding()
 
             testCreateLdapBinding()
 
@@ -146,9 +149,16 @@ class LdapBasicCase extends SubCase {
         }
         assert 3 == result.size()
 
+        result = getLdapEntry {
+            ldapFilter = "(objectClass=person)"
+            limit = 1
+        }
+        assert 1 == result.size()
+
         String cn = "Micha Kops"
         result = getLdapEntry {
             ldapFilter = "(cn=${cn})"
+            limit = 2
         }
         assert 1 == result.size()
 
@@ -160,6 +170,31 @@ class LdapBasicCase extends SubCase {
             assert 1 == map.get("values").size()
             assert cn == map.get("values").get(0)
         }
+    }
+
+    void testGetCandidateLdapEntryForBinding(){
+
+        List result = getCandidateLdapEntryForBinding {
+            ldapFilter = "(cn=nobody)"
+        }
+        assert 0 == result.size()
+
+        result = getCandidateLdapEntryForBinding {
+            ldapFilter = "(objectClass=person)"
+        }
+        assert 3 == result.size()
+
+        result = getCandidateLdapEntryForBinding {
+            ldapFilter = "(objectClass=person)"
+            limit = 2
+        }
+        assert 2 == result.size()
+
+        String cn = "Micha Kops"
+        result = getCandidateLdapEntryForBinding {
+            ldapFilter = "(cn=${cn})"
+        }
+        assert 1 == result.size()
     }
 
     void testCreateLdapBinding(){
@@ -174,11 +209,43 @@ class LdapBasicCase extends SubCase {
             assert true
         }
 
+        List result = getCandidateLdapEntryForBinding {
+            ldapFilter = "(objectClass=person)"
+        }
+        assert 3 == result.size()
+
         String dn = "cn=Micha Kops,ou=Users,dc=example,dc=com"
         createLdapBinding {
             accountUuid = Test.currentEnvSpec.session.accountUuid
             ldapUid = dn
         }
+
+        result = getCandidateLdapEntryForBinding {
+            ldapFilter = "(objectClass=person)"
+            limit = 10000
+        }
+        assert 2 == result.size()
+
+        result = getCandidateLdapEntryForBinding {
+            ldapFilter = "(objectClass=person)"
+        }
+        assert 2 == result.size()
+        for(Map map : result){
+            assert dn != map.get(LdapConstant.LDAP_DN_KEY)
+        }
+
+        result = getCandidateLdapEntryForBinding {
+            ldapFilter = "(cn=Micha Kop)"
+        }
+        assert 0 == result.size()
+
+        result = getCandidateLdapEntryForBinding {
+            ldapFilter = "(cn=Micha Kop)"
+            limit = 1
+        }
+        assert 0 == result.size()
+
+        testGetLdapEntry()
     }
 
     void testAddLdapServer(){
@@ -194,7 +261,8 @@ class LdapBasicCase extends SubCase {
             username = ""
             password = ""
             encryption = "None"
-            systemTags = [LdapSystemTags.LDAP_CLEAN_BINDING_FILTER.instantiateTag([(LdapSystemTags.LDAP_CLEAN_BINDING_FILTER_TOKEN): "(cn=Micha Kops)"])]
+            systemTags = [LdapSystemTags.LDAP_SERVER_TYPE.instantiateTag([(LdapSystemTags.LDAP_SERVER_TYPE_TOKEN): LdapConstant.OpenLdap.TYPE]),
+                          LdapSystemTags.LDAP_CLEAN_BINDING_FILTER.instantiateTag([(LdapSystemTags.LDAP_CLEAN_BINDING_FILTER_TOKEN): "(cn=Micha Kops)"])]
             sessionId = Test.currentEnvSpec.session.uuid
         } as LdapServerInventory
         LdapUuid = result.uuid

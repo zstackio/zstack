@@ -48,6 +48,8 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
             validate((APICreateLdapBindingMsg) msg);
         } else if(msg instanceof APIGetLdapEntryMsg){
             validate((APIGetLdapEntryMsg) msg);
+        } else if(msg instanceof APIGetCandidateLdapEntryForBindingMsg){
+            validate((APIGetCandidateLdapEntryForBindingMsg) msg);
         }
 
         setServiceId(msg);
@@ -84,6 +86,10 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIGetLdapEntryMsg msg){
+        validateLdapServerExist();
+    }
+
+    private void validate(APIGetCandidateLdapEntryForBindingMsg msg){
         validateLdapServerExist();
     }
 

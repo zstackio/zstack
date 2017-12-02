@@ -4,13 +4,11 @@ import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationExceptio
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ldap.NamingException;
+import org.springframework.ldap.control.PagedResultsDirContextProcessor;
 import org.springframework.ldap.core.DirContextOperations;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.core.support.AbstractContextMapper;
-import org.springframework.ldap.filter.AndFilter;
-import org.springframework.ldap.filter.EqualsFilter;
-import org.springframework.ldap.filter.Filter;
-import org.springframework.ldap.filter.HardcodedFilter;
+import org.springframework.ldap.filter.*;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.transaction.annotation.Transactional;
@@ -109,6 +107,8 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
             handle((APIDeleteLdapServerMsg) msg);
         } else if (msg instanceof APIGetLdapEntryMsg) {
             handle((APIGetLdapEntryMsg) msg);
+        } else if(msg instanceof APIGetCandidateLdapEntryForBindingMsg){
+            handle((APIGetCandidateLdapEntryForBindingMsg) msg);
         } else if (msg instanceof APICreateLdapBindingMsg) {
             handle((APICreateLdapBindingMsg) msg);
         } else if (msg instanceof APIDeleteLdapBindingMsg) {
@@ -493,6 +493,46 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
     private void handle(APIGetLdapEntryMsg msg) {
         APIGetLdapEntryReply reply = new APIGetLdapEntryReply();
 
+        List<Object> result = this.searchLdapEntry(msg.getLdapFilter(), msg.getLimit(), null);
+        reply.setInventories(result);
+
+        bus.reply(msg, reply);
+    }
+
+    private void handle(APIGetCandidateLdapEntryForBindingMsg msg) {
+        APIGetLdapEntryReply reply = new APIGetLdapEntryReply();
+
+        AndFilter andFilter = new AndFilter();
+        andFilter.and(new HardcodedFilter(msg.getLdapFilter()));
+
+        List<String> boundLdapEntryList = Q.New(LdapAccountRefVO.class)
+                .select(LdapAccountRefVO_.ldapUid)
+                .listValues();
+
+        List<Object> result = this.searchLdapEntry(andFilter.toString(), msg.getLimit(), new ResultFilter() {
+            @Override
+            boolean needSelect(String dn) {
+                return !boundLdapEntryList.contains(dn);
+            }
+        });
+
+        reply.setInventories(result);
+
+        bus.reply(msg, reply);
+    }
+
+    /**
+     * @param filter
+     * @param count
+     *           count is null, return all
+     * @param resultFilter
+     *           resultFilter is null, do not check result
+     *
+     * @return
+     */
+    private List<Object> searchLdapEntry(String filter, Integer count, ResultFilter resultFilter){
+        List<Object> result = new ArrayList<>();
+
         LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration();
         LdapTemplate ldapTemplate = ldapTemplateContextSource.getLdapTemplate();
 
@@ -500,37 +540,61 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         searchCtls.setSearchScope(SearchControls.SUBTREE_SCOPE);
         searchCtls.setReturningAttributes(this.getReturningAttributes());
 
+        PagedResultsDirContextProcessor processor = new PagedResultsDirContextProcessor(1000);
+
         try {
-            List<Object> result = ldapTemplate.search("", msg.getLdapFilter(), searchCtls, new AbstractContextMapper<Object>() {
-                @Override
-                protected Object doMapFromContext(DirContextOperations ctx) {
-                    Map<String, Object> result = new HashMap<>();
-                    result.put(LdapConstant.LDAP_DN_KEY, ctx.getNameInNamespace());
-
-                    List<Object> list = new ArrayList<>();
-                    result.put("attributes", list);
-
-                    Attributes attributes = ctx.getAttributes();
-                    NamingEnumeration it = attributes.getAll();
-                    try {
-                        while (it.hasMore()){
-                            list.add(it.next());
+            do {
+                List<Object> subResult = ldapTemplate.search("", filter, searchCtls, new AbstractContextMapper<Object>() {
+                    @Override
+                    protected Object doMapFromContext(DirContextOperations ctx) {
+                        if (resultFilter != null && !resultFilter.needSelect(ctx.getNameInNamespace())){
+                            return null;
                         }
-                    }catch (javax.naming.NamingException e){
-                        logger.error("query ldap entry attributes fail", e.getCause());
-                        throw new OperationFailureException(operr("query ldap entry fail, %s", e.toString()));
+
+                        Map<String, Object> result = new HashMap<>();
+                        result.put(LdapConstant.LDAP_DN_KEY, ctx.getNameInNamespace());
+
+                        List<Object> list = new ArrayList<>();
+                        result.put("attributes", list);
+
+                        Attributes attributes = ctx.getAttributes();
+                        NamingEnumeration it = attributes.getAll();
+                        try {
+                            while (it.hasMore()){
+                                list.add(it.next());
+                            }
+                        } catch (javax.naming.NamingException e){
+                            logger.error("query ldap entry attributes fail", e.getCause());
+                            throw new OperationFailureException(operr("query ldap entry fail, %s", e.toString()));
+                        }
+
+                        return result;
                     }
+                }, processor);
 
-                    return result;
-                }
-            });
-            reply.setInventories(result);
-        }catch (Exception e){
+                subResult.removeIf(Objects::isNull);
+                result.addAll(subResult);
+
+            } while (processor.hasMore() && (count == null || count > result.size()));
+
+            if (count == null){
+                return result;
+            }
+
+            if (result.size() <= count){
+                return result;
+            }
+
+            return result.subList(0, count);
+
+        } catch (Exception e){
             logger.error("query ldap entry fail", e);
-            reply.setError(operr("query ldap entry fail, %s", e.toString()));
+            throw new OperationFailureException(operr("query ldap entry[filter: %s] fail, %s", filter, e.toString()));
         }
+    }
 
-        bus.reply(msg, reply);
+    abstract class ResultFilter{
+        abstract boolean needSelect(String dn);
     }
 
     private void handle(APICreateLdapBindingMsg msg) {
