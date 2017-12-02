@@ -288,16 +288,6 @@ public class VmInstanceBase extends AbstractVmInstance {
         VmInstanceState bs = self.getState();
         final VmInstanceState state = self.getState().nextState(stateEvent);
 
-        if (state == VmInstanceState.Stopped) {
-            // cleanup the hostUuid if the VM is stopped
-            if (self.getHostUuid() != null) {
-                self.setLastHostUuid(self.getHostUuid());
-            }
-            self.setHostUuid(null);
-        }
-
-        self.setState(state);
-
         new SQLBatch(){
             @Override
             protected void scripts() {
@@ -305,6 +295,15 @@ public class VmInstanceBase extends AbstractVmInstance {
                     runnable.run();
                 }
 
+                if (state == VmInstanceState.Stopped) {
+                    // cleanup the hostUuid if the VM is stopped
+                    if (self.getHostUuid() != null) {
+                        self.setLastHostUuid(self.getHostUuid());
+                    }
+                    self.setHostUuid(null);
+                }
+
+                self.setState(state);
                 self = merge(self);
             }
         }.execute();
