@@ -123,7 +123,6 @@ public class VmInstanceBase extends AbstractVmInstance {
                 if (!reply.isSuccess()) {
                     N.New(VmInstanceVO.class, self.getUuid()).warn_("unable to check state of the vm[uuid:%s] on the host[uuid:%s], %s;" +
                             "put the VM into the Unknown state", self.getUuid(), hostUuid, reply.getError());
-                    self = dbf.reload(self);
                     changeVmStateInDb(VmInstanceStateEvent.unknown);
                     completion.done();
                     return;
@@ -131,13 +130,12 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                 CheckVmStateOnHypervisorReply r = reply.castReply();
                 String state = r.getStates().get(self.getUuid());
-                self = dbf.reload(self);
                 if (state == null) {
                     changeVmStateInDb(VmInstanceStateEvent.unknown);
                 }
+
                 if (VmInstanceState.Running.toString().equals(state)) {
-                    self.setHostUuid(hostUuid);
-                    changeVmStateInDb(VmInstanceStateEvent.running);
+                    changeVmStateInDb(VmInstanceStateEvent.running, ()-> self.setHostUuid(hostUuid));
                 } else if (VmInstanceState.Stopped.toString().equals(state) && self.getState().equals(VmInstanceState.Destroying)) {
                     changeVmStateInDb(VmInstanceStateEvent.destroyed);
                 } else if (VmInstanceState.Stopped.toString().equals(state)) {
@@ -191,7 +189,6 @@ public class VmInstanceBase extends AbstractVmInstance {
                         }
                     });
                 } else {
-                    self = dbf.reload(self);
                     changeVmStateInDb(VmInstanceStateEvent.unknown);
                     completion.fail(errCode);
                 }
@@ -291,6 +288,8 @@ public class VmInstanceBase extends AbstractVmInstance {
         new SQLBatch(){
             @Override
             protected void scripts() {
+                self = findByUuid(self.getUuid(), self.getClass());
+
                 if (runnable != null) {
                     runnable.run();
                 }
@@ -1001,8 +1000,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         if (operation == VmAbnormalLifeCycleOperation.VmRunningFromUnknownStateHostNotChanged) {
             // the vm is detected on the host again. It's largely because the host disconnected before
             // and now reconnected
-            self.setHostUuid(msg.getHostUuid());
-            changeVmStateInDb(VmInstanceStateEvent.running);
+            changeVmStateInDb(VmInstanceStateEvent.running, ()-> self.setHostUuid(msg.getHostUuid()));
             fireEvent.run();
             bus.reply(msg, reply);
             completion.done();
@@ -1011,39 +1009,34 @@ public class VmInstanceBase extends AbstractVmInstance {
             // the vm comes out of the unknown state to the stopped state
             // it happens when an operation failure led the vm from the stopped state to the unknown state,
             // and later on the vm was detected as stopped on the host again
-            self.setHostUuid(null);
-            changeVmStateInDb(VmInstanceStateEvent.stopped);
+            changeVmStateInDb(VmInstanceStateEvent.stopped, ()-> self.setHostUuid(null));
             fireEvent.run();
             bus.reply(msg, reply);
             completion.done();
             return;
         } else if (operation == VmAbnormalLifeCycleOperation.VmStoppedFromPausedStateHostNotChanged) {
-            self.setHostUuid(msg.getHostUuid());
-            changeVmStateInDb(VmInstanceStateEvent.stopped);
+            changeVmStateInDb(VmInstanceStateEvent.stopped, ()-> self.setHostUuid(msg.getHostUuid()));
             fireEvent.run();
             bus.reply(msg, reply);
             completion.done();
             return;
         } else if (operation == VmAbnormalLifeCycleOperation.VmPausedFromUnknownStateHostNotChanged) {
             //some reason led vm to unknown state and the paused vm are detected on the host again
-            self.setHostUuid(msg.getHostUuid());
-            changeVmStateInDb(VmInstanceStateEvent.paused);
+            changeVmStateInDb(VmInstanceStateEvent.paused, ()-> self.setHostUuid(msg.getHostUuid()));
             fireEvent.run();
             bus.reply(msg, reply);
             completion.done();
             return;
         } else if (operation == VmAbnormalLifeCycleOperation.VmPausedFromRunningStateHostNotChanged) {
             // just synchronize database
-            self.setHostUuid(msg.getHostUuid());
-            changeVmStateInDb(VmInstanceStateEvent.paused);
+            changeVmStateInDb(VmInstanceStateEvent.paused, ()->self.setHostUuid(msg.getHostUuid()));
             fireEvent.run();
             bus.reply(msg, reply);
             completion.done();
             return;
         } else if (operation == VmAbnormalLifeCycleOperation.VmRunningFromPausedStateHostNotChanged) {
             // just synchronize database
-            self.setHostUuid(msg.getHostUuid());
-            changeVmStateInDb(VmInstanceStateEvent.running);
+            changeVmStateInDb(VmInstanceStateEvent.running, ()->self.setHostUuid(msg.getHostUuid()));
             fireEvent.run();
             bus.reply(msg, reply);
             completion.done();
@@ -1077,11 +1070,9 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void handle(Map data) {
                 if (currentState == VmInstanceState.Running) {
-                    self.setHostUuid(currentHostUuid);
-                    changeVmStateInDb(VmInstanceStateEvent.running);
+                    changeVmStateInDb(VmInstanceStateEvent.running, ()-> self.setHostUuid(currentHostUuid));
                 } else if (currentState == VmInstanceState.Stopped) {
-                    self.setHostUuid(null);
-                    changeVmStateInDb(VmInstanceStateEvent.stopped);
+                    changeVmStateInDb(VmInstanceStateEvent.stopped, ()-> self.setHostUuid(null));
                 }
 
                 fireEvent.run();
@@ -1240,11 +1231,12 @@ public class VmInstanceBase extends AbstractVmInstance {
             if (s != null && h != null && s.getExpected() == self.getState()) {
                 if ((h.getExpected() == null && self.getHostUuid() == null) ||
                         (h.getExpected() != null && h.getExpected().equals(self.getHostUuid()))) {
-                    changeVmStateInDb(s.getValue().getDrivenEvent());
-                    reply.setChangeStateDone(true);
 
-                    self.setHostUuid(h.getValue());
-                    dbf.update(self);
+                    changeVmStateInDb(s.getValue().getDrivenEvent(), ()-> {
+                        self.setHostUuid(h.getValue());
+                    });
+
+                    reply.setChangeStateDone(true);
                     reply.setChangeHostUuidDone(true);
                 }
             }
@@ -1628,7 +1620,6 @@ public class VmInstanceBase extends AbstractVmInstance {
                 extEmitter.afterDestroyVm(inv);
                 logger.debug(String.format("successfully deleted vm instance[name:%s, uuid:%s]", self.getName(), self.getUuid()));
                 if (deletionPolicy == VmInstanceDeletionPolicy.Direct) {
-                    self = dbf.reload(self);
                     changeVmStateInDb(VmInstanceStateEvent.destroyed);
                     callVmJustBeforeDeleteFromDbExtensionPoint();
                     dbf.remove(getSelf());
@@ -1646,15 +1637,11 @@ public class VmInstanceBase extends AbstractVmInstance {
                         }
                     }.execute();
                 } else if (deletionPolicy == VmInstanceDeletionPolicy.Delay) {
-                    self = dbf.reload(self);
-                    self.setHostUuid(null);
-                    changeVmStateInDb(VmInstanceStateEvent.destroyed);
+                    changeVmStateInDb(VmInstanceStateEvent.destroyed, ()-> self.setHostUuid(null));
                 } else if (deletionPolicy == VmInstanceDeletionPolicy.Never) {
                     logger.warn(String.format("the vm[uuid:%s] is deleted, but by it's deletion policy[Never]," +
                             " the root volume is not deleted on the primary storage", self.getUuid()));
-                    self = dbf.reload(self);
-                    self.setHostUuid(null);
-                    changeVmStateInDb(VmInstanceStateEvent.destroyed);
+                    changeVmStateInDb(VmInstanceStateEvent.destroyed, ()-> self.setHostUuid(null));
                 }
 
                 completion.success();
@@ -1991,12 +1978,9 @@ public class VmInstanceBase extends AbstractVmInstance {
             public void run(SyncTaskChain chain) {
                 refreshVO();
 
-                Defer.defer(new Runnable() {
-                    @Override
-                    public void run() {
-                        ChangeVmStateReply reply = new ChangeVmStateReply();
-                        bus.reply(msg, reply);
-                    }
+                Defer.defer(() -> {
+                    ChangeVmStateReply reply = new ChangeVmStateReply();
+                    bus.reply(msg, reply);
                 });
 
                 if (self == null) {
@@ -3875,11 +3859,12 @@ public class VmInstanceBase extends AbstractVmInstance {
             public void handle(final Map data) {
                 VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
                 HostInventory host = spec.getDestHost();
-                self.setZoneUuid(host.getZoneUuid());
-                self.setClusterUuid(host.getClusterUuid());
-                self.setLastHostUuid(self.getHostUuid());
-                self.setHostUuid(host.getUuid());
-                self = changeVmStateInDb(VmInstanceStateEvent.running);
+                self = changeVmStateInDb(VmInstanceStateEvent.running, ()-> {
+                    self.setZoneUuid(host.getZoneUuid());
+                    self.setClusterUuid(host.getClusterUuid());
+                    self.setLastHostUuid(self.getHostUuid());
+                    self.setHostUuid(host.getUuid());
+                });
                 VmInstanceInventory vm = VmInstanceInventory.valueOf(self);
                 extEmitter.afterMigrateVm(vm, vm.getLastHostUuid());
                 completion.success();
@@ -4162,13 +4147,14 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void handle(final Map data) {
                 VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-                self.setLastHostUuid(spec.getDestHost().getUuid());
-                self.setHostUuid(spec.getDestHost().getUuid());
-                self.setClusterUuid(spec.getDestHost().getClusterUuid());
-                self.setZoneUuid(spec.getDestHost().getZoneUuid());
-                self.setHypervisorType(spec.getDestHost().getHypervisorType());
-                self.setRootVolumeUuid(spec.getDestRootVolume().getUuid());
-                changeVmStateInDb(VmInstanceStateEvent.running);
+                changeVmStateInDb(VmInstanceStateEvent.running, ()-> {
+                    self.setLastHostUuid(spec.getDestHost().getUuid());
+                    self.setHostUuid(spec.getDestHost().getUuid());
+                    self.setClusterUuid(spec.getDestHost().getClusterUuid());
+                    self.setZoneUuid(spec.getDestHost().getZoneUuid());
+                    self.setHypervisorType(spec.getDestHost().getHypervisorType());
+                    self.setRootVolumeUuid(spec.getDestRootVolume().getUuid());
+                });
                 logger.debug(String.format("vm[uuid:%s] is running ..", self.getUuid()));
                 VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
                 extEmitter.afterStartNewCreatedVm(inv);
@@ -4606,9 +4592,10 @@ public class VmInstanceBase extends AbstractVmInstance {
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
-                self.setLastHostUuid(self.getHostUuid());
-                self.setHostUuid(null);
-                self = changeVmStateInDb(VmInstanceStateEvent.stopped);
+                self = changeVmStateInDb(VmInstanceStateEvent.stopped, ()->{
+                    self.setLastHostUuid(self.getHostUuid());
+                    self.setHostUuid(null);
+                });
                 VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
                 extEmitter.afterStopVm(inv);
                 completion.success();

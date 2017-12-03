@@ -7,6 +7,7 @@ import org.zstack.appliancevm.ApplianceVmCommands.RefreshFirewallRsp;
 import org.zstack.compute.vm.VmInstanceBase;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.core.Completion;
@@ -705,14 +706,18 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
                 @Override
                 public void handle(Map data) {
                     VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-                    self = dbf.reload(self);
-                    self.setLastHostUuid(spec.getDestHost().getUuid());
-                    self.setHostUuid(spec.getDestHost().getUuid());
-                    self.setClusterUuid(spec.getDestHost().getClusterUuid());
-                    self.setZoneUuid(spec.getDestHost().getZoneUuid());
-                    self.setHypervisorType(spec.getDestHost().getHypervisorType());
-                    self.setRootVolumeUuid(spec.getDestRootVolume().getUuid());
-                    changeVmStateInDb(VmInstanceStateEvent.running);
+                    changeVmStateInDb(VmInstanceStateEvent.running, () -> new SQLBatch() {
+                        @Override
+                        protected void scripts() {
+                            self.setLastHostUuid(spec.getDestHost().getUuid());
+                            self.setHostUuid(spec.getDestHost().getUuid());
+                            self.setClusterUuid(spec.getDestHost().getClusterUuid());
+                            self.setZoneUuid(spec.getDestHost().getZoneUuid());
+                            self.setHypervisorType(spec.getDestHost().getHypervisorType());
+                            self.setRootVolumeUuid(spec.getDestRootVolume().getUuid());
+                        }
+                    }.execute());
+
                     logger.debug(String.format("appliance vm[uuid:%s, name: %s, type:%s] is running ..",
                             self.getUuid(), self.getName(), getSelf().getApplianceVmType()));
                     VmInstanceInventory inv = VmInstanceInventory.valueOf(self);

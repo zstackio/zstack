@@ -7,10 +7,7 @@ import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.DbEntityLister;
-import org.zstack.core.db.SQLBatchWithReturn;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.CancelablePeriodicTask;
@@ -333,30 +330,37 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                     String __name__ = "select-backup-storage";
 
                     @Override
-                    @Transactional(readOnly = true)
                     public void run(FlowTrigger trigger, Map data) {
-                        List<String> bsUuids = CollectionUtils.transformToList(template.getBackupStorageRefs(), new Function<String, ImageBackupStorageRefVO>() {
+                        List<String> bsUuids = new SQLBatchWithReturn<List<String>>() {
                             @Override
-                            public String call(ImageBackupStorageRefVO arg) {
-                                return ImageStatus.Deleted.equals(arg.getStatus()) ? null : arg.getBackupStorageUuid();
+                            protected List<String> scripts() {
+                                List<String> bsUuids = CollectionUtils.transformToList(template.getBackupStorageRefs(), new Function<String, ImageBackupStorageRefVO>() {
+                                    @Override
+                                    public String call(ImageBackupStorageRefVO arg) {
+                                        return ImageStatus.Deleted.equals(arg.getStatus()) ? null : arg.getBackupStorageUuid();
+                                    }
+                                });
+
+                                if (bsUuids.isEmpty()) {
+                                    throw new OperationFailureException(operr("the image[uuid:%s, name:%s] has been deleted on all backup storage", template.getUuid(), template.getName()));
+                                }
+
+                                String sql = "select bs.uuid from BackupStorageVO bs, BackupStorageZoneRefVO zref, PrimaryStorageVO ps where zref.zoneUuid = ps.zoneUuid and bs.status = :bsStatus and bs.state = :bsState and ps.uuid = :psUuid and zref.backupStorageUuid = bs.uuid and bs.uuid in (:bsUuids)";
+                                TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+                                q.setParameter("psUuid", msg.getPrimaryStorageUuid());
+                                q.setParameter("bsStatus", BackupStorageStatus.Connected);
+                                q.setParameter("bsState", BackupStorageState.Enabled);
+                                q.setParameter("bsUuids", bsUuids);
+                                bsUuids = q.getResultList();
+
+                                return bsUuids;
                             }
-                        });
+                        }.execute();
 
-                        if (bsUuids.isEmpty()) {
-                            throw new OperationFailureException(operr("the image[uuid:%s, name:%s] has been deleted on all backup storage", template.getUuid(), template.getName()));
-                        }
-
-                        String sql = "select bs.uuid from BackupStorageVO bs, BackupStorageZoneRefVO zref, PrimaryStorageVO ps where zref.zoneUuid = ps.zoneUuid and bs.status = :bsStatus and bs.state = :bsState and ps.uuid = :psUuid and zref.backupStorageUuid = bs.uuid and bs.uuid in (:bsUuids)";
-                        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-                        q.setParameter("psUuid", msg.getPrimaryStorageUuid());
-                        q.setParameter("bsStatus", BackupStorageStatus.Connected);
-                        q.setParameter("bsState", BackupStorageState.Enabled);
-                        q.setParameter("bsUuids", bsUuids);
-                        bsUuids = q.getResultList();
 
                         if (bsUuids.isEmpty()) {
                             trigger.fail(operr("cannot find a backup storage on which the image[uuid:%s] is that satisfies all conditions of: 1. has state Enabled 2. has status Connected. 3 has attached to zone in which primary storage[uuid:%s] is",
-                                            template.getUuid(), msg.getPrimaryStorageUuid()));
+                                    template.getUuid(), msg.getPrimaryStorageUuid()));
                             return;
                         }
 
@@ -367,6 +371,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                                 return arg.getBackupStorageUuid().equals(bsUuid) ? arg : null;
                             }
                         });
+
                         trigger.next();
                     }
                 });
