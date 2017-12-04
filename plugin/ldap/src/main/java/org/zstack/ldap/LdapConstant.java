@@ -11,14 +11,16 @@ public interface LdapConstant {
     interface WindowsAD{
         String TYPE = "WindowsAD";
         String MEMBER_KEY = "member";
+        String DN_KEY = "distinguishedName";
     }
 
     interface OpenLdap{
         String TYPE = "OpenLdap";
 		String MEMBER_KEY = "uniqueMember";
+        String DN_KEY = "entryDN";
     }
 
-    String[] QUERY_LDAP_ENTRY_MUST_RETURN_ATTRIBUTES = {"cn","name","distinguishedname","displayname","userprincipalname","objectclass"};
+    String[] QUERY_LDAP_ENTRY_MUST_RETURN_ATTRIBUTES = {"cn","name","distinguishedname","displayname","userprincipalname","objectclass","entryDN","distinguishedName"};
 
     String QUERY_LDAP_ENTRY_RETURN_ATTRIBUTE_SEPARATOR = ",";
 

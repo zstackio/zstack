@@ -22,6 +22,7 @@ cn: Micha Kops
 sn: Kops
 uid: mkops
 userPassword: password
+entryDN: cn=Micha Kops,ou=Users,dc=example,dc=com
 
 dn: cn=Santa Claus,ou=Users,dc=example,dc=com
 objectClass: top
