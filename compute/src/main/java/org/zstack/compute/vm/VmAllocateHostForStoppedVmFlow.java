@@ -90,7 +90,7 @@ public class VmAllocateHostForStoppedVmFlow implements Flow {
                         String oldHostUuid = spec.getVmInventory().getHostUuid() == null ?
                                 spec.getVmInventory().getLastHostUuid() : spec.getVmInventory().getHostUuid();
                         oldHostUuid = q(HostVO.class).eq(HostVO_.uuid, oldHostUuid).isExists() ? oldHostUuid : null;
-                        sql(VmInstanceVO.class).eq(VmInstanceVO_.uuid, spec.getVmInventory().getLastHostUuid())
+                        sql(VmInstanceVO.class).eq(VmInstanceVO_.uuid, spec.getVmInventory().getUuid())
                                 .set(VmInstanceVO_.lastHostUuid, oldHostUuid)
                                 .set(VmInstanceVO_.hostUuid, areply.getHost().getUuid())
                                 .set(VmInstanceVO_.clusterUuid, areply.getHost().getClusterUuid())
