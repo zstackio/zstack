@@ -164,7 +164,7 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
 
         bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
 
-        rmsg.setRequiredPrimaryStorageTypes(primaryStorageTypes);
+        rmsg.setPossiblePrimaryStorageTypes(primaryStorageTypes);
         msgs.add(rmsg);
 
         if (!spec.getDataDiskOfferings().isEmpty()) {
@@ -205,7 +205,7 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
                     amsg.setRequiredPrimaryStorageUuid(localStorageUuid);
                 }
 
-                amsg.setRequiredPrimaryStorageTypes(primaryStorageTypes);
+                amsg.setPossiblePrimaryStorageTypes(primaryStorageTypes);
                 amsg.setDiskOfferingUuid(dinv.getUuid());
                 rmsg.setImageUuid(spec.getImageSpec().getInventory().getUuid());
                 bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);

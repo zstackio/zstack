@@ -632,7 +632,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
             rmsg.setSize(imageInv.getSize());
         }
         rmsg.setPurpose(PrimaryStorageAllocationPurpose.CreateNewVm.toString());
-        rmsg.setRequiredPrimaryStorageTypes(new ArrayList<>(psTypes));
+        rmsg.setPossiblePrimaryStorageTypes(new ArrayList<>(psTypes));
         bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
         msgs.add(rmsg);
 
@@ -644,7 +644,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
             amsg.setRequiredClusterUuids(clusterUuids);
             amsg.setAllocationStrategy(dinv.getAllocatorStrategy());
             amsg.setDiskOfferingUuid(dinv.getUuid());
-            amsg.setRequiredPrimaryStorageTypes(new ArrayList<>(psTypes));
+            amsg.setPossiblePrimaryStorageTypes(new ArrayList<>(psTypes));
             bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
             msgs.add(amsg);
         }

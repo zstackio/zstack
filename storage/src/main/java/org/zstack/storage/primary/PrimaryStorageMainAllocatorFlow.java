@@ -116,19 +116,23 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
         List<PrimaryStorageVO> vos = query.getResultList();
         logger.debug("select primary storage by sql: " + sql);
 
-        if (spec.getRequiredPrimaryStorageTypes() != null && !spec.getRequiredPrimaryStorageTypes().isEmpty()) {
+        /**
+         * 1. if ps is indicated, then choose it directly
+         * 2. if ps is not indicated and exclude ps is indicated, then exclude it and choose others
+         */
+        if (spec.getPossiblePrimaryStorageTypes() != null && !spec.getPossiblePrimaryStorageTypes().isEmpty()) {
             Iterator<PrimaryStorageVO> it = vos.iterator();
             while (it.hasNext()) {
                 PrimaryStorageVO psvo = it.next();
-                if (!spec.getRequiredPrimaryStorageTypes().contains(psvo.getType())) {
-                    logger.debug(String.format("the primary storage[name:%s, uuid:%s, type:%s] is not in required primary storage types[%s]," +
-                            " remove it", psvo.getName(), psvo.getUuid(), psvo.getType(), spec.getRequiredPrimaryStorageTypes()));
+                if (!spec.getPossiblePrimaryStorageTypes().contains(psvo.getType())) {
+                    logger.debug(String.format("the primary storage[name:%s, uuid:%s, type:%s] is not in possible primary storage types[%s]," +
+                            " remove it", psvo.getName(), psvo.getUuid(), psvo.getType(), spec.getPossiblePrimaryStorageTypes()));
                     it.remove();
                 }
             }
         }
 
-        if (spec.getExcludePrimaryStorageTypes() != null && !spec.getExcludePrimaryStorageTypes().isEmpty()) {
+        if (spec.getRequiredPrimaryStorageUuid() == null && spec.getExcludePrimaryStorageTypes() != null && !spec.getExcludePrimaryStorageTypes().isEmpty()) {
             Iterator<PrimaryStorageVO> it = vos.iterator();
             while (it.hasNext()) {
                 PrimaryStorageVO psvo = it.next();
