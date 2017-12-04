@@ -70,7 +70,7 @@ public class KVMConsoleHypervisorBackend implements ConsoleHypervisorBackend {
                 KVMHostAsyncHttpCallReply kreply = reply.castReply();
                 GetVncPortResponse rsp = kreply.toResponse(GetVncPortResponse.class);
                 if (!rsp.isSuccess()) {
-                    complete.fail(operr(rsp.getError()));
+                    complete.fail(operr("operation error, because:%s", rsp.getError()));
                     return;
                 }
 

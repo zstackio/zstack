@@ -2267,7 +2267,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 public void success(GetFactsRsp rsp) {
                                     if (!rsp.success) {
                                         // one mon cannot get the facts, directly error out
-                                        trigger.fail(operr(rsp.error));
+                                        trigger.fail(operr("operation error, because:%s", rsp.error));
                                         return;
                                     }
 
@@ -2841,7 +2841,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 @Override
                                 public void success(GetFactsRsp rsp) {
                                     if (!rsp.isSuccess()) {
-                                        errors.add(operr(rsp.getError()));
+                                        errors.add(operr("operation error, because:%s", rsp.getError()));
                                     } else {
                                         String fsid = rsp.fsid;
                                         if (!getSelf().getFsid().equals(fsid)) {
@@ -2951,7 +2951,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             @Override
             public void success(AgentResponse rsp) {
                 if (!rsp.isSuccess()) {
-                    reply.setError(operr(rsp.getError()));
+                    reply.setError(operr("operation error, because:%s", rsp.getError()));
                 }
 
                 bus.reply(msg, reply);
@@ -2975,7 +2975,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         CancelSelfFencerOnKvmHostReply reply = new CancelSelfFencerOnKvmHostReply();
         new KvmCommandSender(param.getHostUuid()).send(cmd, KVM_HA_CANCEL_SELF_FENCER, wrapper -> {
             AgentResponse rsp = wrapper.getResponse(AgentResponse.class);
-            return rsp.isSuccess() ? null : operr(rsp.getError());
+            return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
         }, new ReturnValueCompletion<KvmResponseWrapper>(msg) {
             @Override
             public void success(KvmResponseWrapper w) {
@@ -3015,7 +3015,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             @Override
             public ErrorCode getError(KvmResponseWrapper wrapper) {
                 AgentResponse rsp = wrapper.getResponse(AgentResponse.class);
-                return rsp.isSuccess() ? null : operr(rsp.getError());
+                return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
             }
         }, new ReturnValueCompletion<KvmResponseWrapper>(msg) {
             @Override
@@ -3447,7 +3447,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     KVMHostAsyncHttpCallReply kr = r.castReply();
                     CreateKvmSecretRsp rsp = kr.toResponse(CreateKvmSecretRsp.class);
                     if (!rsp.isSuccess()) {
-                        completion.fail(operr(rsp.getError()));
+                        completion.fail(operr("operation error, because:%s", rsp.getError()));
                         return;
                     }
                 }

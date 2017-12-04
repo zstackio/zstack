@@ -58,7 +58,7 @@ public class LocalStorageDeleteBitsGC extends EventBasedGarbageCollector {
                     @Override
                     public ErrorCode getError(KvmResponseWrapper wrapper) {
                         LocalStorageKvmBackend.DeleteBitsRsp rsp = wrapper.getResponse(LocalStorageKvmBackend.DeleteBitsRsp.class);
-                        return rsp.isSuccess() ? null : operr(rsp.getError());
+                        return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
                     }
                 },
 

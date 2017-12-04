@@ -61,7 +61,7 @@ public class ApplianceVmKvmBootstrapFlow extends NoRollbackFlow {
                     if (rsp.isSuccess()) {
                         chain.next();
                     } else {
-                        chain.fail(operr(rsp.getError()));
+                        chain.fail(operr("operation error, because:%s", rsp.getError()));
                     }
                 }
             }

@@ -32,7 +32,7 @@ public class FlatDHCPDeleteNamespaceGC extends EventBasedGarbageCollector {
         new KvmCommandSender(hostUuid).send(command, FlatDhcpBackend.DHCP_DELETE_NAMESPACE_PATH,
                 wrapper -> {
                     FlatDhcpBackend.DeleteNamespaceRsp rsp = wrapper.getResponse(FlatDhcpBackend.DeleteNamespaceRsp.class);
-                    return rsp.isSuccess() ? null : operr(rsp.getError());
+                    return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
                 },
 
                 new ReturnValueCompletion<KvmResponseWrapper>(completion) {

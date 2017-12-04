@@ -126,7 +126,7 @@ public class SftpBackupStorage extends BackupStorageBase {
 
                         completion.success(res);
                     } else {
-                        completion.fail(operr(ret.getError()));
+                        completion.fail(operr("fail to download image, because %s", ret.getError()));
                     }
                 }
 
@@ -160,7 +160,7 @@ public class SftpBackupStorage extends BackupStorageBase {
                     @Override
                     public void success(GetImageSizeRsp rsp) {
                         if (!rsp.isSuccess()) {
-                            reply.setError(operr(rsp.getError()));
+                            reply.setError(operr("operation error, because:%s", rsp.getError()));
                         } else {
                             reply.setSize(rsp.size);
                         }
@@ -278,7 +278,7 @@ public class SftpBackupStorage extends BackupStorageBase {
                 } else if (ret.isSuccess()) {
                     completion.success();
                 } else {
-                    completion.fail(operr(ret.getError()));
+                    completion.fail(operr("operation error, because:%s", ret.getError()));
                 }
             }
 
@@ -450,7 +450,7 @@ public class SftpBackupStorage extends BackupStorageBase {
             @Override
             public void success(GetImageSizeRsp rsp) {
                 if (!rsp.isSuccess()) {
-                    reply.setError(operr(rsp.getError()));
+                    reply.setError(operr("operation error, because:%s", rsp.getError()));
                 } else {
                     reply.setActualSize(rsp.actualSize);
                     reply.setSize(rsp.size);
@@ -482,7 +482,7 @@ public class SftpBackupStorage extends BackupStorageBase {
                     @Override
                     public void success(GetLocalFileSizeRsp rsp) {
                         if (!rsp.isSuccess()) {
-                            reply.setError(operr(rsp.getError()));
+                            reply.setError(operr("operation error, because:%s", rsp.getError()));
                         } else {
                             reply.setSize(rsp.size);
                         }

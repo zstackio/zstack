@@ -352,7 +352,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
                 if (!ret.isSuccess()) {
                     logger.warn(String.format("failed to refresh firewall rules on appliance vm[uuid:%s, name:%s], %s",
                             self.getUuid(), self.getName(), ret.getError()));
-                    reply.setError(operr(ret.getError()));
+                    reply.setError(operr("operation error, because:%s", ret.getError()));
                 }
 
                 bus.reply(msg, reply);

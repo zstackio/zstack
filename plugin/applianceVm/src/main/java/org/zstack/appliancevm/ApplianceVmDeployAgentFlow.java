@@ -102,7 +102,7 @@ public class ApplianceVmDeployAgentFlow extends NoRollbackFlow {
                                 ApplianceVmAsyncHttpCallReply ar = reply.castReply();
                                 InitRsp rsp = ar.toResponse(InitRsp.class);
                                 if (!rsp.isSuccess()) {
-                                    trigger.fail(operr(rsp.getError()));
+                                    trigger.fail(operr("operation error, because:%s", rsp.getError()));
                                     return;
                                 }
 
