@@ -86,7 +86,7 @@ public class ConsoleProxyBase implements ConsoleProxy {
                     self.setProxyPort(ret.getProxyPort());
                     completion.success(self);
                 } else {
-                    completion.fail(operr(ret.getError()));
+                    completion.fail(operr("operation error, because:%s", ret.getError()));
                 }
             }
 
@@ -171,7 +171,7 @@ public class ConsoleProxyBase implements ConsoleProxy {
                         if (ret.isSuccess()) {
                             completion.success();
                         } else {
-                            completion.fail(operr(ret.getError()));
+                            completion.fail(operr("operation error, because:%s", ret.getError()));
                         }
                     }
 

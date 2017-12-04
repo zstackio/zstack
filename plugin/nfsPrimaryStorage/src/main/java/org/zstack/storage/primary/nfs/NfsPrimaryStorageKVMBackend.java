@@ -450,7 +450,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             @Override
             public ErrorCode getError(KvmResponseWrapper wrapper) {
                 MergeSnapshotResponse rsp = wrapper.getResponse(MergeSnapshotResponse.class);
-                return rsp.isSuccess() ? null : operr(rsp.getError());
+                return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
             }
         }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
             @Override
@@ -486,7 +486,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             @Override
             public ErrorCode getError(KvmResponseWrapper wrapper) {
                 MergeSnapshotResponse rsp = wrapper.getResponse(MergeSnapshotResponse.class);
-                return rsp.isSuccess() ? null : operr(rsp.getError());
+                return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
             }
         }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
             @Override
@@ -539,7 +539,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             @Override
             public ErrorCode getError(KvmResponseWrapper wrapper) {
                 GetVolumeActualSizeRsp rsp = wrapper.getResponse(GetVolumeActualSizeRsp.class);
-                return rsp.isSuccess() ? null : operr(rsp.getError());
+                return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
             }
         }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
             @Override
@@ -569,7 +569,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             @Override
             public ErrorCode getError(KvmResponseWrapper wrapper) {
                 GetVolumeBaseImagePathRsp rsp = wrapper.getResponse(GetVolumeBaseImagePathRsp.class);
-                return rsp.isSuccess() ? null : operr(rsp.getError());
+                return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
             }
         }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
             @Override
@@ -614,7 +614,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 KVMHostAsyncHttpCallReply r = reply.castReply();
                 GetCapacityResponse rsp = r.toResponse(GetCapacityResponse.class);
                 if (!r.isSuccess()) {
-                    completion.fail(operr(rsp.getError()));
+                    completion.fail(operr("operation error, because:%s", rsp.getError()));
                     return;
                 }
 
@@ -1036,7 +1036,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
                     OfflineMergeSnapshotRsp rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(OfflineMergeSnapshotRsp.class);
                     if (!rsp.isSuccess()) {
-                        completion.fail(operr(rsp.getError()));
+                        completion.fail(operr("operation error, because:%s", rsp.getError()));
                         return;
                     }
 
@@ -1262,7 +1262,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 KVMHostAsyncHttpCallReply r = reply.castReply();
                 final T rsp = r.toResponse(rspType);
                 if (!rsp.isSuccess()) {
-                    completion.fail(operr(rsp.getError()));
+                    completion.fail(operr("operation error, because:%s", rsp.getError()));
                     return;
                 }
 
@@ -1293,7 +1293,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 KVMHostSyncHttpCallReply r = reply.castReply();
                 final T rsp = r.toResponse(rspType);
                 if (!rsp.isSuccess()) {
-                    completion.fail(operr(rsp.getError()));
+                    completion.fail(operr("operation error, because:%s", rsp.getError()));
                     return;
                 }
 

@@ -98,7 +98,7 @@ public class VirtualRouterDeployAgentFlow extends NoRollbackFlow {
                                 if (ret.isSuccess()) {
                                     trigger.next();
                                 } else {
-                                    trigger.fail(operr(ret.getError()));
+                                    trigger.fail(operr("operation error, because:%s", ret.getError()));
                                 }
                             }
 

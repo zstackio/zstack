@@ -247,7 +247,7 @@ public class KvmBackend extends HypervisorBackend {
                 KVMHostAsyncHttpCallReply r = reply.castReply();
                 final T rsp = r.toResponse(rspType);
                 if (!rsp.success) {
-                    completion.fail(operr(rsp.error));
+                    completion.fail(operr("operation error, because:%s", rsp.error));
                     return;
                 }
 
@@ -1458,7 +1458,7 @@ public class KvmBackend extends HypervisorBackend {
             @Override
             public ErrorCode getError(KvmResponseWrapper wrapper) {
                 GetVolumeSizeRsp rsp = wrapper.getResponse(GetVolumeSizeRsp.class);
-                return rsp.success ? null : operr(rsp.error);
+                return rsp.success ? null : operr("operation error, because:%s", rsp.error);
             }
         }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
             @Override

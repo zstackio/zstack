@@ -45,7 +45,7 @@ public class KVMHostCapacityExtension implements KVMHostConnectExtensionPoint, H
         KVMHostSyncHttpCallReply r = reply.castReply();
         HostCapacityResponse rsp = r.toResponse(HostCapacityResponse.class);
         if (!rsp.isSuccess()) {
-            throw new OperationFailureException(operr(rsp.getError()));
+            throw new OperationFailureException(operr("operation error, because:%s", rsp.getError()));
         }
 
         if (rsp.getTotalMemory() < SizeUtils.sizeStringToBytes(KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.value())) {

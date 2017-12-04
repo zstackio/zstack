@@ -204,7 +204,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     @Override
                     public ErrorCode getError(KvmResponseWrapper wrapper) {
                         AgentResponse rsp = wrapper.getResponse(AgentResponse.class);
-                        return rsp.isSuccess() ? null : operr(rsp.getError());
+                        return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
                     }
                 }, new ReturnValueCompletion<KvmResponseWrapper>(trigger) {
                     @Override
@@ -267,7 +267,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                 @Override
                 public ErrorCode getError(KvmResponseWrapper w) {
                     CleanupUserdataRsp rsp = w.getResponse(CleanupUserdataRsp.class);
-                    return rsp.isSuccess() ? null : operr(rsp.getError());
+                    return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
                 }
             }, new ReturnValueCompletion<KvmResponseWrapper>(null) {
                 @Override
@@ -369,7 +369,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     KVMHostAsyncHttpCallReply r = reply.castReply();
                     ReleaseUserdataRsp rsp = r.toResponse(ReleaseUserdataRsp.class);
                     if (!rsp.isSuccess()) {
-                        completion.fail(operr(rsp.getError()));
+                        completion.fail(operr("operation error, because:%s", rsp.getError()));
                         return;
                     }
 
@@ -551,7 +551,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                                 KVMHostAsyncHttpCallReply r = reply.castReply();
                                 ApplyUserdataRsp rsp = r.toResponse(ApplyUserdataRsp.class);
                                 if (!rsp.isSuccess()) {
-                                    trigger.fail(operr(rsp.getError()));
+                                    trigger.fail(operr("operation error, because:%s", rsp.getError()));
                                     return;
                                 }
 
@@ -619,7 +619,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                                 KVMHostAsyncHttpCallReply r = reply.castReply();
                                 ReleaseUserdataRsp rsp = r.toResponse(ReleaseUserdataRsp.class);
                                 if (!rsp.isSuccess()) {
-                                    trigger.fail(operr(rsp.getError()));
+                                    trigger.fail(operr("operation error, because:%s", rsp.getError()));
                                     return;
                                 }
 

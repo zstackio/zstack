@@ -755,7 +755,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 KVMHostAsyncHttpCallReply r = reply.castReply();
                 T rsp = r.toResponse(rspType);
                 if (!rsp.isSuccess()) {
-                    completion.fail(operr(rsp.getError()));
+                    completion.fail(operr("operation error, because:%s", rsp.getError()));
                     return;
                 }
 
@@ -1634,7 +1634,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             @Override
             public ErrorCode getError(KvmResponseWrapper wrapper) {
                 GetVolumeSizeRsp rsp = wrapper.getResponse(GetVolumeSizeRsp.class);
-                return rsp.isSuccess() ? null : operr(rsp.getError());
+                return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
             }
         }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
             @Override
@@ -1690,7 +1690,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             @Override
             public ErrorCode getError(KvmResponseWrapper w) {
                 GetVolumeBaseImagePathRsp rsp = w.getResponse(GetVolumeBaseImagePathRsp.class);
-                return rsp.isSuccess() ? null : operr(rsp.getError());
+                return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
             }
         }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
             @Override
@@ -1780,7 +1780,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             @Override
                             public ErrorCode getError(KvmResponseWrapper wrapper) {
                                 GetQCOW2ReferenceRsp rsp = wrapper.getResponse(GetQCOW2ReferenceRsp.class);
-                                return rsp.isSuccess() ? null : operr(rsp.getError());
+                                return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
                             }
                         }, new ReturnValueCompletion<KvmResponseWrapper>(trigger) {
                             @Override

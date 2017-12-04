@@ -124,7 +124,7 @@ public class FlatDhcpUpgradeExtension implements Component {
 
                     new KvmCommandSender(l3Host.hostUuid).send(cmd, FlatDhcpBackend.DHCP_DELETE_NAMESPACE_PATH, wrapper -> {
                         DeleteNamespaceRsp rsp = wrapper.getResponse(DeleteNamespaceRsp.class);
-                        return rsp.isSuccess() ? null : operr(rsp.getError());
+                        return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
                     }, new SteppingSendCallback<KvmResponseWrapper>() {
                         @Override
                         public void success(KvmResponseWrapper w) {

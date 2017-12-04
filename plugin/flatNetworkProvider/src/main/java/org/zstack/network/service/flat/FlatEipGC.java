@@ -41,7 +41,7 @@ public class FlatEipGC extends EventBasedGarbageCollector {
                     @Override
                     public ErrorCode getError(KvmResponseWrapper wrapper) {
                         KVMAgentCommands.AgentResponse rsp = wrapper.getResponse(KVMAgentCommands.AgentResponse.class);
-                        return rsp.isSuccess() ? null : operr(rsp.getError());
+                        return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
                     }
                 },
 
