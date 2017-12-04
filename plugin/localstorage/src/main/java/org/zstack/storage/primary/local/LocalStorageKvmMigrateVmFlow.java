@@ -854,7 +854,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                 KVMHostAsyncHttpCallReply r = reply.castReply();
                 T rsp = r.toResponse(rspType);
                 if (!rsp.isSuccess()) {
-                    completion.fail(operr(rsp.getError()));
+                    completion.fail(operr("operation error, because:%s", rsp.getError()));
                     return;
                 }
 

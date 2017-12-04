@@ -87,7 +87,7 @@ public class VirtualRouterDnsBackend extends AbstractVirtualRouterBackend implem
                 VirtualRouterAsyncHttpCallReply r = reply.castReply();
                 SetDnsRsp rsp = r.toResponse(SetDnsRsp.class);
                 if (!rsp.isSuccess()) {
-                    completion.fail(operr(rsp.getError()));
+                    completion.fail(operr("operation error, because:%s", rsp.getError()));
                     return;
                 }
 
@@ -133,7 +133,7 @@ public class VirtualRouterDnsBackend extends AbstractVirtualRouterBackend implem
                 VirtualRouterAsyncHttpCallReply r = reply.castReply();
                 RemoveDnsRsp rsp = r.toResponse(RemoveDnsRsp.class);
                 if (!rsp.isSuccess()) {
-                    completion.fail(operr(rsp.getError()));
+                    completion.fail(operr("operation error, because:%s", rsp.getError()));
                     return;
                 }
 

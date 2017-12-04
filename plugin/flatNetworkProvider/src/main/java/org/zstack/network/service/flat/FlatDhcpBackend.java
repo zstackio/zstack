@@ -434,7 +434,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
         new KvmCommandSender(huuids).send(cmd, DHCP_DELETE_NAMESPACE_PATH, wrapper -> {
             DeleteNamespaceRsp rsp = wrapper.getResponse(DeleteNamespaceRsp.class);
-            return rsp.isSuccess() ? null : operr(rsp.getError());
+            return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
         }, new SteppingSendCallback<KvmResponseWrapper>() {
             @Override
             public void success(KvmResponseWrapper w) {
@@ -1077,7 +1077,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                                         KVMHostAsyncHttpCallReply ar = reply.castReply();
                                         PrepareDhcpRsp rsp = ar.toResponse(PrepareDhcpRsp.class);
                                         if (!rsp.isSuccess()) {
-                                            trigger.fail(operr(rsp.getError()));
+                                            trigger.fail(operr("operation error, because:%s", rsp.getError()));
                                             return;
                                         }
 
@@ -1115,7 +1115,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                                         KVMHostAsyncHttpCallReply r = reply.castReply();
                                         ApplyDhcpRsp rsp = r.toResponse(ApplyDhcpRsp.class);
                                         if (!rsp.isSuccess()) {
-                                            trigger.fail(operr(rsp.getError()));
+                                            trigger.fail(operr("operation error, because:%s", rsp.getError()));
                                             return;
                                         }
 
@@ -1238,7 +1238,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         KvmCommandSender sender = new KvmCommandSender(vm.getHostUuid());
         sender.send(cmd, RESET_DEFAULT_GATEWAY_PATH, wrapper -> {
             ResetDefaultGatewayRsp rsp = wrapper.getResponse(ResetDefaultGatewayRsp.class);
-            return rsp.isSuccess() ? null : operr(rsp.getError());
+            return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
         }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
             @Override
             public void success(KvmResponseWrapper returnValue) {

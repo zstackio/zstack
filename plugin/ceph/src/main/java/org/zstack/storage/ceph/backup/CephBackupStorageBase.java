@@ -724,7 +724,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                     r.setSize(resp.getSize());
                     r.setInstallPath(resp.getInstallPath());
                 } else {
-                    r.setError(operr(resp.getError()));
+                    r.setError(operr("operation error, because:%s", resp.getError()));
                 }
                 bus.reply(msg, r);
             }
@@ -1167,7 +1167,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                                 public void success(GetFactsRsp rsp) {
                                     if (!rsp.success) {
                                         // one mon cannot get the facts, directly error out
-                                        trigger.fail(operr(rsp.error));
+                                        trigger.fail(operr("operation error, because:%s", rsp.error));
                                         return;
                                     }
 
@@ -1605,7 +1605,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                                 @Override
                                 public void success(GetFactsRsp rsp) {
                                     if (!rsp.isSuccess()) {
-                                        errors.add(operr(rsp.getError()));
+                                        errors.add(operr("operation error, because:%s", rsp.getError()));
                                     } else {
                                         String fsid = rsp.fsid;
                                         if (!getSelf().getFsid().equals(fsid)) {

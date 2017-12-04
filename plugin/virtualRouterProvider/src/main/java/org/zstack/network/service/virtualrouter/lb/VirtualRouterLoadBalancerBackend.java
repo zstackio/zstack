@@ -254,7 +254,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     if (rsp.isSuccess()) {
                         completion.success();
                     } else {
-                        completion.fail(operr(rsp.getError()));
+                        completion.fail(operr("operation error, because:%s", rsp.getError()));
                     }
                 } else {
                     completion.fail(reply.getError());
@@ -800,7 +800,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                                         if (rsp.isSuccess()) {
                                             trigger.next();
                                         } else {
-                                            trigger.fail(operr(rsp.getError()));
+                                            trigger.fail(operr("operation error, because:%s", rsp.getError()));
                                         }
                                     } else {
                                         trigger.fail(reply.getError());
@@ -869,7 +869,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     if (rsp.isSuccess()) {
                         completion.success();
                     } else {
-                        completion.fail(operr(rsp.getError()));
+                        completion.fail(operr("operation error, because:%s", rsp.getError()));
                     }
                 } else {
                     completion.fail(reply.getError());

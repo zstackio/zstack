@@ -431,7 +431,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                 KVMHostAsyncHttpCallReply ar = reply.castReply();
                 AgentRsp rsp = ar.toResponse(AgentRsp.class);
                 if (!rsp.success) {
-                    completion.fail(operr(rsp.error));
+                    completion.fail(operr("operation error, because:%s", rsp.error));
                     return;
                 }
 
@@ -466,7 +466,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                 KVMHostAsyncHttpCallReply ar = reply.castReply();
                 AgentRsp rsp = ar.toResponse(AgentRsp.class);
                 if (!rsp.success) {
-                    completion.fail(operr(rsp.error));
+                    completion.fail(operr("operation error, because:%s", rsp.error));
                     return;
                 }
 
@@ -574,7 +574,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                 KVMHostAsyncHttpCallReply ar = reply.castReply();
                 AgentRsp rsp = ar.toResponse(AgentRsp.class);
                 if (!rsp.success) {
-                    completion.fail(operr(rsp.error));
+                    completion.fail(operr("operation error, because:%s", rsp.error));
                     return;
                 }
 
@@ -629,7 +629,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                 KVMHostAsyncHttpCallReply ar = reply.castReply();
                 AgentRsp rsp = ar.toResponse(AgentRsp.class);
                 if (!rsp.success) {
-                    completion.fail(operr(rsp.error));
+                    completion.fail(operr("operation error, because:%s", rsp.error));
                     return;
                 }
 

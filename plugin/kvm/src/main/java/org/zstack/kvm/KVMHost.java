@@ -366,7 +366,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(IncreaseCpuResponse ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(operr(ret.getError()));
+                    reply.setError(operr("operation error, because:%s", ret.getError()));
                 } else {
                     reply.setCpuNum(ret.getCpuNum());
                 }
@@ -391,7 +391,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(IncreaseMemoryResponse ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(operr(ret.getError()));
+                    reply.setError(operr("operation error, because:%s", ret.getError()));
                 } else {
                     reply.setMemorySize(ret.getMemorySize());
                 }
@@ -495,7 +495,7 @@ public class KVMHost extends HostBase implements Host {
 //            @Override
 //            public void success(ChangeCpuMemoryResponse ret) {
 //                if (!ret.isSuccess()) {
-//                    reply.setError(operr(ret.getError()));
+//                    reply.setError(operr("operation error, because:%s", ret.getError()));
 //                } else {
 //                    reply.setCpuNum(ret.getCpuNum());
 //                    reply.setMemorySize(ret.getMemorySize());
@@ -520,7 +520,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(GetVncPortResponse ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(operr(ret.getError()));
+                    reply.setError(operr("operation error, because:%s", ret.getError()));
                 } else {
                     reply.setHostIp(self.getManagementIp());
                     reply.setProtocol(ret.getProtocol());
@@ -555,7 +555,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(CheckVmStateRsp ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(operr(ret.getError()));
+                    reply.setError(operr("operation error, because:%s", ret.getError()));
                 } else {
                     Map<String, String> m = new HashMap<>();
                     for (Map.Entry<String, String> e : ret.states.entrySet()) {
@@ -619,7 +619,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(DetachIsoRsp ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(operr(ret.getError()));
+                    reply.setError(operr("operation error, because:%s", ret.getError()));
                 }
 
                 bus.reply(msg, reply);
@@ -684,7 +684,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(AttachIsoRsp ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(operr(ret.getError()));
+                    reply.setError(operr("operation error, because:%s", ret.getError()));
                 }
 
                 bus.reply(msg, reply);
@@ -741,7 +741,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(DetachNicRsp ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(operr(ret.getError()));
+                    reply.setError(operr("operation error, because:%s", ret.getError()));
                 }
                 bus.reply(msg, reply);
                 completion.done();
@@ -941,7 +941,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(MergeSnapshotRsp ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(operr(ret.getError()));
+                    reply.setError(operr("operation error, because:%s", ret.getError()));
                 }
                 bus.reply(msg, reply);
                 completion.done();
@@ -1025,7 +1025,7 @@ public class KVMHost extends HostBase implements Host {
                     reply.setSnapshotInstallPath(ret.getSnapshotInstallPath());
                     reply.setSize(ret.getSize());
                 } else {
-                    reply.setError(operr(ret.getError()));
+                    reply.setError(operr("operation error, because:%s", ret.getError()));
                 }
                 bus.reply(msg, reply);
                 completion.done();
@@ -2186,7 +2186,7 @@ public class KVMHost extends HostBase implements Host {
         CheckPhysicalNetworkInterfaceResponse rsp = restf.syncJsonPost(checkPhysicalNetworkInterfacePath, cmd, CheckPhysicalNetworkInterfaceResponse.class);
         if (!rsp.isSuccess()) {
             if (rsp.getFailedInterfaceNames().isEmpty()) {
-                reply.setError(operr(rsp.getError()));
+                reply.setError(operr("operation error, because:%s", rsp.getError()));
             } else {
                 reply.setError(operr("%s, failed to check physical network interfaces[names : %s] on kvm host[uuid:%s, ip:%s]",
                         rsp.getError(), msg.getPhysicalInterface(), context.getInventory().getUuid(), context.getInventory().getManagementIp()));
@@ -2281,7 +2281,7 @@ public class KVMHost extends HostBase implements Host {
                                                 self.getUuid(), self.getManagementIp()));
                                         trigger.next();
                                     } else {
-                                        trigger.fail(operr(ret.getError()));
+                                        trigger.fail(operr("operation error, because:%s", ret.getError()));
                                     }
                                 }
                             }
@@ -2697,7 +2697,7 @@ public class KVMHost extends HostBase implements Host {
                                 @Override
                                 public void success(HostFactResponse ret) {
                                     if (!ret.isSuccess()) {
-                                        trigger.fail(operr(ret.getError()));
+                                        trigger.fail(operr("operation error, because:%s", ret.getError()));
                                         return;
                                     }
 

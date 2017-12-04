@@ -105,7 +105,7 @@ public abstract class CephMonBase {
                 if (ret.isSuccess()) {
                     completion.success();
                 } else {
-                    completion.fail(Platform.operr(ret.getError()));
+                    completion.fail(Platform.operr("operation error, because:%s", ret.getError()));
                 }
             }
 
