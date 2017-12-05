@@ -845,6 +845,8 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void handle(final VmStateChangedOnHostMsg msg) {
+        logger.debug(String.format("get VmStateChangedOnHostMsg for vm[uuid:%s], on host[uuid:%s], which tracing state is [%s]" +
+                " and current state on host is [%s]", msg.getVmInstanceUuid(), msg.getHostUuid(), msg.getVmStateAtTracingMoment(), msg.getStateOnHost()));
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
@@ -853,6 +855,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void run(final SyncTaskChain chain) {
+                logger.debug(String.format("running sync task %s with sync signature %s", getName(), getSyncSignature()));
                 vmStateChangeOnHost(msg, new NoErrorCompletion(chain) {
                     @Override
                     public void done() {
