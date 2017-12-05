@@ -2,6 +2,7 @@ package org.zstack.compute.vm;
 
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.zstack.compute.allocator.HostAllocatorManager;
@@ -285,7 +286,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         VmInstanceState bs = self.getState();
         final VmInstanceState state = self.getState().nextState(stateEvent);
 
-        new SQLBatch(){
+        SQLBatch sql = new SQLBatch(){
             @Override
             protected void scripts() {
                 self = findByUuid(self.getUuid(), self.getClass());
@@ -305,7 +306,12 @@ public class VmInstanceBase extends AbstractVmInstance {
                 self.setState(state);
                 self = merge(self);
             }
-        }.execute();
+        };
+        try {
+            sql.execute();
+        } catch (DataIntegrityViolationException e){
+            sql.execute();
+        }
 
         if (bs != state) {
             logger.debug(String.format("vm[uuid:%s] changed state from %s to %s in db", self.getUuid(), bs, self.getState()));
