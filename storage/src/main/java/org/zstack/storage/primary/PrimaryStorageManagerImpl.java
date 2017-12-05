@@ -395,7 +395,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         PrimaryStorageAllocatorStrategy strategy = factory.getPrimaryStorageAllocatorStrategy();
         //
         PrimaryStorageAllocationSpec spec = new PrimaryStorageAllocationSpec();
-        spec.setRequiredPrimaryStorageTypes(msg.getRequiredPrimaryStorageTypes());
+        spec.setPossiblePrimaryStorageTypes(msg.getPossiblePrimaryStorageTypes());
         spec.setExcludePrimaryStorageTypes(msg.getExcludePrimaryStorageTypes());
         spec.setImageUuid(msg.getImageUuid());
         spec.setDiskOfferingUuid(msg.getDiskOfferingUuid());
