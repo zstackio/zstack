@@ -60,34 +60,38 @@ public class VirtualRouterCleanupVipOnDestroyFlow extends NoRollbackFlow {
         q.add(VirtualRouterVipVO_.virtualRouterVmUuid, Op.EQ, vrUuid);
         List<VirtualRouterVipVO> refs = q.list();
         List<VipVO>  vips = new ArrayList<VipVO>();
-        if (!refs.isEmpty()) {
-            Iterator<VirtualRouterVipVO> it = refs.iterator();
-            while (it.hasNext()){
-                VirtualRouterVipVO vvipVO = it.next();
-                VipVO vip = dbf.findByUuid(vvipVO.getUuid(), VipVO.class);
-                if (vip != null && vip.getUseFor() != null){
-                    VipUseForList useForList = new VipUseForList(vip.getUseFor());
-                    if(useForList.isIncluded(VirtualRouterConstant.SNAT_NETWORK_SERVICE_TYPE)) {
-                        vips.add(vip);
-                    }
+
+        if (refs.isEmpty()) {
+            trigger.next();
+            return;
+        }
+
+        Iterator<VirtualRouterVipVO> it = refs.iterator();
+        while (it.hasNext()){
+            VirtualRouterVipVO vvipVO = it.next();
+            VipVO vip = dbf.findByUuid(vvipVO.getUuid(), VipVO.class);
+            if (vip != null && vip.getUseFor() != null){
+                VipUseForList useForList = new VipUseForList(vip.getUseFor());
+                if(useForList.isIncluded(VirtualRouterConstant.SNAT_NETWORK_SERVICE_TYPE)) {
+                    vips.add(vip);
                 }
             }
-            dbf.removeCollection(refs, VirtualRouterVipVO.class);
-            if (!vips.isEmpty()) {
-                deleteVips(vips, new Completion(trigger) {
-                    @Override
-                    public void success() {
-                        trigger.next();
-                    }
+        }
+        dbf.removeCollection(refs, VirtualRouterVipVO.class);
+        if (!vips.isEmpty()) {
+            deleteVips(vips, new Completion(trigger) {
+                @Override
+                public void success() {
+                    trigger.next();
+                }
 
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        trigger.next();
-                    }
-                });
-            } else {
-                trigger.next();
-            }
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    trigger.next();
+                }
+            });
+        } else {
+            trigger.next();
         }
     }
 }
