@@ -77,6 +77,7 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
                 if (ret.isSuccess()) {
                     Map<String, VmInstanceState> states = new HashMap<String, VmInstanceState>(ret.getStates().size());
                     for (Map.Entry<String, String> e : ret.getStates().entrySet()) {
+                        logger.debug(String.format("state from vmsync vm %s state %s", e.getKey(), e.getValue()));
                         VmInstanceState state = KvmVmState.valueOf(e.getValue()).toVmInstanceState();
                         if (state == VmInstanceState.Running || state == VmInstanceState.Paused || state == VmInstanceState.Unknown) {
                             states.put(e.getKey(), state);
@@ -126,7 +127,7 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
                             chain.next();
                             return;
                         }
-                        VmStateChangedOnHostMsg msg = new VmStateChangedOnHostMsg();
+                        VmStateChangedOnHostMsg msg = new VmStateChangedOnHostMsg(logger, "registerSyncHttpCallHandler send VmStateChangedOnHostMsg");
                         msg.setVmStateAtTracingMoment(stateInDb);
                         msg.setVmInstanceUuid(cmd.vmUuid);
                         msg.setStateOnHost(state);

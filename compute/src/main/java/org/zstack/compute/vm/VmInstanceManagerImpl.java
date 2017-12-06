@@ -2049,7 +2049,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
             FutureCompletion future = new FutureCompletion(null);
 
             new While<>(vmUuids).all((vmUuid, completion) -> {
-                VmStateChangedOnHostMsg msg = new VmStateChangedOnHostMsg();
+                VmStateChangedOnHostMsg msg = new VmStateChangedOnHostMsg(logger, "afterChangeHostStatus send VmStateChangedOnHostMsg");
                 msg.setVmInstanceUuid(vmUuid);
                 msg.setHostUuid(hostUuid);
                 msg.setStateOnHost(VmInstanceState.Unknown);
