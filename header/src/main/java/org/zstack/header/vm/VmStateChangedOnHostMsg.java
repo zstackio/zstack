@@ -1,6 +1,7 @@
 package org.zstack.header.vm;
 
 import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.utils.logging.CLogger;
 
 /**
  * Created by frank on 11/1/2015.
@@ -10,6 +11,12 @@ public class VmStateChangedOnHostMsg extends NeedReplyMessage implements VmInsta
     private String vmInstanceUuid;
     private String hostUuid;
     private String stateOnHost;
+
+    public VmStateChangedOnHostMsg() { }
+
+    public VmStateChangedOnHostMsg(CLogger logger, String msg) {
+        logger.debug(msg);
+    }
 
     public String getVmStateAtTracingMoment() {
         return vmStateAtTracingMoment;

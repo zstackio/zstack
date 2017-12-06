@@ -823,7 +823,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                         String s = cr.getStates().get(self.getUuid());
                         VmInstanceState state = VmInstanceState.valueOf(s);
                         if (state != self.getState()) {
-                            VmStateChangedOnHostMsg vcmsg = new VmStateChangedOnHostMsg();
+                            VmStateChangedOnHostMsg vcmsg = new VmStateChangedOnHostMsg(logger, "vmInstanceBase send VmStateChangedOnHostMsg");
                             vcmsg.setHostUuid(self.getHostUuid());
                             vcmsg.setVmInstanceUuid(self.getUuid());
                             vcmsg.setStateOnHost(state);
