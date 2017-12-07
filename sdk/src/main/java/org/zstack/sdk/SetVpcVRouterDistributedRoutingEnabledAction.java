@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class GetCandidatePrimaryStoragesForCreatingVmAction extends AbstractAction {
+public class SetVpcVRouterDistributedRoutingEnabledAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public GetCandidatePrimaryStoragesForCreatingVmResult value;
+        public SetVpcVRouterDistributedRoutingEnabledResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -23,28 +23,10 @@ public class GetCandidatePrimaryStoragesForCreatingVmAction extends AbstractActi
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String imageUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String backupStorageUuid;
-
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List l3NetworkUuids;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String rootDiskOfferingUuid;
-
-    @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List dataDiskOfferingUuids;
+    public java.lang.String uuid;
 
     @Param(required = false)
-    public java.lang.String zoneUuid;
-
-    @Param(required = false)
-    public java.lang.String clusterUuid;
-
-    @Param(required = false)
-    public java.lang.String defaultL3NetworkUuid;
+    public java.lang.Boolean enabled;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -55,6 +37,10 @@ public class GetCandidatePrimaryStoragesForCreatingVmAction extends AbstractActi
     @Param(required = true)
     public String sessionId;
 
+    public long timeout;
+    
+    public long pollingInterval;
+
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -63,8 +49,8 @@ public class GetCandidatePrimaryStoragesForCreatingVmAction extends AbstractActi
             return ret;
         }
         
-        GetCandidatePrimaryStoragesForCreatingVmResult value = res.getResult(GetCandidatePrimaryStoragesForCreatingVmResult.class);
-        ret.value = value == null ? new GetCandidatePrimaryStoragesForCreatingVmResult() : value; 
+        SetVpcVRouterDistributedRoutingEnabledResult value = res.getResult(SetVpcVRouterDistributedRoutingEnabledResult.class);
+        ret.value = value == null ? new SetVpcVRouterDistributedRoutingEnabledResult() : value; 
 
         return ret;
     }
@@ -89,11 +75,11 @@ public class GetCandidatePrimaryStoragesForCreatingVmAction extends AbstractActi
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/vm-instances/candidate-storages";
+        info.httpMethod = "POST";
+        info.path = "/vpc/virtual-routers/{uuid}/distributed-routing";
         info.needSession = true;
-        info.needPoll = false;
-        info.parameterName = "";
+        info.needPoll = true;
+        info.parameterName = "params";
         return info;
     }
 

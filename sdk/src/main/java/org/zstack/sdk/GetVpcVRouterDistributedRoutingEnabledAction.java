@@ -3,13 +3,13 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class GetCandidatePrimaryStoragesForCreatingVmAction extends AbstractAction {
+public class GetVpcVRouterDistributedRoutingEnabledAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public GetCandidatePrimaryStoragesForCreatingVmResult value;
+        public GetVpcVRouterDistributedRoutingEnabledResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -23,28 +23,7 @@ public class GetCandidatePrimaryStoragesForCreatingVmAction extends AbstractActi
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String imageUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String backupStorageUuid;
-
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List l3NetworkUuids;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String rootDiskOfferingUuid;
-
-    @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List dataDiskOfferingUuids;
-
-    @Param(required = false)
-    public java.lang.String zoneUuid;
-
-    @Param(required = false)
-    public java.lang.String clusterUuid;
-
-    @Param(required = false)
-    public java.lang.String defaultL3NetworkUuid;
+    public java.lang.String uuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -63,8 +42,8 @@ public class GetCandidatePrimaryStoragesForCreatingVmAction extends AbstractActi
             return ret;
         }
         
-        GetCandidatePrimaryStoragesForCreatingVmResult value = res.getResult(GetCandidatePrimaryStoragesForCreatingVmResult.class);
-        ret.value = value == null ? new GetCandidatePrimaryStoragesForCreatingVmResult() : value; 
+        GetVpcVRouterDistributedRoutingEnabledResult value = res.getResult(GetVpcVRouterDistributedRoutingEnabledResult.class);
+        ret.value = value == null ? new GetVpcVRouterDistributedRoutingEnabledResult() : value; 
 
         return ret;
     }
@@ -90,7 +69,7 @@ public class GetCandidatePrimaryStoragesForCreatingVmAction extends AbstractActi
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/vm-instances/candidate-storages";
+        info.path = "/vpc/virtual-routers/{uuid}/distributed-routing";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";
