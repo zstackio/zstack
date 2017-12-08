@@ -238,7 +238,7 @@ public class ZSClient {
 
         private ApiResult syncWebHookResult() {
             synchronized (this) {
-                Long timeout = (Long)action.getParameterValue("timeout", false);
+                Long timeout = (Long)action.getNonAPIParameterValue("timeout", false);
                 timeout = timeout == null ? config.defaultPollingTimeout : timeout;
 
                 try {
@@ -444,9 +444,9 @@ public class ZSClient {
 
         private void asyncPollResult(final String url) {
             final long current = System.currentTimeMillis();
-            final Long timeout = (Long)action.getParameterValue("timeout", false);
+            final Long timeout = (Long)action.getNonAPIParameterValue("timeout", false);
             final long expiredTime = current + (timeout == null ? config.defaultPollingTimeout : timeout);
-            final Long i = (Long) action.getParameterValue("pollingInterval", false);
+            final Long i = (Long) action.getNonAPIParameterValue("pollingInterval", false);
 
             final Object sessionId = action.getParameterValue(Constants.SESSION_ID);
             final Timer timer = new Timer();
@@ -523,9 +523,9 @@ public class ZSClient {
 
         private ApiResult syncPollResult(String url) {
             long current = System.currentTimeMillis();
-            Long timeout = (Long)action.getParameterValue("timeout", false);
+            Long timeout = (Long)action.getNonAPIParameterValue("timeout", false);
             long expiredTime = current + (timeout == null ? config.defaultPollingTimeout : timeout);
-            Long interval = (Long) action.getParameterValue("pollingInterval", false);
+            Long interval = (Long) action.getNonAPIParameterValue("pollingInterval", false);
             interval = interval == null ? config.defaultPollingInterval : interval;
 
             Object sessionId = action.getParameterValue(Constants.SESSION_ID);
