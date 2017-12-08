@@ -76,7 +76,7 @@ public class SyncVCenterAction extends AbstractAction {
         info.path = "/vcenters/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "syncVCenter";
         return info;
     }
 
