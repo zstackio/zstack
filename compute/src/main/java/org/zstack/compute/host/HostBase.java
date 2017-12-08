@@ -81,8 +81,6 @@ public abstract class HostBase extends AbstractHost {
     @Autowired
     protected EventFacade evtf;
 
-    final private static Integer MAX_PING_CNT = HostGlobalConfig.MAXIMUM_PING_FAILURE.value(Integer.class);
-
     protected final String id;
 
     protected abstract void pingHook(Completion completion);
@@ -576,6 +574,7 @@ public abstract class HostBase extends AbstractHost {
             return;
         }
 
+        final Integer MAX_PING_CNT = HostGlobalConfig.MAXIMUM_PING_FAILURE.value(Integer.class);
         final List<Integer> stepCount = new ArrayList<>();
         for(int i = 1; i <= MAX_PING_CNT; i ++){
             stepCount.add(i);
