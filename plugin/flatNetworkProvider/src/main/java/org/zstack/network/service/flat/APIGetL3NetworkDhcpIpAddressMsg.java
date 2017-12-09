@@ -13,7 +13,7 @@ import org.zstack.header.rest.RestRequest;
  */
 @Action(category = L3NetworkConstant.ACTION_CATEGORY)
 @RestRequest(
-        path = "/l3-networks/{l3NetworkUuid/dhcp-ip",
+        path = "/l3-networks/{l3NetworkUuid}/dhcp-ip",
         method = HttpMethod.GET,
         responseClass = APIGetL3NetworkDhcpIpAddressReply.class
 )

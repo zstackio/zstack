@@ -56,20 +56,42 @@ public abstract class APIMessage extends NeedReplyMessage {
         Set<Class> apiClass = BeanUtils.reflections.getSubTypesOf(APIMessage.class)
                 .stream().filter(c -> !Modifier.isStatic(c.getModifiers())).collect(Collectors.toSet());
 
+        class Nothing { @APIParam(required = false) public String nothing;}
+
+        APIParam defaultAnnotation;
+        try {
+            defaultAnnotation = Nothing.class.getField("nothing").getAnnotation(APIParam.class);
+        } catch (NoSuchFieldException e) {
+            throw new CloudRuntimeException(e);
+        }
+
         for (Class clz : apiClass) {
             List<Field> fields = FieldUtils.getAllFields(clz);
 
             Map<String, FieldParam> fmap = new HashMap<>();
             for (Field f : fields) {
+                if (Modifier.isStatic(f.getModifiers())) {
+                    continue;
+                }
+                if (f.isAnnotationPresent(APINoSee.class)) {
+                    continue;
+                }
+                if (Modifier.isTransient(f.getModifiers())) {
+                    continue;
+                }
+                if (f.isAnnotationPresent(GsonTransient.class)) {
+                    continue;
+                }
+
                 APIParam at = f.getAnnotation(APIParam.class);
                 if (at == null) {
-                    continue;
+                    at = defaultAnnotation;
                 }
 
                 f.setAccessible(true);
                 FieldParam fp = new FieldParam();
                 fp.field = f;
-                fp.param = f.getAnnotation(APIParam.class);
+                fp.param = at;
                 fmap.put(f.getName(), fp);
             }
 

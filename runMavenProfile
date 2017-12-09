@@ -37,9 +37,10 @@ apihelper() {
 
 
 doc() {
-    cd test
-    mvn test -Dtest=TestGenerateDocTemplate
-    cd - > /dev/null
+#    cd test
+#    mvn test -Dtest=TestGenerateDocTemplate
+#    cd - > /dev/null
+     javadoc  -private -doclet org.zstack.tool.doclet.JsonDocLet -docletpath tool/doclet/target/doclet-2.2.0-jar-with-dependencies.jar  $(find -name *.java)
 }
 
 docpremium() {
