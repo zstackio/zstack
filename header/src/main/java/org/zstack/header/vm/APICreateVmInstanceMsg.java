@@ -67,6 +67,8 @@ import static java.util.Arrays.asList;
  * }
  * @result See :ref:`APICreateVmInstanceEvent`
  * @since 0.1.0
+ *
+ * @summary 创建云主机
  */
 @TagResourceType(VmInstanceVO.class)
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)

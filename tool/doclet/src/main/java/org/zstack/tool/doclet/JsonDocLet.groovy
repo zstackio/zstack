@@ -41,9 +41,6 @@ class JsonDocLet extends Standard  {
             dir.mkdirs()
         }
 
-        new SwaggerDoc(root).generate(outputPath)
-
-        /*
         println("total ${root.classes().length} classes to process")
 
         root.classes().each { clz ->
@@ -79,6 +76,5 @@ class JsonDocLet extends Standard  {
         }
 
         new File(outputPath).write(JsonOutput.toJson(docs))
-        */
     }
 }
