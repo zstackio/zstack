@@ -1,7 +1,7 @@
 #!/bin/sh
 
 usage() {
-    echo "usage:$0 [deploydb|deploy|xml-java-schema|premium|sdk|doc|docpremium|md|mdpremium]"
+    echo "usage:$0 [deploydb|deploy|xml-java-schema|premium|sdk|doc|docpremium|md|mdpremium|openapi]"
 }
 
 py() {
@@ -37,10 +37,39 @@ apihelper() {
 
 
 doc() {
-#    cd test
-#    mvn test -Dtest=TestGenerateDocTemplate
-#    cd - > /dev/null
-     javadoc  -private -doclet org.zstack.tool.doclet.JsonDocLet -docletpath tool/doclet/target/doclet-2.2.0-jar-with-dependencies.jar  $(find -name *.java)
+    cd test
+    mvn test -Dtest=TestGenerateDocTemplate
+    cd - > /dev/null
+}
+
+openapi() {
+    if [ ! -d premium/test-premium ]; then
+	echo "opensource version doesn't have this tool"
+        exit 1
+    fi
+
+    cd tool/doclet
+    mvn -Dmaven.test.skip=true package
+    cd -
+
+    javadoc -private -doclet org.zstack.tool.doclet.JsonDocLet -docletpath tool/doclet/target/doclet-*-jar-with-dependencies.jar  $(find -name *.java)
+
+    DOC_OUTPUT=`echo ~/zstack-doclet-output.json`
+    if [ ! -f $DOC_OUTPUT ]; then
+       echo "$DOC_OUTPUT not found"
+       exit 1
+    fi
+
+    cd premium/test-premium
+    mvn test -Dtest=GenerateSwaggerSpec -DdocletDoc=$DOC_OUTPUT
+    cd -
+
+    echo ""
+    echo ""
+    echo ""
+    echo "***********************************************"
+    echo "openapi spec generated at ~/zstack-api.yaml"
+    echo "***********************************************"
 }
 
 docpremium() {
@@ -187,6 +216,8 @@ run_profile() {
 	notificationapi
     elif test x$1 = x'triggerexpression'; then
 	triggerexpression
+    elif test x$1 = x'openapi'; then
+        openapi
     else
         mvn -pl build -P $1 exec:exec -D$1
     fi
