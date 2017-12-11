@@ -7,6 +7,8 @@ public class CreatePortForwardingRuleAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
+    private static final HashMap<String, Parameter> nonAPIParameterMap = new HashMap<>();
+
     public static class Result {
         public ErrorCode error;
         public CreatePortForwardingRuleResult value;
@@ -64,8 +66,10 @@ public class CreatePortForwardingRuleAction extends AbstractAction {
     @Param(required = true)
     public String sessionId;
 
+    @NonAPIParam
     public long timeout;
-    
+
+    @NonAPIParam
     public long pollingInterval;
 
 
@@ -98,6 +102,10 @@ public class CreatePortForwardingRuleAction extends AbstractAction {
 
     Map<String, Parameter> getParameterMap() {
         return parameterMap;
+    }
+
+    Map<String, Parameter> getNonAPIParameterMap() {
+        return nonAPIParameterMap;
     }
 
     RestInfo getRestInfo() {

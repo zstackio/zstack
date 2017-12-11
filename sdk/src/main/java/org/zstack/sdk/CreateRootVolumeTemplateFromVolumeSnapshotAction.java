@@ -7,6 +7,8 @@ public class CreateRootVolumeTemplateFromVolumeSnapshotAction extends AbstractAc
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
+    private static final HashMap<String, Parameter> nonAPIParameterMap = new HashMap<>();
+
     public static class Result {
         public ErrorCode error;
         public CreateRootVolumeTemplateFromVolumeSnapshotResult value;
@@ -55,8 +57,10 @@ public class CreateRootVolumeTemplateFromVolumeSnapshotAction extends AbstractAc
     @Param(required = true)
     public String sessionId;
 
+    @NonAPIParam
     public long timeout;
-    
+
+    @NonAPIParam
     public long pollingInterval;
 
 
@@ -89,6 +93,10 @@ public class CreateRootVolumeTemplateFromVolumeSnapshotAction extends AbstractAc
 
     Map<String, Parameter> getParameterMap() {
         return parameterMap;
+    }
+
+    Map<String, Parameter> getNonAPIParameterMap() {
+        return nonAPIParameterMap;
     }
 
     RestInfo getRestInfo() {

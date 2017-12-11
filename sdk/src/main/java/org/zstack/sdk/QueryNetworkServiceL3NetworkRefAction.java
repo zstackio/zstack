@@ -7,6 +7,8 @@ public class QueryNetworkServiceL3NetworkRefAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
+    private static final HashMap<String, Parameter> nonAPIParameterMap = new HashMap<>();
+
     public static class Result {
         public ErrorCode error;
         public QueryNetworkServiceL3NetworkRefResult value;
@@ -53,6 +55,10 @@ public class QueryNetworkServiceL3NetworkRefAction extends QueryAction {
 
     Map<String, Parameter> getParameterMap() {
         return parameterMap;
+    }
+
+    Map<String, Parameter> getNonAPIParameterMap() {
+        return nonAPIParameterMap;
     }
 
     RestInfo getRestInfo() {

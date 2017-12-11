@@ -7,6 +7,8 @@ public class RemoveMonFromCephPrimaryStorageAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
+    private static final HashMap<String, Parameter> nonAPIParameterMap = new HashMap<>();
+
     public static class Result {
         public ErrorCode error;
         public RemoveMonFromCephPrimaryStorageResult value;
@@ -37,8 +39,10 @@ public class RemoveMonFromCephPrimaryStorageAction extends AbstractAction {
     @Param(required = true)
     public String sessionId;
 
+    @NonAPIParam
     public long timeout;
-    
+
+    @NonAPIParam
     public long pollingInterval;
 
 
@@ -71,6 +75,10 @@ public class RemoveMonFromCephPrimaryStorageAction extends AbstractAction {
 
     Map<String, Parameter> getParameterMap() {
         return parameterMap;
+    }
+
+    Map<String, Parameter> getNonAPIParameterMap() {
+        return nonAPIParameterMap;
     }
 
     RestInfo getRestInfo() {

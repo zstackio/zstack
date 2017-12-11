@@ -7,6 +7,8 @@ public class GetCandidatePrimaryStoragesForCreatingVmAction extends AbstractActi
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
+    private static final HashMap<String, Parameter> nonAPIParameterMap = new HashMap<>();
+
     public static class Result {
         public ErrorCode error;
         public GetCandidatePrimaryStoragesForCreatingVmResult value;
@@ -85,6 +87,10 @@ public class GetCandidatePrimaryStoragesForCreatingVmAction extends AbstractActi
 
     Map<String, Parameter> getParameterMap() {
         return parameterMap;
+    }
+
+    Map<String, Parameter> getNonAPIParameterMap() {
+        return nonAPIParameterMap;
     }
 
     RestInfo getRestInfo() {
