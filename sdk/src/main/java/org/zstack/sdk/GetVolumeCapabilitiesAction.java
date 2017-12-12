@@ -7,6 +7,8 @@ public class GetVolumeCapabilitiesAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
+    private static final HashMap<String, Parameter> nonAPIParameterMap = new HashMap<>();
+
     public static class Result {
         public ErrorCode error;
         public GetVolumeCapabilitiesResult value;
@@ -64,6 +66,10 @@ public class GetVolumeCapabilitiesAction extends AbstractAction {
 
     Map<String, Parameter> getParameterMap() {
         return parameterMap;
+    }
+
+    Map<String, Parameter> getNonAPIParameterMap() {
+        return nonAPIParameterMap;
     }
 
     RestInfo getRestInfo() {

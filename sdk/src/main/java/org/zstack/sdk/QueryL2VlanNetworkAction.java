@@ -7,6 +7,8 @@ public class QueryL2VlanNetworkAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
+    private static final HashMap<String, Parameter> nonAPIParameterMap = new HashMap<>();
+
     public static class Result {
         public ErrorCode error;
         public QueryL2VlanNetworkResult value;
@@ -53,6 +55,10 @@ public class QueryL2VlanNetworkAction extends QueryAction {
 
     Map<String, Parameter> getParameterMap() {
         return parameterMap;
+    }
+
+    Map<String, Parameter> getNonAPIParameterMap() {
+        return nonAPIParameterMap;
     }
 
     RestInfo getRestInfo() {

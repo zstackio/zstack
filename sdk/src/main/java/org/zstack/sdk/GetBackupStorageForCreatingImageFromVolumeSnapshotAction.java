@@ -7,6 +7,8 @@ public class GetBackupStorageForCreatingImageFromVolumeSnapshotAction extends Ab
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
+    private static final HashMap<String, Parameter> nonAPIParameterMap = new HashMap<>();
+
     public static class Result {
         public ErrorCode error;
         public GetCandidateBackupStorageForCreatingImageResult value;
@@ -67,6 +69,10 @@ public class GetBackupStorageForCreatingImageFromVolumeSnapshotAction extends Ab
 
     Map<String, Parameter> getParameterMap() {
         return parameterMap;
+    }
+
+    Map<String, Parameter> getNonAPIParameterMap() {
+        return nonAPIParameterMap;
     }
 
     RestInfo getRestInfo() {

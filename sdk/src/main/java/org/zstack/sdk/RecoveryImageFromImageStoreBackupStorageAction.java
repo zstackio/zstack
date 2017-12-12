@@ -7,6 +7,8 @@ public class RecoveryImageFromImageStoreBackupStorageAction extends AbstractActi
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
+    private static final HashMap<String, Parameter> nonAPIParameterMap = new HashMap<>();
+
     public static class Result {
         public ErrorCode error;
         public RecoveryImageFromImageStoreBackupStorageResult value;
@@ -46,8 +48,10 @@ public class RecoveryImageFromImageStoreBackupStorageAction extends AbstractActi
     @Param(required = true)
     public String sessionId;
 
+    @NonAPIParam
     public long timeout;
-    
+
+    @NonAPIParam
     public long pollingInterval;
 
 
@@ -80,6 +84,10 @@ public class RecoveryImageFromImageStoreBackupStorageAction extends AbstractActi
 
     Map<String, Parameter> getParameterMap() {
         return parameterMap;
+    }
+
+    Map<String, Parameter> getNonAPIParameterMap() {
+        return nonAPIParameterMap;
     }
 
     RestInfo getRestInfo() {

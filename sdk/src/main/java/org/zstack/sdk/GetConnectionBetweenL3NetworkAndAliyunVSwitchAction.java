@@ -7,6 +7,8 @@ public class GetConnectionBetweenL3NetworkAndAliyunVSwitchAction extends Abstrac
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
+    private static final HashMap<String, Parameter> nonAPIParameterMap = new HashMap<>();
+
     public static class Result {
         public ErrorCode error;
         public GetConnectionBetweenL3NetworkAndAliyunVSwitchResult value;
@@ -67,6 +69,10 @@ public class GetConnectionBetweenL3NetworkAndAliyunVSwitchAction extends Abstrac
 
     Map<String, Parameter> getParameterMap() {
         return parameterMap;
+    }
+
+    Map<String, Parameter> getNonAPIParameterMap() {
+        return nonAPIParameterMap;
     }
 
     RestInfo getRestInfo() {

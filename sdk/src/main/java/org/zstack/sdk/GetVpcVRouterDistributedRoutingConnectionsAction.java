@@ -7,6 +7,8 @@ public class GetVpcVRouterDistributedRoutingConnectionsAction extends AbstractAc
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
+    private static final HashMap<String, Parameter> nonAPIParameterMap = new HashMap<>();
+
     public static class Result {
         public ErrorCode error;
         public GetVpcVRouterDistributedRoutingConnectionsResult value;
@@ -64,6 +66,10 @@ public class GetVpcVRouterDistributedRoutingConnectionsAction extends AbstractAc
 
     Map<String, Parameter> getParameterMap() {
         return parameterMap;
+    }
+
+    Map<String, Parameter> getNonAPIParameterMap() {
+        return nonAPIParameterMap;
     }
 
     RestInfo getRestInfo() {

@@ -7,6 +7,8 @@ public class QueryConnectionBetweenL3NetworkAndAliyunVSwitchAction extends Query
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
+    private static final HashMap<String, Parameter> nonAPIParameterMap = new HashMap<>();
+
     public static class Result {
         public ErrorCode error;
         public QueryConnectionBetweenL3NetworkAndAliyunVSwitchResult value;
@@ -53,6 +55,10 @@ public class QueryConnectionBetweenL3NetworkAndAliyunVSwitchAction extends Query
 
     Map<String, Parameter> getParameterMap() {
         return parameterMap;
+    }
+
+    Map<String, Parameter> getNonAPIParameterMap() {
+        return nonAPIParameterMap;
     }
 
     RestInfo getRestInfo() {

@@ -7,6 +7,8 @@ public class GetBackupStorageCandidatesForImageMigrationAction extends AbstractA
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
+    private static final HashMap<String, Parameter> nonAPIParameterMap = new HashMap<>();
+
     public static class Result {
         public ErrorCode error;
         public GetBackupStorageCandidatesForImageMigrationResult value;
@@ -64,6 +66,10 @@ public class GetBackupStorageCandidatesForImageMigrationAction extends AbstractA
 
     Map<String, Parameter> getParameterMap() {
         return parameterMap;
+    }
+
+    Map<String, Parameter> getNonAPIParameterMap() {
+        return nonAPIParameterMap;
     }
 
     RestInfo getRestInfo() {

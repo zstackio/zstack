@@ -156,8 +156,10 @@ class SdkApiTemplate implements SdkTemplate {
 
         if (!APISyncCallMessage.class.isAssignableFrom(apiMessageClass)) {
             output.add("""\
+    @NonAPIParam
     public long timeout;
-    
+
+    @NonAPIParam
     public long pollingInterval;
 """)
         }
@@ -204,6 +206,10 @@ class SdkApiTemplate implements SdkTemplate {
     Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
+
+    Map<String, Parameter> getNonAPIParameterMap() {
+        return nonAPIParameterMap;
+    }
 """)
 
         ms.add("""\
@@ -232,6 +238,8 @@ import java.util.Map;
 public class ${clzName} extends ${isQueryApi ? "QueryAction" : "AbstractAction"} {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
+
+    private static final HashMap<String, Parameter> nonAPIParameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;

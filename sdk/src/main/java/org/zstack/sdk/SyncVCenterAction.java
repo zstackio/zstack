@@ -7,6 +7,8 @@ public class SyncVCenterAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
+    private static final HashMap<String, Parameter> nonAPIParameterMap = new HashMap<>();
+
     public static class Result {
         public ErrorCode error;
         public SyncVCenterResult value;
@@ -34,8 +36,10 @@ public class SyncVCenterAction extends AbstractAction {
     @Param(required = true)
     public String sessionId;
 
+    @NonAPIParam
     public long timeout;
-    
+
+    @NonAPIParam
     public long pollingInterval;
 
 
@@ -70,13 +74,17 @@ public class SyncVCenterAction extends AbstractAction {
         return parameterMap;
     }
 
+    Map<String, Parameter> getNonAPIParameterMap() {
+        return nonAPIParameterMap;
+    }
+
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/vcenters/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "syncVCenter";
         return info;
     }
 
