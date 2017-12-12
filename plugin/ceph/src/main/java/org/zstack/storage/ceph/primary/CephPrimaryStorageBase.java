@@ -586,6 +586,12 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         String dstPath;
     }
 
+    @ApiTimeout(apiClasses = {
+            APICreateRootVolumeTemplateFromRootVolumeMsg.class,
+            APICreateDataVolumeTemplateFromVolumeMsg.class,
+            APICreateDataVolumeFromVolumeSnapshotMsg.class,
+            APICreateRootVolumeTemplateFromVolumeSnapshotMsg.class
+    })
     public static class UploadCmd extends AgentCommand {
         String imageUuid;
         String hostname;
