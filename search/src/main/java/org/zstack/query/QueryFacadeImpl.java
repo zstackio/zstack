@@ -146,9 +146,17 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             handle((APIQueryMessage) msg);
         } else if (msg instanceof APIGenerateQueryableFieldsMsg) {
             handle((APIGenerateQueryableFieldsMsg) msg);
+        } else if (msg instanceof APIBatchQueryMsg) {
+            handle((APIBatchQueryMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIBatchQueryMsg msg) {
+        APIBatchQueryReply reply = new APIBatchQueryReply();
+        reply.setResult(new BatchQuery().query(msg));
+        bus.reply(msg, reply);
     }
 
     private void handle(APIGenerateQueryableFieldsMsg msg) {

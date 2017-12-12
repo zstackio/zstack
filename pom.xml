@@ -2,7 +2,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.compiler.version>2.5.1</project.compiler.version>
+        <project.compiler.version>3.6.1</project.compiler.version>
         <project.java.version>1.8</project.java.version>
         <spring.framework.version>4.0.3.RELEASE</spring.framework.version>
         <spring.security.version>4.0.2.RELEASE</spring.security.version>
@@ -43,6 +43,11 @@
     <dependencyManagement>
         <dependencies>
             <!-- third-party dependency -->
+            <dependency>
+                <groupId>org.kohsuke</groupId>
+                <artifactId>groovy-sandbox</artifactId>
+                <version>1.15</version>
+            </dependency>
             <dependency>
                 <groupId>org.ini4j</groupId>
                 <artifactId>ini4j</artifactId>
