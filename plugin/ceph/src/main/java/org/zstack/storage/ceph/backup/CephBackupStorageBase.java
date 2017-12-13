@@ -1401,7 +1401,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                                 backupStorageDown();
                             } else if (!res.success || PingOperationFailure.MonAddrChanged.toString().equals(res.failure)) {
                                 // this mon is down(success == false), but the backup storage may still work as other mons may work
-                                ErrorCode errorCode = operr(res.error);
+                                ErrorCode errorCode = operr("operation error, because:%s", res.error);
                                 thisMonIsDown(errorCode);
                             }
                         }
