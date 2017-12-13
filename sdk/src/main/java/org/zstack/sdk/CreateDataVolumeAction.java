@@ -49,10 +49,10 @@ public class CreateDataVolumeAction extends AbstractAction {
     public String sessionId;
 
     @NonAPIParam
-    public long timeout;
+    public long timeout = -1;
 
     @NonAPIParam
-    public long pollingInterval;
+    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
