@@ -18,4 +18,9 @@ public class APIBatchQueryReply extends APIReply {
     public void setResult(Map<String, Object> result) {
         this.result = result;
     }
+
+    public static APIBatchQueryReply __example__() {
+        APIBatchQueryReply ret = new APIBatchQueryReply();
+        return ret;
+    }
 }

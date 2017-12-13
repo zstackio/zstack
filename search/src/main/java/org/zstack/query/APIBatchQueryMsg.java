@@ -15,4 +15,9 @@ public class APIBatchQueryMsg extends APISyncCallMessage {
     public void setScript(String script) {
         this.script = script;
     }
+
+    public static APIBatchQueryMsg __example__() {
+        APIBatchQueryMsg ret = new APIBatchQueryMsg();
+        return ret;
+    }
 }
