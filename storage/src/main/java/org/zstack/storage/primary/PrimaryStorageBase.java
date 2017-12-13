@@ -374,7 +374,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     private void handle(ChangePrimaryStorageStatusMsg msg) {
         changeStatus(PrimaryStorageStatus.valueOf(msg.getStatus()));
-        ChangeVolumeSnapshotStatusReply reply = new ChangeVolumeSnapshotStatusReply();
+        ChangePrimaryStorageStatusReply reply = new ChangePrimaryStorageStatusReply();
         bus.reply(msg, reply);
     }
 
