@@ -157,10 +157,10 @@ class SdkApiTemplate implements SdkTemplate {
         if (!APISyncCallMessage.class.isAssignableFrom(apiMessageClass)) {
             output.add("""\
     @NonAPIParam
-    public long timeout;
+    public long timeout = -1;
 
     @NonAPIParam
-    public long pollingInterval;
+    public long pollingInterval = -1;
 """)
         }
 

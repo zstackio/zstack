@@ -25,6 +25,9 @@ public class ZSClient {
 
     private static ConcurrentHashMap<String, Api> waittingApis = new ConcurrentHashMap<>();
 
+    private static final long ACTION_DEFAULT_TIMEOUT = -1;
+    private static final long ACTION_DEFAULT_POLLINGINTERVAL = -1;
+
     static {
         gson = new GsonBuilder().create();
         prettyGson = new GsonBuilder().setPrettyPrinting().create();
@@ -238,8 +241,7 @@ public class ZSClient {
 
         private ApiResult syncWebHookResult() {
             synchronized (this) {
-                Long timeout = (Long)action.getNonAPIParameterValue("timeout", false);
-                timeout = timeout == null ? config.defaultPollingTimeout : timeout;
+                Long timeout = this.getTimeout();
 
                 try {
                     this.wait(timeout);
@@ -444,16 +446,16 @@ public class ZSClient {
 
         private void asyncPollResult(final String url) {
             final long current = System.currentTimeMillis();
-            final Long timeout = (Long)action.getNonAPIParameterValue("timeout", false);
-            final long expiredTime = current + (timeout == null ? config.defaultPollingTimeout : timeout);
-            final Long i = (Long) action.getNonAPIParameterValue("pollingInterval", false);
+            final Long timeout = this.getTimeout();
+            final long expiredTime = current + timeout;
+            final Long i = this.getInterval();
 
             final Object sessionId = action.getParameterValue(Constants.SESSION_ID);
             final Timer timer = new Timer();
 
             timer.schedule(new TimerTask() {
                 long count = current;
-                long interval = i == null ? config.defaultPollingInterval : i;
+                long interval = i;
 
                 private void done(ApiResult res) {
                     completion.complete(res);
@@ -523,10 +525,9 @@ public class ZSClient {
 
         private ApiResult syncPollResult(String url) {
             long current = System.currentTimeMillis();
-            Long timeout = (Long)action.getNonAPIParameterValue("timeout", false);
-            long expiredTime = current + (timeout == null ? config.defaultPollingTimeout : timeout);
-            Long interval = (Long) action.getNonAPIParameterValue("pollingInterval", false);
-            interval = interval == null ? config.defaultPollingInterval : interval;
+            Long timeout = this.getTimeout();
+            long expiredTime = current + timeout;
+            Long interval = this.getInterval();
 
             Object sessionId = action.getParameterValue(Constants.SESSION_ID);
 
@@ -596,6 +597,16 @@ public class ZSClient {
 
         ApiResult call() {
             return doCall();
+        }
+
+        private long getTimeout(){
+            Long timeout = (Long)action.getNonAPIParameterValue("timeout", false);
+            return timeout == ACTION_DEFAULT_TIMEOUT ? config.defaultPollingTimeout : timeout;
+        }
+
+        private long getInterval(){
+            Long interval = (Long) action.getNonAPIParameterValue("pollingInterval", false);
+            return interval == ACTION_DEFAULT_POLLINGINTERVAL ? config.defaultPollingInterval : interval;
         }
     }
 
