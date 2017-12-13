@@ -164,6 +164,7 @@ class BatchQuery {
         }
 
         APIQueryMessage msg = msgClz.newInstance() as APIQueryMessage
+        msg.setConditions([])
         boolean count = false
         boolean replyWithCount = false
         msg.setSession(session)
@@ -175,58 +176,60 @@ class BatchQuery {
 
         Class inventoryClass = at.inventoryClass()
 
-        words[1..words.size()-1].each { String word ->
-            if (word.startsWith("fields=")) {
-                def values = lstrip(word, "fields=")
-                msg["fields"] = values.split(",")
-            } else if (word.startsWith("limit=")) {
-                def value = lstrip(word, "limit=")
-                msg["limit"] = Integer.valueOf(value)
-            } else if (word.startsWith("start=")) {
-                def value = lstrip(word, "start=")
-                msg["start"] = Integer.valueOf(value)
-            } else if (word.startsWith("sortBy=")) {
-                def value = lstrip(word, "sortBy=")
-                msg["sortBy"] = value
-            } else if (word.startsWith("sortDirection=")) {
-                def value = lstrip(word, "sortDirection=")
-                msg["sortDirection"] = value
-            } else if (word.startsWith("count=")) {
-                def value = lstrip(word, "count=")
-                count = Boolean.valueOf(value)
-            } else if (word.startsWith("replyWithCount=")) {
-                def value = lstrip(word, "replyWithCount=")
-                replyWithCount = Boolean.valueOf(value)
-            } else {
-                String OP = null
-                String delimiter = null
-                for (String op : QUERY_OP_MAPPING.keySet()) {
-                    if (word.contains(op)) {
-                        OP = QUERY_OP_MAPPING.get(op)
-                        delimiter = op
-                        break
-                    }
-                }
-
-                if (OP == null) {
-                    throw new OperationFailureException(Platform.argerr("invalid query string[%s], word[%s] doesn't have a valid operator", qstr, word))
-                }
-
-                List<String> ks = word.split(delimiter, 2)
-                QueryCondition cond = new QueryCondition()
-                if (OP == QueryOp.IS_NULL.toString() || OP == QueryOp.NOT_NULL.toString()) {
-                    cond.name = ks[0]
-                    cond.op = OP
+        if (words.size() > 1) {
+            words[1..words.size() - 1].each { String word ->
+                if (word.startsWith("fields=")) {
+                    def values = lstrip(word, "fields=")
+                    msg["fields"] = values.split(",")
+                } else if (word.startsWith("limit=")) {
+                    def value = lstrip(word, "limit=")
+                    msg["limit"] = Integer.valueOf(value)
+                } else if (word.startsWith("start=")) {
+                    def value = lstrip(word, "start=")
+                    msg["start"] = Integer.valueOf(value)
+                } else if (word.startsWith("sortBy=")) {
+                    def value = lstrip(word, "sortBy=")
+                    msg["sortBy"] = value
+                } else if (word.startsWith("sortDirection=")) {
+                    def value = lstrip(word, "sortDirection=")
+                    msg["sortDirection"] = value
+                } else if (word.startsWith("count=")) {
+                    def value = lstrip(word, "count=")
+                    count = Boolean.valueOf(value)
+                } else if (word.startsWith("replyWithCount=")) {
+                    def value = lstrip(word, "replyWithCount=")
+                    replyWithCount = Boolean.valueOf(value)
                 } else {
-                    if (ks.size() != 2) {
-                        throw new OperationFailureException(Platform.argerr("invalid query string[%s], word[%s] doesn't has key-value pair", qstr, word))
+                    String OP = null
+                    String delimiter = null
+                    for (String op : QUERY_OP_MAPPING.keySet()) {
+                        if (word.contains(op)) {
+                            OP = QUERY_OP_MAPPING.get(op)
+                            delimiter = op
+                            break
+                        }
                     }
-                    cond.name = ks[0]
-                    cond.op = OP
-                    cond.value = ks[1]
-                }
 
-                msg.getConditions().add(cond)
+                    if (OP == null) {
+                        throw new OperationFailureException(Platform.argerr("invalid query string[%s], word[%s] doesn't have a valid operator", qstr, word))
+                    }
+
+                    List<String> ks = word.split(delimiter, 2)
+                    QueryCondition cond = new QueryCondition()
+                    if (OP == QueryOp.IS_NULL.toString() || OP == QueryOp.NOT_NULL.toString()) {
+                        cond.name = ks[0]
+                        cond.op = OP
+                    } else {
+                        if (ks.size() != 2) {
+                            throw new OperationFailureException(Platform.argerr("invalid query string[%s], word[%s] doesn't has key-value pair", qstr, word))
+                        }
+                        cond.name = ks[0]
+                        cond.op = OP
+                        cond.value = ks[1]
+                    }
+
+                    msg.getConditions().add(cond)
+                }
             }
         }
 
@@ -249,11 +252,15 @@ class BatchQuery {
             t = t.cause
         }
 
-        String l = t.stackTrace.find {
+        def trace = t.stackTrace.find {
             it.fileName ==~ /^Script\d+\.groovy$/
-        }.lineNumber
+        }
 
-        def lineNum = l.toInteger() - 1
+        if (!trace.hasProperty("lineNumber")) {
+            throw e
+        }
+
+        def lineNum = trace.lineNumber - 1
         println(code.readLines())
         def line = code.readLines()[lineNum]
         return "${e.message}, error at line ${lineNum}: ${line}"
