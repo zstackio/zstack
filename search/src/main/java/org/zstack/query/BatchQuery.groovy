@@ -13,6 +13,8 @@ import org.zstack.header.query.APIQueryMessage
 import org.zstack.header.query.AutoQuery
 import org.zstack.header.query.QueryCondition
 import org.zstack.header.query.QueryOp
+import org.zstack.header.search.Inventory
+import org.zstack.utils.gson.JSONObjectUtil
 
 import java.lang.reflect.Modifier
 
@@ -32,7 +34,8 @@ class BatchQuery {
                 Date.class,
                 Map.class,
                 Collection.class,
-                Script.class
+                Script.class,
+                Enum.class
         ]
 
         static void checkReceiver(Object obj) {
@@ -40,10 +43,6 @@ class BatchQuery {
         }
 
         static void checkReceiver(Class clz) {
-            if (clz.name.startsWith("org.zstack")) {
-                return
-            }
-
             for (Class wclz : RECEIVER_WHITE_LIST) {
                 if (wclz.isAssignableFrom(clz)) {
                     return
@@ -53,13 +52,21 @@ class BatchQuery {
             throw new Exception("invalid operation on class[${clz.name}]")
         }
 
+        static void checkMethod(String method) {
+            if (method == "sleep") {
+                throw new Exception("invalid operation[${method}]")
+            }
+        }
+
         Object onMethodCall(GroovyInterceptor.Invoker invoker, Object receiver, String method, Object... args) throws Throwable {
             checkReceiver(receiver)
+            checkMethod(method)
             return super.onMethodCall(invoker, receiver, method, args)
         }
 
         Object onStaticCall(GroovyInterceptor.Invoker invoker, Class receiver, String method, Object... args) throws Throwable {
             checkReceiver(receiver)
+            checkMethod(method)
             return super.onStaticCall(invoker, receiver, method, args)
         }
 
@@ -243,7 +250,7 @@ class BatchQuery {
             ret = queryf.query(msg, inventoryClass)
         }
 
-        return ["total": total, "result": ret]
+        return ["total": total, "result": JSONObjectUtil.rehashObject(ret, ArrayList.class)]
     }
 
     private String errorLine(String code, Throwable  e) {
