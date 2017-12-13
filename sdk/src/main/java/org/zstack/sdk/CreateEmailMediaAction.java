@@ -1,16 +1,16 @@
-package org.zstack.sdk.sns;
+package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateSNSTopicAction extends AbstractAction {
+public class CreateEmailMediaAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.sns.UpdateSNSTopicResult value;
+        public org.zstack.sdk.CreateMediaResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -24,13 +24,25 @@ public class UpdateSNSTopicAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    public java.lang.String smtpServer;
 
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,65535L}, noTrim = false)
+    public java.lang.Integer smtpPort;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String username;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String password;
+
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
+
+    @Param(required = false)
+    public java.lang.String resourceUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -53,8 +65,8 @@ public class UpdateSNSTopicAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.sns.UpdateSNSTopicResult value = res.getResult(org.zstack.sdk.sns.UpdateSNSTopicResult.class);
-        ret.value = value == null ? new org.zstack.sdk.sns.UpdateSNSTopicResult() : value; 
+        org.zstack.sdk.CreateMediaResult value = res.getResult(org.zstack.sdk.CreateMediaResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateMediaResult() : value; 
 
         return ret;
     }
@@ -79,11 +91,11 @@ public class UpdateSNSTopicAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/sns/topics/{uuid}/actions";
+        info.httpMethod = "POST";
+        info.path = "/media/emails";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "updateSNSTopic";
+        info.parameterName = "params";
         return info;
     }
 

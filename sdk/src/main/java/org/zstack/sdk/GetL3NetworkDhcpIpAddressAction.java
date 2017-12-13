@@ -23,7 +23,7 @@ public class GetL3NetworkDhcpIpAddressAction extends AbstractAction {
         }
     }
 
-    @Param(required = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String l3NetworkUuid;
 
     @Param(required = false)
@@ -70,7 +70,7 @@ public class GetL3NetworkDhcpIpAddressAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/l3-networks/{l3NetworkUuid/dhcp-ip";
+        info.path = "/l3-networks/{l3NetworkUuid}/dhcp-ip";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

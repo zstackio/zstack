@@ -1,16 +1,16 @@
-package org.zstack.sdk.sns;
+package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateSNSTopicAction extends AbstractAction {
+public class UpdateMonitorTriggerAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.sns.UpdateSNSTopicResult value;
+        public org.zstack.sdk.UpdateMonitorTriggerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -31,6 +31,12 @@ public class UpdateSNSTopicAction extends AbstractAction {
 
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String expression;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,2147483647L}, noTrim = false)
+    public java.lang.Integer duration;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -53,8 +59,8 @@ public class UpdateSNSTopicAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.sns.UpdateSNSTopicResult value = res.getResult(org.zstack.sdk.sns.UpdateSNSTopicResult.class);
-        ret.value = value == null ? new org.zstack.sdk.sns.UpdateSNSTopicResult() : value; 
+        org.zstack.sdk.UpdateMonitorTriggerResult value = res.getResult(org.zstack.sdk.UpdateMonitorTriggerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateMonitorTriggerResult() : value; 
 
         return ret;
     }
@@ -80,10 +86,10 @@ public class UpdateSNSTopicAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/sns/topics/{uuid}/actions";
+        info.path = "/monitoring/triggers/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "updateSNSTopic";
+        info.parameterName = "updateMonitorTrigger";
         return info;
     }
 

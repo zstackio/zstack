@@ -1,16 +1,8 @@
-package org.zstack.sdk.sns;
+package org.zstack.sdk;
 
 
 
-public class SNSApplicationEndpointInventory  {
-
-    public java.lang.String name;
-    public void setName(java.lang.String name) {
-        this.name = name;
-    }
-    public java.lang.String getName() {
-        return this.name;
-    }
+public class MonitorTriggerActionInventory  {
 
     public java.lang.String uuid;
     public void setUuid(java.lang.String uuid) {
@@ -18,6 +10,14 @@ public class SNSApplicationEndpointInventory  {
     }
     public java.lang.String getUuid() {
         return this.uuid;
+    }
+
+    public java.lang.String name;
+    public void setName(java.lang.String name) {
+        this.name = name;
+    }
+    public java.lang.String getName() {
+        return this.name;
     }
 
     public java.lang.String description;
@@ -28,28 +28,12 @@ public class SNSApplicationEndpointInventory  {
         return this.description;
     }
 
-    public java.lang.String type;
-    public void setType(java.lang.String type) {
-        this.type = type;
-    }
-    public java.lang.String getType() {
-        return this.type;
-    }
-
     public java.lang.String state;
     public void setState(java.lang.String state) {
         this.state = state;
     }
     public java.lang.String getState() {
         return this.state;
-    }
-
-    public java.lang.String platformUuid;
-    public void setPlatformUuid(java.lang.String platformUuid) {
-        this.platformUuid = platformUuid;
-    }
-    public java.lang.String getPlatformUuid() {
-        return this.platformUuid;
     }
 
     public java.sql.Timestamp createDate;
@@ -66,6 +50,22 @@ public class SNSApplicationEndpointInventory  {
     }
     public java.sql.Timestamp getLastOpDate() {
         return this.lastOpDate;
+    }
+
+    public java.lang.String type;
+    public void setType(java.lang.String type) {
+        this.type = type;
+    }
+    public java.lang.String getType() {
+        return this.type;
+    }
+
+    public java.util.List triggerUuids;
+    public void setTriggerUuids(java.util.List triggerUuids) {
+        this.triggerUuids = triggerUuids;
+    }
+    public java.util.List getTriggerUuids() {
+        return this.triggerUuids;
     }
 
 }

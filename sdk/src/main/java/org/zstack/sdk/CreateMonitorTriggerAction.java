@@ -1,16 +1,16 @@
-package org.zstack.sdk.sns;
+package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateSNSTopicAction extends AbstractAction {
+public class CreateMonitorTriggerAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.sns.UpdateSNSTopicResult value;
+        public org.zstack.sdk.CreateMonitorTriggerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -23,14 +23,26 @@ public class UpdateSNSTopicAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
+
+    @Param(required = true, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String expression;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,2147483647L}, noTrim = false)
+    public java.lang.Integer duration;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String recoveryExpression;
 
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
+
+    @Param(required = true, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String targetResourceUuid;
+
+    @Param(required = false)
+    public java.lang.String resourceUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -53,8 +65,8 @@ public class UpdateSNSTopicAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.sns.UpdateSNSTopicResult value = res.getResult(org.zstack.sdk.sns.UpdateSNSTopicResult.class);
-        ret.value = value == null ? new org.zstack.sdk.sns.UpdateSNSTopicResult() : value; 
+        org.zstack.sdk.CreateMonitorTriggerResult value = res.getResult(org.zstack.sdk.CreateMonitorTriggerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateMonitorTriggerResult() : value; 
 
         return ret;
     }
@@ -79,11 +91,11 @@ public class UpdateSNSTopicAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/sns/topics/{uuid}/actions";
+        info.httpMethod = "POST";
+        info.path = "/monitoring/triggers";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "updateSNSTopic";
+        info.parameterName = "params";
         return info;
     }
 

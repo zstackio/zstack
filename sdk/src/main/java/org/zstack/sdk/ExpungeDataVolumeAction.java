@@ -23,7 +23,7 @@ public class ExpungeDataVolumeAction extends AbstractAction {
         }
     }
 
-    @Param(required = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
     @Param(required = false)
