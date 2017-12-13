@@ -222,7 +222,7 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
                     return;
                 }
 
-                logger.debug("NFS[uuid:%s] recover connection to host[uuid:%s]");
+                logger.debug(String.format("NFS[uuid:%s] recover connection to host[uuid:%s]", d.getPrimaryStorageUuid(), d.getHostUuid()));
                 if (nfsStatus != PrimaryStorageStatus.Connected) {
                     // use sync call here to make sure the NFS primary storage connected before continue to the next step
                     ChangePrimaryStorageStatusMsg cmsg = new ChangePrimaryStorageStatusMsg();
@@ -649,7 +649,6 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
     }
 
     @Override
-    @Transactional
     public void afterAttachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
         if(inventory.getType().equals(NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE)){
             Q.New(HostVO.class)
