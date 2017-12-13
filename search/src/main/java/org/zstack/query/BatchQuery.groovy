@@ -243,6 +243,22 @@ class BatchQuery {
         return ["total": total, "result": ret]
     }
 
+    private String errorLine(String code, Throwable  e) {
+        Throwable t = e
+        while (t.cause != null) {
+            t = t.cause
+        }
+
+        String l = t.stackTrace.find {
+            it.fileName ==~ /^Script\d+\.groovy$/
+        }.lineNumber
+
+        def lineNum = l.toInteger() - 1
+        println(code.readLines())
+        def line = code.readLines()[lineNum]
+        return "${e.message}, error at line ${lineNum}: ${line}"
+    }
+
     Map<String, Object> query(APIBatchQueryMsg msg) {
         session = msg.getSession()
         Binding binding = new Binding()
@@ -261,6 +277,9 @@ class BatchQuery {
         sandbox.register()
         try {
             shell.evaluate(msg.script)
+        } catch (Throwable t) {
+            sandbox.unregister()
+            throw new OperationFailureException(Platform.operr("${errorLine(msg.script, t)}"))
         } finally {
             sandbox.unregister()
         }
