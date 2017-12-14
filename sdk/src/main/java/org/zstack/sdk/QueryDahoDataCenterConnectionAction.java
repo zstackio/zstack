@@ -3,7 +3,7 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class QueryEcsImageFromLocalAction extends QueryAction {
+public class QueryDahoDataCenterConnectionAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -11,7 +11,7 @@ public class QueryEcsImageFromLocalAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryEcsImageFromLocalResult value;
+        public QueryDahoDataCenterConnectionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +33,8 @@ public class QueryEcsImageFromLocalAction extends QueryAction {
             return ret;
         }
         
-        QueryEcsImageFromLocalResult value = res.getResult(QueryEcsImageFromLocalResult.class);
-        ret.value = value == null ? new QueryEcsImageFromLocalResult() : value; 
+        QueryDahoDataCenterConnectionResult value = res.getResult(QueryDahoDataCenterConnectionResult.class);
+        ret.value = value == null ? new QueryDahoDataCenterConnectionResult() : value; 
 
         return ret;
     }
@@ -64,7 +64,7 @@ public class QueryEcsImageFromLocalAction extends QueryAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/hybrid/aliyun/image";
+        info.path = "/hybrid/daho/connections";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

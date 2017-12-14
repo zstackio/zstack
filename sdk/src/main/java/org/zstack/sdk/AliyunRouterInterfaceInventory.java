@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-public class VirtualRouterInterfaceInventory  {
+public class AliyunRouterInterfaceInventory  {
 
     public java.lang.String uuid;
     public void setUuid(java.lang.String uuid) {

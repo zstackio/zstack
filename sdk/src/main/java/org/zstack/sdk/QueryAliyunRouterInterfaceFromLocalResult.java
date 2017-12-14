@@ -1,11 +1,11 @@
 package org.zstack.sdk;
 
-public class QueryAliyunKeySecretResult {
-    public java.util.List<HybridAccountInventory> inventories;
-    public void setInventories(java.util.List<HybridAccountInventory> inventories) {
+public class QueryAliyunRouterInterfaceFromLocalResult {
+    public java.util.List<AliyunRouterInterfaceInventory> inventories;
+    public void setInventories(java.util.List<AliyunRouterInterfaceInventory> inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<HybridAccountInventory> getInventories() {
+    public java.util.List<AliyunRouterInterfaceInventory> getInventories() {
         return this.inventories;
     }
 

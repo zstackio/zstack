@@ -3,7 +3,7 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class DeleteRouterInterfaceRemoteAction extends AbstractAction {
+public class QueryHybridKeySecretAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -11,7 +11,7 @@ public class DeleteRouterInterfaceRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteRouterInterfaceRemoteResult value;
+        public QueryHybridKeySecretResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -24,29 +24,6 @@ public class DeleteRouterInterfaceRemoteAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = true, validValues = {"vrouter","vbr"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vRouterType;
-
-    @Param(required = false)
-    public java.lang.String deleteMode = "Permissive";
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = true)
-    public String sessionId;
-
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -56,8 +33,8 @@ public class DeleteRouterInterfaceRemoteAction extends AbstractAction {
             return ret;
         }
         
-        DeleteRouterInterfaceRemoteResult value = res.getResult(DeleteRouterInterfaceRemoteResult.class);
-        ret.value = value == null ? new DeleteRouterInterfaceRemoteResult() : value; 
+        QueryHybridKeySecretResult value = res.getResult(QueryHybridKeySecretResult.class);
+        ret.value = value == null ? new QueryHybridKeySecretResult() : value; 
 
         return ret;
     }
@@ -86,10 +63,10 @@ public class DeleteRouterInterfaceRemoteAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/hybrid/aliyun/router-interface/remote/{uuid}";
+        info.httpMethod = "GET";
+        info.path = "/hybrid/hybrid/key";
         info.needSession = true;
-        info.needPoll = true;
+        info.needPoll = false;
         info.parameterName = "";
         return info;
     }

@@ -3,7 +3,7 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class QueryRouterInterfaceFromLocalAction extends QueryAction {
+public class QueryDahoCloudConnectionAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -11,7 +11,7 @@ public class QueryRouterInterfaceFromLocalAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryRouterInterfaceFromLocalResult value;
+        public QueryDahoCloudConnectionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +33,8 @@ public class QueryRouterInterfaceFromLocalAction extends QueryAction {
             return ret;
         }
         
-        QueryRouterInterfaceFromLocalResult value = res.getResult(QueryRouterInterfaceFromLocalResult.class);
-        ret.value = value == null ? new QueryRouterInterfaceFromLocalResult() : value; 
+        QueryDahoCloudConnectionResult value = res.getResult(QueryDahoCloudConnectionResult.class);
+        ret.value = value == null ? new QueryDahoCloudConnectionResult() : value; 
 
         return ret;
     }
@@ -64,7 +64,7 @@ public class QueryRouterInterfaceFromLocalAction extends QueryAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/hybrid/aliyun/router-interface";
+        info.path = "/hybrid/daho/cloud_connections";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

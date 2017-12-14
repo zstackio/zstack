@@ -1,11 +1,11 @@
 package org.zstack.sdk;
 
-public class QueryRouterInterfaceFromLocalResult {
-    public java.util.List<VirtualRouterInterfaceInventory> inventories;
-    public void setInventories(java.util.List<VirtualRouterInterfaceInventory> inventories) {
+public class QueryHybridKeySecretResult {
+    public java.util.List<HybridAccountInventory> inventories;
+    public void setInventories(java.util.List<HybridAccountInventory> inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<VirtualRouterInterfaceInventory> getInventories() {
+    public java.util.List<HybridAccountInventory> getInventories() {
         return this.inventories;
     }
 

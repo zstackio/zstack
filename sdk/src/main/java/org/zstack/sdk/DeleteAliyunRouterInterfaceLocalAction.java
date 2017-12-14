@@ -3,7 +3,7 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class DeleteRouterInterfaceLocalAction extends AbstractAction {
+public class DeleteAliyunRouterInterfaceLocalAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -11,7 +11,7 @@ public class DeleteRouterInterfaceLocalAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteRouterInterfaceLocalResult value;
+        public DeleteAliyunRouterInterfaceLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class DeleteRouterInterfaceLocalAction extends AbstractAction {
             return ret;
         }
         
-        DeleteRouterInterfaceLocalResult value = res.getResult(DeleteRouterInterfaceLocalResult.class);
-        ret.value = value == null ? new DeleteRouterInterfaceLocalResult() : value; 
+        DeleteAliyunRouterInterfaceLocalResult value = res.getResult(DeleteAliyunRouterInterfaceLocalResult.class);
+        ret.value = value == null ? new DeleteAliyunRouterInterfaceLocalResult() : value; 
 
         return ret;
     }

@@ -3,7 +3,7 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class UpdateRouteInterfaceRemoteAction extends AbstractAction {
+public class AttachHybridKeyAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -11,7 +11,7 @@ public class UpdateRouteInterfaceRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateRouteInterfaceRemoteResult value;
+        public AttachHybridKeyResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,12 +26,6 @@ public class UpdateRouteInterfaceRemoteAction extends AbstractAction {
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
-
-    @Param(required = true, validValues = {"active","inactive"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String op;
-
-    @Param(required = true, validValues = {"vbr","vrouter"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vRouterType;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -56,8 +50,8 @@ public class UpdateRouteInterfaceRemoteAction extends AbstractAction {
             return ret;
         }
         
-        UpdateRouteInterfaceRemoteResult value = res.getResult(UpdateRouteInterfaceRemoteResult.class);
-        ret.value = value == null ? new UpdateRouteInterfaceRemoteResult() : value; 
+        AttachHybridKeyResult value = res.getResult(AttachHybridKeyResult.class);
+        ret.value = value == null ? new AttachHybridKeyResult() : value; 
 
         return ret;
     }
@@ -87,10 +81,10 @@ public class UpdateRouteInterfaceRemoteAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/hybrid/aliyun/router-interface/{uuid}/actions";
+        info.path = "/hybrid/hybrid/key/{uuid}/attach";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "updateRouteInterfaceRemote";
+        info.parameterName = "attachHybridKey";
         return info;
     }
 

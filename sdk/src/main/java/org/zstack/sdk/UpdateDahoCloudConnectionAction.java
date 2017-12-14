@@ -3,7 +3,7 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SyncRouterInterfaceFromRemoteAction extends AbstractAction {
+public class UpdateDahoCloudConnectionAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -11,7 +11,7 @@ public class SyncRouterInterfaceFromRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SyncRouterInterfaceFromRemoteResult value;
+        public UpdateDahoCloudConnectionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,10 +25,13 @@ public class SyncRouterInterfaceFromRemoteAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String dataCenterUuid;
+    public java.lang.String uuid;
 
-    @Param(required = false)
-    public java.lang.String resourceUuid;
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = false, maxLength = 1024, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String description;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -53,8 +56,8 @@ public class SyncRouterInterfaceFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        SyncRouterInterfaceFromRemoteResult value = res.getResult(SyncRouterInterfaceFromRemoteResult.class);
-        ret.value = value == null ? new SyncRouterInterfaceFromRemoteResult() : value; 
+        UpdateDahoCloudConnectionResult value = res.getResult(UpdateDahoCloudConnectionResult.class);
+        ret.value = value == null ? new UpdateDahoCloudConnectionResult() : value; 
 
         return ret;
     }
@@ -84,10 +87,10 @@ public class SyncRouterInterfaceFromRemoteAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/hybrid/aliyun/router-interface/{dataCenterUuid}/sync";
+        info.path = "/hybrid/daho/cloud_connections/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "syncRouterInterfaceFromRemote";
+        info.parameterName = "updateDahoCloudConnection";
         return info;
     }
 
