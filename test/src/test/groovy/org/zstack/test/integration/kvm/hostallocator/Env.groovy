@@ -70,7 +70,7 @@ This environment is modeled with the issue reported in #829.
                     }
 
                     kvm {
-                        name = "kvm2"
+                        name = "kvm3"
                         managementIp = "127.0.0.4"
                         username = "root"
                         password = "password"
@@ -79,13 +79,13 @@ This environment is modeled with the issue reported in #829.
                         totalMem = SizeUnit.GIGABYTE.toByte(10)
                     }
 
-                    attachPrimaryStorage("local")
+                    attachPrimaryStorage("nfs")
                     attachL2Network("l2")
                 }
 
-                localPrimaryStorage {
-                    name = "local"
-                    url = "/local_ps"
+                nfsPrimaryStorage {
+                    name = "nfs"
+                    url = "/nfs_root"
                 }
 
                 l2NoVlanNetwork {

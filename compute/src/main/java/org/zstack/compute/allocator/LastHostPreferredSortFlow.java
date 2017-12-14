@@ -17,10 +17,6 @@ import java.util.Optional;
 public class LastHostPreferredSortFlow extends AbstractHostSortorFlow {
     @Override
     public void sort() {
-        if (spec.isListAllHosts()) {
-            return;
-        }
-
         final VmInstanceInventory vm = spec.getVmInstance();
         Optional<HostInventory> hosts = candidates.stream().filter(candidate -> candidate.getUuid().equals(vm.getLastHostUuid())).findAny();
         List<HostInventory> sorted = new ArrayList<>();

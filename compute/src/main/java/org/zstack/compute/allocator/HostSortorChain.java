@@ -49,25 +49,9 @@ public class HostSortorChain implements HostSortorStrategy {
 
     // adjust hosts
     private void reSortHosts(final List<HostInventory> sub, List<HostInventory> hosts) {
-        if (sub.size() == hosts.size()) {
-            hosts.clear();
-            hosts.addAll(sub);
-            return;
-        } else if (sub.size() == 0) {
-            return;
-        }
-
-        DebugUtils.Assert(sub.size() < hosts.size(), "subHosts' size must less than hosts' size");
-
-        List<HostInventory> tmp = new ArrayList<>();
-        tmp.addAll(sub);
-        hosts.forEach(host -> {
-            if (!sub.contains(host)) {
-                tmp.add(host);
-            }
-        });
-        hosts.clear();
-        hosts.addAll(tmp);
+        DebugUtils.Assert(sub.size() <= hosts.size(), "subHosts' size cannot larger than hosts' size");
+        hosts.removeAll(sub);
+        hosts.addAll(0, sub);
     }
 
     private void sort(List<HostInventory> hosts) {
@@ -83,15 +67,13 @@ public class HostSortorChain implements HostSortorStrategy {
             flow.setSpec(allocationSpec);
             logger.debug(String.format("sort by flow: %s", flow.getClass().getSimpleName()));
             flow.sort();
+            reSortHosts(subHosts, hosts);
+            subHosts = flow.getSubCandidates();
 
             if (flow.skipNext()) {
                 break;
-            } else {
-                reSortHosts(subHosts, hosts);
-                subHosts = flow.getSubCandidates();
             }
         }
-        reSortHosts(subHosts, hosts);
         done(hosts);
     }
 
