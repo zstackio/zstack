@@ -27,10 +27,13 @@ public class SetVipQosAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {8192L,34359738367L}, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,65535L}, noTrim = false)
+    public java.lang.Integer port;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1048575L,9223372036854775807L}, noTrim = false)
     public java.lang.Long outboundBandwidth;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {8192L,34359738367L}, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1048575L,9223372036854775807L}, noTrim = false)
     public java.lang.Long inboundBandwidth;
 
     @Param(required = false)
