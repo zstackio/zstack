@@ -122,6 +122,12 @@
         <class>org.zstack.storage.fusionstor.primary.FusionstorPrimaryStorageMonVO</class>
         <class>org.zstack.storage.fusionstor.primary.FusionstorPrimaryStorageVO</class>
         <class>org.zstack.storage.fusionstor.FusionstorCapacityVO</class>
+        <class>org.zstack.storage.surfs.backup.SurfsBackupStorageVO</class>
+        <class>org.zstack.storage.surfs.backup.SurfsBackupStorageNodeVO</class>
+        <class>org.zstack.storage.surfs.primary.SurfsPrimaryStorageNodeVO</class>
+        <class>org.zstack.storage.surfs.primary.SurfsPrimaryStorageVO</class>
+        <class>org.zstack.storage.surfs.SurfsCapacityVO</class>
+        <class>org.zstack.storage.surfs.SurfsPoolClassVO</class>
         <class>org.zstack.core.gc.GarbageCollectorVO</class>
         <class>org.zstack.header.storage.primary.ImageCacheVolumeRefVO</class>
         <class>org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO</class>
