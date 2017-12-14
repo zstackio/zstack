@@ -8,6 +8,8 @@ import org.kohsuke.groovy.sandbox.impl.Super
 import org.zstack.core.Platform
 import org.zstack.header.errorcode.OperationFailureException
 import org.zstack.header.exception.CloudRuntimeException
+import org.zstack.header.identity.AccountConstant
+import org.zstack.header.identity.Action
 import org.zstack.header.identity.SessionInventory
 import org.zstack.header.query.APIQueryMessage
 import org.zstack.header.query.AutoQuery
@@ -171,10 +173,16 @@ class BatchQuery {
         }
 
         APIQueryMessage msg = msgClz.newInstance() as APIQueryMessage
+        msg.setSession(session)
+        if (AccountConstant.INITIAL_SYSTEM_ADMIN_UUID != msg.session.accountUuid && !msgClz.isAnnotationPresent(Action.class)) {
+            // the resource is owned by admin and the account is a normal account
+            //TODO: fix hard code check admin query
+            return ["total": 0, "result": []]
+        }
+
         msg.setConditions([])
         boolean count = false
         boolean replyWithCount = false
-        msg.setSession(session)
 
         AutoQuery at = msg.getClass().getAnnotation(AutoQuery.class)
         if (at == null) {
