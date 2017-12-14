@@ -13,6 +13,7 @@ import org.zstack.header.query.APIQueryMessage
 import org.zstack.header.query.AutoQuery
 import org.zstack.header.query.QueryCondition
 import org.zstack.header.query.QueryOp
+import org.zstack.header.search.Inventory
 
 import java.lang.reflect.Modifier
 
@@ -32,7 +33,8 @@ class BatchQuery {
                 Date.class,
                 Map.class,
                 Collection.class,
-                Script.class
+                Script.class,
+                Enum.class
         ]
 
         static void checkReceiver(Object obj) {
@@ -41,25 +43,35 @@ class BatchQuery {
 
         static void checkReceiver(Class clz) {
             if (clz.name.startsWith("org.zstack")) {
-                return
-            }
-
-            for (Class wclz : RECEIVER_WHITE_LIST) {
-                if (wclz.isAssignableFrom(clz)) {
+                if (clz.isAnnotationPresent(Inventory.class)) {
                     return
+                }
+            } else {
+                for (Class wclz : RECEIVER_WHITE_LIST) {
+                    if (wclz.isAssignableFrom(clz)) {
+                        return
+                    }
                 }
             }
 
             throw new Exception("invalid operation on class[${clz.name}]")
         }
 
+        static void checkMethod(String method) {
+            if (method == "sleep") {
+                throw new Exception("invalid operation[${method}]")
+            }
+        }
+
         Object onMethodCall(GroovyInterceptor.Invoker invoker, Object receiver, String method, Object... args) throws Throwable {
             checkReceiver(receiver)
+            checkMethod(method)
             return super.onMethodCall(invoker, receiver, method, args)
         }
 
         Object onStaticCall(GroovyInterceptor.Invoker invoker, Class receiver, String method, Object... args) throws Throwable {
             checkReceiver(receiver)
+            checkMethod(method)
             return super.onStaticCall(invoker, receiver, method, args)
         }
 
