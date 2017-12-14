@@ -2111,7 +2111,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     @Override
                     public void success(T ret) {
                         if (!ret.success) {
-                            callback.fail(operr(ret.error));
+                            callback.fail(operr("operation error, because:%s", ret.error));
                             return;
                         }
 
@@ -2537,7 +2537,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 primaryStorageDown();
                             } else if (!res.success || PingOperationFailure.MonAddrChanged.toString().equals(res.failure)) {
                                 // this mon is down(success == false, operationFailure == false), but the primary storage may still work as other mons may work
-                                ErrorCode errorCode = operr(res.error);
+                                ErrorCode errorCode = operr("operation error, because:%s", res.error);
                                 thisMonIsDown(errorCode);
                             } else {
                                 throw new CloudRuntimeException("should not be here");
