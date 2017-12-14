@@ -117,6 +117,7 @@ public class VmAllocateNicFlow implements Flow {
                 ErrorCode err = null;
                 for (MessageReply r : replies) {
                     if (r.isSuccess()) {
+
                         int deviceId = deviceIdBitmap.nextClearBit(0);
                         deviceIdBitmap.set(deviceId);
                         AllocateIpReply areply = r.castReply();
@@ -126,8 +127,11 @@ public class VmAllocateNicFlow implements Flow {
                         nic.setUsedIpUuid(areply.getIpInventory().getUuid());
                         nic.setVmInstanceUuid(spec.getVmInventory().getUuid());
                         nic.setL3NetworkUuid(areply.getIpInventory().getL3NetworkUuid());
+
                         assert nic.getL3NetworkUuid() != null;
-                        nic.setMac(NetworkUtils.generateMacWithDeviceId((short) deviceId));
+                        String customMac = new MacOperator().getMac(spec.getVmInventory().getUuid(), nic.getL3NetworkUuid());
+
+                        nic.setMac(customMac != null ? customMac : NetworkUtils.generateMacWithDeviceId((short) deviceId));
                         nic.setDeviceId(deviceId);
                         nic.setNetmask(areply.getIpInventory().getNetmask());
                         nic.setGateway(areply.getIpInventory().getGateway());
