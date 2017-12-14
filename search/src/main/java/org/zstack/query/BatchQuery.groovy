@@ -14,6 +14,7 @@ import org.zstack.header.query.AutoQuery
 import org.zstack.header.query.QueryCondition
 import org.zstack.header.query.QueryOp
 import org.zstack.header.search.Inventory
+import org.zstack.utils.gson.JSONObjectUtil
 
 import java.lang.reflect.Modifier
 
@@ -42,15 +43,9 @@ class BatchQuery {
         }
 
         static void checkReceiver(Class clz) {
-            if (clz.name.startsWith("org.zstack")) {
-                if (clz.isAnnotationPresent(Inventory.class)) {
+            for (Class wclz : RECEIVER_WHITE_LIST) {
+                if (wclz.isAssignableFrom(clz)) {
                     return
-                }
-            } else {
-                for (Class wclz : RECEIVER_WHITE_LIST) {
-                    if (wclz.isAssignableFrom(clz)) {
-                        return
-                    }
                 }
             }
 
@@ -255,7 +250,7 @@ class BatchQuery {
             ret = queryf.query(msg, inventoryClass)
         }
 
-        return ["total": total, "result": ret]
+        return ["total": total, "result": JSONObjectUtil.rehashObject(ret, ArrayList.class)]
     }
 
     private String errorLine(String code, Throwable  e) {
