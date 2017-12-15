@@ -227,7 +227,11 @@
                     <artifactId>vxlan</artifactId>
                     <version>${project.version}</version>
                 </dependency>
-
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>longjob</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
                     <artifactId>mevoco</artifactId>
@@ -454,6 +458,11 @@
         <dependency>
             <groupId>org.zstack</groupId>
             <artifactId>vxlan</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>longjob</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

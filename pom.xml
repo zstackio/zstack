@@ -38,6 +38,7 @@
         <module>sdk</module>
         <module>testlib</module>
         <module>coregroovy</module>
+        <module>longjob</module>
     </modules>
 
     <dependencyManagement>

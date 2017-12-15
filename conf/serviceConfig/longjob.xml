@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>longjob</id>
+    <interceptor>LongJobApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.header.longjob.APISubmitLongJobMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.longjob.APICancelLongJobMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.longjob.APIDeleteLongJobMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.longjob.APIQueryLongJobMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+</service>
