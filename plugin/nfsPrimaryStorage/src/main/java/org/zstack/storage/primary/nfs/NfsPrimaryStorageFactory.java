@@ -54,6 +54,7 @@ import java.util.concurrent.Callable;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.CollectionDSL.map;
 
 public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, PrimaryStorageFactory, Component, CreateTemplateFromVolumeSnapshotExtensionPoint, RecalculatePrimaryStorageCapacityExtensionPoint,
@@ -651,9 +652,10 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
     @Override
     public void afterAttachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
         if(inventory.getType().equals(NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE)){
-            Q.New(HostVO.class)
-                    .select(HostVO_.uuid)
+            Q.New(HostVO.class).select(HostVO_.uuid)
                     .eq(HostVO_.clusterUuid, clusterUuid)
+                    .eq(HostVO_.status, HostStatus.Connected)
+                    .notIn(HostVO_.state, list(HostState.PreMaintenance, HostState.Maintenance))
                     .listValues()
                     .forEach(huuid ->
                             updateNfsHostStatus(inventory.getUuid(), (String)huuid, PrimaryStorageHostStatus.Connected));

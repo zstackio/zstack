@@ -1101,107 +1101,59 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             return;
         }
 
-        FlowChain chain = FlowChainBuilder.newShareFlowChain();
-        chain.setName(String.format("reconnect-nfs-primary-storage-%s", self.getUuid()));
-        chain.then(new ShareFlow() {
-            @Override
-            public void setup() {
-                flow(new NoRollbackFlow() {
-                    String __name__ = "ping";
+        logger.debug(String.format("reconnect-nfs-primary-storage-%s", self.getUuid()));
+        SimpleQuery<PrimaryStorageClusterRefVO> q = dbf.createQuery(PrimaryStorageClusterRefVO.class);
+        q.select(PrimaryStorageClusterRefVO_.clusterUuid);
+        q.add(PrimaryStorageClusterRefVO_.primaryStorageUuid, Op.EQ, self.getUuid());
+        List<String> cuuids = q.listValue();
+        if (cuuids.isEmpty()) {
+            completion.success();
+            return;
+        }
 
+        PrimaryStorageInventory inv = getSelfInventory();
+        new LoopAsyncBatch<String>(completion) {
+            boolean success;
+
+            @Override
+            protected Collection<String> collect() {
+                return cuuids;
+            }
+
+            @Override
+            protected AsyncBatchRunner forEach(String cuuid) {
+                return new AsyncBatchRunner() {
                     @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        backend.ping(getSelfInventory(), new Completion(trigger) {
+                    public void run(NoErrorCompletion completion) {
+                        NfsPrimaryStorageBackend bkd = getBackendByClusterUuid(cuuid);
+                        bkd.remount(inv, cuuid, new Completion(completion) {
                             @Override
                             public void success() {
-                                trigger.next();
+                                success = true;
+                                completion.done();
                             }
 
                             @Override
                             public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
+                                errors.add(errorCode);
+                                completion.done();
                             }
                         });
                     }
-                });
-
-                flow(new NoRollbackFlow() {
-                    String __name__ = "remount";
-
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        SimpleQuery<PrimaryStorageClusterRefVO> q = dbf.createQuery(PrimaryStorageClusterRefVO.class);
-                        q.select(PrimaryStorageClusterRefVO_.clusterUuid);
-                        q.add(PrimaryStorageClusterRefVO_.primaryStorageUuid, Op.EQ, self.getUuid());
-                        List<String> cuuids = q.listValue();
-
-                        if (cuuids.isEmpty()) {
-                            trigger.next();
-                            return;
-                        }
-
-                        PrimaryStorageInventory inv = getSelfInventory();
-
-                        new LoopAsyncBatch<String>(trigger) {
-                            boolean success;
-
-                            @Override
-                            protected Collection<String> collect() {
-                                return cuuids;
-                            }
-
-                            @Override
-                            protected AsyncBatchRunner forEach(String cuuid) {
-                                return new AsyncBatchRunner() {
-                                    @Override
-                                    public void run(NoErrorCompletion completion) {
-                                        NfsPrimaryStorageBackend bkd = getBackendByClusterUuid(cuuid);
-                                        bkd.remount(inv, cuuid, new Completion(completion) {
-                                            @Override
-                                            public void success() {
-                                                success = true;
-                                                completion.done();
-                                            }
-
-                                            @Override
-                                            public void fail(ErrorCode errorCode) {
-                                                errors.add(errorCode);
-                                                completion.done();
-                                            }
-                                        });
-                                    }
-                                };
-                            }
-
-                            @Override
-                            protected void done() {
-                                if (success) {
-                                    self = dbf.reload(self);
-                                    trigger.next();
-                                } else {
-                                    trigger.fail(errf.stringToOperationError(String.format("unable to connect the" +
-                                            "NFS primary storage[uuid:%s, name:%s]", self.getUuid(), self.getName()), errors));
-                                }
-                            }
-                        }.start();
-                    }
-                });
-
-                done(new FlowDoneHandler(completion) {
-                    @Override
-                    public void handle(Map data) {
-                        completion.success();
-                    }
-                });
-
-                error(new FlowErrorHandler(completion) {
-                    @Override
-                    public void handle(ErrorCode errCode, Map data) {
-                        completion.fail(errCode);
-                    }
-                });
+                };
             }
-        }).start();
+
+            @Override
+            protected void done() {
+                if (success) {
+                    self = dbf.reload(self);
+                    completion.success();
+                } else {
+                    completion.fail(errf.stringToOperationError(String.format("unable to connect the" +
+                            "NFS primary storage[uuid:%s, name:%s]", self.getUuid(), self.getName()), errors));
+                }
+            }
+        }.start();
     }
 
     @Override
