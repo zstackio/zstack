@@ -4,7 +4,6 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.zstack.compute.allocator.HostAllocatorManager;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
@@ -823,7 +822,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                         String s = cr.getStates().get(self.getUuid());
                         VmInstanceState state = VmInstanceState.valueOf(s);
                         if (state != self.getState()) {
-                            VmStateChangedOnHostMsg vcmsg = new VmStateChangedOnHostMsg(logger, "vmInstanceBase send VmStateChangedOnHostMsg");
+                            VmStateChangedOnHostMsg vcmsg = new VmStateChangedOnHostMsg();
                             vcmsg.setHostUuid(self.getHostUuid());
                             vcmsg.setVmInstanceUuid(self.getUuid());
                             vcmsg.setStateOnHost(state);
