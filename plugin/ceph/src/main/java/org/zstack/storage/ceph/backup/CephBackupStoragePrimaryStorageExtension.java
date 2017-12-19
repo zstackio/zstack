@@ -18,9 +18,4 @@ public class CephBackupStoragePrimaryStorageExtension implements BackupStoragePr
         }
         return CephBackupStorageGlobalProperty.CEPH_BACKUPSTORAGE_PRIORITY;
     }
-
-    @Override
-    public List<String> getExcludePrimaryStorageTypeList(BackupStorageInventory bs, ImageInventory image) {
-        return CollectionDSL.list();
-    }
 }

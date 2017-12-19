@@ -14,9 +14,6 @@ import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.ImageBackupStorageRefInventory;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
-import org.zstack.header.storage.backup.BackupStorageInventory;
-import org.zstack.header.storage.backup.BackupStoragePrimaryStorageExtensionPoint;
-import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.primary.ImageCacheVO;
 import org.zstack.header.storage.primary.ImageCacheVO_;
 import org.zstack.header.vm.VmInstanceConstant;
@@ -136,7 +133,6 @@ public class VmImageSelectBackupStorageFlow extends NoRollbackFlow {
                         }
                     }));
 
-            addExcludePrimaryStorageForImage(spec);
             if (ImageMediaType.ISO.toString().equals(spec.getImageSpec().getInventory().getMediaType())) {
                 spec.getDestIso().setBackupStorageUuid(bsUuid);
             }
@@ -149,21 +145,5 @@ public class VmImageSelectBackupStorageFlow extends NoRollbackFlow {
         }
 
         trigger.next();
-    }
-
-    private void addExcludePrimaryStorageForImage(VmInstanceSpec spec) {
-        DebugUtils.Assert(spec.getImageSpec().getSelectedBackupStorage() != null, "select backup storage couldn't be null");
-        BackupStorageInventory bs = BackupStorageInventory.valueOf(
-                dbf.findByUuid(spec.getImageSpec().getSelectedBackupStorage().getBackupStorageUuid(), BackupStorageVO.class));
-
-        List<BackupStoragePrimaryStorageExtensionPoint> exts =
-                pluginRgty.getExtensionList(BackupStoragePrimaryStorageExtensionPoint.class);
-        exts.forEach(ext -> {
-            List<String> excludePsTypes = ext.getExcludePrimaryStorageTypeList(bs, spec.getImageSpec().getInventory());
-            if (excludePsTypes != null && !excludePsTypes.isEmpty()) {
-                spec.addExcludePrimaryStorageUuidsForRootVolume(excludePsTypes);
-                spec.addExcludePrimaryStorageUuidsForDataVolume(excludePsTypes);
-            }
-        });
     }
 }
