@@ -127,7 +127,7 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
                             chain.next();
                             return;
                         }
-                        VmStateChangedOnHostMsg msg = new VmStateChangedOnHostMsg(logger, "registerSyncHttpCallHandler send VmStateChangedOnHostMsg");
+                        VmStateChangedOnHostMsg msg = new VmStateChangedOnHostMsg();
                         msg.setVmStateAtTracingMoment(stateInDb);
                         msg.setVmInstanceUuid(cmd.vmUuid);
                         msg.setStateOnHost(state);

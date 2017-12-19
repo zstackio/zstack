@@ -74,7 +74,7 @@ public abstract class VmTracer {
         }
 
         private void handleStateChangeOnHostSide(final String vmUuid, final VmInstanceState actualState, VmInstanceState expected) {
-            VmStateChangedOnHostMsg msg = new VmStateChangedOnHostMsg(logger, "handleStateChangeOnHostSide send VmStateChangedOnHostMsg");
+            VmStateChangedOnHostMsg msg = new VmStateChangedOnHostMsg();
             msg.setVmStateAtTracingMoment(expected);
             msg.setVmInstanceUuid(vmUuid);
             msg.setStateOnHost(actualState);
@@ -113,7 +113,7 @@ public abstract class VmTracer {
         }
 
         private void handleMissingVm(final String vmUuid, final VmInstanceState expectedState) {
-            VmStateChangedOnHostMsg msg = new VmStateChangedOnHostMsg(logger, "handleMissingVm send VmStateChangedOnHostMsg (vm: %s, host: %s, expect state %s, setState Stopped)");
+            VmStateChangedOnHostMsg msg = new VmStateChangedOnHostMsg();
             msg.setVmStateAtTracingMoment(expectedState);
             msg.setHostUuid(hostUuid);
             msg.setVmInstanceUuid(vmUuid);
