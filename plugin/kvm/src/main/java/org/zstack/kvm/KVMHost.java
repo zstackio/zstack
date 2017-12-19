@@ -68,6 +68,7 @@ import org.zstack.utils.ssh.SshShell;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
@@ -1926,6 +1927,7 @@ public class KVMHost extends HostBase implements Host {
             }
             nics.add(completeNicInfo(nic));
         }
+        nics = nics.stream().sorted(Comparator.comparing(NicTO::getDeviceId)).collect(Collectors.toList());
         cmd.setNics(nics);
 
         if (spec.getDestIso() != null) {
