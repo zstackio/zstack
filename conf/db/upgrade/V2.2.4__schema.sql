@@ -19,3 +19,6 @@ CREATE TABLE  `zstack`.`LongJobVO` (
     PRIMARY KEY  (`uuid`),
     CONSTRAINT `fkLongJobVOManagementNodeVO` FOREIGN KEY (`managementNodeUuid`) REFERENCES `ManagementNodeVO` (`uuid`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE EcsInstanceVO ADD COLUMN publicIpAddress varchar(32) DEFAULT NULL;
+DELETE FROM SystemTagVO WHERE tag LIKE 'publicIp::%' AND resourceType='EcsInstanceVO';

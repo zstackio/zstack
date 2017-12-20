@@ -106,6 +106,14 @@ public class EcsInstanceInventory  {
         return this.privateIpAddress;
     }
 
+    public java.lang.String publicIpAddress;
+    public void setPublicIpAddress(java.lang.String publicIpAddress) {
+        this.publicIpAddress = publicIpAddress;
+    }
+    public java.lang.String getPublicIpAddress() {
+        return this.publicIpAddress;
+    }
+
     public java.lang.String ecsVSwitchUuid;
     public void setEcsVSwitchUuid(java.lang.String ecsVSwitchUuid) {
         this.ecsVSwitchUuid = ecsVSwitchUuid;
