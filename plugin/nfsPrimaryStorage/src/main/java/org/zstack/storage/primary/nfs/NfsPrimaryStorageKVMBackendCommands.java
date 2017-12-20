@@ -1,5 +1,6 @@
 package org.zstack.storage.primary.nfs;
 
+import org.zstack.header.HasThreadContext;
 import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeMsg;
@@ -641,7 +642,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
     public static class UpdateMountPointRsp extends NfsPrimaryStorageAgentResponse {
     }
 
-    public static class NfsToNfsMigrateVolumeCmd extends NfsPrimaryStorageAgentCommand {
+    public static class NfsToNfsMigrateVolumeCmd extends NfsPrimaryStorageAgentCommand implements HasThreadContext {
         public String srcVolumeFolderPath;
         public String dstVolumeFolderPath;
     }
