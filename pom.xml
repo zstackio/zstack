@@ -402,29 +402,6 @@
                     </docletArtifact>
                 </configuration>
             </plugin>
-
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.7.9</version>
-
-                <!--
-                <configuration>
-                    <excludes>
-                        <exclude>*</exclude>
-                    </excludes>
-                </configuration>
-                -->
-
-                <executions>
-                    <execution>
-                        <id>instrument</id>
-                        <goals>
-                            <goal>instrument</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
 

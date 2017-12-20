@@ -224,11 +224,101 @@
 	        <groupId>com.github.javaparser</groupId>
 	        <artifactId>javaparser-core</artifactId>
 	    </dependency>
-
     </dependencies>
+
+    <profiles>
+        <profile>
+            <id>coverage</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>1.8</version>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+
+                                <id>default-cli</id>
+                                <configuration>
+                                    <target>
+                                        <!-- Execute an ant task within maven -->
+                                        <echo message="Generating JaCoCo Reports"/>
+                                        <taskdef name="report" classname="org.jacoco.ant.ReportTask">
+                                            <classpath path="${basedir}/target/jacoco-jars/*.jar"/>
+                                        </taskdef>
+
+                                        <mkdir dir="${basedir}/target/coverage-report"/>
+
+                                        <report>
+                                            <executiondata>
+                                                <fileset dir="${basedir}">
+                                                    <include name="target/jacoco.exec"/>
+                                                </fileset>
+                                            </executiondata>
+
+                                            <structure name="Integration Tests Coverage Report">
+                                                <classfiles>
+                                                    <fileset dir="${basedir}/target/classes"/>
+                                                </classfiles>
+
+                                                <sourcefiles encoding="UTF-8">
+                                                    <dirset dir="${project.basedir}/../">
+                                                        <include name="**/java" />
+                                                        <include name="**/groovy" />
+                                                    </dirset>
+                                                </sourcefiles>
+                                            </structure>
+                                            <html destdir="${basedir}/target/coverage-report/html"/>
+                                            <xml destfile="${basedir}/target/coverage-report/coverage-report.xml"/>
+                                            <csv destfile="${basedir}/target/coverage-report/coverage-report.csv"/>
+                                        </report>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.jacoco</groupId>
+                                <artifactId>org.jacoco.ant</artifactId>
+                                <version>0.7.9</version>
+                            </dependency>
+                        </dependencies>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.7.9</version>
+
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                        <configuration>
+                            <append>true</append>
+                            <classDumpDir>target/classes</classDumpDir>
+                            <includes>
+                                <include>org.zstack.*</include>
+                            </includes>
+                            <destFile>target/jacoco.exec</destFile>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -242,6 +332,7 @@
                     -->
                 </configuration>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -252,6 +343,7 @@
                     <debug>true</debug>
                 </configuration>
             </plugin>
+
 	    <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
