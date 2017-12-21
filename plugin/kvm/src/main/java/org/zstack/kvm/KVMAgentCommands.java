@@ -5,6 +5,7 @@ import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotMsg;
 import org.zstack.header.vm.APICreateVmInstanceMsg;
+import org.zstack.header.vm.APIMigrateVmMsg;
 import org.zstack.header.vm.VmBootDevice;
 import org.zstack.header.volume.APICreateVolumeSnapshotMsg;
 import org.zstack.network.securitygroup.SecurityGroupMembersTO;
@@ -1333,6 +1334,7 @@ public class KVMAgentCommands {
     public static class ApplySecurityGroupRuleResponse extends AgentResponse {
     }
 
+    @ApiTimeout(apiClasses = {APIMigrateVmMsg.class})
     public static class MigrateVmCmd extends AgentCommand {
         private String vmUuid;
         private String destHostIp;
