@@ -69,4 +69,10 @@
             <zstack:extension interface="org.zstack.header.Component" />
         </zstack:plugin>
     </bean>
+
+    <bean id="FlatEipApiInterceptor" class="org.zstack.network.service.flat.FlatEipApiInterceptor">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor" />
+        </zstack:plugin>
+    </bean>
 </beans>
