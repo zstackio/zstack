@@ -463,7 +463,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         DesignatedAllocateHostMsg amsg = new DesignatedAllocateHostMsg();
 
         ImageVO image = dbf.findByUuid(msg.getImageUuid(), ImageVO.class);
-        if (image.getMediaType() == ImageMediaType.ISO && msg.getRootDiskOfferingUuid() == null) {
+        if (image != null && image.getMediaType() == ImageMediaType.ISO && msg.getRootDiskOfferingUuid() == null) {
             throw new OperationFailureException(argerr("the image[name:%s, uuid:%s] is an ISO, rootDiskOfferingUuid must be set",
                             image.getName(), image.getUuid()));
         }

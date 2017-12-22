@@ -141,7 +141,9 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
 
         AllocatePrimaryStorageMsg rmsg = new AllocatePrimaryStorageMsg();
         rmsg.setVmInstanceUuid(spec.getVmInventory().getUuid());
-        rmsg.setImageUuid(spec.getImageSpec().getInventory().getUuid());
+        if (spec.getImageSpec() != null) {
+            rmsg.setImageUuid(spec.getImageSpec().getInventory().getUuid());
+        }
         rmsg.setRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForRootVolume());
         rmsg.setRequiredHostUuid(spec.getDestHost().getUuid());
         if (ImageMediaType.ISO.toString().equals(spec.getImageSpec().getInventory().getMediaType())) {
@@ -201,7 +203,9 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
 
             amsg.setPossiblePrimaryStorageTypes(primaryStorageTypes);
             amsg.setDiskOfferingUuid(dinv.getUuid());
-            amsg.setImageUuid(spec.getImageSpec().getInventory().getUuid());
+            if (spec.getImageSpec() != null) {
+                amsg.setImageUuid(spec.getImageSpec().getInventory().getUuid());
+            }
             bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
             msgs.add(amsg);
         }
