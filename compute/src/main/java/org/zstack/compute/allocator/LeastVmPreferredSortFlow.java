@@ -29,45 +29,23 @@ public class LeastVmPreferredSortFlow extends AbstractHostSortorFlow {
     private DatabaseFacade dbf;
 
     @Transactional(readOnly = true)
-    private List<Tuple> findLeastVmHost(List<String> huuids) {
-        String sql = "select count(vm) as cnt, host.uuid" +
+    private List<String> findLeastVmHost(List<String> huuids) {
+        String sql = "select host.uuid" +
                 " from HostVO host" +
                 " Left Join VmInstanceVO vm on host.uuid = vm.hostUuid" +
                 " where host.uuid in (:huuids)" +
-                " group by host.uuid order by cnt";
-        TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
+                " group by host.uuid order by count(vm)";
+        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("huuids", huuids);
         return q.getResultList();
     }
 
     @Override
     public void sort() {
-        if (spec.isListAllHosts()) {
-            return;
-        }
+        Map<String, HostInventory> hosts = candidates.stream().collect(Collectors.toMap(HostInventory::getUuid, (candidate) -> candidate));
+        List<String> sortedHostUuids = findLeastVmHost(candidates.stream().map(HostInventory::getUuid).collect(Collectors.toList()));
 
-        Map<String, HostInventory> hosts = candidates.stream().
-                collect(Collectors.toMap(HostInventory::getUuid, (candidate) -> candidate));
-        List<String> tmp = CollectionUtils.transformToList(
-                findLeastVmHost(hosts.entrySet().stream().map(Map.Entry::getKey).collect(Collectors.toList())), new Function<String, Tuple>() {
-                    @Override
-                    public String call(Tuple arg) {
-                        return arg.get(1, String.class);
-                    }
-                });
-
-        List<HostInventory> sorted = new ArrayList<>(candidates.size());
-
-        candidates.forEach(candidate -> {
-            if (!tmp.contains(candidate.getUuid())) {
-                sorted.add(candidate);
-            }
-        });
-
-        tmp.forEach(huuid -> {
-            sorted.add(hosts.get(huuid));
-        });
         candidates.clear();
-        candidates.addAll(sorted);
+        sortedHostUuids.forEach(huuid -> candidates.add(hosts.get(huuid)));
     }
 }
