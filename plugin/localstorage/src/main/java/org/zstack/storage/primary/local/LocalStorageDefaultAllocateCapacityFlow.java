@@ -145,7 +145,9 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
         AllocatePrimaryStorageMsg rmsg = new AllocatePrimaryStorageMsg();
         rmsg.setAllocationStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
         rmsg.setVmInstanceUuid(spec.getVmInventory().getUuid());
-        rmsg.setImageUuid(spec.getImageSpec().getInventory().getUuid());
+        if (spec.getImageSpec() != null) {
+            rmsg.setImageUuid(spec.getImageSpec().getInventory().getUuid());
+        }
         rmsg.setRequiredPrimaryStorageUuid(localStorageUuid);
         rmsg.setRequiredHostUuid(spec.getDestHost().getUuid());
         if (ImageMediaType.ISO.toString().equals(spec.getImageSpec().getInventory().getMediaType())) {
