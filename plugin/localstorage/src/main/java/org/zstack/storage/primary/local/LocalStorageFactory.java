@@ -265,7 +265,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     public LocalStorageBackupStorageMediator getBackupStorageMediator(String hvType, String bsType) {
         LocalStorageBackupStorageMediator m = backupStorageMediatorMap.get(makeMediatorKey(hvType, bsType));
         if (m == null) {
-            throw new CloudRuntimeException(String.format("no LocalStorageBackupStorageMediator supporting hypervisor[%s] and backup storage[%s] ",
+            throw new OperationFailureException(operr("no LocalStorageBackupStorageMediator supporting hypervisor[%s] and backup storage type[%s] ",
                     hvType, bsType));
         }
 
