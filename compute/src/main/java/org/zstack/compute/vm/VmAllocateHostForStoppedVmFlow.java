@@ -52,7 +52,9 @@ public class VmAllocateHostForStoppedVmFlow implements Flow {
         msg.setCpuCapacity(spec.getVmInventory().getCpuNum());
         msg.setMemoryCapacity(spec.getVmInventory().getMemorySize());
         msg.setVmOperation(spec.getCurrentVmOperation().toString());
-        msg.setImage(spec.getImageSpec().getInventory());
+        if (spec.getImageSpec() != null) {
+            msg.setImage(spec.getImageSpec().getInventory());
+        }
         if ((spec.getRequiredClusterUuid() != null &&
                 !spec.getRequiredClusterUuid().equals(msg.getVmInstance().getClusterUuid()))
                 || spec.getRequiredHostUuid() != null) {
