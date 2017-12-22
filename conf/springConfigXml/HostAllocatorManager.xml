@@ -134,7 +134,6 @@
         <property name="sortFlowNames">
             <list>
                 <value>org.zstack.compute.allocator.PrimaryStoragePrioritySortFlow</value>
-                <value>org.zstack.compute.allocator.RandomSortFlow</value>
             </list>
         </property>
     </bean>

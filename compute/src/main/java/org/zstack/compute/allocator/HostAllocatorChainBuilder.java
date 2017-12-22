@@ -54,6 +54,7 @@ public class HostAllocatorChainBuilder {
     private List<AbstractHostSortorFlow> buildSortFlows() {
         List<AbstractHostSortorFlow> flows = new ArrayList<>();
         try {
+            flows.add(RandomSortFlow.class.newInstance());
             for (Class flowClass : classes) {
                 flows.add((AbstractHostSortorFlow) flowClass.newInstance());
             }

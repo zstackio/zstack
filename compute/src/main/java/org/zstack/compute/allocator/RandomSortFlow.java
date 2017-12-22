@@ -3,8 +3,10 @@ package org.zstack.compute.allocator;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.header.allocator.AbstractHostSortorFlow;
+import org.zstack.header.host.HostInventory;
 
 import java.util.Collections;
+import java.util.List;
 
 /**
  * Created by mingjian.deng on 2017/11/6.
@@ -14,5 +16,15 @@ public class RandomSortFlow extends AbstractHostSortorFlow {
     @Override
     public void sort() {
         Collections.shuffle(candidates);
+        prepareForNext(candidates);
+
+    }
+
+    private void prepareForNext(List<HostInventory> hosts) {
+        if (hosts != null && hosts.size() > 0) {
+            subCandidates.clear();
+            subCandidates.addAll(hosts);
+            skip = false;
+        }
     }
 }
