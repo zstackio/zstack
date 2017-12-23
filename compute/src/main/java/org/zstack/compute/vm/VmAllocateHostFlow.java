@@ -64,11 +64,6 @@ public class VmAllocateHostFlow implements Flow {
     private AllocateHostMsg prepareMsg(VmInstanceSpec spec) {
         DesignatedAllocateHostMsg msg = new DesignatedAllocateHostMsg();
 
-        // if ChangeImage, then only dry run AllocateHostMsg
-        if (spec.getCurrentVmOperation() == VmOperation.ChangeImage) {
-            msg.setDryRun(true);
-        }
-
         List<DiskOfferingInventory> diskOfferings = new ArrayList<>();
         ImageInventory image = spec.getImageSpec().getInventory();
         long diskSize;
@@ -136,21 +131,27 @@ public class VmAllocateHostFlow implements Flow {
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
-                    if (reply instanceof AllocateHostDryRunReply) {
+                    AllocateHostReply areply = (AllocateHostReply) reply;
+                    spec.setDestHost(areply.getHost());
+
+                    // the vm instance will still be stopped after ChangeImage
+                    if (spec.getCurrentVmOperation() == VmOperation.ChangeImage) {
+                        ReturnHostCapacityMsg msg = new ReturnHostCapacityMsg();
+                        msg.setCpuCapacity(spec.getVmInventory().getCpuNum());
+                        msg.setMemoryCapacity(spec.getVmInventory().getMemorySize());
+                        msg.setHostUuid(spec.getDestHost().getUuid());
+                        msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
+                        bus.send(msg);
+
                         chain.next();
                         return;
                     }
-
-                    AllocateHostReply areply = (AllocateHostReply) reply;
-                    spec.setDestHost(areply.getHost());
 
                     // update the vm's host uuid and hypervisor type so even if the management node died later and the vm's state
                     // is stuck in Starting, we know which host it's created on and can check its state on the host
                     VmInstanceVO vmvo = dbf.findByUuid(spec.getVmInventory().getUuid(), VmInstanceVO.class);
                     vmvo.setClusterUuid(spec.getDestHost().getClusterUuid());
-                    if (spec.getCurrentVmOperation() != VmOperation.ChangeImage) {
-                        vmvo.setLastHostUuid(vmvo.getHostUuid());
-                    }
+                    vmvo.setLastHostUuid(vmvo.getHostUuid());
                     vmvo.setHostUuid(spec.getDestHost().getUuid());
                     vmvo.setHypervisorType(spec.getDestHost().getHypervisorType());
                     dbf.update(vmvo);
