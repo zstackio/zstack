@@ -22,3 +22,5 @@ CREATE TABLE  `zstack`.`LongJobVO` (
 
 ALTER TABLE EcsInstanceVO ADD COLUMN publicIpAddress varchar(32) DEFAULT NULL;
 DELETE FROM SystemTagVO WHERE tag LIKE 'publicIp::%' AND resourceType='EcsInstanceVO';
+
+ALTER TABLE AsyncRestVO MODIFY COLUMN `result` mediumtext DEFAULT NULL;
