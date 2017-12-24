@@ -23,7 +23,6 @@ import org.zstack.header.AbstractService;
 import org.zstack.header.allocator.AllocateHostDryRunReply;
 import org.zstack.header.allocator.DesignatedAllocateHostMsg;
 import org.zstack.header.allocator.HostAllocatorConstant;
-import org.zstack.header.allocator.getVmInstanceSyncSignatureExtensionPoint;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.cluster.ClusterInventory;
@@ -2078,16 +2077,5 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         future.getErrorCode().getDetails()));
             }
         }
-    }
-
-    public String getVmInstanceSyncSignature(String vmUuid) {
-        for (getVmInstanceSyncSignatureExtensionPoint ext : pluginRgty.getExtensionList(getVmInstanceSyncSignatureExtensionPoint.class)){
-            String signature = ext.getVmInstanceSyncSignature(vmUuid);
-            if (signature != null) {
-                return signature;
-            }
-        }
-
-        return null;
     }
 }
