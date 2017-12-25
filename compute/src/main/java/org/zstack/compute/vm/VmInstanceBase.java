@@ -533,12 +533,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                String signature = vmMgr.getVmInstanceSyncSignature(self.getUuid());
-                if (signature != null) {
-                    return signature;
-                } else {
-                    return syncThreadName;
-                }
+                return syncThreadName;
             }
 
             @Override
@@ -1415,12 +1410,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                String signature = vmMgr.getVmInstanceSyncSignature(self.getUuid());
-                if (signature != null) {
-                    return signature;
-                } else {
-                    return syncThreadName;
-                }
+                return syncThreadName;
             }
 
             @Override
@@ -1815,12 +1805,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public String getSyncSignature() {
-                String signature = vmMgr.getVmInstanceSyncSignature(self.getUuid());
-                if (signature != null) {
-                    return signature;
-                } else {
-                    return syncThreadName;
-                }
+                return syncThreadName;
             }
 
             @Override
@@ -2088,12 +2073,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public String getSyncSignature() {
-                String signature = vmMgr.getVmInstanceSyncSignature(self.getUuid());
-                if (signature != null) {
-                    return signature;
-                } else {
-                    return syncThreadName;
-                }
+                return syncThreadName;
             }
 
             @Override
@@ -3908,12 +3888,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public String getSyncSignature() {
-                String signature = vmMgr.getVmInstanceSyncSignature(self.getUuid());
-                if (signature != null) {
-                    return signature;
-                } else {
-                    return syncThreadName;
-                }
+                return syncThreadName;
             }
 
             @Override
@@ -4234,12 +4209,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public String getSyncSignature() {
-                String signature = vmMgr.getVmInstanceSyncSignature(self.getUuid());
-                if (signature != null) {
-                    return signature;
-                } else {
-                    return syncThreadName;
-                }
+                return syncThreadName;
             }
 
             @Override
