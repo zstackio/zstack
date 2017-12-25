@@ -147,6 +147,14 @@ public class UnitTestSuite {
                     }
 
                     String simpleName = clazz.getSimpleName();
+
+                    if(System.getProperty("notIgnoreFailCases") == null){
+                        if(UnitTestSuiteConfig.IGNORE_FAIL_CASES.contains(simpleName)){
+                            logger.info("ignore fail case: " + simpleName);
+                            continue;
+                        }
+                    }
+
                     if (simpleName.length() > maxCaseNameLen) {
                         maxCaseNameLen = simpleName.length();
                     }

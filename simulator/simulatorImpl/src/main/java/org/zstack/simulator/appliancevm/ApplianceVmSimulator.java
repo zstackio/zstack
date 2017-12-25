@@ -24,6 +24,7 @@ import javax.servlet.http.HttpServletRequest;
 
 /**
  */
+@Controller
 public class ApplianceVmSimulator {
     private static final CLogger logger = Utils.getLogger(ApplianceVmSimulator.class);
 

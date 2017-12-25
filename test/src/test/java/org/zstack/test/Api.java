@@ -540,8 +540,13 @@ public class Api implements CloudBusEventListener {
             action.description = "simulator";
             action.name = "SimulatorPrimaryStorage-" + i;
             action.sessionId = adminSession.getUuid();
+
             action.totalCapacity = details.getTotalCapacity();
+            action.totalPhysicalCapacity = details.getTotalCapacity();
+
             action.availableCapacity = details.getAvailableCapacity();
+            action.availablePhysicalCapacity = details.getAvailableCapacity();
+
             action.zoneUuid = details.getZoneUuid();
             AddSimulatorPrimaryStorageAction.Result res = action.call();
             throwExceptionIfNeed(res.error);
@@ -1325,8 +1330,13 @@ public class Api implements CloudBusEventListener {
         action.description = inv.getDescription();
         action.type = SimulatorPrimaryStorageConstant.SIMULATOR_PRIMARY_STORAGE_TYPE;
         action.url = inv.getUrl();
+
         action.totalCapacity = inv.getTotalCapacity();
+        action.totalPhysicalCapacity = inv.getTotalCapacity();
+
         action.availableCapacity = inv.getAvailableCapacity();
+        action.availablePhysicalCapacity = inv.getAvailableCapacity();
+
         action.zoneUuid = inv.getZoneUuid();
         AddSimulatorPrimaryStorageAction.Result res = action.call();
         throwExceptionIfNeed(res.error);

@@ -65,7 +65,7 @@ public class TestSnapshotOnKvm1 {
         Assert.assertFalse(svo.isFullSnapshot());
         Assert.assertTrue(svo.isLatest());
         Assert.assertNull(svo.getParentUuid());
-        Assert.assertEquals(0, svo.getDistance());
+        Assert.assertEquals(1, svo.getDistance());
         Assert.assertEquals(vol.getPrimaryStorageUuid(), svo.getPrimaryStorageUuid());
         Assert.assertNotNull(svo.getPrimaryStorageInstallPath());
         VolumeSnapshotTreeVO cvo = dbf.findByUuid(svo.getTreeUuid(), VolumeSnapshotTreeVO.class);
@@ -79,7 +79,7 @@ public class TestSnapshotOnKvm1 {
         Assert.assertFalse(svo.isFullSnapshot());
         Assert.assertTrue(svo.isLatest());
         Assert.assertNotNull(svo.getParentUuid());
-        Assert.assertEquals(1, svo.getDistance());
+        Assert.assertEquals(2, svo.getDistance());
         Assert.assertEquals(vol.getPrimaryStorageUuid(), svo.getPrimaryStorageUuid());
         Assert.assertNotNull(svo.getPrimaryStorageInstallPath());
         Assert.assertEquals(svo.getTreeUuid(), cvo.getUuid());
@@ -92,7 +92,7 @@ public class TestSnapshotOnKvm1 {
         Assert.assertFalse(svo.isFullSnapshot());
         Assert.assertTrue(svo.isLatest());
         Assert.assertNotNull(svo.getParentUuid());
-        Assert.assertEquals(2, svo.getDistance());
+        Assert.assertEquals(3, svo.getDistance());
         Assert.assertEquals(vol.getPrimaryStorageUuid(), svo.getPrimaryStorageUuid());
         Assert.assertNotNull(svo.getPrimaryStorageInstallPath());
         Assert.assertEquals(svo.getTreeUuid(), cvo.getUuid());

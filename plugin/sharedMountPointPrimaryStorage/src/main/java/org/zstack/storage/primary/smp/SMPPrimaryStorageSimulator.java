@@ -17,6 +17,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 /**
  * Created by xing5 on 2016/3/27.
  */
+@Controller
 public class SMPPrimaryStorageSimulator {
     @Autowired
     private RESTFacade restf;

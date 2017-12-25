@@ -29,6 +29,7 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.servlet.http.HttpServletRequest;
 
+@Controller
 public class VirtualRouterSimulator {
     CLogger logger = Utils.getLogger(VirtualRouterSimulator.class);
 

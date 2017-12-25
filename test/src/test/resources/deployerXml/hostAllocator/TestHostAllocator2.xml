@@ -85,7 +85,7 @@
                 <simulatorPrimaryStorage name="primaryStorage2"
                                          description="Test" totalCapacity="100T" availableCapacity="100T" url="nfs://test2" />
                 <simulatorPrimaryStorage name="primaryStorage3"
-                                         description="Test" totalCapacity="100T" availableCapacity="100T" url="nfs://test2" />
+                                         description="Test" totalCapacity="100T" availableCapacity="100T" url="nfs://test3" />
             </primaryStorages>
 
             <backupStorageRef>backupStorage1</backupStorageRef>
