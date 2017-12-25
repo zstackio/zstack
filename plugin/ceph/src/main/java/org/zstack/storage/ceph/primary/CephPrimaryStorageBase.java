@@ -3389,7 +3389,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             @Override
             public void success(CreateSnapshotRsp rsp) {
                 // current ceph has no way to get actual size
-                long asize = rsp.getActualSize() == null ? 1 : rsp.getActualSize();
+                long asize = rsp.getActualSize() == null ? 0 : rsp.getActualSize();
                 sp.setSize(asize);
                 sp.setPrimaryStorageUuid(self.getUuid());
                 sp.setPrimaryStorageInstallPath(spPath);
