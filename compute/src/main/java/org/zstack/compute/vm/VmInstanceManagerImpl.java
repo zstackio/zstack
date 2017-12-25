@@ -604,18 +604,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
         // allocate ps for root volume
         AllocatePrimaryStorageMsg rmsg = new AllocatePrimaryStorageMsg();
 
-        DebugUtils.Assert(imageInv.getBackupStorageRefs().size() == 1, "image must existed in only 1 backupStorage");
-        List<BackupStoragePrimaryStorageExtensionPoint> exts =
-                pluginRgty.getExtensionList(BackupStoragePrimaryStorageExtensionPoint.class);
-        exts.forEach(ext -> {
-            List<String> excludePsTypes = ext.getExcludePrimaryStorageTypeList(BackupStorageInventory.valueOf(
-                            dbf.findByUuid(imageInv.getBackupStorageRefs().get(0).getBackupStorageUuid(), BackupStorageVO.class)),
-                    imageInv);
-            if (excludePsTypes != null && !excludePsTypes.isEmpty()) {
-                rmsg.addExcludePrimaryStorageTypes(excludePsTypes);
-            }
-        });
-
         rmsg.setDryRun(true);
         rmsg.setImageUuid(msg.getImageUuid());
         rmsg.setRequiredClusterUuids(clusterUuids);
