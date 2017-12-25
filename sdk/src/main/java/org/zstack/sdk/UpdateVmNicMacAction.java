@@ -11,7 +11,7 @@ public class UpdateVmNicMacAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateVmMacResult value;
+        public UpdateVmNicMacResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class UpdateVmNicMacAction extends AbstractAction {
             return ret;
         }
         
-        UpdateVmMacResult value = res.getResult(UpdateVmMacResult.class);
-        ret.value = value == null ? new UpdateVmMacResult() : value; 
+        UpdateVmNicMacResult value = res.getResult(UpdateVmNicMacResult.class);
+        ret.value = value == null ? new UpdateVmNicMacResult() : value; 
 
         return ret;
     }

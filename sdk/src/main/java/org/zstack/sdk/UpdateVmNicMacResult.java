@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-public class UpdateVmMacResult {
+public class UpdateVmNicMacResult {
     public VmNicInventory inventory;
     public void setInventory(VmNicInventory inventory) {
         this.inventory = inventory;
