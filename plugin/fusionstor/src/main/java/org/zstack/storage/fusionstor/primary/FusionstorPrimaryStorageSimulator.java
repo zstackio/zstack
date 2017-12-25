@@ -31,6 +31,7 @@ import java.util.Map;
 /**
  * Created by frank on 7/28/2015.
  */
+@Controller
 public class FusionstorPrimaryStorageSimulator {
     @Autowired
     private DatabaseFacade dbf;

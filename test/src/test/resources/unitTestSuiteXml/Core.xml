@@ -17,7 +17,6 @@
     <TestCase class="org.zstack.test.core.cloudbus.TestCloudBusMultiCallTimeout"/>
     <TestCase class="org.zstack.test.core.cloudbus.TestCloudBusNoRouteCall"/>
     <TestCase class="org.zstack.test.core.cloudbus.TestCloudBusSharding"/>
-    <TestCase class="org.zstack.test.core.cloudbus.TestCloudBusSharding1"/>
     <TestCase class="org.zstack.test.core.cloudbus.TestCanonicalEvent"/>
     <TestCase class="org.zstack.test.core.cloudbus.TestCanonicalEvent1"/>
     <TestCase class="org.zstack.test.core.cloudbus.TestCanonicalEvent2"/>
@@ -89,11 +88,6 @@
     <TestCase class="org.zstack.test.core.rest.TestRestAsyncCallbackMissingTaskUuid"/>
     <TestCase class="org.zstack.test.core.rest.TestRestAsyncCallbackTimeout"/>
 
-    <TestCase class="org.zstack.test.core.job.TestJob"/>
-    <TestCase class="org.zstack.test.core.job.TestJob2"/>
-    <TestCase class="org.zstack.test.core.job.TestJobReturnValue" timeout="240"/>
-    <TestCase class="org.zstack.test.core.job.TestJobReturnValueFail"/>
-
     <TestCase class="org.zstack.test.core.plugin.TestPluginOrder"/>
     <TestCase class="org.zstack.test.core.plugin.TestPluginOrder2"/>
 
@@ -149,5 +143,4 @@
 
     <TestCase class="org.zstack.test.core.jsonlabel.TestJsonLabel"/>
 
-    <TestCase class="org.zstack.test.core.scheduler.TestSchedulerQuota"/>
 </UnitTestSuiteConfig>

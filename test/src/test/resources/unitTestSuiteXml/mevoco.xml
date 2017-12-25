@@ -1,34 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="600">
-    <TestCase class="org.zstack.test.mevoco.TestMevoco"/>
-    <TestCase class="org.zstack.test.mevoco.TestMevoco1"/>
-    <TestCase class="org.zstack.test.mevoco.TestMevoco2"/>
-    <TestCase class="org.zstack.test.mevoco.TestMevoco3"/>
-    <TestCase class="org.zstack.test.mevoco.TestMevoco4"/>
-    <TestCase class="org.zstack.test.mevoco.TestMevoco5"/>
-    <TestCase class="org.zstack.test.mevoco.TestMevoco6"/>
-    <TestCase class="org.zstack.test.mevoco.TestMevoco7"/>
-    <TestCase class="org.zstack.test.mevoco.TestMevoco8"/>
     <!--
     <TestCase class="org.zstack.test.mevoco.TestMevoco9"/>
     <TestCase class="org.zstack.test.mevoco.TestMevoco10"/>
     <TestCase class="org.zstack.test.mevoco.TestMevoco11"/>
     -->
-    <TestCase class="org.zstack.test.mevoco.TestMevoco13"/>
-    <TestCase class="org.zstack.test.mevoco.TestMevoco14"/>
-    <TestCase class="org.zstack.test.mevoco.TestMevoco15"/>
-    <TestCase class="org.zstack.test.mevoco.TestMevoco16"/>
-    <TestCase class="org.zstack.test.mevoco.TestMevoco17"/>
-    <TestCase class="org.zstack.test.mevoco.TestMevoco18"/>
-    <TestCase class="org.zstack.test.mevoco.TestMevoco19"/>
-    <TestCase class="org.zstack.test.mevoco.TestMevoco20"/>
-    <TestCase class="org.zstack.test.mevoco.TestMevoco21"/>
-    <TestCase class="org.zstack.test.mevoco.TestMevoco22"/>
-    <TestCase class="org.zstack.test.mevoco.TestMevoco23"/>
-    <TestCase class="org.zstack.test.mevoco.TestLicense1"/>
-    <TestCase class="org.zstack.test.mevoco.TestMevocoMultipleNetwork"/>
-    <TestCase class="org.zstack.test.mevoco.TestMevocoMultipleNetwork1"/>
-    <TestCase class="org.zstack.test.mevoco.TestMevocoMultipleNetwork2"/>
-    <TestCase class="org.zstack.test.mevoco.TestMevocoMultipleNetwork3"/>
-    <TestCase class="org.zstack.test.mevoco.TestMevocoMultipleNetwork4"/>
 </UnitTestSuiteConfig>
