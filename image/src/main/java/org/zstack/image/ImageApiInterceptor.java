@@ -5,6 +5,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -19,10 +20,7 @@ import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.backup.BackupStorageVO_;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
-import org.zstack.header.volume.VolumeFormat;
-import org.zstack.header.volume.VolumeState;
-import org.zstack.header.volume.VolumeStatus;
-import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.*;
 
 import java.util.List;
 
@@ -97,6 +95,14 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
         if (msg.getPlatform() == null) {
             String platform = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.rootVolumeUuid, msg.getRootVolumeUuid()).select(VmInstanceVO_.platform).findValue();
             msg.setPlatform(platform == null ? ImagePlatform.Linux.toString() : platform);
+        }
+
+        if (msg.getGuestOsType() == null) {
+            List<String> osTypes = SQL.New("select i.guestOsType from VolumeVO v, ImageVO i where v.uuid=:vol and v.rootImageUuid = i.uuid").
+                    param("vol", msg.getRootVolumeUuid()).list();
+            if (osTypes != null && osTypes.size() > 0) {
+                msg.setGuestOsType(osTypes.get(0));
+            }
         }
     }
 
