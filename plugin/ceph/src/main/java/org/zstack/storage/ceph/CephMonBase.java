@@ -47,7 +47,7 @@ public abstract class CephMonBase {
         Ssh ssh = new Ssh();
         try {
             ssh.setHostname(self.getHostname()).setUsername(self.getSshUsername()).setPassword(self.getSshPassword()).setPort(self.getSshPort())
-                    .checkTool("ceph", "rbd").runErrorByException();
+                    .checkTool("ceph", "rbd").setTimeout(5).runErrorByException();
         } catch (SshException e) {
             throw new OperationFailureException(operr("The problem may be caused by an incorrect user name or password or SSH port"));
         }
