@@ -26,10 +26,10 @@ import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.ssh.Ssh;
 
-import static org.zstack.core.Platform.operr;
-
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created by xing5 on 2016/10/31.
@@ -115,7 +115,7 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
             }
 
             private void deployAgent() {
-                new Ssh().scp(
+                new Ssh().setTimeout(300).scp(
                         PathUtil.findFileOnClassPath("ansible/zvr/zvr.bin", true).getAbsolutePath(),
                         "/home/vyos/zvr.bin"
                 ).scp(
@@ -126,7 +126,7 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
                 new Ssh().shell("sudo bash /home/vyos/zvrboot.bin\n" +
                         "sudo bash /home/vyos/zvr.bin\n" +
                         "sudo bash /etc/init.d/zstack-virtualrouteragent restart\n"
-                ).setPrivateKey(asf.getPrivateKey()).setUsername("vyos").setHostname(mgmtNicIp).setPort(22).runErrorByExceptionAndClose();
+                ).setTimeout(300).setPrivateKey(asf.getPrivateKey()).setUsername("vyos").setHostname(mgmtNicIp).setPort(22).runErrorByExceptionAndClose();
 
                 trigger.next();
             }
