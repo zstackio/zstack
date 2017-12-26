@@ -10,10 +10,7 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.allocator.AbstractHostAllocatorFlow;
-import org.zstack.header.allocator.HostAllocatorError;
-import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.storage.backup.BackupStorageType;
 import org.zstack.header.storage.backup.BackupStorageVO;
@@ -42,15 +39,7 @@ public class BackupStorageSelectPrimaryStorageAllocatorFlow extends AbstractHost
 
     @Override
     public void allocate() {
-        try {
-            throwExceptionIfIAmTheFirstFlow();
-        } catch (CloudRuntimeException e) {
-            logger.warn(e.getMessage());
-            ErrorCode errorCode = new ErrorCode();
-            errorCode.setCode(HostAllocatorError.NO_AVAILABLE_NIC.toString());
-            errorCode.setDetails("host cannot be allocated without L2Networks");
-            throw new OperationFailureException(errorCode);
-        }
+        throwExceptionIfIAmTheFirstFlow();
 
         if (spec.getRequiredBackupStorageUuid() == null) {
             next(candidates);
