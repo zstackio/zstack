@@ -85,10 +85,50 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
-    private void validate(APICreateRootVolumeTemplateFromVolumeSnapshotMsg msg) {
-        if (msg.getPlatform() == null) {
-            msg.setPlatform(ImagePlatform.Linux.toString());
+    private void fillPlatform(APICreateRootVolumeTemplateFromVolumeSnapshotMsg msg) {
+        if(msg.getPlatform() != null) {
+            return;
         }
+
+        List<String> platforms = SQL.New("select platform from VmInstanceVO where uuid = (" +
+                " select vmInstanceUuid from VolumeVO vol where" +
+                " vol.uuid = (select volumeUuid from VolumeSnapshotVO where uuid = :snapshotUuid) and type = :volumeType" +
+                ")")
+                .param("snapshotUuid", msg.getSnapshotUuid())
+                .param("volumeType", VolumeType.Root)
+                .list();
+
+        if(platforms.isEmpty() || platforms.size() != 1) {
+            msg.setPlatform(ImagePlatform.Linux.toString());
+            return;
+        }
+
+        msg.setPlatform(platforms.get(0));
+    }
+
+    private void fillGuestOsType(APICreateRootVolumeTemplateFromVolumeSnapshotMsg msg) {
+        if(msg.getGuestOsType() != null) {
+            return;
+        }
+
+        List<String> guestOsTypes = SQL.New("select guestOsType from ImageVO where uuid = (" +
+                " select rootImageUuid from VolumeVO vol where " +
+                " vol.uuid = (select volumeUuid from VolumeSnapshotVO where uuid = :snapshotUuid) and type = :volumeType" +
+                ")")
+                .param("snapshotUuid", msg.getSnapshotUuid())
+                .param("volumeType", VolumeType.Root)
+                .list();
+
+        if(guestOsTypes.isEmpty() || guestOsTypes.size() != 1){
+            return;
+        }
+
+        msg.setGuestOsType(guestOsTypes.get(0));
+    }
+
+    private void validate(APICreateRootVolumeTemplateFromVolumeSnapshotMsg msg) {
+        fillPlatform(msg);
+        fillGuestOsType(msg);
     }
 
     private void validate(APICreateRootVolumeTemplateFromRootVolumeMsg msg) {
