@@ -8,7 +8,7 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.*;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.network.service.portforwarding.PortForwardingConstant;
+import org.zstack.header.quota.QuotaConstant;
 import org.zstack.network.service.portforwarding.PortForwardingProtocolType;
 import org.zstack.network.service.portforwarding.PortForwardingRuleInventory;
 import org.zstack.network.service.vip.VipInventory;
@@ -85,14 +85,14 @@ public class TestPolicyForPortForwarding1 {
         Quota.QuotaUsage u = CollectionUtils.find(usages, new Function<Quota.QuotaUsage, Quota.QuotaUsage>() {
             @Override
             public Quota.QuotaUsage call(Quota.QuotaUsage arg) {
-                return arg.getName().equals(PortForwardingConstant.QUOTA_PF_NUM) ? arg : null;
+                return arg.getName().equals(QuotaConstant.PF_NUM) ? arg : null;
             }
         });
-        QuotaInventory q = api.getQuota(PortForwardingConstant.QUOTA_PF_NUM, test.getUuid(), session);
+        QuotaInventory q = api.getQuota(QuotaConstant.PF_NUM, test.getUuid(), session);
         Assert.assertEquals(1, u.getUsed().longValue());
         Assert.assertEquals(q.getValue(), u.getTotal().longValue());
 
-        api.updateQuota(test.getUuid(), PortForwardingConstant.QUOTA_PF_NUM, 1);
+        api.updateQuota(test.getUuid(), QuotaConstant.PF_NUM, 1);
 
         boolean s = false;
         try {

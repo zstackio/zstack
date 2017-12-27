@@ -9,7 +9,6 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.cloudbus.ReplyMessagePreSendingExtensionPoint;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -31,6 +30,7 @@ import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
+import org.zstack.identity.QuotaGlobalConfig;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.volume.FireSnapShotCanonicalEvent;
@@ -771,7 +771,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 Quota.QuotaUsage usage;
 
                 usage = new Quota.QuotaUsage();
-                usage.setName(VolumeSnapshotConstant.QUOTA_VOLUME_SNAPSHOT_NUM);
+                usage.setName(QuotaConstant.VOLUME_SNAPSHOT_NUM);
                 usage.setUsed(getUsedVolumeSnapshotNum(accountUuid));
                 usages.add(usage);
 
@@ -834,14 +834,14 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                                                      String resourceTargetOwnerAccountUuid,
                                                      long volumeSnapshotNumAsked,
                                                      Map<String, Quota.QuotaPair> pairs) {
-                long volumeSnapshotNumQuota = pairs.get(VolumeSnapshotConstant.QUOTA_VOLUME_SNAPSHOT_NUM).getValue();
+                long volumeSnapshotNumQuota = pairs.get(QuotaConstant.VOLUME_SNAPSHOT_NUM).getValue();
                 long volumeSnapshotNumUsed = getUsedVolumeSnapshotNum(resourceTargetOwnerAccountUuid);
                 {
                     QuotaUtil.QuotaCompareInfo quotaCompareInfo;
                     quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
                     quotaCompareInfo.currentAccountUuid = currentAccountUuid;
                     quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                    quotaCompareInfo.quotaName = VolumeSnapshotConstant.QUOTA_VOLUME_SNAPSHOT_NUM;
+                    quotaCompareInfo.quotaName = QuotaConstant.VOLUME_SNAPSHOT_NUM;
                     quotaCompareInfo.quotaValue = volumeSnapshotNumQuota;
                     quotaCompareInfo.currentUsed = volumeSnapshotNumUsed;
                     quotaCompareInfo.request = volumeSnapshotNumAsked;
@@ -855,8 +855,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         Quota.QuotaPair p;
 
         p = new Quota.QuotaPair();
-        p.setName(VolumeSnapshotConstant.QUOTA_VOLUME_SNAPSHOT_NUM);
-        p.setValue(QuotaConstant.QUOTA_VOLUME_SNAPSHOT_NUM);
+        p.setName(QuotaConstant.VOLUME_SNAPSHOT_NUM);
+        p.setValue(QuotaGlobalConfig.VOLUME_SNAPSHOT_NUM.defaultValue(Long.class));
         quota.addPair(p);
 
         quota.addMessageNeedValidation(APICreateVolumeSnapshotMsg.class);

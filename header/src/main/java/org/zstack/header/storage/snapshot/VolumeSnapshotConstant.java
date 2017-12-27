@@ -11,6 +11,4 @@ public interface VolumeSnapshotConstant {
     VolumeSnapshotType STORAGE_SNAPSHOT_TYPE = new VolumeSnapshotType("Storage");
 
     String SNAPSHOT_MESSAGE_ROUTED = "SNAPSHOT_MESSAGE_ROUTED";
-
-    String QUOTA_VOLUME_SNAPSHOT_NUM = "snapshot.volume.num";
 }

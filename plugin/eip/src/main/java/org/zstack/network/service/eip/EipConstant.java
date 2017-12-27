@@ -16,8 +16,6 @@ public interface EipConstant {
 
     public static final String ACTION_CATEGORY = "eip";
 
-    String QUOTA_EIP_NUM = "eip.num";
-
     public static final NetworkServiceType EIP_TYPE = new NetworkServiceType(EIP_NETWORK_SERVICE_TYPE);
 
     public static enum Params {
@@ -40,6 +38,4 @@ public interface EipConstant {
             VmInstanceState.Stopped,
             VmInstanceState.VolumeMigrating
     );
-
-
 }

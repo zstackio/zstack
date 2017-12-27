@@ -8,7 +8,7 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.*;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.network.service.vip.VipConstant;
+import org.zstack.header.quota.QuotaConstant;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.Api;
@@ -70,15 +70,15 @@ public class TestPolicyForVip1 {
         Quota.QuotaUsage u = CollectionUtils.find(usages, new Function<Quota.QuotaUsage, Quota.QuotaUsage>() {
             @Override
             public Quota.QuotaUsage call(Quota.QuotaUsage arg) {
-                return arg.getName().equals(VipConstant.QUOTA_VIP_NUM) ? arg : null;
+                return arg.getName().equals(QuotaConstant.VIP_NUM) ? arg : null;
             }
         });
         Assert.assertNotNull(u);
-        QuotaInventory q = api.getQuota(VipConstant.QUOTA_VIP_NUM, test.getUuid(), session);
+        QuotaInventory q = api.getQuota(QuotaConstant.VIP_NUM, test.getUuid(), session);
         Assert.assertEquals(1, u.getUsed().longValue());
         Assert.assertEquals(q.getValue(), u.getTotal().longValue());
 
-        api.updateQuota(test.getUuid(), VipConstant.QUOTA_VIP_NUM, 1);
+        api.updateQuota(test.getUuid(), QuotaConstant.VIP_NUM, 1);
 
         boolean s = false;
         try {

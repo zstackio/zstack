@@ -10,8 +10,6 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.thread.ChainTask;
-import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
@@ -29,7 +27,6 @@ import org.zstack.header.identity.ReportQuotaExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.NeedQuotaCheckMessage;
-import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
@@ -39,6 +36,7 @@ import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.identity.AccountManager;
+import org.zstack.identity.QuotaGlobalConfig;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.service.vip.*;
 import org.zstack.tag.TagManager;
@@ -453,7 +451,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
             @Override
             public List<Quota.QuotaUsage> getQuotaUsageByAccount(String accountUuid) {
                 Quota.QuotaUsage usage = new Quota.QuotaUsage();
-                usage.setName(LoadBalancerConstants.QUOTA_LOAD_BALANCER_NUM);
+                usage.setName(QuotaConstant.LOAD_BALANCER_NUM);
                 usage.setUsed(getUsedLb(accountUuid));
                 return list(usage);
             }
@@ -472,13 +470,13 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
             }
 
             private void check(APICreateLoadBalancerMsg msg, Map<String, QuotaPair> pairs) {
-                long lbNum = pairs.get(LoadBalancerConstants.QUOTA_LOAD_BALANCER_NUM).getValue();
+                long lbNum = pairs.get(QuotaConstant.LOAD_BALANCER_NUM).getValue();
                 long en = getUsedLb(msg.getSession().getAccountUuid());
 
                 if (en + 1 > lbNum) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                             String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    msg.getSession().getAccountUuid(), LoadBalancerConstants.QUOTA_LOAD_BALANCER_NUM, lbNum)
+                                    msg.getSession().getAccountUuid(), QuotaConstant.LOAD_BALANCER_NUM, lbNum)
                     ));
                 }
             }
@@ -489,8 +487,8 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         quota.setOperator(checker);
 
         QuotaPair p = new QuotaPair();
-        p.setName(LoadBalancerConstants.QUOTA_LOAD_BALANCER_NUM);
-        p.setValue(QuotaConstant.QUOTA_LOAD_BALANCER_NUM);
+        p.setName(QuotaConstant.LOAD_BALANCER_NUM);
+        p.setValue(QuotaGlobalConfig.LOAD_BALANCER_NUM.defaultValue(Long.class));
         quota.addPair(p);
 
         return list(quota);

@@ -4,25 +4,18 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.inventory.InventoryFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.FutureCompletion;
-import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.ErrorCodeList;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.identity.IdentityErrors;
@@ -33,28 +26,17 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.network.l2.*;
-import org.zstack.header.network.l3.APICreateL3NetworkMsg;
-import org.zstack.header.network.l3.L3NetworkConstant;
-import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.quota.QuotaConstant;
-import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
-import org.zstack.header.vm.VmNicInventory;
+import org.zstack.identity.QuotaGlobalConfig;
 import org.zstack.identity.QuotaUtil;
-import org.zstack.network.l2.L2NetworkDefaultMtu;
 import org.zstack.network.l2.L2NetworkExtensionPointEmitter;
 import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.network.l2.L2NoVlanNetwork;
-import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.TypedQuery;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
-import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -283,7 +265,7 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
             @Override
             public List<Quota.QuotaUsage> getQuotaUsageByAccount(String accountUuid) {
                 Quota.QuotaUsage usage = new Quota.QuotaUsage();
-                usage.setName(VxlanNetworkConstant.QUOTA_VXLAN_NUM);
+                usage.setName(QuotaConstant.VXLAN_NUM);
                 usage.setUsed(getUsedVxlan(accountUuid));
                 return list(usage);
             }
@@ -296,13 +278,13 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
             }
 
             private void check(APICreateL2VxlanNetworkMsg msg, Map<String, Quota.QuotaPair> pairs) {
-                long vxlanNum = pairs.get(VxlanNetworkConstant.QUOTA_VXLAN_NUM).getValue();
+                long vxlanNum = pairs.get(QuotaConstant.VXLAN_NUM).getValue();
                 long vxlan = getUsedVxlan(msg.getSession().getAccountUuid());
 
                 if (vxlan + 1 > vxlanNum) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                             String.format("quota exceeding.  The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    msg.getSession().getAccountUuid(), VxlanNetworkConstant.QUOTA_VXLAN_NUM, vxlanNum)
+                                    msg.getSession().getAccountUuid(), QuotaConstant.VXLAN_NUM, vxlanNum)
                     ));
                 }
             }
@@ -313,8 +295,8 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
         quota.addMessageNeedValidation(APICreateL2VxlanNetworkMsg.class);
 
         Quota.QuotaPair p = new Quota.QuotaPair();
-        p.setName(VxlanNetworkConstant.QUOTA_VXLAN_NUM);
-        p.setValue(QuotaConstant.QUOTA_VXLAN_NUM);
+        p.setName(QuotaConstant.VXLAN_NUM);
+        p.setValue(QuotaGlobalConfig.VXLAN_NUM.defaultValue(Long.class));
         quota.addPair(p);
 
         return list(quota);

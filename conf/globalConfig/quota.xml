@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<globalConfig xmlns="http://zstack.org/schema/zstack">
+    <config>
+        <name>vm.totalNum</name>
+        <description>default quota for vm.total number</description>
+        <defaultValue>20</defaultValue>
+        <category>quota</category>
+        <type>java.lang.Long</type>
+    </config>
+    <config>
+        <name>vm.num</name>
+        <description>default quota for vm runnig number</description>
+        <defaultValue>20</defaultValue>
+        <category>quota</category>
+        <type>java.lang.Long</type>
+    </config>
+    <config>
+        <name>vm.memorySize</name>
+        <description>default quota for vm.memorySize</description>
+        <defaultValue>85899345920</defaultValue>
+        <category>quota</category>
+        <type>java.lang.Long</type>
+    </config>
+    <config>
+        <name>vm.cpuNum</name>
+        <description>default quota for vm.cpuNum</description>
+        <defaultValue>80</defaultValue>
+        <category>quota</category>
+        <type>java.lang.Long</type>
+    </config>
+    <config>
+        <name>volume.data.num</name>
+        <description>default quota for volume.data.num</description>
+        <defaultValue>40</defaultValue>
+        <category>quota</category>
+        <type>java.lang.Long</type>
+    </config>
+    <config>
+        <name>volume.capacity</name>
+        <description>default quota for volume.capacity</description>
+        <defaultValue>10995116277760</defaultValue>
+        <category>quota</category>
+        <type>java.lang.Long</type>
+    </config>
+    <config>
+        <name>securityGroup.num</name>
+        <description>default quota for securityGroup.num</description>
+        <defaultValue>20</defaultValue>
+        <category>quota</category>
+        <type>java.lang.Long</type>
+    </config>
+    <config>
+        <name>l3.num</name>
+        <description>default quota for l3.num</description>
+        <defaultValue>20</defaultValue>
+        <category>quota</category>
+        <type>java.lang.Long</type>
+    </config>
+    <config>
+        <name>snapshot.volume.num</name>
+        <description>default quota for snapshot.volume.num</description>
+        <defaultValue>200</defaultValue>
+        <category>quota</category>
+        <type>java.lang.Long</type>
+    </config>
+    <config>
+        <name>loadBalancer.num</name>
+        <description>default quota for loadBalancer.num</description>
+        <defaultValue>20</defaultValue>
+        <category>quota</category>
+        <type>java.lang.Long</type>
+    </config>
+    <config>
+        <name>eip.num</name>
+        <description>default quota for eip.num</description>
+        <defaultValue>20</defaultValue>
+        <category>quota</category>
+        <type>java.lang.Long</type>
+    </config>
+    <config>
+        <name>portForwarding.num</name>
+        <description>default quota for port forwarding</description>
+        <defaultValue>20</defaultValue>
+        <category>quota</category>
+        <type>java.lang.Long</type>
+    </config>
+    <config>
+        <name>image.num</name>
+        <description>default quota for image.num</description>
+        <defaultValue>20</defaultValue>
+        <category>quota</category>
+        <type>java.lang.Long</type>
+    </config>
+    <config>
+        <name>image.size</name>
+        <description>default quota for image.size</description>
+        <defaultValue>10995116277760</defaultValue>
+        <category>quota</category>
+        <type>java.lang.Long</type>
+    </config>
+    <config>
+        <name>vip.num</name>
+        <description>default quota for vip.num</description>
+        <defaultValue>20</defaultValue>
+        <category>quota</category>
+        <type>java.lang.Long</type>
+    </config>
+    <config>
+        <name>vxlan.num</name>
+        <description>default quota for vxlan.num</description>
+        <defaultValue>8</defaultValue>
+        <category>quota</category>
+        <type>java.lang.Long</type>
+    </config>
+</globalConfig>
