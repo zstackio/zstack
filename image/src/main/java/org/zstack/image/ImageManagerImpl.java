@@ -456,7 +456,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         vo.setSystem(msg.isSystem());
         vo.setDescription(msg.getDescription());
         vo.setPlatform(ImagePlatform.valueOf(msg.getPlatform()));
-        vo.setGuestOsType(vo.getGuestOsType());
+        vo.setGuestOsType(msg.getGuestOsType());
         vo.setStatus(ImageStatus.Creating);
         vo.setState(ImageState.Enabled);
         vo.setFormat(format);
