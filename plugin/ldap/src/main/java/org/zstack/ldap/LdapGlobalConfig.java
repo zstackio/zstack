@@ -13,7 +13,7 @@ public class LdapGlobalConfig {
     public static final String CATEGORY = "ldap";
 
     @GlobalConfigValidation
-    @GlobalConfigDef(defaultValue = "member,uniqueMember", type = String.class)
+    @GlobalConfigDef(defaultValue = "member,uniqueMember,memberOf", type = String.class)
     public static GlobalConfig QUERY_LDAP_ENTRY_RETURN_ATTRIBUTES = new GlobalConfig(CATEGORY, "queryLdapEntryReturnAttributes");
 
     @GlobalConfigValidation
