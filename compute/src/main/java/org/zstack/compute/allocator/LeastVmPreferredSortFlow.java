@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SQL;
 import org.zstack.header.allocator.AbstractHostSortorFlow;
 import org.zstack.header.host.HostInventory;
 import org.zstack.utils.CollectionUtils;
@@ -30,14 +31,30 @@ public class LeastVmPreferredSortFlow extends AbstractHostSortorFlow {
 
     @Transactional(readOnly = true)
     private List<String> findLeastVmHost(List<String> huuids) {
-        String sql = "select host.uuid" +
+        String sql = "select host.uuid, count(vm.uuid) as cnt" +
                 " from HostVO host" +
                 " Left Join VmInstanceVO vm on host.uuid = vm.hostUuid" +
                 " where host.uuid in (:huuids)" +
-                " group by host.uuid order by count(vm)";
-        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-        q.setParameter("huuids", huuids);
-        return q.getResultList();
+                " group by host.uuid order by cnt";
+
+        List<Tuple> tuples = SQL.New(sql, Tuple.class).param("huuids", huuids).list();
+        long minVm = tuples.get(0).get(1, Long.class);
+
+        /* count vm numbers of each host, save to  hostMap */
+        Map<String, Long> hostMap = tuples.stream().collect(Collectors.toMap(tuple ->
+                    tuple.get(0, String.class), tuple -> tuple.get(1, Long.class)));
+
+        /* find the best hosts which have the minimum number of vms  */
+        List<String> preferHost = hostMap.entrySet().stream().filter(host -> host.getValue() == minVm)
+                .map(host->host.getKey()).collect(Collectors.toList());
+
+        /* put the best hosts at the head of result, but important thing is:
+         * !!! keep the best host order unchanged, or LeastVmPreferredSortFlow will overwrite the previous shuffle result
+         * Testcase for this change is  TestConcurrentAllocationCase under test-premium */
+        List<String> result = huuids.stream().filter(host -> preferHost.contains(host)).collect(Collectors.toList());
+        result.addAll(huuids.stream().filter(host -> !preferHost.contains(host)).collect(Collectors.toList()));
+
+        return result;
     }
 
     @Override
@@ -47,5 +64,7 @@ public class LeastVmPreferredSortFlow extends AbstractHostSortorFlow {
 
         candidates.clear();
         sortedHostUuids.forEach(huuid -> candidates.add(hosts.get(huuid)));
+        logger.debug(String.format("Sorted by LeastVmPreferred the hosts %s", candidates.stream().map(c -> c.getUuid()).collect(Collectors.toList())));
+
     }
 }
