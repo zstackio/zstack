@@ -1719,11 +1719,13 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
     private void validate(APIDeleteAccountMsg msg) {
         if (new QuotaUtil().isAdminAccount(msg.getUuid())) {
-            throw new ApiMessageInterceptionException(argerr(
-                    "unable to delete an account. The account is an admin account"
-            ));
+            if (msg.getAccountUuid().equals(msg.getSession().getAccountUuid())) {
+                throw new ApiMessageInterceptionException(argerr(
+                        "account cannot delete itself"
+                ));
+            }
         }
-        if(!msg.getSession().getAccountUuid().equals(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID)){
+        if(!new QuotaUtil().isAdminAccount(msg.getSession().getAccountUuid())){
             throw new ApiMessageInterceptionException(argerr(
                     "Only admin can delete account."
             ));
