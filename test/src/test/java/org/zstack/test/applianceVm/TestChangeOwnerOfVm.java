@@ -12,7 +12,7 @@ import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.Quota;
 import org.zstack.header.identity.QuotaInventory;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
+import org.zstack.header.quota.QuotaConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicVO;
@@ -85,13 +85,13 @@ public class TestChangeOwnerOfVm {
             Quota.QuotaUsage snapshotNum = CollectionUtils.find(usages, new Function<Quota.QuotaUsage, Quota.QuotaUsage>() {
                 @Override
                 public Quota.QuotaUsage call(Quota.QuotaUsage arg) {
-                    return VolumeSnapshotConstant.QUOTA_VOLUME_SNAPSHOT_NUM.equals(arg.getName()) ? arg : null;
+                    return QuotaConstant.VOLUME_SNAPSHOT_NUM.equals(arg.getName()) ? arg : null;
                 }
             });
             Assert.assertNotNull(snapshotNum);
 
             QuotaInventory quotaInventory = api.getQuota(
-                    VolumeSnapshotConstant.QUOTA_VOLUME_SNAPSHOT_NUM,
+                    QuotaConstant.VOLUME_SNAPSHOT_NUM,
                     test.getUuid(),
                     identityCreator.getAccountSession());
             Assert.assertEquals(quotaInventory.getValue(), snapshotNum.getTotal().longValue());

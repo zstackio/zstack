@@ -33,6 +33,7 @@ import org.zstack.header.query.ExpandedQueryStruct;
 import org.zstack.header.quota.QuotaConstant;
 import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
+import org.zstack.identity.QuotaGlobalConfig;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO;
 import org.zstack.query.QueryFacade;
@@ -103,7 +104,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             @Override
             public List<Quota.QuotaUsage> getQuotaUsageByAccount(String accountUuid) {
                 Quota.QuotaUsage usage = new Quota.QuotaUsage();
-                usage.setName(SecurityGroupConstant.QUOTA_SG_NUM);
+                usage.setName(QuotaConstant.SG_NUM);
                 usage.setUsed(getUsedSg(accountUuid));
                 return list(usage);
             }
@@ -121,13 +122,13 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             }
 
             private void check(APICreateSecurityGroupMsg msg, Map<String, QuotaPair> pairs) {
-                long sgNum = pairs.get(SecurityGroupConstant.QUOTA_SG_NUM).getValue();
+                long sgNum = pairs.get(QuotaConstant.SG_NUM).getValue();
                 long sgn = getUsedSg(msg.getSession().getAccountUuid());
 
                 if (sgn + 1 > sgNum) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                             String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    msg.getSession().getAccountUuid(), SecurityGroupConstant.QUOTA_SG_NUM, sgNum)
+                                    msg.getSession().getAccountUuid(), QuotaConstant.SG_NUM, sgNum)
                     ));
                 }
             }
@@ -138,8 +139,8 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         quota.addMessageNeedValidation(APICreateSecurityGroupMsg.class);
 
         QuotaPair p = new QuotaPair();
-        p.setName(SecurityGroupConstant.QUOTA_SG_NUM);
-        p.setValue(QuotaConstant.QUOTA_SG_NUM);
+        p.setName(QuotaConstant.SG_NUM);
+        p.setValue(QuotaGlobalConfig.SG_NUM.defaultValue(Long.class));
         quota.addPair(p);
 
         return list(quota);

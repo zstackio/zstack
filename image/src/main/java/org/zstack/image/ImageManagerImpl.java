@@ -52,6 +52,7 @@ import org.zstack.header.vm.CreateTemplateFromVmRootVolumeReply;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
+import org.zstack.identity.QuotaGlobalConfig;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
@@ -1338,12 +1339,12 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 ImageQuotaUtil.ImageQuota imageQuota = new ImageQuotaUtil().getUsed(accountUuid);
 
                 Quota.QuotaUsage usage = new Quota.QuotaUsage();
-                usage.setName(ImageConstant.QUOTA_IMAGE_NUM);
+                usage.setName(QuotaConstant.IMAGE_NUM);
                 usage.setUsed(imageQuota.imageNum);
                 usages.add(usage);
 
                 usage = new Quota.QuotaUsage();
-                usage.setName(ImageConstant.QUOTA_IMAGE_SIZE);
+                usage.setName(QuotaConstant.IMAGE_SIZE);
                 usage.setUsed(imageQuota.imageSize);
                 usages.add(usage);
 
@@ -1364,8 +1365,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
 
                 if (accResRefVO.getResourceType().equals(ImageVO.class.getSimpleName())) {
-                    long imageNumQuota = pairs.get(ImageConstant.QUOTA_IMAGE_NUM).getValue();
-                    long imageSizeQuota = pairs.get(ImageConstant.QUOTA_IMAGE_SIZE).getValue();
+                    long imageNumQuota = pairs.get(QuotaConstant.IMAGE_NUM).getValue();
+                    long imageSizeQuota = pairs.get(QuotaConstant.IMAGE_SIZE).getValue();
 
                     long imageNumUsed = new ImageQuotaUtil().getUsedImageNum(resourceTargetOwnerAccountUuid);
                     long imageSizeUsed = new ImageQuotaUtil().getUsedImageSize(resourceTargetOwnerAccountUuid);
@@ -1380,7 +1381,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                         quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
                         quotaCompareInfo.currentAccountUuid = currentAccountUuid;
                         quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                        quotaCompareInfo.quotaName = ImageConstant.QUOTA_IMAGE_NUM;
+                        quotaCompareInfo.quotaName = QuotaConstant.IMAGE_NUM;
                         quotaCompareInfo.quotaValue = imageNumQuota;
                         quotaCompareInfo.currentUsed = imageNumUsed;
                         quotaCompareInfo.request = imageNumAsked;
@@ -1391,7 +1392,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                         quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
                         quotaCompareInfo.currentAccountUuid = currentAccountUuid;
                         quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                        quotaCompareInfo.quotaName = ImageConstant.QUOTA_IMAGE_SIZE;
+                        quotaCompareInfo.quotaName = QuotaConstant.IMAGE_SIZE;
                         quotaCompareInfo.quotaValue = imageSizeQuota;
                         quotaCompareInfo.currentUsed = imageSizeUsed;
                         quotaCompareInfo.request = imageSizeAsked;
@@ -1406,8 +1407,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 String currentAccountUuid = msg.getSession().getAccountUuid();
                 String resourceTargetOwnerAccountUuid = new QuotaUtil().getResourceOwnerAccountUuid(msg.getImageUuid());
 
-                long imageNumQuota = pairs.get(ImageConstant.QUOTA_IMAGE_NUM).getValue();
-                long imageSizeQuota = pairs.get(ImageConstant.QUOTA_IMAGE_SIZE).getValue();
+                long imageNumQuota = pairs.get(QuotaConstant.IMAGE_NUM).getValue();
+                long imageSizeQuota = pairs.get(QuotaConstant.IMAGE_SIZE).getValue();
                 long imageNumUsed = new ImageQuotaUtil().getUsedImageNum(resourceTargetOwnerAccountUuid);
                 long imageSizeUsed = new ImageQuotaUtil().getUsedImageSize(resourceTargetOwnerAccountUuid);
 
@@ -1420,7 +1421,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
                     quotaCompareInfo.currentAccountUuid = currentAccountUuid;
                     quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                    quotaCompareInfo.quotaName = ImageConstant.QUOTA_IMAGE_NUM;
+                    quotaCompareInfo.quotaName = QuotaConstant.IMAGE_NUM;
                     quotaCompareInfo.quotaValue = imageNumQuota;
                     quotaCompareInfo.currentUsed = imageNumUsed;
                     quotaCompareInfo.request = imageNumAsked;
@@ -1431,7 +1432,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
                     quotaCompareInfo.currentAccountUuid = currentAccountUuid;
                     quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                    quotaCompareInfo.quotaName = ImageConstant.QUOTA_IMAGE_SIZE;
+                    quotaCompareInfo.quotaName = QuotaConstant.IMAGE_SIZE;
                     quotaCompareInfo.quotaValue = imageSizeQuota;
                     quotaCompareInfo.currentUsed = imageSizeUsed;
                     quotaCompareInfo.request = imageSizeAsked;
@@ -1443,7 +1444,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             private void check(APIAddImageMsg msg, Map<String, Quota.QuotaPair> pairs) {
                 String currentAccountUuid = msg.getSession().getAccountUuid();
                 String resourceTargetOwnerAccountUuid = msg.getSession().getAccountUuid();
-                long imageNumQuota = pairs.get(ImageConstant.QUOTA_IMAGE_NUM).getValue();
+                long imageNumQuota = pairs.get(QuotaConstant.IMAGE_NUM).getValue();
                 long imageNumUsed = new ImageQuotaUtil().getUsedImageNum(resourceTargetOwnerAccountUuid);
                 long imageNumAsked = 1;
 
@@ -1452,7 +1453,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
                     quotaCompareInfo.currentAccountUuid = currentAccountUuid;
                     quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                    quotaCompareInfo.quotaName = ImageConstant.QUOTA_IMAGE_NUM;
+                    quotaCompareInfo.quotaName = QuotaConstant.IMAGE_NUM;
                     quotaCompareInfo.quotaValue = imageNumQuota;
                     quotaCompareInfo.currentUsed = imageNumUsed;
                     quotaCompareInfo.request = imageNumAsked;
@@ -1461,7 +1462,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 new ImageQuotaUtil().checkImageSizeQuotaUseHttpHead(msg, pairs);
             }
         };
-
         Quota quota = new Quota();
         quota.setOperator(checker);
         quota.addMessageNeedValidation(APIAddImageMsg.class);
@@ -1469,13 +1469,13 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         quota.addMessageNeedValidation(APIChangeResourceOwnerMsg.class);
 
         Quota.QuotaPair p = new Quota.QuotaPair();
-        p.setName(ImageConstant.QUOTA_IMAGE_NUM);
-        p.setValue(QuotaConstant.QUOTA_IMAGE_NUM);
+        p.setName(QuotaConstant.IMAGE_NUM);
+        p.setValue(QuotaGlobalConfig.IMAGE_NUM.defaultValue(Long.class));
         quota.addPair(p);
 
         p = new Quota.QuotaPair();
-        p.setName(ImageConstant.QUOTA_IMAGE_SIZE);
-        p.setValue(QuotaConstant.QUOTA_IMAGE_SIZE);
+        p.setName(QuotaConstant.IMAGE_SIZE);
+        p.setValue(QuotaGlobalConfig.IMAGE_SIZE.defaultValue(Long.class));
         quota.addPair(p);
 
         return list(quota);
