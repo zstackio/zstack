@@ -1202,7 +1202,7 @@ public class VolumeBase implements Volume {
                         self = dbf.reload(self);
                         if (reply.isSuccess()) {
                             AttachDataVolumeToVmReply ar = reply.castReply();
-                            self.setVmInstanceUuid(msg.getVmInstanceUuid());
+                            self.setVmInstanceUuid(self.isShareable() ? null : msg.getVmInstanceUuid());
                             self.setFormat(self.getFormat() != null ? self.getFormat() :
                                     VolumeFormat.getVolumeFormatByMasterHypervisorType(ar.getHypervisorType()).toString());
                             self = dbf.updateAndRefresh(self);
@@ -1212,11 +1212,6 @@ public class VolumeBase implements Volume {
                             self.setVmInstanceUuid(null);
                             dbf.update(self);
                             evt.setError(reply.getError());
-                        }
-
-                        if (self.isShareable()) {
-                            self.setVmInstanceUuid(null);
-                            dbf.update(self);
                         }
 
                         bus.publish(evt);

@@ -183,6 +183,35 @@ class ShareableDataVolumeMultiVMsCase extends SubCase{
         }
         assert cmd != null
         assert cmd.vmUuid == vmi2.uuid
+
+        detachDataVolumeFromVm {
+            uuid = voi.uuid
+            vmUuid = vmi1.uuid
+        }
+        detachDataVolumeFromVm {
+            uuid = voi.uuid
+            vmUuid = vmi2.uuid
+        }
+
+        boolean success1, success2
+        def thread1 = Thread.start {
+            attachDataVolumeToVm {
+                volumeUuid = voi.uuid
+                vmInstanceUuid = vmi1.uuid
+            }
+            success1 = true
+        }
+
+        def thread2 = Thread.start {
+            attachDataVolumeToVm {
+                volumeUuid = voi.uuid
+                vmInstanceUuid = vmi1.uuid
+            }
+            success2 = true
+        }
+
+        [thread1, thread2].each { it.join() }
+        assert success1 && success2
     }
     @Override
     void clean() {

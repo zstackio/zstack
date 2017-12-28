@@ -10079,9 +10079,9 @@
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
-    "raw": "data volume[%s] has been attached to vm[uuid:%s], can\u0027t attach again",
-    "en_US": "data volume[{0}] has been attached to vm[uuid:{1}], can\u0027t attach again",
-    "zh_CN": "数据云盘已经被挂载到虚拟机[uuid:{1}]，不能再次挂载",
+    "raw": "data volume[uuid:%s] has been attached to some vm, can\u0027t attach again",
+    "en_US": "data volume[uuid:{0}] has been attached to some vm, can\u0027t attach again",
+    "zh_CN": "数据云盘[uuid:{0}]已经被加载上云主机了，不能再次加载",
     "arguments": [
       "vol.getUuid()",
       "vol.getVmInstanceUuid()"

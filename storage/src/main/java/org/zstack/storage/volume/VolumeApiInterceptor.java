@@ -193,9 +193,9 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
                     throw new ApiMessageInterceptionException(operr("the volume[uuid:%s] is in status of deleted, cannot do the operation", vol.getUuid()));
                 }
 
-                if (vol.getVmInstanceUuid() != null) {
-                    throw new ApiMessageInterceptionException(operr("data volume[%s] has been attached to vm[uuid:%s], can't attach again",
-                            vol.getUuid(), vol.getVmInstanceUuid()));
+                if (vol.isAttached() && !vol.isShareable()) {
+                    throw new ApiMessageInterceptionException(operr("data volume[uuid:%s] has been attached to some vm, can't attach again",
+                            vol.getUuid()));
                 }
 
                 if (VolumeStatus.Ready != vol.getStatus() && VolumeStatus.NotInstantiated != vol.getStatus()) {
