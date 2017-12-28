@@ -72,10 +72,6 @@ public class LoadBalancerBase {
     private PluginRegistry pluginRgty;
 
     private String getSyncId() {
-        return String.format("operate-lb-%s", self.getUuid());
-    }
-
-    private String getSyncVipId() {
         return String.format("operate-lb-with-vip-%s", self.getVipUuid());
     }
 
@@ -656,7 +652,7 @@ public class LoadBalancerBase {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                return getSyncVipId();
+                return getSyncId();
             }
 
             @Override
@@ -772,7 +768,7 @@ public class LoadBalancerBase {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                return getSyncVipId();
+                return getSyncId();
             }
 
             @Override
