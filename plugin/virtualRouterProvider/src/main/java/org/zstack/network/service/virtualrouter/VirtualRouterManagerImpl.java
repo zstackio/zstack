@@ -23,6 +23,7 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.configuration.APIUpdateInstanceOfferingEvent;
 import org.zstack.header.configuration.InstanceOfferingInventory;
+import org.zstack.header.configuration.InstanceOfferingState;
 import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -894,19 +895,22 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
     @Transactional(readOnly = true)
     private List<VirtualRouterOfferingInventory> findOfferingByGuestL3Network(L3NetworkInventory guestL3) {
-        String sql = "select offering from VirtualRouterOfferingVO offering, SystemTagVO stag where offering.uuid = stag.resourceUuid and stag.resourceType = :type and offering.zoneUuid = :zoneUuid and stag.tag = :tag";
+        String sql = "select offering from VirtualRouterOfferingVO offering, SystemTagVO stag where " +
+                "offering.uuid = stag.resourceUuid and stag.resourceType = :type and offering.zoneUuid = :zoneUuid and stag.tag = :tag and offering.state = :state";
         TypedQuery<VirtualRouterOfferingVO> q = dbf.getEntityManager().createQuery(sql, VirtualRouterOfferingVO.class);
         q.setParameter("type", InstanceOfferingVO.class.getSimpleName());
         q.setParameter("zoneUuid", guestL3.getZoneUuid());
         q.setParameter("tag", VirtualRouterSystemTags.VR_OFFERING_GUEST_NETWORK.instantiateTag(map(e(VirtualRouterSystemTags.VR_OFFERING_GUEST_NETWORK_TOKEN, guestL3.getUuid()))));
+        q.setParameter("state", InstanceOfferingState.Enabled);
         List<VirtualRouterOfferingVO> vos = q.getResultList();
         if (!vos.isEmpty()) {
             return VirtualRouterOfferingInventory.valueOf1(vos);
         }
 
-        sql ="select offering from VirtualRouterOfferingVO offering where offering.zoneUuid = :zoneUuid";
+        sql ="select offering from VirtualRouterOfferingVO offering where offering.zoneUuid = :zoneUuid and offering.state = :state";
         q = dbf.getEntityManager().createQuery(sql, VirtualRouterOfferingVO.class);
         q.setParameter("zoneUuid", guestL3.getZoneUuid());
+        q.setParameter("state", InstanceOfferingState.Enabled);
         vos = q.getResultList();
         return vos.isEmpty() ? null : VirtualRouterOfferingInventory.valueOf1(vos);
     }
