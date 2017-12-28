@@ -11,7 +11,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.identity.AccountInventory;
-import org.zstack.header.volume.VolumeConstant;
+import org.zstack.header.quota.QuotaConstant;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
 import org.zstack.storage.primary.PrimaryStorageSystemTags;
@@ -55,7 +55,7 @@ public class TestVolumeQuota {
         api.createAccount("Test", "Test");
         AccountInventory test = identityCreator.useAccount("test");
 
-        api.updateQuota(test.getUuid(), VolumeConstant.QUOTA_DATA_VOLUME_NUM, 0);
+        api.updateQuota(test.getUuid(), QuotaConstant.DATA_VOLUME_NUM, 0);
 
         DiskOfferingInventory dinv = deployer.diskOfferings.get("TestDataDiskOffering");
         String itag = PrimaryStorageSystemTags.PRIMARY_STORAGE_ALLOCATOR_USERTAG_TAG_MANDATORY.instantiateTag(map(e("tag", "ps1")));
@@ -63,7 +63,7 @@ public class TestVolumeQuota {
         api.shareResource(list(dinv.getUuid()), list(test.getUuid()), true, null);
 
         thrown.expect(ApiSenderException.class);
-        thrown.expectMessage(VolumeConstant.QUOTA_DATA_VOLUME_NUM);
+        thrown.expectMessage(QuotaConstant.DATA_VOLUME_NUM);
 
         VolumeInventory vol = api.createDataVolume("data", dinv.getUuid(), identityCreator.getAccountSession());
     }

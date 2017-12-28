@@ -18,9 +18,8 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.query.QueryOp;
-import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.quota.QuotaConstant;
 import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.volume.VolumeConstant;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -73,7 +72,7 @@ public class TestPolicyForVm3 {
             Assert.assertEquals(Long.valueOf(gvo.getValue()), Long.valueOf(q.getValue()));
         }
 
-        api.updateQuota(test.getUuid(), VmInstanceConstant.QUOTA_VM_RUNNING_NUM, 0);
+        api.updateQuota(test.getUuid(), QuotaConstant.VM_RUNNING_NUM, 0);
 
         VmCreator vmCreator = new VmCreator(api);
         vmCreator.imageUuid = img.getUuid();
@@ -93,7 +92,7 @@ public class TestPolicyForVm3 {
         }
         Assert.assertTrue(success);
 
-        api.updateQuota(test.getUuid(), VmInstanceConstant.QUOTA_VM_RUNNING_NUM, 1);
+        api.updateQuota(test.getUuid(), QuotaConstant.VM_RUNNING_NUM, 1);
         VmInstanceInventory vm = vmCreator.create();
         api.destroyVmInstance(vm.getUuid());
 
@@ -102,7 +101,7 @@ public class TestPolicyForVm3 {
         api.destroyVmInstance(vm.getUuid());
 
         // Vm cpu number exceeds
-        api.updateQuota(test.getUuid(), VmInstanceConstant.QUOTA_VM_RUNNING_CPU_NUM, 2);
+        api.updateQuota(test.getUuid(), QuotaConstant.VM_RUNNING_CPU_NUM, 2);
         success = false;
         try {
             vmCreator.instanceOfferingUuid = cpu6.getUuid();
@@ -114,12 +113,12 @@ public class TestPolicyForVm3 {
         }
         Assert.assertTrue(success);
 
-        api.updateQuota(test.getUuid(), VmInstanceConstant.QUOTA_VM_RUNNING_CPU_NUM, 100);
+        api.updateQuota(test.getUuid(), QuotaConstant.VM_RUNNING_CPU_NUM, 100);
         vm = vmCreator.create();
         api.destroyVmInstance(vm.getUuid());
 
         // Vm cpu memory exceeds
-        api.updateQuota(test.getUuid(), VmInstanceConstant.QUOTA_VM_RUNNING_MEMORY_SIZE, SizeUnit.GIGABYTE.toByte(1));
+        api.updateQuota(test.getUuid(), QuotaConstant.VM_RUNNING_MEMORY_SIZE, SizeUnit.GIGABYTE.toByte(1));
         InstanceOfferingInventory memory12G = deployer.instanceOfferings.get("12G");
         success = false;
         try {
@@ -132,7 +131,7 @@ public class TestPolicyForVm3 {
         }
         Assert.assertTrue(success);
 
-        api.updateQuota(test.getUuid(), VmInstanceConstant.QUOTA_VM_RUNNING_MEMORY_SIZE, SizeUnit.GIGABYTE.toByte(100));
+        api.updateQuota(test.getUuid(), QuotaConstant.VM_RUNNING_MEMORY_SIZE, SizeUnit.GIGABYTE.toByte(100));
         DiskOfferingInventory disk50G = deployer.diskOfferings.get("disk50G");
         vmCreator.instanceOfferingUuid = ioinv.getUuid();
         vmCreator.addDisk(disk50G.getUuid());
@@ -140,7 +139,7 @@ public class TestPolicyForVm3 {
         api.destroyVmInstance(vm.getUuid());
 
         // volume size exceeds
-        api.updateQuota(test.getUuid(), VolumeConstant.QUOTA_VOLUME_SIZE, SizeUnit.GIGABYTE.toByte(40));
+        api.updateQuota(test.getUuid(), QuotaConstant.VOLUME_SIZE, SizeUnit.GIGABYTE.toByte(40));
         success = false;
         try {
             vmCreator.create();
@@ -151,12 +150,12 @@ public class TestPolicyForVm3 {
         }
         Assert.assertTrue(success);
 
-        api.updateQuota(test.getUuid(), VolumeConstant.QUOTA_VOLUME_SIZE, SizeUnit.GIGABYTE.toByte(1000));
+        api.updateQuota(test.getUuid(), QuotaConstant.VOLUME_SIZE, SizeUnit.GIGABYTE.toByte(1000));
         vm = vmCreator.create();
         api.destroyVmInstance(vm.getUuid());
 
         // data volume number exceeds
-        api.updateQuota(test.getUuid(), VolumeConstant.QUOTA_DATA_VOLUME_NUM, 1);
+        api.updateQuota(test.getUuid(), QuotaConstant.DATA_VOLUME_NUM, 1);
         success = false;
         try {
             vmCreator.addDisk(disk50G.getUuid());
@@ -170,7 +169,7 @@ public class TestPolicyForVm3 {
         }
         Assert.assertTrue(success);
 
-        api.updateQuota(test.getUuid(), VolumeConstant.QUOTA_DATA_VOLUME_NUM, 10);
+        api.updateQuota(test.getUuid(), QuotaConstant.DATA_VOLUME_NUM, 10);
         vm = vmCreator.create();
         api.destroyVmInstance(vm.getUuid());
 
@@ -187,7 +186,7 @@ public class TestPolicyForVm3 {
         api.destroyVmInstance(vm.getUuid());
 
         // volume size exceeds
-        api.updateQuota(test.getUuid(), VolumeConstant.QUOTA_VOLUME_SIZE, SizeUnit.GIGABYTE.toByte(5));
+        api.updateQuota(test.getUuid(), QuotaConstant.VOLUME_SIZE, SizeUnit.GIGABYTE.toByte(5));
         success = false;
         try {
             vmCreator.create();
@@ -201,7 +200,7 @@ public class TestPolicyForVm3 {
         ImageVO imgvo = dbf.findByUuid(img.getUuid(), ImageVO.class);
         imgvo.setSize(SizeUnit.GIGABYTE.toByte(50));
         // volume size exceeds
-        api.updateQuota(test.getUuid(), VolumeConstant.QUOTA_VOLUME_SIZE, SizeUnit.GIGABYTE.toByte(5));
+        api.updateQuota(test.getUuid(), QuotaConstant.VOLUME_SIZE, SizeUnit.GIGABYTE.toByte(5));
         success = false;
         try {
             vmCreator.imageUuid = imgvo.getUuid();

@@ -37,11 +37,6 @@ public interface VmInstanceConstant {
         ChangeImage
     }
 
-    String QUOTA_VM_TOTAL_NUM = "vm.totalNum";
-    String QUOTA_VM_RUNNING_NUM = "vm.num";
-    String QUOTA_VM_RUNNING_MEMORY_SIZE = "vm.memorySize";
-    String QUOTA_VM_RUNNING_CPU_NUM = "vm.cpuNum";
-
     String USER_VM_REGEX_PASSWORD = "[\\da-zA-Z-`=\\\\\\[\\];',./~!@#$%^&*()_+|{}:\"<>?]{1,}";
 
     enum Capability {

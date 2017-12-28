@@ -47,6 +47,7 @@ import org.zstack.utils.*;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.identity.QuotaGlobalConfig;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -54,7 +55,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
-import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.VipUseForList.SNAT_NETWORK_SERVICE_TYPE;
 
@@ -1061,7 +1061,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
             @Override
             public List<Quota.QuotaUsage> getQuotaUsageByAccount(String accountUuid) {
                 Quota.QuotaUsage usage = new Quota.QuotaUsage();
-                usage.setName(PortForwardingConstant.QUOTA_PF_NUM);
+                usage.setName(QuotaConstant.PF_NUM);
                 usage.setUsed(getUsedPf(accountUuid));
                 return list(usage);
             }
@@ -1079,13 +1079,13 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
             }
 
             private void check(APICreatePortForwardingRuleMsg msg, Map<String, QuotaPair> pairs) {
-                long pfNum = pairs.get(PortForwardingConstant.QUOTA_PF_NUM).getValue();
+                long pfNum = pairs.get(QuotaConstant.PF_NUM).getValue();
                 long pfn = getUsedPf(msg.getSession().getAccountUuid());
 
                 if (pfn + 1 > pfNum) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                             String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    msg.getSession().getAccountUuid(), PortForwardingConstant.QUOTA_PF_NUM, pfNum)
+                                    msg.getSession().getAccountUuid(), QuotaConstant.PF_NUM, pfNum)
                     ));
                 }
             }
@@ -1096,8 +1096,8 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         quota.addMessageNeedValidation(APICreatePortForwardingRuleMsg.class);
 
         QuotaPair p = new QuotaPair();
-        p.setName(PortForwardingConstant.QUOTA_PF_NUM);
-        p.setValue(QuotaConstant.QUOTA_PF_NUM);
+        p.setName(QuotaConstant.PF_NUM);
+        p.setValue(QuotaGlobalConfig.PF_NUM.defaultValue(Long.class));
         quota.addPair(p);
         return list(quota);
     }

@@ -8,7 +8,7 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.*;
 import org.zstack.header.network.l2.L2NetworkInventory;
-import org.zstack.header.network.l3.L3NetworkConstant;
+import org.zstack.header.quota.QuotaConstant;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -56,15 +56,15 @@ public class TestPolicyForL3Network1 {
         Quota.QuotaUsage u = CollectionUtils.find(usages, new Function<Quota.QuotaUsage, Quota.QuotaUsage>() {
             @Override
             public Quota.QuotaUsage call(Quota.QuotaUsage arg) {
-                return arg.getName().equals(L3NetworkConstant.QUOTA_L3_NUM) ? arg : null;
+                return arg.getName().equals(QuotaConstant.L3_NUM) ? arg : null;
             }
         });
         Assert.assertNotNull(u);
-        QuotaInventory q = api.getQuota(L3NetworkConstant.QUOTA_L3_NUM, test.getUuid(), session);
+        QuotaInventory q = api.getQuota(QuotaConstant.L3_NUM, test.getUuid(), session);
         Assert.assertEquals(1, u.getUsed().longValue());
         Assert.assertEquals(q.getValue(), u.getTotal().longValue());
 
-        api.updateQuota(test.getUuid(), L3NetworkConstant.QUOTA_L3_NUM, 1);
+        api.updateQuota(test.getUuid(), QuotaConstant.L3_NUM, 1);
 
         boolean success = false;
         try {

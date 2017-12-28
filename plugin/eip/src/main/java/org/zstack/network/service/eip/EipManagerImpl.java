@@ -31,6 +31,7 @@ import org.zstack.header.query.ExpandedQueryStruct;
 import org.zstack.header.quota.QuotaConstant;
 import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
+import org.zstack.identity.QuotaGlobalConfig;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.vip.*;
@@ -1008,7 +1009,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
             @Override
             public List<Quota.QuotaUsage> getQuotaUsageByAccount(String accountUuid) {
                 Quota.QuotaUsage usage = new Quota.QuotaUsage();
-                usage.setName(EipConstant.QUOTA_EIP_NUM);
+                usage.setName(QuotaConstant.EIP_NUM);
                 usage.setUsed(getUsedEipNum(accountUuid));
                 return list(usage);
             }
@@ -1048,7 +1049,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                 String currentAccountUuid = msg.getSession().getAccountUuid();
                 String resourceTargetOwnerAccountUuid = msg.getSession().getAccountUuid();
 
-                long eipNumQuota = pairs.get(EipConstant.QUOTA_EIP_NUM).getValue();
+                long eipNumQuota = pairs.get(QuotaConstant.EIP_NUM).getValue();
                 long usedEipNum = getUsedEipNum(msg.getSession().getAccountUuid());
                 long askedEipNum = 1;
 
@@ -1056,7 +1057,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                 quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
                 quotaCompareInfo.currentAccountUuid = currentAccountUuid;
                 quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                quotaCompareInfo.quotaName = EipConstant.QUOTA_EIP_NUM;
+                quotaCompareInfo.quotaName = QuotaConstant.EIP_NUM;
                 quotaCompareInfo.quotaValue = eipNumQuota;
                 quotaCompareInfo.currentUsed = usedEipNum;
                 quotaCompareInfo.request = askedEipNum;
@@ -1077,7 +1078,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
 
                 if (accResRefVO.getResourceType().equals(VmInstanceVO.class.getSimpleName())) {
-                    long eipNumQuota = pairs.get(EipConstant.QUOTA_EIP_NUM).getValue();
+                    long eipNumQuota = pairs.get(QuotaConstant.EIP_NUM).getValue();
                     long usedEipNum = getUsedEipNum(resourceTargetOwnerAccountUuid);
                     long askedEipNum = getVmEipNum(msg.getResourceUuid());
 
@@ -1085,7 +1086,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                     quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
                     quotaCompareInfo.currentAccountUuid = currentAccountUuid;
                     quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                    quotaCompareInfo.quotaName = EipConstant.QUOTA_EIP_NUM;
+                    quotaCompareInfo.quotaName = QuotaConstant.EIP_NUM;
                     quotaCompareInfo.quotaValue = eipNumQuota;
                     quotaCompareInfo.currentUsed = usedEipNum;
                     quotaCompareInfo.request = askedEipNum;
@@ -1100,8 +1101,8 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         quota.setOperator(checker);
 
         QuotaPair p = new QuotaPair();
-        p.setName(EipConstant.QUOTA_EIP_NUM);
-        p.setValue(QuotaConstant.QUOTA_EIP_NUM);
+        p.setName(QuotaConstant.EIP_NUM);
+        p.setValue(QuotaGlobalConfig.EIP_NUM.defaultValue(Long.class));
         quota.addPair(p);
 
         return list(quota);

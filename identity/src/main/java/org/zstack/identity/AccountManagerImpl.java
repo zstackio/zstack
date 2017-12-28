@@ -949,7 +949,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             }
 
             GlobalConfigVO g = new GlobalConfigVO();
-            g.setCategory(AccountConstant.QUOTA_GLOBAL_CONFIG_CATETORY);
+            g.setCategory(QuotaGlobalConfig.CATEGORY);
             g.setDefaultValue(value.toString());
             g.setValue(g.getDefaultValue());
             g.setName(rtype);
