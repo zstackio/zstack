@@ -1722,7 +1722,7 @@
   {
     "raw": "the VM[uuid:%s] has no nic on the L3 network[uuid:%s]",
     "en_US": "the VM[uuid:{0}] has no nic on the L3 network[uuid:{1}]",
-    "zh_CN": "云主机[uuid:{0}]毛医生camile",
+    "zh_CN": "云主机[uuid:{0}]在L3网络[uuid:{1}]上没有任何网卡",
     "arguments": [
       "msg.getVmInstanceUuid()",
       "msg.getL3NetworkUuid()"
@@ -2031,7 +2031,7 @@
   {
     "raw": "vm[uuid:%s, name:%s] has been deleted",
     "en_US": "vm[uuid:{0}, name:{1}] has been deleted",
-    "zh_CN": "云主机[uuid:{0}, name:{1}]已经被卸载了",
+    "zh_CN": "云主机[uuid:{0}, name:{1}]已经被删除了",
     "arguments": [
       "vo.getUuid()",
       "vo.getName()"
