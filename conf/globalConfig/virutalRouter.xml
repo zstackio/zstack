@@ -54,4 +54,11 @@
         <defaultValue>vrouter12#</defaultValue>
         <category>virtualRouter</category>
     </config>
+    <config>
+        <name>vrouter.echoTimeout</name>
+        <description>The echo timeout for vrouter vm</description>
+        <defaultValue>60</defaultValue>
+        <type>java.lang.Integer</type>
+        <category>virtualRouter</category>
+    </config>
 </globalConfig>
