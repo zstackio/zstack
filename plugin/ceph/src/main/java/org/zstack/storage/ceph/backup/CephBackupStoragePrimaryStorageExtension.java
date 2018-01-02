@@ -1,9 +1,9 @@
 package org.zstack.storage.ceph.backup;
 
+import org.zstack.core.db.SQL;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.backup.BackupStoragePrimaryStorageExtensionPoint;
-import org.zstack.utils.CollectionDSL;
 
 import java.util.List;
 
@@ -17,5 +17,12 @@ public class CephBackupStoragePrimaryStorageExtension implements BackupStoragePr
             return null;
         }
         return CephBackupStorageGlobalProperty.CEPH_BACKUPSTORAGE_PRIORITY;
+    }
+
+    @Override
+    public List<String> getBackupStorageSupportedPS(String psUuid) {
+        return SQL.New("select b.uuid from CephPrimaryStorageVO c, PrimaryStorageVO p, CephBackupStorageVO b, BackupStorageZoneRefVO ref where " +
+                "p.uuid = :puuid and c.uuid = p.uuid and b.fsid = c.fsid and b.uuid = ref.backupStorageUuid and ref.zoneUuid = p.zoneUuid").
+                param("puuid", psUuid).list();
     }
 }
