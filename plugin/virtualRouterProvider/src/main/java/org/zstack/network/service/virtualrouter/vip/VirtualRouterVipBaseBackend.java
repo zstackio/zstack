@@ -211,7 +211,6 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
             @Override
             public void run(final FlowTrigger trigger, final Map data) {
                 DebugUtils.Assert(self.getPeerL3NetworkUuids() != null, "peerL3NetworkUuid cannot be null");
-                DebugUtils.Assert(self.getPeerL3NetworkUuids().size() == 1, "there must be only one peerL3NetworkUuid");
 
                 VirtualRouterStruct s = new VirtualRouterStruct();
                 s.setL3Network(L3NetworkInventory.valueOf(dbf.findByUuid(self.getPeerL3NetworkUuids().iterator().next(), L3NetworkVO.class)));

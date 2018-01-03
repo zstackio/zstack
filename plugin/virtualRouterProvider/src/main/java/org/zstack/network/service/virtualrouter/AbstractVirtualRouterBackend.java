@@ -14,10 +14,6 @@ public abstract class AbstractVirtualRouterBackend {
     protected VirtualRouterManager vrMgr;
 
     protected void acquireVirtualRouterVm(VirtualRouterStruct struct, ReturnValueCompletion<VirtualRouterVmInventory> completion) {
-        for (BeforeAcquireVirtualRouterVmExtensionPoint extp : pluginRgty.getExtensionList(
-                BeforeAcquireVirtualRouterVmExtensionPoint.class)) {
-            extp.beforeAcquireVirtualRouterVmExtensionPoint(struct);
-        }
         vrMgr.acquireVirtualRouterVm(struct, completion);
     }
 }
