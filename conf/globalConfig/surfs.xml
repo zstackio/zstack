@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<globalConfig xmlns="http://zstack.org/schema/zstack">
+    <config>
+        <name>backupStorage.image.download.timeout</name>
+        <description>timeout of command of downloading images to surfs backup storage, in seconds.</description>
+        <category>surfs</category>
+        <defaultValue>3600</defaultValue>
+        <type>java.lang.Long</type>
+    </config>
+
+    <config>
+        <name>imageCache.cleanup.interval</name>
+        <description>interval to cleanup stale image cache on primary storage, in seconds.</description>
+        <category>surfs</category>
+        <defaultValue>43200</defaultValue>
+        <type>java.lang.Long</type>
+    </config>
+
+    <config>
+        <name>primaryStorage.deletePool</name>
+        <description>delete all primary storage related pools when deleting the surfs primary storage</description>
+        <category>surfs</category>
+        <defaultValue>false</defaultValue>
+        <type>java.lang.Boolean</type>
+    </config>
+
+    <config>
+        <name>primaryStorage.node.reconnectDelay</name>
+        <description>the delay to reconnect a primary storage surfs node after a ping failure, in seconds</description>
+        <category>surfs</category>
+        <defaultValue>30</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
+
+    <config>
+        <name>backupStorage.node.reconnectDelay</name>
+        <description>the delay to reconnect a backup storage surfs node after a ping failure, in seconds</description>
+        <category>surfs</category>
+        <defaultValue>30</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
+
+    <config>
+        <name>primaryStorage.node.autoReconnect</name>
+        <description>whether to automatically reconnect a surfs primary storage node when it's unable to be pinged</description>
+        <category>surfs</category>
+        <defaultValue>true</defaultValue>
+        <type>java.lang.Boolean</type>
+    </config>
+
+    <config>
+        <name>backupStorage.node.autoReconnect</name>
+        <description>whether to automatically reconnect a surfs backup storage node when it's unable to be pinged</description>
+        <category>surfs</category>
+        <defaultValue>true</defaultValue>
+        <type>java.lang.Boolean</type>
+    </config>
+</globalConfig>

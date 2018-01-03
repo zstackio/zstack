@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <interceptor>SurfsApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.storage.surfs.backup.APIAddSurfsBackupStorageMsg</name>
+        <serviceId>storage.backup</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.storage.surfs.backup.APIAddNodeToSurfsBackupStorageMsg</name>
+        <serviceId>storage.backup</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.storage.surfs.backup.APIUpdateSurfsBackupStorageNodeMsg</name>
+        <serviceId>storage.backup</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.storage.surfs.backup.APIRemoveNodeFromSurfsBackupStorageMsg</name>
+        <serviceId>storage.backup</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.storage.surfs.backup.APIQuerySurfsBackupStorageMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.storage.surfs.primary.APIAddSurfsPrimaryStorageMsg</name>
+        <serviceId>storage.primary</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.storage.surfs.primary.APIAddNodeToSurfsPrimaryStorageMsg</name>
+        <serviceId>storage.primary</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.storage.surfs.primary.APIUpdateSurfsPrimaryStorageNodeMsg</name>
+        <serviceId>storage.primary</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.storage.surfs.primary.APIRemoveNodeFromSurfsPrimaryStorageMsg</name>
+        <serviceId>storage.primary</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.storage.surfs.primary.APIQuerySurfsPrimaryStorageMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.storage.surfs.primary.APIQuerySurfsPoolClassMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+</service>
