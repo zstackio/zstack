@@ -1,7 +1,8 @@
 package org.zstack.testlib
 
+import org.zstack.sdk.AttachDataVolumeToVmAction
 import org.zstack.sdk.VmInstanceInventory
-
+import org.zstack.utils.gson.JSONObjectUtil
 /**
  * Created by xing5 on 2017/2/16.
  */
@@ -18,6 +19,7 @@ class VmSpec extends Spec implements HasSession {
     String name
     @SpecParam
     String description
+    private List<String> volumeToAttach = []
 
     VmInstanceInventory inventory
 
@@ -157,9 +159,30 @@ class VmSpec extends Spec implements HasSession {
             inventory = queryVmInstance {
                 conditions=["uuid=${inventory.uuid}".toString()]
             }[0]
+
+            volumeToAttach.each { String volName ->
+                DataVolumeSpec volume = findSpec(volName, DataVolumeSpec.class)
+                def a = new AttachDataVolumeToVmAction()
+                a.vmInstanceUuid = inventory.uuid
+                a.volumeUuid = volume.inventory.uuid
+                a.sessionId = sessionId
+                def res = a.call()
+                assert res.error == null : "AttachDataVolumeToVmAction failure: ${JSONObjectUtil.toJsonString(res.error)}"
+            }
         }
 
         return id(name, inventory.uuid)
+    }
+
+    @SpecMethod
+    void attachDataVolume(String...names) {
+        names.each { String volName ->
+            preCreate {
+                addDependency(volName, DataVolumeSpec.class)
+            }
+
+            volumeToAttach.add(volName)
+        }
     }
 
     @Override

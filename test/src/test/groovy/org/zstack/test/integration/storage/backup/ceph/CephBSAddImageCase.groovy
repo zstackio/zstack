@@ -1,5 +1,5 @@
 
-package org.zstack.test.integration.storage.backup.ceph.imagebackupstoragerefvo
+package org.zstack.test.integration.storage.backup.ceph
 
 import org.zstack.core.db.Q
 import org.zstack.header.image.*
@@ -14,7 +14,7 @@ import org.zstack.utils.data.SizeUnit
 /**
  * Created by lining on 2017/3/31.
  */
-class AddImageCase extends SubCase{
+class CephBSAddImageCase extends SubCase{
 
     EnvSpec env
 

@@ -240,6 +240,15 @@ class EnvSpec implements Node {
         return spec
     }
 
+    DataVolumeSpec volume(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = DataVolumeSpec.class) Closure c) {
+        def i = new DataVolumeSpec(this)
+        c.delegate = i
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c()
+        addChild(i)
+        return i
+    }
+
     void adminLogin() {
         session = login(AccountConstant.INITIAL_SYSTEM_ADMIN_NAME, AccountConstant.INITIAL_SYSTEM_ADMIN_PASSWORD)
     }
