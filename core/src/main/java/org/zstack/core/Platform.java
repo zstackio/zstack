@@ -48,6 +48,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -665,6 +667,14 @@ public class Platform {
         return toI18nString(code, l, args.toArray(new Object[args.size()]));
     }
 
+    private static String stringFormat(String fmt, Object...args) {
+        if (args == null || args.length == 0) {
+            return fmt;
+        } else {
+            return String.format(fmt, args);
+        }
+    }
+
     public static String toI18nString(String code, Locale l, Object...args) {
         l = l == null ? locale : l;
 
@@ -678,18 +688,14 @@ public class Platform {
 
             // if the result is an empty string which means the string is not translated in the locale,
             // return the original string so users won't get a confusing, empty string
-            return ret.isEmpty() ? String.format(code, args) : ret;
+            return ret.isEmpty() ? stringFormat(code, args) : ret;
         } catch (NoSuchMessageException e) {
-            return String.format(code, args);
+            return stringFormat(code, args);
         }
     }
 
     public static String i18n(String str, Object...args) {
-        if (args == null || args.length == 0) {
-            return str;
-        } else {
-            return String.format(str, args);
-        }
+        return stringFormat(str, args);
     }
 
     public static String i18n(String str, Map<String, String> args) {
