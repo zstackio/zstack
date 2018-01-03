@@ -1850,9 +1850,24 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         });
     }
 
+    private void checkCephFsId(String psUuid, String bsUuid) {
+        CephPrimaryStorageVO cephPS = dbf.findByUuid(psUuid, CephPrimaryStorageVO.class);
+        DebugUtils.Assert(cephPS != null && cephPS.getFsid() != null, String.format("ceph ps: [%s] and its fsid cannot be null", psUuid));
+        CephBackupStorageVO cephBS = dbf.findByUuid(bsUuid, CephBackupStorageVO.class);
+        if (cephBS != null) {
+            DebugUtils.Assert(cephBS.getFsid() != null, String.format("fsid cannot be null in ceph bs:[%s]", bsUuid));
+            if (!cephPS.getFsid().equals(cephBS.getFsid())) {
+                throw new OperationFailureException(operr(
+                        "fsid is not same between ps[%s] and bs[%s], create template is forbidden.", psUuid, bsUuid));
+            }
+        }
+    }
+
     @Override
     protected void handle(final CreateTemplateFromVolumeOnPrimaryStorageMsg msg) {
         final CreateTemplateFromVolumeOnPrimaryStorageReply reply = new CreateTemplateFromVolumeOnPrimaryStorageReply();
+
+        checkCephFsId(msg.getPrimaryStorageUuid(), msg.getBackupStorageUuid());
 
         String volumeUuid = msg.getVolumeInventory().getUuid();
         String imageUuid = msg.getImageInventory().getUuid();
@@ -1868,7 +1883,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             public void setup() {
 
                 flow(new NoRollbackFlow() {
-                    String __name__ = String.format("create-volume-snapshot");
+                    String __name__ = "create-volume-snapshot";
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
@@ -1901,7 +1916,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 });
 
                 flow(new NoRollbackFlow() {
-                    String __name__ = String.format("create-template-from-volume-snapshot");
+                    String __name__ = "create-template-from-volume-snapshot";
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
@@ -3041,6 +3056,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
 
     private void handle(final UploadBitsToBackupStorageMsg msg) {
+        checkCephFsId(msg.getPrimaryStorageUuid(), msg.getBackupStorageUuid());
         SimpleQuery<BackupStorageVO> q = dbf.createQuery(BackupStorageVO.class);
         q.select(BackupStorageVO_.type);
         q.add(BackupStorageVO_.uuid, Op.EQ, msg.getBackupStorageUuid());

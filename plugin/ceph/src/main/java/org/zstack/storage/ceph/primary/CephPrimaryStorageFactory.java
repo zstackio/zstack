@@ -448,7 +448,6 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
             @Override
             public void run(final FlowTrigger trigger, Map data) {
                 final ParamOut out = (ParamOut) data.get(ParamOut.class);
-
                 BackupStorageAskInstallPathMsg ask = new BackupStorageAskInstallPathMsg();
                 ask.setImageUuid(paramIn.getImage().getUuid());
                 ask.setBackupStorageUuid(paramIn.getBackupStorageUuid());
