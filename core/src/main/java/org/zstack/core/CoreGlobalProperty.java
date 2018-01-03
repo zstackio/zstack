@@ -1,5 +1,7 @@
 package org.zstack.core;
 
+import java.util.List;
+
 /**
  */
 @GlobalPropertyDefinition
@@ -42,4 +44,6 @@ public class CoreGlobalProperty {
     public static boolean SHADOW_ENTITY_ON;
     @GlobalProperty(name = "consoleProxyPort", defaultValue = "4900")
     public static int CONSOLE_PROXY_PORT;
+    @GlobalProperty(name="chrony.serverIp.")
+    public static List<String> CHRONY_SERVERS;
 }
