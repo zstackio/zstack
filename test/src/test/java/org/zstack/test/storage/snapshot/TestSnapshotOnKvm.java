@@ -60,7 +60,7 @@ public class TestSnapshotOnKvm {
         Assert.assertFalse(svo.isFullSnapshot());
         Assert.assertTrue(svo.isLatest());
         Assert.assertNull(svo.getParentUuid());
-        Assert.assertEquals(0, svo.getDistance());
+        Assert.assertEquals(1, svo.getDistance());
         Assert.assertEquals(vol.getPrimaryStorageUuid(), svo.getPrimaryStorageUuid());
         Assert.assertNotNull(svo.getPrimaryStorageInstallPath());
         VolumeSnapshotTreeVO cvo = dbf.findByUuid(svo.getTreeUuid(), VolumeSnapshotTreeVO.class);

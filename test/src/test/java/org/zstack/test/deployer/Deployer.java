@@ -109,6 +109,8 @@ public class Deployer {
     public String SPRING_CONFIG_SNAPSHOT_SERVICE = "volumeSnapshot.xml";
     public String SPRING_CONFIG_TAG_MANAGER = "tag.xml";
     public String SPRING_CONFIG_REST_MANAGER = "rest.xml";
+    public String SPRING_CONFIG_N_MANAGER = "notification.xml";
+    public String SPRING_CONFIG_N_SERVICE = "notification.xml";
 
     private void scanDeployer() {
         ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(true);
@@ -167,6 +169,8 @@ public class Deployer {
             addDefaultConfig(this.SPRING_CONFIG_SNAPSHOT_SERVICE);
             addDefaultConfig(this.SPRING_CONFIG_TAG_MANAGER);
             addDefaultConfig(this.SPRING_CONFIG_REST_MANAGER);
+            addDefaultConfig(this.SPRING_CONFIG_N_MANAGER);
+            addDefaultConfig(this.SPRING_CONFIG_N_SERVICE);
 
             for (String xml : springConfigs) {
                 beanConstructor.addXml(xml);

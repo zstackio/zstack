@@ -23,6 +23,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
 
+@Controller
 public class KVMSimulatorController {
     private static final CLogger logger = Utils.getLogger(KVMSimulatorController.class);
     

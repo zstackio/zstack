@@ -1,17 +1,3 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <UnitTestSuiteConfig xmlns="http://zstack.org/schema/zstack" timeout="600">
-    <TestCase class="org.zstack.test.mevoco.ha.TestHaOnKvm1"/>
-    <TestCase class="org.zstack.test.mevoco.ha.TestHaOnKvm2"/>
-    <TestCase class="org.zstack.test.mevoco.ha.TestHaOnKvm3"/>
-    <TestCase class="org.zstack.test.mevoco.ha.TestHaOnKvm4"/>
-    <TestCase class="org.zstack.test.mevoco.ha.TestHaOnKvm5"/>
-    <TestCase class="org.zstack.test.mevoco.ha.TestHaOnKvm6"/>
-    <TestCase class="org.zstack.test.mevoco.ha.TestHaOnKvm7"/>
-    <TestCase class="org.zstack.test.mevoco.ha.TestHaOnKvm8"/>
-    <TestCase class="org.zstack.test.mevoco.ha.TestHaOnKvm9"/>
-    <TestCase class="org.zstack.test.mevoco.ha.TestHaOnKvm10"/>
-    <TestCase class="org.zstack.test.mevoco.ha.TestHaOnKvm11"/>
-    <TestCase class="org.zstack.test.mevoco.ha.TestHaOnKvm12"/>
-    <TestCase class="org.zstack.test.mevoco.ha.TestHaOnKvm13"/>
-    <TestCase class="org.zstack.test.mevoco.ha.TestHaOnKvm14"/>
 </UnitTestSuiteConfig>

@@ -20,10 +20,15 @@ public class SimulatorPrimaryStorageDeployer implements PrimaryStorageDeployer<S
             PrimaryStorageInventory pinv = new PrimaryStorageInventory();
             pinv.setDescription(pc.getDescription());
             pinv.setName(pc.getName());
+
             long tcap = deployer.parseSizeCapacity(pc.getTotalCapacity());
             pinv.setTotalCapacity(tcap);
+            pinv.setTotalPhysicalCapacity(tcap);
+
             long acap = deployer.parseSizeCapacity(pc.getAvailableCapacity());
             pinv.setAvailableCapacity(acap);
+            pinv.setAvailablePhysicalCapacity(acap);
+
             pinv.setUrl(pc.getUrl());
             pinv.setZoneUuid(zone.getUuid());
             pinv = deployer.getApi().addPrimaryStorageByFullConfig(pinv);

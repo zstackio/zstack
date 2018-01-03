@@ -7,6 +7,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -19,10 +20,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.backup.BackupStorageAskInstallPathMsg;
-import org.zstack.header.storage.backup.BackupStorageAskInstallPathReply;
-import org.zstack.header.storage.backup.BackupStorageConstant;
-import org.zstack.header.storage.backup.DeleteBitsOnBackupStorageMsg;
+import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
@@ -78,6 +76,8 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     private ThreadFacade thdf;
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     private Future imageCacheCleanupThread;
 
@@ -91,13 +91,24 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
             @Override
             @Transactional(readOnly = true)
             public List<String> findBackupStorage(String primaryStorageUuid) {
-                String sql = "select b.uuid from CephPrimaryStorageVO p, CephBackupStorageVO b where b.fsid = p.fsid" +
-                        " and p.uuid = :puuid";
-                TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-                q.setParameter("puuid", primaryStorageUuid);
-                return q.getResultList();
+                List<String> psUuids = new ArrayList<>();
+                psUuids.addAll(getExtensionBSUuids(primaryStorageUuid));
+                // return null because the usage would do some null-processes
+                return psUuids.size() == 0 ? null : psUuids;
             }
         });
+    }
+
+    private List<String> getExtensionBSUuids(String psUuid) {
+        List<String> psUuids = new ArrayList<>();
+        List<BackupStoragePrimaryStorageExtensionPoint> extenstions = pluginRgty.getExtensionList(BackupStoragePrimaryStorageExtensionPoint.class);
+        extenstions.forEach(ext -> {
+            List<String> tmp = ext.getBackupStorageSupportedPS(psUuid);
+            if (tmp != null) {
+                psUuids.addAll(tmp);
+            }
+        });
+        return psUuids;
     }
 
     @Override

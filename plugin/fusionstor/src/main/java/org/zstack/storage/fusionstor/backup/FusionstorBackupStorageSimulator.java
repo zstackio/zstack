@@ -27,6 +27,7 @@ import org.zstack.utils.logging.CLogger;
 /**
  * Created by frank on 7/28/2015.
  */
+@Controller
 public class FusionstorBackupStorageSimulator {
     CLogger logger = Utils.getLogger(FusionstorBackupStorageSimulator.class);
 
