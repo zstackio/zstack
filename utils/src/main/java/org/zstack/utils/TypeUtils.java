@@ -2,13 +2,16 @@ package org.zstack.utils;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  */
 public class TypeUtils {
     private static List<Class> primitivesAndWrapperTypes = new ArrayList<Class>();
     private static List<Class> primitivesTypes = new ArrayList<Class>();
+    private static Set<Class> numberClasses = new HashSet<>();
 
     static {
         primitivesTypes.add(Boolean.TYPE);
@@ -32,6 +35,17 @@ public class TypeUtils {
         primitivesAndWrapperTypes.add(Void.class);
         primitivesAndWrapperTypes.add(String.class);
         primitivesAndWrapperTypes.addAll(primitivesTypes);
+
+        numberClasses.add(Short.TYPE);
+        numberClasses.add(Short.class);
+        numberClasses.add(Integer.TYPE);
+        numberClasses.add(Integer.class);
+        numberClasses.add(Long.TYPE);
+        numberClasses.add(Long.class);
+        numberClasses.add(Float.TYPE);
+        numberClasses.add(Float.class);
+        numberClasses.add(Double.TYPE);
+        numberClasses.add(Double.class);
     }
 
     public static boolean isPrimitiveType(Class clazz) {
@@ -62,7 +76,7 @@ public class TypeUtils {
     }
 
     private static <T> T toValue(String val, Class<T> clazz) {
-        if (Number.class.isAssignableFrom(clazz)) {
+        if (numberClasses.contains(clazz)) {
             Double d = Double.valueOf(val);
             if (Integer.class.isAssignableFrom(clazz) || Integer.TYPE.isAssignableFrom(clazz)) {
                 return (T) new Integer(d.intValue());
