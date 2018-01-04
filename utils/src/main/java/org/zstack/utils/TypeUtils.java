@@ -2,13 +2,16 @@ package org.zstack.utils;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  */
 public class TypeUtils {
     private static List<Class> primitivesAndWrapperTypes = new ArrayList<Class>();
     private static List<Class> primitivesTypes = new ArrayList<Class>();
+    private static Set<Class> numberClasses = new HashSet<>();
 
     static {
         primitivesTypes.add(Boolean.TYPE);
@@ -32,6 +35,17 @@ public class TypeUtils {
         primitivesAndWrapperTypes.add(Void.class);
         primitivesAndWrapperTypes.add(String.class);
         primitivesAndWrapperTypes.addAll(primitivesTypes);
+
+        numberClasses.add(Short.TYPE);
+        numberClasses.add(Short.class);
+        numberClasses.add(Integer.TYPE);
+        numberClasses.add(Integer.class);
+        numberClasses.add(Long.TYPE);
+        numberClasses.add(Long.class);
+        numberClasses.add(Float.TYPE);
+        numberClasses.add(Float.class);
+        numberClasses.add(Double.TYPE);
+        numberClasses.add(Double.class);
     }
 
     public static boolean isPrimitiveType(Class clazz) {
@@ -62,20 +76,25 @@ public class TypeUtils {
     }
 
     private static <T> T toValue(String val, Class<T> clazz) {
-        if (Integer.class.isAssignableFrom(clazz) || Integer.TYPE.isAssignableFrom(clazz)) {
-            return (T) Integer.valueOf(val);
-        } else if (Long.class.isAssignableFrom(clazz) || Long.TYPE.isAssignableFrom(clazz)) {
-            return (T) Long.valueOf(val);
-        } else if (Boolean.class.isAssignableFrom(clazz) || Boolean.TYPE.isAssignableFrom(clazz)) {
-            return (T) Boolean.valueOf(val);
-        } else  if (Float.class.isAssignableFrom(clazz) || Float.TYPE.isAssignableFrom(clazz)) {
-            return (T) Float.valueOf(val);
-        } else if (Short.class.isAssignableFrom(clazz) || Short.TYPE.isAssignableFrom(clazz)) {
-            return (T) Short.valueOf(val);
-        } else if (Double.class.isAssignableFrom(clazz) || Double.TYPE.isAssignableFrom(clazz)) {
-            return (T) Double.valueOf(val);
+        if (numberClasses.contains(clazz)) {
+            Double d = Double.valueOf(val);
+            if (Integer.class.isAssignableFrom(clazz) || Integer.TYPE.isAssignableFrom(clazz)) {
+                return (T) new Integer(d.intValue());
+            } else if (Long.class.isAssignableFrom(clazz) || Long.TYPE.isAssignableFrom(clazz)) {
+                return (T) new Long(d.longValue());
+            } else  if (Float.class.isAssignableFrom(clazz) || Float.TYPE.isAssignableFrom(clazz)) {
+                return (T) new Float(d.floatValue());
+            } else if (Short.class.isAssignableFrom(clazz) || Short.TYPE.isAssignableFrom(clazz)) {
+                return (T) new Short(d.shortValue());
+            } else if (Double.class.isAssignableFrom(clazz) || Double.TYPE.isAssignableFrom(clazz)) {
+                return (T) d;
+            } else {
+                throw new RuntimeException(String.format("not supported number class: %s", clazz));
+            }
         } else if (String.class.isAssignableFrom(clazz)) {
             return (T) val;
+        } else if (Boolean.class.isAssignableFrom(clazz) || Boolean.TYPE.isAssignableFrom(clazz)) {
+            return (T) Boolean.valueOf(val);
         } else {
             return (T) val;
         }
