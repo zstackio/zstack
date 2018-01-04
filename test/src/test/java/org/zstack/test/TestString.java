@@ -1,8 +1,7 @@
 package org.zstack.test;
 
-import org.apache.logging.log4j.ThreadContext;
 import org.junit.Test;
-import org.zstack.core.Platform;
+import org.zstack.utils.TypeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -15,12 +14,14 @@ public class TestString {
 
     @Test
     public void test() throws InterruptedException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
-        ThreadContext.put("api", Platform.getUuid());
-        logger.debug("message 1");
-        logger.info("message 2");
-        logger.warn("message 3");
-        logger.error("message 4");
-        logger.trace("message 5");
-        ThreadContext.clearAll();
+        assert TypeUtils.stringToValue("1.0", Integer.class) == 1;
+        assert TypeUtils.stringToValue("1.0000000", Integer.class) == 1;
+        assert TypeUtils.stringToValue("1.2", Integer.class) == 1;
+        assert TypeUtils.stringToValue("1.3", Long.class) == 1L;
+        assert TypeUtils.stringToValue("1.3", Float.class) == 1.3F;
+        assert TypeUtils.stringToValue("1.3", Double.class) == 1.3D;
+        assert TypeUtils.stringToValue("false", Boolean.class) == false;
+        assert TypeUtils.stringToValue("true", Boolean.class) == true;
+        assert TypeUtils.stringToValue("true", String.class).equals("true");
     }
 }
