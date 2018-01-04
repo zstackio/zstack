@@ -62,20 +62,25 @@ public class TypeUtils {
     }
 
     private static <T> T toValue(String val, Class<T> clazz) {
-        if (Integer.class.isAssignableFrom(clazz) || Integer.TYPE.isAssignableFrom(clazz)) {
-            return (T) Integer.valueOf(val);
-        } else if (Long.class.isAssignableFrom(clazz) || Long.TYPE.isAssignableFrom(clazz)) {
-            return (T) Long.valueOf(val);
-        } else if (Boolean.class.isAssignableFrom(clazz) || Boolean.TYPE.isAssignableFrom(clazz)) {
-            return (T) Boolean.valueOf(val);
-        } else  if (Float.class.isAssignableFrom(clazz) || Float.TYPE.isAssignableFrom(clazz)) {
-            return (T) Float.valueOf(val);
-        } else if (Short.class.isAssignableFrom(clazz) || Short.TYPE.isAssignableFrom(clazz)) {
-            return (T) Short.valueOf(val);
-        } else if (Double.class.isAssignableFrom(clazz) || Double.TYPE.isAssignableFrom(clazz)) {
-            return (T) Double.valueOf(val);
+        if (Number.class.isAssignableFrom(clazz)) {
+            Double d = Double.valueOf(val);
+            if (Integer.class.isAssignableFrom(clazz) || Integer.TYPE.isAssignableFrom(clazz)) {
+                return (T) new Integer(d.intValue());
+            } else if (Long.class.isAssignableFrom(clazz) || Long.TYPE.isAssignableFrom(clazz)) {
+                return (T) new Long(d.longValue());
+            } else  if (Float.class.isAssignableFrom(clazz) || Float.TYPE.isAssignableFrom(clazz)) {
+                return (T) new Float(d.floatValue());
+            } else if (Short.class.isAssignableFrom(clazz) || Short.TYPE.isAssignableFrom(clazz)) {
+                return (T) new Short(d.shortValue());
+            } else if (Double.class.isAssignableFrom(clazz) || Double.TYPE.isAssignableFrom(clazz)) {
+                return (T) d;
+            } else {
+                throw new RuntimeException(String.format("not supported number class: %s", clazz));
+            }
         } else if (String.class.isAssignableFrom(clazz)) {
             return (T) val;
+        } else if (Boolean.class.isAssignableFrom(clazz) || Boolean.TYPE.isAssignableFrom(clazz)) {
+            return (T) Boolean.valueOf(val);
         } else {
             return (T) val;
         }
