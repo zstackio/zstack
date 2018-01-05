@@ -33,12 +33,12 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
-import static org.zstack.core.Platform.operr;
-
 import javax.persistence.Query;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
+
+import static org.zstack.core.Platform.operr;
 
 public class SftpBackupStorage extends BackupStorageBase {
     private static final CLogger logger = Utils.getLogger(SftpBackupStorage.class);
@@ -341,6 +341,9 @@ public class SftpBackupStorage extends BackupStorageBase {
         runner.setAgentPort(SftpBackupStorageGlobalProperty.AGENT_PORT);
         runner.setPlayBookName(SftpBackupStorageConstant.ANSIBLE_PLAYBOOK_NAME);
         runner.putArgument("pkg_sftpbackupstorage", agentPackageName);
+        if (CoreGlobalProperty.CHRONY_SERVERS != null && !CoreGlobalProperty.CHRONY_SERVERS.isEmpty()) {
+            runner.putArgument("chrony_servers", String.join(",", CoreGlobalProperty.CHRONY_SERVERS));
+        }
         runner.run(new Completion(complete) {
             @Override
             public void success() {
