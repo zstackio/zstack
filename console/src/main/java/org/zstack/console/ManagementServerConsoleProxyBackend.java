@@ -38,13 +38,13 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
-import static org.zstack.core.Platform.argerr;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.zstack.core.Platform.argerr;
 
 /**
  * Created with IntelliJ IDEA.
@@ -147,6 +147,9 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                     runner.setTargetIp(Platform.getManagementServerIp());
                     runner.setPlayBookName(ANSIBLE_PLAYBOOK_NAME);
                     runner.putArgument("pkg_consoleproxy", agentPackageName);
+                    if (CoreGlobalProperty.CHRONY_SERVERS != null && !CoreGlobalProperty.CHRONY_SERVERS.isEmpty()) {
+                        runner.putArgument("chrony_servers", String.join(",", CoreGlobalProperty.CHRONY_SERVERS));
+                    }
                     runner.run(new Completion(completion, chain) {
                         @Override
                         public void success() {

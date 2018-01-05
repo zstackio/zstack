@@ -26,9 +26,9 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
-import static org.zstack.core.Platform.operr;
-
 import java.util.Map;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created by frank on 7/27/2015.
@@ -171,6 +171,9 @@ public class CephBackupStorageMonBase extends CephMonBase {
                             runner.setAgentPort(CephGlobalProperty.BACKUP_STORAGE_AGENT_PORT);
                             runner.setPlayBookName(CephGlobalProperty.BACKUP_STORAGE_PLAYBOOK_NAME);
                             runner.putArgument("pkg_cephbagent", CephGlobalProperty.BACKUP_STORAGE_PACKAGE_NAME);
+                            if (CoreGlobalProperty.CHRONY_SERVERS != null && !CoreGlobalProperty.CHRONY_SERVERS.isEmpty()) {
+                                runner.putArgument("chrony_servers", String.join(",", CoreGlobalProperty.CHRONY_SERVERS));
+                            }
                             runner.run(new Completion(trigger) {
                                 @Override
                                 public void success() {
