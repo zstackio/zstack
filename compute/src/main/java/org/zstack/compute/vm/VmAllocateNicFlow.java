@@ -131,7 +131,7 @@ public class VmAllocateNicFlow implements Flow {
                         assert nic.getL3NetworkUuid() != null;
                         String customMac = new MacOperator().getMac(spec.getVmInventory().getUuid(), nic.getL3NetworkUuid());
 
-                        nic.setMac(customMac != null ? customMac : NetworkUtils.generateMacWithDeviceId((short) deviceId));
+                        nic.setMac(customMac != null ? customMac.toLowerCase() : NetworkUtils.generateMacWithDeviceId((short) deviceId));
                         nic.setDeviceId(deviceId);
                         nic.setNetmask(areply.getIpInventory().getNetmask());
                         nic.setGateway(areply.getIpInventory().getGateway());

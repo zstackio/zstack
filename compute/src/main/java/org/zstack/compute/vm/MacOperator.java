@@ -63,15 +63,16 @@ public class MacOperator {
     }
 
     public void validateAvailableMac(String mac) {
-        Matcher matcher = pattern.matcher(mac);
+        String lowercaseMac = mac.toLowerCase();
+        Matcher matcher = pattern.matcher(lowercaseMac);
         if (!matcher.matches()) {
             throw new OperationFailureException(operr("this is not a valid MAC address [%s]", mac));
         }
-        if ("00:00:00:00:00:00".equalsIgnoreCase(mac) || "ff:ff:ff:ff:ff:ff".equalsIgnoreCase(mac)) {
+        if ("00:00:00:00:00:00".equals(lowercaseMac) || "ff:ff:ff:ff:ff:ff".equals(lowercaseMac)) {
             throw new OperationFailureException(operr("Disallowed address"));
         }
-        if (Q.New(VmNicVO.class).eq(VmNicVO_.mac, mac).isExists()) {
-            throw new OperationFailureException(operr("Duplicate mac address [%s]", mac));
+        if (Q.New(VmNicVO.class).eq(VmNicVO_.mac, lowercaseMac).isExists()) {
+            throw new OperationFailureException(operr("Duplicate mac address [%s]", lowercaseMac));
         }
     }
 }
