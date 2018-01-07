@@ -151,3 +151,48 @@ CREATE TABLE  `zstack`.`EventSubscriptionLabelVO` (
     `subscriptionUuid` varchar(32) NOT NULL,
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# Foreign keys for table SNSApplicationEndpointVO
+
+ALTER TABLE SNSApplicationEndpointVO ADD CONSTRAINT fkSNSApplicationEndpointVOSNSApplicationPlatformVO FOREIGN KEY (platformUuid) REFERENCES SNSApplicationPlatformVO (uuid) ;
+
+# Foreign keys for table SNSDingTalkAtPersonVO
+
+ALTER TABLE SNSDingTalkAtPersonVO ADD CONSTRAINT fkSNSDingTalkAtPersonVOSNSDingTalkEndpointVO FOREIGN KEY (endpointUuid) REFERENCES SNSDingTalkEndpointVO (uuid) ;
+
+# Foreign keys for table SNSDingTalkEndpointVO
+
+ALTER TABLE SNSDingTalkEndpointVO ADD CONSTRAINT fkSNSDingTalkEndpointVOSNSApplicationEndpointVO FOREIGN KEY (uuid) REFERENCES SNSApplicationEndpointVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE;
+
+# Foreign keys for table SNSEmailEndpointVO
+
+ALTER TABLE SNSEmailEndpointVO ADD CONSTRAINT fkSNSEmailEndpointVOSNSApplicationEndpointVO FOREIGN KEY (uuid) REFERENCES SNSApplicationEndpointVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE;
+
+# Foreign keys for table SNSEmailPlatformVO
+
+ALTER TABLE SNSEmailPlatformVO ADD CONSTRAINT fkSNSEmailPlatformVOSNSApplicationPlatformVO FOREIGN KEY (uuid) REFERENCES SNSApplicationPlatformVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE;
+
+# Foreign keys for table SNSHttpEndpointVO
+
+ALTER TABLE SNSHttpEndpointVO ADD CONSTRAINT fkSNSHttpEndpointVOSNSApplicationEndpointVO FOREIGN KEY (uuid) REFERENCES SNSApplicationEndpointVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE;
+
+# Foreign keys for table SNSSubscriberVO
+
+ALTER TABLE SNSSubscriberVO ADD CONSTRAINT fkSNSSubscriberVOSNSApplicationEndpointVO FOREIGN KEY (endpointUuid) REFERENCES SNSApplicationEndpointVO (uuid) ON DELETE CASCADE;
+ALTER TABLE SNSSubscriberVO ADD CONSTRAINT fkSNSSubscriberVOSNSTopicVO FOREIGN KEY (topicUuid) REFERENCES SNSTopicVO (uuid) ON DELETE CASCADE;
+
+# Foreign keys for table AlarmActionVO
+
+ALTER TABLE AlarmActionVO ADD CONSTRAINT fkAlarmActionVOAlarmVO FOREIGN KEY (alarmUuid) REFERENCES AlarmVO (uuid) ON DELETE CASCADE;
+
+# Foreign keys for table AlarmLabelVO
+
+ALTER TABLE AlarmLabelVO ADD CONSTRAINT fkAlarmLabelVOAlarmVO FOREIGN KEY (alarmUuid) REFERENCES AlarmVO (uuid) ON DELETE CASCADE;
+
+# Foreign keys for table EventSubscriptionActionVO
+
+ALTER TABLE EventSubscriptionActionVO ADD CONSTRAINT fkEventSubscriptionActionVOEventSubscriptionVO FOREIGN KEY (subscriptionUuid) REFERENCES EventSubscriptionVO (uuid) ON DELETE CASCADE;
+
+# Foreign keys for table EventSubscriptionLabelVO
+
+ALTER TABLE EventSubscriptionLabelVO ADD CONSTRAINT fkEventSubscriptionLabelVOEventSubscriptionVO FOREIGN KEY (subscriptionUuid) REFERENCES EventSubscriptionVO (uuid) ON DELETE CASCADE;
