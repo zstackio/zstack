@@ -10,6 +10,7 @@ import org.zstack.core.CoreGlobalProperty
 import org.zstack.core.Platform
 import org.zstack.core.asyncbatch.While
 import org.zstack.core.db.DatabaseFacade
+import org.zstack.core.db.DatabaseFacadeImpl
 import org.zstack.core.db.SQL
 import org.zstack.core.notification.NotificationVO
 import org.zstack.header.core.NoErrorCompletion
@@ -39,6 +40,7 @@ import org.zstack.sdk.zwatch.alarm.SubscribeEventAction
 import org.zstack.sdk.zwatch.alarm.UnsubscribeEventAction
 import org.zstack.storage.volume.VolumeGlobalConfig
 import org.zstack.utils.DebugUtils
+import org.zstack.utils.FieldUtils
 import org.zstack.utils.data.Pair
 import org.zstack.utils.gson.JSONObjectUtil
 
@@ -126,6 +128,7 @@ class EnvSpec implements Node {
     ]
 
     static Closure GLOBAL_DELETE_HOOK
+    static List<AllowedDBRemaining> allowedDBRemainingList = []
 
     protected ConcurrentLinkedQueue resourcesNeedDeletion = new ConcurrentLinkedQueue()
 
@@ -477,7 +480,7 @@ class EnvSpec implements Node {
     }
 
     private void makeSureAllEntitiesDeleted() {
-        DatabaseFacade dbf = Test.componentLoader.getComponent(DatabaseFacade.class)
+        DatabaseFacadeImpl dbf = Test.componentLoader.getComponent(DatabaseFacadeImpl.class)
         def entityTypes = dbf.entityManager.metamodel.entities
         entityTypes.each { type ->
             if (type.name in ["ManagementNodeVO", "SessionVO",
@@ -495,7 +498,20 @@ class EnvSpec implements Node {
             long count = SQL.New("select count(*) from ${type.name}".toString(), Long.class).find()
 
             if (count > 0) {
-                def err = "[${Test.CURRENT_SUB_CASE != null ? Test.CURRENT_SUB_CASE.class : this.class}] EnvSpec.delete() didn't cleanup the environment, there are still records in the database" +
+                Class voClz = dbf.entityInfoMap.keySet().find { it.simpleName == type.name }
+                assert voClz != null: "cannot find the entity[${type.name}]"
+
+                List vos = SQL.New("select a from ${type.name} a".toString(), voClz).list()
+
+                for (AllowedDBRemaining a : allowedDBRemainingList) {
+                    vos = a.check(type.name, vos)
+                    if (vos.isEmpty()) {
+                        // the remaining rows are allowed by test
+                        return
+                    }
+                }
+
+                def err = "[${Test.CURRENT_SUB_CASE != null ? Test.CURRENT_SUB_CASE.class : this.class}] EnvSpec.delete() didn't cleanup the environment, there are still ${vos.size()} records in the database" +
                         " table ${type.name}, go fix it immediately!!! Abort the system"
                 logger.fatal(err)
 
