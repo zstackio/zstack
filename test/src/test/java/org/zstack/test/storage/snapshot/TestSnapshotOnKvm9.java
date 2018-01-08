@@ -35,7 +35,10 @@ import java.util.concurrent.TimeUnit;
 * delete all
 *
 * confirms delete success
+* Covered by new style test case SnapshotMaxIncrementalCase
 */
+
+@Deprecated
 public class TestSnapshotOnKvm9 {
     CLogger logger = Utils.getLogger(TestSnapshotOnKvm9.class);
     Deployer deployer;
