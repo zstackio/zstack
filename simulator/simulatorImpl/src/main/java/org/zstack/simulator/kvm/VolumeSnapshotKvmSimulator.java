@@ -35,6 +35,9 @@ import java.util.Map;
 public class VolumeSnapshotKvmSimulator {
     private static CLogger logger = Utils.getLogger(VolumeSnapshotKvmSimulator.class);
 
+    @Autowired
+    private DatabaseFacade dbf;
+
     public static class Qcow2 {
         private String installPath;
         private List<Qcow2> next = new ArrayList<Qcow2>();
@@ -178,9 +181,6 @@ public class VolumeSnapshotKvmSimulator {
             }
         }
     }
-
-    @Autowired
-    private DatabaseFacade dbf;
 
     private Map<String, Qcow2> snapshots = new HashMap<String, Qcow2>();
 
