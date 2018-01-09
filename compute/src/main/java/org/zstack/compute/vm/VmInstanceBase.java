@@ -75,6 +75,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.*;
@@ -4149,7 +4150,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 dbf.remove(self);
                 // clean up EO, otherwise API-retry may cause conflict if
                 // the resource uuid is set
-                dbf.eoCleanup(VmInstanceVO.class);
+                dbf.eoCleanup(VmInstanceVO.class, asList(self.getUuid()));
                 completion.fail(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR, errCode));
             }
         }).start();
