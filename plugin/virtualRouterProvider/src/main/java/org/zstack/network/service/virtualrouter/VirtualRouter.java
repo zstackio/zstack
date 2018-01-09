@@ -451,13 +451,12 @@ public class VirtualRouter extends ApplianceVmBase {
                 VirtualRouterAsyncHttpCallReply re = reply.castReply();
                 VirtualRouterCommands.ConfigureNicRsp rsp = re.toResponse(VirtualRouterCommands.ConfigureNicRsp.class);
                 if (rsp.isSuccess()) {
-
-                    logger.debug(String.format("successfully add nic[%s] to virtual router vm[uuid:%s, ip:%s]",info, vr.getUuid(), vr.getManagementNic()
-                            .getIp()));
+                    logger.debug(String.format("successfully add nic[ip:%s, mac:%s] to virtual router vm[uuid:%s, ip:%s]",
+                            info.getIp(), info.getMac(), vr.getUuid(), vr.getManagementNic().getIp()));
                     completion.success();
                 } else {
-                    ErrorCode err = operr("unable to add nic[%s] to virtual router vm[uuid:%s ip:%s], because %s",
-                            info, vr.getUuid(), vr.getManagementNic().getIp(), rsp.getError());
+                    ErrorCode err = operr("unable to add nic[ip:%s, mac:%s] to virtual router vm[uuid:%s ip:%s], because %s",
+                            info.getIp(), info.getMac(), vr.getUuid(), vr.getManagementNic().getIp(), rsp.getError());
                     completion.fail(err);
                 }
             }

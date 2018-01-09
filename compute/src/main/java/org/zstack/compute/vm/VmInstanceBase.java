@@ -1143,26 +1143,63 @@ public class VmInstanceBase extends AbstractVmInstance {
                     return;
                 }
 
-                detachNic(msg.getVmNicUuid(), new Completion(msg, chain) {
+                FlowChain fchain = FlowChainBuilder.newSimpleFlowChain();
+                fchain.setName(String.format("l3-network-detach-from-vm-%s", msg.getVmInstanceUuid()));
+                fchain.then(new NoRollbackFlow() {
+                    String __name__ = "before-detach-nic";
+
                     @Override
-                    public void success() {
+                    public void run(FlowTrigger trigger, Map data) {
+                        VmNicInventory nic = VmNicInventory.valueOf((VmNicVO) Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find());
+                        beforeDetachNic(nic, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                }).then(new NoRollbackFlow() {
+                    String __name__ = "detach-nic";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        detachNic(msg.getVmNicUuid(), new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                }).done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        self = dbf.reload(self);
                         bus.reply(msg, reply);
                         chain.next();
                     }
-
+                }).error(new FlowErrorHandler(msg) {
                     @Override
-                    public void fail(ErrorCode errorCode) {
-                        reply.setError(errorCode);
+                    public void handle(ErrorCode errCode, Map data) {
+                        reply.setError(errCode);
                         bus.reply(msg, reply);
                         chain.next();
                     }
-                });
-
+                }).start();
             }
 
             @Override
             public String getName() {
-                return "detach-nic";
+                return "nic-detach";
             }
         });
     }
@@ -2983,7 +3020,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 }
 
                 FlowChain fchain = FlowChainBuilder.newSimpleFlowChain();
-                fchain.setName(String.format("detach-l3-network-to-vm-%s", msg.getVmInstanceUuid()));
+                fchain.setName(String.format("detach-l3-network-from-vm-%s", msg.getVmInstanceUuid()));
                 fchain.then(new NoRollbackFlow() {
                     String __name__ = "before-detach-nic";
 
