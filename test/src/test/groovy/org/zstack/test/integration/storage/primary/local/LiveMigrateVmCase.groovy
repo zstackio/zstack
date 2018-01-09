@@ -7,9 +7,13 @@ import org.zstack.header.identity.AccountConstant
 import org.zstack.header.identity.SharedResourceVO
 import org.zstack.header.vm.VmInstanceConstant
 import org.zstack.header.vm.VmInstanceVO
+import org.zstack.kvm.KVMAgentCommands
+import org.zstack.kvm.KVMSecurityGroupBackend
 import org.zstack.sdk.AccountInventory
 import org.zstack.sdk.GetVmCapabilitiesResult
 import org.zstack.sdk.HostInventory
+import org.zstack.sdk.KVMHostInventory
+import org.zstack.sdk.MigrateVmAction
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.storage.primary.local.LocalStorageKvmBackend
 import org.zstack.storage.primary.local.LocalStoragePrimaryStorageGlobalConfig
@@ -44,13 +48,35 @@ class LiveMigrateVmCase extends SubCase {
     @Override
     void test() {
         env.create {
+            testLiveMigrateVmFailure()
             testLiveMigrateVmWithDataVolume()
         }
     }
-
-    void testLiveMigrateVmWithDataVolume() {
+    void testLiveMigrateVmFailure() {
         dbf = bean(DatabaseFacade.class)
         VmInstanceInventory vm1 = (VmInstanceInventory) env.inventoryByName("vm")
+        KVMHostInventory host1 = (KVMHostInventory) env.inventoryByName("kvm")
+        KVMHostInventory host2 = (KVMHostInventory) env.inventoryByName("kvm1")
+        env.simulator(KVMSecurityGroupBackend.SECURITY_GROUP_CLEANUP_UNUSED_RULE_ON_HOST_PATH) {
+            return new KVMAgentCommands.CleanupUnusedRulesOnHostResponse()
+        }
+
+        assert vm1.hostUuid == host1.uuid
+        stopVmInstance {
+            uuid = vm1.uuid
+        }
+        MigrateVmAction action = new MigrateVmAction()
+        action.hostUuid = host2.uuid
+        action.vmInstanceUuid = vm1.uuid
+        action.sessionId = adminSession()
+        assert null != action.call().error
+    }
+
+    void testLiveMigrateVmWithDataVolume() {
+        VmInstanceInventory vm1 = (VmInstanceInventory) env.inventoryByName("vm")
+        startVmInstance {
+            uuid = vm1.uuid
+        }
         def invs = queryHost {
         } as List<HostInventory>
         def targetHostUuid = invs.find { i -> i.uuid != vm1.getHostUuid() }.getUuid()
