@@ -24,9 +24,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.L2NetworkGetVniExtensionPoint;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.L2NetworkVO_;
-import org.zstack.header.network.l3.L3NetworkCategory;
-import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.header.network.l3.L3NetworkVO_;
+import org.zstack.header.network.l3.*;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.vm.*;
@@ -406,6 +404,10 @@ public class VirtualRouter extends ApplianceVmBase {
 
         if (l3NetworkVO.getCategory().equals(L3NetworkCategory.Private)) {
             vo.setMetaData(GUEST_NIC_MASK.toString());
+
+            UsedIpVO usedIpVO = Q.New(UsedIpVO.class).eq(UsedIpVO_.uuid, nicInventory.getUsedIpUuid()).find();
+            usedIpVO.setMetaData(GUEST_NIC_MASK.toString());
+            dbf.updateAndRefresh(usedIpVO);
         } else {
             vo.setMetaData(ADDITIONAL_PUBLIC_NIC_MASK.toString());
         }
