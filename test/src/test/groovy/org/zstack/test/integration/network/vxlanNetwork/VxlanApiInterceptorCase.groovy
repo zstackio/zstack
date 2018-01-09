@@ -135,12 +135,19 @@ class VxlanApiInterceptorCase extends SubCase {
             delegate.name = "TestRange2"
         }
 
+        createVniRange {
+            delegate.startVni = 20
+            delegate.endVni = 80
+            delegate.l2NetworkUuid = poolinv.getUuid()
+            delegate.name = "TestRange3"
+        }
+
         expect(AssertionError.class) {
             createVniRange {
                 delegate.startVni = 100
                 delegate.endVni = 10000
                 delegate.l2NetworkUuid = poolinv.getUuid()
-                delegate.name = "TestRange3"
+                delegate.name = "TestRange4"
             }
         }
 
@@ -149,7 +156,7 @@ class VxlanApiInterceptorCase extends SubCase {
                 delegate.startVni = 101
                 delegate.endVni = 1000
                 delegate.l2NetworkUuid = poolinv.getUuid()
-                delegate.name = "TestRange4"
+                delegate.name = "TestRange5"
             }
         }
 
@@ -158,7 +165,7 @@ class VxlanApiInterceptorCase extends SubCase {
                 delegate.startVni = 50
                 delegate.endVni = 100
                 delegate.l2NetworkUuid = poolinv.getUuid()
-                delegate.name = "TestRange5"
+                delegate.name = "TestRange6"
             }
         }
 
@@ -167,7 +174,7 @@ class VxlanApiInterceptorCase extends SubCase {
                 delegate.startVni = 50
                 delegate.endVni = 20000
                 delegate.l2NetworkUuid = poolinv.getUuid()
-                delegate.name = "TestRange5"
+                delegate.name = "TestRange7"
             }
         }
 
