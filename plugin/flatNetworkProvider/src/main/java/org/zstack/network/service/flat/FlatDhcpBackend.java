@@ -94,10 +94,11 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
     @Transactional(readOnly = true)
     private List<DhcpInfo> getDhcpInfoForConnectedKvmHost(KVMHostConnectedContext context) {
-        String sql = "select vm.uuid, vm.defaultL3NetworkUuid from VmInstanceVO vm where vm.hostUuid = :huuid and vm.state in (:states)";
+        String sql = "select vm.uuid, vm.defaultL3NetworkUuid from VmInstanceVO vm where vm.hostUuid = :huuid and vm.state in (:states) and vm.type = :vtype";
         TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
         q.setParameter("huuid", context.getInventory().getUuid());
         q.setParameter("states", list(VmInstanceState.Running, VmInstanceState.Unknown));
+        q.setParameter("vtype", VmInstanceConstant.USER_VM_TYPE);
         List<Tuple> ts = q.getResultList();
         if (ts.isEmpty()) {
             return null;
