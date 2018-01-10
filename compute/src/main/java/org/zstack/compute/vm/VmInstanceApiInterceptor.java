@@ -119,7 +119,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             @Override
             protected void scripts() {
                 VmInstanceVO vo = findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
-                if (vo.getHostUuid().equals(msg.getHostUuid())) {
+                if (vo.getState().equals(VmInstanceState.Running) && vo.getHostUuid().equals(msg.getHostUuid())) {
                     throw new ApiMessageInterceptionException(argerr(
                             "the vm[uuid:%s] is already on host[uuid:%s]", msg.getVmInstanceUuid(), msg.getHostUuid()
                     ));
