@@ -95,5 +95,5 @@
     <import resource="springConfigXml/notification.xml"/>
     <import resource="springConfigXml/webhook.xml"/>
     <import resource="springConfigXml/externalService.xml"/>
-    <import resource="springConfigXml/cornJob.xml"/>
+    <import resource="springConfigXml/cronJob.xml"/>
 </beans>
