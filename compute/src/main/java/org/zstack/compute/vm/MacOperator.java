@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.math.BigInteger;
 
 import static org.zstack.core.Platform.operr;
 
@@ -62,14 +63,25 @@ public class MacOperator {
         return null;
     }
 
+    private boolean isMulticastMac(String mac) {
+        if (!pattern.matcher(mac.toLowerCase()).matches()){
+            throw new OperationFailureException(operr("This is not a valid MAC address [%s]", mac));
+        }
+        String binaryString = new BigInteger(mac.substring(0,2), 16).toString(2);
+        return binaryString.substring(binaryString.length() - 1).equals("1");
+    }
+
     public void validateAvailableMac(String mac) {
         String lowercaseMac = mac.toLowerCase();
         Matcher matcher = pattern.matcher(lowercaseMac);
         if (!matcher.matches()) {
-            throw new OperationFailureException(operr("this is not a valid MAC address [%s]", mac));
+            throw new OperationFailureException(operr("Not a valid MAC address [%s]", mac));
         }
         if ("00:00:00:00:00:00".equals(lowercaseMac) || "ff:ff:ff:ff:ff:ff".equals(lowercaseMac)) {
             throw new OperationFailureException(operr("Disallowed address"));
+        }
+        if (isMulticastMac(lowercaseMac)){
+            throw new OperationFailureException(operr("Expected unicast mac address, found multicast MAC address [%s]", mac));
         }
         if (Q.New(VmNicVO.class).eq(VmNicVO_.mac, lowercaseMac).isExists()) {
             throw new OperationFailureException(operr("Duplicate mac address [%s]", lowercaseMac));
