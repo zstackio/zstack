@@ -60,6 +60,8 @@ import org.zstack.network.service.eip.FilterVmNicsForEipInVirtualRouterExtension
 import org.zstack.network.service.vip.*;
 import org.zstack.network.service.lb.*;
 import org.zstack.network.service.virtualrouter.eip.VirtualRouterEipRefInventory;
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO;
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO_;
 import org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterPortForwardingRuleRefInventory;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipInventory;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipVO;
@@ -1241,9 +1243,34 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
     @Override
     public List<VmNicInventory> getCandidateVmNicsForLoadBalancerInVirtualRouter(APIGetCandidateVmNicsForLoadBalancerMsg msg, List<VmNicInventory> candidates) {
-
-        if(candidates.isEmpty()){
+        if(candidates == null || candidates.isEmpty()){
             return candidates;
+        }
+
+        String vrUuid = Q.New(VirtualRouterLoadBalancerRefVO.class)
+                .select(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid)
+                .eq(VirtualRouterLoadBalancerRefVO_.loadBalancerUuid, msg.getLoadBalancerUuid())
+                .findValue();
+
+        if (vrUuid != null) {
+            return getCandidateVmNicsIfLoadBalancerBound(msg, candidates, vrUuid);
+        }
+
+        List<String> peerL3NetworkUuids = SQL.New("select peer.l3NetworkUuid " +
+                "from LoadBalancerVO lb, VipVO vip, VipPeerL3NetworkRefVO peer " +
+                "where lb.vipUuid = vip.uuid " +
+                "and vip.uuid = peer.vipUuid " +
+                "and lb.uuid = :lbUuid")
+                .param("lbUuid", msg.getLoadBalancerUuid())
+                .list();
+
+        if (peerL3NetworkUuids != null && !peerL3NetworkUuids.isEmpty()) {
+            List<String> vrUuids = Q.New(VmNicVO.class).select(VmNicVO_.vmInstanceUuid)
+                    .in(VmNicVO_.l3NetworkUuid, peerL3NetworkUuids)
+                    .eq(VmNicVO_.metaData, VirtualRouterNicMetaData.GUEST_NIC_MASK)
+                    .listValues();
+
+            return getCandidateVmNicsIfLoadBalancerBound(msg, candidates, vrUuids.get(0));
         }
 
         return new SQLBatchWithReturn<List<VmNicInventory>>(){
@@ -1292,7 +1319,48 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
             }
         }.execute();
-
     }
 
+    private List<VmNicInventory> getCandidateVmNicsIfLoadBalancerBound(APIGetCandidateVmNicsForLoadBalancerMsg msg, List<VmNicInventory> candidates, String vrUuid) {
+        List<String> candidatesUuids = candidates.stream().map(n -> n.getUuid()).collect(Collectors.toList());
+        logger.debug(String.format("loadbalancer[uuid:%s] has bound to virtual router[uuid:%s], " +
+                        "continue working with vmnics:%s", msg.getLoadBalancerUuid(), vrUuid, candidatesUuids));
+
+        return new SQLBatchWithReturn<List<VmNicInventory>>(){
+
+            @Override
+            protected List<VmNicInventory> scripts() {
+                List<String> guestL3Uuids = Q.New(VmNicVO.class)
+                        .select(VmNicVO_.l3NetworkUuid)
+                        .eq(VmNicVO_.vmInstanceUuid, vrUuid)
+                        .eq(VmNicVO_.metaData, VirtualRouterNicMetaData.GUEST_NIC_MASK)
+                        .listValues();
+
+                if (guestL3Uuids == null || guestL3Uuids.isEmpty()) {
+                    return new ArrayList<>();
+                }
+
+                List<String> vmNicUuids = SQL.New("select nic.uuid from VmNicVO nic, VmInstanceEO vm " +
+                        "where vm.uuid = nic.vmInstanceUuid " +
+                        "and vm.type = :vmType " +
+                        "and vm.state in (:vmState) " +
+                        "and nic.l3NetworkUuid in (:l3s) " +
+                        "and nic.metaData is NULL")
+                        .param("vmType", VmInstanceConstant.USER_VM_TYPE.toString())
+                        .param("vmState", asList(VmInstanceState.Running, VmInstanceState.Stopped))
+                        .param("l3s", guestL3Uuids)
+                        .list();
+
+                List<String> attachedVmNicUuids = Q.New(LoadBalancerListenerVmNicRefVO.class)
+                        .select(LoadBalancerListenerVmNicRefVO_.vmNicUuid)
+                        .eq(LoadBalancerListenerVmNicRefVO_.listenerUuid, msg.getListenerUuid())
+                        .listValues();
+
+                return candidates.stream()
+                        .filter( nic -> vmNicUuids.contains(nic.getUuid()))
+                        .filter( nic -> !attachedVmNicUuids.contains(nic.getUuid()))
+                        .collect(Collectors.toList());
+            }
+        }.execute();
+    }
 }
