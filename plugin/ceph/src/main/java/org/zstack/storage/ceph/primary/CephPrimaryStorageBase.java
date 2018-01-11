@@ -2,6 +2,7 @@ package org.zstack.storage.ceph.primary;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -2246,10 +2247,46 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                         DebugUtils.Assert(!mons.isEmpty(), "how can be no connected MON !!!???");
 
-                        final AsyncLatch latch = new AsyncLatch(mons.size(), new NoErrorCompletion(trigger) {
+                        List<ErrorCode> errors = new ArrayList<>();
+                        new While<>(mons).each((mon, compl) -> {
+                            GetFactsCmd cmd = new GetFactsCmd();
+                            cmd.uuid = self.getUuid();
+                            cmd.monUuid = mon.getSelf().getUuid();
+                            mon.httpCall(GET_FACTS, cmd, GetFactsRsp.class, new ReturnValueCompletion<GetFactsRsp>(compl) {
+                                @Override
+                                public void success(GetFactsRsp rsp) {
+                                    if (!rsp.success) {
+                                        // one mon cannot get the facts, directly error out
+                                        errors.add(Platform.operr(rsp.getError()));
+                                        compl.allDone();
+                                        return;
+                                    }
+
+                                    CephPrimaryStorageMonVO monVO = dbf.reload(mon.getSelf());
+                                    if (monVO != null) {
+                                        fsids.put(monVO.getUuid(), rsp.fsid);
+                                        monVO.setMonAddr(rsp.monAddr == null ? monVO.getHostname() : rsp.monAddr);
+                                        dbf.update(monVO);
+                                    }
+                                    compl.done();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    // one mon cannot get the facts, directly error out
+                                    errors.add(errorCode);
+                                    compl.allDone();
+                                }
+                            });
+                        }).run(new NoErrorCompletion(trigger) {
                             @Override
                             public void done() {
-                                Set<String> set = new HashSet<String>();
+                                if (!errors.isEmpty()) {
+                                    trigger.fail(errors.get(0));
+                                    return;
+                                }
+
+                                Set<String> set = new HashSet<>();
                                 set.addAll(fsids.values());
 
                                 if (set.size() != 1) {
@@ -2280,36 +2317,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 trigger.next();
                             }
                         });
-
-                        for (final CephPrimaryStorageMonBase mon : mons) {
-                            GetFactsCmd cmd = new GetFactsCmd();
-                            cmd.uuid = self.getUuid();
-                            cmd.monUuid = mon.getSelf().getUuid();
-                            mon.httpCall(GET_FACTS, cmd, GetFactsRsp.class, new ReturnValueCompletion<GetFactsRsp>(latch) {
-                                @Override
-                                public void success(GetFactsRsp rsp) {
-                                    if (!rsp.success) {
-                                        // one mon cannot get the facts, directly error out
-                                        trigger.fail(operr("operation error, because:%s", rsp.error));
-                                        return;
-                                    }
-
-                                    CephPrimaryStorageMonVO monVO = mon.getSelf();
-                                    fsids.put(monVO.getUuid(), rsp.fsid);
-                                    monVO.setMonAddr(rsp.monAddr == null ? monVO.getHostname() : rsp.monAddr);
-                                    dbf.update(monVO);
-
-                                    latch.ack();
-                                }
-
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    // one mon cannot get the facts, directly error out
-                                    trigger.fail(errorCode);
-                                }
-                            });
-                        }
-
                     }
                 });
 
