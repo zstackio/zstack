@@ -98,4 +98,9 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="KVMHostAllocatorFilterExtensionPoint" class="org.zstack.kvm.KVMHostAllocatorFilterExtensionPoint">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.allocator.HostAllocatorFilterExtensionPoint" />
+        </zstack:plugin>
+    </bean>
 </beans>
