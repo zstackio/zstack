@@ -100,6 +100,8 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     public static final String PING_PATH = "/nfsprimarystorage/ping";
     public static final String GET_VOLUME_BASE_IMAGE_PATH = "/nfsprimarystorage/getvolumebaseimage";
     public static final String UPDATE_MOUNT_POINT_PATH = "/nfsprimarystorage/updatemountpoint";
+    public static final String NFS_TO_NFS_MIGRATE_VOLUME_PATH = "/nfsprimarystorage/migratevolume";
+    public static final String NFS_REBASE_VOLUME_BACKING_FILE_PATH = "/nfsprimarystorage/rebasevolumebackingfile";
 
     //////////////// For unit test //////////////////////////
     private boolean syncGetCapacity = false;
@@ -390,7 +392,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             }
         });
     }
-    
+
     private void doPing(List<String> hostUuids, String psUuid, Completion completion){
         List<ErrorCode> errs = new ArrayList<>();
         new While<>(hostUuids).each((huuid, compl) -> {
@@ -584,6 +586,118 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
             @Override
             public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    public void handle(PrimaryStorageInventory dstPsInv, NfsToNfsMigrateVolumeMsg msg, ReturnValueCompletion<NfsToNfsMigrateVolumeReply> completion) {
+        HostVO hostVO = dbf.findByUuid(msg.getHostUuid(), HostVO.class);
+        if (hostVO == null) {
+            throw new OperationFailureException(operr("The chosen host[uuid:%s] to perform storage migration is lost", msg.getHostUuid()));
+        }
+        HostInventory host = HostInventory.valueOf(hostVO);
+
+        // check if need to mount ps to host first
+        boolean mounted = Q.New(PrimaryStorageClusterRefVO.class)
+                .eq(PrimaryStorageClusterRefVO_.clusterUuid, host.getClusterUuid())
+                .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, dstPsInv.getUuid())
+                .isExists();
+        if (mounted) {
+            logger.info(String.format("no need to mount nfs ps[uuid:%s] to host[uuid:%s]", dstPsInv.getUuid(), host.getUuid()));
+            // copy volume folder
+            NfsToNfsMigrateVolumeCmd cmd = new NfsToNfsMigrateVolumeCmd();
+            cmd.srcVolumeFolderPath = msg.getSrcVolumeFolderPath();
+            cmd.dstVolumeFolderPath = msg.getDstVolumeFolderPath();
+            new KvmCommandSender(host.getUuid()).send(cmd, NFS_TO_NFS_MIGRATE_VOLUME_PATH, new KvmCommandFailureChecker() {
+                @Override
+                public ErrorCode getError(KvmResponseWrapper wrapper) {
+                    NfsToNfsMigrateVolumeRsp rsp = wrapper.getResponse(NfsToNfsMigrateVolumeRsp.class);
+                    return rsp.isSuccess() ? null : operr(rsp.getError());
+                }
+            }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
+                @Override
+                public void success(KvmResponseWrapper w) {
+                    logger.info("successfully copyed volume folder to nfs ps " + dstPsInv.getUuid());
+                    NfsToNfsMigrateVolumeReply reply = new NfsToNfsMigrateVolumeReply();
+                    completion.success(reply);
+                }
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    logger.error("failed to copy volume folder to nfs ps " + dstPsInv.getUuid());
+                    completion.fail(errorCode);
+                }
+            });
+            return;
+        }
+
+        // mount ps to host
+        mount(dstPsInv, host.getUuid(), new Completion(completion) {
+            @Override
+            public void success() {
+                logger.info(String.format("successfully mounted nfs ps[uuid:%s] to host[uuid:%s]", dstPsInv.getUuid(), host.getUuid()));
+                // copy volume folder
+                NfsToNfsMigrateVolumeCmd cmd = new NfsToNfsMigrateVolumeCmd();
+                cmd.srcVolumeFolderPath = msg.getSrcVolumeFolderPath();
+                cmd.dstVolumeFolderPath = msg.getDstVolumeFolderPath();
+                new KvmCommandSender(host.getUuid()).send(cmd, NFS_TO_NFS_MIGRATE_VOLUME_PATH, new KvmCommandFailureChecker() {
+                    @Override
+                    public ErrorCode getError(KvmResponseWrapper wrapper) {
+                        NfsToNfsMigrateVolumeRsp rsp = wrapper.getResponse(NfsToNfsMigrateVolumeRsp.class);
+                        return rsp.isSuccess() ? null : operr(rsp.getError());
+                    }
+                }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
+                    @Override
+                    public void success(KvmResponseWrapper w) {
+                        logger.info("successfully copyed volume folder to nfs ps " + dstPsInv.getUuid());
+                        // umount ps from host
+                        logger.debug(String.format("try to umount nfs ps[uuid:%s] from host[uuid:%s]", dstPsInv.getUuid(), host.getUuid()));
+                        unmount(dstPsInv, host.getUuid());
+                        NfsToNfsMigrateVolumeReply reply = new NfsToNfsMigrateVolumeReply();
+                        completion.success(reply);
+                    }
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        logger.error("failed to copy volume folder to nfs ps " + dstPsInv.getUuid());
+                        completion.fail(errorCode);
+                    }
+                });
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.error(String.format("failed to mount nfs ps[uuid:%s] to host[uuid:%s]", dstPsInv.getUuid(), host.getUuid()));
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    public void handle(PrimaryStorageInventory inv, NfsRebaseVolumeBackingFileMsg msg, ReturnValueCompletion<NfsRebaseVolumeBackingFileReply> completion) {
+        NfsRebaseVolumeBackingFileCmd cmd = new NfsRebaseVolumeBackingFileCmd();
+        cmd.srcPsMountPath = Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.mountPath).eq(PrimaryStorageVO_.uuid, msg.getSrcPsUuid()).findValue();
+        cmd.dstPsMountPath = Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.mountPath).eq(PrimaryStorageVO_.uuid, msg.getDstPsUuid()).findValue();
+        cmd.dstVolumeFolderPath = msg.getDstVolumeFolderPath();
+
+        final HostInventory host = nfsFactory.getConnectedHostForOperation(inv).get(0);
+        new KvmCommandSender(host.getUuid()).send(cmd, NFS_REBASE_VOLUME_BACKING_FILE_PATH, new KvmCommandFailureChecker() {
+            @Override
+            public ErrorCode getError(KvmResponseWrapper wrapper) {
+                NfsRebaseVolumeBackingFileRsp rsp = wrapper.getResponse(NfsRebaseVolumeBackingFileRsp.class);
+                return rsp.isSuccess() ? null : operr(rsp.getError());
+            }
+        }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
+            @Override
+            public void success(KvmResponseWrapper returnValue) {
+                logger.info("successfully rebased backing file for qcow2 files in " + msg.getDstVolumeFolderPath());
+                NfsRebaseVolumeBackingFileReply reply = new NfsRebaseVolumeBackingFileReply();
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.error("failed to rebase backing file for qcow2 files in " + msg.getDstVolumeFolderPath());
                 completion.fail(errorCode);
             }
         });
