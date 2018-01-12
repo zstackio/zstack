@@ -126,10 +126,17 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                         .eq(VmNicVO_.metaData, VirtualRouterNicMetaData.GUEST_NIC_MASK)
                         .listValues());
 
-        if (vrUuids.size() > 1) {
+        if (vrUuids.size() == 2
+                && LoadBalancerSystemTags.SEPARATE_VR.hasTag(msg.getLoadBalancerUuid())
+                && vrUuids.stream().anyMatch(uuid -> VirtualRouterSystemTags.DEDICATED_ROLE_VR.hasTag(uuid))) {
+            logger.debug(String.format(
+                    "there are two virtual routers[uuids:%s] on l3 networks[uuids:%s] which vmnics[uuids:%s]" +
+                            "attached", vrUuids, l3NetworkUuids, attachedVmNicUuids
+            ));
+        } else if (vrUuids.size() > 1) {
             throw new ApiMessageInterceptionException(argerr(
                     "new add vm nics[uuids:%s] and attached vmnics are not on the same vrouter, " +
-                    "they are on vrouters[uuids:%s]", msg.getVmNicUuids(), vrUuids));
+                            "they are on vrouters[uuids:%s]", msg.getVmNicUuids(), vrUuids));
         }
 
         List<String> peerL3NetworkUuids = SQL.New("select peer.l3NetworkUuid " +
@@ -170,6 +177,52 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         TypedQuery<VirtualRouterVmVO> q = dbf.getEntityManager().createQuery(sql, VirtualRouterVmVO.class);
         q.setParameter("lbUuid", lbUuid);
         List<VirtualRouterVmVO> vrs = q.getResultList();
+
+        if (LoadBalancerSystemTags.SEPARATE_VR.hasTag(lbUuid)) {
+            Optional<VirtualRouterVmInventory> vr = vrs.stream()
+                    .filter(v -> VirtualRouterSystemTags.DEDICATED_ROLE_VR.hasTag(v.getUuid()))
+                    .map(v -> VirtualRouterVmInventory.valueOf(v))
+                    .findFirst();
+
+            return vr.orElse(null);
+        }
+
+        DebugUtils.Assert(vrs.size() <= 1, String.format("multiple virtual routers[uuids:%s] found",
+                vrs.stream().map(v -> v.getUuid()).collect(Collectors.toList())));
+        return vrs.isEmpty() ? null : VirtualRouterVmInventory.valueOf(vrs.get(0));
+    }
+
+    @Transactional(readOnly = true)
+    private VirtualRouterVmInventory findVirtualRouterVm(String lbUuid, List<String> vmNics) {
+        String sql = "select vr from VirtualRouterVmVO vr, VirtualRouterLoadBalancerRefVO ref where ref.virtualRouterVmUuid =" +
+                " vr.uuid and ref.loadBalancerUuid = :lbUuid";
+        TypedQuery<VirtualRouterVmVO> q = dbf.getEntityManager().createQuery(sql, VirtualRouterVmVO.class);
+        q.setParameter("lbUuid", lbUuid);
+        List<VirtualRouterVmVO> vrs = q.getResultList();
+
+        if (LoadBalancerSystemTags.SEPARATE_VR.hasTag(lbUuid)) {
+            Optional<VirtualRouterVmVO> vr = vrs.stream()
+                    .filter(v -> VirtualRouterSystemTags.DEDICATED_ROLE_VR.hasTag(v.getUuid()))
+                    .findFirst();
+
+            if (!vr.isPresent()) {
+                return null;
+            }
+
+            List<String> vmNicL3NetworkUuids = Q.New(VmNicVO.class).select(VmNicVO_.l3NetworkUuid).in(VmNicVO_.uuid, vmNics).listValues();
+
+            VirtualRouterVmInventory vrInventory = VirtualRouterVmInventory.valueOf(vr.get());
+            vmNicL3NetworkUuids.removeAll(vrInventory.getGuestL3Networks());
+
+            if (!vmNicL3NetworkUuids.isEmpty()) {
+                logger.debug(String.format("found l3 networks[uuids:%s] not attached to separate vr[uuid:%s] for loadbalancer[uuid:%s]",
+                        vmNicL3NetworkUuids, vr.get().getUuid(), lbUuid));
+                throw new CloudRuntimeException(String.format("not support separate vr with multiple networks vpc!"));
+            }
+        }
+
+        DebugUtils.Assert(vrs.size() <= 1, String.format("multiple virtual routers[uuids:%s] found",
+                vrs.stream().map(v -> v.getUuid()).collect(Collectors.toList())));
         return vrs.isEmpty() ? null : VirtualRouterVmInventory.valueOf(vrs.get(0));
     }
 
@@ -545,7 +598,8 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
     @Override
     public void addVmNics(final LoadBalancerStruct struct, List<VmNicInventory> nics, final Completion completion) {
-        VirtualRouterVmInventory vr = findVirtualRouterVm(struct.getLb().getUuid());
+        VirtualRouterVmInventory vr = findVirtualRouterVm(struct.getLb().getUuid(),
+                nics.stream().map(n -> n.getUuid()).collect(Collectors.toList()));
         if (vr != null) {
             startVrIfNeededAndRefresh(vr, struct, nics, completion);
             return;
@@ -613,7 +667,16 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        if (struct.getVmNics() != null && !struct.getVmNics().isEmpty()) {
+                        List<String> attachedVmNicUuids = new ArrayList<>();
+                        for (LoadBalancerListenerInventory ll : struct.getLb().getListeners()) {
+                            attachedVmNicUuids.addAll(ll.getVmNicRefs().stream()
+                                    .map(r -> r.getVmNicUuid()).collect(Collectors.toList()));
+                        }
+                        attachedVmNicUuids.removeAll(
+                                nics.stream().map(n -> n.getUuid()).collect(Collectors.toSet()));
+                        if (attachedVmNicUuids != null && !attachedVmNicUuids.isEmpty()) {
+                            logger.debug(String.format("there are vmnics[uuids:%s] attached on loadbalancer[uuid:%s], " +
+                                    "wont release vip[uuid: %s]", attachedVmNicUuids, struct.getLb().getUuid(), vip.getUuid()));
                             trigger.rollback();
                             return;
                         }
@@ -815,7 +878,16 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                                 return;
                             }
 
-                            if (struct.getVmNics() != null && !struct.getVmNics().isEmpty()) {
+                            List<String> attachedVmNicUuids = new ArrayList<>();
+                            for (LoadBalancerListenerInventory ll : struct.getLb().getListeners()) {
+                                attachedVmNicUuids.addAll(ll.getVmNicRefs().stream()
+                                        .map(r -> r.getVmNicUuid()).collect(Collectors.toList()));
+                            }
+                            attachedVmNicUuids.removeAll(
+                                    nics.stream().map(n -> n.getUuid()).collect(Collectors.toSet()));
+                            if (attachedVmNicUuids != null && !attachedVmNicUuids.isEmpty()) {
+                                logger.debug(String.format("there are vmnics[uuids:%s] attached on loadbalancer[uuid:%s], " +
+                                        "wont release vip[uuid: %s]", attachedVmNicUuids, struct.getLb().getUuid(), vip.getUuid()));
                                 trigger.rollback();
                                 return;
                             }

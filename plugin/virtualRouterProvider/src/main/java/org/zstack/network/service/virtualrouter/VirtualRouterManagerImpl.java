@@ -1241,22 +1241,46 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         return null;
     }
 
+    private String getDedicatedRoleVrUuidFromVrUuids(List<String> uuids, String loadBalancerUuid) {
+        Set<String> vrUuids = new HashSet<>(uuids);
+
+        if (vrUuids.size() == 2
+                && LoadBalancerSystemTags.SEPARATE_VR.hasTag(loadBalancerUuid)
+                && vrUuids.stream().anyMatch(uuid -> VirtualRouterSystemTags.DEDICATED_ROLE_VR.hasTag(uuid))) {
+            for (String uuid : vrUuids) {
+                if (VirtualRouterSystemTags.DEDICATED_ROLE_VR.hasTag(uuid)) {
+                    return uuid;
+                }
+            }
+        }
+
+        if (vrUuids.size() == 1) {
+            return vrUuids.iterator().next();
+        } else if (vrUuids.size() == 0) {
+            return null;
+        } else {
+            throw new CloudRuntimeException(String.format("there are multiple virtual routers[uuids:%s]", vrUuids));
+        }
+    }
+
     @Override
     public List<VmNicInventory> getCandidateVmNicsForLoadBalancerInVirtualRouter(APIGetCandidateVmNicsForLoadBalancerMsg msg, List<VmNicInventory> candidates) {
         if(candidates == null || candidates.isEmpty()){
             return candidates;
         }
 
-        String vrUuid = Q.New(VirtualRouterLoadBalancerRefVO.class)
+        List<String> vrUuids = Q.New(VirtualRouterLoadBalancerRefVO.class)
                 .select(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid)
                 .eq(VirtualRouterLoadBalancerRefVO_.loadBalancerUuid, msg.getLoadBalancerUuid())
-                .findValue();
+                .listValues();
+
+        String vrUuid = getDedicatedRoleVrUuidFromVrUuids(vrUuids, msg.getLoadBalancerUuid());
 
         if (vrUuid != null) {
             return getCandidateVmNicsIfLoadBalancerBound(msg, candidates, vrUuid);
         }
 
-        List<String> peerL3NetworkUuids = SQL.New("select peer.l3NetworkUuid " +
+        final List<String> peerL3NetworkUuids = SQL.New("select peer.l3NetworkUuid " +
                 "from LoadBalancerVO lb, VipVO vip, VipPeerL3NetworkRefVO peer " +
                 "where lb.vipUuid = vip.uuid " +
                 "and vip.uuid = peer.vipUuid " +
@@ -1265,12 +1289,24 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 .list();
 
         if (peerL3NetworkUuids != null && !peerL3NetworkUuids.isEmpty()) {
-            List<String> vrUuids = Q.New(VmNicVO.class).select(VmNicVO_.vmInstanceUuid)
+            vrUuids = Q.New(VmNicVO.class).select(VmNicVO_.vmInstanceUuid)
                     .in(VmNicVO_.l3NetworkUuid, peerL3NetworkUuids)
                     .eq(VmNicVO_.metaData, VirtualRouterNicMetaData.GUEST_NIC_MASK)
                     .listValues();
 
-            return getCandidateVmNicsIfLoadBalancerBound(msg, candidates, vrUuids.get(0));
+            vrUuid = getDedicatedRoleVrUuidFromVrUuids(vrUuids, msg.getLoadBalancerUuid());
+
+            if (vrUuid == null) {
+                return getCandidateVmNicsIfPeerL3NetworkExists(msg, candidates.stream()
+                        .filter(n -> peerL3NetworkUuids.contains(n.getL3NetworkUuid()))
+                        .collect(Collectors.toList()), peerL3NetworkUuids);
+            }
+
+            return getCandidateVmNicsIfLoadBalancerBound(msg, candidates, vrUuid);
+        }
+
+        if (vrUuid != null) {
+            return getCandidateVmNicsIfLoadBalancerBound(msg, candidates, vrUuid);
         }
 
         return new SQLBatchWithReturn<List<VmNicInventory>>(){
@@ -1319,6 +1355,12 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
             }
         }.execute();
+    }
+
+    private List<VmNicInventory> getCandidateVmNicsIfPeerL3NetworkExists(APIGetCandidateVmNicsForLoadBalancerMsg msg, List<VmNicInventory> candidates, List<String> peerL3NetworkUuids) {
+	    return candidates.stream()
+                .filter(n -> peerL3NetworkUuids.contains(n.getL3NetworkUuid()))
+                .collect(Collectors.toList());
     }
 
     private List<VmNicInventory> getCandidateVmNicsIfLoadBalancerBound(APIGetCandidateVmNicsForLoadBalancerMsg msg, List<VmNicInventory> candidates, String vrUuid) {
