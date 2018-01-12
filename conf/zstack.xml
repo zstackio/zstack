@@ -52,6 +52,7 @@
     <import resource="springConfigXml/Error.xml"/>
     <import resource="springConfigXml/flatNetworkProvider.xml"/>
     <import resource="springConfigXml/fusionstor.xml"/>
+    <import resource="springConfigXml/surfs.xml"/>
     <import resource="springConfigXml/gc.xml"/>
     <import resource="springConfigXml/GlobalConfigFacade.xml"/>
     <import resource="springConfigXml/HostAllocatorManager.xml"/>
