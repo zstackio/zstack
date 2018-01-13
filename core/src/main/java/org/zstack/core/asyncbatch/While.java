@@ -6,6 +6,7 @@ import org.zstack.utils.DebugUtils;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -21,6 +22,8 @@ public class While<T> {
     private final int EACH = 1;
     private final int ALL = 2;
     private final int STEP = 3;
+
+    private AtomicBoolean isOver = new AtomicBoolean(false);
 
     public interface Do<T> {
         void accept(T item, WhileCompletion completion);
@@ -88,6 +91,11 @@ public class While<T> {
     }
 
     private void runStep(NoErrorCompletion completion) {
+        if (items.isEmpty()) {
+            completion.done();
+            return;
+        }
+
         int s = Math.min(step, items.size());
 
         Iterator<T> it = items.iterator();
@@ -100,7 +108,11 @@ public class While<T> {
         T t;
         synchronized (it) {
             if (!it.hasNext()) {
-                completion.done();
+                doneCompletion(completion);
+                return;
+            }
+
+            if (isOver.get()){
                 return;
             }
 
@@ -110,7 +122,7 @@ public class While<T> {
         consumer.accept(t, new WhileCompletion(completion) {
             @Override
             public void allDone() {
-                completion.done();
+                doneCompletion(completion);
             }
             @Override
             public void done() {
@@ -130,16 +142,22 @@ public class While<T> {
             consumer.accept(t, new WhileCompletion(completion) {
                 @Override
                 public void allDone() {
-                    completion.done();
+                    doneCompletion(completion);
                 }
 
                 @Override
                 public void done() {
                     if (count.decrementAndGet() == 0) {
-                        completion.done();
+                        doneCompletion(completion);
                     }
                 }
             });
+        }
+    }
+
+    private void doneCompletion(NoErrorCompletion completion){
+        if (isOver.compareAndSet(false, true)) {
+            completion.done();
         }
     }
 }
