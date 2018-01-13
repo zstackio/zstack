@@ -160,6 +160,20 @@ triggerexpression() {
    cd - > /dev/null
 }
 
+cloudwatchfunction() {
+   if [ ! -d premium/zwatch ]; then
+	echo "this command needs premium source code"
+        exit 1
+   fi
+
+   cd premium/zwatch
+   mvn -P function generate-sources
+   mkdir -p src/main/java/org/zstack/zwatch/api/antlr4/
+   yes | cp target/generated-sources/antlr4/MetricFunction* src/main/java/org/zstack/zwatch/api/antlr4/
+   rm -f target/generated-sources/antlr4/MetricFunction*
+   cd - > /dev/null
+}
+
 sdk() {
     set -u
     rm -rf ~/zstack-sdk/java
@@ -216,6 +230,8 @@ run_profile() {
 	notificationapi
     elif test x$1 = x'triggerexpression'; then
 	triggerexpression
+    elif test x$1 = x'cloudwatchfunction'; then
+	cloudwatchfunction
     elif test x$1 = x'openapi'; then
         openapi
     else

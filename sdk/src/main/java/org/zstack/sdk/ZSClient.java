@@ -373,7 +373,12 @@ public class ZSClient {
                     String k = e.getKey();
                     Object v = e.getValue();
 
-                    if (v instanceof Collection) {
+                    if (v instanceof List) {
+                        List lst = (List) v;
+                        for (int i=0; i<lst.size(); i++) {
+                            builder.addQueryParameter(String.format("%s.%s", k, i), lst.get(i).toString());
+                        }
+                    } else if (v instanceof Collection) {
                         for (Object o : (Collection) v) {
                             builder.addQueryParameter(k, o.toString());
                         }
