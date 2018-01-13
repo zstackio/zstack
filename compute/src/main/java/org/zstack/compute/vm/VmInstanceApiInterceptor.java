@@ -97,10 +97,16 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APIChangeInstanceOfferingMsg) msg);
         } else if (msg instanceof APIMigrateVmMsg) {
             validate((APIMigrateVmMsg) msg);
+        } else if (msg instanceof APIDetachIsoFromVmInstanceMsg) {
+            validate((APIDetachIsoFromVmInstanceMsg) msg);
         }
 
         setServiceId(msg);
         return msg;
+    }
+
+    private void validate(APIDetachIsoFromVmInstanceMsg msg) {
+        msg.isoUuid = new IsoOperator().getIsoUuidByVmUuid(msg.getVmInstanceUuid());
     }
 
     private void validate(APIMigrateVmMsg msg) {
@@ -335,6 +341,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
 
         msg.setVmInstanceUuid(vmUuid);
+
+        msg.l3Uuid = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).select(VmNicVO_.l3NetworkUuid).findValue();
     }
 
     private static <T> List<T> getDuplicateElements(List<T> list) {

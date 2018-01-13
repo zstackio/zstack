@@ -1,6 +1,7 @@
 package org.zstack.ldap;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
@@ -14,7 +15,7 @@ public class APICreateLdapBindingMsg extends APIMessage {
     @APIParam(maxLength = 255)
     private String ldapUid;
 
-    @APIParam(maxLength = 32)
+    @APIParam(resourceType = AccountVO.class, maxLength = 32)
     private String accountUuid;
 
     public String getLdapUid() {

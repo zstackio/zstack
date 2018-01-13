@@ -5,7 +5,9 @@ import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.network.l3.APICreateL3NetworkEvent;
 import org.zstack.header.notification.ApiNotification;
+import org.zstack.header.other.APIAuditor;
 import org.zstack.header.zone.ZoneVO;
 
 /**
@@ -43,7 +45,7 @@ import org.zstack.header.zone.ZoneVO;
  * @since 0.1.0
  */
 
-public abstract class APICreateL2NetworkMsg extends APICreateMessage {
+public abstract class APICreateL2NetworkMsg extends APICreateMessage implements APIAuditor {
     /**
      * @desc max length of 255 characters
      */
@@ -121,6 +123,10 @@ public abstract class APICreateL2NetworkMsg extends APICreateMessage {
                 }
             }
         };
+    }
+
+    public Result audit(APIMessage msg, APIEvent rsp) {
+        return new Result(rsp.isSuccess() ? ((APICreateL2NetworkEvent)rsp).getInventory().getUuid() : "", L2NetworkVO.class);
     }
 
 }

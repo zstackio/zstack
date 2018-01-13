@@ -22,7 +22,7 @@ import org.zstack.header.storage.primary.PrimaryStorageVO;
 public class APIUpdateCephPrimaryStoragePoolMsg extends APIMessage implements PrimaryStorageMessage {
     @APINoSee
     private String primaryStorageUuid;
-    @APIParam(resourceType = PrimaryStorageVO.class)
+    @APIParam(resourceType = CephPrimaryStoragePoolVO.class)
     private String uuid;
     @APIParam(maxLength = 255, required = false)
     private String aliasName;

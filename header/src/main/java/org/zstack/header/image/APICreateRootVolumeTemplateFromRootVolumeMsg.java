@@ -7,6 +7,7 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
+import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.volume.VolumeVO;
@@ -21,7 +22,7 @@ import java.util.List;
         responseClass = APICreateRootVolumeTemplateFromRootVolumeEvent.class,
         parameterName = "params"
 )
-public class APICreateRootVolumeTemplateFromRootVolumeMsg extends APICreateMessage {
+public class APICreateRootVolumeTemplateFromRootVolumeMsg extends APICreateMessage implements APIAuditor {
     @APIParam(maxLength = 255)
     private String name;
     @APIParam(required = false, maxLength = 2048)
@@ -117,4 +118,8 @@ public class APICreateRootVolumeTemplateFromRootVolumeMsg extends APICreateMessa
         };
     }
 
+    @Override
+    public Result audit(APIMessage msg, APIEvent rsp) {
+        return new Result(rsp.isSuccess() ? ((APICreateRootVolumeTemplateFromRootVolumeEvent)rsp).getInventory().getUuid() : "", ImageVO.class);
+    }
 }

@@ -7,6 +7,7 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
+import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.vm.VmInstanceVO;
@@ -28,7 +29,7 @@ import java.util.List;
         parameterName = "params",
         responseClass = APIAddVmNicToLoadBalancerEvent.class
 )
-public class APIAddVmNicToLoadBalancerMsg extends APIMessage implements LoadBalancerMessage {
+public class APIAddVmNicToLoadBalancerMsg extends APIMessage implements LoadBalancerMessage, APIAuditor {
     @APIParam(resourceType = VmNicVO.class, checkAccount = true, operationTarget = true, nonempty = true)
     private List<String> vmNicUuids;
     @APIParam(resourceType = LoadBalancerListenerVO.class, checkAccount = true, operationTarget = true)
@@ -111,4 +112,8 @@ public class APIAddVmNicToLoadBalancerMsg extends APIMessage implements LoadBala
         };
     }
 
+    @Override
+    public Result audit(APIMessage msg, APIEvent rsp) {
+        return new Result(((APIAddVmNicToLoadBalancerMsg)msg).getLoadBalancerUuid(), LoadBalancerVO.class);
+    }
 }
