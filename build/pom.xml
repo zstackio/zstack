@@ -48,6 +48,7 @@
                                         <exclude>springConfigXml/sharedMountPointPrimaryStorage.xml</exclude>
                                         <exclude>springConfigXml/ceph.xml</exclude>
                                         <exclude>springConfigXml/fusionstor.xml</exclude>
+                                        <exclude>springConfigXml/surfs.xml</exclude>
                                         <exclude>springConfigXml/tag.xml</exclude>
                                         <exclude>serviceConfig/metadata.xml</exclude>
                                     </excludes>
@@ -145,6 +146,11 @@
                 <dependency>
                     <groupId>org.zstack</groupId>
                     <artifactId>fusionstor</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>surfs</artifactId>
                     <version>${project.version}</version>
                 </dependency>
                 <dependency>
