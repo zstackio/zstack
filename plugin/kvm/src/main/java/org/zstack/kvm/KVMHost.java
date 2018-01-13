@@ -2500,16 +2500,21 @@ public class KVMHost extends HostBase implements Host {
     public void connectHook(final ConnectHostInfo info, final Completion complete) {
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             if (info.isNewAdded()) {
+                SystemTagCreator creator;
                 createHostVersionSystemTags("zstack", "kvmSimulator", "0.1");
-                SystemTagCreator creator = KVMSystemTags.LIBVIRT_VERSION.newSystemTagCreator(self.getUuid());
-                creator.inherent = true;
-                creator.setTagByTokens(map(e(KVMSystemTags.LIBVIRT_VERSION_TOKEN, "1.2.9")));
-                creator.create();
+                if (null == KVMSystemTags.LIBVIRT_VERSION.getTokenByResourceUuid(self.getUuid(), KVMSystemTags.LIBVIRT_VERSION_TOKEN)) {
+                    creator = KVMSystemTags.LIBVIRT_VERSION.newSystemTagCreator(self.getUuid());
+                    creator.inherent = true;
+                    creator.setTagByTokens(map(e(KVMSystemTags.LIBVIRT_VERSION_TOKEN, "1.2.9")));
+                    creator.create();
+                }
 
-                creator = KVMSystemTags.QEMU_IMG_VERSION.newSystemTagCreator(self.getUuid());
-                creator.inherent = true;
-                creator.setTagByTokens(map(e(KVMSystemTags.QEMU_IMG_VERSION_TOKEN, "2.0.0")));
-                creator.create();
+                if (null == KVMSystemTags.QEMU_IMG_VERSION.getTokenByResourceUuid(self.getUuid(), KVMSystemTags.QEMU_IMG_VERSION_TOKEN)) {
+                    creator = KVMSystemTags.QEMU_IMG_VERSION.newSystemTagCreator(self.getUuid());
+                    creator.inherent = true;
+                    creator.setTagByTokens(map(e(KVMSystemTags.QEMU_IMG_VERSION_TOKEN, "2.0.0")));
+                    creator.create();
+                }
             }
 
             continueConnect(info.isNewAdded(), complete);
