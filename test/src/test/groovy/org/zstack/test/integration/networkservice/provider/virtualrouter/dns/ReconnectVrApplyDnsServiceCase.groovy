@@ -1,9 +1,12 @@
 package org.zstack.test.integration.networkservice.provider.virtualrouter.dns
 
 import org.springframework.http.HttpEntity
+import org.zstack.core.db.Q
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
+import org.zstack.network.service.virtualrouter.VirtualRouterVmVO
 import org.zstack.sdk.L3NetworkInventory
+import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.test.integration.networkservice.provider.virtualrouter.VirtualRouterNetworkServiceEnv
 import org.zstack.testlib.EnvSpec
@@ -12,9 +15,9 @@ import org.zstack.testlib.SubCase
 import org.zstack.utils.gson.JSONObjectUtil
 
 /**
- * Created by weiwang on 25/05/2017.
+ * Created by shixin on 01/12/2018.
  */
-class VirtualRouterAddDnsCase extends SubCase {
+class ReconnectVrApplyDnsServiceCase extends SubCase {
     EnvSpec env
 
     L3NetworkInventory l3
@@ -41,59 +44,42 @@ class VirtualRouterAddDnsCase extends SubCase {
 
     void testAddDns() {
         VirtualRouterCommands.SetDnsCmd cmd = null
+        VmInstanceInventory vm = env.inventoryByName("vm")
+
+        addDnsToL3Network {
+            delegate.l3NetworkUuid = l3.getUuid()
+            delegate.dns = dns1
+        }
+        addDnsToL3Network {
+            delegate.l3NetworkUuid = l3.getUuid()
+            delegate.dns = dns2
+        }
+        addDnsToL3Network {
+            delegate.l3NetworkUuid = l3.getUuid()
+            delegate.dns = dns3
+        }
+        addDnsToL3Network {
+            delegate.l3NetworkUuid = l3.getUuid()
+            delegate.dns = dns4
+        }
 
         env.afterSimulator(VirtualRouterConstant.VR_SET_DNS_PATH) { rsp, HttpEntity<String> e ->
             cmd = JSONObjectUtil.toObject(e.body, VirtualRouterCommands.SetDnsCmd.class)
             return rsp
         }
 
-        addDnsToL3Network {
-            delegate.l3NetworkUuid = l3.getUuid()
-            delegate.dns = dns1
+        List<VirtualRouterVmVO> vrs = Q.New(VirtualRouterVmVO.class).list()
+
+        reconnectVirtualRouter {
+            vmInstanceUuid = vrs.get(0).uuid
         }
 
         assert cmd != null
-        assert cmd.dns.stream()
-                      .map { dnsinfo -> dnsinfo.dnsAddress }
-                      .collect()
-                      .contains(dns1)
-
-        addDnsToL3Network {
-            delegate.l3NetworkUuid = l3.getUuid()
-            delegate.dns = dns2
-        }
-        cmd == null
-        addDnsToL3Network {
-            delegate.l3NetworkUuid = l3.getUuid()
-            delegate.dns = dns3
-        }
-
-        assert cmd != null
-        assert cmd.dns.size() == 3
+        assert cmd.dns.size() == 4
         assert cmd.dns.get(0).dnsAddress == dns1
         assert cmd.dns.get(1).dnsAddress == dns2
         assert cmd.dns.get(2).dnsAddress == dns3
-
-        cmd = null
-        removeDnsFromL3Network {
-            l3NetworkUuid = l3.getUuid()
-            dns = dns1
-        }
-        assert cmd != null
-        assert cmd.dns.size() == 2
-        assert cmd.dns.get(0).dnsAddress == dns2
-        assert cmd.dns.get(1).dnsAddress == dns3
-
-        cmd = null
-        addDnsToL3Network {
-            delegate.l3NetworkUuid = l3.getUuid()
-            delegate.dns = dns4
-        }
-        assert cmd != null
-        assert cmd.dns.size() == 3
-        assert cmd.dns.get(0).dnsAddress == dns2
-        assert cmd.dns.get(1).dnsAddress == dns3
-        assert cmd.dns.get(2).dnsAddress == dns4
+        assert cmd.dns.get(3).dnsAddress == dns4
     }
 
     @Override
