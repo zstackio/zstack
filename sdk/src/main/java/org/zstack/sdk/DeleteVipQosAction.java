@@ -27,8 +27,8 @@ public class DeleteVipQosAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = true, validValues = {"in","out","all"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String direction;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Integer port;
 
     @Param(required = false)
     public java.util.List systemTags;

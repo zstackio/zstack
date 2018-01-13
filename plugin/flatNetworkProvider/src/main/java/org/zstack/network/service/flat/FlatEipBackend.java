@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -20,7 +21,10 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostErrors;
+import org.zstack.header.host.HostVO;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.network.service.AfterApplyFlatEipExtensionPoint;
+import org.zstack.header.search.DeleteVO;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperation;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
@@ -31,6 +35,7 @@ import org.zstack.network.service.NetworkServiceFilter;
 import org.zstack.network.service.eip.*;
 import org.zstack.network.service.flat.FlatNetworkServiceConstant.AgentCmd;
 import org.zstack.network.service.flat.FlatNetworkServiceConstant.AgentRsp;
+import org.zstack.network.service.vip.VipGetServiceReferencePoint;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
@@ -45,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -63,6 +69,8 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
     private ApiTimeoutManager timeoutMgr;
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     public static class EipTO {
         public String eipUuid;
@@ -78,6 +86,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         public String nicName;
         public String vmBridgeName;
         public String publicBridgeName;
+        public String vipUuid;
     }
 
     public static class ApplyEipCmd extends AgentCmd {
@@ -381,6 +390,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                 to.vip = eip.getVipIp();
                 to.vipGateway = vip.getGateway();
                 to.vipNetmask = vip.getNetmask();
+                to.vipUuid = vip.getUuid();
                 to.vmBridgeName = bridgeNames.get(nic.getL3NetworkUuid());
                 to.publicBridgeName = pubBridgeNames.get(eip.getVipUuid());
                 return to;
@@ -467,6 +477,16 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                     return;
                 }
 
+                List<String> vipUuids = CollectionUtils.transformToList(eips, new Function<String, EipTO>() {
+                    @Override
+                    public String call(EipTO arg) {
+                        return arg.vipUuid;
+                    }
+                });
+                for (AfterApplyFlatEipExtensionPoint ext : pluginRgty.getExtensionList(AfterApplyFlatEipExtensionPoint.class)) {
+                    ext.AfterApplyFlatEip(vipUuids);
+                }
+
                 completion.success();
             }
         });
@@ -544,6 +564,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         to.vip = struct.getVip().getIp();
         to.vipGateway = struct.getVip().getGateway();
         to.vipNetmask = struct.getVip().getNetmask();
+        to.vipUuid = struct.getVip().getUuid();
         to.vmBridgeName = new BridgeNameFinder().findByL3Uuid(struct.getNic().getL3NetworkUuid());
         to.publicBridgeName = new BridgeNameFinder().findByL3Uuid(struct.getVip().getL3NetworkUuid());
         return to;
@@ -573,6 +594,10 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                 if (!rsp.success) {
                     completion.fail(operr("operation error, because:%s", rsp.error));
                     return;
+                }
+
+                for (AfterApplyFlatEipExtensionPoint ext : pluginRgty.getExtensionList(AfterApplyFlatEipExtensionPoint.class)) {
+                    ext.AfterApplyFlatEip(asList(struct.getVip().getUuid()));
                 }
 
                 completion.success();
