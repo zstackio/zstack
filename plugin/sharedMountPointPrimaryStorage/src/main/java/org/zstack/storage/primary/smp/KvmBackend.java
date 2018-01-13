@@ -1404,10 +1404,11 @@ public class KvmBackend extends HypervisorBackend {
                             "hosts[uuid:%s] have the same mount path, but actually mount different storage.",
                             ret.firstAccessHostUuids
                     ));
-                    cleanInvalidIdFile(ret.firstAccessHostUuids);
                 }
 
                 if (!ret.errorCodes.isEmpty()) {
+                    cleanInvalidIdFile(ret.firstAccessHostUuids);
+
                     String mountPathErrorInfo = "Can't access mount path on ";
                     for(String hostUuid : ret.huuids) {
                         mountPathErrorInfo += String.format("host[uuid:%s] ", hostUuid);
@@ -1550,8 +1551,8 @@ public class KvmBackend extends HypervisorBackend {
                     /* TODO: find a way to confirm it, and do not block add host
                     reply.setError(argerr("host[uuid:%s] might mount storage which is different from SMP[uuid:%s], please check it",
                             msg.getHostUuid(), msg.getPrimaryStorageUuid()));
-                    */
                     cleanInvalidIdFile(asList(msg.getHostUuid()));
+                    */
                 }
                 bus.reply(msg, reply);
             }
