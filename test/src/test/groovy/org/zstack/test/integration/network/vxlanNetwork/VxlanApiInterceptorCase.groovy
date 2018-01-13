@@ -3,7 +3,10 @@ package org.zstack.test.integration.network.vxlanNetwork
 import org.springframework.http.HttpEntity
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanKvmAgentCommands
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant
+import org.zstack.sdk.AccountInventory
+import org.zstack.sdk.L2VxlanNetworkInventory
 import org.zstack.sdk.L2VxlanNetworkPoolInventory
+import org.zstack.sdk.SessionInventory
 import org.zstack.sdk.VniRangeInventory
 import org.zstack.test.integration.network.NetworkTest
 import org.zstack.testlib.EnvSpec
@@ -27,6 +30,11 @@ class VxlanApiInterceptorCase extends SubCase {
     @Override
     void environment() {
         env = env {
+            account {
+                name = "accnTest1"
+                password = "password"
+            }
+
             instanceOffering {
                 name = "instanceOffering"
                 memory = SizeUnit.GIGABYTE.toByte(8)
@@ -107,6 +115,7 @@ class VxlanApiInterceptorCase extends SubCase {
     void test() {
         env.create {
             testVxlanNetwork()
+            testUpdateL2NetworkWithNormalAccount()
         }
     }
 
@@ -314,6 +323,49 @@ class VxlanApiInterceptorCase extends SubCase {
             delegate.uuid = vniRange.getUuid()
         }
 
+    }
+
+    void testUpdateL2NetworkWithNormalAccount() {
+        def accnTest1 = env.inventoryByName("accnTest1") as AccountInventory
+        def pool = queryL2VxlanNetworkPool { conditions = ["name=TestVxlanPool"] }[0] as L2VxlanNetworkPoolInventory
+        def vxlan1 = queryL2VxlanNetwork { conditions = ["name=TestVxlan11"] }[0] as L2VxlanNetworkInventory
+
+        shareResource {
+            resourceUuids = [pool.uuid]
+            accountUuids = [accnTest1.uuid]
+        }
+
+        def session1 = logInByAccount {
+            accountName = accnTest1.name
+            password = "password"
+        } as SessionInventory
+
+        createVniRange {
+            delegate.startVni = 65534
+            delegate.endVni = 65534
+            delegate.l2NetworkUuid = pool.getUuid()
+            delegate.name = "TestRange1000"
+        }
+
+        def vxlan101 = createL2VxlanNetwork {
+            name = "TestVxlan101"
+            poolUuid = pool.uuid
+            sessionId = session1.uuid
+        } as L2VxlanNetworkInventory
+
+        expect(AssertionError) {
+            updateL2Network {
+                uuid = vxlan1.uuid
+                name = "TestVxlan011"
+                sessionId = session1.uuid
+            }
+        }
+
+        updateL2Network {
+            uuid = vxlan101.uuid
+            name = "TestVxlan0101"
+            sessionId = session1.uuid
+        }
     }
 
     @Override
