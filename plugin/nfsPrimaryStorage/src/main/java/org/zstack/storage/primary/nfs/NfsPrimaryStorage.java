@@ -906,6 +906,15 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
+    protected void handle(GetInstallPathForDataVolumeDownloadMsg msg) {
+        final GetInstallPathForDataVolumeDownloadReply reply = new GetInstallPathForDataVolumeDownloadReply();
+        final String installPath = PathUtil.join(self.getMountPath(), PrimaryStoragePathMaker.makeDataVolumeInstallPath(msg.getVolumeUuid()));
+        reply.setInstallPath(installPath);
+        bus.reply(msg, reply);
+
+    }
+
+    @Override
     protected void handle(final DeleteBitsOnPrimaryStorageMsg msg) {
         final DeleteBitsOnPrimaryStorageReply reply = new DeleteBitsOnPrimaryStorageReply();
         NfsPrimaryStorageBackend bkd = getBackend(HypervisorType.valueOf(msg.getHypervisorType()));

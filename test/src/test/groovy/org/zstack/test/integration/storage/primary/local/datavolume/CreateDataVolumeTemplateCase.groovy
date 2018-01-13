@@ -2,17 +2,17 @@ package org.zstack.test.integration.storage.primary.local.datavolume
 
 import org.zstack.core.db.Q
 import org.zstack.header.image.ImageVO
+import org.zstack.sdk.BackupStorageInventory
+import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.ImageInventory
+import org.zstack.sdk.KVMHostInventory
+import org.zstack.sdk.PrimaryStorageInventory
+import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VolumeInventory
 import org.zstack.test.integration.storage.Env
 import org.zstack.test.integration.storage.StorageTest
-import org.zstack.testlib.BackupStorageSpec
-import org.zstack.testlib.DiskOfferingSpec
 import org.zstack.testlib.EnvSpec
-import org.zstack.testlib.KVMHostSpec
-import org.zstack.testlib.PrimaryStorageSpec
 import org.zstack.testlib.SubCase
-import org.zstack.testlib.VmSpec
 /**
  * Created by mingjian.deng on 2017/10/19.
  */
@@ -42,39 +42,39 @@ class CreateDataVolumeTemplateCase extends SubCase {
     }
 
     void testCreateDataVolumeTemplate() {
-        PrimaryStorageSpec primaryStorageSpec = env.specByName("local")
-        DiskOfferingSpec disk = env.specByName("diskOffering")
-        BackupStorageSpec bs = env.specByName("sftp")
-        KVMHostSpec kvm = env.specByName("kvm")
-        VmSpec vm = env.specByName("test-vm")
+        def ps = env.inventoryByName("local") as PrimaryStorageInventory
+        def disk = env.inventoryByName("diskOffering") as DiskOfferingInventory
+        def bs = env.inventoryByName("sftp") as BackupStorageInventory
+        def kvm = env.inventoryByName("kvm") as KVMHostInventory
+        def vm = env.inventoryByName("test-vm") as VmInstanceInventory
 
         def count = Q.New(ImageVO.class).count()
 
-        VolumeInventory dataVolume = createDataVolume {
+        def dataVolume = createDataVolume {
             name = "1G"
-            diskOfferingUuid = disk.inventory.uuid
-            primaryStorageUuid = primaryStorageSpec.inventory.uuid
-            systemTags = Arrays.asList("localStorage::hostUuid::" + kvm.inventory.uuid)
-        }
+            diskOfferingUuid = disk.uuid
+            primaryStorageUuid = ps.uuid
+            systemTags = Arrays.asList("localStorage::hostUuid::" + kvm.uuid)
+        } as VolumeInventory
 
-        ImageInventory image = createDataVolumeTemplateFromVolume {
+        def image = createDataVolumeTemplateFromVolume {
             name = "data-volume"
             volumeUuid = dataVolume.uuid
-            backupStorageUuids = [bs.inventory.uuid]
-        }
+            backupStorageUuids = [bs.uuid]
+        } as ImageInventory
 
         assert image.name == "data-volume"
 
         attachDataVolumeToVm {
             volumeUuid = dataVolume.uuid
-            vmInstanceUuid = vm.inventory.uuid
+            vmInstanceUuid = vm.uuid
         }
 
         image = createDataVolumeTemplateFromVolume {
             name = "data-volume-1"
             volumeUuid = dataVolume.uuid
-            backupStorageUuids = [bs.inventory.uuid]
-        }
+            backupStorageUuids = [bs.uuid]
+        } as ImageInventory
 
         assert image.name == "data-volume-1"
         assert Q.New(ImageVO.class).count() == count + 2

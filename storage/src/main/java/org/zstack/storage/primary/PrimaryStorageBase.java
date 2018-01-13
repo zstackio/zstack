@@ -47,13 +47,15 @@ import org.zstack.header.volume.VolumeReportPrimaryStorageCapacityUsageReply;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
-import static org.zstack.core.Platform.operr;
+
 import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
+import static org.zstack.core.Platform.operr;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE, dependencyCheck = true)
 public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
@@ -108,6 +110,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     protected abstract void handle(CreateTemplateFromVolumeOnPrimaryStorageMsg msg);
 
     protected abstract void handle(DownloadDataVolumeToPrimaryStorageMsg msg);
+
+    protected abstract void handle(GetInstallPathForDataVolumeDownloadMsg msg);
 
     protected abstract void handle(DeleteBitsOnPrimaryStorageMsg msg);
 
@@ -311,6 +315,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((DeleteSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof UpdatePrimaryStorageHostStatusMsg) {
             handle((UpdatePrimaryStorageHostStatusMsg) msg);
+        } else if (msg instanceof GetInstallPathForDataVolumeDownloadMsg) {
+            handle((GetInstallPathForDataVolumeDownloadMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }

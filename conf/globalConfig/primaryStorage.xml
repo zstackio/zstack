@@ -9,6 +9,30 @@
 		<validatorRegularExpression>^/(.*)</validatorRegularExpression>
 	</config>
 
+    <config>
+        <name>primarystorage.delete.bits.garbageCollector.interval</name>
+        <description>The interval primary storage delete bits which should be cleaned up, in seconds</description>
+        <defaultValue>600</defaultValue>
+        <category>primaryStorage</category>
+        <type>java.lang.Long</type>
+    </config>
+
+    <config>
+        <name>primarystorage.delete.bits.times</name>
+        <description>Primary storage delete bits garbage collector execute times</description>
+        <defaultValue>50</defaultValue>
+        <category>primaryStorage</category>
+        <type>java.lang.Integer</type>
+    </config>
+
+    <config>
+        <name>primarystorage.delete.bits.garbage.on</name>
+        <description>If primary storage delete bits garbage collector work on</description>
+        <defaultValue>true</defaultValue>
+        <category>primaryStorage</category>
+        <type>java.lang.Boolean</type>
+    </config>
+
 	<config>
 		<name>reservedCapacity</name>
 		<description>The reserved capacity on all primary storage</description>

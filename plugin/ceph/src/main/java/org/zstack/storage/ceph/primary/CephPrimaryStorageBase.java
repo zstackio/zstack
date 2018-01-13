@@ -2004,6 +2004,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     @Override
+    protected void handle(GetInstallPathForDataVolumeDownloadMsg msg) {
+        GetInstallPathForDataVolumeDownloadReply reply = new GetInstallPathForDataVolumeDownloadReply();
+        reply.setInstallPath(makeDataVolumeInstallPath(msg.getVolumeUuid()));
+        bus.reply(msg, reply);
+    }
+
+    @Override
     protected void handle(final DeleteBitsOnPrimaryStorageMsg msg) {
         DeleteCmd cmd = new DeleteCmd();
         cmd.installPath = msg.getInstallPath();

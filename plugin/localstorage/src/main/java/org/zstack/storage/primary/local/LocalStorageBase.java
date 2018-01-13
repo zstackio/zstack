@@ -1754,6 +1754,30 @@ public class LocalStorageBase extends PrimaryStorageBase {
     }
 
     @Override
+    protected void handle(GetInstallPathForDataVolumeDownloadMsg msg) {
+        if (msg.getHostUuid() == null) {
+            throw new OperationFailureException(operr("unable to create the data volume[uuid: %s] on a local primary storage[uuid:%s], because the hostUuid is not specified.",
+                    msg.getVolumeUuid(), self.getUuid()));
+        }
+
+        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getHostUuid());
+        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handle(msg, new ReturnValueCompletion<GetInstallPathForDataVolumeDownloadReply>(msg) {
+            @Override
+            public void success(GetInstallPathForDataVolumeDownloadReply returnValue) {
+                bus.reply(msg, returnValue);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                GetInstallPathForDataVolumeDownloadReply reply = new GetInstallPathForDataVolumeDownloadReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    @Override
     protected void handle(final DeleteBitsOnPrimaryStorageMsg msg) {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("delete-bits-on-local-primary-storage-%s", self.getUuid()));
