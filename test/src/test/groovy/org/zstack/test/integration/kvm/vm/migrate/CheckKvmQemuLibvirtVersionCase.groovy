@@ -31,9 +31,6 @@ class CheckKvmQemuLibvirtVersionCase extends SubCase {
     @Override
     void setup() {
         useSpring(KvmTest.springSpec)
-        spring {
-            ceph()
-        }
     }
 
     @Override

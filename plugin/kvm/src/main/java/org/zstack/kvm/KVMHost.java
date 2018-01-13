@@ -2515,6 +2515,11 @@ public class KVMHost extends HostBase implements Host {
                     creator.setTagByTokens(map(e(KVMSystemTags.QEMU_IMG_VERSION_TOKEN, "2.0.0")));
                     creator.create();
                 }
+
+                if (!checkQemuLibvirtVersionOfHost()) {
+                    complete.fail(operr("host [uuid:%s] cannot be added to cluster [uuid:%s] because qemu/libvirt version does not match",
+                            self.getUuid(), self.getClusterUuid()));
+                }
             }
 
             continueConnect(info.isNewAdded(), complete);
@@ -2759,6 +2764,22 @@ public class KVMHost extends HostBase implements Host {
                         }
                     });
 
+                    if (info.isNewAdded()) {
+                        flow(new NoRollbackFlow() {
+                            String __name__ = "check-qemu-libvirt-version";
+
+                            @Override
+                            public void run(FlowTrigger trigger, Map data) {
+                                if (checkQemuLibvirtVersionOfHost()) {
+                                    trigger.next();
+                                } else {
+                                    trigger.fail(operr("host [uuid:%s] cannot be added to cluster [uuid:%s] because qemu/libvirt version does not match",
+                                            self.getUuid(), self.getClusterUuid()));
+                                }
+                            }
+                        });
+                    }
+
                     flow(new NoRollbackFlow() {
                         String __name__ = "prepare-host-env";
 
@@ -2786,6 +2807,51 @@ public class KVMHost extends HostBase implements Host {
                 }
             }).start();
         }
+    }
+
+    private boolean checkQemuLibvirtVersionOfHost() {
+        List<String> hostUuidsInCluster = Q.New(HostVO.class)
+                .select(HostVO_.uuid)
+                .eq(HostVO_.clusterUuid, self.getClusterUuid())
+                .notEq(HostVO_.uuid, self.getUuid())
+                .listValues();
+        if (hostUuidsInCluster.isEmpty()) {
+            return true;
+        }
+
+        Map<String, List<String>> qemuVersions = KVMSystemTags.QEMU_IMG_VERSION.getTags(hostUuidsInCluster);
+        if (qemuVersions != null && qemuVersions.size() != 0) {
+            String clusterQemuVer = KVMSystemTags.QEMU_IMG_VERSION.getTokenByTag(
+                    qemuVersions.values().iterator().next().get(0),
+                    KVMSystemTags.QEMU_IMG_VERSION_TOKEN
+            );
+
+            String hostQemuVer = KVMSystemTags.QEMU_IMG_VERSION.getTokenByResourceUuid(
+                    self.getUuid(), KVMSystemTags.QEMU_IMG_VERSION_TOKEN
+            );
+
+            if (clusterQemuVer != null && !clusterQemuVer.equals(hostQemuVer)) {
+                return false;
+            }
+        }
+
+        Map<String, List<String>> libvirtVersions = KVMSystemTags.LIBVIRT_VERSION.getTags(hostUuidsInCluster);
+        if (libvirtVersions != null && libvirtVersions.size() != 0) {
+            String clusterLibvirtVer = KVMSystemTags.LIBVIRT_VERSION.getTokenByTag(
+                    libvirtVersions.values().iterator().next().get(0),
+                    KVMSystemTags.LIBVIRT_VERSION_TOKEN
+            );
+
+            String hostLibvirtVer = KVMSystemTags.LIBVIRT_VERSION.getTokenByResourceUuid(
+                    self.getUuid(), KVMSystemTags.LIBVIRT_VERSION_TOKEN
+            );
+
+            if (clusterLibvirtVer != null && !clusterLibvirtVer.equals(hostLibvirtVer)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     @Override
