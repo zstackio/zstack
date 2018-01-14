@@ -1045,7 +1045,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             }
         }
 
-        throw new CloudRuntimeException(String.format("%s doesn't have base resource type", clz));
+        return null;
     }
 
     private void startExpiredSessionCollector() {
