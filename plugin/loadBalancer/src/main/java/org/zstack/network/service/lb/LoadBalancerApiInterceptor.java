@@ -266,10 +266,13 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
                 throw new ApiMessageInterceptionException(argerr("conflict loadBalancerPort[%s], a vip[uuid:%s] has used that port", msg.getLoadBalancerPort(), TargetVipUuids));
             }
 
-            VipUuids = SQL.New("select distinct lb.vipUuid from LoadBalancerVO lb, LoadBalancerListenerVO lbl where " +
-                    "lbl.instancePort=:port and lbl.loadBalancerUuid=lb.uuid", String.class).param("port", msg.getInstancePort()).list();
-            if (!VipUuids.isEmpty() && VipUuids.contains(TargetVipUuids)) {
-                throw new ApiMessageInterceptionException(argerr("conflict loadBalancerPort[%s], a vip[uuid:%s] has used that port", msg.getLoadBalancerPort(), TargetVipUuids));
+            String lblUuid = SQL.New("select lbl.uuid from LoadBalancerVO lb, LoadBalancerListenerVO lbl where " +
+                    "lbl.instancePort=:port and lbl.loadBalancerUuid=lb.uuid and lb.vipUuid =:uuid", String.class)
+                    .param("port", msg.getInstancePort())
+                    .param("uuid", TargetVipUuids).find();
+
+            if (lblUuid != null){
+                throw new ApiMessageInterceptionException(argerr("conflict instancePort[%s], a listener[uuid:%s] has used that port", msg.getInstancePort(), lblUuid));
             }
         }
     }
