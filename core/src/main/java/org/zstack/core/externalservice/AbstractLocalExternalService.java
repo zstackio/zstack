@@ -6,14 +6,12 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
 import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
-import org.zstack.core.thread.TimerTask;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.ProcessFinder;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.concurrent.Callable;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -50,7 +48,7 @@ public abstract class AbstractLocalExternalService implements LocalExternalServi
         a.run();
     }
 
-    protected class ActionIfServiceNotUp implements Runnable {
+    public class ActionIfServiceNotUp implements Runnable {
         public Integer timeout = 120; // in secs
         public int interval = 2; // in secs
         public Runnable action;

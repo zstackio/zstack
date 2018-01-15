@@ -1,16 +1,16 @@
-package org.zstack.sdk;
+package org.zstack.sdk.zwatch.api;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class DeleteExportedImageFromBackupStorageAction extends AbstractAction {
+public class PutMetricDataAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteExportedImageFromBackupStorageResult value;
+        public org.zstack.sdk.zwatch.api.PutMetricDataResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -23,11 +23,11 @@ public class DeleteExportedImageFromBackupStorageAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String backupStorageUuid;
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String namespace;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String imageUuid;
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List data;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -50,8 +50,8 @@ public class DeleteExportedImageFromBackupStorageAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteExportedImageFromBackupStorageResult value = res.getResult(org.zstack.sdk.DeleteExportedImageFromBackupStorageResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteExportedImageFromBackupStorageResult() : value; 
+        org.zstack.sdk.zwatch.api.PutMetricDataResult value = res.getResult(org.zstack.sdk.zwatch.api.PutMetricDataResult.class);
+        ret.value = value == null ? new org.zstack.sdk.zwatch.api.PutMetricDataResult() : value; 
 
         return ret;
     }
@@ -76,8 +76,8 @@ public class DeleteExportedImageFromBackupStorageAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/backup-storage/{backupStorageUuid}/exported-images/{imageUuid}";
+        info.httpMethod = "POST";
+        info.path = "/zwatch/metrics";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";

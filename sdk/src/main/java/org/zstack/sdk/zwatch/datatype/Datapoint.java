@@ -12,11 +12,11 @@ public class Datapoint  {
         return this.value;
     }
 
-    public long time;
-    public void setTime(long time) {
+    public java.lang.Long time;
+    public void setTime(java.lang.Long time) {
         this.time = time;
     }
-    public long getTime() {
+    public java.lang.Long getTime() {
         return this.time;
     }
 
