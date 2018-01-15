@@ -116,6 +116,30 @@ public class VxlanKvmAgentCommands {
     public static class PopulateVxlanFdbResponse extends AgentResponse {
     }
 
+    public static class PopulateVxlanNetworksFdbCmd extends AgentCommand {
+        private List<String> networkUuids;
+        private List<String> peers;
+
+        public List<String> getNetworkUuids() {
+            return networkUuids;
+        }
+
+        public void setNetworkUuids(List<String> networkUuids) {
+            this.networkUuids = networkUuids;
+        }
+
+        public List<String> getPeers() {
+            return peers;
+        }
+
+        public void setPeers(List<String> peers) {
+            this.peers = peers;
+        }
+    }
+
+    public static class PopulateVxlanNetworksFdbResponse extends AgentResponse {
+    }
+
     public static class CheckVxlanCidrCmd extends AgentCommand {
         private String cidr;
 
