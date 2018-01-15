@@ -11,6 +11,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.TransactionalCallback.Operation;
 import org.zstack.header.Component;
+import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIListMessage;
 import org.zstack.header.vo.EO;
@@ -538,6 +539,7 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
 
     @Override
     @Transactional
+    @ExceptionSafe
     public void hardDeleteCollectionSelectedBySQL(String sql, Class entityClass) {
         EntityInfo info = getEntityInfo(entityClass);
         Query q = getEntityManager().createQuery(sql);
