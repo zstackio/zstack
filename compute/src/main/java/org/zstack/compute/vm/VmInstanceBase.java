@@ -1,5 +1,7 @@
 package org.zstack.compute.vm;
 
+
+import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -36,11 +38,8 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
+import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
-import org.zstack.header.image.ImageEO;
-import org.zstack.header.image.ImageInventory;
-import org.zstack.header.image.ImageStatus;
-import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.primary.*;
@@ -70,10 +69,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.err;
@@ -3561,9 +3557,12 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     @Transactional(readOnly = true)
     private List<VolumeVO> getAttachableVolume(String accountUuid) {
+        if (!self.getState().equals(VmInstanceState.Stopped) && self.getPlatform().equals(ImagePlatform.Other.toString())) {
+            return Collections.emptyList();
+        }
         List<String> volUuids = acntMgr.getResourceUuidsCanAccessByAccount(accountUuid, VolumeVO.class);
         if (volUuids != null && volUuids.isEmpty()) {
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
 
         List<String> formats = VolumeFormat.getVolumeFormatSupportedByHypervisorTypeInString(self.getHypervisorType());
@@ -3643,7 +3642,6 @@ public class VmInstanceBase extends AbstractVmInstance {
             q.setParameter("volStatus", VolumeStatus.NotInstantiated);
             vos.addAll(q.getResultList());
         }
-
 
         for (GetAttachableVolumeExtensionPoint ext : pluginRgty.getExtensionList(GetAttachableVolumeExtensionPoint.class)) {
             if (!vos.isEmpty()) {
