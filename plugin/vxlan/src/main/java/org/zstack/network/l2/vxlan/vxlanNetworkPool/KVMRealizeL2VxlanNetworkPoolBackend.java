@@ -27,18 +27,17 @@ import org.zstack.network.l2.vxlan.vtep.CreateVtepMsg;
 import org.zstack.network.l2.vxlan.vtep.VtepVO;
 import org.zstack.network.l2.vxlan.vtep.VtepVO_;
 import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
+import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
+import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO_;
+import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
-import static org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant.KVM_VXLAN_TYPE;
-import static org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant.VXLAN_KVM_CHECK_L2VXLAN_NETWORK_PATH;
-import static org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant.VXLAN_PORT;
+import static org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant.*;
 
 /**
  * Created by weiwang on 20/03/2017.
@@ -52,6 +51,9 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
     private ApiTimeoutManager timeoutMgr;
     @Autowired
     private CloudBus bus;
+
+    private static String VTEP_IP = "vtepIp";
+    private static String NEED_POPULATE = "needPopulate";
 
     @Override
     public void realize(L2NetworkInventory l2Network, String hostUuid, Completion completion) {
@@ -67,44 +69,171 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
         final L2VxlanNetworkPoolInventory vxlanPool = (L2VxlanNetworkPoolInventory) l2Network;
         final String clusterUuid = Q.New(HostVO.class).select(HostVO_.clusterUuid).eq(HostVO_.uuid, hostUuid).findValue();
 
-        VxlanKvmAgentCommands.CheckVxlanCidrCmd cmd = new VxlanKvmAgentCommands.CheckVxlanCidrCmd();
-        cmd.setCidr(getAttachedCidrs(vxlanPool.getUuid()).get(clusterUuid));
-        if (!l2Network.getPhysicalInterface().isEmpty()) {
-            cmd.setPhysicalInterfaceName(l2Network.getPhysicalInterface());
-        }
-
-        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
-        msg.setHostUuid(hostUuid);
-        msg.setCommand(cmd);
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
-        msg.setPath(VXLAN_KVM_CHECK_L2VXLAN_NETWORK_PATH);
-        msg.setNoStatusCheck(noStatusCheck);
-        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
-        bus.send(msg, new CloudBusCallBack(completion) {
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("check-l2-vxlan-pool-%s-on-host-%s", l2Network.getUuid(), hostUuid));
+        chain.then(new NoRollbackFlow() {
             @Override
-            public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    completion.fail(reply.getError());
+            public void run(FlowTrigger trigger, Map data) {
+                VxlanKvmAgentCommands.CheckVxlanCidrCmd cmd = new VxlanKvmAgentCommands.CheckVxlanCidrCmd();
+                cmd.setCidr(getAttachedCidrs(vxlanPool.getUuid()).get(clusterUuid));
+                if (!l2Network.getPhysicalInterface().isEmpty()) {
+                    cmd.setPhysicalInterfaceName(l2Network.getPhysicalInterface());
+                }
+
+                KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+                msg.setHostUuid(hostUuid);
+                msg.setCommand(cmd);
+                msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
+                msg.setPath(VXLAN_KVM_CHECK_L2VXLAN_NETWORK_PATH);
+                msg.setNoStatusCheck(noStatusCheck);
+                bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+                bus.send(msg, new CloudBusCallBack(completion) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            completion.fail(reply.getError());
+                            return;
+                        }
+
+                        KVMHostAsyncHttpCallReply hreply = reply.castReply();
+                        VxlanKvmAgentCommands.CheckVxlanCidrResponse rsp = hreply.toResponse(VxlanKvmAgentCommands.CheckVxlanCidrResponse.class);
+                        if (!rsp.isSuccess()) {
+                            ErrorCode err = operr("failed to check cidr[%s] for l2VxlanNetworkPool[uuid:%s, name:%s] on kvm host[uuid:%s], %s",
+                                    cmd.getCidr(), vxlanPool.getUuid(), vxlanPool.getName(), hostUuid, rsp.getError());
+                            completion.fail(err);
+                            return;
+                        }
+
+                        data.put(VTEP_IP, rsp.getVtepIp());
+                        String info = String.format("successfully checked cidr[%s] for l2VxlanNetworkPool[uuid:%s, name:%s] on kvm host[uuid:%s]",
+                                cmd.getCidr(), vxlanPool.getUuid(), vxlanPool.getName(), hostUuid);
+                        logger.debug(info);
+                        trigger.next();
+                    }
+                });
+            }
+
+        }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                List<VtepVO> vtepVOS = Q.New(VtepVO.class)
+                        .eq(VtepVO_.poolUuid, l2Network.getUuid())
+                        .eq(VtepVO_.hostUuid, hostUuid)
+                        .list();
+
+                data.put(NEED_POPULATE, false);
+                DebugUtils.Assert(vtepVOS == null || vtepVOS.size() <= 1, String.format(
+                        "multiple vteps[ips: %s] found on host[uuid: %s]",
+                        vtepVOS.stream().map(v -> v.getVtepIp()).collect(Collectors.toSet()), hostUuid));
+
+
+                if (vtepVOS != null && vtepVOS.size() == 1 && !vtepVOS.get(0).getVtepIp().equals(data.get(VTEP_IP))) {
+                    logger.debug(String.format(
+                            "remove deprecated vtep[ip:%s] from host[uuid:%s] for l2 vxlan network pool[uuid:%s]",
+                            vtepVOS.get(0).getVtepIp(), hostUuid, l2Network.getUuid()));
+                    dbf.remove(vtepVOS.get(0));
+                } else if (vtepVOS != null && vtepVOS.size() == 1 && vtepVOS.get(0).getVtepIp().equals(data.get(VTEP_IP))) {
+                    logger.debug(String.format(
+                            "vtep[ip:%s] from host[uuid:%s] for l2 vxlan network pool[uuid:%s] checks successfully",
+                            vtepVOS.get(0).getVtepIp(), hostUuid, l2Network.getUuid()));
+                    trigger.next();
+                }
+
+                logger.debug(String.format(
+                        "creating vtep[ip:%s] on host[uuid:%s] for l2 vxlan network pool[uuid:%s]",
+                        data.get(VTEP_IP), hostUuid, l2Network.getUuid()));
+
+                CreateVtepMsg cmsg = new CreateVtepMsg();
+                cmsg.setPoolUuid(l2Network.getUuid());
+                cmsg.setClusterUuid(clusterUuid);
+                cmsg.setHostUuid(hostUuid);
+                cmsg.setPort(VXLAN_PORT);
+                cmsg.setVtepIp((String) data.get(VTEP_IP));
+                cmsg.setType(KVM_VXLAN_TYPE);
+
+                bus.makeTargetServiceIdByResourceUuid(cmsg, L2NetworkConstant.SERVICE_ID, l2Network.getUuid());
+                bus.send(cmsg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            logger.warn(reply.getError().toString());
+                            trigger.fail(reply.getError());
+                            return;
+                        }
+                        logger.debug(String.format("created new vtep [%s] on vxlan network pool [%s]", cmsg.getVtepIp(), l2Network.getUuid()));
+                        data.put(NEED_POPULATE, true);
+                        trigger.next();
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                if (data.get(NEED_POPULATE).equals(false)) {
+                    trigger.next();
                     return;
                 }
 
-                KVMHostAsyncHttpCallReply hreply = reply.castReply();
-                VxlanKvmAgentCommands.CheckVxlanCidrResponse rsp = hreply.toResponse(VxlanKvmAgentCommands.CheckVxlanCidrResponse.class);
-                if (!rsp.isSuccess()) {
-                    ErrorCode err = operr("failed to check cidr[%s] for l2VxlanNetwork[uuid:%s, name:%s] on kvm host[uuid:%s], %s",
-                            cmd.getCidr(), vxlanPool.getUuid(), vxlanPool.getName(), hostUuid, rsp.getError());
-                    completion.fail(err);
+                List<VtepVO> vteps = Q.New(VtepVO.class).eq(VtepVO_.poolUuid, l2Network.getUuid()).list();
+
+                if (vteps == null || vteps.size() <= 1) {
+                    logger.debug("no need to populate fdb since there are only one vtep or less");
+                    trigger.next();
                     return;
                 }
 
-                String info = String.format("successfully checked cidr[%s] for l2VxlanNetwork[uuid:%s, name:%s] on kvm host[uuid:%s]",
-                        cmd.getCidr(), vxlanPool.getUuid(), vxlanPool.getName(), hostUuid);
-                logger.debug(info);
+                List<String> vxlanNetworkUuids = Q.New(VxlanNetworkVO.class)
+                        .select(VxlanNetworkVO_.uuid)
+                        .eq(VxlanNetworkVO_.poolUuid, l2Network.getUuid())
+                        .listValues();
 
+                new While<>(vteps).all((vtep, completion1) -> {
+                    Set<String> peers = vteps.stream()
+                            .map(v -> v.getVtepIp())
+                            .collect(Collectors.toSet());
+                    peers.remove(vtep.getVtepIp());
+
+                    logger.info(String.format("populate fdb to vtep[ip:%s] for vxlan network pool %s with vxlan network[uuids:%s] to host[uuid:%s]",
+                            vtep.getVtepIp(), l2Network.getUuid(), vxlanNetworkUuids, vtep.getHostUuid()));
+
+                    VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd cmd = new VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd();
+                    cmd.setPeers(new ArrayList<>(peers));
+                    cmd.setNetworkUuids(vxlanNetworkUuids);
+
+                    KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+                    msg.setHostUuid(vtep.getHostUuid());
+                    msg.setCommand(cmd);
+                    msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
+                    msg.setPath(VXLAN_KVM_POPULATE_FDB_L2VXLAN_NETWORKS_PATH);
+                    msg.setNoStatusCheck(noStatusCheck);
+                    bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+                    bus.send(msg, new CloudBusCallBack(completion1) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (!reply.isSuccess()) {
+                                logger.warn(reply.getError().toString());
+                            }
+                            completion1.done();
+                        }
+                    });
+                }).run(new NoErrorCompletion() {
+                    @Override
+                    public void done() {
+                        trigger.next();
+                    }
+                });
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
                 completion.success();
             }
-        });
-
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
     }
 
     @Override
