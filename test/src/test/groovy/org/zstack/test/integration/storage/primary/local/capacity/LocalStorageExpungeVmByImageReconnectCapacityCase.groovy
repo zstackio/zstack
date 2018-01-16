@@ -1,41 +1,40 @@
 package org.zstack.test.integration.storage.primary.local.capacity
 
-import org.springframework.http.HttpEntity
+import org.zstack.compute.vm.VmGlobalConfig
 import org.zstack.core.db.Q
-import org.zstack.header.vm.VmInstanceVO_
-import org.zstack.network.service.flat.FlatDhcpBackend
-import org.zstack.sdk.ClusterInventory
-import org.zstack.sdk.DiskOfferingInventory
+import org.zstack.header.image.ImageConstant
+import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy
+import org.zstack.header.vm.VmInstanceState
+import org.zstack.header.vm.VmInstanceVO
+import org.zstack.sdk.BackupStorageInventory
 import org.zstack.sdk.GetPrimaryStorageCapacityResult
+import org.zstack.sdk.HostDiskCapacity
+import org.zstack.sdk.HostInventory
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.sdk.VmInstanceInventory
+import org.zstack.sdk.VolumeInventory
 import org.zstack.storage.primary.local.LocalStorageHostRefVO
 import org.zstack.storage.primary.local.LocalStorageHostRefVO_
+import org.zstack.storage.primary.local.LocalStorageKvmBackend
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
-import org.zstack.testlib.LocalStorageSpec
 import org.zstack.testlib.SubCase
-import org.zstack.utils.gson.JSONObjectUtil
-import org.zstack.compute.vm.VmGlobalConfig
-import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy
-import org.zstack.testlib.VmSpec
-import org.zstack.core.db.DatabaseFacade
-import org.zstack.kvm.KVMAgentCommands
-import org.zstack.header.vm.VmInstanceVO
-import org.zstack.kvm.KVMConstant
-import org.zstack.header.vm.VmInstanceState
-import org.zstack.test.integration.storage.Env
-import org.zstack.storage.primary.local.LocalStorageKvmBackend
-
-
+import org.zstack.utils.data.SizeUnit
 /**
  * Created by SyZhao on 2017/4/21.
  */
 class LocalStorageExpungeVmByImageReconnectCapacityCase extends SubCase {
     EnvSpec env
+    PrimaryStorageInventory ps
+    BackupStorageInventory bs
+    ImageInventory image
+    VmInstanceInventory vm
+    L3NetworkInventory l3
+    InstanceOfferingInventory offering
+    HostInventory host
 
     @Override
     void clean() {
@@ -49,118 +48,117 @@ class LocalStorageExpungeVmByImageReconnectCapacityCase extends SubCase {
 
     @Override
     void environment() {
-        env = Env.localStorageOneVmEnvForPrimaryStorage()
+        env = LocalStorageEnv.localStorageOneVmEnvForCapacity()
     }
 
     @Override
     void test() {
         env.create {
+            prepare()
             testExpungeVmByImageReconnectCheckCapacity()
+        }
+    }
+
+    void prepare() {
+        LocalStorageEnv.simulator(env)
+
+        bs = env.inventoryByName("sftp") as BackupStorageInventory
+        ps = env.inventoryByName("local") as PrimaryStorageInventory
+        l3 = env.inventoryByName("l3") as L3NetworkInventory
+        offering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
+        host = env.inventoryByName("kvm") as HostInventory
+
+        image = addImage {
+            name = "image1"
+            url = "http://zstack.org/download/test.qcow2"
+            backupStorageUuids = [bs.uuid]
+            format = ImageConstant.QCOW2_FORMAT_STRING
+        } as ImageInventory
+
+        vm = createVmInstance {
+            name = "test-vm"
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3.uuid]
+            instanceOfferingUuid = offering.uuid
+            hostUuid = host.uuid
+        } as VmInstanceInventory
+
+        reconnectHost {
+            uuid = vm.hostUuid
+        }
+        reconnectPrimaryStorage {
+            uuid = ps.uuid
         }
     }
 
     void testExpungeVmByImageReconnectCheckCapacity() {
         VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicy.Delay.toString())
-        PrimaryStorageInventory ps = env.inventoryByName("local")
-        ClusterInventory cluster = env.inventoryByName("cluster")
-        ImageInventory image = env.inventoryByName("image1")
-        DiskOfferingInventory diskOffering = env.inventoryByName("diskOffering")
-        InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering")
-        L3NetworkInventory l3 = env.inventoryByName("l3")
-        VmSpec vmSpec = env.specByName("test-vm")
-        VmInstanceInventory vm = vmSpec.inventory
-        DatabaseFacade dbf = bean(DatabaseFacade.class)
-        assert vmSpec.inventory.rootVolumeUuid
+        assert vm.rootVolumeUuid
 
+        def volume = queryVolume {
+            conditions=["uuid=${vm.rootVolumeUuid}"]
+        }[0] as VolumeInventory
+
+        assert volume.size > 0
 
         LocalStorageHostRefVO beforeRefVO = Q.New(LocalStorageHostRefVO.class)
                 .eq(LocalStorageHostRefVO_.hostUuid, vm.hostUuid).find()
 
-        GetPrimaryStorageCapacityResult beforeCapacityResult = getPrimaryStorageCapacity {
+        def beforeCapacityResult = getPrimaryStorageCapacity {
             primaryStorageUuids = [ps.uuid]
-        }
+        } as GetPrimaryStorageCapacityResult
 
-        int spend = 1000000000
-        boolean checked = false
-        env.simulator(LocalStorageKvmBackend.INIT_PATH) { HttpEntity<String> e, EnvSpec spec ->
-            LocalStorageKvmBackend.InitCmd cmd = JSONObjectUtil.toObject(e.body,LocalStorageKvmBackend.InitCmd.class)
+        def hostCapacity = getLocalStorageHostDiskCapacity {
+            primaryStorageUuid = ps.uuid
+            hostUuid = host.uuid
+        }[0] as HostDiskCapacity
 
-            LocalStorageHostRefVO refVO = Q.New(LocalStorageHostRefVO.class)
-                    .eq(LocalStorageHostRefVO_.hostUuid, cmd.hostUuid).find()
-
-            def rsp = new LocalStorageKvmBackend.AgentResponse()
-            rsp.totalCapacity = refVO.totalPhysicalCapacity
-            if(cmd.hostUuid == vm.hostUuid){
-                rsp.availableCapacity = refVO.totalPhysicalCapacity - spend
-            }else{
-                rsp.availableCapacity = refVO.availablePhysicalCapacity
-            }
-            checked = true
+        env.simulator(LocalStorageKvmBackend.CREATE_VOLUME_FROM_CACHE_PATH) {
+            def rsp = new LocalStorageKvmBackend.CreateVolumeFromCacheRsp()
+            rsp.totalCapacity = hostCapacity.totalCapacity
+            rsp.availableCapacity = hostCapacity.availableCapacity - SizeUnit.GIGABYTE.toByte(20)
             return rsp
         }
-        //reconnectHost {
-        //    uuid = vm.hostUuid
-        //}
-        reconnectPrimaryStorage {
-            uuid = ps.uuid
-        }
-        GetPrimaryStorageCapacityResult afterCapacityResult = getPrimaryStorageCapacity {
-            primaryStorageUuids = [ps.uuid]
-        }
-        LocalStorageHostRefVO afterRefVO = Q.New(LocalStorageHostRefVO.class)
-                .eq(LocalStorageHostRefVO_.hostUuid, vm.hostUuid).find()
-        assert checked
-        assert beforeCapacityResult.availablePhysicalCapacity ==  afterCapacityResult.availablePhysicalCapacity + spend
-        //assert beforeCapacityResult.availableCapacity > afterCapacityResult.availableCapacity
-        assert beforeRefVO.availablePhysicalCapacity == afterRefVO.availablePhysicalCapacity + spend
-
 
         destroyVmInstance {
             uuid = vm.uuid
         }
+
         VmInstanceVO vmvo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
         assert vmvo.state == VmInstanceState.Destroyed
 
-        def delete_bits_path_is_invoked = false
-        env.simulator(LocalStorageKvmBackend.DELETE_BITS_PATH) { HttpEntity<String> e, EnvSpec spec ->
-            delete_bits_path_is_invoked = true
-            LocalStorageHostRefVO refVO = Q.New(LocalStorageHostRefVO.class)
-                    .eq(LocalStorageHostRefVO_.hostUuid, vm.hostUuid).find()
-            def rsp = new LocalStorageKvmBackend.AgentResponse()
-            rsp.totalCapacity = refVO.totalPhysicalCapacity
-            rsp.availableCapacity = refVO.availablePhysicalCapacity + spend
-            return rsp
-        }
-        expungeVmInstance {
-            uuid = vmSpec.inventory.uuid
-        }
-        assert delete_bits_path_is_invoked
-
-        //GetPrimaryStorageCapacityResult capacityResult = getPrimaryStorageCapacity {
-        //    primaryStorageUuids = [ps.uuid]
-        //}
-        //assert beforeCapacityResult.availableCapacity < capacityResult.availableCapacity
-        //assert beforeCapacityResult.availablePhysicalCapacity < capacityResult.availablePhysicalCapacity
-
-        env.simulator(LocalStorageKvmBackend.INIT_PATH) { HttpEntity<String> e, EnvSpec spec ->
-            LocalStorageKvmBackend.InitCmd cmd = JSONObjectUtil.toObject(e.body,LocalStorageKvmBackend.InitCmd.class)
-
-            LocalStorageHostRefVO refVO = Q.New(LocalStorageHostRefVO.class)
-                    .eq(LocalStorageHostRefVO_.hostUuid, cmd.hostUuid).find()
-
-            def rsp = new LocalStorageKvmBackend.AgentResponse()
-            rsp.totalCapacity = refVO.totalPhysicalCapacity
-            rsp.availableCapacity = refVO.availablePhysicalCapacity
-            return rsp
+        reconnectHost {
+            uuid = vm.hostUuid
         }
         reconnectPrimaryStorage {
             uuid = ps.uuid
         }
-        afterCapacityResult = getPrimaryStorageCapacity {
+
+        def afterCapacityResult = getPrimaryStorageCapacity {
             primaryStorageUuids = [ps.uuid]
-        }
+        } as GetPrimaryStorageCapacityResult
+
+        LocalStorageHostRefVO afterRefVO = Q.New(LocalStorageHostRefVO.class)
+                .eq(LocalStorageHostRefVO_.hostUuid, vm.hostUuid).find()
 
         assert beforeCapacityResult.availablePhysicalCapacity == afterCapacityResult.availablePhysicalCapacity
         assert beforeCapacityResult.availableCapacity == afterCapacityResult.availableCapacity
+        assert beforeRefVO.availablePhysicalCapacity == afterRefVO.availablePhysicalCapacity
+
+        expungeVmInstance {
+            uuid = vm.uuid
+        }
+
+        afterCapacityResult = getPrimaryStorageCapacity {
+            primaryStorageUuids = [ps.uuid]
+        } as GetPrimaryStorageCapacityResult
+
+        afterRefVO = Q.New(LocalStorageHostRefVO.class)
+                .eq(LocalStorageHostRefVO_.hostUuid, vm.hostUuid).find()
+
+        assert beforeRefVO.availablePhysicalCapacity == afterRefVO.availablePhysicalCapacity
+        assert beforeRefVO.availableCapacity == afterRefVO.availableCapacity - SizeUnit.GIGABYTE.toByte(2)
+        assert beforeCapacityResult.availablePhysicalCapacity == afterCapacityResult.availablePhysicalCapacity
+        assert beforeCapacityResult.availableCapacity == afterCapacityResult.availableCapacity - SizeUnit.GIGABYTE.toByte(2)
     }
 }
