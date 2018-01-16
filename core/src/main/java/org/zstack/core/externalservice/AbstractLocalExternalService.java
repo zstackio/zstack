@@ -18,9 +18,6 @@ import java.util.concurrent.TimeUnit;
 public abstract class AbstractLocalExternalService implements LocalExternalService {
     protected static final CLogger logger = Utils.getLogger(AbstractLocalExternalService.class);
 
-    @Autowired
-    protected ThreadFacade thdf;
-
     protected abstract String[] getCommandLineKeywords();
 
     protected ProcessFinder processFinder = new ProcessFinder();
@@ -45,17 +42,22 @@ public abstract class AbstractLocalExternalService implements LocalExternalServi
     protected void doActionIfServicePIDNotShowUpInTwoMinutes(Runnable runnable) {
         ActionIfServiceNotUp a = new ActionIfServiceNotUp();
         a.action = runnable;
+        a.upChecker = () -> getPID() != null;
         a.run();
     }
 
+    @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
     public class ActionIfServiceNotUp implements Runnable {
         public Integer timeout = 120; // in secs
         public int interval = 2; // in secs
         public Runnable action;
-        public Callable<Boolean> upChecker = () -> getPID() != null;
+        public Callable<Boolean> upChecker;
         public int successTimes = 3;
 
         private long endTime = System.currentTimeMillis();
+
+        @Autowired
+        protected ThreadFacade thdf;
 
         private void doAction() {
             action.run();
@@ -66,6 +68,7 @@ public abstract class AbstractLocalExternalService implements LocalExternalServi
             DebugUtils.Assert(action != null, "action cannot be null");
             DebugUtils.Assert(upChecker != null, "upChecker cannot be null");
             DebugUtils.Assert(timeout != null, "timeout cannot be null");
+            DebugUtils.Assert(upChecker != null, "upChecker cannot be null");
 
             endTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(timeout);
 
