@@ -2024,6 +2024,11 @@ public class LocalStorageBase extends PrimaryStorageBase {
         updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
             @Override
             public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
+
+                String beforeCapacity = String.format("[totalCapacity: %s, availableCapacity: %s, totalPhysicalCapacity: %s, " +
+                        "availablePhysicalCapacity: %s]", cap.getTotalCapacity(), cap.getAvailableCapacity(),
+                        cap.getTotalPhysicalCapacity(), cap.getAvailablePhysicalCapacity());
+
                 if (total != null) {
                     long t = cap.getTotalCapacity() - total;
                     cap.setTotalCapacity(t < 0 ? 0 : t);
@@ -2045,6 +2050,12 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     long su = cap.getSystemUsedCapacity() - systemUsed;
                     cap.setSystemUsedCapacity(su < 0 ? 0 : su);
                 }
+
+                String nowCapacity = String.format("[totalCapacity: %s, availableCapacity: %s, totalPhysicalCapacity: %s, " +
+                                "availablePhysicalCapacity: %s]", cap.getTotalCapacity(), cap.getAvailableCapacity(),
+                        cap.getTotalPhysicalCapacity(), cap.getAvailablePhysicalCapacity());
+                logger.info(String.format("decrease local primary storage[uuid: %s] capacity, changed capacity from %s to %s", cap.getUuid(), beforeCapacity, nowCapacity));
+
                 return cap;
             }
         });
