@@ -1,5 +1,7 @@
 package org.zstack.header.longjob
 
+import org.zstack.header.longjob.APIQueryLongJobReply
+import org.zstack.header.query.APIQueryMessage
 import org.zstack.header.query.APIQueryMessage
 
 doc {
@@ -12,11 +14,10 @@ doc {
     rest {
         request {
 			url "GET /v1/longjobs"
-
 			url "GET /v1/longjobs/{uuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header(Authorization: 'OAuth the-session-uuid')
 
             clz APIQueryLongJobMsg.class
 
