@@ -20,8 +20,6 @@ class VirtualRouterAddDnsCase extends SubCase {
     L3NetworkInventory l3
     String dns1 = "8.8.8.8"
     String dns2 = "8.8.4.4"
-    String dns3 = "8.8.4.5"
-    String dns4 = "8.8.4.6"
 
     @Override
     void clean() {
@@ -62,38 +60,12 @@ class VirtualRouterAddDnsCase extends SubCase {
             delegate.l3NetworkUuid = l3.getUuid()
             delegate.dns = dns2
         }
-        cmd == null
-        addDnsToL3Network {
-            delegate.l3NetworkUuid = l3.getUuid()
-            delegate.dns = dns3
-        }
 
         assert cmd != null
-        assert cmd.dns.size() == 3
-        assert cmd.dns.get(0).dnsAddress == dns1
-        assert cmd.dns.get(1).dnsAddress == dns2
-        assert cmd.dns.get(2).dnsAddress == dns3
-
-        cmd = null
-        removeDnsFromL3Network {
-            l3NetworkUuid = l3.getUuid()
-            dns = dns1
-        }
-        assert cmd != null
-        assert cmd.dns.size() == 2
-        assert cmd.dns.get(0).dnsAddress == dns2
-        assert cmd.dns.get(1).dnsAddress == dns3
-
-        cmd = null
-        addDnsToL3Network {
-            delegate.l3NetworkUuid = l3.getUuid()
-            delegate.dns = dns4
-        }
-        assert cmd != null
-        assert cmd.dns.size() == 3
-        assert cmd.dns.get(0).dnsAddress == dns2
-        assert cmd.dns.get(1).dnsAddress == dns3
-        assert cmd.dns.get(2).dnsAddress == dns4
+        assert cmd.dns.stream()
+                      .map { dnsinfo -> dnsinfo.dnsAddress }
+                      .collect()
+                      .containsAll([dns1, dns2])
     }
 
     @Override

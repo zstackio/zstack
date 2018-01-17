@@ -3,7 +3,6 @@ package org.zstack.network.service.virtualrouter.dns;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
@@ -46,9 +45,6 @@ public class VirtualRouterSyncDnsOnStartFlow extends NoRollbackFlow {
     private ErrorFacade errf;
     @Autowired
     private ApiTimeoutManager apiTimeoutManager;
-    @Autowired
-    @Qualifier("VirtualRouterDnsBackend")
-    VirtualRouterDnsBackend dnsBackend;
 
     @Override
     public void run(final FlowTrigger chain, final Map data) {
@@ -95,7 +91,7 @@ public class VirtualRouterSyncDnsOnStartFlow extends NoRollbackFlow {
         }
 
         SetDnsCmd cmd = new SetDnsCmd();
-        cmd.setDns(dnsBackend.getDnsInfoOfVr(vr.getUuid(), null));
+        cmd.setDns(dns);
 
         VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
         msg.setVmInstanceUuid(vr.getUuid());
