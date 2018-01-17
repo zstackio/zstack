@@ -2090,6 +2090,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     protected <T extends AgentResponse> void httpCall(final String path, final AgentCommand cmd, final Class<T> retClass, final ReturnValueCompletion<T> callback) {
+        httpCall(path, cmd, retClass, callback, null, 0);
+    }
+
+    protected <T extends AgentResponse> void httpCall(final String path, final AgentCommand cmd, final Class<T> retClass, final ReturnValueCompletion<T> callback, TimeUnit unit, long timeout) {
         cmd.setUuid(self.getUuid());
         cmd.setFsId(getSelf().getFsid());
 
@@ -2123,7 +2127,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                 CephPrimaryStorageMonBase base = it.next();
 
-                base.httpCall(path, cmd, retClass, new ReturnValueCompletion<T>(callback) {
+                ReturnValueCompletion<T> completion = new ReturnValueCompletion<T>(callback) {
                     @Override
                     public void success(T ret) {
                         if (!ret.success) {
@@ -2144,7 +2148,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         errorCodes.add(errorCode);
                         call();
                     }
-                });
+                };
+
+                if (unit == null) {
+                    base.httpCall(path, cmd, retClass, completion);
+                } else {
+                    base.httpCall(path, cmd, retClass, completion, unit, timeout);
+                }
             }
         }
 
@@ -3558,7 +3568,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }
-        });
+        }, TimeUnit.MILLISECONDS, msg.getTimeout());
     }
 
     private void handle(CephToCephMigrateVolumeSnapshotMsg msg) {
@@ -3585,7 +3595,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }
-        });
+        }, TimeUnit.MILLISECONDS, msg.getTimeout());
     }
 
     private void handle(GetVolumeSnapshotInfoMsg msg) {

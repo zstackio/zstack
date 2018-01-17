@@ -616,7 +616,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                     NfsToNfsMigrateVolumeRsp rsp = wrapper.getResponse(NfsToNfsMigrateVolumeRsp.class);
                     return rsp.isSuccess() ? null : operr(rsp.getError());
                 }
-            }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
+            }, msg.getTimeout(), new ReturnValueCompletion<KvmResponseWrapper>(completion) {
                 @Override
                 public void success(KvmResponseWrapper w) {
                     logger.info("successfully copyed volume folder to nfs ps " + dstPsInv.getUuid());
@@ -647,7 +647,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                         NfsToNfsMigrateVolumeRsp rsp = wrapper.getResponse(NfsToNfsMigrateVolumeRsp.class);
                         return rsp.isSuccess() ? null : operr(rsp.getError());
                     }
-                }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
+                }, msg.getTimeout(), new ReturnValueCompletion<KvmResponseWrapper>(completion) {
                     @Override
                     public void success(KvmResponseWrapper w) {
                         logger.info("successfully copyed volume folder to nfs ps " + dstPsInv.getUuid());
