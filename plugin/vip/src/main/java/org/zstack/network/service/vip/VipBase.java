@@ -677,7 +677,6 @@ public class VipBase {
         bus.publish(evt);
     }
 
-
     public Boolean checkPeerL3Additive(String peerL3NetworkUuid) {
         refresh();
 
@@ -686,7 +685,9 @@ public class VipBase {
         }
 
         if (self.getPeerL3NetworkRefs().stream()
-                .allMatch(ref -> ref.getL3NetworkUuid().equals(peerL3NetworkUuid))) {
+                .anyMatch(ref -> ref.getL3NetworkUuid().equals(peerL3NetworkUuid))) {
+            logger.debug(String.format("peer l3 [uuid:%s] has already add to vip[uuid:%s], skip to add",
+                    peerL3NetworkUuid, self.getUuid()));
             return false;
         }
 
