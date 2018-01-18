@@ -26,14 +26,6 @@ public class IPsecConnectionInventory  {
         return this.description;
     }
 
-    public java.lang.String l3NetworkUuid;
-    public void setL3NetworkUuid(java.lang.String l3NetworkUuid) {
-        this.l3NetworkUuid = l3NetworkUuid;
-    }
-    public java.lang.String getL3NetworkUuid() {
-        return this.l3NetworkUuid;
-    }
-
     public java.lang.String peerAddress;
     public void setPeerAddress(java.lang.String peerAddress) {
         this.peerAddress = peerAddress;
@@ -168,6 +160,14 @@ public class IPsecConnectionInventory  {
     }
     public java.util.List<IPsecPeerCidrInventory> getPeerCidrs() {
         return this.peerCidrs;
+    }
+
+    public java.util.List<IPsecL3NetworkRefInventory> l3NetworkRefs;
+    public void setL3NetworkRefs(java.util.List<IPsecL3NetworkRefInventory> l3NetworkRefs) {
+        this.l3NetworkRefs = l3NetworkRefs;
+    }
+    public java.util.List<IPsecL3NetworkRefInventory> getL3NetworkRefs() {
+        return this.l3NetworkRefs;
     }
 
 }

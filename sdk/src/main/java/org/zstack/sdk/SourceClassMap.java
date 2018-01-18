@@ -125,6 +125,7 @@ public class SourceClassMap {
 			put("org.zstack.hybrid.account.HybridAccountInventory", "org.zstack.sdk.HybridAccountInventory");
 			put("org.zstack.hybrid.core.HybridType", "org.zstack.sdk.HybridType");
 			put("org.zstack.ipsec.IPsecConnectionInventory", "org.zstack.sdk.IPsecConnectionInventory");
+			put("org.zstack.ipsec.IPsecL3NetworkRefInventory", "org.zstack.sdk.IPsecL3NetworkRefInventory");
 			put("org.zstack.ipsec.IPsecPeerCidrInventory", "org.zstack.sdk.IPsecPeerCidrInventory");
 			put("org.zstack.kvm.APIKvmRunShellEvent$ShellResult", "org.zstack.sdk.ShellResult");
 			put("org.zstack.kvm.KVMHostInventory", "org.zstack.sdk.KVMHostInventory");
@@ -286,6 +287,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.HybridEipStatus", "org.zstack.header.hybrid.network.eip.HybridEipStatus");
 			put("org.zstack.sdk.HybridType", "org.zstack.hybrid.core.HybridType");
 			put("org.zstack.sdk.IPsecConnectionInventory", "org.zstack.ipsec.IPsecConnectionInventory");
+			put("org.zstack.sdk.IPsecL3NetworkRefInventory", "org.zstack.ipsec.IPsecL3NetworkRefInventory");
 			put("org.zstack.sdk.IPsecPeerCidrInventory", "org.zstack.ipsec.IPsecPeerCidrInventory");
 			put("org.zstack.sdk.IdentityZoneInventory", "org.zstack.header.identityzone.IdentityZoneInventory");
 			put("org.zstack.sdk.IdentityZoneProperty", "org.zstack.header.identityzone.IdentityZoneProperty");
