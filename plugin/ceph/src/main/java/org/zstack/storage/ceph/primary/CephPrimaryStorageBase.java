@@ -607,6 +607,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public String installPath;
     }
 
+    @ApiTimeout(apiClasses = {APIRevertVolumeFromSnapshotMsg.class})
     public static class RollbackSnapshotCmd extends AgentCommand {
         String snapshotPath;
 
