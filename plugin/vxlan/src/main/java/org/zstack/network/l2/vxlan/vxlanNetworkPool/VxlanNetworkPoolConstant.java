@@ -20,6 +20,7 @@ public class VxlanNetworkPoolConstant {
 
     public static final String VXLAN_KVM_CHECK_L2VXLAN_NETWORK_PATH = "/network/l2vxlan/checkcidr";
     public static final String VXLAN_KVM_REALIZE_L2VXLAN_NETWORK_PATH = "/network/l2vxlan/createbridge";
+    public static final String VXLAN_KVM_REALIZE_L2VXLAN_NETWORKS_PATH = "/network/l2vxlan/createbridges";
     public static final String VXLAN_KVM_POPULATE_FDB_L2VXLAN_NETWORK_PATH = "/network/l2vxlan/populatefdb";
     public static final String VXLAN_KVM_POPULATE_FDB_L2VXLAN_NETWORKS_PATH = "/network/l2vxlan/populatefdbs";
 }

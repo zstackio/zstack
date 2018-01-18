@@ -6,12 +6,14 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
@@ -27,8 +29,10 @@ import org.zstack.network.l2.vxlan.vtep.CreateVtepMsg;
 import org.zstack.network.l2.vxlan.vtep.VtepVO;
 import org.zstack.network.l2.vxlan.vtep.VtepVO_;
 import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
+import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetwork;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO_;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -38,6 +42,8 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant.*;
+import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.map;
 
 /**
  * Created by weiwang on 20/03/2017.
@@ -72,6 +78,8 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("check-l2-vxlan-pool-%s-on-host-%s", l2Network.getUuid(), hostUuid));
         chain.then(new NoRollbackFlow() {
+            String __name__ = String.format("check-vtep-ip-for-l2-vxlan-pool-%s", l2Network.getUuid());
+
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 VxlanKvmAgentCommands.CheckVxlanCidrCmd cmd = new VxlanKvmAgentCommands.CheckVxlanCidrCmd();
@@ -114,29 +122,35 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
             }
 
         }).then(new NoRollbackFlow() {
+            String __name__ = String.format("create-vtep-for-l2-vxlan-pool-%s", l2Network.getUuid());
+
             @Override
             public void run(FlowTrigger trigger, Map data) {
+                data.put(NEED_POPULATE, false);
+
                 List<VtepVO> vtepVOS = Q.New(VtepVO.class)
                         .eq(VtepVO_.poolUuid, l2Network.getUuid())
                         .eq(VtepVO_.hostUuid, hostUuid)
                         .list();
 
-                data.put(NEED_POPULATE, false);
-                DebugUtils.Assert(vtepVOS == null || vtepVOS.size() <= 1, String.format(
-                        "multiple vteps[ips: %s] found on host[uuid: %s]",
-                        vtepVOS.stream().map(v -> v.getVtepIp()).collect(Collectors.toSet()), hostUuid));
+                if (vtepVOS == null || vtepVOS.isEmpty()) {
+                    trigger.next();
+                    return;
+                } else if (vtepVOS.size() > 1) {
+                    throw new CloudRuntimeException(String.format("multiple vteps[ips: %s] found on host[uuid: %s]",
+                            vtepVOS.stream().map(v -> v.getVtepIp()).collect(Collectors.toSet()), hostUuid));
 
-
-                if (vtepVOS != null && vtepVOS.size() == 1 && !vtepVOS.get(0).getVtepIp().equals(data.get(VTEP_IP))) {
-                    logger.debug(String.format(
-                            "remove deprecated vtep[ip:%s] from host[uuid:%s] for l2 vxlan network pool[uuid:%s]",
-                            vtepVOS.get(0).getVtepIp(), hostUuid, l2Network.getUuid()));
-                    dbf.remove(vtepVOS.get(0));
-                } else if (vtepVOS != null && vtepVOS.size() == 1 && vtepVOS.get(0).getVtepIp().equals(data.get(VTEP_IP))) {
+                } else if (vtepVOS.get(0).getVtepIp().equals(data.get(VTEP_IP))) {
                     logger.debug(String.format(
                             "vtep[ip:%s] from host[uuid:%s] for l2 vxlan network pool[uuid:%s] checks successfully",
                             vtepVOS.get(0).getVtepIp(), hostUuid, l2Network.getUuid()));
                     trigger.next();
+                    return;
+                } else {
+                    logger.debug(String.format(
+                            "remove deprecated vtep[ip:%s] from host[uuid:%s] for l2 vxlan network pool[uuid:%s]",
+                            vtepVOS.get(0).getVtepIp(), hostUuid, l2Network.getUuid()));
+                    dbf.remove(vtepVOS.get(0));
                 }
 
                 logger.debug(String.format(
@@ -167,6 +181,91 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
                 });
             }
         }).then(new NoRollbackFlow() {
+            String __name__ = String.format("realize-vtep-for-l2-vxlan-pool-%s", l2Network.getUuid());
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                if (data.get(NEED_POPULATE).equals(false)) {
+                    trigger.next();
+                    return;
+                }
+
+                List<VxlanNetworkVO> vxlanNetworkVOS = SQL.New("select vxlan from VxlanNetworkVO vxlan, VmNicVO nic, L3NetworkVO l3 " +
+                        "where vxlan.uuid = l3.l2NetworkUuid " +
+                        "and nic.l3NetworkUuid = l3.uuid " +
+                        "and vxlan.poolUuid = :poolUuid " +
+                        "group by vxlan.uuid")
+                        .param("poolUuid", l2Network.getUuid())
+                        .list();
+
+                if (vxlanNetworkVOS == null || vxlanNetworkVOS.isEmpty()) {
+                    trigger.next();
+                    return;
+                }
+
+                final List<VtepVO> vteps = Q.New(VtepVO.class).eq(VtepVO_.poolUuid, l2Network.getUuid()).list();
+
+                if (vteps == null || vteps.isEmpty()) {
+                    trigger.next();
+                    return;
+                }
+
+                List<Integer> vnis = vxlanNetworkVOS.stream()
+                        .map(v -> v.getVni())
+                        .collect(Collectors.toList());
+
+                final VxlanKvmAgentCommands.CreateVxlanBridgesCmd cmd = new VxlanKvmAgentCommands.CreateVxlanBridgesCmd();
+                cmd.setVtepIp((String) data.get(VTEP_IP));
+                cmd.setVnis(vnis);
+                cmd.setL2NetworkUuid(l2Network.getUuid());
+                cmd.setPeers(vteps.stream()
+                        .map(v -> v.getVtepIp())
+                        .filter(v -> !v.equals(cmd.getVtepIp()))
+                        .collect(Collectors.toList()));
+
+                KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+                msg.setHostUuid(hostUuid);
+                msg.setCommand(cmd);
+                msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
+                msg.setNoStatusCheck(noStatusCheck);
+                msg.setPath(VXLAN_KVM_REALIZE_L2VXLAN_NETWORKS_PATH);
+                bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+                bus.send(msg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            trigger.fail(reply.getError());
+                            return;
+                        }
+
+                        KVMHostAsyncHttpCallReply hreply = reply.castReply();
+                        VxlanKvmAgentCommands.CreateVxlanBridgeResponse rsp = hreply.toResponse(VxlanKvmAgentCommands.CreateVxlanBridgeResponse.class);
+                        if (!rsp.isSuccess()) {
+                            ErrorCode err = operr("failed to realize vxlan network pool[uuid:%s, type:%s, vnis:%s] on kvm host[uuid:%s], because %s",
+                                    l2Network.getUuid(), l2Network.getType(), vnis, hostUuid, rsp.getError());
+                            trigger.fail(err);
+                            return;
+                        }
+
+                        String info = String.format(
+                                "successfully realize vxlan network pool[uuid:%s, type:%s, vnis:%s] on kvm host[uuid:%s]",
+                                l2Network.getUuid(), l2Network.getType(), vnis, hostUuid);
+                        logger.debug(info);
+
+                        for (VxlanNetworkVO vo : vxlanNetworkVOS) {
+                            SystemTagCreator creator = KVMSystemTags.L2_BRIDGE_NAME.newSystemTagCreator(vo.getUuid());
+                            creator.inherent = true;
+                            creator.ignoreIfExisting = true;
+                            creator.setTagByTokens(map(e(KVMSystemTags.L2_BRIDGE_NAME_TOKEN, cmd.getBridgeName())));
+                            creator.create();
+                        }
+                        trigger.next();
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = String.format("populate-vtep-for-l2-vxlan-pool-%s", l2Network.getUuid());
+
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 if (data.get(NEED_POPULATE).equals(false)) {
