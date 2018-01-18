@@ -7,6 +7,7 @@ import org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeMsg
 import org.zstack.header.image.APICreateRootVolumeTemplateFromRootVolumeMsg
 import org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotMsg
 import org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotMsg
+import org.zstack.header.storage.snapshot.APIRevertVolumeFromSnapshotMsg
 import org.zstack.header.vm.APICreateVmInstanceMsg
 import org.zstack.header.vm.APIExpungeVmInstanceMsg
 import org.zstack.header.vm.APIMigrateVmMsg
@@ -89,6 +90,9 @@ class TimeoutCase extends SubCase {
                     break
                 case APICreateDataVolumeFromVolumeTemplateMsg.class:
                     assert 3 * 60 * 60 * 1000L == tt.value.timeout
+                    break
+                case APIRevertVolumeFromSnapshotMsg.class:
+                    assert 24 * 60 * 60 * 1000L == tt.value.timeout
                     break
                 default:
                     ignore.add(tt.key)
