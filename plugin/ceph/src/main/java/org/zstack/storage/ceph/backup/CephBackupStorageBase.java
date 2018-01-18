@@ -594,6 +594,10 @@ public class CephBackupStorageBase extends BackupStorageBase {
     }
 
     private <T extends AgentResponse> void httpCall(final String path, final AgentCommand cmd, final Class<T> retClass, final ReturnValueCompletion<T> callback) {
+        httpCall(path, cmd, retClass, callback, null, 0);
+    }
+
+    private <T extends AgentResponse> void httpCall(final String path, final AgentCommand cmd, final Class<T> retClass, final ReturnValueCompletion<T> callback, TimeUnit unit, long timeout) {
         cmd.setFsid(getSelf().getFsid());
         cmd.setUuid(self.getUuid());
 
@@ -624,7 +628,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                 }
 
                 CephBackupStorageMonBase base = it.next();
-                base.httpCall(path, cmd, retClass, new ReturnValueCompletion<T>(callback) {
+                ReturnValueCompletion<T> completion = new ReturnValueCompletion<T>(callback) {
                     @Override
                     public void success(T ret) {
                         if (!ret.success) {
@@ -647,7 +651,13 @@ public class CephBackupStorageBase extends BackupStorageBase {
                         errorCodes.add(errorCode);
                         call();
                     }
-                });
+                };
+
+                if (unit == null) {
+                    base.httpCall(path, cmd, retClass, completion);
+                } else {
+                    base.httpCall(path, cmd, retClass, completion, unit, timeout);
+                }
             }
         }
 
@@ -876,7 +886,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }
-        });
+        }, TimeUnit.MILLISECONDS, msg.getTimeout());
     }
 
     @Override
