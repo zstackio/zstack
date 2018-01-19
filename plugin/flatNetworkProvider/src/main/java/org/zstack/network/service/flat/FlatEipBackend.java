@@ -69,6 +69,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
 
     public static class EipTO {
         public String eipUuid;
+        public String vipUuid;
         public String vmUuid;
         public String nicUuid;
         public String vip;
@@ -382,6 +383,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                 to.nicMac = nic.getMac();
                 to.nicUuid = nic.getUuid();
                 to.vip = eip.getVipIp();
+                to.vipUuid = eip.getVipUuid();
                 to.vipGateway = vip.getGateway();
                 to.vipNetmask = vip.getNetmask();
                 to.vmBridgeName = bridgeNames.get(nic.getL3NetworkUuid());
@@ -536,6 +538,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
 
     private EipTO eipStructToEipTO(EipStruct struct) {
         EipTO to = new EipTO();
+        to.vipUuid = struct.getVip().getUuid();
         to.eipUuid = struct.getEip().getUuid();
         to.vmUuid = struct.getNic().getVmInstanceUuid();
         to.nicUuid = struct.getNic().getUuid();
