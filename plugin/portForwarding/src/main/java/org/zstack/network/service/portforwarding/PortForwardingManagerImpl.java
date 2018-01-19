@@ -192,6 +192,14 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
             @Override
             protected List<VmNicInventory> scripts() {
+                String vmNicUuid = Q.New(PortForwardingRuleVO.class)
+                        .select(PortForwardingRuleVO_.vmNicUuid)
+                        .eq(PortForwardingRuleVO_.uuid, ruleUuid)
+                        .findValue();
+                if (vmNicUuid != null) {
+                    return new ArrayList<>();
+                }
+
                 Tuple t = sql("select l3.zoneUuid, vip.uuid" +
                         " from L3NetworkVO l3, VipVO vip, PortForwardingRuleVO rule" +
                         " where vip.l3NetworkUuid = l3.uuid" +
