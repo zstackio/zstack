@@ -1,11 +1,14 @@
 package org.zstack.testlib
 
+import org.springframework.http.HttpEntity
+import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanKvmAgentCommands
+import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant
 import org.zstack.sdk.L2NetworkInventory
 
 /**
  * Created by weiwang on 15/03/2017.
  */
-class L2VxlanNetworkPoolSpec extends L2NetworkSpec {
+class L2VxlanNetworkPoolSpec extends L2NetworkSpec implements Simulator {
 
     L2VxlanNetworkPoolSpec(EnvSpec envSpec) {
         super(envSpec)
@@ -30,5 +33,23 @@ class L2VxlanNetworkPoolSpec extends L2NetworkSpec {
         }
 
         return id(name, inventory.uuid)
+    }
+
+    @Override
+    void registerSimulators(EnvSpec env) {
+        env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_REALIZE_L2VXLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
+            return new VxlanKvmAgentCommands.CreateVxlanBridgeResponse()
+        }
+
+        env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_POPULATE_FDB_L2VXLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
+            return new VxlanKvmAgentCommands.PopulateVxlanFdbResponse()
+        }
+
+        env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_POPULATE_FDB_L2VXLAN_NETWORKS_PATH) { HttpEntity<String> entity, EnvSpec spec ->
+            return new VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd()
+        }
+        env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_REALIZE_L2VXLAN_NETWORKS_PATH) { HttpEntity<String> entity, EnvSpec spec ->
+            return new VxlanKvmAgentCommands.CreateVxlanBridgesCmd()
+        }
     }
 }

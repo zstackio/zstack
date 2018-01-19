@@ -197,6 +197,14 @@ class VxlanVtepIpChangedCase extends SubCase {
             hostUuid = host1.uuid
         } as VmInstanceInventory
 
+        createVmInstance {
+            name = "TestVm1"
+            instanceOfferingUuid = (env.inventoryByName("instanceOffering") as InstanceOfferingInventory).uuid
+            imageUuid = (env.inventoryByName("image1") as ImageInventory).uuid
+            l3NetworkUuids = [l3.uuid]
+            hostUuid = host2.uuid
+        }
+
         def vteps = Q.New(VtepVO.class).list() as List<VtepVO>
         assert vteps.size() == 2
         assert vteps.vtepIp.toSet() == ["192.168.100.10", "192.168.100.11"].toSet()
@@ -212,19 +220,16 @@ class VxlanVtepIpChangedCase extends SubCase {
             return resp
         }
 
+        env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_REALIZE_L2VXLAN_NETWORKS_PATH) { HttpEntity<String> entity, EnvSpec spec ->
+            return new VxlanKvmAgentCommands.CreateVxlanBridgesCmd()
+        }
+
         reconnectHost { uuid = host1.uuid }
 
         vteps = Q.New(VtepVO.class).list() as List<VtepVO>
         assert vteps.size() == 2
         assert vteps.vtepIp.toSet() == ["192.168.101.10", "192.168.100.11"].toSet()
 
-        createVmInstance {
-            name = "TestVm1"
-            instanceOfferingUuid = (env.inventoryByName("instanceOffering") as InstanceOfferingInventory).uuid
-            imageUuid = (env.inventoryByName("image1") as ImageInventory).uuid
-            l3NetworkUuids = [l3.uuid]
-            hostUuid = host2.uuid
-        }
 
         env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_CHECK_L2VXLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
             def resp = new VxlanKvmAgentCommands.CheckVxlanCidrResponse() as VxlanKvmAgentCommands.CheckVxlanCidrResponse
@@ -244,6 +249,13 @@ class VxlanVtepIpChangedCase extends SubCase {
             return new VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd()
         }
 
+        def realizeRecords = [] as SynchronizedList<VxlanKvmAgentCommands.CreateVxlanBridgesCmd>
+        env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_REALIZE_L2VXLAN_NETWORKS_PATH) { HttpEntity<String> entity, EnvSpec spec ->
+            def cmd = JSONObjectUtil.toObject(entity.body, VxlanKvmAgentCommands.CreateVxlanBridgesCmd.class)
+            realizeRecords.add(cmd.vnis)
+            return new VxlanKvmAgentCommands.CreateVxlanBridgesCmd()
+        }
+
         reconnectHost { uuid = host1.uuid }
 
         vteps = Q.New(VtepVO.class).list() as List<VtepVO>
@@ -254,6 +266,9 @@ class VxlanVtepIpChangedCase extends SubCase {
             assert records.size() == 2
             assert records[0] == [vxlan.uuid]
         }
+
+        assert realizeRecords.size() == 1
+        assert realizeRecords.get(0) == [vxlan.vni]
 
         rebootVmInstance { uuid = vm1.uuid }
     }
