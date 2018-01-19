@@ -621,6 +621,8 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class PingCmd extends NfsPrimaryStorageAgentCommand {
+        public String mountPath;
+        public String url;
     }
 
     public static class GetVolumeBaseImagePathCmd extends NfsPrimaryStorageAgentCommand {

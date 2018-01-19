@@ -354,7 +354,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             completion.fail(operr("no host accessed to the nfs[uuid:%s]", inv.getUuid()));
             return;
         }
-        doPing(hostUuids, inv.getUuid(), new Completion(completion) {
+        doPing(hostUuids, inv, new Completion(completion) {
             @Override
             public void success() {
                 completion.success();
@@ -380,7 +380,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         }
 
         Collections.shuffle(huuids);
-        doPing(huuids.subList(0, min(limit,huuids.size())), inv.getUuid(), new Completion(completion) {
+        doPing(huuids.subList(0, min(limit,huuids.size())), inv, new Completion(completion) {
             @Override
             public void success() {
                 completion.success();
@@ -393,11 +393,13 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         });
     }
 
-    private void doPing(List<String> hostUuids, String psUuid, Completion completion){
+    private void doPing(List<String> hostUuids, PrimaryStorageInventory psInv, Completion completion){
         List<ErrorCode> errs = new ArrayList<>();
         new While<>(hostUuids).each((huuid, compl) -> {
             PingCmd cmd = new PingCmd();
-            cmd.setUuid(psUuid);
+            cmd.setUuid(psInv.getUuid());
+            cmd.mountPath = psInv.getMountPath();
+            cmd.url = psInv.getUrl();
 
             KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
             msg.setCommand(cmd);
@@ -413,14 +415,14 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                     if (!reply.isSuccess() || !rsp.isSuccess()) {
                         ErrorCode err = operr("failed to ping nfs primary storage[uuid:%s] from host[uuid:%s],because %s. " +
                                         "disconnect this host-ps connection",
-                                psUuid, huuid, reply.isSuccess() ? rsp.getError() : reply.getError());
-                        nfsFactory.updateNfsHostStatus(psUuid, huuid, PrimaryStorageHostStatus.Disconnected);
+                                psInv.getUuid(), huuid, reply.isSuccess() ? rsp.getError() : reply.getError());
+                        nfsFactory.updateNfsHostStatus(psInv.getUuid(), huuid, PrimaryStorageHostStatus.Disconnected);
                         logger.warn(err.toString());
                         errs.add(err);
                         compl.done();
                     } else {
                         compl.allDone();
-                        nfsFactory.updateNfsHostStatus(psUuid, huuid, PrimaryStorageHostStatus.Connected);
+                        nfsFactory.updateNfsHostStatus(psInv.getUuid(), huuid, PrimaryStorageHostStatus.Connected);
                     }
                 }
             });
@@ -1200,7 +1202,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             asyncHttpCall(REMOUNT_PATH, hostUuid, cmd, NfsPrimaryStorageAgentResponse.class, pinv, new ReturnValueCompletion<NfsPrimaryStorageAgentResponse>(compl) {
                 @Override
                 public void success(NfsPrimaryStorageAgentResponse rsp) {
-                    logger.warn(String.format("remount NFS primary storage[uuid:%s, name:%s] on the KVM host[uuid:%s],", pinv.getUuid(), pinv.getName(), hostUuid));
+                    logger.debug(String.format("remount NFS primary storage[uuid:%s, name:%s] on the KVM host[uuid:%s],", pinv.getUuid(), pinv.getName(), hostUuid));
                     nfsFactory.updateNfsHostStatus(pinv.getUuid(), hostUuid, PrimaryStorageHostStatus.Connected);
                     compl.done();
                 }
@@ -1209,13 +1211,9 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 public void fail(ErrorCode errorCode) {
                     nfsFactory.updateNfsHostStatus(pinv.getUuid(), hostUuid, PrimaryStorageHostStatus.Disconnected);
                     errs.add(errorCode);
-                    logger.warn(String.format("failed to remount NFS primary storage[uuid:%s, name:%s] on the KVM host[uuid:%s]," +
-                            "%s. Start a reconnect to fix the problem", pinv.getUuid(), pinv.getName(), hostUuid, errorCode.toString()));
 
-                    ReconnectHostMsg rmsg = new ReconnectHostMsg();
-                    rmsg.setHostUuid(hostUuid);
-                    bus.makeTargetServiceIdByResourceUuid(rmsg, HostConstant.SERVICE_ID, hostUuid);
-                    bus.send(rmsg);
+                    logger.warn(String.format("failed to remount NFS primary storage[uuid:%s, name:%s] on the KVM host[uuid:%s]," +
+                            "%s.", pinv.getUuid(), pinv.getName(), hostUuid, errorCode.toString()));
                     compl.done();
                 }
             });
