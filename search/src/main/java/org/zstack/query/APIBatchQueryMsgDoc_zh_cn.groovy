@@ -13,8 +13,8 @@ doc {
         request {
 			url "GET /v1/batch-queries"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header(Authorization: 'OAuth the-session-uuid')
 
             clz APIBatchQueryMsg.class
 

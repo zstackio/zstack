@@ -74,6 +74,7 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
                     if (spec.getDestRootVolume().getUuid().equals(vinv.getUuid())) {
                         spec.setDestRootVolume(vinv);
                     } else {
+                        // Delete the original volumeInventory, and then re-add latest volumeInventory, the latest volumeInventory contains more attributes
                         spec.getDestDataVolumes().removeIf(volumeInventory -> msg.getVolumeUuid().equals(volumeInventory.getUuid()));
                         spec.getDestDataVolumes().add(vinv);
                     }
