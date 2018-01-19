@@ -1,8 +1,5 @@
 package org.zstack.network.service.virtualrouter.lb;
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -30,7 +27,6 @@ import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipBackend;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
-import javax.annotation.Nullable;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -111,7 +107,7 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
             public List<LoadBalancerVO> call() {
                 String sql = "select lb from LoadBalancerVO lb, LoadBalancerListenerVO l, LoadBalancerListenerVmNicRefVO lref, VmNicVO nic, L3NetworkVO l3" +
                         " where lb.uuid = l.loadBalancerUuid and l.uuid = lref.listenerUuid and lref.vmNicUuid = nic.uuid and nic.l3NetworkUuid = l3.uuid" +
-                        " and l3.uuid = :l3uuid and lb.state = :state and lb.uuid not in (select t.resourceUuid from SystemTagVO t" +
+                        " and l3.uuid in (:l3uuids) and lb.state = :state and lb.uuid not in (select t.resourceUuid from SystemTagVO t" +
                         " where t.tag = :tag and t.resourceType = :rtype)";
 
                 TypedQuery<LoadBalancerVO>  vq = dbf.getEntityManager().createQuery(sql, LoadBalancerVO.class);
@@ -126,7 +122,7 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
                     if (!lbuuids.isEmpty()) {
                         sql = "select lb from LoadBalancerVO lb, LoadBalancerListenerVO l, LoadBalancerListenerVmNicRefVO lref, VmNicVO nic, L3NetworkVO l3" +
                                 " where lb.uuid = l.loadBalancerUuid and l.uuid = lref.listenerUuid and lref.vmNicUuid = nic.uuid and nic.l3NetworkUuid = l3.uuid" +
-                                " and l3.uuid in (:l3uuid) and lb.state = :state and lb.uuid not in (select t.resourceUuid from SystemTagVO t" +
+                                " and l3.uuid in (:l3uuids) and lb.state = :state and lb.uuid not in (select t.resourceUuid from SystemTagVO t" +
                                 " where t.tag = :tag and t.resourceType = :rtype and t.resourceUuid not in (:mylbs))";
                         vq = dbf.getEntityManager().createQuery(sql, LoadBalancerVO.class);
                         vq.setParameter("mylbs", lbuuids);
@@ -136,7 +132,7 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
                 vq.setParameter("tag", LoadBalancerSystemTags.SEPARATE_VR.getTagFormat());
                 vq.setParameter("rtype", LoadBalancerVO.class.getSimpleName());
                 vq.setParameter("state", LoadBalancerState.Enabled);
-                vq.setParameter("l3uuid", l3Uuids);
+                vq.setParameter("l3uuids", l3Uuids);
                 return vq.getResultList();
             }
         }.call();
