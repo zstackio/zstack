@@ -256,7 +256,8 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
                             SystemTagCreator creator = KVMSystemTags.L2_BRIDGE_NAME.newSystemTagCreator(vo.getUuid());
                             creator.inherent = true;
                             creator.ignoreIfExisting = true;
-                            creator.setTagByTokens(map(e(KVMSystemTags.L2_BRIDGE_NAME_TOKEN, cmd.getBridgeName())));
+                            creator.setTagByTokens(map(e(KVMSystemTags.L2_BRIDGE_NAME_TOKEN,
+                                    KVMRealizeL2VxlanNetworkBackend.makeBridgeName(vo.getVni()))));
                             creator.create();
                         }
                         trigger.next();
