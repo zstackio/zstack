@@ -10,6 +10,7 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.GLock;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -979,7 +980,17 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 info.ip = arg.getIp();
                 info.netmask = arg.getNetmask();
                 info.mac = arg.getMac();
-                info.dns = arg.getL3Network().getDns();
+                info.dns = new Callable<List<String>>() {
+                    @Override
+                    public List<String> call() {
+                        List<String> dns = Q.New(L3NetworkDnsVO.class).eq(L3NetworkDnsVO_.l3NetworkUuid, arg.getL3Network().getUuid())
+                                .select(L3NetworkDnsVO_.dns).orderBy(L3NetworkDnsVO_.id, SimpleQuery.Od.ASC).listValues();
+                        if (dns == null) {
+                            dns = new ArrayList<String>();
+                        }
+                        return dns;
+                    }
+                }.call();
                 info.l3NetworkUuid = arg.getL3Network().getUuid();
                 info.bridgeName = l3Bridges.get(arg.getL3Network().getUuid());
                 info.namespaceName = makeNamespaceName(info.bridgeName, arg.getL3Network().getUuid());

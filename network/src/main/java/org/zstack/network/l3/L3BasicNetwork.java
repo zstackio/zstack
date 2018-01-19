@@ -522,6 +522,23 @@ public class L3BasicNetwork implements L3Network {
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "remove-dns-from-db";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        SimpleQuery<L3NetworkDnsVO> q = dbf.createQuery(L3NetworkDnsVO.class);
+                        q.add(L3NetworkDnsVO_.dns, Op.EQ, msg.getDns());
+                        q.add(L3NetworkDnsVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
+                        L3NetworkDnsVO dns = q.find();
+                        if (dns != null) {
+                            //TODO: create extension points
+                            dbf.remove(dns);
+                        }
+                        trigger.next();
+                    }
+                });
+
                 if (!self.getNetworkServices().isEmpty()) {
                     flow(new NoRollbackFlow() {
                         String __name__ = "remove-dns-from-backend";
@@ -545,23 +562,6 @@ public class L3BasicNetwork implements L3Network {
                         }
                     });
                 }
-
-                flow(new NoRollbackFlow() {
-                    String __name__ = "remove-dns-from-db";
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        SimpleQuery<L3NetworkDnsVO> q = dbf.createQuery(L3NetworkDnsVO.class);
-                        q.add(L3NetworkDnsVO_.dns, Op.EQ, msg.getDns());
-                        q.add(L3NetworkDnsVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
-                        L3NetworkDnsVO dns = q.find();
-                        if (dns != null) {
-                            //TODO: create extension points
-                            dbf.remove(dns);
-                        }
-                        trigger.next();
-                    }
-                });
 
                 done(new FlowDoneHandler(msg) {
                     @Override
