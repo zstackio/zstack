@@ -94,6 +94,7 @@ import static org.zstack.network.service.virtualrouter.vyos.VyosConstants.VYOS_R
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 import static java.util.Arrays.asList;
+import static org.zstack.utils.VipUseForList.SNAT_NETWORK_SERVICE_TYPE;
 
 public class VirtualRouterManagerImpl extends AbstractService implements VirtualRouterManager,
         PrepareDbInitialValueExtensionPoint, L2NetworkCreateExtensionPoint,
@@ -1302,6 +1303,17 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                         .collect(Collectors.toList()), peerL3NetworkUuids);
             }
 
+            return getCandidateVmNicsIfLoadBalancerBound(msg, candidates, vrUuid);
+        }
+
+        VipVO lbVipVO = SQL.New("select vip from LoadBalancerVO lb, VipVO vip " +
+                "where lb.vipUuid = vip.uuid " +
+                "and lb.uuid = :lbUuid")
+                .param("lbUuid", msg.getLoadBalancerUuid()).find();
+
+        if (lbVipVO.getUseFor() != null && lbVipVO.getUseFor().contains(SNAT_NETWORK_SERVICE_TYPE)) {
+            vrUuid = Q.New(VirtualRouterVipVO.class).select(VirtualRouterVipVO_.virtualRouterVmUuid)
+                    .eq(VirtualRouterVipVO_.uuid, lbVipVO.getUuid()).findValue();
             return getCandidateVmNicsIfLoadBalancerBound(msg, candidates, vrUuid);
         }
 
