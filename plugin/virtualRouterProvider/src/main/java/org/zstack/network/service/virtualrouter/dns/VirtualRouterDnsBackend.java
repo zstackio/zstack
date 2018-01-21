@@ -2,6 +2,7 @@ package org.zstack.network.service.virtualrouter.dns;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.appliancevm.ApplianceVmStatus;
+import org.zstack.core.cascade.AsyncBranchCascadeExtensionPoint;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
@@ -33,9 +34,7 @@ import org.zstack.utils.logging.CLogger;
 import static org.zstack.core.Platform.operr;
 
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import javax.persistence.Tuple;
 
@@ -65,17 +64,37 @@ public class VirtualRouterDnsBackend extends AbstractVirtualRouterBackend implem
         if (execludeL3NetworkUuid == null) {
             execludeL3NetworkUuid = "";
         }
-        String sql = "select l3.dns, nic.mac, min(l3.id) as idx from L3NetworkDnsVO l3, VmNicVO nic where l3.l3NetworkUuid = nic.l3NetworkUuid " +
-                "and l3.l3NetworkUuid != :execludeL3NetworkUuid and nic.vmInstanceUuid = :vrUuid group by l3.dns order by idx";
-        List<Tuple> tuples = SQL.New(sql, Tuple.class).param("execludeL3NetworkUuid", execludeL3NetworkUuid).param("vrUuid", vrUuid).list();
+        String sql = "select l3.dns, nic.mac from L3NetworkDnsVO l3, VmNicVO nic where l3.l3NetworkUuid = nic.l3NetworkUuid " +
+                "and l3.l3NetworkUuid != :execludeL3NetworkUuid and nic.vmInstanceUuid = :vrUuid and nic.metaData in (:guestNic) order by l3.id";
+        List<Tuple> tuples = SQL.New(sql, Tuple.class).param("execludeL3NetworkUuid", execludeL3NetworkUuid).param("vrUuid", vrUuid)
+                .param("guestNic", VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST).list();
+
+        Map<String, List<String>> dnsMap = new HashMap<>();
+        if (tuples != null && !tuples.isEmpty()) {
+            tuples.forEach(tuple -> {
+                List<String> lst = dnsMap.computeIfAbsent(tuple.get(0, String.class), k -> new ArrayList<>());
+                lst.add(tuple.get(1, String.class));
+            });
+        }
 
         List<VirtualRouterCommands.DnsInfo> dnsInfos = new ArrayList<>();
         if (tuples != null && !tuples.isEmpty()) {
             for (Tuple tuple: tuples) {
-                VirtualRouterCommands.DnsInfo info = new VirtualRouterCommands.DnsInfo();
-                info.setDnsAddress(tuple.get(0, String.class));
-                info.setNicMac(tuple.get(1, String.class));
-                dnsInfos.add(info);
+                String dns = tuple.get(0, String.class);
+                List<String> macList = dnsMap.get(dns);
+                if (macList != null && !macList.isEmpty()) {
+                    for (String mac: macList) {
+                        VirtualRouterCommands.DnsInfo info = new VirtualRouterCommands.DnsInfo();
+                        info.setDnsAddress(dns);
+                        info.setNicMac(mac);
+                        dnsInfos.add(info);
+                    }
+                }
+
+                dnsMap.remove(dns);
+                if (dnsMap.isEmpty()) {
+                    break;
+                }
             }
         }
 
