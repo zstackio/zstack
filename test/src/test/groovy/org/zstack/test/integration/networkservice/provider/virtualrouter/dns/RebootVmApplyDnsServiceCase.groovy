@@ -43,6 +43,7 @@ class RebootVmApplyDnsServiceCase extends SubCase {
     void testAddDns() {
         VirtualRouterCommands.SetDnsCmd cmd = null
         VmInstanceInventory vm = env.inventoryByName("vm")
+        L3NetworkInventory pubL3 = env.inventoryByName("pubL3")
 
         addDnsToL3Network {
             delegate.l3NetworkUuid = l3.getUuid()
@@ -56,8 +57,9 @@ class RebootVmApplyDnsServiceCase extends SubCase {
             delegate.l3NetworkUuid = l3.getUuid()
             delegate.dns = dns3
         }
+        /* public network dns will not be included in setdns */
         addDnsToL3Network {
-            delegate.l3NetworkUuid = l3.getUuid()
+            delegate.l3NetworkUuid = pubL3.getUuid()
             delegate.dns = dns4
         }
 
@@ -71,11 +73,10 @@ class RebootVmApplyDnsServiceCase extends SubCase {
         }
 
         assert cmd != null
-        assert cmd.dns.size() == 4
+        assert cmd.dns.size() == 3
         assert cmd.dns.get(0).dnsAddress == dns1
         assert cmd.dns.get(1).dnsAddress == dns2
         assert cmd.dns.get(2).dnsAddress == dns3
-        assert cmd.dns.get(3).dnsAddress == dns4
     }
 
     @Override
