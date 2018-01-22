@@ -15,7 +15,6 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.inventory.InventoryFacade;
 import org.zstack.core.job.JobQueueFacade;
-import org.zstack.core.notification.N;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
@@ -36,7 +35,6 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent.PrimaryStorageDeletedData;
 import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent.PrimaryStorageStatusChangedData;
-import org.zstack.header.storage.snapshot.ChangeVolumeSnapshotStatusReply;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotReportPrimaryStorageCapacityUsageMsg;
 import org.zstack.header.storage.snapshot.VolumeSnapshotReportPrimaryStorageCapacityUsageReply;
@@ -195,61 +193,75 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         }
     }
 
-    private void forbidOperationWhenPrimaryStorageDisable(String primaryStorageState) {
-        if (primaryStorageState.equals(PrimaryStorageState.Disabled.toString())) {
-            logger.debug("checking primary storage status whether Disabled");
-            String error = "Operation is not permitted when primary storage status is 'Disabled', please check primary storage status";
-            ErrorCode errorCode = new ErrorCode();
-            errorCode.setCode(PrimaryStorageErrors.ALLOCATE_ERROR.toString());
-            errorCode.setDetails(error);
-            errorCode.setDescription("Operation is not permitted");
-            throw new OperationFailureException(errorCode);
-        }
-    }
+    private class PrimaryStorageValidater{
+        private boolean forbidOperationWhenPrimaryStorageDisable = false;
+        private boolean forbidOperationWhenPrimaryStorageMaintenance = false;
 
-    private void forbidOperationWhenPrimaryStorageMaintenance(String primaryStorageState) {
-        logger.debug("checking primary storage status whether Maintenance");
-        if (primaryStorageState.equals(PrimaryStorageState.Maintenance.toString())) {
-            String error = "Operation is not permitted when primary storage status is 'Maintenance', please check primary storage status";
+        public PrimaryStorageValidater disable(){
+            this.forbidOperationWhenPrimaryStorageDisable = true;
+            return this;
+        }
+
+        public PrimaryStorageValidater maintenance(){
+            this.forbidOperationWhenPrimaryStorageMaintenance = true;
+            return this;
+        }
+
+        public void validate(){
             ErrorCode errorCode = new ErrorCode();
             errorCode.setCode(PrimaryStorageErrors.ALLOCATE_ERROR.toString());
-            errorCode.setDetails(error);
             errorCode.setDescription("Operation is not permitted");
-            throw new OperationFailureException(errorCode);
+            if (forbidOperationWhenPrimaryStorageDisable && self.getState().equals(PrimaryStorageState.Disabled)) {
+                String error = "Operation is not permitted when primary storage status is 'Disabled', please check primary storage status";
+                errorCode.setDetails(error);
+            }
+            if (forbidOperationWhenPrimaryStorageMaintenance && self.getState().equals(PrimaryStorageState.Maintenance)) {
+                String error = "Operation is not permitted when primary storage status is 'Maintenance', please check primary storage status";
+                errorCode.setDetails(error);
+            }
+            if (null != errorCode.getDetails()){
+                throw new OperationFailureException(errorCode);
+            }
         }
     }
 
     private void checkPrimaryStatus(Message msg) {
         if (msg instanceof InstantiateVolumeOnPrimaryStorageMsg) {
-            forbidOperationWhenPrimaryStorageMaintenance(self.getState().toString());
-            forbidOperationWhenPrimaryStorageDisable(self.getState().toString());
+            new PrimaryStorageValidater().disable().maintenance()
+                    .validate();
         } else if (msg instanceof DeleteVolumeOnPrimaryStorageMsg) {
-            forbidOperationWhenPrimaryStorageMaintenance(self.getState().toString());
+            new PrimaryStorageValidater().maintenance()
+                    .validate();
         } else if (msg instanceof CreateTemplateFromVolumeOnPrimaryStorageMsg) {
-            forbidOperationWhenPrimaryStorageDisable(self.getState().toString());
-            forbidOperationWhenPrimaryStorageMaintenance(self.getState().toString());
+            new PrimaryStorageValidater().disable().maintenance()
+                    .validate();
         } else if (msg instanceof PrimaryStorageDeletionMsg) {
-            forbidOperationWhenPrimaryStorageMaintenance(self.getState().toString());
-            forbidOperationWhenPrimaryStorageDisable(self.getState().toString());
+            new PrimaryStorageValidater().disable().maintenance()
+                    .validate();
         } else if (msg instanceof DownloadDataVolumeToPrimaryStorageMsg) {
-            forbidOperationWhenPrimaryStorageDisable(self.getState().toString());
-            forbidOperationWhenPrimaryStorageMaintenance(self.getState().toString());
+            new PrimaryStorageValidater().disable().maintenance()
+                    .validate();
         } else if (msg instanceof DeleteBitsOnPrimaryStorageMsg) {
-            forbidOperationWhenPrimaryStorageMaintenance(self.getState().toString());
+            new PrimaryStorageValidater().maintenance()
+                    .validate();
         } else if (msg instanceof DeleteIsoFromPrimaryStorageMsg) {
-            forbidOperationWhenPrimaryStorageMaintenance(self.getState().toString());
+            new PrimaryStorageValidater().maintenance()
+                    .validate();
         } else if (msg instanceof AskVolumeSnapshotCapabilityMsg) {
-            forbidOperationWhenPrimaryStorageDisable(self.getState().toString());
-            forbidOperationWhenPrimaryStorageMaintenance(self.getState().toString());
+            new PrimaryStorageValidater().disable().maintenance()
+                    .validate();
         } else if (msg instanceof MergeVolumeSnapshotOnPrimaryStorageMsg) {
-            forbidOperationWhenPrimaryStorageMaintenance(self.getState().toString());
+            new PrimaryStorageValidater().maintenance()
+                    .validate();
         } else if (msg instanceof DeleteSnapshotOnPrimaryStorageMsg) {
-            forbidOperationWhenPrimaryStorageMaintenance(self.getState().toString());
+            new PrimaryStorageValidater().maintenance()
+                    .validate();
         } else if (msg instanceof RevertVolumeFromSnapshotOnPrimaryStorageMsg) {
-            forbidOperationWhenPrimaryStorageMaintenance(self.getState().toString());
+            new PrimaryStorageValidater().maintenance()
+                    .validate();
         } else if (msg instanceof ReInitRootVolumeFromTemplateOnPrimaryStorageMsg) {
-            forbidOperationWhenPrimaryStorageMaintenance(self.getState().toString());
-            forbidOperationWhenPrimaryStorageDisable(self.getState().toString());
+            new PrimaryStorageValidater().disable().maintenance()
+                    .validate();
         }
     }
 
@@ -506,7 +518,9 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     private void handleBase(CreateTemplateFromVolumeOnPrimaryStorageMsg msg) {
         checkIfBackupStorageAttachedToMyZone(msg.getBackupStorageUuid());
-        handle(msg);
+        new PrimaryStorageValidater().disable().maintenance()
+                .validate();
+            handle(msg);
     }
 
     private void handle(final DetachPrimaryStorageFromClusterMsg msg) {
