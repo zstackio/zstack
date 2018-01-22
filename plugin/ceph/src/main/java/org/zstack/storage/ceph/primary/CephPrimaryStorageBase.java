@@ -2184,9 +2184,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             void connect(final FlowTrigger trigger) {
                 if (!it.hasNext()) {
                     if (errorCodes.size() == mons.size()) {
-                        trigger.fail(operr("unable to connect to the ceph primary storage[uuid:%s]." +
-                                                " Failed to connect all ceph mons. Errors are %s",
-                                        self.getUuid(), JSONObjectUtil.toJsonString(errorCodes)));
+                        if (errorCodes.isEmpty()) {
+                            trigger.fail(operr("unable to connect to the ceph primary storage[uuid:%s]." +
+                                    " Failed to connect all ceph mons.", self.getUuid()));
+                        } else {
+                            trigger.fail(operr("unable to connect to the ceph primary storage[uuid:%s]." +
+                                            " Failed to connect all ceph mons. Errors are %s",
+                                    self.getUuid(), JSONObjectUtil.toJsonString(errorCodes)));
+                        }
                     } else {
                         // reload because mon status changed
                         PrimaryStorageVO vo = dbf.reload(self);
