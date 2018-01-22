@@ -209,6 +209,7 @@ public class SourceClassMap {
 			put("org.zstack.zwatch.alarm.sns.SNSTextTemplateInventory", "org.zstack.sdk.zwatch.alarm.sns.SNSTextTemplateInventory");
 			put("org.zstack.zwatch.api.APIGetAllEventMetadataReply$EventStruct", "org.zstack.sdk.zwatch.api.EventStruct");
 			put("org.zstack.zwatch.api.APIGetAllMetricMetadataReply$MetricStruct", "org.zstack.sdk.zwatch.api.MetricStruct");
+			put("org.zstack.zwatch.datatype.AlarmData", "org.zstack.sdk.zwatch.datatype.AlarmData");
 			put("org.zstack.zwatch.datatype.AuditData", "org.zstack.sdk.zwatch.datatype.AuditData");
 			put("org.zstack.zwatch.datatype.Datapoint", "org.zstack.sdk.zwatch.datatype.Datapoint");
 			put("org.zstack.zwatch.datatype.EventData", "org.zstack.sdk.zwatch.datatype.EventData");
@@ -426,6 +427,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.zwatch.alarm.sns.SNSTextTemplateInventory", "org.zstack.zwatch.alarm.sns.SNSTextTemplateInventory");
 			put("org.zstack.sdk.zwatch.api.EventStruct", "org.zstack.zwatch.api.APIGetAllEventMetadataReply$EventStruct");
 			put("org.zstack.sdk.zwatch.api.MetricStruct", "org.zstack.zwatch.api.APIGetAllMetricMetadataReply$MetricStruct");
+			put("org.zstack.sdk.zwatch.datatype.AlarmData", "org.zstack.zwatch.datatype.AlarmData");
 			put("org.zstack.sdk.zwatch.datatype.AuditData", "org.zstack.zwatch.datatype.AuditData");
 			put("org.zstack.sdk.zwatch.datatype.Datapoint", "org.zstack.zwatch.datatype.Datapoint");
 			put("org.zstack.sdk.zwatch.datatype.EmergencyLevel", "org.zstack.zwatch.datatype.EventFamily$EmergencyLevel");
