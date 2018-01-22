@@ -65,11 +65,11 @@ doc {
 				column {
 					name "stopHA"
 					enclosedIn "stopVmInstance"
-					desc ""
+					desc "彻底关闭HA云主机"
 					location "body"
 					type "String"
 					optional true
-					since "0.6"
+					since "2.2"
 					
 				}
 			}
