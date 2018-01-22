@@ -1435,9 +1435,9 @@
     "fileName": "src/main/java/org/zstack/compute/host/HostApiInterceptor.java"
   },
   {
-    "raw": "can not maintain host[uuid:%s]which is connecting",
-    "en_US": "can not maintain host[uuid:{0}]which is connecting",
-    "zh_CN": "不能对Connecting状态的物理机[uuid:{0}]进行维护操作",
+    "raw": "can not maintain host[uuid:%s]which is not Connected",
+    "en_US": "can not maintain host[uuid:{0}]which is not Connected",
+    "zh_CN": "只能对已连接状态的物理机[uuid:{0}]进行维护操作",
     "arguments": [
       "msg.getHostUuid()"
     ],

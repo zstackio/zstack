@@ -102,6 +102,9 @@ public class APIChangeHostStateMsg extends APIMessage implements HostMessage {
         return new ApiNotification() {
             @Override
             public void after(APIEvent evt) {
+                if (!evt.isSuccess()) {
+                    return;
+                }
                 ntfy("Changed the state to %s", ((APIChangeHostStateEvent)evt).getInventory().getState())
                         .resource(uuid, HostVO.class.getSimpleName())
                         .messageAndEvent(that, evt).done();
