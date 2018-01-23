@@ -33,7 +33,7 @@ public class GetEventDataAction extends AbstractAction {
     public java.lang.Integer limit = 100;
 
     @Param(required = false)
-    public java.util.List labels;
+    public java.util.List conditions;
 
     @Param(required = false)
     public boolean latest = false;
