@@ -1,6 +1,5 @@
 package org.zstack.compute.host;
 
-import org.apache.commons.collections.list.SynchronizedList;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -21,7 +20,6 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.allocator.HostAllocatorConstant;
-import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
@@ -50,6 +48,8 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.map;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public abstract class HostBase extends AbstractHost {
@@ -162,102 +162,96 @@ public abstract class HostBase extends AbstractHost {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("maintenance-mode-host-%s-ip-%s", self.getUuid(), self.getManagementIp()));
 
-        HostMaintenancePolicy policy = HostMaintenancePolicy.MigrateVm;
+        List<String> operateVmUuids = Q.New(VmInstanceVO.class)
+                .select(VmInstanceVO_.uuid)
+                .eq(VmInstanceVO_.hostUuid, self.getUuid())
+                .notEq(VmInstanceVO_.state, VmInstanceState.Unknown)
+                .listValues();
+
+        Map<HostMaintenancePolicy, Set<String>> policyVmMap = map(
+                e(HostMaintenancePolicy.MigrateVm, new HashSet<>(operateVmUuids)),
+                e(HostMaintenancePolicy.StopVm, new HashSet<>()));
         for (HostMaintenancePolicyExtensionPoint ext : pluginRgty.getExtensionList(HostMaintenancePolicyExtensionPoint.class)) {
-            HostMaintenancePolicy p = ext.getHostMaintenancePolicy(getSelfInventory());
-            if (p != null) {
-                policy = p;
-                logger.debug(String.format("HostMaintenancePolicyExtensionPoint[%s] set maintenance policy for host[uuid:%s] to %s",
-                        ext.getClass(), self.getUuid(), policy));
-            }
+            Map<String, HostMaintenancePolicy> vmUuidPolicyMap = ext.getHostMaintenanceVmOperationPolicy(getSelfInventory());
+            logger.debug(String.format("HostMaintenancePolicyExtensionPoint[%s] preset maintenance policy for host[uuid:%s] to %s",
+                    ext.getClass(), self.getUuid(), vmUuidPolicyMap));
+            vmUuidPolicyMap.forEach((vmUuid, policy) -> policyVmMap.get(policy).add(vmUuid));
         }
+
+        // default policy is migrate, but stop policy setting is high priority
+        policyVmMap.values().forEach(vmUuids -> vmUuids.retainAll(operateVmUuids));
+        policyVmMap.get(HostMaintenancePolicy.MigrateVm).removeAll(policyVmMap.get(HostMaintenancePolicy.StopVm));
 
         final int quantity = getVmMigrateQuantity();
         DebugUtils.Assert(quantity != 0, "getVmMigrateQuantity() cannot return 0");
-        final HostMaintenancePolicy finalPolicy = policy;
         chain.then(new ShareFlow() {
-            List<String> vmFailedToMigrate = new ArrayList<String>();
-
             @Override
             public void setup() {
-                if (finalPolicy == HostMaintenancePolicy.MigrateVm) {
-                    flow(new NoRollbackFlow() {
-                        String __name__ = "try-migrate-vm";
+                flow(new NoRollbackFlow() {
+                    String __name__ = "try-migrate-vm";
 
-                        @Override
-                        public void run(final FlowTrigger trigger, Map data) {
-                            SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
-                            q.select(VmInstanceVO_.uuid);
-                            q.add(VmInstanceVO_.hostUuid, Op.EQ, self.getUuid());
-                            q.add(VmInstanceVO_.state, Op.NOT_EQ, VmInstanceState.Unknown);
-                            List<String> vmUuids = q.listValue();
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        List<String> vmUuids = new ArrayList<>(policyVmMap.get(HostMaintenancePolicy.MigrateVm));
+                        if (vmUuids.isEmpty()) {
+                            trigger.next();
+                            return;
+                        }
 
-                            if (vmUuids.isEmpty()) {
-                                trigger.next();
-                                return;
+                        int migrateQuantity = quantity;
+                        HostInventory host = getSelfInventory();
+                        List<String> vmFailedToMigrate = Collections.synchronizedList(new ArrayList<String>());
+                        for (OrderVmBeforeMigrationDuringHostMaintenanceExtensionPoint ext : pluginRgty.getExtensionList(OrderVmBeforeMigrationDuringHostMaintenanceExtensionPoint.class)) {
+                            List<String> ordered = ext.orderVmBeforeMigrationDuringHostMaintenance(host, vmUuids);
+                            if (ordered != null) {
+                                vmUuids = ordered;
+
+                                logger.debug(String.format("%s ordered VMs for host maintenance, to keep the order, we will migrate VMs one by one",
+                                        ext.getClass()));
+                                migrateQuantity = 1;
                             }
+                        }
 
-                            int migrateQuantity = quantity;
-                            HostInventory host = getSelfInventory();
-                            for (OrderVmBeforeMigrationDuringHostMaintenanceExtensionPoint ext : pluginRgty.getExtensionList(OrderVmBeforeMigrationDuringHostMaintenanceExtensionPoint.class)) {
-                                List<String> ordered = ext.orderVmBeforeMigrationDuringHostMaintenance(host, vmUuids);
-                                if (ordered != null) {
-                                    vmUuids = ordered;
-
-                                    logger.debug(String.format("%s ordered VMs for host maintenance, to keep the order, we will migrate VMs one by one",
-                                            ext.getClass()));
-                                    migrateQuantity = 1;
-                                }
-                            }
-
-                            new While<>(vmUuids).step((vmUuid, compl) -> {
-                                MigrateVmMsg msg = new MigrateVmMsg();
-                                msg.setVmInstanceUuid(vmUuid);
-                                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vmUuid);
-                                bus.send(msg, new CloudBusCallBack(compl) {
-                                    @Override
-                                    public void run(MessageReply reply) {
-                                        if (!reply.isSuccess()) {
-                                            vmFailedToMigrate.add(msg.getVmInstanceUuid());
-                                        }
-                                        compl.done();
-                                    }
-                                });
-                            }, migrateQuantity).run(new NoErrorCompletion() {
+                        new While<>(vmUuids).step((vmUuid, compl) -> {
+                            MigrateVmMsg msg = new MigrateVmMsg();
+                            msg.setVmInstanceUuid(vmUuid);
+                            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vmUuid);
+                            bus.send(msg, new CloudBusCallBack(compl) {
                                 @Override
-                                public void done() {
-                                    if (!vmFailedToMigrate.isEmpty()) {
-                                        logger.warn(String.format("failed to migrate vm[uuids:%s] on host[uuid:%s, name:%s, ip:%s], will try stopping it.",
-                                                vmFailedToMigrate, self.getUuid(), self.getName(), self.getManagementIp()));
+                                public void run(MessageReply reply) {
+                                    if (!reply.isSuccess()) {
+                                        vmFailedToMigrate.add(msg.getVmInstanceUuid());
                                     }
-                                    trigger.next();
+                                    compl.done();
                                 }
                             });
-                        }
-                    });
-                } else {
-                    // the policy is not to migrate vm
-                    // put all vms in vmFailedToMigrate so the next flow will stop all of them
-                    SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
-                    q.select(VmInstanceVO_.uuid);
-                    q.add(VmInstanceVO_.hostUuid, Op.EQ, self.getUuid());
-                    q.add(VmInstanceVO_.state, Op.NOT_EQ, VmInstanceState.Unknown);
-                    List<String> vmUuids = q.listValue();
-                    vmFailedToMigrate.addAll(vmUuids);
-                }
+                        }, migrateQuantity).run(new NoErrorCompletion() {
+                            @Override
+                            public void done() {
+                                if (!vmFailedToMigrate.isEmpty()) {
+                                    logger.warn(String.format("failed to migrate vm[uuids:%s] on host[uuid:%s, name:%s, ip:%s], will try stopping it.",
+                                            vmFailedToMigrate, self.getUuid(), self.getName(), self.getManagementIp()));
+                                    policyVmMap.get(HostMaintenancePolicy.StopVm).addAll(vmFailedToMigrate);
+                                    policyVmMap.get(HostMaintenancePolicy.MigrateVm).removeAll(vmFailedToMigrate);
+                                }
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
 
                 flow(new NoRollbackFlow() {
                     String __name__ = "stop-vm-not-migrated";
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        if (vmFailedToMigrate.isEmpty()) {
+                        if (policyVmMap.get(HostMaintenancePolicy.StopVm).isEmpty()) {
                             trigger.next();
                             return;
                         }
 
                         List<String> vmUuids = Q.New(VmInstanceVO.class).select(VmInstanceVO_.uuid)
-                                .in(VmInstanceVO_.uuid, vmFailedToMigrate).listValues();
+                                .in(VmInstanceVO_.uuid, policyVmMap.get(HostMaintenancePolicy.StopVm)).listValues();
                         stopFailedToMigrateVms(vmUuids, trigger);
                     }
 

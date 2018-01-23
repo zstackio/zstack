@@ -50,7 +50,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
-import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionDSL.*;
 
 /**
  * Created by frank on 6/30/2015.
@@ -622,18 +622,21 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 
     @Override
     @Transactional(readOnly = true)
-    public HostMaintenancePolicy getHostMaintenancePolicy(HostInventory host) {
-        String sql = "select count(ps)" +
-                " from PrimaryStorageVO ps, PrimaryStorageClusterRefVO ref" +
+    public Map<String, HostMaintenancePolicy> getHostMaintenanceVmOperationPolicy(HostInventory host) {
+        Map<String, HostMaintenancePolicy> result = new HashMap<>();
+        String sql = "select vm.uuid" +
+                " from PrimaryStorageVO ps, PrimaryStorageClusterRefVO ref, VmInstanceVO vm, VolumeVO vol" +
                 " where ps.uuid = ref.primaryStorageUuid" +
                 " and ps.type = :type" +
-                " and ref.clusterUuid = :cuuid";
-        TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+                " and ref.clusterUuid = :cuuid" +
+                " and vol.primaryStorageUuid = ps.uuid" +
+                " and vm.rootVolumeUuid = vol.uuid";
+        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("type", LocalStorageConstants.LOCAL_STORAGE_TYPE);
         q.setParameter("cuuid", host.getClusterUuid());
-        q.setMaxResults(1);
-        Long count = q.getSingleResult();
-        return count > 0 ? HostMaintenancePolicy.StopVm : null;
+        List<String> vmUuids = q.getResultList();
+        vmUuids.forEach(it -> result.put(it, HostMaintenancePolicy.StopVm));
+        return result;
     }
 
     @Override
