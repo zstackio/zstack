@@ -67,6 +67,13 @@ public class SimulatorPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
+    protected void handle(DeleteBitsOnPrimaryStorageMsg msg) {
+        DeleteBitsOnPrimaryStorageReply reply = new DeleteBitsOnPrimaryStorageReply();
+        logger.debug(String.format("Successfully deleted path[uuid:%s] from primary storage[uuid:%s]", msg.getInstallPath(), msg.getPrimaryStorageUuid()));
+        bus.reply(msg, reply);
+    }
+
+    @Override
     protected void handle(InstantiateVolumeOnPrimaryStorageMsg msg) {
         if (msg.getClass() == InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg.class) {
             handle((InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg) msg);
@@ -79,6 +86,12 @@ public class SimulatorPrimaryStorage extends PrimaryStorageBase {
                     msg.getPrimaryStorageUuid()));
             bus.reply(msg, reply);
         }
+    }
+
+    @Override
+    protected void handle(final GetPrimaryStorageFolderListMsg msg) {
+        GetPrimaryStorageFolderListReply reply = new GetPrimaryStorageFolderListReply();
+        bus.reply(msg, reply);
     }
 
     @Override
@@ -103,8 +116,8 @@ public class SimulatorPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
-    protected void handle(DeleteBitsOnPrimaryStorageMsg msg) {
-        DeleteBitsOnPrimaryStorageReply reply = new DeleteBitsOnPrimaryStorageReply();
+    protected void handle(DeleteVolumeBitsOnPrimaryStorageMsg msg) {
+        DeleteVolumeBitsOnPrimaryStorageReply reply = new DeleteVolumeBitsOnPrimaryStorageReply();
         bus.reply(msg, reply);
     }
 

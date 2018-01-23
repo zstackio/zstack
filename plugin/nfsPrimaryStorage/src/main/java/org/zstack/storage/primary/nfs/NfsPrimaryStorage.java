@@ -8,6 +8,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -222,24 +223,58 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         if (bkd == null) {
             throw new OperationFailureException(operr("cannot find usable backend"));
         }
-
-        DeleteBitsOnPrimaryStorageMsg dmsg = new DeleteBitsOnPrimaryStorageMsg();
-        dmsg.setFolder(true);
-        dmsg.setHypervisorType(bkd.getHypervisorType().toString());
-        dmsg.setInstallPath(new File(msg.getInstallPath()).getParent());
-        dmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
-        bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
-        bus.send(dmsg, new CloudBusCallBack(msg) {
+        PrimaryStorageVO ps = dbf.findByUuid(msg.getPrimaryStorageUuid(), PrimaryStorageVO.class);
+        DeleteImageCacheOnPrimaryStorageReply sreply = new DeleteImageCacheOnPrimaryStorageReply();
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("delete-image-cache-on-nfs-primary-storage-%s", msg.getPrimaryStorageUuid()));
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "delete-volume-cache";
             @Override
-            public void run(MessageReply reply) {
-                DeleteImageCacheOnPrimaryStorageReply r = new DeleteImageCacheOnPrimaryStorageReply();
-                r.setSuccess(reply.isSuccess());
-                if (reply.getError() != null) {
-                    r.setError(reply.getError());
-                }
-                bus.reply(msg, r);
+            public void run(FlowTrigger trigger, Map data) {
+                DeleteVolumeBitsOnPrimaryStorageMsg dmsg = new DeleteVolumeBitsOnPrimaryStorageMsg();
+                dmsg.setFolder(true);
+                dmsg.setHypervisorType(bkd.getHypervisorType().toString());
+                dmsg.setInstallPath(new File(msg.getInstallPath()).getParent());
+                dmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+                bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
+                bus.send(dmsg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (reply.isSuccess()) {
+                            trigger.next();
+                        } else {
+                            trigger.fail(reply.getError());
+                        }
+                    }
+                });
             }
-        });
+        }).done(new FlowDoneHandler(msg) {
+            @Override
+            public void handle(Map data) {
+                bus.reply(msg, sreply);
+            }
+        }).error(new FlowErrorHandler(msg) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                sreply.setError(errCode);
+                bus.reply(msg, sreply);
+            }
+        }).start();
+    }
+
+    private String selectRandomHostFromPS(PrimaryStorageInventory ps) {
+        List<String> cuuids = ps.getAttachedClusterUuids();
+        if (cuuids.isEmpty()) {
+            return null;
+        }
+
+        List<String> hosts = SQL.New("select host.uuid from ClusterVO cluster, HostVO host " +
+                        "where cluster.uuid = host.clusterUuid and host.status = :hostStatus and cluster.uuid in (:cuuids) order by rand()").
+                param("hostStatus", HostStatus.Connected).param("cuuids", cuuids).list();
+        if (hosts == null || hosts.size() == 0) {
+            return null;
+        }
+        return hosts.get(0);
     }
 
     private void handle(final GetVolumeRootImageUuidFromPrimaryStorageMsg msg) {
@@ -743,6 +778,32 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
+    protected void handle(GetPrimaryStorageFolderListMsg msg) {
+        GetPrimaryStorageFolderListReply reply = new GetPrimaryStorageFolderListReply();
+        String hostUuid = getAvailableHostUuidForOperation();
+        if (hostUuid == null) {
+            bus.reply(msg, reply);
+            return;
+        }
+        String type = Q.New(HostVO.class).eq(HostVO_.uuid, hostUuid).select(HostVO_.hypervisorType).findValue();
+        NfsPrimaryStorageBackend bkd = getBackend(HypervisorType.valueOf(type));
+
+        bkd.list(getSelfInventory(), msg.getPath(), new ReturnValueCompletion<List<String>>(msg) {
+            @Override
+            public void success(List<String> paths) {
+                reply.setFolders(paths);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    @Override
     protected void handle(InstantiateVolumeOnPrimaryStorageMsg msg) {
         try {
             if (msg.getClass() == InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg.class) {
@@ -915,9 +976,57 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
-    protected void handle(final DeleteBitsOnPrimaryStorageMsg msg) {
-        final DeleteBitsOnPrimaryStorageReply reply = new DeleteBitsOnPrimaryStorageReply();
+    protected void handle(final DeleteVolumeBitsOnPrimaryStorageMsg msg) {
+        final DeleteVolumeBitsOnPrimaryStorageReply reply = new DeleteVolumeBitsOnPrimaryStorageReply();
         NfsPrimaryStorageBackend bkd = getBackend(HypervisorType.valueOf(msg.getHypervisorType()));
+        if (msg.isFolder()) {
+            bkd.deleteFolder(getSelfInventory(), msg.getInstallPath(), new Completion(msg) {
+                @Override
+                public void success() {
+                    bus.reply(msg, reply);
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    reply.setError(errorCode);
+                    bus.reply(msg, reply);
+                }
+            });
+        } else {
+            bkd.delete(getSelfInventory(), msg.getInstallPath(), new Completion(msg) {
+                @Override
+                public void success() {
+                    bus.reply(msg, reply);
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    reply.setError(errorCode);
+                    bus.reply(msg, reply);
+                }
+            });
+        }
+    }
+
+    private String getAvailableHostUuidForOperation() {
+        List<String> hostUuids = Q.New(PrimaryStorageHostRefVO.class).
+                eq(PrimaryStorageHostRefVO_.primaryStorageUuid, self.getUuid()).select(PrimaryStorageHostRefVO_.hostUuid).listValues();
+        if (hostUuids == null || hostUuids.size() == 0) {
+            return null;
+        }
+        return hostUuids.get(0);
+    }
+
+    @Override
+    protected void handle(final DeleteBitsOnPrimaryStorageMsg msg) {
+        final DeleteVolumeBitsOnPrimaryStorageReply reply = new DeleteVolumeBitsOnPrimaryStorageReply();
+        String hostUuid = getAvailableHostUuidForOperation();
+        if (hostUuid == null) {
+            bus.reply(msg, reply);
+            return;
+        }
+        String type = Q.New(HostVO.class).eq(HostVO_.uuid, hostUuid).select(HostVO_.hypervisorType).findValue();
+        NfsPrimaryStorageBackend bkd = getBackend(HypervisorType.valueOf(type));
         if (msg.isFolder()) {
             bkd.deleteFolder(getSelfInventory(), msg.getInstallPath(), new Completion(msg) {
                 @Override
