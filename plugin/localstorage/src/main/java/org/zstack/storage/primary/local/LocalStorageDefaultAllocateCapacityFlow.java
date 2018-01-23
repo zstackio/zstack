@@ -204,7 +204,7 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
                     logger.debug("there are non-local primary storage in the cluster, use it for data volumes");
                 } else {
                     amsg.setAllocationStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
-                    amsg.setRequiredPrimaryStorageUuid(localStorageUuid);
+                    amsg.setRequiredPrimaryStorageUuid(getRequiredStorageUuid(spec.getDestHost().getUuid(), spec.getRequiredPrimaryStorageUuidForDataVolume()));
                 }
 
                 amsg.setPossiblePrimaryStorageTypes(primaryStorageTypes);
