@@ -7,11 +7,14 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.asyncbatch.AsyncBatchRunner;
 import org.zstack.core.asyncbatch.LoopAsyncBatch;
 import org.zstack.core.cloudbus.AutoOffEventCallback;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.notification.N;
+import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.cluster.ClusterConnectionStatus;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
@@ -19,11 +22,13 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
@@ -37,6 +42,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
+import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -55,6 +61,8 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
 
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    private SMPPrimaryStorageImageCacheCleaner imageCacheCleaner;
 
     public SMPPrimaryStorageBase(PrimaryStorageVO self) {
         super(self);
@@ -91,6 +99,32 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
     public void attachHook(String clusterUuid, final Completion completion) {
         HypervisorBackend bkd = getHypervisorFactoryByClusterUuid(clusterUuid).getHypervisorBackend(self);
         bkd.attachHook(clusterUuid, completion);
+    }
+
+    @Override
+    protected void handle(GetPrimaryStorageFolderListMsg msg) {
+        GetPrimaryStorageFolderListReply reply = new GetPrimaryStorageFolderListReply();
+        String hostUuid = getAvailableHostUuidForOperation();
+        if (hostUuid == null) {
+            bus.reply(msg, reply);
+            return;
+        }
+        String type = Q.New(HostVO.class).eq(HostVO_.uuid, hostUuid).select(HostVO_.hypervisorType).findValue();
+        HypervisorFactory f = getHypervisorFactoryByHypervisorType(type);
+        final HypervisorBackend bkd = f.getHypervisorBackend(self);
+
+        bkd.handle(msg, new ReturnValueCompletion<GetPrimaryStorageFolderListReply>(msg) {
+            @Override
+            public void success(GetPrimaryStorageFolderListReply reply) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     @Override
@@ -145,6 +179,31 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
                 gc.submit(SMPPrimaryStorageGlobalConfig.GC_INTERVAL.value(Long.class), TimeUnit.SECONDS);
 
                 DeleteVolumeOnPrimaryStorageReply reply = new DeleteVolumeOnPrimaryStorageReply();
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    @Override
+    protected void handle(DeleteBitsOnPrimaryStorageMsg msg) {
+        final DeleteBitsOnPrimaryStorageReply reply = new DeleteBitsOnPrimaryStorageReply();
+        String hostUuid = getAvailableHostUuidForOperation();
+        if (hostUuid == null) {
+            bus.reply(msg, reply);
+            return;
+        }
+        String type = Q.New(HostVO.class).eq(HostVO_.uuid, hostUuid).select(HostVO_.hypervisorType).findValue();
+        HypervisorFactory f = getHypervisorFactoryByHypervisorType(type);
+        final HypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handle(msg, new ReturnValueCompletion<DeleteBitsOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(DeleteBitsOnPrimaryStorageReply reply) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
                 bus.reply(msg, reply);
             }
         });
@@ -211,18 +270,18 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     @Override
-    protected void handle(final DeleteBitsOnPrimaryStorageMsg msg) {
+    protected void handle(final DeleteVolumeBitsOnPrimaryStorageMsg msg) {
         HypervisorFactory f = getHypervisorFactoryByHypervisorType(msg.getHypervisorType());
         HypervisorBackend bkd = f.getHypervisorBackend(self);
-        bkd.handle(msg, new ReturnValueCompletion<DeleteBitsOnPrimaryStorageReply>(msg) {
+        bkd.handle(msg, new ReturnValueCompletion<DeleteVolumeBitsOnPrimaryStorageReply>(msg) {
             @Override
-            public void success(DeleteBitsOnPrimaryStorageReply reply) {
+            public void success(DeleteVolumeBitsOnPrimaryStorageReply reply) {
                 bus.reply(msg, reply);
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
-                DeleteBitsOnPrimaryStorageReply reply = new DeleteBitsOnPrimaryStorageReply();
+                DeleteVolumeBitsOnPrimaryStorageReply reply = new DeleteVolumeBitsOnPrimaryStorageReply();
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }
@@ -452,9 +511,65 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
             handle((CreateTemporaryVolumeFromSnapshotMsg) msg);
         } else if (msg instanceof SMPRecalculatePrimaryStorageCapacityMsg) {
             handle((SMPRecalculatePrimaryStorageCapacityMsg) msg);
+        } else if (msg instanceof DeleteImageCacheOnPrimaryStorageMsg) {
+            handle((DeleteImageCacheOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(final DeleteImageCacheOnPrimaryStorageMsg msg) {
+        DeleteImageCacheOnPrimaryStorageReply sreply = new DeleteImageCacheOnPrimaryStorageReply();
+        PrimaryStorageVO ps = dbf.findByUuid(msg.getPrimaryStorageUuid(), PrimaryStorageVO.class);
+
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("delete-image-cache-on-smp-primary-storage-%s", msg.getPrimaryStorageUuid()));
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "delete-volume-cache";
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                String hostUuid = getAvailableHostUuidForOperation();
+                if (hostUuid == null) {
+                    trigger.next();
+                    return;
+                }
+                HostVO hvo = dbf.findByUuid(hostUuid, HostVO.class);
+                DeleteVolumeBitsOnPrimaryStorageMsg dmsg = new DeleteVolumeBitsOnPrimaryStorageMsg();
+                dmsg.setFolder(true);
+                dmsg.setHypervisorType(hvo.getHypervisorType());
+                dmsg.setInstallPath(new File(msg.getInstallPath()).getParent());
+                dmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+                bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
+                bus.send(dmsg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (reply.isSuccess()) {
+                            trigger.next();
+                        } else {
+                            trigger.fail(reply.getError());
+                        }
+                    }
+                });
+            }
+        }).done(new FlowDoneHandler(msg) {
+            @Override
+            public void handle(Map data) {
+                bus.reply(msg, sreply);
+            }
+        }).error(new FlowErrorHandler(msg) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                sreply.setError(errCode);
+                bus.reply(msg, sreply);
+            }
+        }).start();
+    }
+
+    @Override
+    protected void handle(APICleanUpImageCacheOnPrimaryStorageMsg msg) {
+        APICleanUpImageCacheOnPrimaryStorageEvent evt = new APICleanUpImageCacheOnPrimaryStorageEvent(msg.getId());
+        imageCacheCleaner.cleanup(msg.getUuid());
+        bus.publish(evt);
     }
 
     protected void handle(SMPRecalculatePrimaryStorageCapacityMsg msg) {

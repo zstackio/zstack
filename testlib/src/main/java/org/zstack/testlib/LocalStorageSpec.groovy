@@ -122,6 +122,10 @@ class LocalStorageSpec extends PrimaryStorageSpec {
             return new LocalStorageKvmBackend.DeleteBitsRsp()
         }
 
+        simulator(LocalStorageKvmBackend.GET_LIST_PATH) {
+            return new LocalStorageKvmBackend.ListPathRsp()
+        }
+
         simulator(LocalStorageKvmSftpBackupStorageMediatorImpl.DOWNLOAD_BIT_PATH) {
             return new LocalStorageKvmSftpBackupStorageMediatorImpl.SftpDownloadBitsRsp()
         }

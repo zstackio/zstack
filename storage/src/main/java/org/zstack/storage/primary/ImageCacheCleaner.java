@@ -5,17 +5,17 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.primary.DeleteImageCacheOnPrimaryStorageMsg;
-import org.zstack.header.storage.primary.ImageCacheShadowVO;
-import org.zstack.header.storage.primary.ImageCacheVO;
-import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.storage.backup.BackupStoragePrimaryStorageExtensionPoint;
+import org.zstack.header.storage.primary.*;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -39,6 +39,8 @@ public abstract class ImageCacheCleaner {
     protected CloudBus bus;
     @Autowired
     protected ResourceDestinationMaker destMaker;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     protected Future<Void> gcThread;
 
@@ -93,7 +95,7 @@ public abstract class ImageCacheCleaner {
         });
     }
 
-    protected void doCleanup(String psUuid) {
+    private void cleanUpVolumeCache(String psUuid) {
         List<ImageCacheShadowVO> shadowVOs = createShadowImageCacheVOs(psUuid);
         if (shadowVOs == null || shadowVOs.isEmpty()) {
             return;
@@ -124,6 +126,22 @@ public abstract class ImageCacheCleaner {
                 }
             });
         }
+    }
+
+    private void cleanUpImageCache(String psUuid) {
+        PrimaryStorageVO ps = dbf.findByUuid(psUuid, PrimaryStorageVO.class);
+        logger.info(String.format("cleanup image cache on PrimaryStorage [%s]", ps.getUuid()));
+        List<BackupStoragePrimaryStorageExtensionPoint> extenstions = pluginRgty.getExtensionList(BackupStoragePrimaryStorageExtensionPoint.class);
+        extenstions.forEach(ext -> {
+            ext.cleanupPrimaryCacheForBS(PrimaryStorageInventory.valueOf(ps), null, new NopeCompletion());
+        });
+    }
+
+    protected void doCleanup(String psUuid) {
+        if (psUuid != null) {
+            cleanUpImageCache(psUuid);
+        }
+        cleanUpVolumeCache(psUuid);
     }
 
     private void startGCThread() {

@@ -5,7 +5,7 @@ import org.zstack.core.gc.GC;
 import org.zstack.core.gc.GCCompletion;
 import org.zstack.core.gc.TimeBasedGarbageCollector;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.primary.DeleteBitsOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.DeleteVolumeBitsOnPrimaryStorageMsg;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.storage.primary.PrimaryStorageStatus;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
@@ -47,7 +47,7 @@ public class PrimaryStorageDeleteBitGC extends TimeBasedGarbageCollector {
             return;
         }
 
-        DeleteBitsOnPrimaryStorageMsg delMsg = new DeleteBitsOnPrimaryStorageMsg();
+        DeleteVolumeBitsOnPrimaryStorageMsg delMsg = new DeleteVolumeBitsOnPrimaryStorageMsg();
         delMsg.setInstallPath(primaryStorageInstallPath);
         delMsg.setBitsUuid(volume.getUuid());
         delMsg.setBitsType(VolumeVO.class.getSimpleName());

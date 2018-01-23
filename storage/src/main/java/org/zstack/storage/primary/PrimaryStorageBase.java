@@ -105,6 +105,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     protected abstract void handle(InstantiateVolumeOnPrimaryStorageMsg msg);
 
+    protected abstract void handle(GetPrimaryStorageFolderListMsg msg);
+
     protected abstract void handle(DeleteVolumeOnPrimaryStorageMsg msg);
 
     protected abstract void handle(CreateTemplateFromVolumeOnPrimaryStorageMsg msg);
@@ -112,6 +114,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     protected abstract void handle(DownloadDataVolumeToPrimaryStorageMsg msg);
 
     protected abstract void handle(GetInstallPathForDataVolumeDownloadMsg msg);
+
+    protected abstract void handle(DeleteVolumeBitsOnPrimaryStorageMsg msg);
 
     protected abstract void handle(DeleteBitsOnPrimaryStorageMsg msg);
 
@@ -245,7 +249,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         } else if (msg instanceof DownloadDataVolumeToPrimaryStorageMsg) {
             new PrimaryStorageValidater().disable().maintenance()
                     .validate();
-        } else if (msg instanceof DeleteBitsOnPrimaryStorageMsg) {
+        } else if (msg instanceof DeleteVolumeBitsOnPrimaryStorageMsg) {
             new PrimaryStorageValidater().maintenance()
                     .validate();
         } else if (msg instanceof DeleteIsoFromPrimaryStorageMsg) {
@@ -279,6 +283,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((InstantiateVolumeOnPrimaryStorageMsg) msg);
         } else if (msg instanceof DeleteVolumeOnPrimaryStorageMsg) {
             handle((DeleteVolumeOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof DeleteBitsOnPrimaryStorageMsg) {
+            handle((DeleteBitsOnPrimaryStorageMsg) msg);
         } else if (msg instanceof CreateTemplateFromVolumeOnPrimaryStorageMsg) {
             handleBase((CreateTemplateFromVolumeOnPrimaryStorageMsg) msg);
         } else if (msg instanceof PrimaryStorageDeletionMsg) {
@@ -287,8 +293,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((DetachPrimaryStorageFromClusterMsg) msg);
         } else if (msg instanceof DownloadDataVolumeToPrimaryStorageMsg) {
             handleBase((DownloadDataVolumeToPrimaryStorageMsg) msg);
-        } else if (msg instanceof DeleteBitsOnPrimaryStorageMsg) {
-            handle((DeleteBitsOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof DeleteVolumeBitsOnPrimaryStorageMsg) {
+            handle((DeleteVolumeBitsOnPrimaryStorageMsg) msg);
         } else if (msg instanceof ConnectPrimaryStorageMsg) {
             handle((ConnectPrimaryStorageMsg) msg);
         } else if (msg instanceof DownloadIsoToPrimaryStorageMsg) {
@@ -317,6 +323,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((UpdatePrimaryStorageHostStatusMsg) msg);
         } else if (msg instanceof GetInstallPathForDataVolumeDownloadMsg) {
             handle((GetInstallPathForDataVolumeDownloadMsg) msg);
+        } else if (msg instanceof GetPrimaryStorageFolderListMsg) {
+            handle((GetPrimaryStorageFolderListMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
