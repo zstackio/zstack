@@ -1,7 +1,8 @@
 package org.zstack.core.gc;
 
-import org.zstack.header.vo.BaseResource;
-import org.zstack.header.vo.ResourceVO;
+import org.zstack.header.managementnode.ManagementNodeVO;
+import org.zstack.header.vo.*;
+import org.zstack.header.vo.ForeignKey;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
@@ -16,6 +17,12 @@ public class GarbageCollectorVO extends ResourceVO {
     @Column
     private String name;
 
+    // UPDATE GarbageCollectorVO SET managementNodeUuid = NULL WHERE managementNodeUuid NOT IN (SELECT uuid FROM ManagementNodeVO);
+    // ALTER TABLE GarbageCollectorVO ADD CONSTRAINT fkGarbageCollectorVOManagementNodeVO FOREIGN KEY (managementNodeUuid) REFERENCES ManagementNodeVO (uuid) ON DELETE SET NULL;
+    @Column
+    @ForeignKey(parentEntityClass = ManagementNodeVO.class, onDeleteAction = ForeignKey.ReferenceOption.SET_NULL)
+    private String managementNodeUuid;
+
     @Column
     private String runnerClass;
 
@@ -25,9 +32,6 @@ public class GarbageCollectorVO extends ResourceVO {
     @Column
     @Enumerated(EnumType.STRING)
     private GCStatus status;
-
-    @Column
-    private String managementNodeUuid;
 
     @Column
     private String type;

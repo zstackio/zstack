@@ -141,7 +141,9 @@ public class GarbageCollectorManagerImpl extends AbstractService
 
     private void loadOrphanJobs() throws ClassNotFoundException, IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
         List<GarbageCollectorVO> vos = Q.New(GarbageCollectorVO.class)
-                .isNull(GarbageCollectorVO_.managementNodeUuid).list();
+                .eq(GarbageCollectorVO_.status, GCStatus.Idle)
+                .isNull(GarbageCollectorVO_.managementNodeUuid)
+                .list();
 
         int count = 0;
 
