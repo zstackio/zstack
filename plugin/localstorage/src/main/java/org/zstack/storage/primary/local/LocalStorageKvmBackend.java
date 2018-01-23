@@ -1276,6 +1276,14 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     @Override
+    void handle(GetInstallPathForDataVolumeDownloadMsg msg, ReturnValueCompletion<GetInstallPathForDataVolumeDownloadReply> completion) {
+        GetInstallPathForDataVolumeDownloadReply reply = new GetInstallPathForDataVolumeDownloadReply();
+        final String installPath = makeDataVolumeInstallUrl(msg.getVolumeUuid());
+        reply.setInstallPath(installPath);
+        completion.success(reply);
+    }
+
+    @Override
     void handle(DeleteBitsOnPrimaryStorageMsg msg, final ReturnValueCompletion<DeleteBitsOnPrimaryStorageReply> completion) {
         String hostUuid = getHostUuidByResourceUuid(msg.getBitsUuid(), msg.getBitsType());
         deleteBits(PathUtil.parentFolder(msg.getInstallPath()), hostUuid, true, new Completion(completion) {

@@ -95,6 +95,14 @@ public class SimulatorPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
+    protected void handle(GetInstallPathForDataVolumeDownloadMsg msg) {
+        String path = putil.join(self.getUrl(), PrimaryStorageConstant.VM_FOLDER, msg.getVolumeUuid() + ".qcow2");
+        GetInstallPathForDataVolumeDownloadReply reply = new GetInstallPathForDataVolumeDownloadReply();
+        reply.setInstallPath(path);
+        bus.reply(msg, reply);
+    }
+
+    @Override
     protected void handle(DeleteBitsOnPrimaryStorageMsg msg) {
         DeleteBitsOnPrimaryStorageReply reply = new DeleteBitsOnPrimaryStorageReply();
         bus.reply(msg, reply);

@@ -50,15 +50,15 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
+import javax.persistence.Tuple;
+import java.io.File;
+import java.util.*;
+
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.header.storage.backup.BackupStorageConstant.*;
 import static org.zstack.utils.ProgressUtils.getEndFromStage;
-
-import javax.persistence.Tuple;
-import java.io.File;
-import java.util.*;
 
 /**
  * Created by xing5 on 2016/3/26.
@@ -747,6 +747,14 @@ public class KvmBackend extends HypervisorBackend {
                 completion.fail(errorCode);
             }
         });
+    }
+
+    @Override
+    void handle(GetInstallPathForDataVolumeDownloadMsg msg, ReturnValueCompletion<GetInstallPathForDataVolumeDownloadReply> completion) {
+        final String installPath = makeDataVolumeInstallUrl(msg.getVolumeUuid());
+        GetInstallPathForDataVolumeDownloadReply reply = new GetInstallPathForDataVolumeDownloadReply();
+        reply.setInstallPath(installPath);
+        completion.success(reply);
     }
 
     @Override

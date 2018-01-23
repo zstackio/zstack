@@ -36,12 +36,15 @@ import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.operr;
-
 import javax.persistence.TypedQuery;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created by xing5 on 2016/3/26.
@@ -181,6 +184,26 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
             @Override
             public void fail(ErrorCode errorCode) {
                 DownloadDataVolumeToPrimaryStorageReply reply = new DownloadDataVolumeToPrimaryStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    @Override
+    protected void handle(GetInstallPathForDataVolumeDownloadMsg msg) {
+        HypervisorType type = VolumeFormat.getMasterHypervisorTypeByVolumeFormat(msg.getImage().getFormat());
+        HypervisorFactory f = getHypervisorFactoryByHypervisorType(type.toString());
+        HypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handle(msg, new ReturnValueCompletion<GetInstallPathForDataVolumeDownloadReply>(msg) {
+            @Override
+            public void success(GetInstallPathForDataVolumeDownloadReply reply) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                GetInstallPathForDataVolumeDownloadReply reply = new GetInstallPathForDataVolumeDownloadReply();
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }

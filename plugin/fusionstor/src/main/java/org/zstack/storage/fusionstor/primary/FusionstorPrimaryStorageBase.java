@@ -1485,6 +1485,13 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     @Override
+    protected void handle(GetInstallPathForDataVolumeDownloadMsg msg) {
+        final GetInstallPathForDataVolumeDownloadReply reply = new GetInstallPathForDataVolumeDownloadReply();
+        reply.setInstallPath(makeDataVolumeInstallPath(msg.getVolumeUuid()));
+        bus.reply(msg, reply);
+    }
+
+    @Override
     protected void handle(final DeleteBitsOnPrimaryStorageMsg msg) {
         DeleteCmd cmd = new DeleteCmd();
         cmd.installPath = msg.getInstallPath();
