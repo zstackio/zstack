@@ -132,19 +132,19 @@ public class AlarmData  {
         return this.alarmName;
     }
 
-    public double threshold;
-    public void setThreshold(double threshold) {
+    public java.lang.Double threshold;
+    public void setThreshold(java.lang.Double threshold) {
         this.threshold = threshold;
     }
-    public double getThreshold() {
+    public java.lang.Double getThreshold() {
         return this.threshold;
     }
 
-    public int period;
-    public void setPeriod(int period) {
+    public java.lang.Integer period;
+    public void setPeriod(java.lang.Integer period) {
         this.period = period;
     }
-    public int getPeriod() {
+    public java.lang.Integer getPeriod() {
         return this.period;
     }
 
@@ -154,6 +154,14 @@ public class AlarmData  {
     }
     public java.lang.String getLabels() {
         return this.labels;
+    }
+
+    public java.lang.Double metricValue;
+    public void setMetricValue(java.lang.Double metricValue) {
+        this.metricValue = metricValue;
+    }
+    public java.lang.Double getMetricValue() {
+        return this.metricValue;
     }
 
     public long time;
