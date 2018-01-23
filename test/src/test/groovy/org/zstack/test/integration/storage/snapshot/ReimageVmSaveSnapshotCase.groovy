@@ -321,6 +321,7 @@ class ReimageVmSaveSnapshotCase extends SubCase {
                     PrimaryStoragePathMaker.makeCachedImageInstallPathFromImageUuidForTemplate(vm.getImageUuid()))){
                 check = true
             }
+            assert rsp.newVolumeInstallPath != null
             return rsp
         }
         reimageVmInstance {
