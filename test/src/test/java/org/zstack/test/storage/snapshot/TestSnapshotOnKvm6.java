@@ -33,7 +33,9 @@ import org.zstack.utils.logging.CLogger;
 * 4. take a new snapshot
 *
 * confirm new chain created
+* Covered by new style test case SnapshotMaxIncrementalCase
 */
+@Deprecated
 public class TestSnapshotOnKvm6 {
     CLogger logger = Utils.getLogger(TestSnapshotOnKvm6.class);
     Deployer deployer;

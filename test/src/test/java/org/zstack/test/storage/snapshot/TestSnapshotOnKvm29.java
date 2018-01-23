@@ -34,7 +34,9 @@ import org.zstack.utils.logging.CLogger;
 * 2. delete data volume
 *
 * confirm snapshots are deleted
+* Covered by new style testcase CreateSnapshotOnDataVolumeCase
 */
+@Deprecated
 public class TestSnapshotOnKvm29 {
     CLogger logger = Utils.getLogger(TestSnapshotOnKvm29.class);
     Deployer deployer;

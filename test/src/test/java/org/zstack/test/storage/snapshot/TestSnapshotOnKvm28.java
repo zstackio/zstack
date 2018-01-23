@@ -29,7 +29,9 @@ import org.zstack.utils.logging.CLogger;
 * 1. take 4 snapshot from vm's data volume
 *
 * confirm snapshots are taken
+* Covered by new style testcase CreateSnapshotOnDataVolumeCase
 */
+@Deprecated
 public class TestSnapshotOnKvm28 {
     CLogger logger = Utils.getLogger(TestSnapshotOnKvm28.class);
     Deployer deployer;

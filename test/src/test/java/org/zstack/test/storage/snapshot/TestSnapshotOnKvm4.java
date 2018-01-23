@@ -28,7 +28,9 @@ import org.zstack.utils.logging.CLogger;
 * 3. delete last snapshot
 *
 * confirm latest snapshot set correct
+* Covered by new style test case SnapshotMaxIncrementalCase
 */
+@Deprecated
 public class TestSnapshotOnKvm4 {
     CLogger logger = Utils.getLogger(TestSnapshotOnKvm4.class);
     Deployer deployer;
