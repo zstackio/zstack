@@ -28,6 +28,7 @@
         <module>sharedMountPointPrimaryStorage</module>
         <module>ldap</module>
         <module>vxlan</module>
+        <module>surfs</module>
     </modules>
     <dependencies>
         <dependency>
