@@ -101,7 +101,9 @@ public class ApiValidator implements GlobalApiMessageInterceptor {
     private void validateIpRangeOverlapWithVm(String l3NetworkUuid, String vmInstanceUuid) {
         List<VmNicVO> vmNicVOS = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, vmInstanceUuid).list();
         List<IpRangeVO> newIpRangeVOS = Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, l3NetworkUuid).list();
-        DebugUtils.Assert(newIpRangeVOS != null && !newIpRangeVOS.isEmpty(), String.format("the l3 network[%s] to attach must has ip range", l3NetworkUuid));
+        if (newIpRangeVOS == null || newIpRangeVOS.isEmpty()) {
+            throw new ApiMessageInterceptionException(operr("no ip ranges attached with l3 network[uuid:%s]", l3NetworkUuid));
+        }
 
         for (VmNicVO vmNicVO: vmNicVOS) {
             List<IpRangeVO> ipRangeVOS = Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, vmNicVO.getL3NetworkUuid()).limit(1).list();
