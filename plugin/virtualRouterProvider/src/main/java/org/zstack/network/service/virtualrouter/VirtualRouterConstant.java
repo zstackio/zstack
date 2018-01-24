@@ -60,5 +60,6 @@ public interface VirtualRouterConstant {
         IS_RECONNECT,
         VIPS,
         PUB_VIP_UUID,
+        VR_NIC,
     }
 }
