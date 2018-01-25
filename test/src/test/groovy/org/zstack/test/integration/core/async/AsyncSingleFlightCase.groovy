@@ -1,15 +1,20 @@
 package org.zstack.test.integration.core.async
 
 import org.zstack.core.singleflight.AsyncSingleFlight
+import org.zstack.header.core.FutureCompletion
 import org.zstack.header.core.ReturnValueCompletion
 import org.zstack.header.errorcode.ErrorCode
 import org.zstack.testlib.SubCase
+import org.zstack.utils.Utils
+import org.zstack.utils.logging.CLogger
 
+import java.lang.reflect.Field
 import java.util.concurrent.Callable
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
 class AsyncSingleFlightCase extends SubCase {
+
     @Override
     void clean() {
     }
@@ -57,6 +62,7 @@ class AsyncSingleFlightCase extends SubCase {
         AtomicInteger threadCounter = new AtomicInteger(0)
         CustomChecker c = new CustomChecker()
         AsyncSingleFlight<Boolean> sf = new AsyncSingleFlight<>()
+        Boolean success = false
 
         1.upto(totalCnt) {
             Thread.start {
@@ -70,23 +76,29 @@ class AsyncSingleFlightCase extends SubCase {
                 }, new ReturnValueCompletion<Boolean>(null) {
                     @Override
                     void success(Boolean returnValue) {
-                        assert returnValue
+                        success = returnValue
                     }
 
                     @Override
                     void fail(ErrorCode errorCode) {
-                        assert false
+                        success = false
                     }
                 })
             }
         }
 
-        while (threadCounter.get() != totalCnt) {
-            TimeUnit.MICROSECONDS.sleep(100)
+        int whileCount = 0
+        while (sf.calls.get(key) == null || sf.calls.get(key).size() != totalCnt || c.getCounter() == 0) {
+            TimeUnit.MILLISECONDS.sleep(100)
+            assert whileCount ++ < 20
         }
 
         c.setDone()
 
-        assert c.getCounter() == 1
+        assert !retryInSecs(2){
+            return c.getCounter() != 1
+        }
+
+        assert success
     }
 }
