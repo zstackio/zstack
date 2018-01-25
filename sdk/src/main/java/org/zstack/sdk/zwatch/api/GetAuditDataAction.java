@@ -33,7 +33,7 @@ public class GetAuditDataAction extends AbstractAction {
     public java.lang.Integer limit = 100;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List labels;
+    public java.util.List conditions;
 
     @Param(required = false)
     public java.util.List systemTags;
