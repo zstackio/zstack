@@ -18,6 +18,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.identity.APIDeleteAccountEvent;
 import org.zstack.header.longjob.*;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
+import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.Message;
 import org.zstack.identity.AccountManager;
 import org.zstack.tag.TagManager;
@@ -29,7 +30,7 @@ import java.util.List;
 /**
  * Created by GuoYi on 11/14/17.
  */
-public class LongJobManagerImpl extends AbstractService implements LongJobManager, ManagementNodeChangeListener {
+public class LongJobManagerImpl extends AbstractService implements LongJobManager, ManagementNodeReadyExtensionPoint, ManagementNodeChangeListener {
     private static final CLogger logger = Utils.getLogger(LongJobManagerImpl.class);
 
     @Autowired
@@ -216,8 +217,6 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
 
     @Override
     public boolean start() {
-        logger.debug(String.format("Management node[uuid:%s] joins, starts to load longjobs", Platform.getManagementServerId()));
-        loadLongJob();
         return true;
     }
 
@@ -319,5 +318,11 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         }
 
         return vo;
+    }
+
+    @Override
+    public void managementNodeReady() {
+        logger.debug(String.format("Management node[uuid:%s] is ready, starts to load longjobs", Platform.getManagementServerId()));
+        loadLongJob();
     }
 }
