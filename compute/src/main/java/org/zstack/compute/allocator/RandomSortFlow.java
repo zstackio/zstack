@@ -13,11 +13,12 @@ import java.util.List;
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class RandomSortFlow extends AbstractHostSortorFlow {
+    private boolean skip = true;
+
     @Override
     public void sort() {
         Collections.shuffle(candidates);
         prepareForNext(candidates);
-
     }
 
     private void prepareForNext(List<HostInventory> hosts) {
@@ -26,5 +27,10 @@ public class RandomSortFlow extends AbstractHostSortorFlow {
             subCandidates.addAll(hosts);
             skip = false;
         }
+    }
+
+    @Override
+    public boolean skipNext() {
+        return skip;
     }
 }

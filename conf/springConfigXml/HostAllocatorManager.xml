@@ -106,6 +106,7 @@
         <property name="sortFlowNames">
             <list>
                 <value>org.zstack.compute.allocator.PrimaryStoragePrioritySortFlow</value>
+                <value>org.zstack.compute.allocator.SoftAvoidHostSortFlow</value>
                 <value>org.zstack.compute.allocator.LeastVmPreferredSortFlow</value>
             </list>
         </property>
@@ -134,6 +135,7 @@
         <property name="sortFlowNames">
             <list>
                 <value>org.zstack.compute.allocator.PrimaryStoragePrioritySortFlow</value>
+                <value>org.zstack.compute.allocator.SoftAvoidHostSortFlow</value>
             </list>
         </property>
     </bean>
@@ -210,6 +212,7 @@
         <property name="sortFlowNames">
             <list>
                 <value>org.zstack.compute.allocator.PrimaryStoragePrioritySortFlow</value>
+                <value>org.zstack.compute.allocator.SoftAvoidHostSortFlow</value>
                 <value>org.zstack.compute.allocator.LeastVmPreferredSortFlow</value>
             </list>
         </property>
