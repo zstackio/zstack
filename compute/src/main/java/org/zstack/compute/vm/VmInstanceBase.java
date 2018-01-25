@@ -1,7 +1,6 @@
 package org.zstack.compute.vm;
 
 
-import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -38,8 +37,8 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
-import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
+import org.zstack.header.image.*;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.primary.*;
@@ -3980,6 +3979,12 @@ public class VmInstanceBase extends AbstractVmInstance {
             spec.setUsbRedirect(VmSystemTags.USB_REDIRECT.getTokenByResourceUuid(self.getUuid(), VmSystemTags.USB_REDIRECT_TOKEN));
             spec.setEnableRDP(VmSystemTags.RDP_ENABLE.getTokenByResourceUuid(self.getUuid(), VmSystemTags.RDP_ENABLE_TOKEN));
             spec.setVDIMonitorNumber(VmSystemTags.VDI_MONITOR_NUMBER.getTokenByResourceUuid(self.getUuid(), VmSystemTags.VDI_MONITOR_NUMBER_TOKEN));
+        }
+
+        if (msg instanceof HaStartVmInstanceMsg) {
+            spec.setSoftAvoidHostUuids(((HaStartVmInstanceMsg) msg).getSoftAvoidHostUuids());
+        } else if (msg instanceof StartVmInstanceMsg) {
+            spec.setSoftAvoidHostUuids(((StartVmInstanceMsg) msg).getSoftAvoidHostUuids());
         }
 
         if (spec.getDestNics().isEmpty()) {
