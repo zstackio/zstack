@@ -12,6 +12,7 @@ class VmSpec extends Spec implements HasSession {
     private Closure rootDiskOffering = {}
     private Closure cluster = {}
     private Closure host = {}
+    private Closure primaryStorage = {}
     private Closure diskOfferings = {}
     private Closure l3Networks = {}
     private Closure defaultL3Network = {}
@@ -93,6 +94,19 @@ class VmSpec extends Spec implements HasSession {
     }
 
     @SpecMethod
+    void usePrimaryStorage(String name) {
+        preCreate {
+            addDependency(name, PrimaryStorageSpec.class)
+        }
+
+        primaryStorage = {
+            PrimaryStorageSpec spec = findSpec(name, PrimaryStorageSpec.class)
+            assert spec != null: "cannot find primaryStorage[$name], check the vm block of environment"
+            return spec.inventory.uuid
+        }
+    }
+
+    @SpecMethod
     void useDiskOfferings(String... names) {
         names.each { String name ->
             preCreate {
@@ -150,6 +164,7 @@ class VmSpec extends Spec implements HasSession {
             delegate.rootDiskOfferingUuid = rootDiskOffering()
             delegate.clusterUuid = cluster()
             delegate.hostUuid = host()
+            delegate.primaryStorageUuidForRootVolume = primaryStorage()
             delegate.dataDiskOfferingUuids = diskOfferings()
             delegate.l3NetworkUuids = l3Networks()
             delegate.defaultL3NetworkUuid = defaultL3Network()
