@@ -28,12 +28,4 @@ public class SNSEmailPlatformInventory extends org.zstack.sdk.sns.SNSApplication
         return this.username;
     }
 
-    public java.lang.String password;
-    public void setPassword(java.lang.String password) {
-        this.password = password;
-    }
-    public java.lang.String getPassword() {
-        return this.password;
-    }
-
 }

@@ -24,7 +24,10 @@ public class RemoveSNSDingTalkAtPersonAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    public java.lang.String endpointUuid;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String phoneNumber;
 
     @Param(required = false)
     public java.lang.String deleteMode = "Permissive";

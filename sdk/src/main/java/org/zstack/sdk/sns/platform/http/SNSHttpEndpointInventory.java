@@ -20,12 +20,4 @@ public class SNSHttpEndpointInventory extends org.zstack.sdk.sns.SNSApplicationE
         return this.username;
     }
 
-    public java.lang.String password;
-    public void setPassword(java.lang.String password) {
-        this.password = password;
-    }
-    public java.lang.String getPassword() {
-        return this.password;
-    }
-
 }
