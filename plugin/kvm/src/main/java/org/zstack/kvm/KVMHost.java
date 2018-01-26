@@ -1565,7 +1565,7 @@ public class KVMHost extends HostBase implements Host {
             public void fail(ErrorCode err) {
                 DestroyVmOnHypervisorReply reply = new DestroyVmOnHypervisorReply();
 
-                if (err.isError(SysErrors.HTTP_ERROR, SysErrors.IO_ERROR)) {
+                if (err.isError(SysErrors.HTTP_ERROR, SysErrors.IO_ERROR, SysErrors.TIMEOUT)) {
                     err = errf.instantiateErrorCode(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, "unable to destroy a vm", err);
                 }
 
