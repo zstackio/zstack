@@ -10,8 +10,7 @@ class DataVolumeSpec extends Spec implements HasSession {
     @SpecParam
     String description
     private Closure diskOfferings = {}
-    @SpecParam
-    String primaryStorageUuid
+    private Closure primaryStorage = {}
 
     VolumeInventory inventory
 
@@ -23,7 +22,7 @@ class DataVolumeSpec extends Spec implements HasSession {
         inventory = createDataVolume {
             delegate.resourceUuid = uuid
             delegate.name = name
-            delegate.primaryStorageUuid = primaryStorageUuid
+            delegate.primaryStorageUuid = primaryStorage()
             delegate.diskOfferingUuid = diskOfferings()
             delegate.description = description
             delegate.sessionId = sessionId
@@ -47,6 +46,19 @@ class DataVolumeSpec extends Spec implements HasSession {
         diskOfferings = {
             DiskOfferingSpec spec = findSpec(name, DiskOfferingSpec.class)
             assert spec != null: "cannot find useDiskOffering[$name], check the vm block of environment"
+            return spec.inventory.uuid
+        }
+    }
+
+    @SpecMethod
+    void usePrimaryStorage(String name) {
+        preCreate {
+            addDependency(name, PrimaryStorageSpec.class)
+        }
+
+        primaryStorage = {
+            PrimaryStorageSpec spec = findSpec(name, PrimaryStorageSpec.class)
+            assert spec != null: "cannot find usePrimaryStorage[$name], check the primaryStorage block of environment"
             return spec.inventory.uuid
         }
     }

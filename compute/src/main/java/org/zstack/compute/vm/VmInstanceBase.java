@@ -1,7 +1,6 @@
 package org.zstack.compute.vm;
 
 
-import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -25,6 +24,7 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.allocator.*;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.cluster.ClusterInventory;
+import org.zstack.header.cluster.ClusterState;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.configuration.*;
@@ -38,8 +38,8 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
-import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
+import org.zstack.header.image.*;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.primary.*;
@@ -3573,8 +3573,52 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         String sql;
         List<VolumeVO> vos;
-        if (volUuids == null) {
-            // accessed by a system admin
+
+        /*
+         * Cluster1: [PS1, PS2, PS3]
+         * Cluster2: [PS1, PS2]
+         * Cluster3: [PS1, PS2, PS3]
+         *
+         * Assume a stopped vm which has no clusterUuid and root volume on PS1
+         * then it can attach all suitable data volumes from [PS1, PS2]
+         * because PS1 is attached to [Cluster1, Cluster2, Cluster3]
+         * and they all have [PS1, PS2] attached
+         */
+        List<String> psUuids = null;
+        if (self.getClusterUuid() == null) {
+            // 1. get clusterUuids of VM->RV->PS
+            sql = "select cls.uuid from" +
+                    " ClusterVO cls, VolumeVO vol, VmInstanceVO vm, PrimaryStorageClusterRefVO ref" +
+                    " where vm.uuid = :vmUuid" +
+                    " and vol.uuid = vm.rootVolumeUuid" +
+                    " and ref.primaryStorageUuid = vol.primaryStorageUuid" +
+                    " and cls.uuid = ref.clusterUuid" +
+                    " and cls.state = :clsState" +
+                    " group by cls.uuid";
+            List<String> clusterUuids = SQL.New(sql)
+                    .param("vmUuid", self.getUuid())
+                    .param("clsState", ClusterState.Enabled)
+                    .list();
+
+            // 2. get all PS that attachs to clusterUuids
+            sql = "select ps.uuid from PrimaryStorageVO ps" +
+                    " inner join PrimaryStorageClusterRefVO ref on ref.primaryStorageUuid = ps.uuid" +
+                    " inner join ClusterVO cls on cls.uuid = ref.clusterUuid" +
+                    " where cls.uuid in (:clusterUuids)" +
+                    " and ps.state = :psState" +
+                    " and ps.status = :psStatus" +
+                    " group by ps.uuid" +
+                    " having count(distinct cls.uuid) = :clsCount";
+            psUuids = SQL.New(sql)
+                    .param("clusterUuids", clusterUuids)
+                    .param("psState", PrimaryStorageState.Enabled)
+                    .param("psStatus", PrimaryStorageStatus.Connected)
+                    .param("clsCount", (long)clusterUuids.size())
+                    .list();
+        }
+
+        if (volUuids == null) {                             // accessed by a system admin
+            // if vm.clusterUuid is not null
             sql = "select vol" +
                     " from VolumeVO vol, VmInstanceVO vm, PrimaryStorageClusterRefVO ref" +
                     " where vol.type = :type" +
@@ -3594,6 +3638,28 @@ public class VmInstanceBase extends AbstractVmInstance {
             q.setParameter("type", VolumeType.Data);
             vos = q.getResultList();
 
+            // if vm.clusterUuid is null
+            if (self.getClusterUuid() == null) {
+                // 3. get data volume candidates from psUuids
+                sql = "select vol from VolumeVO vol" +
+                        " where vol.primaryStorageUuid in (:psUuids)" +
+                        " and vol.type = :volType" +
+                        " and vol.state = :volState" +
+                        " and vol.status = :volStatus" +
+                        " and vol.format in (:formats)" +
+                        " and vol.vmInstanceUuid is null" +
+                        " group by vol.uuid";
+                List<VolumeVO> dvs = SQL.New(sql)
+                        .param("psUuids", psUuids)
+                        .param("volType", VolumeType.Data)
+                        .param("volState", VolumeState.Enabled)
+                        .param("volStatus", VolumeStatus.Ready)
+                        .param("formats", formats)
+                        .list();
+                vos.addAll(dvs);
+            }
+
+            // for NotInstantiated data volumes
             sql = "select vol" +
                     " from VolumeVO vol" +
                     " where vol.type = :type" +
@@ -3605,8 +3671,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             q.setParameter("volState", VolumeState.Enabled);
             q.setParameter("volStatus", VolumeStatus.NotInstantiated);
             vos.addAll(q.getResultList());
-        } else {
-            // accessed by a normal account
+        } else {                                            // accessed by a normal account
+            // if vm.clusterUuid is not null
             sql = "select vol" +
                     " from VolumeVO vol, VmInstanceVO vm, PrimaryStorageClusterRefVO ref" +
                     " where vol.type = :type" +
@@ -3628,6 +3694,30 @@ public class VmInstanceBase extends AbstractVmInstance {
             q.setParameter("volUuids", volUuids);
             vos = q.getResultList();
 
+            // if vm.clusterUuid is null
+            if (self.getClusterUuid() == null) {
+                // 3. get data volume candidates from psUuids
+                sql = "select vol from VolumeVO vol" +
+                        " where vol.primaryStorageUuid in (:psUuids)" +
+                        " and vol.type = :volType" +
+                        " and vol.state = :volState" +
+                        " and vol.status = :volStatus" +
+                        " and vol.format in (:formats)" +
+                        " and vol.vmInstanceUuid is null" +
+                        " and vol.uuid in (:volUuids)" +
+                        " group by vol.uuid";
+                List<VolumeVO> dvs = SQL.New(sql)
+                        .param("psUuids", psUuids)
+                        .param("volType", VolumeType.Data)
+                        .param("volState", VolumeState.Enabled)
+                        .param("volStatus", VolumeStatus.Ready)
+                        .param("formats", formats)
+                        .param("volUuids", volUuids)
+                        .list();
+                vos.addAll(dvs);
+            }
+
+            // for NotInstantiated data volumes
             sql = "select vol" +
                     " from VolumeVO vol" +
                     " where vol.type = :type" +
