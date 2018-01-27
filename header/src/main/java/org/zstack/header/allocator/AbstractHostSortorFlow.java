@@ -15,7 +15,6 @@ public abstract class AbstractHostSortorFlow {
     protected List<HostInventory> candidates = new ArrayList<>();
     protected HostAllocatorSpec spec;
     protected List<HostInventory> subCandidates = new ArrayList<>();
-    protected boolean skip = true;
 
     public List<HostInventory> getCandidates() {
         return candidates;
@@ -35,9 +34,7 @@ public abstract class AbstractHostSortorFlow {
 
     public abstract void sort();
 
-    public boolean skipNext() {
-        return skip;
-    }
+    public abstract boolean skipNext();
 
     public HostAllocatorSpec getSpec() {
         return spec;

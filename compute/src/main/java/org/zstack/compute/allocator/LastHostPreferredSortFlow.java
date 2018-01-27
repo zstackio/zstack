@@ -15,6 +15,8 @@ import java.util.Optional;
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class LastHostPreferredSortFlow extends AbstractHostSortorFlow {
+    private boolean skip = true;
+
     @Override
     public void sort() {
         final VmInstanceInventory vm = spec.getVmInstance();
@@ -33,5 +35,10 @@ public class LastHostPreferredSortFlow extends AbstractHostSortorFlow {
             skip = false;
             subCandidates.addAll(candidates);
         }
+    }
+
+    @Override
+    public boolean skipNext() {
+        return skip;
     }
 }
