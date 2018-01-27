@@ -12,6 +12,7 @@ import java.util.*;
  */
 public class HostAllocatorSpec {
     private List<String> avoidHostUuids;
+    private List<String> softAvoidHostUuids;
     private long cpuCapacity;
     private long memoryCapacity;
     private List<String> l3NetworkUuids;
@@ -107,6 +108,14 @@ public class HostAllocatorSpec {
         this.avoidHostUuids = avoidHostUuids;
     }
 
+    public List<String> getSoftAvoidHostUuids() {
+        return softAvoidHostUuids;
+    }
+
+    public void setSoftAvoidHostUuids(List<String> softAvoidHostUuids) {
+        this.softAvoidHostUuids = softAvoidHostUuids;
+    }
+
     public long getCpuCapacity() {
         return cpuCapacity;
     }
@@ -186,6 +195,7 @@ public class HostAllocatorSpec {
         HostAllocatorSpec spec = new HostAllocatorSpec();
         spec.setAllocatorStrategy(msg.getAllocatorStrategy());
         spec.setAvoidHostUuids(msg.getAvoidHostUuids());
+        spec.setSoftAvoidHostUuids(msg.getSoftAvoidHostUuids());
         spec.setCpuCapacity(msg.getCpuCapacity());
         spec.setDiskSize(msg.getDiskSize());
         spec.setListAllHosts(msg.isListAllHosts());

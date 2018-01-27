@@ -4072,6 +4072,12 @@ public class VmInstanceBase extends AbstractVmInstance {
             spec.setVDIMonitorNumber(VmSystemTags.VDI_MONITOR_NUMBER.getTokenByResourceUuid(self.getUuid(), VmSystemTags.VDI_MONITOR_NUMBER_TOKEN));
         }
 
+        if (msg instanceof HaStartVmInstanceMsg) {
+            spec.setSoftAvoidHostUuids(((HaStartVmInstanceMsg) msg).getSoftAvoidHostUuids());
+        } else if (msg instanceof StartVmInstanceMsg) {
+            spec.setSoftAvoidHostUuids(((StartVmInstanceMsg) msg).getSoftAvoidHostUuids());
+        }
+
         if (spec.getDestNics().isEmpty()) {
             throw new OperationFailureException(operr("unable to start the vm[uuid:%s]." +
                             " It doesn't have any nic, please attach a nic and try again", self.getUuid()));
