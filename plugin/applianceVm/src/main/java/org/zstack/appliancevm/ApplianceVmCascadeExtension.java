@@ -60,11 +60,11 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
     private static String NAME = ApplianceVmVO.class.getSimpleName();
 
 
-    private static final int OP_NOPE = 0;
-    private static final int OP_MIGRATE = 1;
-    private static final int OP_DELETION = 2;
+    protected static final int OP_NOPE = 0;
+    protected static final int OP_MIGRATE = 1;
+    protected static final int OP_DELETION = 2;
 
-    private int toDeleteOpCode(CascadeAction action) {
+    protected int toDeleteOpCode(CascadeAction action) {
         if (PrimaryStorageVO.class.getSimpleName().equals(action.getParentIssuer())) {
             return OP_DELETION;
         }
@@ -310,7 +310,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
         completion.success();
     }
 
-    private void handleDeletion(final CascadeAction action, final Completion completion) {
+    protected void handleDeletion(final CascadeAction action, final Completion completion) {
         int op = toDeleteOpCode(action);
 
         if (op == OP_NOPE) {
@@ -510,7 +510,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
     }
 
     @Transactional
-    private List<ApplianceVmInventory> apvmFromDeleteAction(CascadeAction action) {
+    protected List<ApplianceVmInventory> apvmFromDeleteAction(CascadeAction action) {
         List<ApplianceVmInventory> ret = null;
 
         if (HostVO.class.getSimpleName().equals(action.getParentIssuer())) {
