@@ -1,27 +1,33 @@
 package org.zstack.longjob;
 
 import org.zstack.core.db.Q;
+import org.zstack.header.Component;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.longjob.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.portal.apimediator.ApiMessageProcessor;
 import org.zstack.portal.apimediator.ApiMessageProcessorImpl;
 import org.zstack.utils.BeanUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
+import org.zstack.utils.logging.CLogger;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.zstack.core.Platform.argerr;
 
 /**
  * Created by GuoYi on 12/6/17.
  */
-public class LongJobApiInterceptor implements ApiMessageInterceptor {
+public class LongJobApiInterceptor implements ApiMessageInterceptor, Component {
+    private static final CLogger logger = Utils.getLogger(LongJobApiInterceptor.class);
+
+    /**
+     * Key:LongJobName
+     */
+    private TreeMap<String, Class<APIMessage>> apiMsgOfLongJob = new TreeMap<>();
+
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         if (msg instanceof APISubmitLongJobMsg) {
@@ -36,22 +42,10 @@ public class LongJobApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APISubmitLongJobMsg msg) {
-        Class<APIMessage> apiClass = null;
-        List<Class> longJobClasses = BeanUtils.scanClass("org.zstack", LongJobFor.class);
-        for (Class it : longJobClasses) {
-            LongJobFor at = (LongJobFor) it.getAnnotation(LongJobFor.class);
-            if (at.value().getSimpleName().equals(msg.getJobName())) {
-                try {
-                    apiClass = (Class<APIMessage>) Class.forName(at.value().getName());
-                } catch (ClassNotFoundException e) {
-                    throw new OperationFailureException(argerr("%s is not an API", msg.getJobName()));
-                }
-            }
+        Class<APIMessage> apiClass = apiMsgOfLongJob.get(msg.getJobName());
+        if (null == apiClass) {
+            throw new ApiMessageInterceptionException(argerr("%s is not an API", msg.getJobName()));
         }
-        if (apiClass == null) {
-            throw new OperationFailureException(argerr("%s does not have corresponding longjob", msg.getJobName()));
-        }
-
         // validate msg.jobData
         Map<String, Object> config = new HashMap<>();
         List<String> serviceConfigFolders = new ArrayList<>();
@@ -90,5 +84,30 @@ public class LongJobApiInterceptor implements ApiMessageInterceptor {
         if (state != LongJobState.Succeeded && state != LongJobState.Canceled && state != LongJobState.Failed) {
             throw new ApiMessageInterceptionException(argerr("delete longjob only when it's succeeded, canceled, or failed"));
         }
+    }
+
+    @Override
+    public boolean start() {
+        Class<APIMessage> apiClass = null;
+        List<Class> longJobClasses = BeanUtils.scanClass("org.zstack", LongJobFor.class);
+        for (Class it : longJobClasses) {
+            LongJobFor at = (LongJobFor) it.getAnnotation(LongJobFor.class);
+            try {
+                apiClass = (Class<APIMessage>) Class.forName(at.value().getName());
+            } catch (ClassNotFoundException | ClassCastException e) {
+                //ApiMessage and LongJob are not one by one corresponding ,so we skip it
+                e.printStackTrace();
+                continue;
+            }
+            logger.debug(String.format("[LongJob] collect api class [%s]", apiClass.getSimpleName()));
+            apiMsgOfLongJob.put(at.value().getSimpleName(), apiClass);
+        }
+        return true;
+    }
+
+    @Override
+    public boolean stop() {
+        apiMsgOfLongJob.clear();
+        return true;
     }
 }

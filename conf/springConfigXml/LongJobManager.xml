@@ -24,12 +24,14 @@
     <bean id="LongJobFactory" class="org.zstack.longjob.LongJobFactoryImpl">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.longjob.LongJobFactory" />
+            <zstack:extension interface="org.zstack.header.Component" />
         </zstack:plugin>
     </bean>
 
     <bean id="LongJobApiInterceptor" class="org.zstack.longjob.LongJobApiInterceptor">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
+            <zstack:extension interface="org.zstack.header.Component" />
         </zstack:plugin>
     </bean>
 </beans>
