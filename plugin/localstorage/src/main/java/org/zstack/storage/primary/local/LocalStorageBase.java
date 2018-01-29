@@ -36,9 +36,7 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
-import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
-import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
-import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
+import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.*;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.volume.*;
@@ -1271,6 +1269,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                 List<String> volumesUuids = new ArrayList<>();
                 List<String> snapshotUuids = new ArrayList<>();
+                List<String> snapshotTreeUuids = new ArrayList<>();
                 for (LocalStorageResourceRefVO ref : refs) {
                     if (VolumeVO.class.getSimpleName().equals(ref.getResourceType())) {
                         volumesUuids.add(ref.getResourceUuid());
@@ -1280,11 +1279,28 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 }
 
                 if (!snapshotUuids.isEmpty()) {
+                    List<String> treeList = sql(
+                            "select treeUuid from VolumeSnapshotVO where uuid in (:uuids) group by treeUuid", String.class)
+                            .param("uuids", snapshotUuids).list();
+                    if(treeList != null){
+                        snapshotTreeUuids.addAll(treeList);
+                    }
+
                     sql("delete from VolumeSnapshotVO sp where sp.uuid in (:uuids)")
                             .param("uuids", snapshotUuids).execute();
 
                     logger.debug(String.format("delete volume snapshots%s because the host[uuid:%s] is removed from" +
                             " the local storage[name:%s, uuid:%s]", snapshotUuids, hostUuid, self.getName(), self.getUuid()));
+                }
+
+                if(!snapshotTreeUuids.isEmpty()) {
+                    for(String snapshotTreeUuid : snapshotTreeUuids) {
+                        if (q(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.treeUuid, snapshotTreeUuid).isExists()) {
+                            break;
+                        }
+                        logger.debug(String.format("volume snapshot tree[uuid:%s] has no leaf, delete it", snapshotTreeUuid));
+                        sql(VolumeSnapshotTreeVO.class).eq(VolumeSnapshotTreeVO_.uuid, snapshotTreeUuid).hardDelete();
+                    }
                 }
 
                 if (!volumesUuids.isEmpty()) {
