@@ -1311,7 +1311,6 @@ public class VmInstanceBase extends AbstractVmInstance {
         amsg.setCpuCapacity(self.getCpuNum());
         amsg.setMemoryCapacity(self.getMemorySize());
         amsg.getAvoidHostUuids().add(self.getHostUuid());
-        amsg.setImage(ImageInventory.valueOf(dbf.findByUuid(self.getImageUuid(), ImageVO.class)));
         if (msg instanceof GetVmMigrationTargetHostMsg) {
             GetVmMigrationTargetHostMsg gmsg = (GetVmMigrationTargetHostMsg) msg;
             if (gmsg.getAvoidHostUuids() != null) {

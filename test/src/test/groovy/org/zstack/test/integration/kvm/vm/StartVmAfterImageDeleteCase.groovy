@@ -6,6 +6,7 @@ import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.sdk.BackupStorageInventory
 import org.zstack.sdk.GetVmStartingCandidateClustersHostsResult
+import org.zstack.sdk.HostInventory
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.L3NetworkInventory
@@ -40,6 +41,8 @@ class StartVmAfterImageDeleteCase extends SubCase {
             createVmWithNewImage()
             deleteImage()
             testStartVm()
+            testMigrateVm()
+            testCreateTemplateFromRootVolume()
             testGetCandidate()
             deleteVm()
         }
@@ -82,17 +85,6 @@ class StartVmAfterImageDeleteCase extends SubCase {
         }
     }
 
-    void deleteVm() {
-        destroyVmInstance {
-            delegate.uuid = vm.uuid
-        }
-        expungeVmInstance {
-            delegate.uuid = vm.uuid
-        }
-
-        assert Q.New(VmInstanceVO.class).count() == 0
-    }
-
     void testStartVm() {
         // start vm which image has been deleted
         vm = stopVmInstance {
@@ -111,6 +103,21 @@ class StartVmAfterImageDeleteCase extends SubCase {
         assert vm.state == VmInstanceState.Running.toString()
     }
 
+    void testMigrateVm(){
+        def hosts = getVmMigrationCandidateHosts {
+            vmInstanceUuid = vm.uuid
+        } as List<HostInventory>
+
+        assert hosts.size() == 0
+    }
+
+    void testCreateTemplateFromRootVolume(){
+        createRootVolumeTemplateFromRootVolume {
+            name = "test"
+            rootVolumeUuid = vm.rootVolumeUuid
+        }
+    }
+
     void testGetCandidate() {
         vm = stopVmInstance {
             delegate.uuid = vm.uuid
@@ -123,5 +130,16 @@ class StartVmAfterImageDeleteCase extends SubCase {
         assert result.hosts.size() == 1
         assert result.hosts.get(0).uuid == vm.lastHostUuid
         assert result.clusters.size() == 1
+    }
+
+    void deleteVm() {
+        destroyVmInstance {
+            delegate.uuid = vm.uuid
+        }
+        expungeVmInstance {
+            delegate.uuid = vm.uuid
+        }
+
+        assert Q.New(VmInstanceVO.class).count() == 0
     }
 }
