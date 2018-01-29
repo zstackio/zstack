@@ -54,7 +54,6 @@ import javax.persistence.Tuple;
 import java.io.File;
 import java.util.*;
 
-import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.header.storage.backup.BackupStorageConstant.*;
@@ -106,6 +105,14 @@ public class KvmBackend extends HypervisorBackend {
 
     public static class DeleteBitsCmd extends AgentCmd {
         public String path;
+    }
+
+    public static class GetSubPathCmd extends AgentCmd {
+        public String path;
+    }
+
+    public static class GetSubPathRsp extends AgentRsp {
+        public List<String> paths;
     }
 
     @ApiTimeout(apiClasses = {
@@ -195,6 +202,7 @@ public class KvmBackend extends HypervisorBackend {
     public static final String CONNECT_PATH = "/sharedmountpointprimarystorage/connect";
     public static final String CREATE_VOLUME_FROM_CACHE_PATH = "/sharedmountpointprimarystorage/createrootvolume";
     public static final String DELETE_BITS_PATH = "/sharedmountpointprimarystorage/bits/delete";
+    public static final String GET_SUBPATH_PATH = "/sharedmountpointprimarystorage/sub/path";
     public static final String CREATE_TEMPLATE_FROM_VOLUME_PATH = "/sharedmountpointprimarystorage/createtemplatefromvolume";
     public static final String UPLOAD_BITS_TO_SFTP_BACKUPSTORAGE_PATH = "/sharedmountpointprimarystorage/sftp/upload";
     public static final String DOWNLOAD_BITS_FROM_SFTP_BACKUPSTORAGE_PATH = "/sharedmountpointprimarystorage/sftp/download";
@@ -758,11 +766,61 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     @Override
-    void handle(DeleteBitsOnPrimaryStorageMsg msg, final ReturnValueCompletion<DeleteBitsOnPrimaryStorageReply> completion) {
+    void handle(DeleteVolumeBitsOnPrimaryStorageMsg msg, final ReturnValueCompletion<DeleteVolumeBitsOnPrimaryStorageReply> completion) {
+        deleteBits(msg.getInstallPath(), new Completion(completion) {
+            @Override
+            public void success() {
+                DeleteVolumeBitsOnPrimaryStorageReply reply = new DeleteVolumeBitsOnPrimaryStorageReply();
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    void handle(final DeleteBitsOnPrimaryStorageMsg msg, ReturnValueCompletion<DeleteBitsOnPrimaryStorageReply> completion) {
         deleteBits(msg.getInstallPath(), new Completion(completion) {
             @Override
             public void success() {
                 DeleteBitsOnPrimaryStorageReply reply = new DeleteBitsOnPrimaryStorageReply();
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    private void getSubPathList(String path, final ReturnValueCompletion<List<String>> completion) {
+        GetSubPathCmd cmd = new GetSubPathCmd();
+        cmd.path = path;
+        new Do().go(GET_SUBPATH_PATH, cmd, GetSubPathRsp.class, new ReturnValueCompletion<AgentRsp>(completion) {
+            @Override
+            public void success(AgentRsp rsp) {
+                GetSubPathRsp r = (GetSubPathRsp)rsp;
+                completion.success(r.paths);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    void handle(GetPrimaryStorageFolderListMsg msg, ReturnValueCompletion<GetPrimaryStorageFolderListReply> completion) {
+        getSubPathList(msg.getPath(), new ReturnValueCompletion<List<String>>(completion) {
+            @Override
+            public void success(List<String> paths) {
+                GetPrimaryStorageFolderListReply reply = new GetPrimaryStorageFolderListReply();
+                reply.setFolders(paths);
                 completion.success(reply);
             }
 

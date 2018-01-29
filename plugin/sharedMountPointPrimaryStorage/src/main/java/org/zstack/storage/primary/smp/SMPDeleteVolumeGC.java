@@ -5,7 +5,7 @@ import org.zstack.core.gc.GC;
 import org.zstack.core.gc.GCCompletion;
 import org.zstack.core.gc.TimeBasedGarbageCollector;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.primary.DeleteBitsOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.DeleteVolumeBitsOnPrimaryStorageMsg;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.volume.VolumeInventory;
@@ -28,7 +28,7 @@ public class SMPDeleteVolumeGC extends TimeBasedGarbageCollector {
             return;
         }
 
-        DeleteBitsOnPrimaryStorageMsg msg = new DeleteBitsOnPrimaryStorageMsg();
+        DeleteVolumeBitsOnPrimaryStorageMsg msg = new DeleteVolumeBitsOnPrimaryStorageMsg();
         msg.setInstallPath(volume.getInstallPath());
         msg.setFolder(true);
         msg.setPrimaryStorageUuid(primaryStorageUuid);

@@ -476,7 +476,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                     public void rollback(FlowRollback trigger, Map data) {
                         if (primaryStorageInstallPath != null) {
                             // if primaryStorageInstallPath != null, then delete it directly
-                            DeleteBitsOnPrimaryStorageMsg delMsg = new DeleteBitsOnPrimaryStorageMsg();
+                            DeleteVolumeBitsOnPrimaryStorageMsg delMsg = new DeleteVolumeBitsOnPrimaryStorageMsg();
                             delMsg.setInstallPath(primaryStorageInstallPath);
                             delMsg.setBitsUuid(vol.getUuid());
                             delMsg.setBitsType(VolumeVO.class.getSimpleName());

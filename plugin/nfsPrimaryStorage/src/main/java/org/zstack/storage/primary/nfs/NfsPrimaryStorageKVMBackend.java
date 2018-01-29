@@ -88,6 +88,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     public static final String CREATE_EMPTY_VOLUME_PATH = "/nfsprimarystorage/createemptyvolume";
     public static final String GET_CAPACITY_PATH = "/nfsprimarystorage/getcapacity";
     public static final String DELETE_PATH = "/nfsprimarystorage/delete";
+    public static final String LIST_PATH = "/nfsprimarystorage/listpath";
     public static final String CHECK_BITS_PATH = "/nfsprimarystorage/checkbits";
     public static final String MOVE_BITS_PATH = "/nfsprimarystorage/movebits";
     public static final String MERGE_SNAPSHOT_PATH = "/nfsprimarystorage/mergesnapshot";
@@ -992,6 +993,39 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     @Override
     public void deleteFolder(PrimaryStorageInventory pinv, String installPath, Completion completion) {
         delete(pinv, installPath, true, completion);
+    }
+
+    @Override
+    public void list(PrimaryStorageInventory pinv, String path, ReturnValueCompletion<List<String>> completion) {
+        HostInventory host = nfsFactory.getConnectedHostForOperation(pinv).get(0);
+        ListDirectionCmd cmd = new ListDirectionCmd();
+        cmd.setPath(path);
+        cmd.setUuid(pinv.getUuid());
+
+        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+        msg.setCommand(cmd);
+        msg.setPath(LIST_PATH);
+        msg.setHostUuid(host.getUuid());
+        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                ListDirectionResponse rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(ListDirectionResponse.class);
+                if (!rsp.isSuccess()) {
+                    logger.warn(String.format("failed to list path[%s] on nfs primary storage[uuid:%s], %s, will clean up",
+                            path, pinv.getUuid(), rsp.getError()));
+                    completion.fail(operr(rsp.getError()));
+                } else {
+                    completion.success(rsp.getPaths());
+                }
+            }
+        });
     }
 
     @Override

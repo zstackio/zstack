@@ -344,6 +344,30 @@ public class NfsPrimaryStorageKVMBackendCommands {
 
     public static class DeleteResponse extends NfsPrimaryStorageAgentResponse {
     }
+
+    public static class ListDirectionCmd extends NfsPrimaryStorageAgentCommand {
+        private String path;
+
+        public String getPath() {
+            return path;
+        }
+
+        public void setPath(String path) {
+            this.path = path;
+        }
+    }
+
+    public static class ListDirectionResponse extends NfsPrimaryStorageAgentResponse {
+        private List<String> paths;
+
+        public List<String> getPaths() {
+            return paths;
+        }
+
+        public void setPaths(List<String> paths) {
+            this.paths = paths;
+        }
+    }
     
     public static class RevertVolumeFromSnapshotCmd extends NfsPrimaryStorageAgentCommand {
         private String snapshotInstallPath;

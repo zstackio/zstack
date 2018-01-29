@@ -410,7 +410,7 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
             @Override
             public void rollback(FlowRollback trigger, Map data) {
                 if (ctx.tempInstallPath != null) {
-                    DeleteBitsOnPrimaryStorageMsg msg = new DeleteBitsOnPrimaryStorageMsg();
+                    DeleteVolumeBitsOnPrimaryStorageMsg msg = new DeleteVolumeBitsOnPrimaryStorageMsg();
                     msg.setPrimaryStorageUuid(paramIn.getPrimaryStorageUuid());
                     msg.setInstallPath(ctx.tempInstallPath);
                     msg.setHypervisorType(hvtype.toString());
@@ -485,7 +485,7 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                DeleteBitsOnPrimaryStorageMsg msg = new DeleteBitsOnPrimaryStorageMsg();
+                DeleteVolumeBitsOnPrimaryStorageMsg msg = new DeleteVolumeBitsOnPrimaryStorageMsg();
                 msg.setHypervisorType(hvtype.toString());
                 msg.setPrimaryStorageUuid(paramIn.getPrimaryStorageUuid());
                 msg.setInstallPath(ctx.tempInstallPath);

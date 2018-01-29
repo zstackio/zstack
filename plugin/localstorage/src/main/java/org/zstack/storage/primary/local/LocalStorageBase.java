@@ -1794,24 +1794,24 @@ public class LocalStorageBase extends PrimaryStorageBase {
     }
 
     @Override
-    protected void handle(final DeleteBitsOnPrimaryStorageMsg msg) {
+    protected void handle(final DeleteVolumeBitsOnPrimaryStorageMsg msg) {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
-        chain.setName(String.format("delete-bits-on-local-primary-storage-%s", self.getUuid()));
+        chain.setName(String.format("delete-volume-bits-on-local-primary-storage-%s", self.getUuid()));
         chain.then(new ShareFlow() {
-            DeleteBitsOnPrimaryStorageReply reply;
+            DeleteVolumeBitsOnPrimaryStorageReply reply;
 
             @Override
             public void setup() {
                 flow(new NoRollbackFlow() {
-                    String __name__ = "delete-bits-on-host";
+                    String __name__ = "delete-volume-bits-on-host";
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
                         LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByResourceUuid(msg.getBitsUuid(), msg.getBitsType());
                         LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
-                        bkd.handle(msg, new ReturnValueCompletion<DeleteBitsOnPrimaryStorageReply>(msg) {
+                        bkd.handle(msg, new ReturnValueCompletion<DeleteVolumeBitsOnPrimaryStorageReply>(msg) {
                             @Override
-                            public void success(DeleteBitsOnPrimaryStorageReply returnValue) {
+                            public void success(DeleteVolumeBitsOnPrimaryStorageReply returnValue) {
                                 reply = returnValue;
                                 trigger.next();
                             }
@@ -1845,14 +1845,83 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 error(new FlowErrorHandler(msg) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        DeleteBitsOnPrimaryStorageReply reply = new DeleteBitsOnPrimaryStorageReply();
+                        DeleteVolumeBitsOnPrimaryStorageReply reply = new DeleteVolumeBitsOnPrimaryStorageReply();
                         reply.setError(errCode);
                         bus.reply(msg, reply);
                     }
                 });
             }
         }).start();
+    }
 
+    @Override
+    protected void handle(GetPrimaryStorageFolderListMsg msg) {
+        DebugUtils.Assert(msg.getHostUuid() != null, "hostUuid cannot be null here!");
+        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getHostUuid());
+        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handle(msg, new ReturnValueCompletion<GetPrimaryStorageFolderListReply>(msg) {
+            GetPrimaryStorageFolderListReply reply = new GetPrimaryStorageFolderListReply();
+            @Override
+            public void success(GetPrimaryStorageFolderListReply returnValue) {
+                reply = returnValue;
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    @Override
+    protected void handle(final DeleteBitsOnPrimaryStorageMsg msg) {
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("delete-bits-on-local-primary-storage-%s", self.getUuid()));
+        chain.then(new ShareFlow() {
+            DeleteBitsOnPrimaryStorageReply reply;
+
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "delete-bits-on-host";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getHostUuid());
+                        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+                        bkd.handle(msg, new ReturnValueCompletion<DeleteBitsOnPrimaryStorageReply>(msg) {
+                            @Override
+                            public void success(DeleteBitsOnPrimaryStorageReply returnValue) {
+                                reply = returnValue;
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        bus.reply(msg, reply);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
+                    }
+                });
+            }
+        }).start();
     }
 
     @Override
