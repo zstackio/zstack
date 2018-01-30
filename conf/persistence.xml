@@ -117,6 +117,12 @@
         <class>org.zstack.storage.ceph.primary.CephPrimaryStorageMonVO</class>
         <class>org.zstack.storage.ceph.primary.CephPrimaryStorageVO</class>
         <class>org.zstack.storage.ceph.CephCapacityVO</class>
+        <class>org.zstack.storage.surfs.backup.SurfsBackupStorageVO</class>
+        <class>org.zstack.storage.surfs.backup.SurfsBackupStorageNodeVO</class>
+        <class>org.zstack.storage.surfs.primary.SurfsPrimaryStorageNodeVO</class>
+        <class>org.zstack.storage.surfs.primary.SurfsPrimaryStorageVO</class>
+        <class>org.zstack.storage.surfs.SurfsCapacityVO</class>
+        <class>org.zstack.storage.surfs.SurfsPoolClassVO</class>
         <class>org.zstack.storage.fusionstor.backup.FusionstorBackupStorageVO</class>
         <class>org.zstack.storage.fusionstor.backup.FusionstorBackupStorageMonVO</class>
         <class>org.zstack.storage.fusionstor.primary.FusionstorPrimaryStorageMonVO</class>
