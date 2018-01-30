@@ -594,11 +594,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             APICreateRootVolumeTemplateFromVolumeSnapshotMsg.class
     })
     public static class UploadCmd extends AgentCommand {
-        String imageUuid;
-        String hostname;
-        String srcPath;
-        String dstPath;
-        String description;
+        public String imageUuid;
+        public String hostname;
+        public String srcPath;
+        public String dstPath;
+        public String description;
     }
 
     public static class CpRsp extends AgentResponse {
@@ -1852,6 +1852,33 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         });
     }
 
+    @Override
+    protected void handle(final GetPrimaryStorageFolderListMsg msg) {
+        GetPrimaryStorageFolderListReply reply = new GetPrimaryStorageFolderListReply();
+        bus.reply(msg, reply);
+    }
+
+    @Override
+    protected void handle(final DeleteBitsOnPrimaryStorageMsg msg) {
+        DeleteCmd cmd = new DeleteCmd();
+        cmd.installPath = msg.getInstallPath();
+
+        final DeleteBitsOnPrimaryStorageReply reply = new DeleteBitsOnPrimaryStorageReply();
+
+        httpCall(DELETE_PATH, cmd, DeleteRsp.class, new ReturnValueCompletion<DeleteRsp>(msg) {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void success(DeleteRsp ret) {
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
     private void checkCephFsId(String psUuid, String bsUuid) {
         CephPrimaryStorageVO cephPS = dbf.findByUuid(psUuid, CephPrimaryStorageVO.class);
         DebugUtils.Assert(cephPS != null && cephPS.getFsid() != null, String.format("ceph ps: [%s] and its fsid cannot be null", psUuid));
@@ -2011,11 +2038,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     @Override
-    protected void handle(final DeleteBitsOnPrimaryStorageMsg msg) {
+    protected void handle(final DeleteVolumeBitsOnPrimaryStorageMsg msg) {
         DeleteCmd cmd = new DeleteCmd();
         cmd.installPath = msg.getInstallPath();
 
-        final DeleteBitsOnPrimaryStorageReply reply = new DeleteBitsOnPrimaryStorageReply();
+        final DeleteVolumeBitsOnPrimaryStorageReply reply = new DeleteVolumeBitsOnPrimaryStorageReply();
 
         httpCall(DELETE_PATH, cmd, DeleteRsp.class, new ReturnValueCompletion<DeleteRsp>(msg) {
             @Override

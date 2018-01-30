@@ -1079,6 +1079,12 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
         }
     }
 
+    @Override
+    protected void handle(final GetPrimaryStorageFolderListMsg msg) {
+        GetPrimaryStorageFolderListReply reply = new GetPrimaryStorageFolderListReply();
+        bus.reply(msg, reply);
+    }
+
     class DownloadToCache {
         ImageSpec image;
 
@@ -1489,6 +1495,27 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
         final GetInstallPathForDataVolumeDownloadReply reply = new GetInstallPathForDataVolumeDownloadReply();
         reply.setInstallPath(makeDataVolumeInstallPath(msg.getVolumeUuid()));
         bus.reply(msg, reply);
+    }
+
+    @Override
+    protected void handle(final DeleteVolumeBitsOnPrimaryStorageMsg msg) {
+        DeleteCmd cmd = new DeleteCmd();
+        cmd.installPath = msg.getInstallPath();
+
+        final DeleteVolumeBitsOnPrimaryStorageReply reply = new DeleteVolumeBitsOnPrimaryStorageReply();
+
+        httpCall(DELETE_PATH, cmd, DeleteRsp.class, new ReturnValueCompletion<DeleteRsp>(msg) {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void success(DeleteRsp ret) {
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     @Override
