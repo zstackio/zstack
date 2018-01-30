@@ -105,6 +105,7 @@ public class KvmBackend extends HypervisorBackend {
 
     public static class DeleteBitsCmd extends AgentCmd {
         public String path;
+        public boolean folder = false;
     }
 
     public static class GetSubPathCmd extends AgentCmd {
@@ -783,7 +784,7 @@ public class KvmBackend extends HypervisorBackend {
 
     @Override
     void handle(final DeleteBitsOnPrimaryStorageMsg msg, ReturnValueCompletion<DeleteBitsOnPrimaryStorageReply> completion) {
-        deleteBits(msg.getInstallPath(), new Completion(completion) {
+        deleteBits(msg.getInstallPath(), msg.isFolder(), new Completion(completion) {
             @Override
             public void success() {
                 DeleteBitsOnPrimaryStorageReply reply = new DeleteBitsOnPrimaryStorageReply();
@@ -1115,8 +1116,14 @@ public class KvmBackend extends HypervisorBackend {
 
     @Override
     void deleteBits(String path, final Completion completion) {
+        deleteBits(path, false, completion);
+    }
+
+    @Override
+    void deleteBits(String path, boolean folder, final Completion completion) {
         DeleteBitsCmd cmd = new DeleteBitsCmd();
         cmd.path = path;
+        cmd.folder = folder;
         new Do().go(DELETE_BITS_PATH, cmd, new ReturnValueCompletion<AgentRsp>(completion) {
             @Override
             public void success(AgentRsp rsp) {
