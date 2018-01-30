@@ -46,6 +46,8 @@ public abstract class HypervisorBackend extends SMPPrimaryStorageBase {
 
     abstract void deleteBits(String path, Completion completion);
 
+    abstract void deleteBits(String path, boolean folder, Completion completion);
+
     abstract void handle(CreateTemplateFromVolumeOnPrimaryStorageMsg msg, ReturnValueCompletion<CreateTemplateFromVolumeOnPrimaryStorageReply> completion);
 
     abstract void handle(UploadBitsToBackupStorageMsg msg, ReturnValueCompletion<UploadBitsToBackupStorageReply> completion);
