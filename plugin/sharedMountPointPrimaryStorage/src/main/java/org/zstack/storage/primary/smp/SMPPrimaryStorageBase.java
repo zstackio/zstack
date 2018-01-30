@@ -195,6 +195,7 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
         String type = Q.New(HostVO.class).eq(HostVO_.uuid, hostUuid).select(HostVO_.hypervisorType).findValue();
         HypervisorFactory f = getHypervisorFactoryByHypervisorType(type);
         final HypervisorBackend bkd = f.getHypervisorBackend(self);
+
         bkd.handle(msg, new ReturnValueCompletion<DeleteBitsOnPrimaryStorageReply>(msg) {
             @Override
             public void success(DeleteBitsOnPrimaryStorageReply reply) {
