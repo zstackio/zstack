@@ -17,8 +17,6 @@ public class GarbageCollectorVO extends ResourceVO {
     @Column
     private String name;
 
-    // UPDATE GarbageCollectorVO SET managementNodeUuid = NULL WHERE managementNodeUuid NOT IN (SELECT uuid FROM ManagementNodeVO);
-    // ALTER TABLE GarbageCollectorVO ADD CONSTRAINT fkGarbageCollectorVOManagementNodeVO FOREIGN KEY (managementNodeUuid) REFERENCES ManagementNodeVO (uuid) ON DELETE SET NULL;
     @Column
     @ForeignKey(parentEntityClass = ManagementNodeVO.class, onDeleteAction = ForeignKey.ReferenceOption.SET_NULL)
     private String managementNodeUuid;
