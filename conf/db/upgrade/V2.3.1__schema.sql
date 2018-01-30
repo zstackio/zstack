@@ -1,0 +1,2 @@
+UPDATE GarbageCollectorVO SET managementNodeUuid = NULL WHERE managementNodeUuid NOT IN (SELECT uuid FROM ManagementNodeVO);
+ALTER TABLE GarbageCollectorVO ADD CONSTRAINT fkGarbageCollectorVOManagementNodeVO FOREIGN KEY (managementNodeUuid) REFERENCES ManagementNodeVO (uuid) ON DELETE SET NULL;
