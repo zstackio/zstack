@@ -70,6 +70,7 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.err;
@@ -2791,7 +2792,9 @@ public class VmInstanceBase extends AbstractVmInstance {
         if (l3Uuids != null && l3Uuids.isEmpty()) {
             return new ArrayList<L3NetworkInventory>();
         }
-
+        if (self.getClusterUuid() == null){
+            return getAttachableL3NetworkWhenClusterUuidSetNull(l3Uuids);
+        }
         String sql;
         TypedQuery<L3NetworkVO> q;
         if (self.getVmNics().isEmpty()) {
@@ -2856,6 +2859,77 @@ public class VmInstanceBase extends AbstractVmInstance {
         q.setParameter("uuid", self.getUuid());
         List<L3NetworkVO> l3s = q.getResultList();
         return L3NetworkInventory.valueOf(l3s);
+    }
+
+    @Transactional(readOnly = true)
+    private List<L3NetworkInventory> getAttachableL3NetworkWhenClusterUuidSetNull(List<String> uuids){
+        return new SQLBatchWithReturn<List<L3NetworkInventory>>() {
+
+            @Override
+            protected List<L3NetworkInventory> scripts(){
+                String rootPsUuid = self.getRootVolume().getPrimaryStorageUuid();
+
+                //Get Candidate ClusterUuids From Primary Storage
+                List<String> clusterUuids =  q(PrimaryStorageClusterRefVO.class)
+                        .select(PrimaryStorageClusterRefVO_.clusterUuid)
+                        .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, rootPsUuid)
+                        .listValues();
+
+                //filtering the ClusterUuid by vmNic L3s one by one
+                if (!self.getVmNics().isEmpty()){
+                    for (String l3uuid: self.getVmNics().stream().map(nic -> nic.getL3NetworkUuid()).collect(Collectors.toList())){
+                        clusterUuids = getCandidateClusterUuidsFromAttachedL3(l3uuid, clusterUuids);
+                        if (clusterUuids.isEmpty()){
+                            return new ArrayList<>();
+                        }
+                    }
+                }
+
+                //Get enabled l3 from the Candidate ClusterUuids
+                List<L3NetworkVO> l3s = sql("select l3" +
+                        " from L3NetworkVO l3, L2NetworkVO l2, " +
+                        " L2NetworkClusterRefVO l2ref" +
+                        " where l2.uuid = l3.l2NetworkUuid " +
+                        " and l2.uuid = l2ref.l2NetworkUuid " +
+                        " and l2ref.clusterUuid in (:Uuids)" +
+                        " and l3.state = :l3State " +
+                        " group by l3.uuid")
+                        .param("Uuids", clusterUuids)
+                        .param("l3State", L3NetworkState.Enabled).list();
+
+               if (l3s.isEmpty()){
+                   return new ArrayList<>();
+               }
+
+               //filter result if normal user
+               if (uuids != null) {
+                   l3s = l3s.stream().filter(l3 -> uuids.contains(l3.getUuid())).collect(Collectors.toList());
+               }
+
+               if (l3s.isEmpty()){
+                   return new ArrayList<>();
+               }
+               //filter l3 that already attached
+               if (!self.getVmNics().isEmpty()) {
+                   List<String> vmL3Uuids = self.getVmNics().stream().map(nic -> nic.getL3NetworkUuid()).collect(Collectors.toList());
+                   l3s = l3s.stream().filter(l3 -> !vmL3Uuids.contains(l3.getUuid())).collect(Collectors.toList());
+               }
+
+               return L3NetworkInventory.valueOf(l3s);
+            }
+
+            private List<String> getCandidateClusterUuidsFromAttachedL3(String l3Uuid, List<String> clusterUuids) {
+                return sql("select l2ref.clusterUuid " +
+                        " from L3NetworkVO l3, L2NetworkVO l2, L2NetworkClusterRefVO l2ref " +
+                        " where l3.uuid = :l3Uuid " +
+                        " and l3.l2NetworkUuid = l2.uuid " +
+                        " and l2.uuid = l2ref.l2NetworkUuid" +
+                        " and l2ref.clusterUuid in (:uuids) " +
+                        " group by l2ref.clusterUuid", String.class)
+                        .param("l3Uuid", l3Uuid)
+                        .param("uuids", clusterUuids).list();
+            }
+        }.execute();
     }
 
     private void handle(APIGetVmAttachableL3NetworkMsg msg) {
