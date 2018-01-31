@@ -9,7 +9,6 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.core.CoreGlobalProperty;
-import org.zstack.core.GlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -448,6 +447,28 @@ public class RESTFacadeImpl implements RESTFacade {
     }
     @Override
     public <T> T syncJsonPost(String url, String body, Map<String, String> headers, Class<T> returnClass, TimeUnit unit, long timeout) {
+        return syncJson(url, body, headers, HttpMethod.POST, returnClass, unit, timeout);
+    }
+
+    @Override
+    public <T> T syncJsonDelete(String url, String body, Map<String, String> headers, Class<T> returnClass) {
+        return syncJsonDelete(url, body, headers, returnClass, null, -1);
+    }
+    @Override
+    public <T> T syncJsonDelete(String url, String body, Map<String, String> headers, Class<T> returnClass, TimeUnit unit, long timeout) {
+        return syncJson(url, body, headers, HttpMethod.DELETE, returnClass, unit, timeout);
+    }
+
+    @Override
+    public <T> T syncJsonGet(String url, String body, Map<String, String> headers, Class<T> returnClass) {
+        return syncJsonGet(url, body, headers, returnClass, null, -1);
+    }
+    @Override
+    public <T> T syncJsonGet(String url, String body, Map<String, String> headers, Class<T> returnClass, TimeUnit unit, long timeout) {
+        return syncJson(url, body, headers, HttpMethod.GET, returnClass, unit, timeout);
+    }
+
+    public <T> T syncJson(String url, String body, Map<String, String> headers, HttpMethod method, Class<T> returnClass, TimeUnit unit, long timeout) {
         body = body == null ? "" : body;
 
         HttpHeaders requestHeaders = new HttpHeaders();
@@ -458,33 +479,33 @@ public class RESTFacadeImpl implements RESTFacade {
         requestHeaders.setContentLength(body.length());
         HttpEntity<String> req = new HttpEntity<String>(body, requestHeaders);
         if (logger.isTraceEnabled()) {
-            logger.trace(String.format("json post[%s], %s", url, req.toString()));
+            logger.trace(String.format("json %s[%s], %s", method.toString().toLowerCase(), url, req.toString()));
         }
 
         ResponseEntity<String> rsp;
         try {
             if (CoreGlobalProperty.UNIT_TEST_ON) {
-                rsp = template.exchange(url, HttpMethod.POST, req, String.class);
+                rsp = template.exchange(url, method, req, String.class);
             } else {
                 rsp = new Retry<ResponseEntity<String>>() {
                     @Override
                     @RetryCondition(onExceptions = {IOException.class, HttpStatusCodeException.class})
                     protected ResponseEntity<String> call() {
                         if (unit == null) {
-                            return template.exchange(url, HttpMethod.POST, req, String.class);
+                            return template.exchange(url, method, req, String.class);
                         } else {
-                            return template.exchange(url, HttpMethod.POST, req, String.class, Platform.getUuid(), unit.toMillis(timeout), unit.toMillis(timeout));
+                            return template.exchange(url, method, req, String.class, Platform.getUuid(), unit.toMillis(timeout), unit.toMillis(timeout));
                         }
                     }
                 }.run();
             }
         } catch (HttpStatusCodeException e) {
-            throw new OperationFailureException(operr("failed to post to %s, status code: %s, response body: %s", url, e.getStatusCode(), e.getResponseBodyAsString()));
+            throw new OperationFailureException(operr("failed to %s to %s, status code: %s, response body: %s", method.toString().toLowerCase(), url, e.getStatusCode(), e.getResponseBodyAsString()));
         }
 
 
-        if (rsp.getStatusCode() != org.springframework.http.HttpStatus.OK) {
-            throw new OperationFailureException(operr("failed to post to %s, status code: %s, response body: %s", url, rsp.getStatusCode(), rsp.getBody()));
+        if (rsp.getStatusCode() != org.springframework.http.HttpStatus.OK && rsp.getStatusCode() != org.springframework.http.HttpStatus.ACCEPTED) {
+            throw new OperationFailureException(operr("failed to %s to %s, status code: %s, response body: %s", method.toString().toLowerCase(), url, rsp.getStatusCode(), rsp.getBody()));
         }
         
         if (rsp.getBody() != null && returnClass != Void.class) {
