@@ -19,9 +19,7 @@ import org.zstack.header.network.l3.L3NetworkDnsVO;
 import org.zstack.header.network.l3.L3NetworkDnsVO_;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.header.network.service.NetworkServiceProviderType;
-import org.zstack.header.network.service.DnsStruct;
-import org.zstack.header.network.service.NetworkServiceDnsBackend;
+import org.zstack.header.network.service.*;
 import org.zstack.header.vm.*;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.*;
@@ -41,7 +39,7 @@ import javax.persistence.Tuple;
 /**
  */
 public class VirtualRouterDnsBackend extends AbstractVirtualRouterBackend implements NetworkServiceDnsBackend,
-        VmDetachNicExtensionPoint {
+        VirtualRouterBeforeDetachNicExtensionPoint, VirtualRouterAfterAttachNicExtensionPoint {
     private final CLogger logger = Utils.getLogger(VirtualRouterDnsBackend.class);
 
     @Autowired
@@ -314,55 +312,99 @@ public class VirtualRouterDnsBackend extends AbstractVirtualRouterBackend implem
         releaseDns(dnsStructList.iterator(), spec, completion);
     }
 
-    @Override
-    public void preDetachNic(VmNicInventory nic) {
-
-    }
-
-    @Override
-    public void beforeDetachNic(VmNicInventory nic) {
-        if (!VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST.contains(nic.getMetaData())) {
-            return;
-        }
-
+    private void ApplyDnsForVirtualRouter(String vrUuid, String execludeL3NetworkUuid, Completion completion){
         VirtualRouterCommands.SetDnsCmd cmd = new VirtualRouterCommands.SetDnsCmd();
-        cmd.setDns(getDnsInfoOfVr(nic.getVmInstanceUuid(), nic.getL3NetworkUuid()));
+        cmd.setDns(getDnsInfoOfVr(vrUuid, execludeL3NetworkUuid));
 
         VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
         msg.setCheckStatus(true);
         msg.setPath(VirtualRouterConstant.VR_SET_DNS_PATH);
         msg.setCommand(cmd);
         msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
-        msg.setVmInstanceUuid(nic.getVmInstanceUuid());
-        bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, nic.getVmInstanceUuid());
-        bus.send(msg, new CloudBusCallBack(null) {
+        msg.setVmInstanceUuid(vrUuid);
+        bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vrUuid);
+        bus.send(msg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
                     logger.warn(String.format("virtual router[uuid: %s] failed to remove dns, because %s",
-                            nic.getVmInstanceUuid(), reply.getError()));
+                            vrUuid, reply.getError()));
+                    completion.fail(reply.getError());
                 } else {
                     VirtualRouterAsyncHttpCallReply re = reply.castReply();
                     RemoveDnsRsp ret = re.toResponse(RemoveDnsRsp.class);
                     if (ret.isSuccess()) {
                         logger.warn(String.format("virtual router[uuid: %s] successfully removed dns",
-                                nic.getVmInstanceUuid()));
+                                vrUuid));
+                        completion.success();
                     } else {
                         logger.warn(String.format("virtual router[uuid: %s] failed to remove dns, because %s",
-                                nic.getVmInstanceUuid(), ret.getError()));
+                                vrUuid, ret.getError()));
+                        completion.fail(reply.getError());
                     }
                 }
             }
         });
     }
 
-    @Override
-    public void afterDetachNic(VmNicInventory nic) {
 
+    @Override
+    public void beforeDetachNic(VmNicInventory nic, Completion completion) {
+        if (!VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST.contains(nic.getMetaData())) {
+            completion.success();
+            return;
+        }
+
+        ApplyDnsForVirtualRouter(nic.getVmInstanceUuid(), nic.getL3NetworkUuid(), completion);
     }
 
     @Override
-    public void failedToDetachNic(VmNicInventory nic, ErrorCode error) {
+    public void beforeDetachNicRollback(VmNicInventory nic, NoErrorCompletion completion) {
+        if (!VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST.contains(nic.getMetaData())) {
+            completion.done();
+            return;
+        }
 
+        ApplyDnsForVirtualRouter(nic.getVmInstanceUuid(), null, new Completion(completion) {
+            @Override
+            public void success() {
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.done();
+            }
+        });
+    }
+
+    @Override
+    public void afterAttachNic(VmNicInventory nic, Completion completion) {
+        if (!VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST.contains(nic.getMetaData())) {
+            completion.success();
+            return;
+        }
+
+        ApplyDnsForVirtualRouter(nic.getVmInstanceUuid(), null, completion);
+    }
+
+    @Override
+    public void afterAttachNicRollback(VmNicInventory nic, NoErrorCompletion completion) {
+        if (!VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST.contains(nic.getMetaData())) {
+            completion.done();
+            return;
+        }
+
+        ApplyDnsForVirtualRouter(nic.getVmInstanceUuid(), nic.getL3NetworkUuid(), new Completion(completion) {
+            @Override
+            public void success() {
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.done();
+            }
+        });
     }
 }
