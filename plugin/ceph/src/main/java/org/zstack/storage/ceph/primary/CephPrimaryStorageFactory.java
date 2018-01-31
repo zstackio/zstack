@@ -253,9 +253,10 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
             @Transactional(readOnly = true)
             public CephPrimaryStorageVO call() {
                 String sql = "select pri from CephPrimaryStorageVO pri, ImageCacheVO c where pri.uuid = c.primaryStorageUuid" +
-                        " and c.imageUuid = :imgUuid";
+                        " and c.imageUuid = :imgUuid and c.installUrl = :path";
                 TypedQuery<CephPrimaryStorageVO> q = dbf.getEntityManager().createQuery(sql, CephPrimaryStorageVO.class);
                 q.setParameter("imgUuid", to.getImageUuid());
+                q.setParameter("path", to.getPath());
                 return q.getSingleResult();
             }
         }.call();
