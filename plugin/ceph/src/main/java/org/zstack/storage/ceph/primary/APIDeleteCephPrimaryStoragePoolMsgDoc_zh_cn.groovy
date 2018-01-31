@@ -5,7 +5,7 @@ import org.zstack.storage.ceph.primary.APIDeleteCephPrimaryStoragePoolEvent
 doc {
     title "DeleteCephPrimaryStoragePool"
 
-    category "未知类别"
+    category "storage.ceph.primary"
 
     desc """在这里填写API描述"""
 

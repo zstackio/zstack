@@ -5,7 +5,7 @@ import org.zstack.storage.ceph.primary.APIAddMonToCephPrimaryStorageEvent
 doc {
     title "为 Ceph 主存储添加 mon 节点(AddMonToCephPrimaryStorage)"
 
-    category "stroage.ceph.primary"
+    category "storage.ceph.primary"
 
     desc """为 Ceph 主存储添加 mon 节点"""
 

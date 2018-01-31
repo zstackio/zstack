@@ -7,7 +7,7 @@ import org.zstack.header.query.APIQueryMessage
 doc {
     title "QueryCephPrimaryStoragePool"
 
-    category "未知类别"
+    category "storage.ceph.primary"
 
     desc """在这里填写API描述"""
 
