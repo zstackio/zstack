@@ -168,6 +168,11 @@ class MaintainHostCase extends SubCase{
                 success = true
             }
 
+            retryInSecs{
+                // maintain host will stopVm first, then StopVmMsg will queue up behind CreateVmMsg
+                assert Q.New(HostVO.class).eq(HostVO_.uuid, host.uuid).select(HostVO_.state).findValue() == HostState.PreMaintenance
+            }
+
             bus.reply(msg, r)
         }
 
