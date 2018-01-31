@@ -65,6 +65,7 @@ import org.zstack.utils.logging.CLogger;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.i18n;
 import static org.zstack.core.Platform.operr;
@@ -2501,12 +2502,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     @Override
     protected void pingHook(final Completion completion) {
-        final List<CephPrimaryStorageMonBase> mons = CollectionUtils.transformToList(getSelf().getMons(), new Function<CephPrimaryStorageMonBase, CephPrimaryStorageMonVO>() {
-            @Override
-            public CephPrimaryStorageMonBase call(CephPrimaryStorageMonVO arg) {
-                return new CephPrimaryStorageMonBase(arg);
-            }
-        });
+        final List<CephPrimaryStorageMonBase> mons = getSelf().getMons().stream()
+                .filter(mon -> !mon.getStatus().equals(MonStatus.Connecting)).map(CephPrimaryStorageMonBase::new).collect(Collectors.toList());
 
         final List<ErrorCode> errors = new ArrayList<ErrorCode>();
 
