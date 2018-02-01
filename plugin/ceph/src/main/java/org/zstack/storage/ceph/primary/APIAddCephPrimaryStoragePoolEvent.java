@@ -3,10 +3,12 @@ package org.zstack.storage.ceph.primary;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
 
+import java.sql.Timestamp;
+
 /**
  * Created by xing5 on 2017/2/28.
  */
-@RestResponse(fieldsTo = {"all"})
+@RestResponse(allTo = "inventory")
 public class APIAddCephPrimaryStoragePoolEvent extends APIEvent {
     public APIAddCephPrimaryStoragePoolEvent() {
     }
@@ -26,8 +28,19 @@ public class APIAddCephPrimaryStoragePoolEvent extends APIEvent {
     }
 
     public static APIAddCephPrimaryStoragePoolEvent __example__() {
-        APIAddCephPrimaryStoragePoolEvent msg = new APIAddCephPrimaryStoragePoolEvent();
-        return msg;
+        APIAddCephPrimaryStoragePoolEvent event = new APIAddCephPrimaryStoragePoolEvent();
+
+        CephPrimaryStoragePoolInventory inv = new CephPrimaryStoragePoolInventory();
+        inv.setUuid(uuid());
+        inv.setPoolName("pool name");
+        inv.setAliasName("alias name");
+        inv.setDescription("description");
+        inv.setType(CephPrimaryStoragePoolType.Data.toString());
+        inv.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        inv.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        inv.setPrimaryStorageUuid(uuid());
+        event.setInventory(inv);
+        return event;
     }
     
 }

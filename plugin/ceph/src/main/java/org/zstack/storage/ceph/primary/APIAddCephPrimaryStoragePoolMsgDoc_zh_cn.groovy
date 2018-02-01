@@ -5,9 +5,9 @@ import org.zstack.storage.ceph.primary.APIAddCephPrimaryStoragePoolEvent
 doc {
     title "AddCephPrimaryStoragePool"
 
-    category "未知类别"
+    category "storage.ceph.primary"
 
-    desc """在这里填写API描述"""
+    desc """为Ceph主存储添加Pool"""
 
     rest {
         request {
@@ -33,12 +33,22 @@ doc {
 					
 				}
 				column {
-					name "name"
-					enclosedIn ""
-					desc "资源名称"
+					name "poolName"
+					enclosedIn "params"
+					desc ""
 					location "body"
 					type "String"
 					optional false
+					since "0.6"
+					
+				}
+				column {
+					name "aliasName"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional true
 					since "0.6"
 					
 				}
@@ -53,8 +63,8 @@ doc {
 					
 				}
 				column {
-					name "errorIfNotExist"
-					enclosedIn ""
+					name "isCreate"
+					enclosedIn "params"
 					desc ""
 					location "body"
 					type "boolean"
@@ -88,36 +98,6 @@ doc {
 					desc ""
 					location "body"
 					type "List"
-					optional true
-					since "0.6"
-					
-				}
-				column {
-					name "poolName"
-					enclosedIn "params"
-					desc ""
-					location "body"
-					type "String"
-					optional false
-					since "0.6"
-					
-				}
-				column {
-					name "aliasName"
-					enclosedIn "params"
-					desc ""
-					location "body"
-					type "String"
-					optional true
-					since "0.6"
-					
-				}
-				column {
-					name "isCreate"
-					enclosedIn "params"
-					desc ""
-					location "body"
-					type "boolean"
 					optional true
 					since "0.6"
 					
