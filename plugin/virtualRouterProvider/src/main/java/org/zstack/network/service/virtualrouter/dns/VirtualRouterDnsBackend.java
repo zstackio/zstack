@@ -281,17 +281,17 @@ public class VirtualRouterDnsBackend extends AbstractVirtualRouterBackend implem
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
-                    logger.warn(String.format("virtual router[name: %s, uuid: %s] failed to remove dns%s, because %s",
+                    logger.debug(String.format("virtual router[name: %s, uuid: %s] failed to remove dns%s, because %s",
                             vr.getName(), vr.getUuid(), JSONObjectUtil.toJsonString(info), reply.getError()));
                     // TODO GC
                 } else {
                     VirtualRouterAsyncHttpCallReply re = reply.castReply();
                     RemoveDnsRsp ret = re.toResponse(RemoveDnsRsp.class);
                     if (ret.isSuccess()) {
-                        logger.warn(String.format("virtual router[name: %s, uuid: %s] successfully removed dns%s",
+                        logger.debug(String.format("virtual router[name: %s, uuid: %s] successfully removed dns%s",
                                 vr.getName(), vr.getUuid(), JSONObjectUtil.toJsonString(info)));
                     } else {
-                        logger.warn(String.format("virtual router[name: %s, uuid: %s] failed to remove dns%s, because %s",
+                        logger.debug(String.format("virtual router[name: %s, uuid: %s] failed to remove dns%s, because %s",
                                 vr.getName(), vr.getUuid(), JSONObjectUtil.toJsonString(info), ret.getError()));
                         //TODO GC
                     }
@@ -327,18 +327,18 @@ public class VirtualRouterDnsBackend extends AbstractVirtualRouterBackend implem
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
-                    logger.warn(String.format("virtual router[uuid: %s] failed to remove dns, because %s",
+                    logger.debug(String.format("virtual router[uuid: %s] failed to apply dns, because %s",
                             vrUuid, reply.getError()));
                     completion.fail(reply.getError());
                 } else {
                     VirtualRouterAsyncHttpCallReply re = reply.castReply();
                     RemoveDnsRsp ret = re.toResponse(RemoveDnsRsp.class);
                     if (ret.isSuccess()) {
-                        logger.warn(String.format("virtual router[uuid: %s] successfully removed dns",
+                        logger.debug(String.format("virtual router[uuid: %s] successfully apply dns",
                                 vrUuid));
                         completion.success();
                     } else {
-                        logger.warn(String.format("virtual router[uuid: %s] failed to remove dns, because %s",
+                        logger.debug(String.format("virtual router[uuid: %s] failed to apply dns, because %s",
                                 vrUuid, ret.getError()));
                         completion.fail(reply.getError());
                     }
