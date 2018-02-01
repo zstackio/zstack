@@ -4284,8 +4284,8 @@
   },
   {
     "raw": "unable to connect to KVM[ip:%s, username:%s, sshPort:%d] to check the management node connectivity,please check if username/password is wrong; %s",
-    "en_US": "unable to connect to KVM[ip:{0}, username:{1}, sshPort:%d] to check the management node connectivity,please check if username/password is wrong; {2}",
-    "zh_CN": "不能连接到物理机[ip:{0}, username:{1}, sshPort:%d] 去检查与管理节点是否连通  ,请检查您的用户名或者密码是否有误; {2}",
+    "en_US": "unable to connect to KVM[ip:{0}, username:{1}, sshPort:{2}] to check the management node connectivity,please check if username/password is wrong; {3}",
+    "zh_CN": "不能连接到物理机[ip:{0}, username:{1}, sshPort:{2}] 去检查与管理节点是否连通  ,请检查您的用户名或者密码是否有误; {3}",
     "arguments": [
       "self.getManagementIp()",
       "getSelf().getUsername()",
