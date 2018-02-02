@@ -191,7 +191,7 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
                             vr.getUuid(), ret.getError());
                     trigger.fail(err);
                 } else {
-                    String info = String.format("failed to sync eip on virtual router[uuid:%s]",
+                    String info = String.format("sync eip on virtual router[uuid:%s] successfully",
                             vr.getUuid());
                     logger.debug(info);
                     trigger.next();

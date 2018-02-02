@@ -546,7 +546,7 @@ public class VirtualRouter extends ApplianceVmBase {
         data.put(Param.VR_NIC, VmNicInventory.valueOf(vo));
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
-        chain.setName(String.format("virtualRouter-apply-services-after-attachNic-%s:%s", nicInventory.getVmInstanceUuid(), nicInventory.getUuid()));
+        chain.setName(String.format("apply-services-after-attach-nic-%s-from-virtualrouter-%s", nicInventory.getUuid(), nicInventory.getVmInstanceUuid()));
         chain.setData(data);
         chain.insert(new virtualRouterAfterAttachNicFlow());
         chain.then(new virtualRouterApplyServicesAfterAttachNicFlow());
@@ -609,7 +609,7 @@ public class VirtualRouter extends ApplianceVmBase {
     }
 
     private class virtualRouterReleaseServicesbeforeDetachNicFlow implements Flow {
-        String __name__ = "virtualRouter-release-services-beforeDetachNic";
+        String __name__ = "virtualRouter-release-services-before-detach-nic";
 
         private void virtualRouterReleaseServices(final Iterator<VirtualRouterBeforeDetachNicExtensionPoint> it, VmNicInventory nicInv, Completion completion) {
             if (!it.hasNext()) {
@@ -682,7 +682,7 @@ public class VirtualRouter extends ApplianceVmBase {
         data.put(Param.VR_NIC, nicInventory);
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
-        chain.setName(String.format("virtualRouter-release-services-before-attachNic-%s:%s", nicInventory.getVmInstanceUuid(), nicInventory.getUuid()));
+        chain.setName(String.format("release-services-before-detach-nic-%s-from-virtualrouter-%s", nicInventory.getUuid(), nicInventory.getVmInstanceUuid()));
         chain.setData(data);
         chain.insert(new virtualRouterbeforeDetachNic());
         chain.then(new virtualRouterReleaseServicesbeforeDetachNicFlow());
