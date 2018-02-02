@@ -282,12 +282,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
             ));
         }
 
-        String secretUuid = CephSystemTags.KVM_SECRET_UUID.getTokenByResourceUuid(pri.getUuid(), CephSystemTags.KVM_SECRET_UUID_TOKEN);
-        if (secretUuid == null) {
-            throw new CloudRuntimeException(String.format("cannot find KVM secret uuid for ceph primary storage[uuid:%s]", pri.getUuid()));
-        }
-        cto.setSecretUuid(secretUuid);
-
+        cto.setSecretUuid(getCephSecretUuid(pri.getUuid()));
         return cto;
     }
 
@@ -323,17 +318,24 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
             }
         });
 
-
-        String secretUuid = CephSystemTags.KVM_SECRET_UUID.getTokenByResourceUuid(vol.getPrimaryStorageUuid(), CephSystemTags.KVM_SECRET_UUID_TOKEN);
-        if (secretUuid == null) {
-            throw new CloudRuntimeException(String.format("cannot find KVM secret uuid for ceph primary storage[uuid:%s]", vol.getPrimaryStorageUuid()));
-        }
-
         KVMCephVolumeTO cto = new KVMCephVolumeTO(to);
-        cto.setSecretUuid(secretUuid);
+        cto.setSecretUuid(getCephSecretUuid(vol.getPrimaryStorageUuid()));
         cto.setMonInfo(monInfos);
         cto.setDeviceType(VolumeTO.CEPH);
         return cto;
+    }
+
+    private String getCephSecretUuid(String psUuid){
+        if (CephSystemTags.NO_CEPHX.hasTag(psUuid)){
+            return null;
+        }
+
+        String secretUuid = CephSystemTags.KVM_SECRET_UUID.getTokenByResourceUuid(psUuid, CephSystemTags.KVM_SECRET_UUID_TOKEN);
+        if (secretUuid == null) {
+            throw new CloudRuntimeException(String.format("cannot find KVM secret uuid for ceph primary storage[uuid:%s]", psUuid));
+        }
+
+        return secretUuid;
     }
 
     @Override
@@ -387,7 +389,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         cmd.setBootIso(convertIsoToCephIfNeeded(cmd.getBootIso()));
 
         CephPrimaryStorageVO cephPrimaryStorageVO = dbf.findByUuid(spec.getDestRootVolume().getPrimaryStorageUuid(), CephPrimaryStorageVO.class);
-        if(cephPrimaryStorageVO != null){
+        if (cephPrimaryStorageVO != null && !CephSystemTags.NO_CEPHX.hasTag(cephPrimaryStorageVO.getUuid())) {
             cmd.getAddons().put(CephConstants.CEPH_SCECRET_KEY, cephPrimaryStorageVO.getUserKey());
             cmd.getAddons().put(CephConstants.CEPH_SECRECT_UUID, CephSystemTags.KVM_SECRET_UUID.getTokenByResourceUuid(cephPrimaryStorageVO.getUuid(), CephSystemTags.KVM_SECRET_UUID_TOKEN));
         }
