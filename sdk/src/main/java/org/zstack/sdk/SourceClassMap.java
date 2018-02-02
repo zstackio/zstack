@@ -113,6 +113,7 @@ public class SourceClassMap {
 			put("org.zstack.header.tag.SystemTagInventory", "org.zstack.sdk.SystemTagInventory");
 			put("org.zstack.header.tag.TagInventory", "org.zstack.sdk.TagInventory");
 			put("org.zstack.header.tag.UserTagInventory", "org.zstack.sdk.UserTagInventory");
+			put("org.zstack.header.vipQos.VipQosInventory", "org.zstack.sdk.VipQosInventory");
 			put("org.zstack.header.vm.CloneVmInstanceInventory", "org.zstack.sdk.CloneVmInstanceInventory");
 			put("org.zstack.header.vm.CloneVmInstanceResults", "org.zstack.sdk.CloneVmInstanceResults");
 			put("org.zstack.header.vm.VmInstanceInventory", "org.zstack.sdk.VmInstanceInventory");
@@ -124,6 +125,7 @@ public class SourceClassMap {
 			put("org.zstack.hybrid.account.HybridAccountInventory", "org.zstack.sdk.HybridAccountInventory");
 			put("org.zstack.hybrid.core.HybridType", "org.zstack.sdk.HybridType");
 			put("org.zstack.ipsec.IPsecConnectionInventory", "org.zstack.sdk.IPsecConnectionInventory");
+			put("org.zstack.ipsec.IPsecL3NetworkRefInventory", "org.zstack.sdk.IPsecL3NetworkRefInventory");
 			put("org.zstack.ipsec.IPsecPeerCidrInventory", "org.zstack.sdk.IPsecPeerCidrInventory");
 			put("org.zstack.kvm.APIKvmRunShellEvent$ShellResult", "org.zstack.sdk.ShellResult");
 			put("org.zstack.kvm.KVMHostInventory", "org.zstack.sdk.KVMHostInventory");
@@ -285,6 +287,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.HybridEipStatus", "org.zstack.header.hybrid.network.eip.HybridEipStatus");
 			put("org.zstack.sdk.HybridType", "org.zstack.hybrid.core.HybridType");
 			put("org.zstack.sdk.IPsecConnectionInventory", "org.zstack.ipsec.IPsecConnectionInventory");
+			put("org.zstack.sdk.IPsecL3NetworkRefInventory", "org.zstack.ipsec.IPsecL3NetworkRefInventory");
 			put("org.zstack.sdk.IPsecPeerCidrInventory", "org.zstack.ipsec.IPsecPeerCidrInventory");
 			put("org.zstack.sdk.IdentityZoneInventory", "org.zstack.header.identityzone.IdentityZoneInventory");
 			put("org.zstack.sdk.IdentityZoneProperty", "org.zstack.header.identityzone.IdentityZoneProperty");
@@ -380,6 +383,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VRouterRouteTableInventory", "org.zstack.vrouterRoute.VRouterRouteTableInventory");
 			put("org.zstack.sdk.VipInventory", "org.zstack.network.service.vip.VipInventory");
 			put("org.zstack.sdk.VipPortRangeInventory", "org.zstack.network.service.virtualrouter.APIGetVipUsedPortsReply$VipPortRangeInventory");
+			put("org.zstack.sdk.VipQosInventory", "org.zstack.header.vipQos.VipQosInventory");
 			put("org.zstack.sdk.VirtualBorderRouterInventory", "org.zstack.header.aliyun.network.connection.VirtualBorderRouterInventory");
 			put("org.zstack.sdk.VirtualRouterInterfaceInventory", "org.zstack.header.aliyun.network.connection.VirtualRouterInterfaceInventory");
 			put("org.zstack.sdk.VirtualRouterOfferingInventory", "org.zstack.network.service.virtualrouter.VirtualRouterOfferingInventory");

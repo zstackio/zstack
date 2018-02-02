@@ -180,39 +180,56 @@ public class L3BasicNetwork implements L3Network {
     }
 
     private void handle(IpRangeDeletionMsg msg) {
-        IpRangeDeletionReply reply = new IpRangeDeletionReply();
-
-        List<IpRangeDeletionExtensionPoint> exts = pluginRgty.getExtensionList(IpRangeDeletionExtensionPoint.class);
-        IpRangeVO iprvo = dbf.findByUuid(msg.getIpRangeUuid(), IpRangeVO.class);
-        if (iprvo == null) {
-            bus.reply(msg, reply);
-            return;
-        }
-
-        final IpRangeInventory inv = IpRangeInventory.valueOf(iprvo);
-
-        for (IpRangeDeletionExtensionPoint ext : exts) {
-            ext.preDeleteIpRange(inv);
-        }
-
-        CollectionUtils.safeForEach(exts, new ForEachFunction<IpRangeDeletionExtensionPoint>() {
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
-            public void run(IpRangeDeletionExtensionPoint arg) {
-                arg.beforeDeleteIpRange(inv);
+            public String getSyncSignature() {
+                return getSyncId();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                IpRangeDeletionReply reply = new IpRangeDeletionReply();
+
+                List<IpRangeDeletionExtensionPoint> exts = pluginRgty.getExtensionList(IpRangeDeletionExtensionPoint.class);
+                IpRangeVO iprvo = dbf.findByUuid(msg.getIpRangeUuid(), IpRangeVO.class);
+                if (iprvo == null) {
+                    bus.reply(msg, reply);
+                    return;
+                }
+
+                final IpRangeInventory inv = IpRangeInventory.valueOf(iprvo);
+
+                for (IpRangeDeletionExtensionPoint ext : exts) {
+                    ext.preDeleteIpRange(inv);
+                }
+
+                CollectionUtils.safeForEach(exts, new ForEachFunction<IpRangeDeletionExtensionPoint>() {
+                    @Override
+                    public void run(IpRangeDeletionExtensionPoint arg) {
+                        arg.beforeDeleteIpRange(inv);
+                    }
+                });
+
+
+                dbf.remove(iprvo);
+
+                CollectionUtils.safeForEach(exts, new ForEachFunction<IpRangeDeletionExtensionPoint>() {
+                    @Override
+                    public void run(IpRangeDeletionExtensionPoint arg) {
+                        arg.afterDeleteIpRange(inv);
+                    }
+                });
+
+                bus.reply(msg, reply);
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return String.format("ip-range-%s-deletion", msg.getIpRangeUuid());
             }
         });
 
-
-        dbf.remove(iprvo);
-
-        CollectionUtils.safeForEach(exts, new ForEachFunction<IpRangeDeletionExtensionPoint>() {
-            @Override
-            public void run(IpRangeDeletionExtensionPoint arg) {
-                arg.afterDeleteIpRange(inv);
-            }
-        });
-
-        bus.reply(msg, reply);
     }
 
     private void handle(L3NetworkDeletionMsg msg) {
@@ -522,6 +539,23 @@ public class L3BasicNetwork implements L3Network {
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "remove-dns-from-db";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        SimpleQuery<L3NetworkDnsVO> q = dbf.createQuery(L3NetworkDnsVO.class);
+                        q.add(L3NetworkDnsVO_.dns, Op.EQ, msg.getDns());
+                        q.add(L3NetworkDnsVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
+                        L3NetworkDnsVO dns = q.find();
+                        if (dns != null) {
+                            //TODO: create extension points
+                            dbf.remove(dns);
+                        }
+                        trigger.next();
+                    }
+                });
+
                 if (!self.getNetworkServices().isEmpty()) {
                     flow(new NoRollbackFlow() {
                         String __name__ = "remove-dns-from-backend";
@@ -545,23 +579,6 @@ public class L3BasicNetwork implements L3Network {
                         }
                     });
                 }
-
-                flow(new NoRollbackFlow() {
-                    String __name__ = "remove-dns-from-db";
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        SimpleQuery<L3NetworkDnsVO> q = dbf.createQuery(L3NetworkDnsVO.class);
-                        q.add(L3NetworkDnsVO_.dns, Op.EQ, msg.getDns());
-                        q.add(L3NetworkDnsVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
-                        L3NetworkDnsVO dns = q.find();
-                        if (dns != null) {
-                            //TODO: create extension points
-                            dbf.remove(dns);
-                        }
-                        trigger.next();
-                    }
-                });
 
                 done(new FlowDoneHandler(msg) {
                     @Override
@@ -683,93 +700,75 @@ public class L3BasicNetwork implements L3Network {
         IpRangeVO vo = dbf.findByUuid(msg.getUuid(), IpRangeVO.class);
         self = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
 
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public String getSyncSignature() {
-                return getSyncId();
-            }
-
-            @Override
-            public void run(SyncTaskChain chainTask) {
-                final APIDeleteIpRangeEvent evt = new APIDeleteIpRangeEvent(msg.getId());
-                final String issuer = IpRangeVO.class.getSimpleName();
-                final List<IpRangeInventory> ctx = IpRangeInventory.valueOf(Arrays.asList(vo));
-                FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
-                chain.setName(String.format("delete-ip-range-%s", msg.getUuid()));
-                if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
-                    chain.then(new NoRollbackFlow() {
+        final APIDeleteIpRangeEvent evt = new APIDeleteIpRangeEvent(msg.getId());
+        final String issuer = IpRangeVO.class.getSimpleName();
+        final List<IpRangeInventory> ctx = IpRangeInventory.valueOf(Arrays.asList(vo));
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("delete-ip-range-%s", msg.getUuid()));
+        if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
+            chain.then(new NoRollbackFlow() {
+                @Override
+                public void run(final FlowTrigger trigger, Map data) {
+                    casf.asyncCascade(CascadeConstant.DELETION_CHECK_CODE, issuer, ctx, new Completion(trigger) {
                         @Override
-                        public void run(final FlowTrigger trigger, Map data) {
-                            casf.asyncCascade(CascadeConstant.DELETION_CHECK_CODE, issuer, ctx, new Completion(trigger) {
-                                @Override
-                                public void success() {
-                                    trigger.next();
-                                }
-
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    trigger.fail(errorCode);
-                                }
-                            });
+                        public void success() {
+                            trigger.next();
                         }
-                    }).then(new NoRollbackFlow() {
-                        @Override
-                        public void run(final FlowTrigger trigger, Map data) {
-                            casf.asyncCascade(CascadeConstant.DELETION_DELETE_CODE, issuer, ctx, new Completion(trigger) {
-                                @Override
-                                public void success() {
-                                    trigger.next();
-                                }
 
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    trigger.fail(errorCode);
-                                }
-                            });
-                        }
-                    });
-                } else {
-                    chain.then(new NoRollbackFlow() {
                         @Override
-                        public void run(final FlowTrigger trigger, Map data) {
-                            casf.asyncCascade(CascadeConstant.DELETION_FORCE_DELETE_CODE, issuer, ctx, new Completion(trigger) {
-                                @Override
-                                public void success() {
-                                    trigger.next();
-                                }
-
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    trigger.fail(errorCode);
-                                }
-                            });
+                        public void fail(ErrorCode errorCode) {
+                            trigger.fail(errorCode);
                         }
                     });
                 }
+            }).then(new NoRollbackFlow() {
+                @Override
+                public void run(final FlowTrigger trigger, Map data) {
+                    casf.asyncCascade(CascadeConstant.DELETION_DELETE_CODE, issuer, ctx, new Completion(trigger) {
+                        @Override
+                        public void success() {
+                            trigger.next();
+                        }
 
-                chain.done(new FlowDoneHandler(msg) {
-                    @Override
-                    public void handle(Map data) {
-                        casf.asyncCascadeFull(CascadeConstant.DELETION_CLEANUP_CODE, issuer, ctx, new NopeCompletion());
-                        bus.publish(evt);
-                        chainTask.next();
-                    }
-                }).error(new FlowErrorHandler(msg) {
-                    @Override
-                    public void handle(ErrorCode errCode, Map data) {
-                        evt.setError(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, errCode));
-                        bus.publish(evt);
-                        chainTask.next();
-                    }
-                }).start();
-            }
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            trigger.fail(errorCode);
+                        }
+                    });
+                }
+            });
+        } else {
+            chain.then(new NoRollbackFlow() {
+                @Override
+                public void run(final FlowTrigger trigger, Map data) {
+                    casf.asyncCascade(CascadeConstant.DELETION_FORCE_DELETE_CODE, issuer, ctx, new Completion(trigger) {
+                        @Override
+                        public void success() {
+                            trigger.next();
+                        }
 
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            trigger.fail(errorCode);
+                        }
+                    });
+                }
+            });
+        }
+
+        chain.done(new FlowDoneHandler(msg) {
             @Override
-            public String getName() {
-                return String.format("delete-ip-range-%s", msg.getIpRangeUuid());
+            public void handle(Map data) {
+                casf.asyncCascadeFull(CascadeConstant.DELETION_CLEANUP_CODE, issuer, ctx, new NopeCompletion());
+                bus.publish(evt);
             }
-        });
-
+        }).error(new FlowErrorHandler(msg) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                evt.setError(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, errCode));
+                bus.publish(evt);
+            }
+        }).start();
     }
 
     private void handle(APIDeleteL3NetworkMsg msg) {

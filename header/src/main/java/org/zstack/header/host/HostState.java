@@ -63,4 +63,8 @@ public enum HostState {
 
         return tran.nextState;
     }
+
+    public HostStateEvent getTargetStateDrivenEvent(HostState targetState) {
+        return transactionMap.values().stream().filter(it -> it.nextState == targetState).findFirst().map(it -> it.event).orElse(null);
+    }
 }

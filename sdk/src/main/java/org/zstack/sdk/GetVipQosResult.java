@@ -1,20 +1,12 @@
 package org.zstack.sdk;
 
 public class GetVipQosResult {
-    public long outboundBandwidth;
-    public void setOutboundBandwidth(long outboundBandwidth) {
-        this.outboundBandwidth = outboundBandwidth;
+    public java.util.List<VipQosInventory> inventories;
+    public void setInventories(java.util.List<VipQosInventory> inventories) {
+        this.inventories = inventories;
     }
-    public long getOutboundBandwidth() {
-        return this.outboundBandwidth;
-    }
-
-    public long inboundBandwidth;
-    public void setInboundBandwidth(long inboundBandwidth) {
-        this.inboundBandwidth = inboundBandwidth;
-    }
-    public long getInboundBandwidth() {
-        return this.inboundBandwidth;
+    public java.util.List<VipQosInventory> getInventories() {
+        return this.inventories;
     }
 
 }

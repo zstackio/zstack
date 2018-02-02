@@ -218,7 +218,7 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
                     maxDataVolumeNum = ext.getMaxDataVolumeNumber();
                 }
 
-                count = Q.New(VolumeVO.class).eq(VolumeVO_.type, VolumeType.Data).eq(VolumeVO_.vmInstanceUuid, msg.getVolumeUuid()).count();
+                count = Q.New(VolumeVO.class).eq(VolumeVO_.type, VolumeType.Data).eq(VolumeVO_.vmInstanceUuid, msg.getVmInstanceUuid()).count();
                 if (count + 1 > maxDataVolumeNum) {
                     throw new ApiMessageInterceptionException(operr("hypervisor[%s] only allows max %s data volumes to be attached to a single vm; there have been %s data volumes attached to vm[uuid:%s]",
                             hvType, maxDataVolumeNum, count, msg.getVmInstanceUuid()));

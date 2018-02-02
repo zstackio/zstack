@@ -25,7 +25,9 @@ import org.zstack.utils.logging.CLogger;
 * 2. take 4 snapshot from vm's root volume
 *
 * confirm there are two chain
+* Covered by new style test case SnapshotMaxIncrementalCase
 */
+@Deprecated
 public class TestSnapshotOnKvm3 {
     CLogger logger = Utils.getLogger(TestSnapshotOnKvm3.class);
     Deployer deployer;

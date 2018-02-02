@@ -1,17 +1,23 @@
 package org.zstack.test.integration.storage.ceph
 
+import org.zstack.sdk.AddCephBackupStorageAction
+import org.zstack.sdk.AddCephPrimaryStorageAction
+import org.zstack.sdk.AddMonToCephBackupStorageAction
 import org.zstack.sdk.AddMonToCephPrimaryStorageAction
+import org.zstack.sdk.BackupStorageInventory
+import org.zstack.sdk.PrimaryStorageInventory
+import org.zstack.sdk.ZoneInventory
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
-import org.zstack.testlib.PrimaryStorageSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
-
 /**
  * Created by camile on 2017/8/24.
  */
 class CephOperationCase extends SubCase {
     EnvSpec env
+    PrimaryStorageInventory ps
+    BackupStorageInventory bs
 
     @Override
     void setup() {
@@ -111,19 +117,60 @@ class CephOperationCase extends SubCase {
     @Override
     void test() {
         env.create {
-            testAddReplaceMon()
+            prepare()
+            testAddPrimaryReplaceMon()
+            testAddPrimarySameMon()
+
+            testAddBackupReplaceMon()
+            testAddBackupSameMon()
         }
     }
 
-    private void testAddReplaceMon() {
-        PrimaryStorageSpec primaryStorageSpec = env.specByName("ceph-pri")
+    void prepare() {
+        ps = env.inventoryByName("ceph-pri") as PrimaryStorageInventory
+        bs = env.inventoryByName("ceph-bk") as BackupStorageInventory
+    }
+
+    void testAddPrimaryReplaceMon() {
         AddMonToCephPrimaryStorageAction action = new AddMonToCephPrimaryStorageAction()
-        action.uuid = primaryStorageSpec.inventory.uuid
+        action.uuid = ps.uuid
         action.monUrls = ["root:password@localhost/?monPort=7777"]
         action.sessionId = adminSession()
         assert action.call().error != null
         assert action.call().error.code == "SYS.1007"
-        assert action.call().error.description == "One or more API argument is invalid"
+        assert action.call().error.details == "Adding the same Mon node is not allowed"
+    }
+
+    void testAddPrimarySameMon() {
+        def zone = env.inventoryByName("zone") as ZoneInventory
+        def action = new AddCephPrimaryStorageAction()
+        action.sessionId = adminSession()
+        action.name = "test"
+        action.zoneUuid = zone.uuid
+        action.monUrls = ["root:password@127.0.0.2/?monPort=7777", "root:password@127.0.0.2/?monPort=7778"]
+        assert action.call().error != null
+        assert action.call().error.code == "SYS.1007"
+        assert action.call().error.details == "Cannot add same host[127.0.0.2] in mons"
+    }
+
+    void testAddBackupReplaceMon() {
+        AddMonToCephBackupStorageAction action = new AddMonToCephBackupStorageAction()
+        action.uuid = bs.uuid
+        action.monUrls = ["root:password@localhost/?monPort=7777"]
+        action.sessionId = adminSession()
+        assert action.call().error != null
+        assert action.call().error.code == "SYS.1007"
+        assert action.call().error.details == "Adding the same Mon node is not allowed"
+    }
+
+    void testAddBackupSameMon() {
+        def action = new AddCephBackupStorageAction()
+        action.sessionId = adminSession()
+        action.name = "test"
+        action.monUrls = ["root:password@127.0.0.2/?monPort=7777", "root:password@127.0.0.2/?monPort=7778"]
+        assert action.call().error != null
+        assert action.call().error.code == "SYS.1007"
+        assert action.call().error.details == "Cannot add same host[127.0.0.2] in mons"
     }
 
     @Override

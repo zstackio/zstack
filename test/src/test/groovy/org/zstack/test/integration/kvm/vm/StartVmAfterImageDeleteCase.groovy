@@ -5,6 +5,8 @@ import org.zstack.header.image.ImageConstant
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.sdk.BackupStorageInventory
+import org.zstack.sdk.GetVmStartingCandidateClustersHostsResult
+import org.zstack.sdk.HostInventory
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.L3NetworkInventory
@@ -37,8 +39,12 @@ class StartVmAfterImageDeleteCase extends SubCase {
     void test() {
         env.create {
             createVmWithNewImage()
-            testDeleteImage()
+            deleteImage()
             testStartVm()
+            testMigrateVm()
+            testCreateTemplateFromRootVolume()
+            testGetCandidate()
+            deleteVm()
         }
     }
 
@@ -69,7 +75,7 @@ class StartVmAfterImageDeleteCase extends SubCase {
         assert Q.New(VmInstanceVO.class).count() == 1
     }
 
-    void testDeleteImage() {
+    void deleteImage() {
         deleteImage {
             delegate.uuid = image.uuid
         }
@@ -95,8 +101,38 @@ class StartVmAfterImageDeleteCase extends SubCase {
             delegate.uuid = vm.uuid
         } as VmInstanceInventory
         assert vm.state == VmInstanceState.Running.toString()
+    }
 
+    void testMigrateVm(){
+        def hosts = getVmMigrationCandidateHosts {
+            vmInstanceUuid = vm.uuid
+        } as List<HostInventory>
 
+        assert hosts.size() == 0
+    }
+
+    void testCreateTemplateFromRootVolume(){
+        createRootVolumeTemplateFromRootVolume {
+            name = "test"
+            rootVolumeUuid = vm.rootVolumeUuid
+        }
+    }
+
+    void testGetCandidate() {
+        vm = stopVmInstance {
+            delegate.uuid = vm.uuid
+        } as VmInstanceInventory
+        assert vm.state == VmInstanceState.Stopped.toString()
+
+        def result = getVmStartingCandidateClustersHosts {
+            delegate.uuid = vm.uuid
+        } as GetVmStartingCandidateClustersHostsResult
+        assert result.hosts.size() == 1
+        assert result.hosts.get(0).uuid == vm.lastHostUuid
+        assert result.clusters.size() == 1
+    }
+
+    void deleteVm() {
         destroyVmInstance {
             delegate.uuid = vm.uuid
         }

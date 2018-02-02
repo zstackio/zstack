@@ -20,7 +20,9 @@ import org.zstack.utils.logging.CLogger;
 
 /*
 * take snapshot from vm's root volume
+* Covered by new style test case UpdateSnapshot
 */
+@Deprecated
 public class TestUpdateSnapshot {
     CLogger logger = Utils.getLogger(TestUpdateSnapshot.class);
     Deployer deployer;

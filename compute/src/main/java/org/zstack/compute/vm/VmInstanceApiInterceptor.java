@@ -34,10 +34,8 @@ import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -119,7 +117,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             @Override
             protected void scripts() {
                 VmInstanceVO vo = findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
-                if (vo.getHostUuid().equals(msg.getHostUuid())) {
+                if (vo.getState().equals(VmInstanceState.Running) && vo.getHostUuid().equals(msg.getHostUuid())) {
                     throw new ApiMessageInterceptionException(argerr(
                             "the vm[uuid:%s] is already on host[uuid:%s]", msg.getVmInstanceUuid(), msg.getHostUuid()
                     ));
@@ -369,7 +367,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
-    private void validate(APICreateVmInstanceMsg msg) {
+    private void validate(APICreateVmInstanceMsg msg) throws ApiMessageInterceptionException {
         SimpleQuery<InstanceOfferingVO> iq = dbf.createQuery(InstanceOfferingVO.class);
         iq.select(InstanceOfferingVO_.state, InstanceOfferingVO_.type);
         iq.add(InstanceOfferingVO_.uuid, Op.EQ, msg.getInstanceOfferingUuid());
@@ -381,6 +379,19 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
         if (!itype.equals(VmInstanceConstant.USER_VM_TYPE)){
             throw new ApiMessageInterceptionException(operr("instance offering[uuid:%s, type:%s] is not UserVm type, can't create vm from it", msg.getInstanceOfferingUuid(), itype));
+        }
+
+        Set<String> macs = new HashSet<>();
+        if (null != msg.getSystemTags()) {
+            Optional<String> duplicateMac = msg.getSystemTags().stream()
+                    .filter(t -> VmSystemTags.CUSTOM_MAC.isMatch(t))
+                    .map(t -> t.split("::")[2].toLowerCase())
+                    .filter(t -> !macs.add(t))
+                    .findAny();
+            if (duplicateMac.isPresent()){
+                throw new ApiMessageInterceptionException(operr(
+                        "Not allowed same mac [%s]", duplicateMac.get()));
+            }
         }
 
         SimpleQuery<ImageVO> imgq = dbf.createQuery(ImageVO.class);

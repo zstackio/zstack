@@ -29,7 +29,9 @@ import javax.persistence.TypedQuery;
 * 3. create another snapshot
 *
 * confirm failure didn't mess up existing snapshot
+* Covered by new style testcase CreateSnashotFailureCase
 */
+@Deprecated
 public class TestSnapshotOnKvm7 {
     CLogger logger = Utils.getLogger(TestSnapshotOnKvm7.class);
     Deployer deployer;

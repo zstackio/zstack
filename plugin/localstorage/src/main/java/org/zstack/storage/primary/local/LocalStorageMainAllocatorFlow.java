@@ -14,7 +14,9 @@ import org.zstack.header.host.HostState;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.PrimaryStorageConstant.AllocatorParams;
+import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
+import org.zstack.utils.SizeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -50,6 +52,7 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
         PrimaryStorageAllocationSpec spec = (PrimaryStorageAllocationSpec) data.get(AllocatorParams.SPEC);
         TypedQuery<LocalStorageHostRefVO> query;
         String errorInfo;
+        long reservedCapacity = SizeUtils.sizeStringToBytes(PrimaryStorageGlobalConfig.RESERVED_CAPACITY.value());
 
         if (spec.getRequiredPrimaryStorageUuid() != null) {
             String sql = "select ref" +
@@ -162,17 +165,16 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
         List<LocalStorageHostRefVO> candidateHosts = new ArrayList<>();
         for (LocalStorageHostRefVO ref : refs) {
             if (spec.isNoOverProvisioning()) {
-                if (ref.getAvailableCapacity() > spec.getSize()) {
+                if ((ref.getAvailableCapacity() - reservedCapacity) >= spec.getSize()) {
                     candidateHosts.add(ref);
                 }
             } else {
                 if (ratioMgr.calculatePrimaryStorageAvailableCapacityByRatio(ref.getPrimaryStorageUuid(),
-                        ref.getAvailableCapacity()) > spec.getSize()) {
+                        ref.getAvailableCapacity()) - reservedCapacity >= spec.getSize()) {
                     candidateHosts.add(ref);
                 }
             }
         }
-
         if (!candidateHosts.isEmpty()) {
             Iterator<LocalStorageHostRefVO> it = candidateHosts.iterator();
             List<String> err = new ArrayList<>();
@@ -184,12 +186,10 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
                     it.remove();
                 }
             }
-
             if (candidateHosts.isEmpty()) {
                 errorInfo = StringUtils.join(err, ",");
             }
         }
-
         Set<String> candidates = new HashSet<>();
         if (!candidateHosts.isEmpty()) {
             if (PrimaryStorageAllocationPurpose.CreateNewVm.toString().equals(spec.getPurpose())) {
@@ -211,7 +211,6 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
             q.setParameter("psUuids", candidates);
             res = q.getResultList();
         }
-
         /**
          * 1. if ps is indicated, then choose it directly
          * 2. if ps is not indicated and exclude ps is indicated, then exclude it and choose others

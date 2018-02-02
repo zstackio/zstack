@@ -38,6 +38,9 @@ public class PrimaryStoragePrioritySortFlow extends AbstractHostSortorFlow {
     private PluginRegistry pluginRgty;
     @Autowired
     protected DatabaseFacade dbf;
+
+    private boolean skip = true;
+
     @Override
     public void sort() {
         DebugUtils.Assert(candidates != null && !candidates.isEmpty(), "HostInventory cannot be none");
@@ -140,5 +143,10 @@ public class PrimaryStoragePrioritySortFlow extends AbstractHostSortorFlow {
             subCandidates.addAll(hosts);
             skip = false;
         }
+    }
+
+    @Override
+    public boolean skipNext() {
+        return skip;
     }
 }

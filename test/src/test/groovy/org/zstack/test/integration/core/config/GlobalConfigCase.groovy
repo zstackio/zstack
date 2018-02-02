@@ -1,7 +1,10 @@
 package org.zstack.test.integration.core.config
 
+import org.zstack.core.config.GlobalConfigFacadeImpl
+import org.zstack.core.config.GlobalConfigVO
+import org.zstack.core.db.DatabaseFacade
+import org.zstack.kvm.KVMGlobalConfig
 import org.zstack.sdk.UpdateGlobalConfigAction
-import org.zstack.test.integration.kvm.Env
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -34,8 +37,40 @@ class GlobalConfigCase extends SubCase {
     @Override
     void test() {
         env.create {
+            testTolerateDatabaseDirtyData()
+            testUpdateIntegerConfigWithFloatValue()
+            testFloatPointNumberTolerance()
             testBooleanValidator()
         }
+    }
+
+    void testFloatPointNumberTolerance() {
+        // test if the global config can convert float to int
+        KVMGlobalConfig.VM_MIGRATION_QUANTITY.@value = 1.0
+        assert KVMGlobalConfig.VM_MIGRATION_QUANTITY.value(int.class) == 1
+    }
+
+    void testUpdateIntegerConfigWithFloatValue() {
+        expect(AssertionError.class) {
+            updateGlobalConfig {
+                category = KVMGlobalConfig.VM_MIGRATION_QUANTITY.category
+                name = KVMGlobalConfig.VM_MIGRATION_QUANTITY.name
+                value = "1.0"
+            }
+        }
+    }
+
+    void testTolerateDatabaseDirtyData() {
+        // make dirty data in database
+        GlobalConfigVO vo = KVMGlobalConfig.VM_MIGRATION_QUANTITY.reload()
+        vo.setValue("1.0")
+        DatabaseFacade dbf = bean(DatabaseFacade.class)
+        dbf.update(vo)
+
+        GlobalConfigFacadeImpl gcf = bean(GlobalConfigFacadeImpl.class)
+        gcf.start()
+
+        assert KVMGlobalConfig.VM_MIGRATION_QUANTITY.value(int.class) == 1
     }
 
     void testBooleanValidator() {

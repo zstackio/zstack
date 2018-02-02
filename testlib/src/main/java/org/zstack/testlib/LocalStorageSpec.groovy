@@ -122,6 +122,10 @@ class LocalStorageSpec extends PrimaryStorageSpec {
             return new LocalStorageKvmBackend.DeleteBitsRsp()
         }
 
+        simulator(LocalStorageKvmBackend.GET_LIST_PATH) {
+            return new LocalStorageKvmBackend.ListPathRsp()
+        }
+
         simulator(LocalStorageKvmSftpBackupStorageMediatorImpl.DOWNLOAD_BIT_PATH) {
             return new LocalStorageKvmSftpBackupStorageMediatorImpl.SftpDownloadBitsRsp()
         }
@@ -135,7 +139,9 @@ class LocalStorageSpec extends PrimaryStorageSpec {
         }
 
         simulator(LocalStorageKvmBackend.REVERT_SNAPSHOT_PATH) {
-            return new LocalStorageKvmBackend.RevertVolumeFromSnapshotRsp()
+            def rsp = new LocalStorageKvmBackend.RevertVolumeFromSnapshotRsp()
+            rsp.newVolumeInstallPath = "/new/snapshot/install/path"
+            return rsp
         }
 
         simulator(LocalStorageKvmBackend.MERGE_AND_REBASE_SNAPSHOT_PATH) {

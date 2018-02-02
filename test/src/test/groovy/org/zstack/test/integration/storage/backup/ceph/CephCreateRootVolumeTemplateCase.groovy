@@ -1,4 +1,4 @@
-package org.zstack.test.integration.storage.primary.ceph
+package org.zstack.test.integration.storage.backup.ceph
 
 import org.zstack.core.db.Q
 import org.zstack.header.image.ImageConstant
@@ -22,8 +22,7 @@ import org.zstack.testlib.SubCase
 /**
  * Created by lining on 2017-9-10.
  */
-class CreateRootVolumeTemplateFromRootVolumeCase extends SubCase{
-
+class CephCreateRootVolumeTemplateCase extends SubCase{
     EnvSpec env
 
     @Override

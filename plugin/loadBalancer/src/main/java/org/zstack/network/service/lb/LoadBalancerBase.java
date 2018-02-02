@@ -539,40 +539,7 @@ public class LoadBalancerBase {
     private void handle(APIGetCandidateVmNicsForLoadBalancerMsg msg) {
         APIGetCandidateVmNicsForLoadBalancerReply reply = new APIGetCandidateVmNicsForLoadBalancerReply();
 
-        VipVO vipVO = Q.New(VipVO.class).eq(VipVO_.uuid, self.getVipUuid()).find();
-
-        if (vipVO.getPeerL3NetworkUuids() != null && !vipVO.getPeerL3NetworkUuids().isEmpty()) {
-            // the load balancer has been bound to a private L3 network
-            List<VmNicVO> nics = SQL.New("select nic" +
-                    " from VmNicVO nic, VmInstanceVO vm" +
-                    " where nic.l3NetworkUuid in :l3Uuid" +
-                    " and nic.uuid not in (select ref.vmNicUuid from LoadBalancerListenerVmNicRefVO ref where ref.listenerUuid = :luuid)" +
-                    " and nic.vmInstanceUuid = vm.uuid" +
-                    " and vm.type = :vmType" +
-                    " and vm.state in (:vmStates)")
-                    .param("l3Uuid", vipVO.getPeerL3NetworkUuids())
-                    .param("luuid", msg.getListenerUuid())
-                    .param("vmType", VmInstanceConstant.USER_VM_TYPE)
-                    .param("vmStates", asList(VmInstanceState.Running, VmInstanceState.Stopped)).list();
-            reply.setInventories(callGetCandidateVmNicsForLoadBalancerExtensionPoint(msg, VmNicInventory.valueOf(nics)));
-            bus.reply(msg, reply);
-            return;
-        }
-
-        // the load balancer has not been bound to any private L3 network
-        List<String> l3Uuids = SQL.New("select l3.uuid" +
-                " from L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref" +
-                " where l3.uuid = ref.l3NetworkUuid" +
-                " and ref.networkServiceType = :type")
-                .param("type", LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING).list();
-        if (l3Uuids.isEmpty()) {
-            reply.setInventories(new ArrayList<>());
-            bus.reply(msg, reply);
-            return;
-        }
-
         new SQLBatch(){
-
             @Override
             protected void scripts() {
                 List<String> guestNetworks = sql("select l3.uuid" +
@@ -582,16 +549,19 @@ public class LoadBalancerBase {
                         .param("type", LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING)
                         .list();
 
-                List<VmNicVO> nics = sql("select nic" +
-                        " from VmNicVO nic, VmInstanceVO vm" +
-                        " where nic.l3NetworkUuid in (:guestNetworks)" +
-                        " and nic.vmInstanceUuid = vm.uuid" +
-                        " and vm.type = :vmType" +
-                        " and vm.state in (:vmStates)")
-                        .param("guestNetworks",guestNetworks)
-                        .param("vmType", VmInstanceConstant.USER_VM_TYPE)
-                        .param("vmStates", asList(VmInstanceState.Running, VmInstanceState.Stopped))
-                        .list();
+                List<VmNicVO> nics = new ArrayList<>();
+                if (guestNetworks != null && !guestNetworks.isEmpty()) {
+                    nics = sql("select nic" +
+                            " from VmNicVO nic, VmInstanceVO vm" +
+                            " where nic.l3NetworkUuid in (:guestNetworks)" +
+                            " and nic.vmInstanceUuid = vm.uuid" +
+                            " and vm.type = :vmType" +
+                            " and vm.state in (:vmStates)")
+                            .param("guestNetworks",guestNetworks)
+                            .param("vmType", VmInstanceConstant.USER_VM_TYPE)
+                            .param("vmStates", asList(VmInstanceState.Running, VmInstanceState.Stopped))
+                            .list();
+                }
 
                 reply.setInventories(callGetCandidateVmNicsForLoadBalancerExtensionPoint(msg, VmNicInventory.valueOf(nics)));
             }

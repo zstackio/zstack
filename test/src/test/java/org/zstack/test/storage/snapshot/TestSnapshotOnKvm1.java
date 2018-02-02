@@ -22,7 +22,9 @@ import org.zstack.utils.logging.CLogger;
 
 /*
 * take 3 snapshot from vm's root volume
+* @Deprecated, Covered by new style test case CreateSnapshotOnRootVolumeCase
 */
+@Deprecated
 public class TestSnapshotOnKvm1 {
     CLogger logger = Utils.getLogger(TestSnapshotOnKvm1.class);
     Deployer deployer;

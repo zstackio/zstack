@@ -13,7 +13,10 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.timeout.ApiTimeoutManager;
+import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -24,9 +27,9 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.L2NetworkGetVniExtensionPoint;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.L2NetworkVO_;
-import org.zstack.header.network.l3.L3NetworkCategory;
-import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.header.network.l3.L3NetworkVO_;
+import org.zstack.header.network.l3.*;
+import org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint;
+import org.zstack.header.network.service.VirtualRouterBeforeDetachNicExtensionPoint;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.vm.*;
@@ -34,14 +37,12 @@ import org.zstack.network.service.virtualrouter.VirtualRouterCommands.PingCmd;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.PingRsp;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
 
+import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.network.service.virtualrouter.VirtualRouterNicMetaData.ADDITIONAL_PUBLIC_NIC_MASK;
 import static org.zstack.network.service.virtualrouter.VirtualRouterNicMetaData.GUEST_NIC_MASK;
 
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -399,6 +400,131 @@ public class VirtualRouter extends ApplianceVmBase {
         }).start();
     }
 
+    private class virtualRouterAfterAttachNicFlow extends NoRollbackFlow {
+        @Override
+        public void run(FlowTrigger trigger, Map data) {
+            VmNicInventory nicInventory = (VmNicInventory) data.get(Param.VR_NIC);
+            L3NetworkVO l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, nicInventory.getL3NetworkUuid()).find();
+
+            VirtualRouterCommands.ConfigureNicCmd cmd = new VirtualRouterCommands.ConfigureNicCmd();
+            VirtualRouterCommands.NicInfo info = new VirtualRouterCommands.NicInfo();
+            info.setIp(nicInventory.getIp());
+            info.setDefaultRoute(false);
+            info.setGateway(nicInventory.getGateway());
+            info.setMac(nicInventory.getMac());
+            info.setNetmask(nicInventory.getNetmask());
+
+            L2NetworkVO l2NetworkVO = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, l3NetworkVO.getL2NetworkUuid()).find();
+            info.setCategory(l3NetworkVO.getCategory().toString());
+            info.setL2type(l2NetworkVO.getType());
+            info.setPhysicalInterface(l2NetworkVO.getPhysicalInterface());
+            for (L2NetworkGetVniExtensionPoint ext : pluginRgty.getExtensionList(L2NetworkGetVniExtensionPoint.class)) {
+                if (ext.getL2NetworkVniType().equals(l2NetworkVO.getType())) {
+                    info.setVni(ext.getL2NetworkVni(l2NetworkVO.getUuid()));
+                }
+            }
+            cmd.setNics(Arrays.asList(info));
+
+            VirtualRouterAsyncHttpCallMsg cmsg = new VirtualRouterAsyncHttpCallMsg();
+            cmsg.setCommand(cmd);
+            cmsg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
+            cmsg.setPath(VirtualRouterConstant.VR_CONFIGURE_NIC_PATH);
+            cmsg.setVmInstanceUuid(vr.getUuid());
+            cmsg.setCheckStatus(true);
+            bus.makeTargetServiceIdByResourceUuid(cmsg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
+            bus.send(cmsg, new CloudBusCallBack(trigger) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        trigger.fail(reply.getError());
+                        return;
+                    }
+
+                    VirtualRouterAsyncHttpCallReply re = reply.castReply();
+                    VirtualRouterCommands.ConfigureNicRsp rsp = re.toResponse(VirtualRouterCommands.ConfigureNicRsp.class);
+                    if (rsp.isSuccess()) {
+                        logger.debug(String.format("successfully add nic[ip:%s, mac:%s] to virtual router vm[uuid:%s, ip:%s]",
+                                info.getIp(), info.getMac(), vr.getUuid(), vr.getManagementNic().getIp()));
+                        trigger.next();
+                    } else {
+                        ErrorCode err = operr("unable to add nic[ip:%s, mac:%s] to virtual router vm[uuid:%s ip:%s], because %s",
+                                info.getIp(), info.getMac(), vr.getUuid(), vr.getManagementNic().getIp(), rsp.getError());
+                        trigger.fail(err);
+                    }
+                }
+            });
+        }
+    }
+
+    private class virtualRouterApplyServicesAfterAttachNicFlow implements Flow {
+        String __name__ = "virtualRouter-apply-services-afterAttachNic";
+
+        private void virtualRouterApplyServicesAfterAttachNic(Iterator<VirtualRouterAfterAttachNicExtensionPoint> it, VmNicInventory nicInv, Completion completion){
+            if (!it.hasNext()) {
+                completion.success();
+                return;
+            }
+
+            VirtualRouterAfterAttachNicExtensionPoint ext = it.next();
+            ext.afterAttachNic(nicInv, new Completion(completion) {
+                @Override
+                public void success() {
+                    virtualRouterApplyServicesAfterAttachNic(it, nicInv, completion);
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    completion.fail(errorCode);
+                }
+            });
+        }
+
+        @Override
+        public void run(FlowTrigger trigger, Map data) {
+            VmNicInventory nicInv = (VmNicInventory) data.get(Param.VR_NIC);
+
+            Iterator<VirtualRouterAfterAttachNicExtensionPoint> it = pluginRgty.getExtensionList(VirtualRouterAfterAttachNicExtensionPoint.class).iterator();
+            virtualRouterApplyServicesAfterAttachNic(it, nicInv,  new Completion(trigger) {
+                @Override
+                public void success() {
+                    trigger.next();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    trigger.fail(errorCode);
+                }
+            });
+        }
+
+        private void virtualRouterApplyServicesAfterAttachNicRollback(Iterator<VirtualRouterAfterAttachNicExtensionPoint> it, VmNicInventory nicInv, NoErrorCompletion completion){
+            if (!it.hasNext()) {
+                completion.done();
+                return;
+            }
+
+            VirtualRouterAfterAttachNicExtensionPoint ext = it.next();
+            ext.afterAttachNicRollback(nicInv, new NoErrorCompletion(completion) {
+                @Override
+                public void done() {
+                    virtualRouterApplyServicesAfterAttachNicRollback(it, nicInv, completion);
+                }
+            });
+        }
+
+        @Override
+        public void rollback(FlowRollback trigger, Map data) {
+            VmNicInventory nicInv = (VmNicInventory) data.get(Param.VR_NIC);
+            Iterator<VirtualRouterAfterAttachNicExtensionPoint> it = pluginRgty.getExtensionList(VirtualRouterAfterAttachNicExtensionPoint.class).iterator();
+            virtualRouterApplyServicesAfterAttachNicRollback(it, nicInv, new NoErrorCompletion() {
+                @Override
+                public void done() {
+                    trigger.rollback();
+                }
+            });
+        }
+    }
+
     @Override
     protected void afterAttachNic(VmNicInventory nicInventory, Completion completion) {
         VmNicVO vo = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, nicInventory.getUuid()).find();
@@ -406,101 +532,171 @@ public class VirtualRouter extends ApplianceVmBase {
 
         if (l3NetworkVO.getCategory().equals(L3NetworkCategory.Private)) {
             vo.setMetaData(GUEST_NIC_MASK.toString());
+
+            UsedIpVO usedIpVO = Q.New(UsedIpVO.class).eq(UsedIpVO_.uuid, nicInventory.getUsedIpUuid()).find();
+            usedIpVO.setMetaData(GUEST_NIC_MASK.toString());
+            dbf.updateAndRefresh(usedIpVO);
         } else {
             vo.setMetaData(ADDITIONAL_PUBLIC_NIC_MASK.toString());
         }
-        dbf.updateAndRefresh(vo);
+        vo = dbf.updateAndRefresh(vo);
         logger.debug(String.format("updated metadata of vmnic[uuid: %s]", vo.getUuid()));
 
-        VirtualRouterCommands.ConfigureNicCmd cmd = new VirtualRouterCommands.ConfigureNicCmd();
-        VirtualRouterCommands.NicInfo info = new VirtualRouterCommands.NicInfo();
-        info.setIp(nicInventory.getIp());
-        info.setDefaultRoute(false);
-        info.setGateway(nicInventory.getGateway());
-        info.setMac(nicInventory.getMac());
-        info.setNetmask(nicInventory.getNetmask());
+        Map data = new HashMap();
+        data.put(Param.VR_NIC, VmNicInventory.valueOf(vo));
 
-        L2NetworkVO l2NetworkVO = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, l3NetworkVO.getL2NetworkUuid()).find();
-        info.setCategory(l3NetworkVO.getCategory().toString());
-        info.setL2type(l2NetworkVO.getType());
-        info.setPhysicalInterface(l2NetworkVO.getPhysicalInterface());
-        for (L2NetworkGetVniExtensionPoint ext : pluginRgty.getExtensionList(L2NetworkGetVniExtensionPoint.class)) {
-            if (ext.getL2NetworkVniType().equals(l2NetworkVO.getType())) {
-                info.setVni(ext.getL2NetworkVni(l2NetworkVO.getUuid()));
-            }
-        }
-        cmd.setNics(Arrays.asList(info));
-
-        VirtualRouterAsyncHttpCallMsg cmsg = new VirtualRouterAsyncHttpCallMsg();
-        cmsg.setCommand(cmd);
-        cmsg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
-        cmsg.setPath(VirtualRouterConstant.VR_CONFIGURE_NIC_PATH);
-        cmsg.setVmInstanceUuid(vr.getUuid());
-        cmsg.setCheckStatus(true);
-        bus.makeTargetServiceIdByResourceUuid(cmsg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
-        bus.send(cmsg, new CloudBusCallBack(completion) {
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("virtualRouter-apply-services-after-attachNic-%s:%s", nicInventory.getVmInstanceUuid(), nicInventory.getUuid()));
+        chain.setData(data);
+        chain.insert(new virtualRouterAfterAttachNicFlow());
+        chain.then(new virtualRouterApplyServicesAfterAttachNicFlow());
+        chain.done(new FlowDoneHandler(completion) {
             @Override
-            public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    completion.fail(reply.getError());
-                    return;
-                }
-
-                VirtualRouterAsyncHttpCallReply re = reply.castReply();
-                VirtualRouterCommands.ConfigureNicRsp rsp = re.toResponse(VirtualRouterCommands.ConfigureNicRsp.class);
-                if (rsp.isSuccess()) {
-
-                    logger.debug(String.format("successfully add nic[%s] to virtual router vm[uuid:%s, ip:%s]",info, vr.getUuid(), vr.getManagementNic()
-                            .getIp()));
-                    completion.success();
-                } else {
-                    ErrorCode err = operr("unable to add nic[%s] to virtual router vm[uuid:%s ip:%s], because %s",
-                            info, vr.getUuid(), vr.getManagementNic().getIp(), rsp.getError());
-                    completion.fail(err);
-                }
+            public void handle(Map data) {
+                completion.success();
             }
-        });
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
+    }
+
+    private class virtualRouterbeforeDetachNic extends NoRollbackFlow {
+        String __name__ = "virtualRouter-beforeDetachNic";
+        @Override
+        public void run(FlowTrigger trigger, Map data) {
+            VmNicInventory nicInventory = (VmNicInventory) data.get(Param.VR_NIC);
+            VirtualRouterCommands.RemoveNicCmd cmd = new VirtualRouterCommands.RemoveNicCmd();
+            VirtualRouterCommands.NicInfo info = new VirtualRouterCommands.NicInfo();
+            info.setIp(nicInventory.getIp());
+            info.setDefaultRoute(false);
+            info.setGateway(nicInventory.getGateway());
+            info.setMac(nicInventory.getMac());
+            info.setNetmask(nicInventory.getNetmask());
+            cmd.setNics(Arrays.asList(info));
+
+            VirtualRouterAsyncHttpCallMsg cmsg = new VirtualRouterAsyncHttpCallMsg();
+            cmsg.setCommand(cmd);
+            cmsg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
+            cmsg.setPath(VirtualRouterConstant.VR_REMOVE_NIC_PATH);
+            cmsg.setVmInstanceUuid(vr.getUuid());
+            cmsg.setCheckStatus(true);
+            bus.makeTargetServiceIdByResourceUuid(cmsg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
+            bus.send(cmsg, new CloudBusCallBack(trigger) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        trigger.fail(reply.getError());
+                        return;
+                    }
+
+                    VirtualRouterAsyncHttpCallReply re = reply.castReply();
+                    VirtualRouterCommands.RemoveNicRsp rsp = re.toResponse(VirtualRouterCommands.RemoveNicRsp.class);
+                    if (rsp.isSuccess()) {
+                        logger.debug(String.format("successfully detach nic[%s] from virtual router vm[uuid:%s, ip:%s]",info, vr.getUuid(), vr.getManagementNic()
+                                .getIp()));
+                        trigger.next();
+                    } else {
+                        ErrorCode err = operr("unable to detach nic[%s] from virtual router vm[uuid:%s ip:%s], because %s",
+                                info, vr.getUuid(), vr.getManagementNic().getIp(), rsp.getError());
+                        trigger.fail(err);
+                    }
+                }
+            });
+        }
+    }
+
+    private class virtualRouterReleaseServicesbeforeDetachNicFlow implements Flow {
+        String __name__ = "virtualRouter-release-services-beforeDetachNic";
+
+        private void virtualRouterReleaseServices(final Iterator<VirtualRouterBeforeDetachNicExtensionPoint> it, VmNicInventory nicInv, Completion completion) {
+            if (!it.hasNext()) {
+                completion.success();
+                return;
+            }
+
+            VirtualRouterBeforeDetachNicExtensionPoint ext = it.next();
+            ext.beforeDetachNic(nicInv, new Completion(completion) {
+                @Override
+                public void success() {
+                    virtualRouterReleaseServices(it, nicInv, completion);
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    completion.fail(errorCode);
+                }
+            });
+        }
+
+        @Override
+        public void run(FlowTrigger trigger, Map data) {
+            VmNicInventory nicInv = (VmNicInventory) data.get(Param.VR_NIC);
+            Iterator<VirtualRouterBeforeDetachNicExtensionPoint> it = pluginRgty.getExtensionList(VirtualRouterBeforeDetachNicExtensionPoint.class).iterator();
+            virtualRouterReleaseServices(it, nicInv, new Completion(trigger) {
+                @Override
+                public void success() {
+                    trigger.next();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    trigger.fail(errorCode);
+                }
+            });
+        }
+
+        private void virtualRouterReleaseServicesRollback(final Iterator<VirtualRouterBeforeDetachNicExtensionPoint> it, VmNicInventory nicInv, NoErrorCompletion completion) {
+            if (!it.hasNext()) {
+                completion.done();
+                return;
+            }
+
+            VirtualRouterBeforeDetachNicExtensionPoint ext = it.next();
+            ext.beforeDetachNicRollback(nicInv, new NoErrorCompletion(completion) {
+                @Override
+                public void done() {
+                    virtualRouterReleaseServicesRollback(it, nicInv, completion);
+                }
+            });
+        }
+
+        @Override
+        public void rollback(FlowRollback trigger, Map data) {
+            VmNicInventory nicInv = (VmNicInventory) data.get(Param.VR_NIC);
+            Iterator<VirtualRouterBeforeDetachNicExtensionPoint> it = pluginRgty.getExtensionList(VirtualRouterBeforeDetachNicExtensionPoint.class).iterator();
+            virtualRouterReleaseServicesRollback(it, nicInv, new NoErrorCompletion(trigger) {
+                @Override
+                public void done() {
+                    trigger.rollback();
+                }
+            });
+        }
     }
 
     @Override
     protected void beforeDetachNic(VmNicInventory nicInventory, Completion completion) {
-        VirtualRouterCommands.RemoveNicCmd cmd = new VirtualRouterCommands.RemoveNicCmd();
-        VirtualRouterCommands.NicInfo info = new VirtualRouterCommands.NicInfo();
-        info.setIp(nicInventory.getIp());
-        info.setDefaultRoute(false);
-        info.setGateway(nicInventory.getGateway());
-        info.setMac(nicInventory.getMac());
-        info.setNetmask(nicInventory.getNetmask());
-        cmd.setNics(Arrays.asList(info));
+        Map data = new HashMap();
+        data.put(Param.VR_NIC, nicInventory);
 
-        VirtualRouterAsyncHttpCallMsg cmsg = new VirtualRouterAsyncHttpCallMsg();
-        cmsg.setCommand(cmd);
-        cmsg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
-        cmsg.setPath(VirtualRouterConstant.VR_REMOVE_NIC_PATH);
-        cmsg.setVmInstanceUuid(vr.getUuid());
-        cmsg.setCheckStatus(true);
-        bus.makeTargetServiceIdByResourceUuid(cmsg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
-        bus.send(cmsg, new CloudBusCallBack(completion) {
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("virtualRouter-release-services-before-attachNic-%s:%s", nicInventory.getVmInstanceUuid(), nicInventory.getUuid()));
+        chain.setData(data);
+        chain.insert(new virtualRouterbeforeDetachNic());
+        chain.then(new virtualRouterReleaseServicesbeforeDetachNicFlow());
+        chain.done(new FlowDoneHandler(completion) {
             @Override
-            public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    completion.fail(reply.getError());
-                    return;
-                }
-
-                VirtualRouterAsyncHttpCallReply re = reply.castReply();
-                VirtualRouterCommands.RemoveNicRsp rsp = re.toResponse(VirtualRouterCommands.RemoveNicRsp.class);
-                if (rsp.isSuccess()) {
-                    logger.debug(String.format("successfully detach nic[%s] from virtual router vm[uuid:%s, ip:%s]",info, vr.getUuid(), vr.getManagementNic()
-                            .getIp()));
-                    completion.success();
-                } else {
-                    ErrorCode err = operr("unable to detach nic[%s] from virtual router vm[uuid:%s ip:%s], because %s",
-                            info, vr.getUuid(), vr.getManagementNic().getIp(), rsp.getError());
-                    completion.fail(err);
-                }
+            public void handle(Map data) {
+                completion.success();
             }
-        });
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
     }
 
 }

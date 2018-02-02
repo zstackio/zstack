@@ -32,11 +32,6 @@ class OnePsCreateVmCase extends SubCase {
             }
 
             diskOffering {
-                name = "diskOffering2"
-                diskSize = SizeUnit.GIGABYTE.toByte(203)
-            }
-
-            diskOffering {
                 name = "diskOffering3"
                 diskSize = SizeUnit.GIGABYTE.toByte(102)
             }
@@ -117,15 +112,15 @@ class OnePsCreateVmCase extends SubCase {
 
     void createVmVolumeSizeEqualSinglePsCap() {
         InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
-        DiskOfferingInventory diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory
-        DiskOfferingInventory diskOffering3 = env.inventoryByName("diskOffering3") as DiskOfferingInventory
+        DiskOfferingInventory _100G = env.inventoryByName("diskOffering") as DiskOfferingInventory
+        DiskOfferingInventory _102G = env.inventoryByName("diskOffering3") as DiskOfferingInventory
         ImageInventory image = env.inventoryByName("image") as ImageInventory
         L3NetworkInventory l3 = env.inventoryByName("l3") as L3NetworkInventory
 
         CreateVmInstanceAction createVmInstanceAction = new CreateVmInstanceAction(
                 name: "vm",
                 instanceOfferingUuid: instanceOffering.uuid,
-                dataDiskOfferingUuids: [diskOffering3.uuid],
+                dataDiskOfferingUuids: [_102G.uuid],
                 imageUuid: image.uuid,
                 l3NetworkUuids: [l3.uuid],
                 sessionId: currentEnvSpec.session.uuid
@@ -137,7 +132,7 @@ class OnePsCreateVmCase extends SubCase {
             instanceOfferingUuid = instanceOffering.uuid
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
-            dataDiskOfferingUuids = [diskOffering.uuid]
+            dataDiskOfferingUuids = [_100G.uuid]
         }
     }
 }

@@ -1,5 +1,7 @@
 package org.zstack.header.longjob
 
+import org.zstack.header.longjob.APISubmitLongJobEvent
+
 doc {
     title "SubmitLongJob"
 
@@ -11,8 +13,8 @@ doc {
         request {
 			url "POST /v1/longjobs"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header(Authorization: 'OAuth the-session-uuid')
 
             clz APISubmitLongJobMsg.class
 
@@ -88,6 +90,16 @@ doc {
 					type "List"
 					optional true
 					since "2.2.4"
+					
+				}
+				column {
+					name "targetResourceUuid"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "0.6"
 					
 				}
 			}

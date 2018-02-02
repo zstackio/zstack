@@ -64,19 +64,14 @@ public class VxlanPoolApiInterceptor implements ApiMessageInterceptor {
         for (VniRangeVO e : exists) {
             if (checkOverlap(msg.getStartVni(), msg.getEndVni(), e.getStartVni(), e.getEndVni()) == true) {
                 throw new ApiMessageInterceptionException(Platform.err(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("this vni range has overlapped with vni range [%s], which start vni is [%s], end vni is [%s]",
-                                e.getUuid(), e.getStartVni(), e.getEndVni())
+                        String.format("this vni range[start:%s, end:%s] has overlapped with vni range [%s], which start vni is [%s], end vni is [%s]",
+                                msg.getStartVni(), msg.getEndVni(), e.getUuid(), e.getStartVni(), e.getEndVni())
                 ));
             }
         }
     }
 
     private boolean checkOverlap(Integer checktart, Integer checkEnd, Integer existStart, Integer existEnd){
-        if ((existStart <= checktart) && (checktart <= existEnd)) {
-            return true;
-        } else if ((checktart <= existStart) && (existStart <= existEnd)) {
-            return true;
-        }
-        return false;
+        return (checktart >= existStart && checktart <= existEnd) || (checktart <= existStart && existStart <= checkEnd);
     }
 }

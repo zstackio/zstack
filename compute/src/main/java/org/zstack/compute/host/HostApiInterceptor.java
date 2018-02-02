@@ -93,8 +93,8 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
                 .select(HostVO_.status)
                 .eq(HostVO_.uuid,msg.getHostUuid())
                 .findValue();
-        if (hostStatus == HostStatus.Connecting && msg.getStateEvent().equals(HostStateEvent.maintain.toString())){
-            throw new ApiMessageInterceptionException(operr("can not maintain host[uuid:%s]which is connecting", msg.getHostUuid()));
+        if (hostStatus != HostStatus.Connected && msg.getStateEvent().equals(HostStateEvent.maintain.toString())){
+            throw new ApiMessageInterceptionException(operr("can not maintain host[uuid:%s]which is not Connected", msg.getHostUuid()));
         }
     }
 }

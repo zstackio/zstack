@@ -4,15 +4,21 @@ import org.springframework.http.HttpEntity
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
+import org.zstack.header.storage.primary.PrimaryStorageVO
 import org.zstack.sdk.AddCephPrimaryStorageAction
+import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonVO
+import org.zstack.storage.ceph.primary.CephPrimaryStoragePoolVO
+import org.zstack.storage.ceph.primary.CephPrimaryStorageVO
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.HttpError
 import org.zstack.testlib.SubCase
 import org.zstack.testlib.Test
 import org.zstack.utils.Utils
+import org.zstack.utils.data.SizeUnit
+import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.logging.CLogger
 
 class AddCephPrimaryStorageCase extends SubCase {
@@ -69,8 +75,6 @@ use:
                     l3Network {
                         name = "l3"
 
-
-
                         ip {
                             startIp = "192.168.100.10"
                             endIp = "192.168.100.100"
@@ -79,7 +83,6 @@ use:
                         }
                     }
                 }
-
             }
         }
     }
@@ -105,6 +108,68 @@ use:
         }
     }
 
+    void testAddCephPrimaryStorageGetFactsFailed() {
+        env.simulator(CephPrimaryStorageMonBase.ECHO_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            return [:]
+        }
+
+        env.simulator(CephPrimaryStorageBase.INIT_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            def fsid = "7ff218d9-f525-435f-8a40-3618d1772a64"
+            def rsp = new CephPrimaryStorageBase.InitRsp()
+            rsp.fsid = fsid
+            rsp.availableCapacity = SizeUnit.GIGABYTE.toByte(1)
+            rsp.totalCapacity = SizeUnit.GIGABYTE.toByte(1)
+            return rsp
+        }
+
+        // first try: simulate that the last mon fails to get facts
+        env.simulator(CephPrimaryStorageBase.GET_FACTS) { HttpEntity<String> e, EnvSpec spec ->
+            def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.GetFactsCmd.class)
+            def rsp = new CephPrimaryStorageBase.GetFactsRsp()
+            CephPrimaryStorageMonVO mon = dbFindByUuid(cmd.monUuid, CephPrimaryStorageMonVO.class)
+            if (mon != null && mon.getHostname() == "127.0.0.3") {
+                rsp.setSuccess(false)
+                rsp.setError("failed to GET_FACTS on purpose")
+            }
+            return rsp
+        }
+
+        AddCephPrimaryStorageAction action = new AddCephPrimaryStorageAction()
+        action.name = "add-ceph-ps"
+        action.monUrls = ["root:password@127.0.0.1", "root:password@127.0.0.2", "root:password@127.0.0.3"]
+        action.rootVolumePoolName = "rootPool"
+        action.dataVolumePoolName = "dataPool"
+        action.imageCachePoolName = "cachePool"
+        action.zoneUuid = env.inventoryByName("zone1").uuid
+        action.sessionId = adminSession()
+        action.call()
+
+        assert Q.New(PrimaryStorageVO.class).count() == 0l
+        assert Q.New(CephPrimaryStorageVO.class).count() == 0l
+        assert Q.New(CephPrimaryStorageMonVO.class).count() == 0l
+        assert Q.New(CephPrimaryStoragePoolVO.class).count() == 0l
+
+        // second try: simulate that all mons succeeded to get facts
+        env.simulator(CephPrimaryStorageBase.GET_FACTS)  { HttpEntity<String> e, EnvSpec spec ->
+            return new CephPrimaryStorageBase.GetFactsRsp()
+        }
+
+        action = new AddCephPrimaryStorageAction()
+        action.name = "add-ceph-ps"
+        action.monUrls = ["root:password@127.0.0.1", "root:password@127.0.0.2", "root:password@127.0.0.3"]
+        action.rootVolumePoolName = "rootPool"
+        action.dataVolumePoolName = "dataPool"
+        action.imageCachePoolName = "cachePool"
+        action.zoneUuid = env.inventoryByName("zone1").uuid
+        action.sessionId = adminSession()
+        action.call()
+
+        assert Q.New(PrimaryStorageVO.class).count() == 1l
+        assert Q.New(CephPrimaryStorageVO.class).count() == 1l
+        assert Q.New(CephPrimaryStoragePoolVO.class).count() == 3l
+        assert Q.New(CephPrimaryStorageMonVO.class).count() == 3l
+    }
+
     @Override
     void test() {
         dbf = bean(DatabaseFacade.class)
@@ -112,6 +177,7 @@ use:
 
         env.create {
             testAfterAddCephPrimaryStorageTimeoutStillConnect()
+            testAddCephPrimaryStorageGetFactsFailed()
         }
     }
 }

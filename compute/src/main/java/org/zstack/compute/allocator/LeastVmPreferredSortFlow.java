@@ -8,13 +8,10 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQL;
 import org.zstack.header.allocator.AbstractHostSortorFlow;
 import org.zstack.header.host.HostInventory;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
-import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -75,6 +72,10 @@ public class LeastVmPreferredSortFlow extends AbstractHostSortorFlow {
         candidates.clear();
         sortedHostUuids.forEach(huuid -> candidates.add(hosts.get(huuid)));
         logger.debug(String.format("Sorted by LeastVmPreferred the hosts %s", candidates.stream().map(c -> c.getUuid()).collect(Collectors.toList())));
+    }
 
+    @Override
+    public boolean skipNext() {
+        return true;
     }
 }

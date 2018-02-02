@@ -7,7 +7,10 @@ import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
-import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.DbEntityLister;
+import org.zstack.core.db.SQLBatchWithReturn;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.CancelablePeriodicTask;
@@ -37,13 +40,14 @@ import org.zstack.header.volume.APIGetVolumeFormatReply.VolumeFormatReplyStruct;
 import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
 import org.zstack.identity.AccountManager;
 import org.zstack.search.SearchQuery;
+import org.zstack.storage.primary.PrimaryStorageDeleteBitGC;
+import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.utils.path.PathUtil;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -322,6 +326,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             ImageBackupStorageRefVO targetBackupStorageRef;
             PrimaryStorageInventory targetPrimaryStorage;
             String primaryStorageInstallPath;
+            String prePSInstallPath;
             String volumeFormat;
 
             @Override
@@ -413,6 +418,33 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                     }
                 });
 
+                flow(new NoRollbackFlow() {
+                    String __name__ = "get-download-data-volume-template-to-primary-storage-for-garbage";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        GetInstallPathForDataVolumeDownloadMsg gmsg = new GetInstallPathForDataVolumeDownloadMsg();
+                        gmsg.setPrimaryStorageUuid(targetPrimaryStorage.getUuid());
+                        gmsg.setVolumeUuid(vol.getUuid());
+                        gmsg.setBackupStorageRef(ImageBackupStorageRefInventory.valueOf(targetBackupStorageRef));
+                        gmsg.setImage(ImageInventory.valueOf(template));
+                        gmsg.setHostUuid(msg.getHostUuid());
+                        bus.makeTargetServiceIdByResourceUuid(gmsg, PrimaryStorageConstant.SERVICE_ID, targetPrimaryStorage.getUuid());
+                        bus.send(gmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                } else {
+                                    GetInstallPathForDataVolumeDownloadReply r = reply.castReply();
+                                    prePSInstallPath = r.getInstallPath();
+                                    trigger.next();
+                                }
+                            }
+                        });
+                    }
+                });
+
                 flow(new Flow() {
                     String __name__ = "download-data-volume-template-to-primary-storage";
 
@@ -443,15 +475,24 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
                         if (primaryStorageInstallPath != null) {
-                            DeleteBitsOnPrimaryStorageMsg delMsg = new DeleteBitsOnPrimaryStorageMsg();
-                            delMsg.setInstallPath(PathUtil.parentFolder(primaryStorageInstallPath));
+                            // if primaryStorageInstallPath != null, then delete it directly
+                            DeleteVolumeBitsOnPrimaryStorageMsg delMsg = new DeleteVolumeBitsOnPrimaryStorageMsg();
+                            delMsg.setInstallPath(primaryStorageInstallPath);
                             delMsg.setBitsUuid(vol.getUuid());
                             delMsg.setBitsType(VolumeVO.class.getSimpleName());
-                            delMsg.setFolder(true);
                             delMsg.setPrimaryStorageUuid(targetPrimaryStorage.getUuid());
                             delMsg.setHypervisorType(VolumeFormat.getMasterHypervisorTypeByVolumeFormat(vol.getFormat()).toString());
                             bus.makeTargetServiceIdByResourceUuid(delMsg, PrimaryStorageConstant.SERVICE_ID, targetPrimaryStorage.getUuid());
                             bus.send(delMsg);
+                        } else if (PrimaryStorageGlobalConfig.PRIMARY_STORAGE_DELETEBITS_ON.value(Boolean.class)) {
+                            // if primaryStorageInstallPath == null, we don't know the status agent running, so use garbage to delete
+                            PrimaryStorageDeleteBitGC gc = new PrimaryStorageDeleteBitGC();
+                            gc.NAME = String.format("gc-delete-bits-volume-%s-on-primary-storage-%s", vol.getUuid(), targetPrimaryStorage.getUuid());
+                            gc.primaryStorageInstallPath = prePSInstallPath;
+                            gc.primaryStorageUuid = targetPrimaryStorage.getUuid();
+                            gc.volume = vol;
+                            gc.submit(PrimaryStorageGlobalConfig.PRIMARY_STORAGE_DELETEBITS_GARBAGE_COLLECTOR_INTERVAL.value(Long.class),
+                                    TimeUnit.SECONDS);
                         }
                         trigger.rollback();
                     }

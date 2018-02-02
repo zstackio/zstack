@@ -15,14 +15,14 @@ import static org.zstack.utils.CollectionDSL.e
 class GetAttachableVmsForDataVolumeCase extends SubCase{
     EnvSpec env
 
-    VmInstanceInventory vm_root_volume_is_local_on_host1
-    VmInstanceInventory vm_root_volume_is_local_on_host2
-    VmInstanceInventory vm_root_volume_is_nfs_on_host1
-    VmInstanceInventory vm_root_volume_is_nfs_on_host2
+    VmInstanceInventory vmRootVolumeIsLocalOnHost1
+    VmInstanceInventory vmRootVolumeIsLocalOnHost2
+    VmInstanceInventory vmRootVolumeIsNfsOnHost1
+    VmInstanceInventory vmRootVolumeIsNfsOnHost2
 
-    VolumeInventory local_data_volume_on_host1
-    VolumeInventory local_data_volume_on_host2
-    VolumeInventory nfs_data_volume
+    VolumeInventory localDataVolumeOnHost1
+    VolumeInventory localDataVolumeOnHost2
+    VolumeInventory nfsDataVolume
 
 
     @Override
@@ -145,7 +145,7 @@ class GetAttachableVmsForDataVolumeCase extends SubCase{
         // local root volume
              // vm on host1
              // vm on host2
-        vm_root_volume_is_local_on_host1 = createVmInstance {
+        vmRootVolumeIsLocalOnHost1 = createVmInstance {
             name = "vm"
             instanceOfferingUuid = instanceOffering.uuid
             imageUuid = image.uuid
@@ -154,7 +154,7 @@ class GetAttachableVmsForDataVolumeCase extends SubCase{
             primaryStorageUuidForRootVolume = local.uuid
         }
 
-        vm_root_volume_is_local_on_host2 = createVmInstance {
+        vmRootVolumeIsLocalOnHost2 = createVmInstance {
             name = "vm"
             instanceOfferingUuid = instanceOffering.uuid
             imageUuid = image.uuid
@@ -167,7 +167,7 @@ class GetAttachableVmsForDataVolumeCase extends SubCase{
         // nfs root volume
             // vm on host1
             // vm on host2
-        vm_root_volume_is_nfs_on_host1 = createVmInstance {
+        vmRootVolumeIsNfsOnHost1 = createVmInstance {
             name = "vm"
             instanceOfferingUuid = instanceOffering.uuid
             imageUuid = image.uuid
@@ -176,7 +176,7 @@ class GetAttachableVmsForDataVolumeCase extends SubCase{
             primaryStorageUuidForRootVolume = nfs.uuid
         }
 
-        vm_root_volume_is_nfs_on_host2 = createVmInstance {
+        vmRootVolumeIsNfsOnHost2 = createVmInstance {
             name = "vm"
             instanceOfferingUuid = instanceOffering.uuid
             imageUuid = image.uuid
@@ -191,105 +191,105 @@ class GetAttachableVmsForDataVolumeCase extends SubCase{
         String localStorageSystemTag = LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.instantiateTag(
                 map(e(LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME_TOKEN, host1.uuid))
         )
-        local_data_volume_on_host1 = createDataVolume {
+        localDataVolumeOnHost1 = createDataVolume {
             name = "data"
             diskOfferingUuid = diskOffering.uuid
             primaryStorageUuid = local.uuid
             systemTags = [localStorageSystemTag]
         }
         attachDataVolumeToVm {
-            vmInstanceUuid = vm_root_volume_is_local_on_host1.uuid
-            volumeUuid = local_data_volume_on_host1.uuid
+            vmInstanceUuid = vmRootVolumeIsLocalOnHost1.uuid
+            volumeUuid = localDataVolumeOnHost1.uuid
         }
         detachDataVolumeFromVm {
-            vmUuid = vm_root_volume_is_local_on_host1.uuid
-            uuid = local_data_volume_on_host1.uuid
+            vmUuid = vmRootVolumeIsLocalOnHost1.uuid
+            uuid = localDataVolumeOnHost1.uuid
         }
 
         localStorageSystemTag = LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.instantiateTag(
                 map(e(LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME_TOKEN, host2.uuid))
         )
-        local_data_volume_on_host2 = createDataVolume {
+        localDataVolumeOnHost2 = createDataVolume {
             name = "data"
             diskOfferingUuid = diskOffering.uuid
             primaryStorageUuid = local.uuid
             systemTags = [localStorageSystemTag]
         }
         attachDataVolumeToVm {
-            vmInstanceUuid = vm_root_volume_is_local_on_host2.uuid
-            volumeUuid = local_data_volume_on_host2.uuid
+            vmInstanceUuid = vmRootVolumeIsLocalOnHost2.uuid
+            volumeUuid = localDataVolumeOnHost2.uuid
         }
         detachDataVolumeFromVm {
-            vmUuid = vm_root_volume_is_local_on_host2.uuid
-            uuid = local_data_volume_on_host2.uuid
+            vmUuid = vmRootVolumeIsLocalOnHost2.uuid
+            uuid = localDataVolumeOnHost2.uuid
         }
 
         // nfs data volume
-        nfs_data_volume = createDataVolume {
+        nfsDataVolume = createDataVolume {
             name = "data"
             diskOfferingUuid = diskOffering.uuid
             primaryStorageUuid = nfs.uuid
         }
         attachDataVolumeToVm {
-            vmInstanceUuid = vm_root_volume_is_nfs_on_host1.uuid
-            volumeUuid = nfs_data_volume.uuid
+            vmInstanceUuid = vmRootVolumeIsNfsOnHost1.uuid
+            volumeUuid = nfsDataVolume.uuid
         }
         detachDataVolumeFromVm {
-            vmUuid = vm_root_volume_is_nfs_on_host1.uuid
-            uuid = nfs_data_volume.uuid
+            vmUuid = vmRootVolumeIsNfsOnHost1.uuid
+            uuid = nfsDataVolume.uuid
         }
 
         // test begin
 
         List<VmInstanceInventory> result = getDataVolumeAttachableVm {
-            volumeUuid = local_data_volume_on_host1.uuid
+            volumeUuid = localDataVolumeOnHost1.uuid
         }
-        check(result, [vm_root_volume_is_local_on_host1.uuid, vm_root_volume_is_nfs_on_host1.uuid])
+        check(result, [vmRootVolumeIsLocalOnHost1.uuid, vmRootVolumeIsNfsOnHost1.uuid])
 
 
         result = getDataVolumeAttachableVm {
-            volumeUuid = local_data_volume_on_host2.uuid
+            volumeUuid = localDataVolumeOnHost2.uuid
         }
-        check(result, [vm_root_volume_is_local_on_host2.uuid, vm_root_volume_is_nfs_on_host2.uuid])
+        check(result, [vmRootVolumeIsLocalOnHost2.uuid, vmRootVolumeIsNfsOnHost2.uuid])
 
 
         result = getDataVolumeAttachableVm {
-            volumeUuid = nfs_data_volume.uuid
+            volumeUuid = nfsDataVolume.uuid
         }
-        check(result, [vm_root_volume_is_local_on_host1.uuid, vm_root_volume_is_nfs_on_host1.uuid, vm_root_volume_is_local_on_host2.uuid, vm_root_volume_is_nfs_on_host2.uuid])
+        check(result, [vmRootVolumeIsLocalOnHost1.uuid, vmRootVolumeIsNfsOnHost1.uuid, vmRootVolumeIsLocalOnHost2.uuid, vmRootVolumeIsNfsOnHost2.uuid])
 
     }
 
     void getAttachableStoppedVms(){
         stopVmInstance {
-            uuid = vm_root_volume_is_local_on_host1.uuid
+            uuid = vmRootVolumeIsLocalOnHost1.uuid
         }
         stopVmInstance {
-            uuid = vm_root_volume_is_local_on_host2.uuid
+            uuid = vmRootVolumeIsLocalOnHost2.uuid
         }
         stopVmInstance {
-            uuid = vm_root_volume_is_nfs_on_host1.uuid
+            uuid = vmRootVolumeIsNfsOnHost1.uuid
         }
         stopVmInstance {
-            uuid = vm_root_volume_is_nfs_on_host2.uuid
+            uuid = vmRootVolumeIsNfsOnHost2.uuid
         }
 
         List<VmInstanceInventory> result = getDataVolumeAttachableVm {
-            volumeUuid = local_data_volume_on_host1.uuid
+            volumeUuid = localDataVolumeOnHost1.uuid
         }
-        check(result, [vm_root_volume_is_local_on_host1.uuid, vm_root_volume_is_nfs_on_host1.uuid, vm_root_volume_is_nfs_on_host2.uuid])
+        check(result, [vmRootVolumeIsLocalOnHost1.uuid, vmRootVolumeIsNfsOnHost1.uuid, vmRootVolumeIsNfsOnHost2.uuid])
 
 
         result = getDataVolumeAttachableVm {
-            volumeUuid = local_data_volume_on_host2.uuid
+            volumeUuid = localDataVolumeOnHost2.uuid
         }
-        check(result, [vm_root_volume_is_local_on_host2.uuid, vm_root_volume_is_nfs_on_host1.uuid, vm_root_volume_is_nfs_on_host2.uuid])
+        check(result, [vmRootVolumeIsLocalOnHost2.uuid, vmRootVolumeIsNfsOnHost1.uuid, vmRootVolumeIsNfsOnHost2.uuid])
 
 
         result = getDataVolumeAttachableVm {
-            volumeUuid = nfs_data_volume.uuid
+            volumeUuid = nfsDataVolume.uuid
         }
-        check(result, [vm_root_volume_is_local_on_host1.uuid, vm_root_volume_is_nfs_on_host1.uuid, vm_root_volume_is_local_on_host2.uuid, vm_root_volume_is_nfs_on_host2.uuid])
+        check(result, [vmRootVolumeIsLocalOnHost1.uuid, vmRootVolumeIsNfsOnHost1.uuid, vmRootVolumeIsLocalOnHost2.uuid, vmRootVolumeIsNfsOnHost2.uuid])
 
     }
 

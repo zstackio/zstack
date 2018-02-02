@@ -106,7 +106,7 @@ public abstract class VmTracer {
             for (Map.Entry<String, VmInstanceState> e : mgmtSideStates.entrySet()) {
                 String vmUuid = e.getKey();
                 VmInstanceState expectedState = e.getValue();
-                if (expectedState != VmInstanceState.Stopped && !hostSideStates.containsKey(vmUuid)) {
+                if (expectedState != VmInstanceState.Stopped && expectedState != VmInstanceState.Created && !hostSideStates.containsKey(vmUuid)) {
                     handleMissingVm(vmUuid, expectedState);
                 }
             }

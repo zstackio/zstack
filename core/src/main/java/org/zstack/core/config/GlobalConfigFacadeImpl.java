@@ -239,6 +239,8 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
 
             private void validateAll() {
                 for (GlobalConfig g : allConfigs.values()) {
+                    g.normalize();
+
                     try {
                         g.validate();
                     } catch (Exception e) {
@@ -389,7 +391,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                 }
             }
 
-            private void parseConfig(File file) throws JAXBException, FileNotFoundException {
+            private void parseConfig(File file) throws JAXBException {
                 if (!file.getName().endsWith("xml")) {
                     logger.warn(String.format("file[%s] in global config folder is not end with .xml, skip it", file.getAbsolutePath()));
                     return;

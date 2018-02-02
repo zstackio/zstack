@@ -1435,9 +1435,9 @@
     "fileName": "src/main/java/org/zstack/compute/host/HostApiInterceptor.java"
   },
   {
-    "raw": "can not maintain host[uuid:%s]which is connecting",
-    "en_US": "can not maintain host[uuid:{0}]which is connecting",
-    "zh_CN": "不能对Connecting状态的物理机[uuid:{0}]进行维护操作",
+    "raw": "can not maintain host[uuid:%s]which is not Connected",
+    "en_US": "can not maintain host[uuid:{0}]which is not Connected",
+    "zh_CN": "只能对已连接状态的物理机[uuid:{0}]进行维护操作",
     "arguments": [
       "msg.getHostUuid()"
     ],
@@ -4284,8 +4284,8 @@
   },
   {
     "raw": "unable to connect to KVM[ip:%s, username:%s, sshPort:%d] to check the management node connectivity,please check if username/password is wrong; %s",
-    "en_US": "unable to connect to KVM[ip:{0}, username:{1}, sshPort:%d] to check the management node connectivity,please check if username/password is wrong; {2}",
-    "zh_CN": "不能连接到物理机[ip:{0}, username:{1}, sshPort:%d] 去检查与管理节点是否连通  ,请检查您的用户名或者密码是否有误; {2}",
+    "en_US": "unable to connect to KVM[ip:{0}, username:{1}, sshPort:{2}] to check the management node connectivity,please check if username/password is wrong; {3}",
+    "zh_CN": "不能连接到物理机[ip:{0}, username:{1}, sshPort:{2}] 去检查与管理节点是否连通  ,请检查您的用户名或者密码是否有误; {3}",
     "arguments": [
       "self.getManagementIp()",
       "getSelf().getUsername()",
@@ -8825,7 +8825,7 @@
   {
     "raw": "the volume[uuid:%s] is the root volume of the vm[uuid:%s]. Currently the vm is in state of %s, please stop it before migration",
     "en_US": "the volume[uuid:{0}] is the root volume of the vm[uuid:{1}]. Currently the vm is in state of {2}, please stop it before migration",
-    "zh_CN": "云盘[uuid:{0}]不是云主机[uuid:{1}]的根云盘。现在这个云主机的状态为{2}，请在迁移前停止它",
+    "zh_CN": "云盘[uuid:{0}]是云主机[uuid:{1}]的根云盘。当前云主机的状态为{2}，请停止后再迁移",
     "arguments": [
       "vol.getUuid()",
       "vol.getVmInstanceUuid()",
@@ -8837,7 +8837,7 @@
   {
     "raw": "the volume[uuid:%s] is the root volume of the vm[uuid:%s]. Currently the vm still has %s data volumes attached, please detach them before migration",
     "en_US": "the volume[uuid:{0}] is the root volume of the vm[uuid:{1}]. Currently the vm still has {2} data volumes attached, please detach them before migration",
-    "zh_CN": "云盘[uuid:{0}]不是云主机[uuid:{1}]的根云盘。现在这个云主机仍然有挂载的数据云盘，请在迁移前卸载",
+    "zh_CN": "云盘[uuid:{0}]是云主机[uuid:{1}]的根云盘。当前云主机仍有已挂载的数据云盘，请卸载后再迁移",
     "arguments": [
       "vol.getUuid()",
       "vol.getVmInstanceUuid()",

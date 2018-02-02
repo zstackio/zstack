@@ -32,7 +32,10 @@ import org.zstack.utils.logging.CLogger;
 * 7. create a new snapshot
 *
 * confirm tree.current are correctly set in each step of above
+*
+* Covered by new style test case SnapshotMaxIncrementalCase
 */
+@Deprecated
 public class TestSnapshotOnKvm40 {
     CLogger logger = Utils.getLogger(TestSnapshotOnKvm40.class);
     Deployer deployer;

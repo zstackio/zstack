@@ -190,7 +190,7 @@ class BatchCreateVmOnLocalStorageCase extends SubCase{
             }).run()
         }
 
-        latch.await(2, TimeUnit.MINUTES);
+        latch.await(2, TimeUnit.MINUTES)
         assert Q.New(VmInstanceVO.class).notNull(VmInstanceVO_.uuid).count() == 10L
     }
 }

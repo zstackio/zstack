@@ -1,31 +1,23 @@
 package org.zstack.test.integration.storage.primary.local.capacity
 
-import org.springframework.http.HttpEntity
-import org.zstack.sdk.ClusterInventory
+import org.zstack.core.db.Q
+import org.zstack.header.image.ImageConstant
+import org.zstack.sdk.BackupStorageInventory
 import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.GetPrimaryStorageCapacityResult
+import org.zstack.sdk.HostDiskCapacity
+import org.zstack.sdk.HostInventory
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.PrimaryStorageInventory
-import org.zstack.test.integration.storage.Env
-import org.zstack.test.integration.storage.StorageTest
-import org.zstack.testlib.EnvSpec
-import org.zstack.testlib.LocalStorageSpec
-import org.zstack.testlib.PrimaryStorageSpec
-import org.zstack.testlib.SubCase
-import org.zstack.utils.gson.JSONObjectUtil
-import org.zstack.utils.data.SizeUnit
 import org.zstack.storage.primary.local.LocalStorageHostRefVO
 import org.zstack.storage.primary.local.LocalStorageHostRefVO_
-import org.zstack.storage.backup.sftp.SftpBackupStorageCommands
-import org.zstack.testlib.BackupStorageSpec
 import org.zstack.storage.primary.local.LocalStorageKvmBackend
-import org.zstack.storage.backup.sftp.SftpBackupStorageConstant
-import org.zstack.header.image.ImageConstant
-import org.zstack.core.db.Q
-
-
+import org.zstack.test.integration.storage.StorageTest
+import org.zstack.testlib.EnvSpec
+import org.zstack.testlib.SubCase
+import org.zstack.utils.data.SizeUnit
 /**
  * Created by SyZhao on 2017/4/17.
  */
@@ -44,7 +36,7 @@ class LocalStorageCreateVmByIsoCapacityCase extends SubCase {
 
     @Override
     void environment() {
-        env = Env.localStorageOneVmEnv()
+        env = LocalStorageEnv.localStorageOneVmEnvForCapacity()
     }
 
     @Override
@@ -55,85 +47,85 @@ class LocalStorageCreateVmByIsoCapacityCase extends SubCase {
     }
 
     void testCreateVmByIsoCheckCapacity() {
-        PrimaryStorageInventory ps = env.inventoryByName("local")
-        ClusterInventory cluster = env.inventoryByName("cluster")
-        ImageInventory image = env.inventoryByName("iso")
-        DiskOfferingInventory diskOffering = env.inventoryByName("diskOffering")
-        InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering")
-        L3NetworkInventory l3 = env.inventoryByName("l3")
+        LocalStorageEnv.simulator(env)
 
+        def ps = env.inventoryByName("local") as PrimaryStorageInventory
+        def diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory
+        def instanceOffering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
+        def l3 = env.inventoryByName("l3") as L3NetworkInventory
+        def bs = env.inventoryByName("sftp") as BackupStorageInventory
+        def host = env.inventoryByName("kvm") as HostInventory
 
-        def bs = env.inventoryByName("sftp")
-        def image_virtual_size = SizeUnit.GIGABYTE.toByte(10)//10G
-        def image_physical_size = SizeUnit.GIGABYTE.toByte(1)//1G
-
-        reconnectPrimaryStorage {
-            uuid = ps.uuid
-        }
-
-        def download_image_path_invoked = false
-        env.simulator(SftpBackupStorageConstant.DOWNLOAD_IMAGE_PATH) { HttpEntity<String> e, EnvSpec spec ->
-            def cmd = JSONObjectUtil.toObject(e.getBody(), SftpBackupStorageCommands.DownloadCmd.class)
-            BackupStorageSpec bsSpec = spec.specByUuid(cmd.uuid)
-
-            def rsp = new SftpBackupStorageCommands.DownloadResponse()
-            rsp.size = image_virtual_size
-            rsp.actualSize = image_physical_size 
-            rsp.availableCapacity = bsSpec.availableCapacity
-            rsp.totalCapacity = bsSpec.totalCapacity
-            download_image_path_invoked = true
-            return rsp
-        }
-
-        ImageInventory sizedImage = addImage {
+        ImageInventory iso = addImage {
             name = "sized-image"
             url = "http://my-site/foo.iso"
             backupStorageUuids = [bs.uuid]
             format = ImageConstant.ISO_FORMAT_STRING
         }
 
-        assert download_image_path_invoked
+        reconnectPrimaryStorage {
+            uuid = ps.uuid
+        }
 
         GetPrimaryStorageCapacityResult beforeCapacityResult = getPrimaryStorageCapacity {
             primaryStorageUuids = [ps.uuid]
         }
 
+        def hostCapacity = getLocalStorageHostDiskCapacity {
+            primaryStorageUuid = ps.uuid
+            hostUuid = host.uuid
+        }[0] as HostDiskCapacity
+
+        env.simulator(LocalStorageKvmBackend.CREATE_EMPTY_VOLUME_PATH) {
+            def rsp = new LocalStorageKvmBackend.CreateEmptyVolumeRsp()
+            rsp.totalCapacity = hostCapacity.totalCapacity
+            rsp.availableCapacity = hostCapacity.availableCapacity - SizeUnit.GIGABYTE.toByte(20) - SizeUnit.GIGABYTE.toByte(1)
+            return rsp
+        }
+
         def vm = createVmInstance {
             name = "crt-vm"
             instanceOfferingUuid = instanceOffering.uuid
-            imageUuid = sizedImage.uuid
+            imageUuid = iso.uuid
             l3NetworkUuids = [l3.uuid]
             rootDiskOfferingUuid = diskOffering.uuid
+            hostUuid = host.uuid
         }
 
         GetPrimaryStorageCapacityResult capacityResult = getPrimaryStorageCapacity {
             primaryStorageUuids = [ps.uuid]
         }
-        assert beforeCapacityResult.availableCapacity == capacityResult.availableCapacity + SizeUnit.GIGABYTE.toByte(20) + image_physical_size
 
-        boolean checked = false
-        env.simulator(LocalStorageKvmBackend.INIT_PATH) { HttpEntity<String> e, EnvSpec spec ->
-            LocalStorageKvmBackend.InitCmd cmd = JSONObjectUtil.toObject(e.body,LocalStorageKvmBackend.InitCmd.class)
+        def hostRef = Q.New(LocalStorageHostRefVO.class).eq(LocalStorageHostRefVO_.hostUuid, host.uuid).find() as LocalStorageHostRefVO
+        assert hostRef.availableCapacity == hostCapacity.availableCapacity - SizeUnit.GIGABYTE.toByte(20) - SizeUnit.GIGABYTE.toByte(1)
+        assert hostRef.availablePhysicalCapacity == hostCapacity.availablePhysicalCapacity - SizeUnit.GIGABYTE.toByte(20) - SizeUnit.GIGABYTE.toByte(1)
 
-            LocalStorageHostRefVO refVO = Q.New(LocalStorageHostRefVO.class)
-                    .eq(LocalStorageHostRefVO_.hostUuid, cmd.hostUuid).find()
+        // ImageCache(1G) + VolumeSize(20G)
+        assert beforeCapacityResult.availableCapacity == capacityResult.availableCapacity +
+                SizeUnit.GIGABYTE.toByte(1) + SizeUnit.GIGABYTE.toByte(20)
+        assert beforeCapacityResult.availablePhysicalCapacity ==
+                capacityResult.availablePhysicalCapacity + SizeUnit.GIGABYTE.toByte(20) + SizeUnit.GIGABYTE.toByte(1)
+        assert beforeCapacityResult.totalCapacity == capacityResult.totalCapacity
+        assert beforeCapacityResult.totalPhysicalCapacity == capacityResult.totalPhysicalCapacity
 
-            def rsp = new LocalStorageKvmBackend.AgentResponse()
-            rsp.totalCapacity = refVO.totalPhysicalCapacity
-            if(cmd.hostUuid == vm.hostUuid){
-                rsp.availableCapacity = refVO.totalPhysicalCapacity - image_physical_size
-            }else{
-                rsp.availableCapacity = refVO.availablePhysicalCapacity
-            }
-            checked = true
+        env.simulator(LocalStorageKvmBackend.INIT_PATH) {
+            def rsp = new LocalStorageKvmBackend.CreateEmptyVolumeRsp()
+            rsp.totalCapacity = hostCapacity.totalCapacity
+            rsp.availableCapacity = hostCapacity.availableCapacity - SizeUnit.GIGABYTE.toByte(20) - SizeUnit.GIGABYTE.toByte(1)
             return rsp
         }
-        reconnectPrimaryStorage {
-            uuid = ps.uuid
+
+        reconnectHost {
+            uuid = host.uuid
         }
         GetPrimaryStorageCapacityResult afterCapacityResult = getPrimaryStorageCapacity {
             primaryStorageUuids = [ps.uuid]
         }
-        assert beforeCapacityResult.availablePhysicalCapacity == afterCapacityResult.availablePhysicalCapacity + image_physical_size
+        assert beforeCapacityResult.availableCapacity == afterCapacityResult.availableCapacity +
+                SizeUnit.GIGABYTE.toByte(1) + SizeUnit.GIGABYTE.toByte(20)
+        assert beforeCapacityResult.availablePhysicalCapacity ==
+                afterCapacityResult.availablePhysicalCapacity + SizeUnit.GIGABYTE.toByte(20) + SizeUnit.GIGABYTE.toByte(1)
+        assert beforeCapacityResult.totalCapacity == afterCapacityResult.totalCapacity
+        assert beforeCapacityResult.totalPhysicalCapacity == afterCapacityResult.totalPhysicalCapacity
     }
 }

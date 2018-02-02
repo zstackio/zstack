@@ -1,5 +1,7 @@
 package org.zstack.header.longjob
 
+import org.zstack.header.longjob.APICancelLongJobEvent
+
 doc {
     title "CancelLongJob"
 
@@ -11,8 +13,8 @@ doc {
         request {
 			url "PUT /v1/longjobs/{uuid}/actions"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header(Authorization: 'OAuth the-session-uuid')
 
             clz APICancelLongJobMsg.class
 

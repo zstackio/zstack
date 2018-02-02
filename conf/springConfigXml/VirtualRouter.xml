@@ -154,6 +154,8 @@
     <bean id="VirtualRouterDnsBackend" class="org.zstack.network.service.virtualrouter.dns.VirtualRouterDnsBackend">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.network.service.NetworkServiceDnsBackend" />
+            <zstack:extension interface="org.zstack.header.network.service.VirtualRouterBeforeDetachNicExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint" />
         </zstack:plugin>
     </bean>
 
@@ -199,6 +201,8 @@
     <bean id="VirtualRouterLoadBalancerBackend" class="org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.network.service.lb.LoadBalancerBackend" />
+            <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor" />
+            <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
         </zstack:plugin>
     </bean>
 

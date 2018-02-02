@@ -8,6 +8,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -16,7 +17,10 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
-import org.zstack.header.core.*;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.NopeCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -52,11 +56,6 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
-import static org.zstack.core.Platform.operr;
-import static org.zstack.core.progress.ProgressReportService.reportProgress;
-import static org.zstack.header.storage.backup.BackupStorageConstant.*;
-import static org.zstack.utils.ProgressUtils.getEndFromStage;
-
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.io.File;
@@ -64,6 +63,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import static org.zstack.core.Platform.operr;
+import static org.zstack.core.progress.ProgressReportService.reportProgress;
+import static org.zstack.header.storage.backup.BackupStorageConstant.CREATE_ROOT_VOLUME_TEMPLATE_CREATE_TEMPORARY_TEMPLATE_STAGE;
+import static org.zstack.header.storage.backup.BackupStorageConstant.CREATE_ROOT_VOLUME_TEMPLATE_UPLOAD_STAGE;
+import static org.zstack.utils.ProgressUtils.getEndFromStage;
 
 public class NfsPrimaryStorage extends PrimaryStorageBase {
     private static final CLogger logger = Utils.getLogger(NfsPrimaryStorage.class);
@@ -105,6 +110,10 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             handle((DeleteImageCacheOnPrimaryStorageMsg) msg);
         } else if (msg instanceof NfsRecalculatePrimaryStorageCapacityMsg) {
             handle((NfsRecalculatePrimaryStorageCapacityMsg) msg);
+        } else if (msg instanceof NfsToNfsMigrateVolumeMsg) {
+            handle((NfsToNfsMigrateVolumeMsg) msg);
+        } else if (msg instanceof NfsRebaseVolumeBackingFileMsg) {
+            handle((NfsRebaseVolumeBackingFileMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -214,24 +223,58 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         if (bkd == null) {
             throw new OperationFailureException(operr("cannot find usable backend"));
         }
-
-        DeleteBitsOnPrimaryStorageMsg dmsg = new DeleteBitsOnPrimaryStorageMsg();
-        dmsg.setFolder(true);
-        dmsg.setHypervisorType(bkd.getHypervisorType().toString());
-        dmsg.setInstallPath(new File(msg.getInstallPath()).getParent());
-        dmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
-        bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
-        bus.send(dmsg, new CloudBusCallBack(msg) {
+        PrimaryStorageVO ps = dbf.findByUuid(msg.getPrimaryStorageUuid(), PrimaryStorageVO.class);
+        DeleteImageCacheOnPrimaryStorageReply sreply = new DeleteImageCacheOnPrimaryStorageReply();
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("delete-image-cache-on-nfs-primary-storage-%s", msg.getPrimaryStorageUuid()));
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "delete-volume-cache";
             @Override
-            public void run(MessageReply reply) {
-                DeleteImageCacheOnPrimaryStorageReply r = new DeleteImageCacheOnPrimaryStorageReply();
-                r.setSuccess(reply.isSuccess());
-                if (reply.getError() != null) {
-                    r.setError(reply.getError());
-                }
-                bus.reply(msg, r);
+            public void run(FlowTrigger trigger, Map data) {
+                DeleteVolumeBitsOnPrimaryStorageMsg dmsg = new DeleteVolumeBitsOnPrimaryStorageMsg();
+                dmsg.setFolder(true);
+                dmsg.setHypervisorType(bkd.getHypervisorType().toString());
+                dmsg.setInstallPath(new File(msg.getInstallPath()).getParent());
+                dmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+                bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
+                bus.send(dmsg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (reply.isSuccess()) {
+                            trigger.next();
+                        } else {
+                            trigger.fail(reply.getError());
+                        }
+                    }
+                });
             }
-        });
+        }).done(new FlowDoneHandler(msg) {
+            @Override
+            public void handle(Map data) {
+                bus.reply(msg, sreply);
+            }
+        }).error(new FlowErrorHandler(msg) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                sreply.setError(errCode);
+                bus.reply(msg, sreply);
+            }
+        }).start();
+    }
+
+    private String selectRandomHostFromPS(PrimaryStorageInventory ps) {
+        List<String> cuuids = ps.getAttachedClusterUuids();
+        if (cuuids.isEmpty()) {
+            return null;
+        }
+
+        List<String> hosts = SQL.New("select host.uuid from ClusterVO cluster, HostVO host " +
+                        "where cluster.uuid = host.clusterUuid and host.status = :hostStatus and cluster.uuid in (:cuuids) order by rand()").
+                param("hostStatus", HostStatus.Connected).param("cuuids", cuuids).list();
+        if (hosts == null || hosts.size() == 0) {
+            return null;
+        }
+        return hosts.get(0);
     }
 
     private void handle(final GetVolumeRootImageUuidFromPrimaryStorageMsg msg) {
@@ -735,6 +778,32 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
+    protected void handle(GetPrimaryStorageFolderListMsg msg) {
+        GetPrimaryStorageFolderListReply reply = new GetPrimaryStorageFolderListReply();
+        String hostUuid = getAvailableHostUuidForOperation();
+        if (hostUuid == null) {
+            bus.reply(msg, reply);
+            return;
+        }
+        String type = Q.New(HostVO.class).eq(HostVO_.uuid, hostUuid).select(HostVO_.hypervisorType).findValue();
+        NfsPrimaryStorageBackend bkd = getBackend(HypervisorType.valueOf(type));
+
+        bkd.list(getSelfInventory(), msg.getPath(), new ReturnValueCompletion<List<String>>(msg) {
+            @Override
+            public void success(List<String> paths) {
+                reply.setFolders(paths);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    @Override
     protected void handle(InstantiateVolumeOnPrimaryStorageMsg msg) {
         try {
             if (msg.getClass() == InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg.class) {
@@ -898,9 +967,66 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
-    protected void handle(final DeleteBitsOnPrimaryStorageMsg msg) {
-        final DeleteBitsOnPrimaryStorageReply reply = new DeleteBitsOnPrimaryStorageReply();
+    protected void handle(GetInstallPathForDataVolumeDownloadMsg msg) {
+        final GetInstallPathForDataVolumeDownloadReply reply = new GetInstallPathForDataVolumeDownloadReply();
+        final String installPath = PathUtil.join(self.getMountPath(), PrimaryStoragePathMaker.makeDataVolumeInstallPath(msg.getVolumeUuid()));
+        reply.setInstallPath(installPath);
+        bus.reply(msg, reply);
+
+    }
+
+    @Override
+    protected void handle(final DeleteVolumeBitsOnPrimaryStorageMsg msg) {
+        final DeleteVolumeBitsOnPrimaryStorageReply reply = new DeleteVolumeBitsOnPrimaryStorageReply();
         NfsPrimaryStorageBackend bkd = getBackend(HypervisorType.valueOf(msg.getHypervisorType()));
+        if (msg.isFolder()) {
+            bkd.deleteFolder(getSelfInventory(), msg.getInstallPath(), new Completion(msg) {
+                @Override
+                public void success() {
+                    bus.reply(msg, reply);
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    reply.setError(errorCode);
+                    bus.reply(msg, reply);
+                }
+            });
+        } else {
+            bkd.delete(getSelfInventory(), msg.getInstallPath(), new Completion(msg) {
+                @Override
+                public void success() {
+                    bus.reply(msg, reply);
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    reply.setError(errorCode);
+                    bus.reply(msg, reply);
+                }
+            });
+        }
+    }
+
+    private String getAvailableHostUuidForOperation() {
+        List<String> hostUuids = Q.New(PrimaryStorageHostRefVO.class).
+                eq(PrimaryStorageHostRefVO_.primaryStorageUuid, self.getUuid()).select(PrimaryStorageHostRefVO_.hostUuid).listValues();
+        if (hostUuids == null || hostUuids.size() == 0) {
+            return null;
+        }
+        return hostUuids.get(0);
+    }
+
+    @Override
+    protected void handle(final DeleteBitsOnPrimaryStorageMsg msg) {
+        final DeleteVolumeBitsOnPrimaryStorageReply reply = new DeleteVolumeBitsOnPrimaryStorageReply();
+        String hostUuid = getAvailableHostUuidForOperation();
+        if (hostUuid == null) {
+            bus.reply(msg, reply);
+            return;
+        }
+        String type = Q.New(HostVO.class).eq(HostVO_.uuid, hostUuid).select(HostVO_.hypervisorType).findValue();
+        NfsPrimaryStorageBackend bkd = getBackend(HypervisorType.valueOf(type));
         if (msg.isFolder()) {
             bkd.deleteFolder(getSelfInventory(), msg.getInstallPath(), new Completion(msg) {
                 @Override
@@ -1011,6 +1137,49 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         });
     }
 
+    private void handle(NfsToNfsMigrateVolumeMsg msg) {
+        NfsPrimaryStorageBackend backend = getUsableBackend();
+        if (backend == null) {
+            throw new OperationFailureException(operr("the NFS primary storage[uuid:%s, name:%s] cannot find hosts in attached clusters to perform the operation",
+                    self.getUuid(), self.getName()));
+        }
+
+        backend.handle(getSelfInventory(), msg, new ReturnValueCompletion<NfsToNfsMigrateVolumeReply>(msg) {
+            @Override
+            public void success(NfsToNfsMigrateVolumeReply reply) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                NfsToNfsMigrateVolumeReply reply = new NfsToNfsMigrateVolumeReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(NfsRebaseVolumeBackingFileMsg msg) {
+        NfsPrimaryStorageBackend backend = getUsableBackend();
+        if (backend == null) {
+            throw new OperationFailureException(operr("the NFS primary storage[uuid:%s, name:%s] cannot find hosts in attached clusters to perform the operation",
+                    self.getUuid(), self.getName()));
+        }
+        backend.handle(getSelfInventory(), msg, new ReturnValueCompletion<NfsRebaseVolumeBackingFileReply>(msg) {
+            @Override
+            public void success(NfsRebaseVolumeBackingFileReply reply) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                NfsRebaseVolumeBackingFileReply reply = new NfsRebaseVolumeBackingFileReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
     protected void handle(NfsRecalculatePrimaryStorageCapacityMsg msg) {
         if (msg.isRelease()) {
             doReleasePrimaryStorageCapacity();
@@ -1050,107 +1219,59 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             return;
         }
 
-        FlowChain chain = FlowChainBuilder.newShareFlowChain();
-        chain.setName(String.format("reconnect-nfs-primary-storage-%s", self.getUuid()));
-        chain.then(new ShareFlow() {
-            @Override
-            public void setup() {
-                flow(new NoRollbackFlow() {
-                    String __name__ = "ping";
+        logger.debug(String.format("reconnect-nfs-primary-storage-%s", self.getUuid()));
+        SimpleQuery<PrimaryStorageClusterRefVO> q = dbf.createQuery(PrimaryStorageClusterRefVO.class);
+        q.select(PrimaryStorageClusterRefVO_.clusterUuid);
+        q.add(PrimaryStorageClusterRefVO_.primaryStorageUuid, Op.EQ, self.getUuid());
+        List<String> cuuids = q.listValue();
+        if (cuuids.isEmpty()) {
+            completion.success();
+            return;
+        }
 
+        PrimaryStorageInventory inv = getSelfInventory();
+        new LoopAsyncBatch<String>(completion) {
+            boolean success;
+
+            @Override
+            protected Collection<String> collect() {
+                return cuuids;
+            }
+
+            @Override
+            protected AsyncBatchRunner forEach(String cuuid) {
+                return new AsyncBatchRunner() {
                     @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        backend.ping(getSelfInventory(), new Completion(trigger) {
+                    public void run(NoErrorCompletion completion) {
+                        NfsPrimaryStorageBackend bkd = getBackendByClusterUuid(cuuid);
+                        bkd.remount(inv, cuuid, new Completion(completion) {
                             @Override
                             public void success() {
-                                trigger.next();
+                                success = true;
+                                completion.done();
                             }
 
                             @Override
                             public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
+                                errors.add(errorCode);
+                                completion.done();
                             }
                         });
                     }
-                });
-
-                flow(new NoRollbackFlow() {
-                    String __name__ = "remount";
-
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        SimpleQuery<PrimaryStorageClusterRefVO> q = dbf.createQuery(PrimaryStorageClusterRefVO.class);
-                        q.select(PrimaryStorageClusterRefVO_.clusterUuid);
-                        q.add(PrimaryStorageClusterRefVO_.primaryStorageUuid, Op.EQ, self.getUuid());
-                        List<String> cuuids = q.listValue();
-
-                        if (cuuids.isEmpty()) {
-                            trigger.next();
-                            return;
-                        }
-
-                        PrimaryStorageInventory inv = getSelfInventory();
-
-                        new LoopAsyncBatch<String>(trigger) {
-                            boolean success;
-
-                            @Override
-                            protected Collection<String> collect() {
-                                return cuuids;
-                            }
-
-                            @Override
-                            protected AsyncBatchRunner forEach(String cuuid) {
-                                return new AsyncBatchRunner() {
-                                    @Override
-                                    public void run(NoErrorCompletion completion) {
-                                        NfsPrimaryStorageBackend bkd = getBackendByClusterUuid(cuuid);
-                                        bkd.remount(inv, cuuid, new Completion(completion) {
-                                            @Override
-                                            public void success() {
-                                                success = true;
-                                                completion.done();
-                                            }
-
-                                            @Override
-                                            public void fail(ErrorCode errorCode) {
-                                                errors.add(errorCode);
-                                                completion.done();
-                                            }
-                                        });
-                                    }
-                                };
-                            }
-
-                            @Override
-                            protected void done() {
-                                if (success) {
-                                    self = dbf.reload(self);
-                                    trigger.next();
-                                } else {
-                                    trigger.fail(errf.stringToOperationError(String.format("unable to connect the" +
-                                            "NFS primary storage[uuid:%s, name:%s]", self.getUuid(), self.getName()), errors));
-                                }
-                            }
-                        }.start();
-                    }
-                });
-
-                done(new FlowDoneHandler(completion) {
-                    @Override
-                    public void handle(Map data) {
-                        completion.success();
-                    }
-                });
-
-                error(new FlowErrorHandler(completion) {
-                    @Override
-                    public void handle(ErrorCode errCode, Map data) {
-                        completion.fail(errCode);
-                    }
-                });
+                };
             }
-        }).start();
+
+            @Override
+            protected void done() {
+                if (success) {
+                    self = dbf.reload(self);
+                    completion.success();
+                } else {
+                    completion.fail(errf.stringToOperationError(String.format("unable to connect the" +
+                            "NFS primary storage[uuid:%s, name:%s]", self.getUuid(), self.getName()), errors));
+                }
+            }
+        }.start();
     }
 
     @Override

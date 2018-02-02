@@ -16,6 +16,8 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l3.*;
+import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
+import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO_;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.vip.VipVO_;
 import org.zstack.tag.PatternedSystemTag;
@@ -28,7 +30,9 @@ import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 
 import javax.persistence.TypedQuery;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
@@ -112,19 +116,20 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
         String sql = "select nic.l3NetworkUuid from VmNicVO nic where nic.uuid in (:uuids) group by nic.l3NetworkUuid";
         TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("uuids", msg.getVmNicUuids());
-        List<String> l3Uuids = q.getResultList();
+        Set<String> l3Uuids = new HashSet<>(q.getResultList());
         DebugUtils.Assert(!l3Uuids.isEmpty(), "cannot find the l3Network");
-        if (l3Uuids.size() > 1) {
-            throw new ApiMessageInterceptionException(argerr("vm nics[uuids:%s] are not on the same L3 network. they are on L3 networks[uuids:%s]", msg.getVmNicUuids(), l3Uuids));
-        }
 
-        String l3Uuid = l3Uuids.get(0);
-        sql = "select ref.l3NetworkUuid from NetworkServiceL3NetworkRefVO ref where ref.l3NetworkUuid = :uuid and ref.networkServiceType = :ntype";
-        q = dbf.getEntityManager().createQuery(sql, String.class);
-        q.setParameter("uuid", l3Uuid);
-        q.setParameter("ntype", LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
-        if (q.getResultList().isEmpty()) {
-            throw new ApiMessageInterceptionException(operr("the L3 network[uuid:%s] of the vm nics has no network service[%s] enabled", l3Uuid, LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING));
+        Set<String> networksAttachedLbService = new HashSet<>(Q.New(NetworkServiceL3NetworkRefVO.class)
+                .select(NetworkServiceL3NetworkRefVO_.l3NetworkUuid)
+                .in(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, l3Uuids)
+                .eq(NetworkServiceL3NetworkRefVO_.networkServiceType, LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING)
+                .listValues());
+
+        l3Uuids.removeAll(networksAttachedLbService);
+        if (l3Uuids.size() > 0) {
+            throw new ApiMessageInterceptionException(
+                    operr("L3 networks[uuids:%s] of the vm nics has no network service[%s] enabled",
+                            l3Uuids, LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING));
         }
 
         sql = "select ref.vmNicUuid from LoadBalancerListenerVmNicRefVO ref where ref.vmNicUuid in (:nicUuids) and ref.listenerUuid = :uuid";
@@ -261,10 +266,13 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
                 throw new ApiMessageInterceptionException(argerr("conflict loadBalancerPort[%s], a vip[uuid:%s] has used that port", msg.getLoadBalancerPort(), TargetVipUuids));
             }
 
-            VipUuids = SQL.New("select distinct lb.vipUuid from LoadBalancerVO lb, LoadBalancerListenerVO lbl where " +
-                    "lbl.instancePort=:port and lbl.loadBalancerUuid=lb.uuid", String.class).param("port", msg.getInstancePort()).list();
-            if (!VipUuids.isEmpty() && VipUuids.contains(TargetVipUuids)) {
-                throw new ApiMessageInterceptionException(argerr("conflict loadBalancerPort[%s], a vip[uuid:%s] has used that port", msg.getLoadBalancerPort(), TargetVipUuids));
+            String lblUuid = SQL.New("select lbl.uuid from LoadBalancerVO lb, LoadBalancerListenerVO lbl where " +
+                    "lbl.instancePort=:port and lbl.loadBalancerUuid=lb.uuid and lb.vipUuid =:uuid", String.class)
+                    .param("port", msg.getInstancePort())
+                    .param("uuid", TargetVipUuids).find();
+
+            if (lblUuid != null){
+                throw new ApiMessageInterceptionException(argerr("conflict instancePort[%s], a listener[uuid:%s] has used that port", msg.getInstancePort(), lblUuid));
             }
         }
     }

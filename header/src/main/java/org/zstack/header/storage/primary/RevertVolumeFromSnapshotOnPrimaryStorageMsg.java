@@ -1,11 +1,14 @@
 package org.zstack.header.storage.primary;
 
+import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.header.storage.snapshot.APIRevertVolumeFromSnapshotMsg;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.volume.VolumeInventory;
 
 /**
  */
+@ApiTimeout(apiClasses = APIRevertVolumeFromSnapshotMsg.class)
 public class RevertVolumeFromSnapshotOnPrimaryStorageMsg extends NeedReplyMessage implements PrimaryStorageMessage {
     private VolumeInventory volume;
     private VolumeSnapshotInventory snapshot;
