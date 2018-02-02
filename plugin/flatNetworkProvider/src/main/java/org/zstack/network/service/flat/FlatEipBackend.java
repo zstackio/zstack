@@ -484,7 +484,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                     }
                 });
                 for (AfterApplyFlatEipExtensionPoint ext : pluginRgty.getExtensionList(AfterApplyFlatEipExtensionPoint.class)) {
-                    ext.AfterApplyFlatEip(vipUuids);
+                    ext.AfterApplyFlatEip(vipUuids, hostUuid);
                 }
 
                 completion.success();
@@ -575,9 +575,10 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         ApplyEipCmd cmd = new ApplyEipCmd();
         cmd.eip = eipStructToEipTO(struct);
 
+        String hostUuid = getHostUuidByVmUuid(cmd.eip.vmUuid);
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
-        msg.setHostUuid(getHostUuidByVmUuid(cmd.eip.vmUuid));
+        msg.setHostUuid(hostUuid);
         msg.setPath(APPLY_EIP_PATH);
         msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
@@ -597,7 +598,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                 }
 
                 for (AfterApplyFlatEipExtensionPoint ext : pluginRgty.getExtensionList(AfterApplyFlatEipExtensionPoint.class)) {
-                    ext.AfterApplyFlatEip(asList(struct.getVip().getUuid()));
+                    ext.AfterApplyFlatEip(asList(struct.getVip().getUuid()), hostUuid);
                 }
 
                 completion.success();
