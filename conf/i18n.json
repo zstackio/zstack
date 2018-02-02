@@ -786,7 +786,7 @@
   {
     "raw": "More than one BackupStorage on the same host identified by hostname. There has been a SftpBackupStorage [hostname:%s] existing. The BackupStorage type to be added is %s. ",
     "en_US": "More than one BackupStorage on the same host identified by hostname. There has been a SftpBackupStorage [hostname:{0}] existing. The BackupStorage type to be added is {1}. ",
-    "zh_CN": "超过一个相同的镜像服务器类型在认证的物理机上，这事发生在Sftp存储上 [机器名:{0}] 已存在. 这个类型的镜像服务器已经被添加{1}",
+    "zh_CN": "有超过一个镜像服务器拥有相同的主机名，已经存在一个 SFTP 镜像存储 [主机名:{0}]，被添加的镜像存储类型为 {1}",
     "arguments": [
       "hostname",
       "newBS"
@@ -797,7 +797,7 @@
   {
     "raw": "More than one BackupStorage on the same host identified by hostname. There has been an ImageStoreBackupStorage [hostname:%s] existing. The BackupStorage type to be added is %s. ",
     "en_US": "More than one BackupStorage on the same host identified by hostname. There has been an ImageStoreBackupStorage [hostname:{0}] existing. The BackupStorage type to be added is {1}. ",
-    "zh_CN": "超过一个相同的镜像服务器类型在认证的物理机上，这事发生在镜像仓库上 [机器名:{0}] 已存在. 这个类型的镜像服务器已经被添加{1}",
+    "zh_CN": "有超过一个镜像服务器拥有相同的主机名，已经存在一个镜像仓库 [主机名:{0}]，被添加的镜像存储类型为 {1}",
     "arguments": [
       "hostname",
       "newBS"
@@ -3771,7 +3771,7 @@
   {
     "raw": "No connected backup storage found for image[uuid:%s, name:%s]",
     "en_US": "No connected backup storage found for image[uuid:{0}, name:{1}]",
-    "zh_CN": "没有Connected状态的镜像服务器来搜索镜像[uuid:{0}, name:{1}]",
+    "zh_CN": "在所有 Connected 状态的镜像服务器上都找不到镜像[uuid:{0}, name:{1}]",
     "arguments": [
       "self.getUuid()",
       "self.getName()"
@@ -3938,7 +3938,7 @@
   {
     "raw": "the vip[uuid:%s] has been used for %s",
     "en_US": "the vip[uuid:{0}] has been used for {1}",
-    "zh_CN": "虚拟IP[uuid:{0}]已经被{1}使用",
+    "zh_CN": "虚拟IP[uuid:{0}]已经用作网络服务 {1}",
     "arguments": [
       "msg.getVipUuid()",
       "vip.getUseFor()"
@@ -3980,7 +3980,7 @@
   {
     "raw": "the L3 network[uuid:%s] doesn\u0027t have any IP range",
     "en_US": "the L3 network[uuid:{0}] doesn\u0027t have any IP range",
-    "zh_CN": "三层网络[uuid:{0}]没有IP地址范围",
+    "zh_CN": "三层网络[uuid:{0}]没有设置网络段",
     "arguments": [
       "msg.getL3NetworkUuid()"
     ],
@@ -4173,7 +4173,7 @@
   {
     "raw": "failed to destroy vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s], because %s",
     "en_US": "failed to destroy vm[uuid:{0} name:{1}] on kvm host[uuid:{2}, ip:{3}], because {4}",
-    "zh_CN": "无法在物理机[uuid:{2}, ip:{3}]上关闭云主机[uuid:{0} name:{1}]，原因：{4}",
+    "zh_CN": "无法在物理机[uuid:{2}, ip:{3}]上删除云主机[uuid:{0} name:{1}]，原因：{4}",
     "arguments": [
       "vminv.getUuid()",
       "vminv.getName()",
@@ -4187,7 +4187,7 @@
   {
     "raw": "failed to stop vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s], because %s",
     "en_US": "failed to stop vm[uuid:{0} name:{1}] on kvm host[uuid:{2}, ip:{3}], because {4}",
-    "zh_CN": "停止在物理机[uuid:{2}, ip:{3}]上的云主机[uuid:{0} 名称:{1}]失败，因为:{4}",
+    "zh_CN": "在物理机[uuid:{2}, ip:{3}]上停止云主机[uuid:{0} 名称:{1}]失败，因为:{4}",
     "arguments": [
       "vminv.getUuid()",
       "vminv.getName()",
@@ -4201,7 +4201,7 @@
   {
     "raw": "failed to start vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s], because %s",
     "en_US": "failed to start vm[uuid:{0} name:{1}] on kvm host[uuid:{2}, ip:{3}], because {4}",
-    "zh_CN": "启动在物理机[uuid:{2}, ip:{3}]上的云主机[uuid:{0} 名称:{1}]失败，因为:{4}",
+    "zh_CN": "在物理机[uuid:{2}, ip:{3}]上启动云主机[uuid:{0} 名称:{1}]失败，因为:{4}",
     "arguments": [
       "spec.getVmInventory().getUuid()",
       "spec.getVmInventory().getName()",
@@ -4272,7 +4272,7 @@
   {
     "raw": "the KVM host[ip:%s] cannot access the management node\u0027s callback url. It seems that the KVM host cannot reach the management IP[%s]. %s %s",
     "en_US": "the KVM host[ip:{0}] cannot access the management node\u0027s callback url. It seems that the KVM host cannot reach the management IP[{1}]. {2} {3}",
-    "zh_CN": "物理机[ip:{0}] 不能连接到管理节点 。 看起来是这个物理机不能查找到管理节点的IP [{1}]. {2} {3}",
+    "zh_CN": "物理机[ip:{0}] 不能连接到管理节点 。 看起来是这个物理机无法到达管理节点的IP [{1}]. {2} {3}",
     "arguments": [
       "self.getManagementIp()",
       "Platform.getManagementServerIp()",
@@ -8029,7 +8029,7 @@
   {
     "raw": "all ceph mons are Disconnected in ceph backup storage[uuid:%s]",
     "en_US": "all ceph mons are Disconnected in ceph backup storage[uuid:{0}]",
-    "zh_CN": "所有在ceph镜像服务器[uuid:{0}]中的ceph的mons都处于失联状态",
+    "zh_CN": "所有在ceph镜像服务器[uuid:{0}]的监控节点都处于失联状态",
     "arguments": [
       "self.getUuid()"
     ],
@@ -8039,7 +8039,7 @@
   {
     "raw": "unable to connect to the ceph backup storage[uuid:%s]. Failed to connect all ceph mons. Errors are %s",
     "en_US": "unable to connect to the ceph backup storage[uuid:{0}]. Failed to connect all ceph mons. Errors are {1}",
-    "zh_CN": "无法连接到ceph镜像服务器[uuid:{0}]。无法与所有的ceph mons连接。错误是{1}",
+    "zh_CN": "无法连接到ceph镜像服务器[uuid:{0}]。所有监控节点均无法连接。错误是{1}",
     "arguments": [
       "self.getUuid()",
       "JSONObjectUtil.toJsonString(errorCodes)"
@@ -8050,7 +8050,7 @@
   {
     "raw": "there is another CEPH backup storage[name:%s, uuid:%s] with the same FSID[%s], you cannot add the same CEPH setup as two different backup storage",
     "en_US": "there is another CEPH backup storage[name:{0}, uuid:{1}] with the same FSID[{2}], you cannot add the same CEPH setup as two different backup storage",
-    "zh_CN": "有另外一个CEPH镜像服务器[name:{0}, uuid:{1}]有相同的FSIO[{2}]，你不能添加同样的CEPH为两个不同的镜像服务器",
+    "zh_CN": "有另外一个CEPH镜像服务器[name:{0}, uuid:{1}]有相同的FSID[{2}]，你不能添加同样的CEPH为两个不同的镜像服务器",
     "arguments": [
       "otherCeph.getName()",
       "otherCeph.getUuid()",
@@ -8062,7 +8062,7 @@
   {
     "raw": "unable to add mon to ceph backup storage",
     "en_US": "unable to add mon to ceph backup storage",
-    "zh_CN": "无法添加mon到ceph镜像服务器",
+    "zh_CN": "在ceph镜像服务器上添加监控节点失败",
     "arguments": [],
     "line": 1330,
     "fileName": "src/main/java/org/zstack/storage/ceph/backup/CephBackupStorageBase.java"
@@ -8070,7 +8070,7 @@
   {
     "raw": "cannot update status of the ceph backup storage mon[uuid:%s], it has been deleted.This error can be ignored",
     "en_US": "cannot update status of the ceph backup storage mon[uuid:{0}], it has been deleted.This error can be ignored",
-    "zh_CN": "无法更新ceph镜像服务器mon[uuid:{0}]，他已经被删除。这个错误可以被忽略",
+    "zh_CN": "无法更新ceph镜像服务器监控节点[uuid:{0}]，他已经被删除。这个错误可以被忽略",
     "arguments": [
       "uuid"
     ],
@@ -8080,7 +8080,7 @@
   {
     "raw": "all mons failed to execute http call[%s], errors are %s",
     "en_US": "all mons failed to execute http call[{0}], errors are {1}",
-    "zh_CN": "所有的mons都无法执行http call[{0}]，错误是{1}",
+    "zh_CN": "所有的监控节点都无法执行http call[{0}]，错误是{1}",
     "arguments": [
       "path",
       "JSONObjectUtil.toJsonString(errorCodes)"
@@ -8126,7 +8126,7 @@
   {
     "raw": "all ceph mons of primary storage[uuid:%s] are not in Connected state",
     "en_US": "all ceph mons of primary storage[uuid:{0}] are not in Connected state",
-    "zh_CN": "所有的主存储的ceph mons都不处于已连接状态",
+    "zh_CN": "Ceph主存储[uuid:{0}]所有的监控节点都不是已连接状态",
     "arguments": [
       "self.getUuid()"
     ],
@@ -8146,7 +8146,7 @@
   {
     "raw": "unable to connect to the ceph primary storage[uuid:%s]. Failed to connect all ceph mons. Errors are %s",
     "en_US": "unable to connect to the ceph primary storage[uuid:{0}]. Failed to connect all ceph mons. Errors are {1}",
-    "zh_CN": "无法连接到ceph主存储[uuid:{0}]。连接所有ceph mons失败。错误是{1}",
+    "zh_CN": "无法连接到ceph主存储[uuid:{0}]。所有监控节点均连接失败。错误是{1}",
     "arguments": [
       "self.getUuid()",
       "JSONObjectUtil.toJsonString(errorCodes)"
@@ -8157,7 +8157,7 @@
   {
     "raw": "the fsid returned by mons are mismatching, it seems the mons belong to different ceph clusters:\\n",
     "en_US": "the fsid returned by mons are mismatching, it seems the mons belong to different ceph clusters:\\n",
-    "zh_CN": "mons返回的fsid不匹配，似乎mons属于不同的ceph集群",
+    "zh_CN": "监控节点返回的fsid不匹配，似乎监控节点属于不同的ceph集群",
     "arguments": [],
     "line": 1786,
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageBase.java"
@@ -8229,7 +8229,7 @@
   {
     "raw": "cannot find any Connected ceph mon for the primary storage[uuid:%s]",
     "en_US": "cannot find any Connected ceph mon for the primary storage[uuid:{0}]",
-    "zh_CN": "无法找到一台处于Connected状态的用于监控Ceph主存储[uuid:{0}]的监控节点",
+    "zh_CN": "无法为Ceph主存储[uuid:{0}]找到一台处于Connected状态的的监控节点",
     "arguments": [
       "vol.getPrimaryStorageUuid()"
     ],
@@ -8457,7 +8457,7 @@
   {
     "raw": "zoneUuids, clusterUuids, primaryStorageUuids must have at least one be none-empty list, or all is set to true",
     "en_US": "zoneUuids, clusterUuids, primaryStorageUuids must have at least one be none-empty list, or all is set to true",
-    "zh_CN": "区域、集群、主存储的Uuids中必须至少有一个不为空列表，或者全部的pass都设置为true",
+    "zh_CN": "区域、集群、主存储的Uuids中必须至少有一个不为空列表，除非将字段 all 设为 true",
     "arguments": [],
     "line": 77,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageApiInterceptor.java"
@@ -8487,7 +8487,7 @@
   {
     "raw": "primary storage[uuid:%s] and cluster[uuid:%s] are not in the same zone",
     "en_US": "primary storage[uuid:{0}] and cluster[uuid:{1}] are not in the same zone",
-    "zh_CN": "主存储[uuid:{0}]还集群[uuid:{1}]不在同一个区域内",
+    "zh_CN": "主存储[uuid:{0}]和集群[uuid:{1}]不在同一个区域内",
     "arguments": [
       "msg.getPrimaryStorageUuid()",
       "msg.getClusterUuid()"
@@ -8519,7 +8519,7 @@
   {
     "raw": "after removing primary storage%s to avoid, there is no candidate primary storage anymore",
     "en_US": "after removing primary storage{0} to avoid, there is no candidate primary storage anymore",
-    "zh_CN": "把主存储{0}移到排除列表后，就没有申请的主存储了",
+    "zh_CN": "把主存储{0}移到排除列表后，就没有可用的主存储了",
     "arguments": [
       "spec.getAvoidPrimaryStorageUuids()"
     ],
@@ -8604,7 +8604,7 @@
   {
     "raw": "cannot find any qualified primary storage, errors are %s",
     "en_US": "cannot find any qualified primary storage, errors are {0}",
-    "zh_CN": "找不到合格的主存储，错误为:{0}",
+    "zh_CN": "找不到可用的主存储，错误为:{0}",
     "arguments": [
       "errs"
     ],
@@ -8635,7 +8635,7 @@
   {
     "raw": "cannot find primary storage having user tag[%s]. The user tag is specified in instance offering or disk offering",
     "en_US": "cannot find primary storage having user tag[{0}]. The user tag is specified in instance offering or disk offering",
-    "zh_CN": "找不到由计算规格或云盘规格指定的拥有指定用户标签的主存储[uuid:{0}]",
+    "zh_CN": "找不到带有指定用户标签的主存储[uuid:{0}]，该标签由计算规格或者云盘规格指定",
     "arguments": [
       "tag"
     ],
@@ -8645,7 +8645,7 @@
   {
     "raw": "PrimaryStorageTagAllocatorExtensionPoint[%s] returns zero primary storage candidate",
     "en_US": "PrimaryStorageTagAllocatorExtensionPoint[{0}] returns zero primary storage candidate",
-    "zh_CN": "主存储标签分配插件[{0}]返回零个主存储申请",
+    "zh_CN": "主存储标签分配插件[{0}]找不到可用的主存储",
     "arguments": [
       "extp.getClass().getName()"
     ],
@@ -8803,7 +8803,7 @@
   {
     "raw": "the dest host[uuid:%s] doesn\u0027t belong to the local primary storage[uuid:%s] where the volume[uuid:%s] locates",
     "en_US": "the dest host[uuid:{0}] doesn\u0027t belong to the local primary storage[uuid:{1}] where the volume[uuid:{2}] locates",
-    "zh_CN": "目标物理机[uuid:{0}]不属于云盘[uuid:{2}]位于的本地主存储[uuid:{1}]",
+    "zh_CN": "目标物理机[uuid:{0}]不在云盘[uuid:{2}]位于的本地主存储[uuid:{1}]上",
     "arguments": [
       "msg.getDestHostUuid()",
       "ref.getPrimaryStorageUuid()",
@@ -8903,7 +8903,7 @@
   {
     "raw": "failed to download image[uuid:%s] to all hosts in the local storage[uuid:%s]. %s",
     "en_US": "failed to download image[uuid:{0}] to all hosts in the local storage[uuid:{1}]. {2}",
-    "zh_CN": "在本地存储[uuid:{1}]上往所有物理机下载镜像[uuid:{0}]失败。{2}",
+    "zh_CN": "在所有属于本地存储[uuid:{1}]的物理机上，均无法下载镜像[uuid:{0}]。{2}",
     "arguments": [
       "msg.getImage().getUuid()",
       "self.getUuid()",
@@ -9002,7 +9002,7 @@
   {
     "raw": "local storage doesn\u0027t support live migration for hypervisor[%s]",
     "en_US": "local storage doesn\u0027t support live migration for hypervisor[{0}]",
-    "zh_CN": "本地存储不支持虚拟机监视器[{0}]上的热迁移",
+    "zh_CN": "本地存储不支持对虚拟化类型[{0}]进行热迁移",
     "arguments": [
       "spec.getVmInventory().getHypervisorType()"
     ],
@@ -9039,7 +9039,7 @@
   {
     "raw": "unable to recover the vm[uuid:%s, name:%s]. The vm\u0027s root volume is on the local storage[uuid:%s]; however, the host on which the root volume is has been deleted",
     "en_US": "unable to recover the vm[uuid:{0}, name:{1}]. The vm\u0027s root volume is on the local storage[uuid:{2}]; however, the host on which the root volume is has been deleted",
-    "zh_CN": "不能回复云主机[uuid:{0}, name:{1}]。云主机的根云盘在本地存储[uuid:{2}]上；然而物理机内的根云盘已经被删除了",
+    "zh_CN": "不能恢复云主机[uuid:{0}, name:{1}]。云主机的根云盘在本地存储[uuid:{2}]上；然而物理机内的根云盘已经被删除了",
     "arguments": [
       "vm.getUuid()",
       "vm.getName()",
@@ -9051,7 +9051,7 @@
   {
     "raw": "unable to live migrate vm[uuid:%s] with data volumes on local storage. Need detach all data volumes first.",
     "en_US": "unable to live migrate vm[uuid:{0}] with data volumes on local storage. Need detach all data volumes first.",
-    "zh_CN": "无法在本地存储上迁移挂载了数据云盘的云主机[uuid:{0}]。需要先手动卸载所有数据云盘。",
+    "zh_CN": "无法在本地存储上热迁移挂载了数据云盘的云主机[uuid:{0}]。需要先手动卸载所有数据云盘。",
     "arguments": [
       "vm.getUuid()"
     ],
@@ -9061,7 +9061,7 @@
   {
     "raw": "unable to live migrate vm[uuid:%s] with local storage. Only linux guest is supported. Current platform is [%s]",
     "en_US": "unable to live migrate vm[uuid:{0}] with local storage. Only linux guest is supported. Current platform is [{1}]",
-    "zh_CN": "无法在本地存储上迁移云主机[uuid:{0}]。只有Linux类型的云主机支持该操作。当前类型为：[{1}]。",
+    "zh_CN": "无法在本地存储上热迁移云主机[uuid:{0}]。只有Linux类型的云主机支持该操作。当前类型为：[{1}]。",
     "arguments": [
       "vm.getUuid()",
       "vm.getPlatform()"
@@ -9103,7 +9103,7 @@
   {
     "raw": "KVM host[uuid: %s] fails to be added into local primary storage[uuid: %s], %s",
     "en_US": "KVM host[uuid: {0}] fails to be added into local primary storage[uuid: {1}], {2}",
-    "zh_CN": "物理机[uuid:{0}]添加到主存储[uuid:{1}]失败，{2}",
+    "zh_CN": "本地存储[uuid:{1}]添加物理机[uuid:{0}]失败，{2}",
     "arguments": [
       "context.getInventory().getUuid()",
       "priUuid",
@@ -9115,7 +9115,7 @@
   {
     "raw": "unable to create an empty volume[uuid:%s, name:%s] on the kvm host[uuid:%s]",
     "en_US": "unable to create an empty volume[uuid:{0}, name:{1}] on the kvm host[uuid:{2}]",
-    "zh_CN": "不能创建空的云盘[uuid:{0}, name:{1}]在物理机[uuid:{2}]上",
+    "zh_CN": "不能在物理机[uuid:{2}]上创建空云盘[uuid:{0}, name:{1}]",
     "arguments": [
       "p.volume.getUuid()",
       "p.volume.getName()",
@@ -9155,7 +9155,7 @@
   {
     "raw": "there has been a nfs primary storage having url as %s in zone[uuid:%s]",
     "en_US": "there has been a nfs primary storage having url as {0} in zone[uuid:{1}]",
-    "zh_CN": "已经存在NFS主存储在区域[uuid:{1}]内拥有url{0}",
+    "zh_CN": "区域[uuid:{1}]内已经存在 url 为 {0} 的 NFS 主存储",
     "arguments": [
       "url",
       "zoneUuid"
@@ -9555,7 +9555,7 @@
   {
     "raw": "failed to upload bits from nfs primary storage[uuid:%s, path:%s] to SFTP backup storage[hostname:%s, path: %s], %s",
     "en_US": "failed to upload bits from nfs primary storage[uuid:{0}, path:{1}] to SFTP backup storage[hostname:{2}, path: {3}], {4}",
-    "zh_CN": "从nfs主存储[uuid:{0}, path:{1}]上传比特到STFP镜像服务器[hostname:{2}, path: {3}]失败，{4}",
+    "zh_CN": "从nfs主存储[uuid:{0}, path:{1}]上传数据到STFP镜像服务器[hostname:{2}, path: {3}]失败，{4}",
     "arguments": [
       "pinv.getUuid()",
       "primaryStorageInstallPath",
