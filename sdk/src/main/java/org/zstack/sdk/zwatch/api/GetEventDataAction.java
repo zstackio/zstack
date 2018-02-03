@@ -36,9 +36,6 @@ public class GetEventDataAction extends AbstractAction {
     public java.util.List conditions;
 
     @Param(required = false)
-    public boolean latest = false;
-
-    @Param(required = false)
     public java.util.List systemTags;
 
     @Param(required = false)
