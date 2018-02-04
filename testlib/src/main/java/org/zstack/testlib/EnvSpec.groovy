@@ -38,6 +38,8 @@ import org.zstack.sdk.zwatch.alarm.CreateAlarmAction
 import org.zstack.sdk.zwatch.alarm.DeleteAlarmAction
 import org.zstack.sdk.zwatch.alarm.SubscribeEventAction
 import org.zstack.sdk.zwatch.alarm.UnsubscribeEventAction
+import org.zstack.sdk.zwatch.alarm.sns.CreateSNSTextTemplateAction
+import org.zstack.sdk.zwatch.alarm.sns.DeleteSNSTextTemplateAction
 import org.zstack.storage.volume.VolumeGlobalConfig
 import org.zstack.utils.DebugUtils
 import org.zstack.utils.FieldUtils
@@ -125,6 +127,7 @@ class EnvSpec implements Node {
             [SubscribeEventAction.metaClass, SubscribeEventAction.Result.metaClass, UnsubscribeEventAction.class],
             [CreateSNSHttpEndpointAction.metaClass, CreateSNSHttpEndpointAction.Result.metaClass, DeleteSNSApplicationEndpointAction.class],
             [CreateSNSDingTalkEndpointAction.metaClass, CreateSNSDingTalkEndpointAction.Result.metaClass, DeleteSNSApplicationEndpointAction.class],
+            [CreateSNSTextTemplateAction.metaClass, CreateSNSTextTemplateAction.Result.metaClass, DeleteSNSTextTemplateAction.class],
     ]
 
     static Closure GLOBAL_DELETE_HOOK
@@ -616,7 +619,9 @@ class EnvSpec implements Node {
             cleanupClosures.each { it() }
             cleanSimulatorAndMessageHandlers()
 
-            destroy(session.uuid)
+            if (session != null) {
+                destroy(session.uuid)
+            }
 
             resourcesNeedDeletion.each {
                 logger.info("run delete() method on ${it.class}")
