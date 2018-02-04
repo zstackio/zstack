@@ -30,8 +30,9 @@ public class VmSystemTags {
     public static String ROOT_PASSWORD_TOKEN = "rootPassword";
     public static PatternedSystemTag ROOT_PASSWORD = new PatternedSystemTag(String.format("rootPassword::{%s}", ROOT_PASSWORD_TOKEN), VmInstanceVO.class);
 
+    public static String ISO_DEVICEID_TOKEN = "deviceId";
     public static String ISO_TOKEN = "iso";
-    public static PatternedSystemTag ISO = new PatternedSystemTag(String.format("iso::{%s}", ISO_TOKEN), VmInstanceVO.class);
+    public static PatternedSystemTag ISO = new PatternedSystemTag(String.format("iso::{%s}::{%s}", ISO_TOKEN, ISO_DEVICEID_TOKEN), VmInstanceVO.class);
 
     public static String BOOT_ORDER_TOKEN = "bootOrder";
     public static PatternedSystemTag BOOT_ORDER = new PatternedSystemTag(String.format("bootOrder::{%s}", BOOT_ORDER_TOKEN), VmInstanceVO.class);

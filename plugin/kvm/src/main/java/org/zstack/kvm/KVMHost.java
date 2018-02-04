@@ -8,6 +8,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.compute.host.HostBase;
 import org.zstack.compute.host.HostSystemTags;
+import org.zstack.compute.vm.IsoOperator;
 import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.CoreGlobalProperty;
@@ -70,6 +71,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.header.vm.VmInstanceConstant.MAXIMUM_MOUNT_ISO_NUMBER;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -609,6 +611,7 @@ public class KVMHost extends HostBase implements Host {
         DetachIsoCmd cmd = new DetachIsoCmd();
         cmd.isoUuid = msg.getIsoUuid();
         cmd.vmUuid = msg.getVmInstanceUuid();
+        cmd.deviceId = IsoOperator.getIsoDeviceId(msg.getVmInstanceUuid(), msg.getIsoUuid());
 
         KVMHostInventory inv = (KVMHostInventory) getSelfInventory();
         for (KVMPreDetachIsoExtensionPoint ext : pluginRgty.getExtensionList(KVMPreDetachIsoExtensionPoint.class)) {
@@ -670,6 +673,7 @@ public class KVMHost extends HostBase implements Host {
         IsoTO iso = new IsoTO();
         iso.setImageUuid(msg.getIsoSpec().getImageUuid());
         iso.setPath(msg.getIsoSpec().getInstallPath());
+        iso.setDeviceId(msg.getIsoSpec().getDeviceId());
 
         AttachIsoCmd cmd = new AttachIsoCmd();
         cmd.vmUuid = msg.getVmInstanceUuid();
@@ -1940,11 +1944,12 @@ public class KVMHost extends HostBase implements Host {
         nics = nics.stream().sorted(Comparator.comparing(NicTO::getDeviceId)).collect(Collectors.toList());
         cmd.setNics(nics);
 
-        if (spec.getDestIso() != null) {
+        for (VmInstanceSpec.IsoSpec isoSpec : spec.getDestIsoList()) {
             IsoTO bootIso = new IsoTO();
-            bootIso.setPath(spec.getDestIso().getInstallPath());
-            bootIso.setImageUuid(spec.getDestIso().getImageUuid());
-            cmd.setBootIso(bootIso);
+            bootIso.setPath(isoSpec.getInstallPath());
+            bootIso.setImageUuid(isoSpec.getImageUuid());
+            bootIso.setDeviceId(IsoOperator.getIsoDeviceId(spec.getVmInventory().getUuid(), isoSpec.getImageUuid()));
+            cmd.getBootIso().add(bootIso);
         }
 
         cmd.setBootDev(toKvmBootDev(spec.getBootOrders()));

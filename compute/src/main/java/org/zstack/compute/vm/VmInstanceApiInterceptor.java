@@ -76,6 +76,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APIAttachL3NetworkToVmMsg) msg);
         } else if (msg instanceof APIAttachIsoToVmInstanceMsg) {
             validate((APIAttachIsoToVmInstanceMsg) msg);
+        } else if (msg instanceof APIDetachIsoFromVmInstanceMsg) {
+            validate((APIDetachIsoFromVmInstanceMsg) msg);
         } else if (msg instanceof APISetVmBootOrderMsg) {
             validate((APISetVmBootOrderMsg) msg);
         } else if (msg instanceof APIDeleteVmStaticIpMsg) {
@@ -256,9 +258,28 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIAttachIsoToVmInstanceMsg msg) {
-        String isoUuid = new IsoOperator().getIsoUuidByVmUuid(msg.getVmInstanceUuid());
-        if (isoUuid != null) {
-            throw new ApiMessageInterceptionException(operr("VM[uuid:%s] already has an ISO[uuid:%s] attached", msg.getVmInstanceUuid(), isoUuid));
+        List<String> isoUuids = IsoOperator.getIsoUuidByVmUuid(msg.getVmInstanceUuid());
+        if (isoUuids.contains(msg.getIsoUuid())) {
+            throw new ApiMessageInterceptionException(operr("VM[uuid:%s] already has an ISO[uuid:%s] attached", msg.getVmInstanceUuid(), msg.getIsoUuid()));
+        }
+    }
+
+    private void fillIsoUuid(APIDetachIsoFromVmInstanceMsg msg) {
+        List<String> isoUuids = IsoOperator.getIsoUuidByVmUuid(msg.getVmInstanceUuid());
+        if(isoUuids.size() == 1) {
+            msg.setIsoUuid(isoUuids.get(0));
+        }
+    }
+
+    private void validate(APIDetachIsoFromVmInstanceMsg msg) {
+        List<String> isoUuids = IsoOperator.getIsoUuidByVmUuid(msg.getVmInstanceUuid());
+
+        if (isoUuids.size() > 1 && msg.getIsoUuid() == null) {
+            throw new ApiMessageInterceptionException(operr("VM[uuid:%s] has multiple ISOs attached, specify the isoUuid when detaching", msg.getVmInstanceUuid()));
+        }
+
+        if (msg.getIsoUuid() == null) {
+            fillIsoUuid(msg);
         }
     }
 

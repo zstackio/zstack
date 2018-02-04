@@ -672,6 +672,7 @@ public class KVMAgentCommands {
     public static class IsoTO {
         private String path;
         private String imageUuid;
+        private int deviceId;
 
         public IsoTO() {
         }
@@ -679,6 +680,7 @@ public class KVMAgentCommands {
         public IsoTO(IsoTO other) {
             this.path = other.path;
             this.imageUuid = other.imageUuid;
+            this.deviceId = other.deviceId;
         }
 
 
@@ -696,6 +698,14 @@ public class KVMAgentCommands {
 
         public void setPath(String path) {
             this.path = path;
+        }
+
+        public int getDeviceId() {
+            return deviceId;
+        }
+
+        public void setDeviceId(int deviceId) {
+            this.deviceId = deviceId;
         }
     }
 
@@ -725,7 +735,7 @@ public class KVMAgentCommands {
         private String consolePassword;
         private List<String> bootDev;
         private VolumeTO rootVolume;
-        private IsoTO bootIso;
+        private List<IsoTO> bootIso = new ArrayList<>();
         private List<VolumeTO> dataVolumes;
         private List<NicTO> nics;
         private long timeout;
@@ -888,11 +898,11 @@ public class KVMAgentCommands {
             this.instanceOfferingOnlineChange = instanceOfferingOnlineChange;
         }
 
-        public IsoTO getBootIso() {
+        public List<IsoTO> getBootIso() {
             return bootIso;
         }
 
-        public void setBootIso(IsoTO bootIso) {
+        public void setBootIso(List<IsoTO> bootIso) {
             this.bootIso = bootIso;
         }
 
@@ -1633,6 +1643,7 @@ public class KVMAgentCommands {
     public static class DetachIsoCmd extends AgentCommand {
         public String vmUuid;
         public String isoUuid;
+        public int deviceId;
     }
 
     public static class DetachIsoRsp extends AgentResponse {

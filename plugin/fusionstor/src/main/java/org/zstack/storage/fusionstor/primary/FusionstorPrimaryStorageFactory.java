@@ -30,6 +30,8 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.volume.SyncVolumeSizeMsg;
 import org.zstack.header.volume.SyncVolumeSizeReply;
 import org.zstack.header.volume.VolumeConstant;
@@ -43,14 +45,12 @@ import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.function.ListFunction;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -322,7 +322,15 @@ public class FusionstorPrimaryStorageFactory implements PrimaryStorageFactory, F
         }
 
         cmd.setDataVolumes(dtos);
-        cmd.setBootIso(convertIsoToFusionstorIfNeeded(cmd.getBootIso()));
+
+        List<IsoTO> isoTOList = CollectionUtils.transformToList(cmd.getBootIso(), new Function<IsoTO, IsoTO>() {
+            @Override
+            public IsoTO call(IsoTO arg) {
+                return convertIsoToFusionstorIfNeeded(arg);
+            }
+        });
+        cmd.setBootIso(isoTOList);
+
     }
 
     @Override
