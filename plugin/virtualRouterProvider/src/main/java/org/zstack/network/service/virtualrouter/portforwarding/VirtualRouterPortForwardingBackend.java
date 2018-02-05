@@ -273,7 +273,7 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
         revokeRule(struct, completion);
     }
 
-    private static List<PortForwardingRuleTO> findPortforwardingsOnVirtualRouter(VmNicInventory nic) {
+    private List<PortForwardingRuleTO> findPortforwardingsOnVirtualRouter(VmNicInventory nic) {
         List<Tuple> pfs = SQL.New("select pf, nic.ip, nic.mac " +
                 "from PortForwardingRuleVO pf, VmNicVO nic, VmInstanceVO vm " +
                 "where pf.vmNicUuid = nic.uuid " +
@@ -288,6 +288,24 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
 
         if (pfs == null || pfs.isEmpty()) {
             return null;
+        }
+
+        List<VirtualRouterPortForwardingRuleRefVO> refs = new ArrayList<VirtualRouterPortForwardingRuleRefVO>();
+        for (Tuple t : pfs) {
+            PortForwardingRuleVO rule = t.get(0, PortForwardingRuleVO.class);
+            if (!Q.New(VirtualRouterPortForwardingRuleRefVO.class)
+                    .eq(VirtualRouterPortForwardingRuleRefVO_.uuid, rule.getUuid())
+                    .eq(VirtualRouterPortForwardingRuleRefVO_.virtualRouterVmUuid, nic.getVmInstanceUuid())
+                    .isExists()) {
+                VirtualRouterPortForwardingRuleRefVO ref = new VirtualRouterPortForwardingRuleRefVO();
+                ref.setVirtualRouterVmUuid(nic.getVmInstanceUuid());
+                ref.setVipUuid(rule.getVipUuid());
+                ref.setUuid(rule.getUuid());
+                refs.add(ref);
+            }
+        }
+        if (!refs.isEmpty()) {
+            dbf.persistCollection(refs);
         }
 
         List<PortForwardingRuleTO> tos = new ArrayList<>();
@@ -313,6 +331,11 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
     @Override
     public void afterAttachNic(VmNicInventory nic, Completion completion) {
         if (!VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST.contains(nic.getMetaData())) {
+            completion.success();
+            return;
+        }
+
+        if (VirtualRouterSystemTags.DEDICATED_ROLE_VR.hasTag(nic.getVmInstanceUuid())) {
             completion.success();
             return;
         }
