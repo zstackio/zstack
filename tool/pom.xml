@@ -4,6 +4,7 @@
     <packaging>pom</packaging>
     <modules>
         <module>doclet</module>
+        <module>generator</module>
     </modules>
     <parent>
         <artifactId>zstack</artifactId>

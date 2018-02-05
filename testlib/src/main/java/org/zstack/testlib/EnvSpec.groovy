@@ -120,7 +120,6 @@ class EnvSpec implements Node {
             [CreateBaremetalChassisAction.metaClass, CreateBaremetalChassisAction.Result.metaClass, DeleteBaremetalChassisAction.class],
             [CreateBaremetalHostCfgAction.metaClass, CreateBaremetalHostCfgAction.Result.metaClass, DeleteBaremetalHostCfgAction.class],
             [AddLdapServerAction.metaClass, AddLdapServerAction.Result.metaClass, DeleteLdapServerAction.class],
-<<<<<<< HEAD
             [CreateSNSEmailPlatformAction.metaClass, CreateSNSEmailPlatformAction.Result.metaClass, DeleteSNSApplicationPlatformAction.class],
             [CreateSNSEmailEndpointAction.metaClass, CreateSNSEmailEndpointAction.Result.metaClass, DeleteSNSApplicationEndpointAction.class],
             [CreateSNSTopicAction.metaClass, CreateSNSTopicAction.Result.metaClass, DeleteSNSTopicAction.class],
@@ -129,9 +128,7 @@ class EnvSpec implements Node {
             [CreateSNSHttpEndpointAction.metaClass, CreateSNSHttpEndpointAction.Result.metaClass, DeleteSNSApplicationEndpointAction.class],
             [CreateSNSDingTalkEndpointAction.metaClass, CreateSNSDingTalkEndpointAction.Result.metaClass, DeleteSNSApplicationEndpointAction.class],
             [CreateSNSTextTemplateAction.metaClass, CreateSNSTextTemplateAction.Result.metaClass, DeleteSNSTextTemplateAction.class],
-=======
             [SubmitLongJobAction.metaClass, SubmitLongJobAction.Result.metaClass, DeleteLongJobAction.class],
->>>>>>> upstream/master
     ]
 
     static Closure GLOBAL_DELETE_HOOK

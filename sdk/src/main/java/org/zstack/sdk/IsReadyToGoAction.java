@@ -66,15 +66,11 @@ public class IsReadyToGoAction extends AbstractAction {
         return parameterMap;
     }
 
-<<<<<<< HEAD
-    protected RestInfo getRestInfo() {
-=======
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
->>>>>>> upstream/master
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/management-nodes/ready";

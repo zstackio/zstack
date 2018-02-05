@@ -76,11 +76,11 @@ public class VipInventory  {
         return this.serviceProvider;
     }
 
-    public java.util.List<String> peerL3NetworkUuids;
-    public void setPeerL3NetworkUuids(java.util.List<String> peerL3NetworkUuids) {
+    public java.util.List peerL3NetworkUuids;
+    public void setPeerL3NetworkUuids(java.util.List peerL3NetworkUuids) {
         this.peerL3NetworkUuids = peerL3NetworkUuids;
     }
-    public java.util.List<String> getPeerL3NetworkUuids() {
+    public java.util.List getPeerL3NetworkUuids() {
         return this.peerL3NetworkUuids;
     }
 

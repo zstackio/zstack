@@ -12,11 +12,7 @@ public class QueryUserTagAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-<<<<<<< HEAD
-        public org.zstack.sdk.QueryUserResult value;
-=======
-        public QueryUserTagResult value;
->>>>>>> upstream/master
+        public org.zstack.sdk.QueryUserTagResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -38,13 +34,8 @@ public class QueryUserTagAction extends QueryAction {
             return ret;
         }
         
-<<<<<<< HEAD
-        org.zstack.sdk.QueryUserResult value = res.getResult(org.zstack.sdk.QueryUserResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QueryUserResult() : value; 
-=======
-        QueryUserTagResult value = res.getResult(QueryUserTagResult.class);
-        ret.value = value == null ? new QueryUserTagResult() : value; 
->>>>>>> upstream/master
+        org.zstack.sdk.QueryUserTagResult value = res.getResult(org.zstack.sdk.QueryUserTagResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryUserTagResult() : value; 
 
         return ret;
     }
@@ -67,15 +58,11 @@ public class QueryUserTagAction extends QueryAction {
         return parameterMap;
     }
 
-<<<<<<< HEAD
-    protected RestInfo getRestInfo() {
-=======
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
->>>>>>> upstream/master
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/user-tags";

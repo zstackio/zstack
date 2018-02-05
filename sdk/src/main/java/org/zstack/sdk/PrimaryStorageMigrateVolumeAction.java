@@ -12,11 +12,7 @@ public class PrimaryStorageMigrateVolumeAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-<<<<<<< HEAD:sdk/src/main/java/org/zstack/sdk/PrimaryStorageMigrateDataVolumeAction.java
-        public org.zstack.sdk.PrimaryStorageMigrateDataVolumeResult value;
-=======
-        public PrimaryStorageMigrateVolumeResult value;
->>>>>>> upstream/master:sdk/src/main/java/org/zstack/sdk/PrimaryStorageMigrateVolumeAction.java
+        public org.zstack.sdk.PrimaryStorageMigrateVolumeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -58,13 +54,8 @@ public class PrimaryStorageMigrateVolumeAction extends AbstractAction {
             return ret;
         }
         
-<<<<<<< HEAD:sdk/src/main/java/org/zstack/sdk/PrimaryStorageMigrateDataVolumeAction.java
-        org.zstack.sdk.PrimaryStorageMigrateDataVolumeResult value = res.getResult(org.zstack.sdk.PrimaryStorageMigrateDataVolumeResult.class);
-        ret.value = value == null ? new org.zstack.sdk.PrimaryStorageMigrateDataVolumeResult() : value; 
-=======
-        PrimaryStorageMigrateVolumeResult value = res.getResult(PrimaryStorageMigrateVolumeResult.class);
-        ret.value = value == null ? new PrimaryStorageMigrateVolumeResult() : value; 
->>>>>>> upstream/master:sdk/src/main/java/org/zstack/sdk/PrimaryStorageMigrateVolumeAction.java
+        org.zstack.sdk.PrimaryStorageMigrateVolumeResult value = res.getResult(org.zstack.sdk.PrimaryStorageMigrateVolumeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.PrimaryStorageMigrateVolumeResult() : value; 
 
         return ret;
     }
@@ -87,15 +78,11 @@ public class PrimaryStorageMigrateVolumeAction extends AbstractAction {
         return parameterMap;
     }
 
-<<<<<<< HEAD:sdk/src/main/java/org/zstack/sdk/PrimaryStorageMigrateDataVolumeAction.java
-    protected RestInfo getRestInfo() {
-=======
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
->>>>>>> upstream/master:sdk/src/main/java/org/zstack/sdk/PrimaryStorageMigrateVolumeAction.java
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/primary-storage/volumes/{volumeUuid}/actions";

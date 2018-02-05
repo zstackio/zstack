@@ -78,15 +78,11 @@ public class UnsubscribeSNSTopicAction extends AbstractAction {
         return parameterMap;
     }
 
-<<<<<<< HEAD:sdk/src/main/java/org/zstack/sdk/sns/UnsubscribeSNSTopicAction.java
-    protected RestInfo getRestInfo() {
-=======
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
->>>>>>> upstream/master:sdk/src/main/java/org/zstack/sdk/DetachNetworkServiceFromL3NetworkAction.java
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/sns/topics/{topicUuid}/endpoints/{endpointUuid}";

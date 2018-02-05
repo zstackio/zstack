@@ -87,7 +87,6 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         public String nicName;
         public String vmBridgeName;
         public String publicBridgeName;
-        public String vipUuid;
     }
 
     public static class ApplyEipCmd extends AgentCmd {
@@ -555,7 +554,6 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
 
     private EipTO eipStructToEipTO(EipStruct struct) {
         EipTO to = new EipTO();
-        to.vipUuid = struct.getVip().getUuid();
         to.eipUuid = struct.getEip().getUuid();
         to.vmUuid = struct.getNic().getVmInstanceUuid();
         to.nicUuid = struct.getNic().getUuid();

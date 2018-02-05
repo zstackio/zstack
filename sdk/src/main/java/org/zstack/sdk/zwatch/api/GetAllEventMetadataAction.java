@@ -8,6 +8,8 @@ public class GetAllEventMetadataAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
+    private static final HashMap<String, Parameter> nonAPIParameterMap = new HashMap<>();
+
     public static class Result {
         public ErrorCode error;
         public org.zstack.sdk.zwatch.api.GetAllEventMetadataResult value;
@@ -62,6 +64,10 @@ public class GetAllEventMetadataAction extends AbstractAction {
 
     protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
+    }
+
+    protected Map<String, Parameter> getNonAPIParameterMap() {
+        return nonAPIParameterMap;
     }
 
     protected RestInfo getRestInfo() {

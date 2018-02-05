@@ -164,11 +164,11 @@ public class IPsecConnectionInventory  {
         return this.peerCidrs;
     }
 
-    public java.util.List<IPsecL3NetworkRefInventory> l3NetworkRefs;
-    public void setL3NetworkRefs(java.util.List<IPsecL3NetworkRefInventory> l3NetworkRefs) {
+    public java.util.List l3NetworkRefs;
+    public void setL3NetworkRefs(java.util.List l3NetworkRefs) {
         this.l3NetworkRefs = l3NetworkRefs;
     }
-    public java.util.List<IPsecL3NetworkRefInventory> getL3NetworkRefs() {
+    public java.util.List getL3NetworkRefs() {
         return this.l3NetworkRefs;
     }
 

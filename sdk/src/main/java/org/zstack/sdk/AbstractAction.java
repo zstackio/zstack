@@ -23,15 +23,11 @@ public abstract class AbstractAction {
         Param annotation;
     }
 
-<<<<<<< HEAD
-    protected abstract Map<String, Parameter> getParameterMap();
-=======
     // API parameter
-    abstract Map<String, Parameter> getParameterMap();
->>>>>>> upstream/master
+    protected abstract Map<String, Parameter> getParameterMap();
 
     // Non-API parameter, likes: timeout, pollingInterval
-    abstract Map<String, Parameter> getNonAPIParameterMap();
+    protected abstract Map<String, Parameter> getNonAPIParameterMap();
 
     private void initializeParametersIfNot() {
         synchronized (getParameterMap()) {

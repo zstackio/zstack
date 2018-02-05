@@ -84,7 +84,7 @@ public class ApiResult {
         }
     }
 
-    public <T> T getResult(Class<T> clz) {
+    public  <T> T getResult(Class<T> clz) {
         if (resultString == null || resultString.isEmpty()) {
             return null;
         }

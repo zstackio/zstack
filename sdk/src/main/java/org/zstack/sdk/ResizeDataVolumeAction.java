@@ -12,11 +12,7 @@ public class ResizeDataVolumeAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-<<<<<<< HEAD:sdk/src/main/java/org/zstack/sdk/PrimaryStorageMigrateRootVolumeAction.java
-        public org.zstack.sdk.PrimaryStorageMigrateRootVolumeResult value;
-=======
-        public ResizeDataVolumeResult value;
->>>>>>> upstream/master:sdk/src/main/java/org/zstack/sdk/ResizeDataVolumeAction.java
+        public org.zstack.sdk.ResizeDataVolumeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -58,13 +54,8 @@ public class ResizeDataVolumeAction extends AbstractAction {
             return ret;
         }
         
-<<<<<<< HEAD:sdk/src/main/java/org/zstack/sdk/PrimaryStorageMigrateRootVolumeAction.java
-        org.zstack.sdk.PrimaryStorageMigrateRootVolumeResult value = res.getResult(org.zstack.sdk.PrimaryStorageMigrateRootVolumeResult.class);
-        ret.value = value == null ? new org.zstack.sdk.PrimaryStorageMigrateRootVolumeResult() : value; 
-=======
-        ResizeDataVolumeResult value = res.getResult(ResizeDataVolumeResult.class);
-        ret.value = value == null ? new ResizeDataVolumeResult() : value; 
->>>>>>> upstream/master:sdk/src/main/java/org/zstack/sdk/ResizeDataVolumeAction.java
+        org.zstack.sdk.ResizeDataVolumeResult value = res.getResult(org.zstack.sdk.ResizeDataVolumeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ResizeDataVolumeResult() : value; 
 
         return ret;
     }
@@ -87,15 +78,11 @@ public class ResizeDataVolumeAction extends AbstractAction {
         return parameterMap;
     }
 
-<<<<<<< HEAD:sdk/src/main/java/org/zstack/sdk/PrimaryStorageMigrateRootVolumeAction.java
-    protected RestInfo getRestInfo() {
-=======
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
->>>>>>> upstream/master:sdk/src/main/java/org/zstack/sdk/ResizeDataVolumeAction.java
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/volumes/data/resize/{uuid}/actions";
