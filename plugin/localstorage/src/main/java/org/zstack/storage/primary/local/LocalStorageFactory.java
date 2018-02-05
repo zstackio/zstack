@@ -13,6 +13,9 @@ import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.Component;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
@@ -531,8 +534,27 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         q.groupBy(LocalStorageResourceRefVO_.hostUuid);
         long count = q.count();
 
-        if (count < 2) {
+
+        if (count == 0) {
             return;
+        }
+
+        // if count is 1, multi primary storage is indicated
+        if (count == 1) {
+            if (!Q.New(LocalStorageResourceRefVO.class).eq(LocalStorageResourceRefVO_.resourceUuid, volume.getUuid()).isExists()) {
+                return;
+            }
+
+            String vmClusterUuid = vm.getClusterUuid();
+            String volumeHostUuid = Q.New(LocalStorageResourceRefVO.class)
+                    .select(LocalStorageResourceRefVO_.hostUuid)
+                    .eq(LocalStorageResourceRefVO_.resourceUuid, volume.getUuid()).findValue();
+
+            if (!Q.New(HostVO.class)
+                    .eq(HostVO_.uuid, volumeHostUuid)
+                    .eq(HostVO_.clusterUuid, vmClusterUuid).isExists()) {
+                throw new OperationFailureException(operr("Can't attach volume to VM, no qualified cluster"));
+            }
         }
 
         q = dbf.createQuery(LocalStorageResourceRefVO.class);
