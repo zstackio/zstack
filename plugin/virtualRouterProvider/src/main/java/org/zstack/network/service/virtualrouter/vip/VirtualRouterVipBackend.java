@@ -304,6 +304,16 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
 
     @Override
     public void afterAttachNic(VmNicInventory nic, Completion completion) {
+        if (!VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST.contains(nic.getMetaData())) {
+            completion.success();
+            return;
+        }
+
+        if (VirtualRouterSystemTags.DEDICATED_ROLE_VR.hasTag(nic.getVmInstanceUuid())) {
+            completion.success();
+            return;
+        }
+
         List<VipTO> vips = findVipsOnVirtualRouter(nic);
 
         if (vips == null || vips.isEmpty()) {
@@ -343,7 +353,7 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
         });
     }
 
-    private static List<VipTO> findVipsOnVirtualRouter(VmNicInventory nic) {
+    private List<VipTO> findVipsOnVirtualRouter(VmNicInventory nic) {
         List<VipVO> vips = SQL.New("select vip from VipVO vip, VipPeerL3NetworkRefVO ref " +
                 "where ref.vipUuid = vip.uuid " +
                 "and ref.l3NetworkUuid = :l3Uuid")
@@ -358,7 +368,20 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
                 Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, nic.getVmInstanceUuid()).find());
 
         List<VipTO> vipTOS = new ArrayList<>();
+        List<VirtualRouterVipVO> refs = new ArrayList<>();
         for (VipVO vip : vips) {
+            if (vipTOS.stream().anyMatch(v -> v.getIp().equals(vip.getIp()))) {
+                logger.warn(String.format(
+                        "found duplicate vip ip[uuid; %s, uuids: %s] for vr[uuid: %s]",
+                        vip.getIp(),
+                        vips.stream().
+                                filter(v -> v.getIp().equals(vip.getIp()))
+                                .map(v -> v.getUuid())
+                                .collect(Collectors.toSet()),
+                        nic.getVmInstanceUuid()));
+                continue;
+            }
+
             VipTO to = new VipTO();
             to.setIp(vip.getIp());
             to.setGateway(vip.getGateway());
@@ -367,6 +390,18 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
                     .filter(n -> n.getL3NetworkUuid().equals(vip.getL3NetworkUuid()))
                     .findFirst().get().getMac());
             vipTOS.add(to);
+
+            if (!Q.New(VirtualRouterVipVO.class)
+                    .eq(VirtualRouterVipVO_.uuid, vip.getUuid())
+                    .isExists()) {
+                VirtualRouterVipVO vo = new VirtualRouterVipVO();
+                vo.setUuid(vip.getUuid());
+                vo.setVirtualRouterVmUuid(nic.getVmInstanceUuid());
+                refs.add(vo);
+            }
+        }
+        if (!refs.isEmpty()) {
+            dbf.persistCollection(refs);
         }
 
         return vipTOS;
