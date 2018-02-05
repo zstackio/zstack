@@ -170,7 +170,8 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             public void run(SyncTaskChain chain) {
                 APISubmitLongJobEvent evt = new APISubmitLongJobEvent(msg.getId());
                 LongJobVO vo = dbf.findByUuid(msg.getJobUuid(), LongJobVO.class);
-
+                vo.setState(LongJobState.Running);
+                vo = dbf.updateAndRefresh(vo);
                 // launch the long job right now
                 ThreadContext.put(Constants.THREAD_CONTEXT_API, vo.getApiId());
                 ThreadContext.put(Constants.THREAD_CONTEXT_TASK_NAME, vo.getJobName());
@@ -195,8 +196,8 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                     }
                 });
 
-                vo.setState(LongJobState.Running);
-                evt.setInventory(LongJobInventory.valueOf(dbf.updateAndRefresh(vo)));
+
+                evt.setInventory(LongJobInventory.valueOf(vo));
                 logger.info(String.format("longjob [uuid:%s, name:%s] has been started", vo.getUuid(), vo.getName()));
                 bus.publish(evt);
 
