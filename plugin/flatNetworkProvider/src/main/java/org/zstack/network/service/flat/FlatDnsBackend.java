@@ -87,7 +87,7 @@ public class FlatDnsBackend implements NetworkServiceDnsBackend, KVMHostConnectE
                 KVMHostAsyncHttpCallReply re = (KVMHostAsyncHttpCallReply)reply;
                 SetDnsRsp rsp = re.castReply();
                 if (!rsp.isSuccess()) {
-                    completion.fail(Platform.operr(rsp.getError()));
+                    completion.fail(Platform.operr("operation error, because:%s", rsp.getError()));
                 }
             }
         });

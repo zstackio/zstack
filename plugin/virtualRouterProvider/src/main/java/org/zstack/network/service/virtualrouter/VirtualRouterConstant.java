@@ -51,6 +51,7 @@ public interface VirtualRouterConstant {
 
     public static final String ANSIBLE_PLAYBOOK_NAME = "virtualrouter.py";
     public static final String ANSIBLE_MODULE_PATH = "ansible/virtualrouter";
+    public static final String SNAT_NETWORK_SERVICE_TYPE = "SNAT";
 
     public static enum Param {
         VR,
@@ -58,5 +59,7 @@ public interface VirtualRouterConstant {
         IS_NEW_CREATED,
         IS_RECONNECT,
         VIPS,
+        PUB_VIP_UUID,
+        VR_NIC,
     }
 }

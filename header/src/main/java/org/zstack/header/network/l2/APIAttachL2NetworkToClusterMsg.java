@@ -46,7 +46,7 @@ public class APIAttachL2NetworkToClusterMsg extends APIMessage implements L2Netw
     /**
      * @desc l2Network uuid
      */
-    @APIParam(resourceType = L2NetworkVO.class)
+    @APIParam(resourceType = L2NetworkVO.class, checkAccount = true, operationTarget = true)
     private String l2NetworkUuid;
     /**
      * @desc cluster uuid. See :ref:`ClusterInventory`

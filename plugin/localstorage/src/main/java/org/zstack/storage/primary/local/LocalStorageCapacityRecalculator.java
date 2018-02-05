@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SQL;
 import org.zstack.header.storage.primary.PrimaryStorageCapacityUpdaterRunnable;
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
@@ -166,32 +167,44 @@ public class LocalStorageCapacityRecalculator {
 
     @Transactional
     public LocalStorageCapacityRecalculator calculateTotalCapacity(String psUuid) {
+        final long totalCapacity;
+        final long availableCapacity;
+        final long totalPhysicalCapacity;
+        final long availablePhysicalCapacity;
+
         String sql = "select sum(ref.totalCapacity)," +
                 " sum(ref.availableCapacity)," +
                 " sum(ref.totalPhysicalCapacity)," +
                 " sum(ref.availablePhysicalCapacity)" +
                 " from LocalStorageHostRefVO ref" +
-                " where ref.primaryStorageUuid = :psUuid";
+                " where ref.primaryStorageUuid = :psUuid" +
+                " group by ref.primaryStorageUuid";
         TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
         q.setParameter("psUuid", psUuid);
-        Tuple ts = q.getSingleResult();
+        List<Tuple> resultList =  q.getResultList();
 
-        final long totalCapacity;
-        final long availableCapacity;
-        final long totalPhysicalCapacity;
-        final long availablePhysicalCapacity;
-        PrimaryStorageCapacityUpdater pupdater = new PrimaryStorageCapacityUpdater(psUuid);
-        if (ts != null) {
+        if (resultList != null && !resultList.isEmpty()) {
+            Tuple ts = resultList.get(0);
             totalCapacity = ts.get(0) == null ? 0 : ts.get(0, Long.class);
             availableCapacity = ts.get(1) == null ? 0 : ts.get(1, Long.class);
             totalPhysicalCapacity = ts.get(2) == null ? 0 : ts.get(2, Long.class);
             availablePhysicalCapacity = ts.get(3) == null ? 0 : ts.get(3, Long.class);
         } else {
+            // LocalStorage not mounted
+            // Cluster no host
             totalCapacity = 0;
-            availableCapacity = 0;
             totalPhysicalCapacity = 0;
             availablePhysicalCapacity = 0;
+
+            Long used = SQL.New("select sum(ref.size)" +
+                    " from LocalStorageResourceRefVO ref" +
+                    " where ref.primaryStorageUuid = :psUuid")
+                    .param("psUuid", psUuid).find();
+
+            availableCapacity = used != null ? totalCapacity - used : 0;
         }
+
+        PrimaryStorageCapacityUpdater pupdater = new PrimaryStorageCapacityUpdater(psUuid);
         pupdater.run(new PrimaryStorageCapacityUpdaterRunnable() {
             @Override
             public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {

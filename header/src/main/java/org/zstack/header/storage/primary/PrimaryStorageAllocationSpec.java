@@ -18,14 +18,32 @@ public class PrimaryStorageAllocationSpec {
     private String imageUuid;
     private boolean noOverProvisioning;
     private String purpose;
-    private List<String> requiredPrimaryStorageTypes;
+    private List<String> possiblePrimaryStorageTypes;
+    private List<String> excludePrimaryStorageTypes;
+    private String backupStorageUuid;
 
-    public List<String> getRequiredPrimaryStorageTypes() {
-        return requiredPrimaryStorageTypes;
+    public List<String> getExcludePrimaryStorageTypes() {
+        return excludePrimaryStorageTypes;
     }
 
-    public void setRequiredPrimaryStorageTypes(List<String> requiredPrimaryStorageTypes) {
-        this.requiredPrimaryStorageTypes = requiredPrimaryStorageTypes;
+    public void setExcludePrimaryStorageTypes(List<String> excludePrimaryStorageTypes) {
+        this.excludePrimaryStorageTypes = excludePrimaryStorageTypes;
+    }
+
+    public String getBackupStorageUuid() {
+        return backupStorageUuid;
+    }
+
+    public void setBackupStorageUuid(String backupStorageUuid) {
+        this.backupStorageUuid = backupStorageUuid;
+    }
+
+    public List<String> getPossiblePrimaryStorageTypes() {
+        return possiblePrimaryStorageTypes;
+    }
+
+    public void setPossiblePrimaryStorageTypes(List<String> possiblePrimaryStorageTypes) {
+        this.possiblePrimaryStorageTypes = possiblePrimaryStorageTypes;
     }
 
     public String getPurpose() {

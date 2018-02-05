@@ -3,6 +3,7 @@ package org.zstack.network.service.vip;
 import org.zstack.header.query.APIQueryReply;
 import org.zstack.header.rest.RestResponse;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static org.zstack.utils.CollectionDSL.list;
@@ -35,7 +36,7 @@ public class APIQueryVipReply extends APIQueryReply {
         inventory.setNetmask("255.255.0.0");
         inventory.setIp("192.168.0.1");
         inventory.setIpRangeUuid(uuid());
-        inventory.setPeerL3NetworkUuid(uuid());
+        inventory.setPeerL3NetworkUuids(Arrays.asList(uuid()));
         inventory.setState(VipState.Enabled.toString());
 
         reply.setInventories(list(inventory));

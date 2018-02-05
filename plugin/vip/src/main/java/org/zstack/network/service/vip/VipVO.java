@@ -2,21 +2,25 @@ package org.zstack.network.service.vip;
 
 import org.zstack.header.network.l3.IpRangeEO;
 import org.zstack.header.network.l3.L3NetworkEO;
-import org.zstack.header.network.l3.UsedIpVO;
-import org.zstack.header.tag.AutoDeleteTag;
-import org.zstack.header.vo.BaseResource;
+import org.zstack.header.vo.*;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.Index;
-import org.zstack.header.vo.ResourceVO;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Entity
 @Table
 @BaseResource
 public class VipVO extends ResourceVO {
+    protected static final CLogger logger = Utils.getLogger(VipVO.class);
+
     @Column
     @Index
     private String  name;
@@ -55,9 +59,10 @@ public class VipVO extends ResourceVO {
     @Column
     private String usedIpUuid;
 
-    @Column
-    @ForeignKey(parentEntityClass = L3NetworkEO.class, onDeleteAction = ReferenceOption.SET_NULL)
-    private String peerL3NetworkUuid;
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinColumn(name = "vipUuid", insertable = false, updatable = false)
+    @NoView
+    private Set<VipPeerL3NetworkRefVO> peerL3NetworkRefs = new HashSet<>();
 
     @Column
     private Timestamp createDate;
@@ -86,12 +91,22 @@ public class VipVO extends ResourceVO {
         this.state = state;
     }
 
-    public String getPeerL3NetworkUuid() {
-        return peerL3NetworkUuid;
+    public Set<VipPeerL3NetworkRefVO> getPeerL3NetworkRefs() {
+        return peerL3NetworkRefs;
     }
 
-    public void setPeerL3NetworkUuid(String peerL3NetworkUuid) {
-        this.peerL3NetworkUuid = peerL3NetworkUuid;
+    public void setPeerL3NetworkRefs(Set<VipPeerL3NetworkRefVO> peerL3NetworkRefs) {
+        this.peerL3NetworkRefs = peerL3NetworkRefs;
+    }
+
+    public Set<String> getPeerL3NetworkUuids() {
+        if (getPeerL3NetworkRefs() != null && !getPeerL3NetworkRefs().isEmpty()) {
+            return getPeerL3NetworkRefs().stream()
+                    .map(ref -> ref.getL3NetworkUuid())
+                    .collect(Collectors.toSet());
+        }
+
+        return null;
     }
 
     public String getServiceProvider() {

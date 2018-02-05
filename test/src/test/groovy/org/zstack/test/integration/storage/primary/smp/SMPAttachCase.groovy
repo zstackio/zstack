@@ -2,6 +2,7 @@ package org.zstack.test.integration.storage.primary.smp
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
+import org.zstack.header.Constants
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_
 import org.zstack.header.storage.primary.PrimaryStorageVO
@@ -9,6 +10,7 @@ import org.zstack.sdk.AttachPrimaryStorageToClusterAction
 import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.PrimaryStorageInventory
+import org.zstack.sdk.ReconnectPrimaryStorageAction
 import org.zstack.storage.primary.smp.KvmBackend
 import org.zstack.test.integration.storage.SMPEnv
 import org.zstack.test.integration.storage.StorageTest
@@ -50,9 +52,11 @@ class SMPAttachCase extends SubCase{
             testAttachingSMPSuccess()
             testAttachingSmpWithoutMountPathOnHost()
             testSameMountPathDifferentStorage()
+            testCleanIdFileAfterAttachFailed()
             testAttachSmpOccupiedByOtherSmp()
             testAttachSameMountPointSmp()
             testReconnectHost()
+            testReconnectSmpWhenNoHostInCluster()
         }
     }
 
@@ -104,7 +108,6 @@ class SMPAttachCase extends SubCase{
     }
 
     void testSameMountPathDifferentStorage(){
-        KvmBackend.ConnectCmd cmd = null
         AtomicInteger firstCount = new AtomicInteger(0)
         env.simulator(KvmBackend.CONNECT_PATH) {
             def ret = new KvmBackend.ConnectRsp()
@@ -117,7 +120,6 @@ class SMPAttachCase extends SubCase{
         AtomicInteger callCount = new AtomicInteger(0)
         env.simulator(KvmBackend.DELETE_BITS_PATH){
             logger.debug(String.format("callCount %d", callCount.incrementAndGet()))
-
             return new KvmBackend.AgentRsp()
         }
 
@@ -129,6 +131,39 @@ class SMPAttachCase extends SubCase{
         assert ret.error != null
         retryInSecs{
             assert callCount.intValue() == 2
+        }
+    }
+
+    void testCleanIdFileAfterAttachFailed(){
+        env.simulator(KvmBackend.CONNECT_PATH) { HttpEntity<String> e ->
+            def ret = new KvmBackend.ConnectRsp()
+            def huuid = e.getHeaders().getFirst(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID)
+            if(huuid == host1.uuid){
+                ret.isFirst = true
+            }
+            if(huuid == host2.uuid){
+                ret.error = "on purpose"
+                ret.success = false
+            }
+            return ret
+        }
+
+        String deleteHostUuid
+        AtomicInteger callCount = new AtomicInteger(0)
+        env.simulator(KvmBackend.DELETE_BITS_PATH){HttpEntity<String> e ->
+            deleteHostUuid = e.getHeaders().getFirst(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID)
+            logger.debug(String.format("callCount %d", callCount.incrementAndGet()))
+            return new KvmBackend.AgentRsp()
+        }
+
+        def a = new AttachPrimaryStorageToClusterAction()
+        a.clusterUuid = clusterInventory.uuid
+        a.primaryStorageUuid = primaryStorageInventory.uuid
+        a.sessionId = adminSession()
+        assert a.call().error != null
+        retryInSecs(3){
+            assert deleteHostUuid == host1.uuid
+            assert callCount.intValue() == 1
         }
     }
 
@@ -180,9 +215,36 @@ class SMPAttachCase extends SubCase{
             rsp.isFirst = true
             return rsp
         }
+
+        boolean deleteCalled = false
+        env.simulator(KvmBackend.DELETE_BITS_PATH) {
+            deleteCalled = true
+            return new KvmBackend.AgentRsp()
+        }
         reconnectHost {
             uuid = host1.uuid
         }
+
+        assert !deleteCalled
+    }
+
+    void testReconnectSmpWhenNoHostInCluster(){
+        deleteHost {
+            uuid = host1.uuid
+        }
+
+        deleteHost {
+            uuid = host2.uuid
+        }
+
+        deleteHost {
+            uuid = host3.uuid
+        }
+
+        ReconnectPrimaryStorageAction a = new ReconnectPrimaryStorageAction()
+        a.uuid = primaryStorageInventory.uuid
+        a.sessionId = currentEnvSpec.session.uuid
+        assert a.call().error != null
     }
 
     @Override

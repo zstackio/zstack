@@ -5,10 +5,9 @@ import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.ansible.AnsibleGlobalProperty;
 import org.zstack.core.ansible.AnsibleRunner;
 import org.zstack.core.ansible.SshFileMd5Checker;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -26,6 +25,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.zstack.core.Platform.operr;
@@ -42,6 +42,8 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
     private ThreadFacade thdf;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     private String syncId;
 
@@ -171,6 +173,9 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
                             runner.setAgentPort(CephGlobalProperty.PRIMARY_STORAGE_AGENT_PORT);
                             runner.setPlayBookName(CephGlobalProperty.PRIMARY_STORAGE_PLAYBOOK_NAME);
                             runner.putArgument("pkg_cephpagent", CephGlobalProperty.PRIMARY_STORAGE_PACKAGE_NAME);
+                            if (CoreGlobalProperty.CHRONY_SERVERS != null && !CoreGlobalProperty.CHRONY_SERVERS.isEmpty()) {
+                                runner.putArgument("chrony_servers", String.join(",", CoreGlobalProperty.CHRONY_SERVERS));
+                            }
                             runner.run(new Completion(trigger) {
                                 @Override
                                 public void success() {
@@ -184,7 +189,51 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
                             });
                         }
                     });
+
                 }
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "deploy-more-agent";
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        List<CephMonExtensionPoint> exts = pluginRgty.getExtensionList(CephMonExtensionPoint.class);
+                        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+                        for(CephMonExtensionPoint ext: exts) {
+                            chain.then(new NoRollbackFlow() {
+                                @Override
+                                public void run(FlowTrigger trigger1, Map data) {
+                                    ext.addMoreAgentInPrimaryStorage(CephPrimaryStorageMonInventory.valueOf(getSelf()), new Completion(trigger1) {
+                                        @Override
+                                        public void success() {
+                                            trigger1.next();
+                                        }
+
+                                        @Override
+                                        public void fail(ErrorCode errorCode) {
+                                            trigger1.fail(errorCode);
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                        chain.done(new FlowDoneHandler(trigger) {
+                            @Override
+                            public void handle(Map data) {
+                                trigger.next();
+                            }
+                        }).error(new FlowErrorHandler(trigger) {
+                            @Override
+                            public void handle(ErrorCode errCode, Map data) {
+                                trigger.fail(errCode);
+                            }
+                        });
+                        if (chain.getFlows().size() > 0) {
+                            chain.start();
+                        } else {
+                            trigger.next();
+                        }
+                    }
+                });
 
                 flow(new NoRollbackFlow() {
                     String __name__ = "echo-agent";

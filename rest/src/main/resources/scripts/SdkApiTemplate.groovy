@@ -193,9 +193,11 @@ class SdkApiTemplate implements SdkTemplate {
 
         if (!APISyncCallMessage.class.isAssignableFrom(apiMessageClass)) {
             output.add("""\
-    public long timeout;
-    
-    public long pollingInterval;
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
 """)
         }
 
@@ -241,6 +243,10 @@ class SdkApiTemplate implements SdkTemplate {
     protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
+
+    Map<String, Parameter> getNonAPIParameterMap() {
+        return nonAPIParameterMap;
+    }
 """)
 
         ms.add("""\
@@ -271,6 +277,8 @@ import org.zstack.sdk.*;
 public class ${clzName} extends ${isQueryApi ? "QueryAction" : "AbstractAction"} {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
+
+    private static final HashMap<String, Parameter> nonAPIParameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;

@@ -6,6 +6,8 @@ import org.zstack.core.retry.Retry;
 import org.zstack.core.retry.RetryCondition;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class TestRetry {
     int successAfter = 3;
@@ -75,5 +77,25 @@ public class TestRetry {
         }.run();
 
         Assert.assertEquals("hello", ret);
+
+        List<Integer> times = new ArrayList();
+        try {
+            successAfter = 3;
+            Retry testStopRetry = new Retry() {
+                @Override
+                @RetryCondition()
+                protected Object call() {
+                    times.add(1);
+                    stop();
+                    return sayHello();
+                }
+            };
+            testStopRetry.run();
+            assert false;
+        }catch (Exception e){
+            assert 1 == times.size();
+            assert true;
+        }
+
     }
 }

@@ -7,13 +7,24 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.network.service.NetworkServiceManager;
+import org.zstack.network.service.portforwarding.PortForwardingConstant;
+import org.zstack.network.service.vip.ModifyVipAttributesStruct;
+import org.zstack.network.service.vip.Vip;
+import org.zstack.network.service.vip.VipConstant;
+import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.SNATInfo;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.SyncSNATRsp;
@@ -28,7 +39,7 @@ import java.util.List;
 import java.util.Map;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class VirtualRouterSyncSNATOnStartFlow extends NoRollbackFlow {
+public class VirtualRouterSyncSNATOnStartFlow implements Flow {
     private static final CLogger logger = Utils.getLogger(VirtualRouterSyncSNATOnStartFlow.class);
 
 	@Autowired
@@ -39,6 +50,8 @@ public class VirtualRouterSyncSNATOnStartFlow extends NoRollbackFlow {
     private ErrorFacade errf;
     @Autowired
     private ApiTimeoutManager apiTimeoutManager;
+    @Autowired
+    private NetworkServiceManager nwServiceMgr;
 
     @Override
     public void run(final FlowTrigger chain, Map data) {
@@ -93,8 +106,77 @@ public class VirtualRouterSyncSNATOnStartFlow extends NoRollbackFlow {
                             vr.getName(), vr.getUuid(), JSONObjectUtil.toJsonString(snatInfo), ret.getError());
                     chain.fail(err);
                 } else {
-                    chain.next();
+                    Vip vip = getVipWithSnatService(data);
+                    if (vip != null){
+                        vip.acquire(new Completion(chain) {
+                            @Override
+                            public void success() {
+                                chain.next();
+                                return;
+                            }
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                chain.fail(errorCode);
+                            }
+                        });
+                    } else {
+                        chain.next();
+                    }
                 }
+            }
+        });
+    }
+
+    @Override
+    public void rollback(final FlowRollback chain, Map data) {
+        releaseSnatServiceOnVip(chain, data);
+    }
+
+    Vip getVipWithSnatService(Map data){
+        String vipUuid = (String)data.get(VirtualRouterConstant.Param.PUB_VIP_UUID.toString());
+        if (vipUuid == null){
+            return null;
+        }
+
+        ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+        struct.setUseFor(NetworkServiceType.SNAT.toString());
+
+        Vip vip = new Vip(vipUuid);
+        VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
+        if (!vr.getGuestL3Networks().isEmpty()){
+            String l3NetworkUuuid = vr.getGuestL3Networks().get(0);
+            try {
+                NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(l3NetworkUuuid, NetworkServiceType.SNAT);
+                struct.setPeerL3NetworkUuid(l3NetworkUuuid);
+                struct.setServiceProvider(providerType.toString());
+            } catch (OperationFailureException e){
+                logger.debug(String.format("Get providerType exception %s", e.toString()));
+            }
+        }
+        vip.setStruct(struct);
+        return vip;
+    }
+
+    void releaseSnatServiceOnVip(final FlowRollback chain, Map data){
+        String vipUuid = (String)data.get(VirtualRouterConstant.Param.PUB_VIP_UUID.toString());
+        if (vipUuid == null){
+            chain.rollback();
+            return;
+        }
+
+        ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+        struct.setUseFor(NetworkServiceType.SNAT.toString());
+        Vip vip = new Vip(vipUuid);
+        vip.setStruct(struct);
+        vip.release(new Completion(chain) {
+            @Override
+            public void success() {
+                chain.rollback();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                chain.rollback();
             }
         });
     }

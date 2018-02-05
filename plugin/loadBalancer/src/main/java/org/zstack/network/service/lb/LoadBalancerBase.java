@@ -39,6 +39,7 @@ import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.operr;
 
+import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -71,7 +72,7 @@ public class LoadBalancerBase {
     private PluginRegistry pluginRgty;
 
     private String getSyncId() {
-        return String.format("operate-lb-%s", self.getUuid());
+        return String.format("operate-lb-with-vip-%s", self.getVipUuid());
     }
 
     private LoadBalancerVO self;
@@ -140,7 +141,7 @@ public class LoadBalancerBase {
                     @Override
                     public void success() {
                         deleteListenersForLoadBalancer(msg.getLoadBalancerUuid());
-                        dbf.remove(Q.New(LoadBalancerVO.class).eq(LoadBalancerVO_.uuid, msg.getLoadBalancerUuid()).find());
+                        dbf.removeByPrimaryKey(msg.getLoadBalancerUuid(), LoadBalancerVO.class);
                         bus.reply(msg, reply);
                         chain.next();
                     }
@@ -538,44 +539,7 @@ public class LoadBalancerBase {
     private void handle(APIGetCandidateVmNicsForLoadBalancerMsg msg) {
         APIGetCandidateVmNicsForLoadBalancerReply reply = new APIGetCandidateVmNicsForLoadBalancerReply();
 
-        List<String> ret = SQL.New("select vip.peerL3NetworkUuid" +
-                " from VipVO vip" +
-                " where vip.uuid = :uuid")
-                .param("uuid", self.getVipUuid()).list();
-        String peerL3Uuid = ret.isEmpty() ? null : ret.get(0);
-
-        if (peerL3Uuid != null) {
-            // the load balancer has been bound to a private L3 network
-            List<VmNicVO> nics = SQL.New("select nic" +
-                    " from VmNicVO nic, VmInstanceVO vm" +
-                    " where nic.l3NetworkUuid = :l3Uuid" +
-                    " and nic.uuid not in (select ref.vmNicUuid from LoadBalancerListenerVmNicRefVO ref where ref.listenerUuid = :luuid)" +
-                    " and nic.vmInstanceUuid = vm.uuid" +
-                    " and vm.type = :vmType" +
-                    " and vm.state in (:vmStates)")
-                    .param("l3Uuid", peerL3Uuid)
-                    .param("luuid", msg.getListenerUuid())
-                    .param("vmType", VmInstanceConstant.USER_VM_TYPE)
-                    .param("vmStates", asList(VmInstanceState.Running, VmInstanceState.Stopped)).list();
-            reply.setInventories(callGetCandidateVmNicsForLoadBalancerExtensionPoint(msg, VmNicInventory.valueOf(nics)));
-            bus.reply(msg, reply);
-            return;
-        }
-
-        // the load balancer has not been bound to any private L3 network
-        List<String> l3Uuids = SQL.New("select l3.uuid" +
-                " from L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref" +
-                " where l3.uuid = ref.l3NetworkUuid" +
-                " and ref.networkServiceType = :type")
-                .param("type", LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING).list();
-        if (l3Uuids.isEmpty()) {
-            reply.setInventories(new ArrayList<>());
-            bus.reply(msg, reply);
-            return;
-        }
-
         new SQLBatch(){
-
             @Override
             protected void scripts() {
                 List<String> guestNetworks = sql("select l3.uuid" +
@@ -585,16 +549,19 @@ public class LoadBalancerBase {
                         .param("type", LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING)
                         .list();
 
-                List<VmNicVO> nics = sql("select nic" +
-                        " from VmNicVO nic, VmInstanceVO vm" +
-                        " where nic.l3NetworkUuid in (:guestNetworks)" +
-                        " and nic.vmInstanceUuid = vm.uuid" +
-                        " and vm.type = :vmType" +
-                        " and vm.state in (:vmStates)")
-                        .param("guestNetworks",guestNetworks)
-                        .param("vmType", VmInstanceConstant.USER_VM_TYPE)
-                        .param("vmStates", asList(VmInstanceState.Running, VmInstanceState.Stopped))
-                        .list();
+                List<VmNicVO> nics = new ArrayList<>();
+                if (guestNetworks != null && !guestNetworks.isEmpty()) {
+                    nics = sql("select nic" +
+                            " from VmNicVO nic, VmInstanceVO vm" +
+                            " where nic.l3NetworkUuid in (:guestNetworks)" +
+                            " and nic.vmInstanceUuid = vm.uuid" +
+                            " and vm.type = :vmType" +
+                            " and vm.state in (:vmStates)")
+                            .param("guestNetworks",guestNetworks)
+                            .param("vmType", VmInstanceConstant.USER_VM_TYPE)
+                            .param("vmStates", asList(VmInstanceState.Running, VmInstanceState.Stopped))
+                            .list();
+                }
 
                 reply.setInventories(callGetCandidateVmNicsForLoadBalancerExtensionPoint(msg, VmNicInventory.valueOf(nics)));
             }
@@ -720,14 +687,11 @@ public class LoadBalancerBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        /* if there is other lb use this vip, do nothing */
-                        long number = Q.New(LoadBalancerVO.class).eq(LoadBalancerVO_.vipUuid, self.getVipUuid()).count();
-                        if (number > 1){
-                            trigger.next();
-                            return;
-                        }
-
-                        new Vip(self.getVipUuid()).release(new Completion(trigger) {
+                        ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+                        struct.setUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+                        Vip v = new Vip(self.getVipUuid());
+                        v.setStruct(struct);
+                        v.release(new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();
@@ -1186,7 +1150,7 @@ public class LoadBalancerBase {
         LoadBalancerListenerVO vo = new LoadBalancerListenerVO();
         vo.setLoadBalancerUuid(self.getUuid());
         vo.setUuid(msg.getResourceUuid() == null ? Platform.getUuid() : msg.getResourceUuid());
-        vo.setDescription(vo.getDescription());
+        vo.setDescription(msg.getDescription());
         vo.setName(msg.getName());
         vo.setInstancePort(msg.getInstancePort());
         vo.setLoadBalancerPort(msg.getLoadBalancerPort());

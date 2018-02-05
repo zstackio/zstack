@@ -8,6 +8,8 @@ public class DeleteSecurityGroupRuleAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
+    private static final HashMap<String, Parameter> nonAPIParameterMap = new HashMap<>();
+
     public static class Result {
         public ErrorCode error;
         public org.zstack.sdk.DeleteSecurityGroupRuleResult value;
@@ -35,9 +37,11 @@ public class DeleteSecurityGroupRuleAction extends AbstractAction {
     @Param(required = true)
     public String sessionId;
 
-    public long timeout;
-    
-    public long pollingInterval;
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -71,7 +75,15 @@ public class DeleteSecurityGroupRuleAction extends AbstractAction {
         return parameterMap;
     }
 
+<<<<<<< HEAD
     protected RestInfo getRestInfo() {
+=======
+    Map<String, Parameter> getNonAPIParameterMap() {
+        return nonAPIParameterMap;
+    }
+
+    RestInfo getRestInfo() {
+>>>>>>> upstream/master
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/security-groups/rules";

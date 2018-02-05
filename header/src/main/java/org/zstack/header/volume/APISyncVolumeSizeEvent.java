@@ -33,8 +33,8 @@ public class APISyncVolumeSizeEvent extends APIEvent {
         String volumeUuid = uuid();
         VolumeInventory vol = new VolumeInventory();
         vol.setName("test-volume");
-        vol.setCreateDate(new Timestamp(System.currentTimeMillis()));
-        vol.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        vol.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        vol.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         vol.setType(VolumeType.Root.toString());
         vol.setUuid(volumeUuid);
         vol.setSize(SizeUnit.GIGABYTE.toByte(100));

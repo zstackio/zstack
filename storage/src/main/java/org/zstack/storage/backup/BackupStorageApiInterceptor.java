@@ -6,17 +6,16 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.storage.backup.*;
 
+import java.util.List;
+
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
-
-import java.util.List;
 
 /**
  * Created with IntelliJ IDEA.

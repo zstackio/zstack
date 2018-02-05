@@ -2,8 +2,8 @@ package org.zstack.core.config;
 
 import org.zstack.header.query.APIQueryReply;
 import org.zstack.header.rest.RestResponse;
-
 import java.util.List;
+import static java.util.Arrays.asList;
 
 /**
  */
@@ -21,8 +21,13 @@ public class APIQueryGlobalConfigReply extends APIQueryReply {
 
     public static APIQueryGlobalConfigReply __example__() {
         APIQueryGlobalConfigReply reply = new APIQueryGlobalConfigReply();
-
-
+        GlobalConfigInventory inv = new GlobalConfigInventory();
+        inv.setCategory("backupStorage");
+        inv.setDefaultValue("1G");
+        inv.setName("reservedCapacity");
+        inv.setValue("2G");
+        inv.setDescription("Reserved capcacity on every backup storage");
+        reply.setInventories(asList(inv));
         return reply;
     }
 

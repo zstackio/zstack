@@ -30,8 +30,8 @@ public class APIQueryClusterReply extends APIQueryReply {
         cluster.setZoneUuid(uuid());
         cluster.setUuid(uuid());
         cluster.setType("zstack");
-        cluster.setCreateDate(new Timestamp(System.currentTimeMillis()));
-        cluster.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        cluster.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        cluster.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         reply.setInventories(asList(cluster));
         reply.setSuccess(true);
         return reply;

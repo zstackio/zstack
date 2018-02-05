@@ -40,13 +40,14 @@ import org.zstack.header.volume.APIGetVolumeFormatReply.VolumeFormatReplyStruct;
 import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
 import org.zstack.identity.AccountManager;
 import org.zstack.search.SearchQuery;
+import org.zstack.storage.primary.PrimaryStorageDeleteBitGC;
+import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.utils.path.PathUtil;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -325,6 +326,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             ImageBackupStorageRefVO targetBackupStorageRef;
             PrimaryStorageInventory targetPrimaryStorage;
             String primaryStorageInstallPath;
+            String prePSInstallPath;
             String volumeFormat;
 
             @Override
@@ -333,30 +335,37 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                     String __name__ = "select-backup-storage";
 
                     @Override
-                    @Transactional(readOnly = true)
                     public void run(FlowTrigger trigger, Map data) {
-                        List<String> bsUuids = CollectionUtils.transformToList(template.getBackupStorageRefs(), new Function<String, ImageBackupStorageRefVO>() {
+                        List<String> bsUuids = new SQLBatchWithReturn<List<String>>() {
                             @Override
-                            public String call(ImageBackupStorageRefVO arg) {
-                                return ImageStatus.Deleted.equals(arg.getStatus()) ? null : arg.getBackupStorageUuid();
+                            protected List<String> scripts() {
+                                List<String> bsUuids = CollectionUtils.transformToList(template.getBackupStorageRefs(), new Function<String, ImageBackupStorageRefVO>() {
+                                    @Override
+                                    public String call(ImageBackupStorageRefVO arg) {
+                                        return ImageStatus.Deleted.equals(arg.getStatus()) ? null : arg.getBackupStorageUuid();
+                                    }
+                                });
+
+                                if (bsUuids.isEmpty()) {
+                                    throw new OperationFailureException(operr("the image[uuid:%s, name:%s] has been deleted on all backup storage", template.getUuid(), template.getName()));
+                                }
+
+                                String sql = "select bs.uuid from BackupStorageVO bs, BackupStorageZoneRefVO zref, PrimaryStorageVO ps where zref.zoneUuid = ps.zoneUuid and bs.status = :bsStatus and bs.state = :bsState and ps.uuid = :psUuid and zref.backupStorageUuid = bs.uuid and bs.uuid in (:bsUuids)";
+                                TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+                                q.setParameter("psUuid", msg.getPrimaryStorageUuid());
+                                q.setParameter("bsStatus", BackupStorageStatus.Connected);
+                                q.setParameter("bsState", BackupStorageState.Enabled);
+                                q.setParameter("bsUuids", bsUuids);
+                                bsUuids = q.getResultList();
+
+                                return bsUuids;
                             }
-                        });
+                        }.execute();
 
-                        if (bsUuids.isEmpty()) {
-                            throw new OperationFailureException(operr("the image[uuid:%s, name:%s] has been deleted on all backup storage", template.getUuid(), template.getName()));
-                        }
-
-                        String sql = "select bs.uuid from BackupStorageVO bs, BackupStorageZoneRefVO zref, PrimaryStorageVO ps where zref.zoneUuid = ps.zoneUuid and bs.status = :bsStatus and bs.state = :bsState and ps.uuid = :psUuid and zref.backupStorageUuid = bs.uuid and bs.uuid in (:bsUuids)";
-                        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-                        q.setParameter("psUuid", msg.getPrimaryStorageUuid());
-                        q.setParameter("bsStatus", BackupStorageStatus.Connected);
-                        q.setParameter("bsState", BackupStorageState.Enabled);
-                        q.setParameter("bsUuids", bsUuids);
-                        bsUuids = q.getResultList();
 
                         if (bsUuids.isEmpty()) {
                             trigger.fail(operr("cannot find a backup storage on which the image[uuid:%s] is that satisfies all conditions of: 1. has state Enabled 2. has status Connected. 3 has attached to zone in which primary storage[uuid:%s] is",
-                                            template.getUuid(), msg.getPrimaryStorageUuid()));
+                                    template.getUuid(), msg.getPrimaryStorageUuid()));
                             return;
                         }
 
@@ -367,6 +376,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                                 return arg.getBackupStorageUuid().equals(bsUuid) ? arg : null;
                             }
                         });
+
                         trigger.next();
                     }
                 });
@@ -408,6 +418,33 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                     }
                 });
 
+                flow(new NoRollbackFlow() {
+                    String __name__ = "get-download-data-volume-template-to-primary-storage-for-garbage";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        GetInstallPathForDataVolumeDownloadMsg gmsg = new GetInstallPathForDataVolumeDownloadMsg();
+                        gmsg.setPrimaryStorageUuid(targetPrimaryStorage.getUuid());
+                        gmsg.setVolumeUuid(vol.getUuid());
+                        gmsg.setBackupStorageRef(ImageBackupStorageRefInventory.valueOf(targetBackupStorageRef));
+                        gmsg.setImage(ImageInventory.valueOf(template));
+                        gmsg.setHostUuid(msg.getHostUuid());
+                        bus.makeTargetServiceIdByResourceUuid(gmsg, PrimaryStorageConstant.SERVICE_ID, targetPrimaryStorage.getUuid());
+                        bus.send(gmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                } else {
+                                    GetInstallPathForDataVolumeDownloadReply r = reply.castReply();
+                                    prePSInstallPath = r.getInstallPath();
+                                    trigger.next();
+                                }
+                            }
+                        });
+                    }
+                });
+
                 flow(new Flow() {
                     String __name__ = "download-data-volume-template-to-primary-storage";
 
@@ -438,15 +475,24 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
                         if (primaryStorageInstallPath != null) {
-                            DeleteBitsOnPrimaryStorageMsg delMsg = new DeleteBitsOnPrimaryStorageMsg();
-                            delMsg.setInstallPath(PathUtil.parentFolder(primaryStorageInstallPath));
+                            // if primaryStorageInstallPath != null, then delete it directly
+                            DeleteVolumeBitsOnPrimaryStorageMsg delMsg = new DeleteVolumeBitsOnPrimaryStorageMsg();
+                            delMsg.setInstallPath(primaryStorageInstallPath);
                             delMsg.setBitsUuid(vol.getUuid());
                             delMsg.setBitsType(VolumeVO.class.getSimpleName());
-                            delMsg.setFolder(true);
                             delMsg.setPrimaryStorageUuid(targetPrimaryStorage.getUuid());
                             delMsg.setHypervisorType(VolumeFormat.getMasterHypervisorTypeByVolumeFormat(vol.getFormat()).toString());
                             bus.makeTargetServiceIdByResourceUuid(delMsg, PrimaryStorageConstant.SERVICE_ID, targetPrimaryStorage.getUuid());
                             bus.send(delMsg);
+                        } else if (PrimaryStorageGlobalConfig.PRIMARY_STORAGE_DELETEBITS_ON.value(Boolean.class)) {
+                            // if primaryStorageInstallPath == null, we don't know the status agent running, so use garbage to delete
+                            PrimaryStorageDeleteBitGC gc = new PrimaryStorageDeleteBitGC();
+                            gc.NAME = String.format("gc-delete-bits-volume-%s-on-primary-storage-%s", vol.getUuid(), targetPrimaryStorage.getUuid());
+                            gc.primaryStorageInstallPath = prePSInstallPath;
+                            gc.primaryStorageUuid = targetPrimaryStorage.getUuid();
+                            gc.volume = vol;
+                            gc.submit(PrimaryStorageGlobalConfig.PRIMARY_STORAGE_DELETEBITS_GARBAGE_COLLECTOR_INTERVAL.value(Long.class),
+                                    TimeUnit.SECONDS);
                         }
                         trigger.rollback();
                     }

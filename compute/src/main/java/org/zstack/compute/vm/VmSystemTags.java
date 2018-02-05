@@ -1,6 +1,7 @@
 package org.zstack.compute.vm;
 
 import org.zstack.header.tag.TagDefinition;
+import org.zstack.header.vm.VmInstance;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.tag.PatternedSystemTag;
 
@@ -14,6 +15,9 @@ public class VmSystemTags {
     public static String STATIC_IP_L3_UUID_TOKEN = "l3NetworkUuid";
     public static String STATIC_IP_TOKEN = "staticIp";
     public static PatternedSystemTag STATIC_IP = new PatternedSystemTag(String.format("staticIp::{%s}::{%s}", STATIC_IP_L3_UUID_TOKEN, STATIC_IP_TOKEN), VmInstanceVO.class);
+
+    public static String MAC_TOKEN = "customMac";
+    public static PatternedSystemTag CUSTOM_MAC = new PatternedSystemTag(String.format("customMac::{%s}::{%s}", STATIC_IP_L3_UUID_TOKEN, MAC_TOKEN), VmInstanceVO.class);
 
     public static PatternedSystemTag WINDOWS_VOLUME_ON_VIRTIO = new PatternedSystemTag("windows::virtioVolume", VmInstanceVO.class);
 
@@ -60,8 +64,6 @@ public class VmSystemTags {
     public static String VM_INJECT_QEMUGA_TOKEN = "qemuga";
     public static PatternedSystemTag VM_INJECT_QEMUGA = new PatternedSystemTag(String.format("%s", VM_INJECT_QEMUGA_TOKEN), VmInstanceVO.class);
 
-
     public static String PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN = "primaryStorageUuidForDataVolume";
     public static PatternedSystemTag PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME = new PatternedSystemTag(String.format("primaryStorageUuidForDataVolume::{%s}", PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN), VmInstanceVO.class);
-
 }

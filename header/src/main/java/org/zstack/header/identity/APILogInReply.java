@@ -24,7 +24,7 @@ public class APILogInReply extends APIReply {
         SessionInventory inventory = new SessionInventory();
         inventory.setUuid(uuid());
         inventory.setAccountUuid(uuid());
-        inventory.setExpiredDate(new Timestamp(new Date().getTime()));
+        inventory.setExpiredDate(new Timestamp(org.zstack.header.message.DocUtils.date));
 
         reply.setInventory(inventory);
         return reply;

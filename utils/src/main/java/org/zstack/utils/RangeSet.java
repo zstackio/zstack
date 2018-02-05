@@ -1,9 +1,6 @@
 package org.zstack.utils;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 /**
  */
@@ -59,6 +56,14 @@ public class RangeSet {
 
     private List<Range> ranges = new ArrayList<Range>();
 
+    public List<Range> getRanges() {
+        return ranges;
+    }
+
+    public void setRanges(List<Range> ranges) {
+        this.ranges = ranges;
+    }
+
     public RangeSet open(long s, long e) {
         ranges.add(new Range(s+1, e-1));
         return this;
@@ -85,12 +90,7 @@ public class RangeSet {
             return ret;
         }
 
-        Collections.sort(ranges, new Comparator<Range>() {
-            @Override
-            public int compare(Range o1, Range o2) {
-                return (int)(o1.start - o2.start);
-            }
-        });
+        sort();
 
         Range r = ranges.get(0);
         for (int i=1; i<ranges.size(); i++) {
@@ -108,12 +108,35 @@ public class RangeSet {
 
     public List<Range> mergeAndSort() {
         List<Range> ret = merge();
+        sort();
+        return ret;
+    }
+
+    public void sort(){
         Collections.sort(ranges, new Comparator<Range>() {
             @Override
             public int compare(Range o1, Range o2) {
                 return (int)(o1.start - o2.start);
             }
         });
-        return ret;
+    }
+
+    public List<String> sortAndToString() {
+        List<String> strList = new ArrayList<String>();
+        if (ranges.isEmpty()){
+            return strList;
+        }
+
+        sort();
+
+        Iterator<Range> it = ranges.iterator();
+        while (it.hasNext()){
+            Range range = it.next();
+            for (long i = range.start; i <= range.end; i++){
+                strList.add(Long.toString(i));
+            }
+        }
+
+        return strList;
     }
 }

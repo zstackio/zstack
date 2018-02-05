@@ -203,13 +203,6 @@ public class CephBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
 
     @Override
     public void preAddImage(ImageInventory img) {
-        final String uploadProtocol = "upload://";
-        if (img.getUrl().startsWith(uploadProtocol)) {
-            img.setUrl(String.format("%s%s/%s",
-                    uploadProtocol,
-                    img.getUuid(),
-                    img.getUrl().substring(uploadProtocol.length())));
-        }
     }
 
     @Override
@@ -237,11 +230,10 @@ public class CephBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
-                    logger.debug("add image info to metadata file successfully");
+                    logger.info("add image info to metadata file successfully");
                 } else {
-                    reply.setError(reply.getError());
+                    logger.warn(String.format("add image info to metadata file failed, %s", reply.getError().toString()));
                 }
-                bus.reply(msg, reply);
             }
         });
 

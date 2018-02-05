@@ -21,6 +21,8 @@ public class ApplianceVmConstant {
         additionalNics,
         publicKey,
         sshPort,
+        uuid,
+        managementNodeIp,
     }
 
     public static enum Params {

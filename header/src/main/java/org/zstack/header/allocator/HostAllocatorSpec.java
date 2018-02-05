@@ -6,15 +6,13 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeFormat;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  */
 public class HostAllocatorSpec {
     private List<String> avoidHostUuids;
+    private List<String> softAvoidHostUuids;
     private long cpuCapacity;
     private long memoryCapacity;
     private List<String> l3NetworkUuids;
@@ -32,6 +30,16 @@ public class HostAllocatorSpec {
     private String requiredPrimaryStorageUuid;
     private Map<String, List<String>> backupStoragePrimaryStorageMetrics;
     private boolean dryRun;
+    private List<String> systemTags;
+    private Map<String, Set<String>> host2PrimaryStorageBlacklist = new HashMap<>();
+
+    public List<String> getSystemTags() {
+        return systemTags;
+    }
+
+    public void setSystemTags(List<String> systemTags) {
+        this.systemTags = systemTags;
+    }
 
     public String getRequiredPrimaryStorageUuid() {
         return requiredPrimaryStorageUuid;
@@ -98,6 +106,14 @@ public class HostAllocatorSpec {
 
     public void setAvoidHostUuids(List<String> avoidHostUuids) {
         this.avoidHostUuids = avoidHostUuids;
+    }
+
+    public List<String> getSoftAvoidHostUuids() {
+        return softAvoidHostUuids;
+    }
+
+    public void setSoftAvoidHostUuids(List<String> softAvoidHostUuids) {
+        this.softAvoidHostUuids = softAvoidHostUuids;
     }
 
     public long getCpuCapacity() {
@@ -179,6 +195,7 @@ public class HostAllocatorSpec {
         HostAllocatorSpec spec = new HostAllocatorSpec();
         spec.setAllocatorStrategy(msg.getAllocatorStrategy());
         spec.setAvoidHostUuids(msg.getAvoidHostUuids());
+        spec.setSoftAvoidHostUuids(msg.getSoftAvoidHostUuids());
         spec.setCpuCapacity(msg.getCpuCapacity());
         spec.setDiskSize(msg.getDiskSize());
         spec.setListAllHosts(msg.isListAllHosts());
@@ -203,6 +220,10 @@ public class HostAllocatorSpec {
         spec.setAllowNoL3Networks(msg.isAllowNoL3Networks());
         spec.setRequiredBackupStorageUuid(msg.getRequiredBackupStorageUuid());
         spec.setRequiredPrimaryStorageUuid(msg.getRequiredPrimaryStorageUuid());
+        if (msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()){
+            spec.setSystemTags(new ArrayList<String>(msg.getSystemTags()));
+        }
+
         return spec;
     }
 
@@ -212,5 +233,13 @@ public class HostAllocatorSpec {
 
     public void setBackupStoragePrimaryStorageMetrics(Map<String, List<String>> backupStoragePrimaryStorageMetrics) {
         this.backupStoragePrimaryStorageMetrics = backupStoragePrimaryStorageMetrics;
+    }
+
+    public Map<String, Set<String>> getHost2PrimaryStorageBlacklist() {
+        return host2PrimaryStorageBlacklist;
+    }
+
+    public void setHost2PrimaryStorageBlacklist(Map<String, Set<String>> host2PrimaryStorageBlacklist) {
+        this.host2PrimaryStorageBlacklist = host2PrimaryStorageBlacklist;
     }
 }

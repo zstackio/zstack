@@ -1,14 +1,18 @@
 package org.zstack.storage.primary.local;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.db.SQL;
 import org.zstack.core.thread.SyncTask;
+import org.zstack.header.core.NopeCompletion;
+import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.primary.ImageCacheShadowVO;
-import org.zstack.header.storage.primary.ImageCacheVO;
-import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.storage.backup.BackupStoragePrimaryStorageExtensionPoint;
+import org.zstack.header.storage.primary.*;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.storage.primary.ImageCacheCleaner;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.CacheInstallPath;
@@ -28,7 +32,8 @@ import java.util.Map;
  */
 public class LocalStorageImageCleaner extends ImageCacheCleaner implements ManagementNodeReadyExtensionPoint {
     private static final CLogger logger = Utils.getLogger(LocalStorageImageCleaner.class);
-
+    @Autowired
+    private PluginRegistry pluginRgty;
     @Override
     public void managementNodeReady() {
         startGC();
@@ -105,7 +110,20 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
         return sq.getResultList();
     }
 
-    protected void doCleanup(String psUuid) {
+    private void cleanUpImageCache(String psUuid) {
+        PrimaryStorageVO ps = dbf.findByUuid(psUuid, PrimaryStorageVO.class);
+        logger.info(String.format("cleanup image cache on PrimaryStorage [%s]", ps.getUuid()));
+        List<String> hostUuids = SQL.New("select h.uuid from LocalStorageHostRefVO ref, HostVO h " +
+                "where ref.hostUuid = h.uuid and ref.primaryStorageUuid = :ps and h.status = :status").
+                param("ps", psUuid).param("status", HostStatus.Connected).list();
+        List<BackupStoragePrimaryStorageExtensionPoint> extenstions = pluginRgty.getExtensionList(BackupStoragePrimaryStorageExtensionPoint.class);
+        extenstions.forEach(ext -> {
+            hostUuids.forEach(hostUuid ->
+                    ext.cleanupPrimaryCacheForBS(PrimaryStorageInventory.valueOf(ps), hostUuid, new NopeCompletion()));
+        });
+    }
+
+    private void cleanUpVolumeCache(String psUuid) {
         List<ImageCacheShadowVO> shadowVOs = createShadowImageCacheVOs(psUuid);
         if (shadowVOs == null || shadowVOs.isEmpty()) {
             return;
@@ -145,6 +163,13 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
                 }
             });
         }
+    }
+
+    protected void doCleanup(String psUuid) {
+        if (psUuid != null) {
+            cleanUpImageCache(psUuid);
+        }
+        cleanUpVolumeCache(psUuid);
     }
 
     @Override

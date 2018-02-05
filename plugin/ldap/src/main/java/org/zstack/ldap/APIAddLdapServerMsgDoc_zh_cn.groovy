@@ -38,7 +38,7 @@ doc {
 					desc "资源的详细描述"
 					location "body"
 					type "String"
-					optional false
+					optional true
 					since "0.6"
 					
 				}

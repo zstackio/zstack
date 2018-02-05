@@ -3,6 +3,7 @@ package org.zstack.storage.ceph;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.Platform;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
@@ -11,6 +12,8 @@ import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.utils.ssh.Ssh;
 import org.zstack.utils.ssh.SshException;
+
+import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.operr;
 
@@ -46,14 +49,18 @@ public abstract class CephMonBase {
         Ssh ssh = new Ssh();
         try {
             ssh.setHostname(self.getHostname()).setUsername(self.getSshUsername()).setPassword(self.getSshPassword()).setPort(self.getSshPort())
-                    .checkTool("ceph", "rbd").runErrorByException();
+                    .checkTool("ceph", "rbd").setTimeout(5).runErrorByException();
         } catch (SshException e) {
             throw new OperationFailureException(operr("The problem may be caused by an incorrect user name or password or SSH port"));
         }
     }
 
     public <T> void httpCall(final String path, final Object cmd, final Class<T> retClass, final ReturnValueCompletion<T> completion) {
-        restf.asyncJsonPost(makeHttpPath(self.getHostname(), path), cmd, new JsonAsyncRESTCallback<T>(completion) {
+        httpCall(path, cmd, retClass, completion, null, 0);
+    }
+
+    public <T> void httpCall(final String path, final Object cmd, final Class<T> retClass, final ReturnValueCompletion<T> completion, TimeUnit unit, long timeout) {
+        JsonAsyncRESTCallback<T> callback = new JsonAsyncRESTCallback<T>(completion) {
             @Override
             public void fail(ErrorCode err) {
                 completion.fail(err);
@@ -67,6 +74,56 @@ public abstract class CephMonBase {
             @Override
             public Class<T> getReturnClass() {
                 return retClass;
+            }
+        };
+
+        if (unit == null) {
+            restf.asyncJsonPost(makeHttpPath(self.getHostname(), path), cmd, callback);
+        } else {
+            restf.asyncJsonPost(makeHttpPath(self.getHostname(), path), cmd, callback, unit, timeout);
+        }
+    }
+
+    private static class AgentResponse {
+        String error;
+        boolean success = true;
+
+        public String getError() {
+            return error;
+        }
+
+        public void setError(String error) {
+            this.error = error;
+        }
+
+        public boolean isSuccess() {
+            return success;
+        }
+
+        public void setSuccess(boolean success) {
+            this.success = success;
+        }
+    }
+
+    public void httpCall(final String path, final Object cmd, final Completion completion) {
+        restf.asyncJsonPost(makeHttpPath(self.getHostname(), path), cmd, new JsonAsyncRESTCallback<AgentResponse>(completion) {
+            @Override
+            public void fail(ErrorCode err) {
+                completion.fail(err);
+            }
+
+            @Override
+            public void success(AgentResponse ret) {
+                if (ret.isSuccess()) {
+                    completion.success();
+                } else {
+                    completion.fail(Platform.operr("operation error, because:%s", ret.getError()));
+                }
+            }
+
+            @Override
+            public Class<AgentResponse> getReturnClass() {
+                return AgentResponse.class;
             }
         });
     }

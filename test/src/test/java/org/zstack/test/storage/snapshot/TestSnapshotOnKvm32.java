@@ -32,7 +32,9 @@ import org.zstack.utils.logging.CLogger;
 * 3. create data volume from snapshot4
 *
 * confirm data volume created failure
+*
 */
+@Deprecated
 public class TestSnapshotOnKvm32 {
     CLogger logger = Utils.getLogger(TestSnapshotOnKvm32.class);
     Deployer deployer;

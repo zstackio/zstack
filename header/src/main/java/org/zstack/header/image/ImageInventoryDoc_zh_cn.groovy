@@ -36,6 +36,12 @@ doc {
 		since "0.6"
 	}
 	field {
+		name "exportMd5Sum"
+		desc ""
+		type "String"
+		since "0.6"
+	}
+	field {
 		name "state"
 		desc ""
 		type "String"

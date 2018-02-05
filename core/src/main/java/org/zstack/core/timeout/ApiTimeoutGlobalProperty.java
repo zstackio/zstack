@@ -10,9 +10,16 @@ import org.zstack.core.GlobalPropertyDefinition;
 public class ApiTimeoutGlobalProperty {
     @GlobalProperty(name="ApiTimeout.org.zstack.header.image.APIAddImageMsg", defaultValue = "timeout::3h")
     public static String APIAddImageMsg;
-    @GlobalProperty(name="ApiTimeout.org.zstack.header.image.APICreateRootVolumeTemplateFromRootVolumeMsg", defaultValue = "timeout::3h")
+    @GlobalProperty(name="ApiTimeout.org.zstack.header.image.APICreateRootVolumeTemplateFromRootVolumeMsg", defaultValue = "timeout::24h")
     public static String APICreateRootVolumeTemplateFromRootVolumeMsg;
-    @GlobalProperty(name="ApiTimeout.org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeMsg", defaultValue = "timeout::3h")
+
+    @GlobalProperty(name="ApiTimeout.org.zstack.header.volume.APICreateDataVolumeFromVolumeTemplateMsg", defaultValue = "timeout::3h")
+    public static String APICreateDataVolumeFromVolumeTemplateMsg;
+
+    @GlobalProperty(name="ApiTimeout.org.zstack.header.vm.APIMigrateVmMsg", defaultValue = "timeout::1h")
+    public static String APIMigrateVmMsg;
+
+    @GlobalProperty(name="ApiTimeout.org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeMsg", defaultValue = "timeout::24h")
     public static String APICreateDataVolumeTemplateFromVolumeMsg;
     @GlobalProperty(name="ApiTimeout.org.zstack.header.volume.APICreateDataVolumeFromVolumeSnapshotMsg", defaultValue = "timeout::3h")
     public static String APICreateDataVolumeFromVolumeSnapshotMsg;
@@ -28,4 +35,6 @@ public class ApiTimeoutGlobalProperty {
     public static String APIDeleteVolumeSnapshotMsg;
     @GlobalProperty(name="ApiTimeout.org.zstack.header.vm.APIExpungeVmInstanceMsg", defaultValue = "timeout::3h")
     public static String APIExpungeVmInstanceMsg;
+    @GlobalProperty(name="ApiTimeout.org.zstack.header.storage.snapshot.APIRevertVolumeFromSnapshotMsg", defaultValue = "timeout::24h")
+    public static String APIRevertVolumeFromSnapshotMsg;
 }

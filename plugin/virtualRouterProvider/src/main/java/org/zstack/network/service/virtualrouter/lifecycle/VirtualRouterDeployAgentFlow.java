@@ -32,9 +32,9 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
-import static org.zstack.core.Platform.operr;
-
 import java.util.Map;
+
+import static org.zstack.core.Platform.operr;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VirtualRouterDeployAgentFlow extends NoRollbackFlow {
@@ -98,7 +98,7 @@ public class VirtualRouterDeployAgentFlow extends NoRollbackFlow {
                                 if (ret.isSuccess()) {
                                     trigger.next();
                                 } else {
-                                    trigger.fail(operr(ret.getError()));
+                                    trigger.fail(operr("operation error, because:%s", ret.getError()));
                                 }
                             }
 
@@ -178,6 +178,9 @@ public class VirtualRouterDeployAgentFlow extends NoRollbackFlow {
         runner.setAgentPort(VirtualRouterGlobalProperty.AGENT_PORT);
         runner.setTargetIp(mgmtIp);
         runner.putArgument("pkg_virtualrouter", agentPackageName);
+        if (CoreGlobalProperty.CHRONY_SERVERS != null && !CoreGlobalProperty.CHRONY_SERVERS.isEmpty()) {
+            runner.putArgument("chrony_servers", String.join(",", CoreGlobalProperty.CHRONY_SERVERS));
+        }
         final VmNicInventory fmgmtNic = mgmtNic;
         runner.run(new Completion(chain) {
             @Override

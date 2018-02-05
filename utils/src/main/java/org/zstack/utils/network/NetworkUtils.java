@@ -305,7 +305,9 @@ public class NetworkUtils {
     }
 
     public static int getTotalIpInCidr(String cidr) {
-        DebugUtils.Assert(isCidr(cidr), String.format("%s is not a cidr", cidr));
+        if (!isCidr(cidr)) {
+            throw new IllegalArgumentException(String.format("%s is not a valid cidr", cidr));
+        }
         SubnetUtils.SubnetInfo range = new SubnetUtils(cidr).getInfo();
 
         return getTotalIpInRange(range.getLowAddress(), range.getHighAddress());

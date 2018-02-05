@@ -4,10 +4,11 @@ import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.core.support.DefaultDirObjectFactory;
 import org.springframework.ldap.core.support.DefaultTlsDirContextAuthenticationStrategy;
 import org.springframework.ldap.core.support.LdapContextSource;
+import org.zstack.core.db.Q;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.tag.PatternedSystemTag;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
-
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
 
@@ -44,9 +45,11 @@ class LdapUtil {
         }
         ldapContextSource.setCacheEnvironmentProperties(false);
         ldapContextSource.setPooled(false);
-        //
+        ldapContextSource.setReferral("follow");
+
         LdapTemplate ldapTemplate;
         ldapTemplate = new LdapTemplate();
+        ldapTemplate.setIgnorePartialResultException(true);
         ldapTemplate.setContextSource(ldapContextSource);
 
         try {
@@ -58,5 +61,48 @@ class LdapUtil {
         }
 
         return new LdapTemplateContextSource(ldapTemplate, ldapContextSource);
+    }
+
+    public static String getMemberKey(){
+        String ldapServerUuid = Q.New(LdapServerVO.class).select(LdapServerVO_.uuid).findValue();
+        String type = LdapSystemTags.LDAP_SERVER_TYPE.getTokenByResourceUuid(ldapServerUuid, LdapSystemTags.LDAP_SERVER_TYPE_TOKEN);
+
+        if(LdapConstant.WindowsAD.TYPE.equals(type)){
+            return LdapConstant.WindowsAD.MEMBER_KEY;
+        }
+
+        if(LdapConstant.OpenLdap.TYPE.equals(type)){
+            return LdapConstant.OpenLdap.MEMBER_KEY;
+        }
+
+        // default WindowsAD
+        return LdapConstant.WindowsAD.MEMBER_KEY;
+    }
+
+    public static String getLdapUseAsLoginName(){
+        String ldapServerUuid = Q.New(LdapServerVO.class).select(LdapServerVO_.uuid).findValue();
+
+        PatternedSystemTag tag = LdapSystemTags.LDAP_USE_AS_LOGIN_NAME;
+        if(!tag.hasTag(ldapServerUuid)){
+            return LdapConstant.LDAP_UID_KEY;
+        }
+
+        return tag.getTokenByResourceUuid(ldapServerUuid, LdapSystemTags.LDAP_USE_AS_LOGIN_NAME_TOKEN);
+    }
+
+    public static String getDnKey(){
+        String ldapServerUuid = Q.New(LdapServerVO.class).select(LdapServerVO_.uuid).findValue();
+        String type = LdapSystemTags.LDAP_SERVER_TYPE.getTokenByResourceUuid(ldapServerUuid, LdapSystemTags.LDAP_SERVER_TYPE_TOKEN);
+
+        if(LdapConstant.WindowsAD.TYPE.equals(type)){
+            return LdapConstant.WindowsAD.DN_KEY;
+        }
+
+        if(LdapConstant.OpenLdap.TYPE.equals(type)){
+            return LdapConstant.OpenLdap.DN_KEY;
+        }
+
+        // default WindowsAD
+        return LdapConstant.WindowsAD.DN_KEY;
     }
 }

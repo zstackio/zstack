@@ -62,6 +62,16 @@ doc {
 					since "0.6"
 					
 				}
+				column {
+					name "stopHA"
+					enclosedIn "stopVmInstance"
+					desc "彻底关闭HA云主机"
+					location "body"
+					type "String"
+					optional true
+					since "2.2"
+					
+				}
 			}
         }
 

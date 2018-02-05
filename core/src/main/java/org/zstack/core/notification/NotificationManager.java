@@ -114,6 +114,14 @@ public class NotificationManager extends AbstractService {
             return notification;
         }
 
+        private boolean ignoreNotification(APIMessage apiMessage, APIEvent evt) {
+            if(apiMessage instanceof APICreateMessage && !evt.isSuccess()) {
+                return true;
+            }
+
+            return false;
+        }
+
         @Override
         @AsyncThread
         public void beforePublishEvent(Event evt) {
@@ -128,6 +136,10 @@ public class NotificationManager extends AbstractService {
             }
 
             apiMessages.remove(aevt.getApiId());
+
+            if(ignoreNotification(b.message, (APIEvent) evt)) {
+                return;
+            }
 
             b.notification.after((APIEvent) evt);
 

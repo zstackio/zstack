@@ -21,9 +21,7 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.storage.primary.PrimaryStorageHostRefVO;
-import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_;
-import org.zstack.header.storage.primary.PrimaryStorageHostStatus;
+import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
@@ -63,9 +61,7 @@ public class VmAllocateHostFlow implements Flow {
                 .listValues();
     }
 
-    private AllocateHostMsg prepareMsg(Map<String, Object> ctx) {
-        VmInstanceSpec spec = (VmInstanceSpec) ctx.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-
+    private AllocateHostMsg prepareMsg(VmInstanceSpec spec) {
         DesignatedAllocateHostMsg msg = new DesignatedAllocateHostMsg();
 
         List<DiskOfferingInventory> diskOfferings = new ArrayList<>();
@@ -81,6 +77,7 @@ public class VmAllocateHostFlow implements Flow {
         diskSize += getTotalDataDiskSize(spec);
         diskOfferings.addAll(spec.getDataDiskOfferings());
         msg.setAvoidHostUuids(getAvoidHost(spec));
+        msg.setSoftAvoidHostUuids(spec.getSoftAvoidHostUuids());
         msg.setDiskOfferings(diskOfferings);
         msg.setDiskSize(diskSize);
         msg.setCpuCapacity(spec.getVmInventory().getCpuNum());
@@ -124,11 +121,12 @@ public class VmAllocateHostFlow implements Flow {
 
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
-        if (VmOperation.NewCreate != spec.getCurrentVmOperation()) {
-            throw new CloudRuntimeException("VmAllocateHostFlow is only for creating new VM");
+        if (VmOperation.NewCreate != spec.getCurrentVmOperation()
+                && VmOperation.ChangeImage != spec.getCurrentVmOperation()) {
+            throw new CloudRuntimeException("VmAllocateHostFlow is only for creating new VM or changing image");
         }
 
-        AllocateHostMsg msg = this.prepareMsg(data);
+        AllocateHostMsg msg = this.prepareMsg(spec);
 
         bus.send(msg, new CloudBusCallBack(chain) {
             @Override
@@ -136,6 +134,19 @@ public class VmAllocateHostFlow implements Flow {
                 if (reply.isSuccess()) {
                     AllocateHostReply areply = (AllocateHostReply) reply;
                     spec.setDestHost(areply.getHost());
+
+                    // the vm instance will still be stopped after ChangeImage
+                    if (spec.getCurrentVmOperation() == VmOperation.ChangeImage) {
+                        ReturnHostCapacityMsg msg = new ReturnHostCapacityMsg();
+                        msg.setCpuCapacity(spec.getVmInventory().getCpuNum());
+                        msg.setMemoryCapacity(spec.getVmInventory().getMemorySize());
+                        msg.setHostUuid(spec.getDestHost().getUuid());
+                        msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
+                        bus.send(msg);
+
+                        chain.next();
+                        return;
+                    }
 
                     // update the vm's host uuid and hypervisor type so even if the management node died later and the vm's state
                     // is stuck in Starting, we know which host it's created on and can check its state on the host
@@ -158,7 +169,15 @@ public class VmAllocateHostFlow implements Flow {
     public void rollback(FlowRollback chain, Map data) {
         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         HostInventory host = spec.getDestHost();
-        if (host != null) {
+
+        // if ChangeImage, then no need to ReturnHostCapacity, and resume vm info
+        if (spec.getCurrentVmOperation() == VmOperation.ChangeImage) {
+            VmInstanceVO vmvo = dbf.findByUuid(spec.getVmInventory().getUuid(), VmInstanceVO.class);
+            vmvo.setClusterUuid(spec.getVmInventory().getClusterUuid());
+            vmvo.setLastHostUuid(spec.getVmInventory().getLastHostUuid());
+            vmvo.setHypervisorType(spec.getVmInventory().getHypervisorType());
+            dbf.update(vmvo);
+        } else if (host != null) {
             ReturnHostCapacityMsg msg = new ReturnHostCapacityMsg();
             msg.setCpuCapacity(spec.getVmInventory().getCpuNum());
             msg.setMemoryCapacity(spec.getVmInventory().getMemorySize());

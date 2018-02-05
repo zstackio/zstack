@@ -19,6 +19,7 @@ import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.operr;
 
+import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
 import java.util.List;
@@ -137,7 +138,10 @@ public class PrimaryStorageCapacityUpdater {
             capacityVO.setTotalCapacity(capacityVO.getTotalPhysicalCapacity());
         }
 
-        capacityVO = dbf.getEntityManager().merge(capacityVO);
+        EntityManager entityManager = dbf.getEntityManager();
+        capacityVO = entityManager.merge(capacityVO);
+        entityManager.flush();
+
         logCapacityChange();
     }
 

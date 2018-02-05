@@ -21,6 +21,7 @@ import org.zstack.core.cloudbus.CloudBusEventListener;
 import org.zstack.core.retry.Retry;
 import org.zstack.core.retry.RetryCondition;
 import org.zstack.header.Component;
+import org.zstack.header.Constants;
 import org.zstack.header.MapField;
 import org.zstack.header.apimediator.ApiMediatorConstant;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -115,6 +116,7 @@ public class RestServer implements Component, CloudBusEventListener {
     }
 
     public static void generateMarkdownDoc(String path) {
+        System.setProperty(Constants.UUID_FOR_EXAMPLE, "true");
         DocumentGenerator rg =  GroovyUtils.newInstance("scripts/RestDocumentationGenerator.groovy");
         rg.generateMarkDown(path, PathUtil.join(System.getProperty("user.home"), "zstack-markdown"));
     }

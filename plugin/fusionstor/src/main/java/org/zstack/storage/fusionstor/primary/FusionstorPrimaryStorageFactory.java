@@ -381,7 +381,7 @@ public class FusionstorPrimaryStorageFactory implements PrimaryStorageFactory, F
                 }
 
                 for (final ImageCacheVO c : staleCache) {
-                    DeleteBitsOnPrimaryStorageMsg msg = new DeleteBitsOnPrimaryStorageMsg();
+                    DeleteVolumeBitsOnPrimaryStorageMsg msg = new DeleteVolumeBitsOnPrimaryStorageMsg();
                     msg.setInstallPath(c.getInstallUrl().split("@")[0]);
                     msg.setPrimaryStorageUuid(c.getPrimaryStorageUuid());
                     bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, c.getPrimaryStorageUuid());

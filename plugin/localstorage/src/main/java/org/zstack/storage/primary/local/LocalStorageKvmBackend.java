@@ -6,6 +6,7 @@ import org.zstack.compute.vm.ImageBackupStorageSelector;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -83,6 +84,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     private ApiTimeoutManager timeoutMgr;
     @Autowired
     private RESTFacade restf;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
 
     public static class AgentCommand {
@@ -297,6 +300,39 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class DeleteBitsRsp extends AgentResponse {
+    }
+
+    public static class ListPathCmd extends AgentCommand {
+        private String path;
+        private String hostUuid;
+
+        public String getPath() {
+            return path;
+        }
+
+        public void setPath(String path) {
+            this.path = path;
+        }
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+    }
+
+    public static class ListPathRsp extends AgentResponse {
+        private List<String> paths;
+
+        public List<String> getPaths() {
+            return paths;
+        }
+
+        public void setPaths(List<String> paths) {
+            this.paths = paths;
+        }
     }
 
     @ApiTimeout(apiClasses = {
@@ -595,6 +631,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static final String CREATE_VOLUME_FROM_CACHE_PATH = "/localstorage/volume/createvolumefromcache";
     public static final String DELETE_BITS_PATH = "/localstorage/delete";
     public static final String DELETE_DIR_PATH = "/localstorage/deletedir";
+    public static final String GET_LIST_PATH = "/localstorage/list";
     public static final String CHECK_BITS_PATH = "/localstorage/checkbits";
     public static final String CREATE_TEMPLATE_FROM_VOLUME = "/localstorage/volume/createtemplate";
     public static final String REVERT_SNAPSHOT_PATH = "/localstorage/snapshot/revert";
@@ -757,7 +794,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 KVMHostAsyncHttpCallReply r = reply.castReply();
                 T rsp = r.toResponse(rspType);
                 if (!rsp.isSuccess()) {
-                    completion.fail(operr(rsp.getError()));
+                    completion.fail(operr("operation error, because:%s", rsp.getError()));
                     return;
                 }
 
@@ -910,6 +947,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                     amsg.setSize(image.getActualSize());
                                     amsg.setPurpose(PrimaryStorageAllocationPurpose.DownloadImage.toString());
                                     amsg.setNoOverProvisioning(true);
+                                    amsg.setImageUuid(image.getUuid());
                                     bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
                                     bus.send(amsg, new CloudBusCallBack(trigger) {
                                         @Override
@@ -1238,6 +1276,24 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         });
     }
 
+    public void listPath(final String path, final String hostUuid, final ReturnValueCompletion<List<String>> completion) {
+        ListPathCmd cmd = new ListPathCmd();
+        cmd.setPath(path);
+        cmd.setHostUuid(hostUuid);
+
+        httpCall(GET_LIST_PATH, hostUuid, cmd, ListPathRsp.class, new ReturnValueCompletion<ListPathRsp>(completion) {
+            @Override
+            public void success(ListPathRsp returnValue) {
+                completion.success(returnValue.getPaths());
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
     @Override
     void handle(final DeleteVolumeOnPrimaryStorageMsg msg, final ReturnValueCompletion<DeleteVolumeOnPrimaryStorageReply> completion) {
         final DeleteVolumeOnPrimaryStorageReply dreply = new DeleteVolumeOnPrimaryStorageReply();
@@ -1277,12 +1333,53 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     @Override
-    void handle(DeleteBitsOnPrimaryStorageMsg msg, final ReturnValueCompletion<DeleteBitsOnPrimaryStorageReply> completion) {
+    void handle(GetInstallPathForDataVolumeDownloadMsg msg, ReturnValueCompletion<GetInstallPathForDataVolumeDownloadReply> completion) {
+        GetInstallPathForDataVolumeDownloadReply reply = new GetInstallPathForDataVolumeDownloadReply();
+        final String installPath = makeDataVolumeInstallUrl(msg.getVolumeUuid());
+        reply.setInstallPath(installPath);
+        completion.success(reply);
+    }
+
+    @Override
+    void handle(DeleteVolumeBitsOnPrimaryStorageMsg msg, final ReturnValueCompletion<DeleteVolumeBitsOnPrimaryStorageReply> completion) {
         String hostUuid = getHostUuidByResourceUuid(msg.getBitsUuid(), msg.getBitsType());
         deleteBits(PathUtil.parentFolder(msg.getInstallPath()), hostUuid, true, new Completion(completion) {
             @Override
             public void success() {
+                DeleteVolumeBitsOnPrimaryStorageReply reply = new DeleteVolumeBitsOnPrimaryStorageReply();
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    void handle(final DeleteBitsOnPrimaryStorageMsg msg, ReturnValueCompletion<DeleteBitsOnPrimaryStorageReply> completion) {
+        deleteBits(msg.getInstallPath(), msg.getHostUuid(), msg.isFolder(), new Completion(completion) {
+            @Override
+            public void success() {
                 DeleteBitsOnPrimaryStorageReply reply = new DeleteBitsOnPrimaryStorageReply();
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    void handle(GetPrimaryStorageFolderListMsg msg, ReturnValueCompletion<GetPrimaryStorageFolderListReply> completion) {
+        listPath(msg.getPath(), msg.getHostUuid(), new ReturnValueCompletion<List<String>>(completion) {
+            @Override
+            public void success(List<String> returnValue) {
+                GetPrimaryStorageFolderListReply reply = new GetPrimaryStorageFolderListReply();
+                reply.setFolders(returnValue);
                 completion.success(reply);
             }
 
@@ -1635,7 +1732,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             @Override
             public ErrorCode getError(KvmResponseWrapper wrapper) {
                 GetVolumeSizeRsp rsp = wrapper.getResponse(GetVolumeSizeRsp.class);
-                return rsp.isSuccess() ? null : operr(rsp.getError());
+                return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
             }
         }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
             @Override
@@ -1691,7 +1788,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             @Override
             public ErrorCode getError(KvmResponseWrapper w) {
                 GetVolumeBaseImagePathRsp rsp = w.getResponse(GetVolumeBaseImagePathRsp.class);
-                return rsp.isSuccess() ? null : operr(rsp.getError());
+                return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
             }
         }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
             @Override
@@ -1760,6 +1857,13 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     @Override
     void handle(final LocalStorageDeleteImageCacheOnPrimaryStorageMsg msg, String hostUuid, final ReturnValueCompletion<DeleteImageCacheOnPrimaryStorageReply> completion) {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        PrimaryStorageVO ps = dbf.findByUuid(msg.getPrimaryStorageUuid(), PrimaryStorageVO.class);
+        if (ps == null) {
+            logger.warn(String.format("ps [%s] cannot found, maybe it is deleted already.", msg.getPrimaryStorageUuid()));
+            DeleteImageCacheOnPrimaryStorageReply reply = new DeleteImageCacheOnPrimaryStorageReply();
+            completion.success(reply);
+            return;
+        }
         chain.setName(String.format("clean-up-image-cache-on-local-storage-%s", self.getUuid()));
         chain.then(new ShareFlow() {
             @Override
@@ -1772,16 +1876,13 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         GetQCOW2ReferenceCmd cmd = new GetQCOW2ReferenceCmd();
                         cmd.searchingDir = self.getUrl();
                         cmd.path = msg.getInstallPath();
-                        cmd.storagePath = Q.New(PrimaryStorageVO.class)
-                                .eq(PrimaryStorageVO_.uuid, msg.getPrimaryStorageUuid())
-                                .select(PrimaryStorageVO_.url)
-                                .findValue();
+                        cmd.storagePath = ps.getUrl();
 
                         new KvmCommandSender(msg.getHostUuid()).send(cmd, GET_QCOW2_REFERENCE, new KvmCommandFailureChecker() {
                             @Override
                             public ErrorCode getError(KvmResponseWrapper wrapper) {
                                 GetQCOW2ReferenceRsp rsp = wrapper.getResponse(GetQCOW2ReferenceRsp.class);
-                                return rsp.isSuccess() ? null : operr(rsp.getError());
+                                return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
                             }
                         }, new ReturnValueCompletion<KvmResponseWrapper>(trigger) {
                             @Override
@@ -1804,6 +1905,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 });
 
                 flow(new NoRollbackFlow() {
+                    String __name__ = "delete-local-image-cache-bits";
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
                         deleteBits(PathUtil.parentFolder(msg.getInstallPath()), msg.getHostUuid(), true, new Completion(trigger) {

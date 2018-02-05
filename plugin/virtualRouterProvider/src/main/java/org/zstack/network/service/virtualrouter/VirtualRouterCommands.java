@@ -59,6 +59,10 @@ public class VirtualRouterCommands {
 		private String gateway;
 		private String netmask;
 		private boolean isDefaultRoute;
+		private String category;
+		private String physicalInterface;
+		private String l2type;
+		private Integer vni;
 		
 		public String getIp() {
 			return ip;
@@ -89,6 +93,38 @@ public class VirtualRouterCommands {
 		}
 		public void setDefaultRoute(boolean isDefaultRoute) {
 			this.isDefaultRoute = isDefaultRoute;
+		}
+
+		public String getCategory() {
+			return category;
+		}
+
+		public void setCategory(String category) {
+			this.category = category;
+		}
+
+		public String getL2type() {
+			return l2type;
+		}
+
+		public void setL2type(String l2type) {
+			this.l2type = l2type;
+		}
+
+		public Integer getVni() {
+			return vni;
+		}
+
+		public void setVni(Integer vni) {
+			this.vni = vni;
+		}
+
+		public String getPhysicalInterface() {
+			return physicalInterface;
+		}
+
+		public void setPhysicalInterface(String physicalInterface) {
+			this.physicalInterface = physicalInterface;
 		}
 	}
 	

@@ -1,7 +1,8 @@
 package org.zstack.testlib
 
+import org.zstack.sdk.AttachDataVolumeToVmAction
 import org.zstack.sdk.VmInstanceInventory
-
+import org.zstack.utils.gson.JSONObjectUtil
 /**
  * Created by xing5 on 2017/2/16.
  */
@@ -11,6 +12,7 @@ class VmSpec extends Spec implements HasSession {
     private Closure rootDiskOffering = {}
     private Closure cluster = {}
     private Closure host = {}
+    private Closure primaryStorage = {}
     private Closure diskOfferings = {}
     private Closure l3Networks = {}
     private Closure defaultL3Network = {}
@@ -18,6 +20,7 @@ class VmSpec extends Spec implements HasSession {
     String name
     @SpecParam
     String description
+    private List<String> volumeToAttach = []
 
     VmInstanceInventory inventory
 
@@ -91,6 +94,19 @@ class VmSpec extends Spec implements HasSession {
     }
 
     @SpecMethod
+    void usePrimaryStorage(String name) {
+        preCreate {
+            addDependency(name, PrimaryStorageSpec.class)
+        }
+
+        primaryStorage = {
+            PrimaryStorageSpec spec = findSpec(name, PrimaryStorageSpec.class)
+            assert spec != null: "cannot find primaryStorage[$name], check the vm block of environment"
+            return spec.inventory.uuid
+        }
+    }
+
+    @SpecMethod
     void useDiskOfferings(String... names) {
         names.each { String name ->
             preCreate {
@@ -148,6 +164,7 @@ class VmSpec extends Spec implements HasSession {
             delegate.rootDiskOfferingUuid = rootDiskOffering()
             delegate.clusterUuid = cluster()
             delegate.hostUuid = host()
+            delegate.primaryStorageUuidForRootVolume = primaryStorage()
             delegate.dataDiskOfferingUuids = diskOfferings()
             delegate.l3NetworkUuids = l3Networks()
             delegate.defaultL3NetworkUuid = defaultL3Network()
@@ -157,9 +174,30 @@ class VmSpec extends Spec implements HasSession {
             inventory = queryVmInstance {
                 conditions=["uuid=${inventory.uuid}".toString()]
             }[0]
+
+            volumeToAttach.each { String volName ->
+                DataVolumeSpec volume = findSpec(volName, DataVolumeSpec.class)
+                def a = new AttachDataVolumeToVmAction()
+                a.vmInstanceUuid = inventory.uuid
+                a.volumeUuid = volume.inventory.uuid
+                a.sessionId = sessionId
+                def res = a.call()
+                assert res.error == null : "AttachDataVolumeToVmAction failure: ${JSONObjectUtil.toJsonString(res.error)}"
+            }
         }
 
         return id(name, inventory.uuid)
+    }
+
+    @SpecMethod
+    void attachDataVolume(String...names) {
+        names.each { String volName ->
+            preCreate {
+                addDependency(volName, DataVolumeSpec.class)
+            }
+
+            volumeToAttach.add(volName)
+        }
     }
 
     @Override

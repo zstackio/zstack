@@ -7,6 +7,8 @@ import org.zstack.header.message.OverriddenApiParams;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.APIAddPrimaryStorageEvent;
 import org.zstack.header.storage.primary.APIAddPrimaryStorageMsg;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.tag.TagResourceType;
 import org.zstack.storage.fusionstor.FusionstorConstants;
 
 import java.util.List;
@@ -19,6 +21,7 @@ import static java.util.Arrays.asList;
 @OverriddenApiParams({
         @OverriddenApiParam(field = "url", param = @APIParam(maxLength = 2048, required = false))
 })
+@TagResourceType(PrimaryStorageVO.class)
 @RestRequest(
         path = "/primary-storage/fusionstor",
         method = HttpMethod.POST,

@@ -22,10 +22,8 @@ import org.zstack.header.host.HostState;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
+import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
-import org.zstack.header.image.ImageState;
-import org.zstack.header.image.ImageVO;
-import org.zstack.header.image.ImageVO_;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.vm.*;
@@ -37,10 +35,7 @@ import static org.zstack.core.Platform.*;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -99,6 +94,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APIMigrateVmMsg) msg);
         } else if (msg instanceof APIDetachIsoFromVmInstanceMsg) {
             validate((APIDetachIsoFromVmInstanceMsg) msg);
+        } else if (msg instanceof APIGetCandidatePrimaryStoragesForCreatingVmMsg) {
+            validate((APIGetCandidatePrimaryStoragesForCreatingVmMsg) msg);
         }
 
         setServiceId(msg);
@@ -109,12 +106,22 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         msg.isoUuid = new IsoOperator().getIsoUuidByVmUuid(msg.getVmInstanceUuid());
     }
 
+    private void validate(final APIGetCandidatePrimaryStoragesForCreatingVmMsg msg) {
+        if (msg.getBackupStorageUuid() == null) {
+            Long refSize = Q.New(ImageBackupStorageRefVO.class).eq(ImageBackupStorageRefVO_.imageUuid, msg.getImageUuid()).count();
+            if (refSize > 1) {
+                throw new ApiMessageInterceptionException(argerr("imageUuid: %s is in more than one backupStorage, " +
+                        "so user must indict the backupStorageUuid", msg.getImageUuid()));
+            }
+        }
+    }
+
     private void validate(APIMigrateVmMsg msg) {
         new SQLBatch() {
             @Override
             protected void scripts() {
                 VmInstanceVO vo = findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
-                if (vo.getHostUuid().equals(msg.getHostUuid())) {
+                if (vo.getState().equals(VmInstanceState.Running) && vo.getHostUuid().equals(msg.getHostUuid())) {
                     throw new ApiMessageInterceptionException(argerr(
                             "the vm[uuid:%s] is already on host[uuid:%s]", msg.getVmInstanceUuid(), msg.getHostUuid()
                     ));
@@ -281,20 +288,20 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
 
         SimpleQuery<L3NetworkVO> l3q = dbf.createQuery(L3NetworkVO.class);
-        l3q.select(L3NetworkVO_.state, L3NetworkVO_.system, L3NetworkVO_.category);
+        l3q.select(L3NetworkVO_.state, L3NetworkVO_.system, L3NetworkVO_.category, L3NetworkVO_.type);
         l3q.add(L3NetworkVO_.uuid, Op.EQ, msg.getL3NetworkUuid());
         t = l3q.findTuple();
         L3NetworkState l3state = t.get(0, L3NetworkState.class);
         boolean system = t.get(1, Boolean.class);
         L3NetworkCategory category = t.get(2, L3NetworkCategory.class);
+        L3NetworkType l3Type = L3NetworkType.valueOf(t.get(3, String.class));
+
         if (l3state == L3NetworkState.Disabled) {
             throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The L3 network[uuid:%s] is disabled", msg.getL3NetworkUuid()));
         }
         if (VmInstanceConstant.USER_VM_TYPE.equals(type) && system) {
-            throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The L3 network[uuid:%s] is a system network and vm is a user vm", msg.getL3NetworkUuid()));
-        }
-        if (!VmInstanceConstant.USER_VM_TYPE.equals(type) && !system && category.equals(L3NetworkCategory.Private)) {
-            throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The vm[uuid: %s] is not a user vm and the L3 network is a private L3", type));
+            throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The L3 network[uuid:%s] is a system network and vm is a user vm",
+                    msg.getL3NetworkUuid()));
         }
 
         if (msg.getStaticIp() != null) {
@@ -366,7 +373,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
-    private void validate(APICreateVmInstanceMsg msg) {
+    private void validate(APICreateVmInstanceMsg msg) throws ApiMessageInterceptionException {
         SimpleQuery<InstanceOfferingVO> iq = dbf.createQuery(InstanceOfferingVO.class);
         iq.select(InstanceOfferingVO_.state, InstanceOfferingVO_.type);
         iq.add(InstanceOfferingVO_.uuid, Op.EQ, msg.getInstanceOfferingUuid());
@@ -378,6 +385,19 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
         if (!itype.equals(VmInstanceConstant.USER_VM_TYPE)){
             throw new ApiMessageInterceptionException(operr("instance offering[uuid:%s, type:%s] is not UserVm type, can't create vm from it", msg.getInstanceOfferingUuid(), itype));
+        }
+
+        Set<String> macs = new HashSet<>();
+        if (null != msg.getSystemTags()) {
+            Optional<String> duplicateMac = msg.getSystemTags().stream()
+                    .filter(t -> VmSystemTags.CUSTOM_MAC.isMatch(t))
+                    .map(t -> t.split("::")[2].toLowerCase())
+                    .filter(t -> !macs.add(t))
+                    .findAny();
+            if (duplicateMac.isPresent()){
+                throw new ApiMessageInterceptionException(operr(
+                        "Not allowed same mac [%s]", duplicateMac.get()));
+            }
         }
 
         SimpleQuery<ImageVO> imgq = dbf.createQuery(ImageVO.class);

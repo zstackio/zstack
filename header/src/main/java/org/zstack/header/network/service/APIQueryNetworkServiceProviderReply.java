@@ -40,8 +40,8 @@ public class APIQueryNetworkServiceProviderReply extends APIQueryReply {
         vo.setAttachedL2NetworkRefs(setRefVO);
         vo.setName("SecurityGroup");
         vo.setType("SecurityGroup");
-        vo.setCreateDate(new Timestamp(System.currentTimeMillis()));
-        vo.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        vo.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        vo.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         vo.setNetworkServiceTypes(nst);
 
         NetworkServiceProviderInventory nsp = NetworkServiceProviderInventory.valueOf(vo);

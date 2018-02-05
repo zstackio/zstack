@@ -24,7 +24,10 @@ import org.zstack.utils.logging.CLogger;
 * 1. take 3 snapshot from vm's root volume
 * 2. revert volume to first one
 * 3. take 2 snapshots again
+* @Deprecated, Covered by new style test case RevertVolumeFromSnapshotCase
 */
+
+@Deprecated
 public class TestSnapshotOnKvm2 {
     CLogger logger = Utils.getLogger(TestSnapshotOnKvm2.class);
     Deployer deployer;

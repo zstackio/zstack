@@ -2,19 +2,15 @@ package org.zstack.testlib
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.cloudbus.CloudBus
-import org.zstack.header.Constants
 import org.zstack.header.message.MessageReply
-import org.zstack.header.rest.RESTConstant
 import org.zstack.header.storage.primary.PingPrimaryStorageMsg
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.storage.primary.local.LocalStorageKvmBackend
-import org.zstack.storage.primary.nfs.NfsPrimaryStorage
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackend
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands
 import org.zstack.storage.primary.nfs.NfsPrimaryToSftpBackupKVMBackend
 import org.zstack.utils.gson.JSONObjectUtil
-
 /**
  * Created by xing5 on 2017/2/13.
  */
@@ -103,6 +99,10 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
 
         simulator(NfsPrimaryStorageKVMBackend.DELETE_PATH) {
             return new NfsPrimaryStorageKVMBackendCommands.DeleteResponse()
+        }
+
+        simulator(NfsPrimaryStorageKVMBackend.LIST_PATH) {
+            return new NfsPrimaryStorageKVMBackendCommands.ListDirectionResponse()
         }
 
         simulator(NfsPrimaryStorageKVMBackend.MOVE_BITS_PATH) {

@@ -67,13 +67,13 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
 
     private static final String NAME = VmInstanceVO.class.getSimpleName();
 
-    private static final int OP_NOPE = 0;
-    private static final int OP_STOP = 1;
-    private static final int OP_DELETION = 2;
+    protected static final int OP_NOPE = 0;
+    protected static final int OP_STOP = 1;
+    protected static final int OP_DELETION = 2;
     private static final int OP_REMOVE_INSTANCE_OFFERING = 3;
-    private static final int OP_DETACH_NIC = 4;
+    protected static final int OP_DETACH_NIC = 4;
 
-    private int toDeletionOpCode(CascadeAction action) {
+    protected int toDeletionOpCode(CascadeAction action) {
         if (!CascadeConstant.DELETION_CODES.contains(action.getActionCode())) {
             return OP_NOPE;
         }
@@ -194,9 +194,10 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
             TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
             q.setParameter("vmType", VmInstanceConstant.USER_VM_TYPE);
             q.setParameter("vmStates", Arrays.asList(
-                    VmInstanceState.Stopped,
                     VmInstanceState.Unknown,
-                    VmInstanceState.Running));
+                    VmInstanceState.Running,
+                    VmInstanceState.Pausing,
+                    VmInstanceState.Paused));
             q.setParameter("clusterUuid", s.getClusterUuid());
             q.setParameter("psUuid", s.getPrimaryStorageUuid());
             vmUuids.addAll(q.getResultList());
@@ -213,14 +214,11 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
             return;
         }
 
-        List<StopVmInstanceMsg> msgs = CollectionUtils.transformToList(vmUuids, new Function<StopVmInstanceMsg, String>() {
-            @Override
-            public StopVmInstanceMsg call(String arg) {
-                StopVmInstanceMsg msg = new StopVmInstanceMsg();
-                msg.setVmInstanceUuid(arg);
-                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, arg);
-                return msg;
-            }
+        List<StopVmInstanceMsg> msgs = CollectionUtils.transformToList(vmUuids, (Function<StopVmInstanceMsg, String>) arg -> {
+            StopVmInstanceMsg msg = new StopVmInstanceMsg();
+            msg.setVmInstanceUuid(arg);
+            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, arg);
+            return msg;
         });
 
         bus.send(msgs, 20, new CloudBusListCallBack(completion) {
@@ -244,7 +242,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
         completion.success();
     }
 
-    private void handleDeletion(final CascadeAction action, final Completion completion) {
+    protected void handleDeletion(final CascadeAction action, final Completion completion) {
         int op = toDeletionOpCode(action);
         if (op == OP_NOPE) {
             completion.success();
@@ -463,7 +461,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
         return structs;
     }
 
-    private List<VmDeletionStruct> vmFromDeleteAction(CascadeAction action) {
+    protected List<VmDeletionStruct> vmFromDeleteAction(CascadeAction action) {
         List<VmDeletionStruct> ret = null;
         if (HostVO.class.getSimpleName().equals(action.getParentIssuer())) {
             List<HostInventory> hosts = action.getParentIssuerContext();

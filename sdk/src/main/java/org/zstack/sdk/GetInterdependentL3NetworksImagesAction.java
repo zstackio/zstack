@@ -8,6 +8,8 @@ public class GetInterdependentL3NetworksImagesAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
+    private static final HashMap<String, Parameter> nonAPIParameterMap = new HashMap<>();
+
     public static class Result {
         public ErrorCode error;
         public org.zstack.sdk.GetInterdependentL3NetworkImageResult value;
@@ -73,7 +75,15 @@ public class GetInterdependentL3NetworksImagesAction extends AbstractAction {
         return parameterMap;
     }
 
+<<<<<<< HEAD
     protected RestInfo getRestInfo() {
+=======
+    Map<String, Parameter> getNonAPIParameterMap() {
+        return nonAPIParameterMap;
+    }
+
+    RestInfo getRestInfo() {
+>>>>>>> upstream/master
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/images-l3networks/dependencies";

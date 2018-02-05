@@ -7,6 +7,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -19,10 +20,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.backup.BackupStorageAskInstallPathMsg;
-import org.zstack.header.storage.backup.BackupStorageAskInstallPathReply;
-import org.zstack.header.storage.backup.BackupStorageConstant;
-import org.zstack.header.storage.backup.DeleteBitsOnBackupStorageMsg;
+import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
@@ -78,6 +76,8 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     private ThreadFacade thdf;
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     private Future imageCacheCleanupThread;
 
@@ -91,13 +91,24 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
             @Override
             @Transactional(readOnly = true)
             public List<String> findBackupStorage(String primaryStorageUuid) {
-                String sql = "select b.uuid from CephPrimaryStorageVO p, CephBackupStorageVO b where b.fsid = p.fsid" +
-                        " and p.uuid = :puuid";
-                TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-                q.setParameter("puuid", primaryStorageUuid);
-                return q.getResultList();
+                List<String> psUuids = new ArrayList<>();
+                psUuids.addAll(getExtensionBSUuids(primaryStorageUuid));
+                // return null because the usage would do some null-processes
+                return psUuids.size() == 0 ? null : psUuids;
             }
         });
+    }
+
+    private List<String> getExtensionBSUuids(String psUuid) {
+        List<String> psUuids = new ArrayList<>();
+        List<BackupStoragePrimaryStorageExtensionPoint> extenstions = pluginRgty.getExtensionList(BackupStoragePrimaryStorageExtensionPoint.class);
+        extenstions.forEach(ext -> {
+            List<String> tmp = ext.getBackupStorageSupportedPS(psUuid);
+            if (tmp != null) {
+                psUuids.addAll(tmp);
+            }
+        });
+        return psUuids;
     }
 
     @Override
@@ -242,9 +253,10 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
             @Transactional(readOnly = true)
             public CephPrimaryStorageVO call() {
                 String sql = "select pri from CephPrimaryStorageVO pri, ImageCacheVO c where pri.uuid = c.primaryStorageUuid" +
-                        " and c.imageUuid = :imgUuid";
+                        " and c.imageUuid = :imgUuid and c.installUrl = :path";
                 TypedQuery<CephPrimaryStorageVO> q = dbf.getEntityManager().createQuery(sql, CephPrimaryStorageVO.class);
                 q.setParameter("imgUuid", to.getImageUuid());
+                q.setParameter("path", to.getPath());
                 return q.getSingleResult();
             }
         }.call();
@@ -270,12 +282,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
             ));
         }
 
-        String secretUuid = CephSystemTags.KVM_SECRET_UUID.getTokenByResourceUuid(pri.getUuid(), CephSystemTags.KVM_SECRET_UUID_TOKEN);
-        if (secretUuid == null) {
-            throw new CloudRuntimeException(String.format("cannot find KVM secret uuid for ceph primary storage[uuid:%s]", pri.getUuid()));
-        }
-        cto.setSecretUuid(secretUuid);
-
+        cto.setSecretUuid(getCephSecretUuid(pri.getUuid()));
         return cto;
     }
 
@@ -311,17 +318,24 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
             }
         });
 
-
-        String secretUuid = CephSystemTags.KVM_SECRET_UUID.getTokenByResourceUuid(vol.getPrimaryStorageUuid(), CephSystemTags.KVM_SECRET_UUID_TOKEN);
-        if (secretUuid == null) {
-            throw new CloudRuntimeException(String.format("cannot find KVM secret uuid for ceph primary storage[uuid:%s]", vol.getPrimaryStorageUuid()));
-        }
-
         KVMCephVolumeTO cto = new KVMCephVolumeTO(to);
-        cto.setSecretUuid(secretUuid);
+        cto.setSecretUuid(getCephSecretUuid(vol.getPrimaryStorageUuid()));
         cto.setMonInfo(monInfos);
         cto.setDeviceType(VolumeTO.CEPH);
         return cto;
+    }
+
+    private String getCephSecretUuid(String psUuid){
+        if (CephSystemTags.NO_CEPHX.hasTag(psUuid)){
+            return null;
+        }
+
+        String secretUuid = CephSystemTags.KVM_SECRET_UUID.getTokenByResourceUuid(psUuid, CephSystemTags.KVM_SECRET_UUID_TOKEN);
+        if (secretUuid == null) {
+            throw new CloudRuntimeException(String.format("cannot find KVM secret uuid for ceph primary storage[uuid:%s]", psUuid));
+        }
+
+        return secretUuid;
     }
 
     @Override
@@ -375,7 +389,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         cmd.setBootIso(convertIsoToCephIfNeeded(cmd.getBootIso()));
 
         CephPrimaryStorageVO cephPrimaryStorageVO = dbf.findByUuid(spec.getDestRootVolume().getPrimaryStorageUuid(), CephPrimaryStorageVO.class);
-        if(cephPrimaryStorageVO != null){
+        if (cephPrimaryStorageVO != null && !CephSystemTags.NO_CEPHX.hasTag(cephPrimaryStorageVO.getUuid())) {
             cmd.getAddons().put(CephConstants.CEPH_SCECRET_KEY, cephPrimaryStorageVO.getUserKey());
             cmd.getAddons().put(CephConstants.CEPH_SECRECT_UUID, CephSystemTags.KVM_SECRET_UUID.getTokenByResourceUuid(cephPrimaryStorageVO.getUuid(), CephSystemTags.KVM_SECRET_UUID_TOKEN));
         }
@@ -437,7 +451,6 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
             @Override
             public void run(final FlowTrigger trigger, Map data) {
                 final ParamOut out = (ParamOut) data.get(ParamOut.class);
-
                 BackupStorageAskInstallPathMsg ask = new BackupStorageAskInstallPathMsg();
                 ask.setImageUuid(paramIn.getImage().getUuid());
                 ask.setBackupStorageUuid(paramIn.getBackupStorageUuid());
@@ -456,6 +469,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
                 msg.setPrimaryStorageInstallPath(paramIn.getSnapshot().getPrimaryStorageInstallPath());
                 msg.setBackupStorageUuid(paramIn.getBackupStorageUuid());
                 msg.setBackupStorageInstallPath(bsInstallPath);
+                msg.setImageUuid(paramIn.getImage().getUuid());
                 bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, paramIn.getPrimaryStorageUuid());
 
                 bus.send(msg, new CloudBusCallBack(trigger) {
@@ -464,7 +478,8 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
                         if (!reply.isSuccess()) {
                             trigger.fail(reply.getError());
                         } else {
-                            out.setBackupStorageInstallPath(bsInstallPath);
+                            UploadBitsToBackupStorageReply reply1 = reply.castReply();
+                            out.setBackupStorageInstallPath(reply1.getInstallPath() == null? bsInstallPath : reply1.getInstallPath());
                             trigger.next();
                         }
                     }

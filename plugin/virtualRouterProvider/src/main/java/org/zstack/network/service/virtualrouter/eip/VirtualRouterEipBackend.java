@@ -1,5 +1,6 @@
 package org.zstack.network.service.virtualrouter.eip;
 
+import com.google.common.collect.ImmutableSet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.appliancevm.ApplianceVmFacade;
 import org.zstack.appliancevm.ApplianceVmFirewallProtocol;
@@ -7,12 +8,15 @@ import org.zstack.appliancevm.ApplianceVmFirewallRuleInventory;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -20,28 +24,29 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceState;
-import org.zstack.header.vm.VmNicInventory;
-import org.zstack.network.service.eip.EipBackend;
-import org.zstack.network.service.eip.EipStruct;
+import org.zstack.header.network.service.NetworkServiceProviderType;
+import org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint;
+import org.zstack.header.vm.*;
+import org.zstack.network.service.NetworkServiceManager;
+import org.zstack.network.service.eip.*;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.CreateEipRsp;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.RemoveEipRsp;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import javax.persistence.Tuple;
+import java.util.*;
 
 import static org.zstack.core.Platform.operr;
 
 /**
  */
-public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implements EipBackend {
+public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implements
+        EipBackend, VirtualRouterAfterAttachNicExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VirtualRouterEipBackend.class);
 
     @Autowired
@@ -54,6 +59,12 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
     private ApplianceVmFacade asf;
     @Autowired
     private ApiTimeoutManager apiTimeoutManager;
+    @Autowired
+    private NetworkServiceManager nwServiceMgr;
+
+    public static final Set<VmInstanceState> SYNC_EIP_VM_STATES = ImmutableSet.<VmInstanceState> of(
+            VmInstanceState.Running
+    );
 
     private List<ApplianceVmFirewallRuleInventory> getFirewallRules(EipStruct struct) {
         ApplianceVmFirewallRuleInventory tcp = new ApplianceVmFirewallRuleInventory();
@@ -338,5 +349,122 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
     @Override
     public String getNetworkServiceProviderType() {
         return VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE;
+    }
+
+    @Override
+    public void afterAttachNic(VmNicInventory nic, Completion completion) {
+        if (!VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST.contains(nic.getMetaData())) {
+            completion.success();
+            return;
+        }
+
+        try {
+            nwServiceMgr.getTypeOfNetworkServiceProviderForService(nic.getL3NetworkUuid(), EipConstant.EIP_TYPE);
+        } catch (OperationFailureException e) {
+            completion.success();
+            return;
+        }
+
+        VirtualRouterVmVO vr = Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, nic.getVmInstanceUuid()).find();
+        DebugUtils.Assert(vr != null,
+                String.format("can not find virtual router[uuid: %s] for nic[uuid: %s, ip: %s, l3NetworkUuid: %s]",
+                        nic.getVmInstanceUuid(), nic.getUuid(), nic.getIp(), nic.getL3NetworkUuid()));
+
+        List<EipTO> eips = findEipsOnVirtualRouter(nic);
+        if (eips == null || eips.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        VirtualRouterCommands.SyncEipCmd cmd = new VirtualRouterCommands.SyncEipCmd();
+        cmd.setEips(eips);
+
+        VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
+        msg.setPath(VirtualRouterConstant.VR_SYNC_EIP);
+        msg.setCommand(cmd);
+        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
+        msg.setVmInstanceUuid(vr.getUuid());
+        bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                VirtualRouterAsyncHttpCallReply re = reply.castReply();
+                VirtualRouterCommands.SyncEipRsp ret = re.toResponse(VirtualRouterCommands.SyncEipRsp.class);
+                if (!ret.isSuccess()) {
+                    ErrorCode err = operr("failed to sync eip on virtual router[uuid:%s], %s",
+                            vr.getUuid(), ret.getError());
+                    completion.fail(err);
+                } else {
+                    String info = String.format("sync eip on virtual router[uuid:%s] successfully",
+                            vr.getUuid());
+                    logger.debug(info);
+                    completion.success();
+                }
+            }
+        });
+    }
+
+    private static List<EipTO> findEipsOnVirtualRouter(VmNicInventory nic) {
+        List<Tuple> eips = SQL.New("select eip.vipIp, eip.guestIp, nic.l3NetworkUuid, nic.mac, vip.l3NetworkUuid " +
+                "from EipVO eip, VmNicVO nic, VmInstanceVO vm, VipVO vip " +
+                "where eip.vmNicUuid = nic.uuid " +
+                "and nic.vmInstanceUuid = vm.uuid " +
+                "and nic.l3NetworkUuid = :l3Uuid " +
+                "and eip.vipUuid = vip.uuid " +
+                "and vm.state in (:syncEipVmStates) " +
+                "and eip.state = :enabledState", Tuple.class)
+                .param("l3Uuid", nic.getL3NetworkUuid())
+                .param("syncEipVmStates", SYNC_EIP_VM_STATES)
+                .param("enabledState", EipState.Enabled)
+                .list();
+
+        if (eips == null || eips.isEmpty()) {
+            return null;
+        }
+
+        List<Tuple> existsEips = SQL.New("select eip.vipIp, eip.guestIp, nic.l3NetworkUuid, nic.mac, vip.l3NetworkUuid " +
+                "from EipVO eip, VirtualRouterEipRefVO ref, VmNicVO nic, VipVO vip " +
+                "where eip.vmNicUuid = nic.uuid " +
+                "and eip.uuid = ref.eipUuid " +
+                "and eip.vipUuid = vip.uuid " +
+                "and ref.virtualRouterVmUuid = :vrUuid", Tuple.class)
+                .param("vrUuid", nic.getVmInstanceUuid())
+                .list();
+
+        if (existsEips != null && !existsEips.isEmpty()) {
+            eips.addAll(existsEips);
+        }
+
+        VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf((VirtualRouterVmVO)
+                Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, nic.getVmInstanceUuid()).find());
+
+        List<EipTO> ret = new ArrayList<EipTO>();
+        for (Tuple t : eips) {
+            EipTO to = new EipTO();
+            to.setVipIp(t.get(0, String.class));
+            to.setGuestIp(t.get(1, String.class));
+            to.setPrivateMac(
+                    vr.getVmNics().stream()
+                            .filter(n -> n.getL3NetworkUuid().equals(t.get(2, String.class)))
+                            .findFirst().get().getMac());
+            to.setSnatInboundTraffic(EipGlobalConfig.SNAT_INBOUND_TRAFFIC.value(Boolean.class));
+            to.setPublicMac(
+                    vr.getVmNics().stream()
+                            .filter(n -> n.getL3NetworkUuid().equals(t.get(4, String.class)))
+                            .findFirst().get().getMac());
+            ret.add(to);
+        }
+
+        return ret;
+    }
+
+    @Override
+    public void afterAttachNicRollback(VmNicInventory nic, NoErrorCompletion completion) {
+        completion.done();
     }
 }

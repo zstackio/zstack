@@ -8,6 +8,8 @@ public class UnsubscribeSNSTopicAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
+    private static final HashMap<String, Parameter> nonAPIParameterMap = new HashMap<>();
+
     public static class Result {
         public ErrorCode error;
         public org.zstack.sdk.sns.UnsubscribeSNSTopicResult value;
@@ -38,9 +40,11 @@ public class UnsubscribeSNSTopicAction extends AbstractAction {
     @Param(required = true)
     public String sessionId;
 
-    public long timeout;
-    
-    public long pollingInterval;
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -74,7 +78,15 @@ public class UnsubscribeSNSTopicAction extends AbstractAction {
         return parameterMap;
     }
 
+<<<<<<< HEAD:sdk/src/main/java/org/zstack/sdk/sns/UnsubscribeSNSTopicAction.java
     protected RestInfo getRestInfo() {
+=======
+    Map<String, Parameter> getNonAPIParameterMap() {
+        return nonAPIParameterMap;
+    }
+
+    RestInfo getRestInfo() {
+>>>>>>> upstream/master:sdk/src/main/java/org/zstack/sdk/DetachNetworkServiceFromL3NetworkAction.java
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/sns/topics/{topicUuid}/endpoints/{endpointUuid}";

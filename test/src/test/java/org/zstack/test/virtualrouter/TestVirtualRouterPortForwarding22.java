@@ -109,7 +109,7 @@ public class TestVirtualRouterPortForwarding22 {
         VipVO vipvo = dbf.findByUuid(vip.getUuid(), VipVO.class);
         // the rules are just detached, not deleted
         // so vip still keeps below information
-        Assert.assertNotNull(vipvo.getPeerL3NetworkUuid());
+        Assert.assertNotNull(vipvo.getPeerL3NetworkUuids());
         Assert.assertNotNull(vipvo.getServiceProvider());
 
         validator.noFirewall(aconfig, rule1);

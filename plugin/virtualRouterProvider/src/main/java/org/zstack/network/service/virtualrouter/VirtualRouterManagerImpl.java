@@ -23,6 +23,7 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.configuration.APIUpdateInstanceOfferingEvent;
 import org.zstack.header.configuration.InstanceOfferingInventory;
+import org.zstack.header.configuration.InstanceOfferingState;
 import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -50,26 +51,27 @@ import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.tag.SystemTagLifeCycleListener;
-import org.zstack.header.vm.VmInstanceState;
-import org.zstack.header.vm.VmNicInventory;
-import org.zstack.header.vm.VmNicVO;
-import org.zstack.header.vm.VmNicVO_;
+import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.l3.L3NetworkSystemTags;
+import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.eip.EipConstant;
 import org.zstack.network.service.eip.FilterVmNicsForEipInVirtualRouterExtensionPoint;
-import org.zstack.network.service.vip.VipInventory;
+import org.zstack.network.service.vip.*;
 import org.zstack.network.service.lb.*;
 import org.zstack.network.service.virtualrouter.eip.VirtualRouterEipRefInventory;
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO;
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO_;
 import org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterPortForwardingRuleRefInventory;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipInventory;
+import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipVO;
+import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipVO_;
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
 import org.zstack.search.GetQuery;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.SystemTagCreator;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.DebugUtils;
-import org.zstack.utils.Utils;
+import org.zstack.tag.TagManager;
+import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
@@ -86,9 +88,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.progress.ProgressReportService.createSubTaskProgress;
+import static org.zstack.network.service.virtualrouter.VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE;
+import static org.zstack.network.service.virtualrouter.VirtualRouterNicMetaData.GUEST_NIC_MASK;
+import static org.zstack.network.service.virtualrouter.vyos.VyosConstants.VYOS_ROUTER_PROVIDER_TYPE;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 import static java.util.Arrays.asList;
+import static org.zstack.utils.VipUseForList.SNAT_NETWORK_SERVICE_TYPE;
 
 public class VirtualRouterManagerImpl extends AbstractService implements VirtualRouterManager,
         PrepareDbInitialValueExtensionPoint, L2NetworkCreateExtensionPoint,
@@ -116,6 +122,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     private List<VirtualRouterPostRebootFlowExtensionPoint> postRebootFlowExtensionPoints;
     private List<VirtualRouterPostReconnectFlowExtensionPoint> postReconnectFlowExtensionPoints;
     private List<VirtualRouterPostDestroyFlowExtensionPoint> postDestroyFlowExtensionPoints;
+    private List<VipGetUsedPortRangeExtensionPoint> vipGetUsedPortRangeExtensionPoints;
 
 	static {
 		supportedL2NetworkTypes.add(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE);
@@ -140,6 +147,10 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     private ThreadFacade thdf;
     @Autowired
     private ApplianceVmFacade apvmf;
+    @Autowired
+    private TagManager tagMgr;
+    @Autowired
+    private NetworkServiceManager nwServiceMgr;
     
 
 	@Override
@@ -350,8 +361,8 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                     }
                 });
 
-                guestNicSpec.setMetaData(guestNicSpec.getMetaData() == null ? VirtualRouterNicMetaData.GUEST_NIC_MASK.toString()
-                        : String.valueOf(Integer.valueOf(guestNicSpec.getMetaData()) | VirtualRouterNicMetaData.GUEST_NIC_MASK));
+                guestNicSpec.setMetaData(guestNicSpec.getMetaData() == null ? GUEST_NIC_MASK.toString()
+                        : String.valueOf(Integer.valueOf(guestNicSpec.getMetaData()) | GUEST_NIC_MASK));
 
                 if (neededService.contains(NetworkServiceType.DHCP.toString())) {
                     openFirewall(aspec, l3Network.getUuid(), 68, ApplianceVmFirewallProtocol.udp);
@@ -401,9 +412,44 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             handle((APIUpdateVirtualRouterOfferingMsg) msg);
         } else if (msg instanceof APIGetAttachablePublicL3ForVRouterMsg) {
             handle((APIGetAttachablePublicL3ForVRouterMsg) msg);
-        } else {
+        } else if (msg instanceof APIGetVipUsedPortsMsg) {
+            handle((APIGetVipUsedPortsMsg) msg);
+        }else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private List<String> getVipUsedPortList(String vipUuid, String protocol){
+        String useFor = Q.New(VipVO.class).select(VipVO_.useFor).eq(VipVO_.uuid, vipUuid).findValue();
+        VipUseForList vipUseForList;
+        if (useFor != null){
+            vipUseForList = new VipUseForList(useFor);
+        } else {
+            vipUseForList = new VipUseForList();
+        }
+
+        List<RangeSet.Range> portRangeList = new ArrayList<RangeSet.Range>();
+        for (VipGetUsedPortRangeExtensionPoint ext : vipGetUsedPortRangeExtensionPoints) {
+            RangeSet range = ext.getVipUsePortRange(vipUuid, protocol, vipUseForList);
+            portRangeList.addAll(range.getRanges());
+        }
+
+        RangeSet portRange = new RangeSet();
+        portRange.setRanges(portRangeList);
+        return portRange.sortAndToString();
+    }
+
+    private void handle(APIGetVipUsedPortsMsg msg) {
+        String vipUuid = msg.getUuid();
+        String protocl = msg.getProtocol().toUpperCase();
+
+        APIGetVipUsedPortsReply reply = new APIGetVipUsedPortsReply();
+        APIGetVipUsedPortsReply.VipPortRangeInventory inv = new APIGetVipUsedPortsReply.VipPortRangeInventory();
+        inv.setUuid(vipUuid);
+        inv.setProtocol(protocl);
+        inv.setUsedPorts(getVipUsedPortList(vipUuid, protocl));
+        reply.setInventories(Arrays.asList(inv));
+        bus.reply(msg, reply);
     }
 
     private void handle(APIGetAttachablePublicL3ForVRouterMsg msg) {
@@ -527,7 +573,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 	
 	public void prepareDbInitialValue() {
 		SimpleQuery<NetworkServiceProviderVO> query = dbf.createQuery(NetworkServiceProviderVO.class);
-		query.add(NetworkServiceProviderVO_.type, Op.EQ, VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE);
+		query.add(NetworkServiceProviderVO_.type, Op.EQ, VIRTUAL_ROUTER_PROVIDER_TYPE);
 		NetworkServiceProviderVO rpvo = query.find();
 		if (rpvo != null) {
 			virtualRouterProvider = NetworkServiceProviderInventory.valueOf(rpvo);
@@ -536,7 +582,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 		
 		NetworkServiceProviderVO vo = new NetworkServiceProviderVO();
         vo.setUuid(Platform.getUuid());
-		vo.setName(VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE);
+		vo.setName(VIRTUAL_ROUTER_PROVIDER_TYPE);
 		vo.setDescription("zstack virtual router network service provider");
 		vo.getNetworkServiceTypes().add(NetworkServiceType.DHCP.toString());
 		vo.getNetworkServiceTypes().add(NetworkServiceType.DNS.toString());
@@ -544,7 +590,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 		vo.getNetworkServiceTypes().add(NetworkServiceType.PortForwarding.toString());
         vo.getNetworkServiceTypes().add(EipConstant.EIP_NETWORK_SERVICE_TYPE);
         vo.getNetworkServiceTypes().add(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
-		vo.setType(VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE);
+		vo.setType(VIRTUAL_ROUTER_PROVIDER_TYPE);
 		vo = dbf.persistAndRefresh(vo);
 		virtualRouterProvider = NetworkServiceProviderInventory.valueOf(vo);
 	}
@@ -564,11 +610,12 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         postRebootFlowExtensionPoints = pluginRgty.getExtensionList(VirtualRouterPostRebootFlowExtensionPoint.class);
         postReconnectFlowExtensionPoints = pluginRgty.getExtensionList(VirtualRouterPostReconnectFlowExtensionPoint.class);
         postDestroyFlowExtensionPoints = pluginRgty.getExtensionList(VirtualRouterPostDestroyFlowExtensionPoint.class);
+        vipGetUsedPortRangeExtensionPoints = pluginRgty.getExtensionList(VipGetUsedPortRangeExtensionPoint.class);
 	}
 	
 	private NetworkServiceProviderVO getRouterVO() {
 		SimpleQuery<NetworkServiceProviderVO> query = dbf.createQuery(NetworkServiceProviderVO.class);
-		query.add(NetworkServiceProviderVO_.type, Op.EQ, VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE);
+		query.add(NetworkServiceProviderVO_.type, Op.EQ, VIRTUAL_ROUTER_PROVIDER_TYPE);
 		return query.find();
 	}
 
@@ -654,7 +701,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
     @Override
     public List<String> selectL3NetworksNeedingSpecificNetworkService(List<String> candidate, NetworkServiceType nsType) {
-        if (candidate.isEmpty()) {
+        if (candidate == null || candidate.isEmpty()) {
             return new ArrayList<>(0);
         }
 
@@ -664,14 +711,29 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 " and nspv.uuid = ref.networkServiceProviderUuid and nspv.type in (:ntype)")
                 .param("candidate", candidate)
                 .param("stype", nsType.toString())
-                .param("ntype", asList(VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE, VyosConstants.VYOS_ROUTER_PROVIDER_TYPE))
+                .param("ntype", asList(VIRTUAL_ROUTER_PROVIDER_TYPE, VYOS_ROUTER_PROVIDER_TYPE))
                 .list();
     }
 
     @Override
     public boolean isL3NetworkNeedingNetworkServiceByVirtualRouter(String l3Uuid, String nsType) {
+        if (l3Uuid == null) {
+            return false;
+        }
         SimpleQuery<NetworkServiceL3NetworkRefVO> q = dbf.createQuery(NetworkServiceL3NetworkRefVO.class);
         q.add(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, Op.EQ, l3Uuid);
+        q.add(NetworkServiceL3NetworkRefVO_.networkServiceType, Op.EQ, nsType);
+        // no need to specify provider type, L3 networks identified by candidates are served by virtual router or vyos
+        return q.isExists();
+    }
+
+    @Override
+    public boolean isL3NetworksNeedingNetworkServiceByVirtualRouter(List<String> l3Uuids, String nsType) {
+        if (l3Uuids == null || l3Uuids.isEmpty()) {
+            return false;
+        }
+        SimpleQuery<NetworkServiceL3NetworkRefVO> q = dbf.createQuery(NetworkServiceL3NetworkRefVO.class);
+        q.add(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, Op.IN, l3Uuids);
         q.add(NetworkServiceL3NetworkRefVO_.networkServiceType, Op.EQ, nsType);
         // no need to specify provider type, L3 networks identified by candidates are served by virtual router or vyos
         return q.isExists();
@@ -782,6 +844,11 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
     @Override
     public void acquireVirtualRouterVm(VirtualRouterStruct struct, final ReturnValueCompletion<VirtualRouterVmInventory> completion) {
+        for (BeforeAcquireVirtualRouterVmExtensionPoint extp : pluginRgty.getExtensionList(
+                BeforeAcquireVirtualRouterVmExtensionPoint.class)) {
+            extp.beforeAcquireVirtualRouterVmExtensionPoint(struct);
+        }
+
         //TODO: find a way to remove the GLock
         final GLock lock = new GLock(String.format("glock-vr-l3-%s", struct.getL3Network().getUuid()), TimeUnit.HOURS.toSeconds(1));
         lock.setSeparateThreadEnabled(false);
@@ -844,19 +911,22 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
     @Transactional(readOnly = true)
     private List<VirtualRouterOfferingInventory> findOfferingByGuestL3Network(L3NetworkInventory guestL3) {
-        String sql = "select offering from VirtualRouterOfferingVO offering, SystemTagVO stag where offering.uuid = stag.resourceUuid and stag.resourceType = :type and offering.zoneUuid = :zoneUuid and stag.tag = :tag";
+        String sql = "select offering from VirtualRouterOfferingVO offering, SystemTagVO stag where " +
+                "offering.uuid = stag.resourceUuid and stag.resourceType = :type and offering.zoneUuid = :zoneUuid and stag.tag = :tag and offering.state = :state";
         TypedQuery<VirtualRouterOfferingVO> q = dbf.getEntityManager().createQuery(sql, VirtualRouterOfferingVO.class);
         q.setParameter("type", InstanceOfferingVO.class.getSimpleName());
         q.setParameter("zoneUuid", guestL3.getZoneUuid());
         q.setParameter("tag", VirtualRouterSystemTags.VR_OFFERING_GUEST_NETWORK.instantiateTag(map(e(VirtualRouterSystemTags.VR_OFFERING_GUEST_NETWORK_TOKEN, guestL3.getUuid()))));
+        q.setParameter("state", InstanceOfferingState.Enabled);
         List<VirtualRouterOfferingVO> vos = q.getResultList();
         if (!vos.isEmpty()) {
             return VirtualRouterOfferingInventory.valueOf1(vos);
         }
 
-        sql ="select offering from VirtualRouterOfferingVO offering where offering.zoneUuid = :zoneUuid";
+        sql ="select offering from VirtualRouterOfferingVO offering where offering.zoneUuid = :zoneUuid and offering.state = :state";
         q = dbf.getEntityManager().createQuery(sql, VirtualRouterOfferingVO.class);
         q.setParameter("zoneUuid", guestL3.getZoneUuid());
+        q.setParameter("state", InstanceOfferingState.Enabled);
         vos = q.getResultList();
         return vos.isEmpty() ? null : VirtualRouterOfferingInventory.valueOf1(vos);
     }
@@ -1073,6 +1143,21 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             return candidates;
         }
 
+        // Note(WeiW) Check vip has attached virtual router network
+        Boolean vipForVirtualRouter = null;
+        if (vip.getPeerL3NetworkUuids() != null && !vip.getPeerL3NetworkUuids().isEmpty()) {
+            // Note(WeiW): The peer l3 must be all of vrouter l3 or flat l3
+            NetworkServiceProviderType providerType = nwServiceMgr.
+                    getTypeOfNetworkServiceProviderForService(vip.getPeerL3NetworkUuids().get(0), EipConstant.EIP_TYPE);
+            // Todo(WeiW): Need to refactor to avoid hard code
+            if (providerType.toString().equals(VYOS_ROUTER_PROVIDER_TYPE) ||
+                    providerType.toString().equals(VIRTUAL_ROUTER_PROVIDER_TYPE)) {
+                vipForVirtualRouter = true;
+            } else {
+                vipForVirtualRouter = false;
+            }
+        }
+
         // 1.get the vm nics which are managed by vrouter or virtual router.
         // it also means to ignore vm in flat.
         List<String> privateL3Uuids = candidates.stream().map(VmNicInventory::getL3NetworkUuid).distinct()
@@ -1087,15 +1172,41 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                         VyosConstants.PROVIDER_TYPE.toString(),
                         VirtualRouterConstant.PROVIDER_TYPE.toString()))
                 .list();
+
         List<VmNicInventory> vmNicInVirtualRouter = candidates.stream().filter(nic ->
                 innerl3Uuids.contains(nic.getL3NetworkUuid()))
                 .collect(Collectors.toList());
 
-        if(vmNicInVirtualRouter.isEmpty()){
+        if (vipForVirtualRouter != null && vipForVirtualRouter == true) {
+            String vrUuid = Q.New(VirtualRouterVipVO.class).select(VirtualRouterVipVO_.virtualRouterVmUuid).eq(VirtualRouterVipVO_.uuid, vip.getUuid()).findValue();
+            if (vrUuid == null) {
+                vrUuid = getVipPeerL3NetworkAttachedVirtualRouter(vip);
+            }
+            if (vrUuid != null) {
+                List<String> vrAttachedGuestL3 = Q.New(VmNicVO.class).select(VmNicVO_.l3NetworkUuid).eq(VmNicVO_.vmInstanceUuid, vrUuid).eq(VmNicVO_.metaData, GUEST_NIC_MASK).listValues();
+                logger.debug(String.format("there is virtual router[uuid:%s] associate with vip[uuid:%s], will return candidates from vr guest l3 networks[%s]",
+                        vrUuid, vip.getUuid(), vrAttachedGuestL3));
+                Set<VmNicInventory> r = candidates.stream()
+                        .filter(nic -> vrAttachedGuestL3.contains(nic.getL3NetworkUuid()))
+                        .collect(Collectors.toSet());
+                return new ArrayList<>(r);
+            }
+
+            logger.debug(String.format("there are no virtual router associate with vip[uuid:%s], and peer l3 exists, will return candidates from peer l3 networks[%s]",
+                    vip.getUuid(), vip.getPeerL3NetworkUuids()));
+            Set<VmNicInventory> r = candidates.stream()
+                    .filter(nic -> vip.getPeerL3NetworkUuids().contains(nic.getL3NetworkUuid()))
+                    .collect(Collectors.toSet());
+
+            return new ArrayList<>(r);
+        } else if (vipForVirtualRouter != null && vipForVirtualRouter == false) {
+            logger.debug(String.format("remove all vmnics in virtual router network since vip[uuid:%s] has used in network which is not %s or %s",
+                    vip.getUuid(), VYOS_ROUTER_PROVIDER_TYPE, VIRTUAL_ROUTER_PROVIDER_TYPE));
+            candidates.removeAll(vmNicInVirtualRouter);
             return candidates;
         }
 
-        // 2.remove vm nic whose l3 don't peer vip's
+        // 2. keep vmnics which associated vrouter attached public network of vip
         List<String> peerL3Uuids = SQL.New("select l3.uuid" +
                 " from VmNicVO nic, L3NetworkVO l3"  +
                 " where nic.vmInstanceUuid in " +
@@ -1111,18 +1222,103 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 .param("isSystem", false)
                 .list();
 
-        List<VmNicInventory> notPeerL3Nics = vmNicInVirtualRouter.stream().filter(nic ->
-                !peerL3Uuids.contains(nic.getL3NetworkUuid()))
-                .collect(Collectors.toList());
-        candidates.removeAll(notPeerL3Nics);
+        Set<VmNicInventory> r = candidates.stream()
+            .filter(nic -> peerL3Uuids.contains(nic.getL3NetworkUuid()))
+            .collect(Collectors.toSet());
+        candidates.removeAll(vmNicInVirtualRouter);
+        candidates.addAll(r);
+
         return candidates;
+    }
+
+    private String getVipPeerL3NetworkAttachedVirtualRouter(VipInventory vip) {
+	    for (String l3Uuid : vip.getPeerL3NetworkUuids()) {
+	        String vrUuid = Q.New(VmNicVO.class).select(VmNicVO_.vmInstanceUuid).eq(VmNicVO_.l3NetworkUuid, l3Uuid).eq(VmNicVO_.metaData, GUEST_NIC_MASK).findValue();
+	        if (vrUuid != null) {
+	            return vrUuid;
+            }
+        }
+
+        return null;
+    }
+
+    private String getDedicatedRoleVrUuidFromVrUuids(List<String> uuids, String loadBalancerUuid) {
+        Set<String> vrUuids = new HashSet<>(uuids);
+
+        if (vrUuids.size() == 2
+                && LoadBalancerSystemTags.SEPARATE_VR.hasTag(loadBalancerUuid)
+                && vrUuids.stream().anyMatch(uuid -> VirtualRouterSystemTags.DEDICATED_ROLE_VR.hasTag(uuid))) {
+            for (String uuid : vrUuids) {
+                if (VirtualRouterSystemTags.DEDICATED_ROLE_VR.hasTag(uuid)) {
+                    return uuid;
+                }
+            }
+        }
+
+        if (vrUuids.size() == 1) {
+            return vrUuids.iterator().next();
+        } else if (vrUuids.size() == 0) {
+            return null;
+        } else {
+            throw new CloudRuntimeException(String.format("there are multiple virtual routers[uuids:%s]", vrUuids));
+        }
     }
 
     @Override
     public List<VmNicInventory> getCandidateVmNicsForLoadBalancerInVirtualRouter(APIGetCandidateVmNicsForLoadBalancerMsg msg, List<VmNicInventory> candidates) {
-
-        if(candidates.isEmpty()){
+        if(candidates == null || candidates.isEmpty()){
             return candidates;
+        }
+
+        List<String> vrUuids = Q.New(VirtualRouterLoadBalancerRefVO.class)
+                .select(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid)
+                .eq(VirtualRouterLoadBalancerRefVO_.loadBalancerUuid, msg.getLoadBalancerUuid())
+                .listValues();
+
+        String vrUuid = getDedicatedRoleVrUuidFromVrUuids(vrUuids, msg.getLoadBalancerUuid());
+
+        if (vrUuid != null) {
+            return getCandidateVmNicsIfLoadBalancerBound(msg, candidates, vrUuid);
+        }
+
+        final List<String> peerL3NetworkUuids = SQL.New("select peer.l3NetworkUuid " +
+                "from LoadBalancerVO lb, VipVO vip, VipPeerL3NetworkRefVO peer " +
+                "where lb.vipUuid = vip.uuid " +
+                "and vip.uuid = peer.vipUuid " +
+                "and lb.uuid = :lbUuid")
+                .param("lbUuid", msg.getLoadBalancerUuid())
+                .list();
+
+        if (peerL3NetworkUuids != null && !peerL3NetworkUuids.isEmpty()) {
+            vrUuids = Q.New(VmNicVO.class).select(VmNicVO_.vmInstanceUuid)
+                    .in(VmNicVO_.l3NetworkUuid, peerL3NetworkUuids)
+                    .eq(VmNicVO_.metaData, VirtualRouterNicMetaData.GUEST_NIC_MASK)
+                    .listValues();
+
+            vrUuid = getDedicatedRoleVrUuidFromVrUuids(vrUuids, msg.getLoadBalancerUuid());
+
+            if (vrUuid == null) {
+                return getCandidateVmNicsIfPeerL3NetworkExists(msg, candidates.stream()
+                        .filter(n -> peerL3NetworkUuids.contains(n.getL3NetworkUuid()))
+                        .collect(Collectors.toList()), peerL3NetworkUuids);
+            }
+
+            return getCandidateVmNicsIfLoadBalancerBound(msg, candidates, vrUuid);
+        }
+
+        VipVO lbVipVO = SQL.New("select vip from LoadBalancerVO lb, VipVO vip " +
+                "where lb.vipUuid = vip.uuid " +
+                "and lb.uuid = :lbUuid")
+                .param("lbUuid", msg.getLoadBalancerUuid()).find();
+
+        if (lbVipVO.getUseFor() != null && lbVipVO.getUseFor().contains(SNAT_NETWORK_SERVICE_TYPE)) {
+            vrUuid = Q.New(VirtualRouterVipVO.class).select(VirtualRouterVipVO_.virtualRouterVmUuid)
+                    .eq(VirtualRouterVipVO_.uuid, lbVipVO.getUuid()).findValue();
+            return getCandidateVmNicsIfLoadBalancerBound(msg, candidates, vrUuid);
+        }
+
+        if (vrUuid != null) {
+            return getCandidateVmNicsIfLoadBalancerBound(msg, candidates, vrUuid);
         }
 
         return new SQLBatchWithReturn<List<VmNicInventory>>(){
@@ -1171,7 +1367,54 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
             }
         }.execute();
-
     }
 
+    private List<VmNicInventory> getCandidateVmNicsIfPeerL3NetworkExists(APIGetCandidateVmNicsForLoadBalancerMsg msg, List<VmNicInventory> candidates, List<String> peerL3NetworkUuids) {
+	    return candidates.stream()
+                .filter(n -> peerL3NetworkUuids.contains(n.getL3NetworkUuid()))
+                .collect(Collectors.toList());
+    }
+
+    private List<VmNicInventory> getCandidateVmNicsIfLoadBalancerBound(APIGetCandidateVmNicsForLoadBalancerMsg msg, List<VmNicInventory> candidates, String vrUuid) {
+        List<String> candidatesUuids = candidates.stream().map(n -> n.getUuid()).collect(Collectors.toList());
+        logger.debug(String.format("loadbalancer[uuid:%s] has bound to virtual router[uuid:%s], " +
+                        "continue working with vmnics:%s", msg.getLoadBalancerUuid(), vrUuid, candidatesUuids));
+
+        return new SQLBatchWithReturn<List<VmNicInventory>>(){
+
+            @Override
+            protected List<VmNicInventory> scripts() {
+                List<String> guestL3Uuids = Q.New(VmNicVO.class)
+                        .select(VmNicVO_.l3NetworkUuid)
+                        .eq(VmNicVO_.vmInstanceUuid, vrUuid)
+                        .eq(VmNicVO_.metaData, VirtualRouterNicMetaData.GUEST_NIC_MASK)
+                        .listValues();
+
+                if (guestL3Uuids == null || guestL3Uuids.isEmpty()) {
+                    return new ArrayList<>();
+                }
+
+                List<String> vmNicUuids = SQL.New("select nic.uuid from VmNicVO nic, VmInstanceEO vm " +
+                        "where vm.uuid = nic.vmInstanceUuid " +
+                        "and vm.type = :vmType " +
+                        "and vm.state in (:vmState) " +
+                        "and nic.l3NetworkUuid in (:l3s) " +
+                        "and nic.metaData is NULL")
+                        .param("vmType", VmInstanceConstant.USER_VM_TYPE.toString())
+                        .param("vmState", asList(VmInstanceState.Running, VmInstanceState.Stopped))
+                        .param("l3s", guestL3Uuids)
+                        .list();
+
+                List<String> attachedVmNicUuids = Q.New(LoadBalancerListenerVmNicRefVO.class)
+                        .select(LoadBalancerListenerVmNicRefVO_.vmNicUuid)
+                        .eq(LoadBalancerListenerVmNicRefVO_.listenerUuid, msg.getListenerUuid())
+                        .listValues();
+
+                return candidates.stream()
+                        .filter( nic -> vmNicUuids.contains(nic.getUuid()))
+                        .filter( nic -> !attachedVmNicUuids.contains(nic.getUuid()))
+                        .collect(Collectors.toList());
+            }
+        }.execute();
+    }
 }

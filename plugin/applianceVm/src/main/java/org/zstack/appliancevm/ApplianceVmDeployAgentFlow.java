@@ -31,9 +31,9 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.path.PathUtil;
 
-import static org.zstack.core.Platform.operr;
-
 import java.util.Map;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  */
@@ -102,7 +102,7 @@ public class ApplianceVmDeployAgentFlow extends NoRollbackFlow {
                                 ApplianceVmAsyncHttpCallReply ar = reply.castReply();
                                 InitRsp rsp = ar.toResponse(InitRsp.class);
                                 if (!rsp.isSuccess()) {
-                                    trigger.fail(operr(rsp.getError()));
+                                    trigger.fail(operr("operation error, because:%s", rsp.getError()));
                                     return;
                                 }
 
@@ -189,6 +189,9 @@ public class ApplianceVmDeployAgentFlow extends NoRollbackFlow {
         runner.setAgentPort(ApplianceVmGlobalProperty.AGENT_PORT);
         runner.setTargetIp(mgmtIp);
         runner.putArgument("pkg_appliancevm", ApplianceVmGlobalProperty.AGENT_PACKAGE_NAME);
+        if (CoreGlobalProperty.CHRONY_SERVERS != null && !CoreGlobalProperty.CHRONY_SERVERS.isEmpty()) {
+            runner.putArgument("chrony_servers", String.join(",", CoreGlobalProperty.CHRONY_SERVERS));
+        }
         runner.run(new Completion(trigger) {
             @Override
             public void success() {

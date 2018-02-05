@@ -1,6 +1,7 @@
 package org.zstack.compute.allocator;
 
 import org.zstack.header.allocator.AbstractHostAllocatorFlow;
+import org.zstack.header.allocator.AbstractHostSortorFlow;
 import org.zstack.header.exception.CloudRuntimeException;
 
 import java.util.ArrayList;
@@ -15,6 +16,10 @@ public class HostAllocatorChainBuilder {
 
     public static HostAllocatorChain newAllocationChain() {
         return new HostAllocatorChain();
+    }
+
+    public static HostSortorChain newSortChain() {
+        return new HostSortorChain();
     }
 
     public static HostAllocatorChainBuilder newBuilder() {
@@ -46,6 +51,19 @@ public class HostAllocatorChainBuilder {
         return flows;
     }
 
+    private List<AbstractHostSortorFlow> buildSortFlows() {
+        List<AbstractHostSortorFlow> flows = new ArrayList<>();
+        try {
+            flows.add(RandomSortFlow.class.newInstance());
+            for (Class flowClass : classes) {
+                flows.add((AbstractHostSortorFlow) flowClass.newInstance());
+            }
+        } catch (Exception e) {
+            throw new CloudRuntimeException(e);
+        }
+        return flows;
+    }
+
     public HostAllocatorChain build() {
         if (!isConstructed) {
             construct();
@@ -53,6 +71,16 @@ public class HostAllocatorChainBuilder {
 
         HostAllocatorChain chain = newAllocationChain();
         chain.setFlows(buildFlows());
+        return chain;
+    }
+
+    public HostSortorChain buildSort() {
+        if (!isConstructed) {
+            construct();
+        }
+
+        HostSortorChain chain = newSortChain();
+        chain.setFlows(buildSortFlows());
         return chain;
     }
 

@@ -10,6 +10,8 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.storage.primary.PrimaryStorageBase.PhysicalCapacityUsage;
 
+import java.util.List;
+
 public interface NfsPrimaryStorageBackend {
     HypervisorType getHypervisorType();
 
@@ -24,6 +26,10 @@ public interface NfsPrimaryStorageBackend {
     void handle(PrimaryStorageInventory inv, SyncVolumeSizeOnPrimaryStorageMsg msg, ReturnValueCompletion<SyncVolumeSizeOnPrimaryStorageReply> completion);
 
     void handle(PrimaryStorageInventory inv, GetVolumeRootImageUuidFromPrimaryStorageMsg msg, ReturnValueCompletion<GetVolumeRootImageUuidFromPrimaryStorageReply> completion);
+
+    void handle(PrimaryStorageInventory inv, NfsToNfsMigrateVolumeMsg msg, ReturnValueCompletion<NfsToNfsMigrateVolumeReply> completion);
+
+    void handle(PrimaryStorageInventory inv, NfsRebaseVolumeBackingFileMsg msg, ReturnValueCompletion<NfsRebaseVolumeBackingFileReply> completion);
 
     void getPhysicalCapacity(PrimaryStorageInventory inv, ReturnValueCompletion<PhysicalCapacityUsage> completion);
 
@@ -40,6 +46,8 @@ public interface NfsPrimaryStorageBackend {
     void delete(PrimaryStorageInventory pinv, String installPath, Completion completion);
 
     void deleteFolder(PrimaryStorageInventory pinv, String installPath, Completion completion);
+
+    void list(PrimaryStorageInventory pinv, String path, ReturnValueCompletion<List<String>> completion);
 
     void revertVolumeFromSnapshot(VolumeSnapshotInventory sinv, VolumeInventory vol, HostInventory host, ReturnValueCompletion<RevertVolumeFromSnapshotOnPrimaryStorageReply> completion);
 

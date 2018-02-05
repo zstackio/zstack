@@ -8,6 +8,8 @@ public class DeleteVipQosAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
+    private static final HashMap<String, Parameter> nonAPIParameterMap = new HashMap<>();
+
     public static class Result {
         public ErrorCode error;
         public org.zstack.sdk.DeleteVipQosResult value;
@@ -26,8 +28,8 @@ public class DeleteVipQosAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = true, validValues = {"in","out","all"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String direction;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Integer port;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -38,9 +40,11 @@ public class DeleteVipQosAction extends AbstractAction {
     @Param(required = true)
     public String sessionId;
 
-    public long timeout;
-    
-    public long pollingInterval;
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -74,7 +78,15 @@ public class DeleteVipQosAction extends AbstractAction {
         return parameterMap;
     }
 
+<<<<<<< HEAD
     protected RestInfo getRestInfo() {
+=======
+    Map<String, Parameter> getNonAPIParameterMap() {
+        return nonAPIParameterMap;
+    }
+
+    RestInfo getRestInfo() {
+>>>>>>> upstream/master
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/vips/{uuid}/vip-qos";

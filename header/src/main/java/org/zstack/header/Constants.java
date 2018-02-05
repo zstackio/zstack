@@ -11,4 +11,6 @@ public interface Constants {
 
     String CATEGORY_RESOURCE = "resource";
     String CATEGORY_METADATA = "metadata";
+
+    String UUID_FOR_EXAMPLE = "UUID_FOR_EXAMPLE";
 }

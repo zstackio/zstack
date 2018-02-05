@@ -234,6 +234,29 @@ public class RESTFacadeImpl implements RESTFacade {
 
         final String taskUuid = Platform.getUuid();
         final long finalStime = stime;
+
+        HttpHeaders requestHeaders = new HttpHeaders();
+        requestHeaders.setContentLength(body.length());
+        requestHeaders.set(RESTConstant.TASK_UUID, taskUuid);
+        requestHeaders.set(RESTConstant.CALLBACK_URL, callbackUrl);
+        MediaType JSON = MediaType.parseMediaType("application/json; charset=utf-8");
+        requestHeaders.setContentType(JSON);
+        if (headers != null) {
+            for (Map.Entry<String, String> e : headers.entrySet()) {
+                requestHeaders.set(e.getKey(), e.getValue());
+            }
+        }
+
+        HttpEntity<String> req = new HttpEntity<String>(body, requestHeaders);
+
+        Retry<ResponseEntity<String>> retry = new Retry<ResponseEntity<String>>() {
+            @Override
+            @RetryCondition(onExceptions = {IOException.class, RestClientException.class, HttpClientErrorException.class})
+            protected ResponseEntity<String> call() {
+                return template.exchange(url, HttpMethod.POST, req, String.class, taskUuid, unit.toMillis(timeout), unit.toMillis(timeout));
+            }
+        };
+
         AsyncHttpWrapper wrapper = new AsyncHttpWrapper() {
             AtomicBoolean called = new AtomicBoolean(false);
 
@@ -253,7 +276,9 @@ public class RESTFacadeImpl implements RESTFacade {
             }
 
             public void fail(ErrorCode err) {
+                retry.stop();
                 if (!called.compareAndSet(false, true)) {
+                    logger.warn(String.format("Failed callback many times, taskId=%s, currentTimeMillis=%s", taskUuid, System.currentTimeMillis()));
                     return;
                 }
 
@@ -269,6 +294,7 @@ public class RESTFacadeImpl implements RESTFacade {
             @AsyncThread
             public void success(HttpEntity<String> responseEntity) {
                 if (!called.compareAndSet(false, true)) {
+                    logger.warn(String.format("Success callback many times, taskId=%s, currentTimeMillis=%s", taskUuid, System.currentTimeMillis()));
                     return;
                 }
 
@@ -315,21 +341,7 @@ public class RESTFacadeImpl implements RESTFacade {
 
         try {
             wrappers.put(taskUuid, wrapper);
-            HttpHeaders requestHeaders = new HttpHeaders();
-            requestHeaders.setContentType(MediaType.APPLICATION_JSON);
-            requestHeaders.setContentLength(body.length());
-            requestHeaders.set(RESTConstant.TASK_UUID, taskUuid);
-            requestHeaders.set(RESTConstant.CALLBACK_URL, callbackUrl);
-            MediaType JSON = MediaType.parseMediaType("application/json; charset=utf-8");
-            requestHeaders.setContentType(JSON);
 
-            if (headers != null) {
-                for (Map.Entry<String, String> e : headers.entrySet()) {
-                    requestHeaders.set(e.getKey(), e.getValue());
-                }
-            }
-
-            HttpEntity<String> req = new HttpEntity<String>(body, requestHeaders);
             if (logger.isTraceEnabled()) {
                 logger.trace(String.format("json post[%s], %s", url, req.toString()));
             }
@@ -340,13 +352,7 @@ public class RESTFacadeImpl implements RESTFacade {
                 if (CoreGlobalProperty.UNIT_TEST_ON) {
                     rsp = template.exchange(url, HttpMethod.POST, req, String.class);
                 } else {
-                    rsp = new Retry<ResponseEntity<String>>() {
-                        @Override
-                        @RetryCondition(onExceptions = {IOException.class, RestClientException.class, HttpClientErrorException.class})
-                        protected ResponseEntity<String> call() {
-                            return template.exchange(url, HttpMethod.POST, req, String.class, taskUuid, unit.toMillis(timeout), unit.toMillis(timeout));
-                        }
-                    }.run();
+                    rsp = retry.run();
                 }
             } catch (HttpClientErrorException e) {
                 String err = String.format("http status: %s, response body:%s", e.getStatusCode(), e.getResponseBodyAsString());
@@ -368,13 +374,13 @@ public class RESTFacadeImpl implements RESTFacade {
     @Override
     public void asyncJsonPost(String url, Object body, Map<String, String> headers, AsyncRESTCallback callback) {
         Long timeout = timeoutMgr.getTimeout(body.getClass());
-        asyncJsonPost(url, body, headers, callback, TimeUnit.MILLISECONDS, timeout == null ? 300000 : timeout);
+        asyncJsonPost(url, body, headers, callback, TimeUnit.MILLISECONDS, timeout == null ? CoreGlobalProperty.REST_FACADE_READ_TIMEOUT : timeout);
     }
 
     @Override
     public void asyncJsonPost(String url, Object body, AsyncRESTCallback callback) {
         Long timeout = timeoutMgr.getTimeout(body.getClass());
-        asyncJsonPost(url, body, callback, TimeUnit.MILLISECONDS, timeout == null ? 300000 : timeout);
+        asyncJsonPost(url, body, callback, TimeUnit.MILLISECONDS, timeout == null ? CoreGlobalProperty.REST_FACADE_READ_TIMEOUT : timeout);
     }
 
     @Override
@@ -441,6 +447,28 @@ public class RESTFacadeImpl implements RESTFacade {
     }
     @Override
     public <T> T syncJsonPost(String url, String body, Map<String, String> headers, Class<T> returnClass, TimeUnit unit, long timeout) {
+        return syncJson(url, body, headers, HttpMethod.POST, returnClass, unit, timeout);
+    }
+
+    @Override
+    public <T> T syncJsonDelete(String url, String body, Map<String, String> headers, Class<T> returnClass) {
+        return syncJsonDelete(url, body, headers, returnClass, null, -1);
+    }
+    @Override
+    public <T> T syncJsonDelete(String url, String body, Map<String, String> headers, Class<T> returnClass, TimeUnit unit, long timeout) {
+        return syncJson(url, body, headers, HttpMethod.DELETE, returnClass, unit, timeout);
+    }
+
+    @Override
+    public <T> T syncJsonGet(String url, String body, Map<String, String> headers, Class<T> returnClass) {
+        return syncJsonGet(url, body, headers, returnClass, null, -1);
+    }
+    @Override
+    public <T> T syncJsonGet(String url, String body, Map<String, String> headers, Class<T> returnClass, TimeUnit unit, long timeout) {
+        return syncJson(url, body, headers, HttpMethod.GET, returnClass, unit, timeout);
+    }
+
+    public <T> T syncJson(String url, String body, Map<String, String> headers, HttpMethod method, Class<T> returnClass, TimeUnit unit, long timeout) {
         body = body == null ? "" : body;
 
         HttpHeaders requestHeaders = new HttpHeaders();
@@ -451,33 +479,33 @@ public class RESTFacadeImpl implements RESTFacade {
         requestHeaders.setContentLength(body.length());
         HttpEntity<String> req = new HttpEntity<String>(body, requestHeaders);
         if (logger.isTraceEnabled()) {
-            logger.trace(String.format("json post[%s], %s", url, req.toString()));
+            logger.trace(String.format("json %s[%s], %s", method.toString().toLowerCase(), url, req.toString()));
         }
 
         ResponseEntity<String> rsp;
         try {
             if (CoreGlobalProperty.UNIT_TEST_ON) {
-                rsp = template.exchange(url, HttpMethod.POST, req, String.class);
+                rsp = template.exchange(url, method, req, String.class);
             } else {
                 rsp = new Retry<ResponseEntity<String>>() {
                     @Override
                     @RetryCondition(onExceptions = {IOException.class, HttpStatusCodeException.class})
                     protected ResponseEntity<String> call() {
                         if (unit == null) {
-                            return template.exchange(url, HttpMethod.POST, req, String.class);
+                            return template.exchange(url, method, req, String.class);
                         } else {
-                            return template.exchange(url, HttpMethod.POST, req, String.class, Platform.getUuid(), unit.toMillis(timeout), unit.toMillis(timeout));
+                            return template.exchange(url, method, req, String.class, Platform.getUuid(), unit.toMillis(timeout), unit.toMillis(timeout));
                         }
                     }
                 }.run();
             }
         } catch (HttpStatusCodeException e) {
-            throw new OperationFailureException(operr("failed to post to %s, status code: %s, response body: %s", url, e.getStatusCode(), e.getResponseBodyAsString()));
+            throw new OperationFailureException(operr("failed to %s to %s, status code: %s, response body: %s", method.toString().toLowerCase(), url, e.getStatusCode(), e.getResponseBodyAsString()));
         }
 
 
-        if (rsp.getStatusCode() != org.springframework.http.HttpStatus.OK) {
-            throw new OperationFailureException(operr("failed to post to %s, status code: %s, response body: %s", url, rsp.getStatusCode(), rsp.getBody()));
+        if (rsp.getStatusCode() != org.springframework.http.HttpStatus.OK && rsp.getStatusCode() != org.springframework.http.HttpStatus.ACCEPTED) {
+            throw new OperationFailureException(operr("failed to %s to %s, status code: %s, response body: %s", method.toString().toLowerCase(), url, rsp.getStatusCode(), rsp.getBody()));
         }
         
         if (rsp.getBody() != null && returnClass != Void.class) {
@@ -494,7 +522,7 @@ public class RESTFacadeImpl implements RESTFacade {
 
     @Override
     public void echo(String url, Completion callback) {
-        echo(url, callback, TimeUnit.SECONDS.toMillis(1), TimeUnit.SECONDS.toMillis(30));
+        echo(url, callback, TimeUnit.SECONDS.toMillis(1), TimeUnit.SECONDS.toMillis(CoreGlobalProperty.REST_FACADE_ECHO_TIMEOUT));
     }
     
     @Override

@@ -21,4 +21,12 @@ public class ImageSystemTags {
     public static String IMAGE_DEPLOY_REMOTE_TOKEN = "remote";
     public static PatternedSystemTag IMAGE_DEPLOY_REMOTE = new PatternedSystemTag(String.format("%s", IMAGE_DEPLOY_REMOTE_TOKEN), ImageVO.class);
 
+    public static String IMAGE_SEVER_CERT_TOKEN = "imageCert";
+    public static PatternedSystemTag IMAGE_SERVER_CERT = new PatternedSystemTag(
+            String.format("image::cert::{%s}", IMAGE_SEVER_CERT_TOKEN),
+            ImageVO.class
+    );
+
+    public static String IMAGE_SOURCE_TYPE_TOKEN = "sourceType";
+    public static PatternedSystemTag IMAGE_SOURCE_TYPE = new PatternedSystemTag(String.format("sourceType::{%s}", IMAGE_SOURCE_TYPE_TOKEN), ImageVO.class);
 }

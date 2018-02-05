@@ -3,14 +3,14 @@ package org.zstack.storage.primary;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
-import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.cloudbus.MessageSafe;
-import org.zstack.core.cloudbus.ResourceDestinationMaker;
+import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
-import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.DbEntityLister;
+import org.zstack.core.db.SQL;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -28,7 +28,6 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.tag.SystemTagValidator;
-import org.zstack.header.vm.VmHaExtensionPoint;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceStartExtensionPoint;
 import org.zstack.search.GetQuery;
@@ -37,13 +36,14 @@ import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.operr;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
+
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
 
 public class PrimaryStorageManagerImpl extends AbstractService implements PrimaryStorageManager,
         ManagementNodeChangeListener, ManagementNodeReadyExtensionPoint, VmInstanceStartExtensionPoint {
@@ -59,6 +59,8 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     private DbEntityLister dl;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private EventFacade evtf;
     @Autowired
     private TagManager tagMgr;
     @Autowired
@@ -356,9 +358,19 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         }
     }
 
+    /**
+     * Supported allocation strategy：
+     *      DefaultPrimaryStorageAllocationStrategy (only work for non-local primary storage)
+     *      LocalPrimaryStorageStrategy (only work for local primary storage)
+     *
+     * Note：
+     *      If the allocation strategy is not specified
+     *          If the cluster is mounted with local storage, the default is LocalPrimaryStorageStrategy。
+     *          Otherwise, it is DefaultPrimaryStorageAllocationStrategy
+     */
     private void handle(AllocatePrimaryStorageMsg msg) {
         AllocatePrimaryStorageReply reply = new AllocatePrimaryStorageReply(null);
-        //
+
         String allocatorStrategyType = null;
         for (PrimaryStorageAllocatorStrategyExtensionPoint ext : pluginRgty.getExtensionList(PrimaryStorageAllocatorStrategyExtensionPoint.class)) {
             allocatorStrategyType = ext.getPrimaryStorageAllocatorStrategyName(msg);
@@ -384,7 +396,8 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         PrimaryStorageAllocatorStrategy strategy = factory.getPrimaryStorageAllocatorStrategy();
         //
         PrimaryStorageAllocationSpec spec = new PrimaryStorageAllocationSpec();
-        spec.setRequiredPrimaryStorageTypes(msg.getRequiredPrimaryStorageTypes());
+        spec.setPossiblePrimaryStorageTypes(msg.getPossiblePrimaryStorageTypes());
+        spec.setExcludePrimaryStorageTypes(msg.getExcludePrimaryStorageTypes());
         spec.setImageUuid(msg.getImageUuid());
         spec.setDiskOfferingUuid(msg.getDiskOfferingUuid());
         spec.setVmInstanceUuid(msg.getVmInstanceUuid());
@@ -448,7 +461,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             @Override
             public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
                 long avail = cap.getAvailableCapacity() - size;
-                if (avail <= 0) {
+                if (avail < 0) {
                     logger.warn(String.format("[Primary Storage Allocation] reserved capacity on primary storage[uuid:%s] failed," +
                             " no available capacity on it", inv.getUuid()));
                     return null;

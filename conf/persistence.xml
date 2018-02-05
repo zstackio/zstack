@@ -58,6 +58,7 @@
         <class>org.zstack.header.network.l3.IpRangeEO</class>
         <class>org.zstack.header.network.l3.UsedIpVO</class>
         <class>org.zstack.network.service.vip.VipVO</class>
+        <class>org.zstack.network.service.vip.VipPeerL3NetworkRefVO</class>
         <class>org.zstack.network.service.eip.EipVO</class>
         <class>org.zstack.network.service.virtualrouter.vip.VirtualRouterVipVO</class>
         <class>org.zstack.network.service.virtualrouter.eip.VirtualRouterEipRefVO</class>
@@ -139,5 +140,6 @@
         <class>org.zstack.core.notification.NotificationSubscriptionVO</class>
         <class>org.zstack.header.vo.ResourceVO</class>
         <class>org.zstack.header.core.webhooks.WebhookVO</class>
+        <class>org.zstack.header.longjob.LongJobVO</class>
     </persistence-unit>
 </persistence>

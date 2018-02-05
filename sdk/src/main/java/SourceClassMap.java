@@ -21,10 +21,12 @@ public class SourceClassMap {
 			put("org.zstack.core.gc.GarbageCollectorInventory", "org.zstack.sdk.GarbageCollectorInventory");
 			put("org.zstack.core.notification.NotificationInventory", "org.zstack.sdk.NotificationInventory");
 			put("org.zstack.core.notification.NotificationSubscriptionInventory", "org.zstack.sdk.NotificationSubscriptionInventory");
-			put("org.zstack.header.aliyun.AliyunException", "org.zstack.sdk.AliyunException");
+			put("org.zstack.header.affinitygroup.AffinityGroupInventory", "org.zstack.sdk.AffinityGroupInventory");
+			put("org.zstack.header.affinitygroup.AffinityGroupUsageInventory", "org.zstack.sdk.AffinityGroupUsageInventory");
 			put("org.zstack.header.aliyun.AliyunOssException", "org.zstack.sdk.AliyunOssException");
 			put("org.zstack.header.aliyun.ecs.EcsInstanceInventory", "org.zstack.sdk.EcsInstanceInventory");
 			put("org.zstack.header.aliyun.ecs.EcsInstanceType", "org.zstack.sdk.EcsInstanceType");
+			put("org.zstack.header.aliyun.errorCode.AliyunErrorCode", "org.zstack.sdk.AliyunErrorCode");
 			put("org.zstack.header.aliyun.image.EcsImageInventory", "org.zstack.sdk.EcsImageInventory");
 			put("org.zstack.header.aliyun.image.ProgressProperty", "org.zstack.sdk.ProgressProperty");
 			put("org.zstack.header.aliyun.network.HybridConnectionType", "org.zstack.sdk.HybridConnectionType");
@@ -88,6 +90,8 @@ public class SourceClassMap {
 			put("org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotEvent$Failure", "org.zstack.sdk.CreateRootVolumeTemplateFromVolumeSnapshotFailure");
 			put("org.zstack.header.image.ImageBackupStorageRefInventory", "org.zstack.sdk.ImageBackupStorageRefInventory");
 			put("org.zstack.header.image.ImageInventory", "org.zstack.sdk.ImageInventory");
+			put("org.zstack.header.longjob.LongJobInventory", "org.zstack.sdk.LongJobInventory");
+			put("org.zstack.header.longjob.LongJobState", "org.zstack.sdk.LongJobState");
 			put("org.zstack.header.managementnode.ManagementNodeInventory", "org.zstack.sdk.ManagementNodeInventory");
 			put("org.zstack.header.network.l2.L2NetworkInventory", "org.zstack.sdk.L2NetworkInventory");
 			put("org.zstack.header.network.l2.L2VlanNetworkInventory", "org.zstack.sdk.L2VlanNetworkInventory");
@@ -109,6 +113,7 @@ public class SourceClassMap {
 			put("org.zstack.header.tag.SystemTagInventory", "org.zstack.sdk.SystemTagInventory");
 			put("org.zstack.header.tag.TagInventory", "org.zstack.sdk.TagInventory");
 			put("org.zstack.header.tag.UserTagInventory", "org.zstack.sdk.UserTagInventory");
+			put("org.zstack.header.vipQos.VipQosInventory", "org.zstack.sdk.VipQosInventory");
 			put("org.zstack.header.vm.CloneVmInstanceInventory", "org.zstack.sdk.CloneVmInstanceInventory");
 			put("org.zstack.header.vm.CloneVmInstanceResults", "org.zstack.sdk.CloneVmInstanceResults");
 			put("org.zstack.header.vm.VmInstanceInventory", "org.zstack.sdk.VmInstanceInventory");
@@ -120,6 +125,7 @@ public class SourceClassMap {
 			put("org.zstack.hybrid.account.HybridAccountInventory", "org.zstack.sdk.HybridAccountInventory");
 			put("org.zstack.hybrid.core.HybridType", "org.zstack.sdk.HybridType");
 			put("org.zstack.ipsec.IPsecConnectionInventory", "org.zstack.sdk.IPsecConnectionInventory");
+			put("org.zstack.ipsec.IPsecL3NetworkRefInventory", "org.zstack.sdk.IPsecL3NetworkRefInventory");
 			put("org.zstack.ipsec.IPsecPeerCidrInventory", "org.zstack.sdk.IPsecPeerCidrInventory");
 			put("org.zstack.kvm.APIKvmRunShellEvent$ShellResult", "org.zstack.sdk.ShellResult");
 			put("org.zstack.kvm.KVMHostInventory", "org.zstack.sdk.KVMHostInventory");
@@ -149,6 +155,7 @@ public class SourceClassMap {
 			put("org.zstack.network.service.lb.LoadBalancerListenerVmNicRefInventory", "org.zstack.sdk.LoadBalancerListenerVmNicRefInventory");
 			put("org.zstack.network.service.portforwarding.PortForwardingRuleInventory", "org.zstack.sdk.PortForwardingRuleInventory");
 			put("org.zstack.network.service.vip.VipInventory", "org.zstack.sdk.VipInventory");
+			put("org.zstack.network.service.virtualrouter.APIGetVipUsedPortsReply$VipPortRangeInventory", "org.zstack.sdk.VipPortRangeInventory");
 			put("org.zstack.network.service.virtualrouter.VirtualRouterOfferingInventory", "org.zstack.sdk.VirtualRouterOfferingInventory");
 			put("org.zstack.network.service.virtualrouter.VirtualRouterVmInventory", "org.zstack.sdk.VirtualRouterVmInventory");
 			put("org.zstack.pciDevice.HostIommuStateType", "org.zstack.sdk.HostIommuStateType");
@@ -186,6 +193,8 @@ public class SourceClassMap {
 			put("org.zstack.storage.fusionstor.primary.FusionstorPrimaryStorageMonInventory", "org.zstack.sdk.FusionstorPrimaryStorageMonInventory");
 			put("org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply$HostDiskCapacity", "org.zstack.sdk.HostDiskCapacity");
 			put("org.zstack.storage.primary.local.LocalStorageResourceRefInventory", "org.zstack.sdk.LocalStorageResourceRefInventory");
+			put("org.zstack.usbDevice.UsbDeviceInventory", "org.zstack.sdk.UsbDeviceInventory");
+			put("org.zstack.usbDevice.UsbDeviceState", "org.zstack.sdk.UsbDeviceState");
 			put("org.zstack.vmware.ESXHostInventory", "org.zstack.sdk.ESXHostInventory");
 			put("org.zstack.vmware.VCenterBackupStorageInventory", "org.zstack.sdk.VCenterBackupStorageInventory");
 			put("org.zstack.vmware.VCenterClusterInventory", "org.zstack.sdk.VCenterClusterInventory");
@@ -225,9 +234,11 @@ public class SourceClassMap {
         {
 			put("org.zstack.sdk.AccountInventory", "org.zstack.header.identity.AccountInventory");
 			put("org.zstack.sdk.AccountResourceRefInventory", "org.zstack.header.identity.AccountResourceRefInventory");
+			put("org.zstack.sdk.AffinityGroupInventory", "org.zstack.header.affinitygroup.AffinityGroupInventory");
+			put("org.zstack.sdk.AffinityGroupUsageInventory", "org.zstack.header.affinitygroup.AffinityGroupUsageInventory");
 			put("org.zstack.sdk.AlertInventory", "org.zstack.monitoring.AlertInventory");
 			put("org.zstack.sdk.AliyunDiskInventory", "org.zstack.header.aliyun.storage.disk.AliyunDiskInventory");
-			put("org.zstack.sdk.AliyunException", "org.zstack.header.aliyun.AliyunException");
+			put("org.zstack.sdk.AliyunErrorCode", "org.zstack.header.aliyun.errorCode.AliyunErrorCode");
 			put("org.zstack.sdk.AliyunOssException", "org.zstack.header.aliyun.AliyunOssException");
 			put("org.zstack.sdk.AliyunSnapshotInventory", "org.zstack.header.aliyun.storage.snapshot.AliyunSnapshotInventory");
 			put("org.zstack.sdk.ApplianceVmInventory", "org.zstack.appliancevm.ApplianceVmInventory");
@@ -289,6 +300,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.HybridEipStatus", "org.zstack.header.hybrid.network.eip.HybridEipStatus");
 			put("org.zstack.sdk.HybridType", "org.zstack.hybrid.core.HybridType");
 			put("org.zstack.sdk.IPsecConnectionInventory", "org.zstack.ipsec.IPsecConnectionInventory");
+			put("org.zstack.sdk.IPsecL3NetworkRefInventory", "org.zstack.ipsec.IPsecL3NetworkRefInventory");
 			put("org.zstack.sdk.IPsecPeerCidrInventory", "org.zstack.ipsec.IPsecPeerCidrInventory");
 			put("org.zstack.sdk.IdentityZoneInventory", "org.zstack.header.identityzone.IdentityZoneInventory");
 			put("org.zstack.sdk.IdentityZoneProperty", "org.zstack.header.identityzone.IdentityZoneProperty");
@@ -313,6 +325,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.LoadBalancerListenerInventory", "org.zstack.network.service.lb.LoadBalancerListenerInventory");
 			put("org.zstack.sdk.LoadBalancerListenerVmNicRefInventory", "org.zstack.network.service.lb.LoadBalancerListenerVmNicRefInventory");
 			put("org.zstack.sdk.LocalStorageResourceRefInventory", "org.zstack.storage.primary.local.LocalStorageResourceRefInventory");
+			put("org.zstack.sdk.LongJobInventory", "org.zstack.header.longjob.LongJobInventory");
+			put("org.zstack.sdk.LongJobState", "org.zstack.header.longjob.LongJobState");
 			put("org.zstack.sdk.ManagementNodeInventory", "org.zstack.header.managementnode.ManagementNodeInventory");
 			put("org.zstack.sdk.MediaInventory", "org.zstack.monitoring.media.MediaInventory");
 			put("org.zstack.sdk.MonitorTriggerActionInventory", "org.zstack.monitoring.actions.MonitorTriggerActionInventory");
@@ -366,6 +380,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.SystemTagInventory", "org.zstack.header.tag.SystemTagInventory");
 			put("org.zstack.sdk.TagInventory", "org.zstack.header.tag.TagInventory");
 			put("org.zstack.sdk.TaskProgressInventory", "org.zstack.header.core.progress.TaskProgressInventory");
+			put("org.zstack.sdk.UsbDeviceInventory", "org.zstack.usbDevice.UsbDeviceInventory");
+			put("org.zstack.sdk.UsbDeviceState", "org.zstack.usbDevice.UsbDeviceState");
 			put("org.zstack.sdk.UserGroupInventory", "org.zstack.header.identity.UserGroupInventory");
 			put("org.zstack.sdk.UserInventory", "org.zstack.header.identity.UserInventory");
 			put("org.zstack.sdk.UserTagInventory", "org.zstack.header.tag.UserTagInventory");
@@ -379,6 +395,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VRouterRouteEntryType", "org.zstack.vrouterRoute.VRouterRouteEntryType");
 			put("org.zstack.sdk.VRouterRouteTableInventory", "org.zstack.vrouterRoute.VRouterRouteTableInventory");
 			put("org.zstack.sdk.VipInventory", "org.zstack.network.service.vip.VipInventory");
+			put("org.zstack.sdk.VipPortRangeInventory", "org.zstack.network.service.virtualrouter.APIGetVipUsedPortsReply$VipPortRangeInventory");
+			put("org.zstack.sdk.VipQosInventory", "org.zstack.header.vipQos.VipQosInventory");
 			put("org.zstack.sdk.VirtualBorderRouterInventory", "org.zstack.header.aliyun.network.connection.VirtualBorderRouterInventory");
 			put("org.zstack.sdk.VirtualRouterInterfaceInventory", "org.zstack.header.aliyun.network.connection.VirtualRouterInterfaceInventory");
 			put("org.zstack.sdk.VirtualRouterOfferingInventory", "org.zstack.network.service.virtualrouter.VirtualRouterOfferingInventory");

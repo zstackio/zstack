@@ -32,7 +32,9 @@ import org.zstack.utils.logging.CLogger;
 * 3. create a snapshot 5
 *
 * confirm merge is executed before deleting snapshot 4 and snapshot 5 create success
+* Covered by CreateSnapshotOnDataVolumeCase
 */
+@Deprecated
 public class TestSnapshotOnKvm36 {
     CLogger logger = Utils.getLogger(TestSnapshotOnKvm36.class);
     Deployer deployer;

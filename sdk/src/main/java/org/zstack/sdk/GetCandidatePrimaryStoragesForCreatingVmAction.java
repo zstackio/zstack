@@ -8,6 +8,8 @@ public class GetCandidatePrimaryStoragesForCreatingVmAction extends AbstractActi
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
+    private static final HashMap<String, Parameter> nonAPIParameterMap = new HashMap<>();
+
     public static class Result {
         public ErrorCode error;
         public org.zstack.sdk.GetCandidatePrimaryStoragesForCreatingVmResult value;
@@ -25,6 +27,9 @@ public class GetCandidatePrimaryStoragesForCreatingVmAction extends AbstractActi
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String imageUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String backupStorageUuid;
 
     @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List l3NetworkUuids;
@@ -85,7 +90,15 @@ public class GetCandidatePrimaryStoragesForCreatingVmAction extends AbstractActi
         return parameterMap;
     }
 
+<<<<<<< HEAD
     protected RestInfo getRestInfo() {
+=======
+    Map<String, Parameter> getNonAPIParameterMap() {
+        return nonAPIParameterMap;
+    }
+
+    RestInfo getRestInfo() {
+>>>>>>> upstream/master
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/vm-instances/candidate-storages";

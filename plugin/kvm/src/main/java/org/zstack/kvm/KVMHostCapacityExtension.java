@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.allocator.UnableToReserveHostCapacityException;
 import org.zstack.header.cluster.ReportHostCapacityMessage;
@@ -29,46 +30,49 @@ public class KVMHostCapacityExtension implements KVMHostConnectExtensionPoint, H
     private CloudBus bus;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private ApiTimeoutManager timeoutMgr;
 
     private void reportCapacity(HostInventory host, Completion completion) {
-        KVMHostSyncHttpCallMsg msg = new KVMHostSyncHttpCallMsg();
+        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setHostUuid(host.getUuid());
+        msg.setCommandTimeout(timeoutMgr.getTimeout(HostCapacityCmd.class, "5m"));
         msg.setPath(KVMConstant.KVM_HOST_CAPACITY_PATH);
         msg.setNoStatusCheck(true);
         msg.setCommand(new HostCapacityCmd());
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
-        MessageReply reply = bus.call(msg);
-        if (!reply.isSuccess()) {
-            throw new OperationFailureException(reply.getError());
-        }
-
-        KVMHostSyncHttpCallReply r = reply.castReply();
-        HostCapacityResponse rsp = r.toResponse(HostCapacityResponse.class);
-        if (!rsp.isSuccess()) {
-            throw new OperationFailureException(operr(rsp.getError()));
-        }
-
-        if (rsp.getTotalMemory() < SizeUtils.sizeStringToBytes(KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.value())) {
-            throw new UnableToReserveHostCapacityException(String.format("The host[uuid:%s]'s memory capacity[%s] is lower than the minimal required capacity[%s]",
-                    host.getUuid(), rsp.getTotalMemory(), SizeUtils.sizeStringToBytes(KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.value())));
-        }
-
-        ReportHostCapacityMessage rmsg = new ReportHostCapacityMessage();
-        rmsg.setHostUuid(host.getUuid());
-        rmsg.setCpuNum((int) rsp.getCpuNum());
-        rmsg.setUsedCpu(rsp.getUsedCpu());
-        rmsg.setTotalMemory(rsp.getTotalMemory());
-        rmsg.setUsedMemory(rsp.getUsedMemory());
-        rmsg.setCpuSockets(rsp.getCpuSockets());
-        rmsg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
-        bus.send(rmsg, new CloudBusCallBack(completion) {
+        bus.send(msg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    completion.fail(reply.getError());
-                } else {
-                    completion.success();
+                KVMHostAsyncHttpCallReply r = reply.castReply();
+                HostCapacityResponse rsp = r.toResponse(HostCapacityResponse.class);
+                if (!rsp.isSuccess()) {
+                    throw new OperationFailureException(operr("operation error, because:%s", rsp.getError()));
                 }
+
+                if (rsp.getTotalMemory() < SizeUtils.sizeStringToBytes(KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.value())) {
+                    throw new UnableToReserveHostCapacityException(String.format("The host[uuid:%s]'s memory capacity[%s] is lower than the minimal required capacity[%s]",
+                        host.getUuid(), rsp.getTotalMemory(), SizeUtils.sizeStringToBytes(KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.value())));
+                }
+
+                ReportHostCapacityMessage rmsg = new ReportHostCapacityMessage();
+                rmsg.setHostUuid(host.getUuid());
+                rmsg.setCpuNum((int) rsp.getCpuNum());
+                rmsg.setUsedCpu(rsp.getUsedCpu());
+                rmsg.setTotalMemory(rsp.getTotalMemory());
+                rmsg.setUsedMemory(rsp.getUsedMemory());
+                rmsg.setCpuSockets(rsp.getCpuSockets());
+                rmsg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
+                bus.send(rmsg, new CloudBusCallBack(completion) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            completion.fail(reply.getError());
+                        } else {
+                            completion.success();
+                        }
+                    }
+                });
             }
         });
     }

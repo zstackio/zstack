@@ -64,4 +64,17 @@
             <zstack:extension interface="org.zstack.header.Component"/>
         </zstack:plugin>
     </bean>
+
+    <bean id="InstantiateVolumeForVmChangeImageExtension"
+          class="org.zstack.storage.volume.InstantiateVolumeForVmChangeImageExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.vm.ChangeVmImageExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="DownloadIsoForVmChangeImageExtension" class="org.zstack.storage.volume.DownloadIsoForVmChangeImageExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.vm.ChangeVmImageExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
 </beans>

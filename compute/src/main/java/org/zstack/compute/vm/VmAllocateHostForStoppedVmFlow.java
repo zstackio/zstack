@@ -6,22 +6,24 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.UpdateQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.allocator.*;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_;
 import org.zstack.header.storage.primary.PrimaryStorageHostStatus;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
@@ -50,6 +52,9 @@ public class VmAllocateHostForStoppedVmFlow implements Flow {
         msg.setCpuCapacity(spec.getVmInventory().getCpuNum());
         msg.setMemoryCapacity(spec.getVmInventory().getMemorySize());
         msg.setVmOperation(spec.getCurrentVmOperation().toString());
+        if (spec.getImageSpec() != null) {
+            msg.setImage(spec.getImageSpec().getInventory());
+        }
         if ((spec.getRequiredClusterUuid() != null &&
                 !spec.getRequiredClusterUuid().equals(msg.getVmInstance().getClusterUuid()))
                 || spec.getRequiredHostUuid() != null) {
@@ -68,29 +73,36 @@ public class VmAllocateHostForStoppedVmFlow implements Flow {
         msg.setRequiredPrimaryStorageUuid(spec.getVmInventory().getRootVolume().getPrimaryStorageUuid());
         msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
         msg.setAvoidHostUuids(getAvoidHost(spec));
+        msg.setSoftAvoidHostUuids(spec.getSoftAvoidHostUuids());
         amsg = msg;
 
         bus.send(amsg, new CloudBusCallBack(chain) {
             @Override
             public void run(MessageReply reply) {
-                if (reply.isSuccess()) {
-                    AllocateHostReply areply = (AllocateHostReply) reply;
-                    spec.setDestHost(areply.getHost());
-                    String oldHostUuid = spec.getVmInventory().getHostUuid() == null ?
-                            spec.getVmInventory().getLastHostUuid() : spec.getVmInventory().getHostUuid();
-
-                    UpdateQuery q = UpdateQuery.New(VmInstanceVO.class);
-                    q.condAnd(VmInstanceVO_.uuid, SimpleQuery.Op.EQ, spec.getVmInventory().getUuid());
-                    q.set(VmInstanceVO_.lastHostUuid, oldHostUuid);
-                    q.set(VmInstanceVO_.hostUuid, areply.getHost().getUuid());
-                    q.set(VmInstanceVO_.clusterUuid, areply.getHost().getClusterUuid());
-                    q.update();
-
-                    data.put(SUCCESS, true);
-                    chain.next();
-                } else {
+                if (!reply.isSuccess()) {
                     chain.fail(reply.getError());
+                    return;
                 }
+
+                AllocateHostReply areply = (AllocateHostReply) reply;
+                spec.setDestHost(areply.getHost());
+
+                new SQLBatch(){
+                    @Override
+                    protected void scripts() {
+                        String oldHostUuid = spec.getVmInventory().getHostUuid() == null ?
+                                spec.getVmInventory().getLastHostUuid() : spec.getVmInventory().getHostUuid();
+                        oldHostUuid = q(HostVO.class).eq(HostVO_.uuid, oldHostUuid).isExists() ? oldHostUuid : null;
+                        sql(VmInstanceVO.class).eq(VmInstanceVO_.uuid, spec.getVmInventory().getUuid())
+                                .set(VmInstanceVO_.lastHostUuid, oldHostUuid)
+                                .set(VmInstanceVO_.hostUuid, areply.getHost().getUuid())
+                                .set(VmInstanceVO_.clusterUuid, areply.getHost().getClusterUuid())
+                                .update();
+                    }
+                }.execute();
+
+                data.put(SUCCESS, true);
+                chain.next();
             }
         });
     }

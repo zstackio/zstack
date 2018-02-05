@@ -10,12 +10,14 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginExtension;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -30,7 +32,12 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.quota.QuotaConstant;
+import org.zstack.header.vm.ReleaseNetworkServiceOnDetachingNicExtensionPoint;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmNicInventory;
 import org.zstack.identity.AccountManager;
+import org.zstack.identity.QuotaGlobalConfig;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.DebugUtils;
@@ -41,12 +48,15 @@ import javax.persistence.TypedQuery;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
  */
-public class VipManagerImpl extends AbstractService implements VipManager, ReportQuotaExtensionPoint {
+public class VipManagerImpl extends AbstractService implements VipManager, ReportQuotaExtensionPoint,
+        ReleaseNetworkServiceOnDetachingNicExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VipManagerImpl.class);
 
     @Autowired
@@ -108,7 +118,7 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
     public VipReleaseExtensionPoint getVipReleaseExtensionPoint(String use) {
         VipReleaseExtensionPoint extp = vipReleaseExts.get(use);
         if (extp == null) {
-            throw new CloudRuntimeException(String.format("cannot VipReleaseExtensionPoint for use[%s]", use));
+            throw new CloudRuntimeException(String.format("cannot get VipReleaseExtensionPoint for use[%s]", use));
         }
 
         return extp;
@@ -327,7 +337,7 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
             public List<Quota.QuotaUsage> getQuotaUsageByAccount(String accountUuid) {
                 Quota.QuotaUsage usage = new Quota.QuotaUsage();
                 usage.setUsed(getUsedVip(accountUuid));
-                usage.setName(VipConstant.QUOTA_VIP_NUM);
+                usage.setName(QuotaConstant.VIP_NUM);
                 return list(usage);
             }
 
@@ -344,13 +354,13 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
             }
 
             private void check(APICreateVipMsg msg, Map<String, QuotaPair> pairs) {
-                long vipNum = pairs.get(VipConstant.QUOTA_VIP_NUM).getValue();
+                long vipNum = pairs.get(QuotaConstant.VIP_NUM).getValue();
                 long vn = getUsedVip(msg.getSession().getAccountUuid());
 
                 if (vn + 1 > vipNum) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                             String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    msg.getSession().getAccountUuid(), VipConstant.QUOTA_VIP_NUM, vipNum)
+                                    msg.getSession().getAccountUuid(), QuotaConstant.VIP_NUM, vipNum)
                     ));
                 }
             }
@@ -361,10 +371,38 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
         quota.setOperator(checker);
 
         QuotaPair p = new QuotaPair();
-        p.setName(VipConstant.QUOTA_VIP_NUM);
-        p.setValue(QuotaConstant.QUOTA_VIP_NUM);
+        p.setName(QuotaConstant.VIP_NUM);
+        p.setValue(QuotaGlobalConfig.VIP_NUM.defaultValue(Long.class));
         quota.addPair(p);
 
         return list(quota);
+    }
+
+    @Override
+    public void releaseResourceOnDetachingNic(VmInstanceSpec spec, VmNicInventory nic, NoErrorCompletion completion) {
+        // Todo(WeiW): Need to check router rather than not only user vm
+        if (spec.getVmInventory().getType().equals(VmInstanceConstant.USER_VM_TYPE)) {
+            completion.done();
+            return;
+        }
+
+        logger.debug(String.format("check detaching nic[uuid:%s] in peer l3 of vip", nic.getUuid()));
+        List<VipPeerL3NetworkRefVO> refVOS = Q.New(VipPeerL3NetworkRefVO.class).eq(VipPeerL3NetworkRefVO_.l3NetworkUuid,
+                nic.getL3NetworkUuid()).list();
+        if (refVOS == null || refVOS.isEmpty()) {
+            completion.done();
+            return;
+        }
+
+        Set<String> refUuids = refVOS.stream().map(r -> r.getVipUuid()).collect(Collectors.toSet());
+        logger.debug(String.format("release peer l3[uuid:%s] from vips[uuid:%s] for detaching nic[uuid:%s]",
+                nic.getL3NetworkUuid(), refUuids, nic.getUuid()));
+        List<VipVO> vipVOS = Q.New(VipVO.class).in(VipVO_.uuid, refUuids).list();
+        for (VipVO vipVO : vipVOS) {
+            VipBase v = new VipBase(vipVO);
+            v.deletePeerL3NetworkUuid(nic.getL3NetworkUuid());
+        }
+
+        completion.done();
     }
 }

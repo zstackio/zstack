@@ -78,6 +78,6 @@ public class TestVirtualRouterEip1 {
         Assert.assertEquals(EipConstant.EIP_NETWORK_SERVICE_TYPE, vipvo.getUseFor());
         Assert.assertEquals(VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE, vipvo.getServiceProvider());
         VmNicInventory nic = vm.getVmNics().get(0);
-        Assert.assertEquals(nic.getL3NetworkUuid(), vipvo.getPeerL3NetworkUuid());
+        Assert.assertTrue(vipvo.getPeerL3NetworkUuids().contains(nic.getL3NetworkUuid()));
     }
 }

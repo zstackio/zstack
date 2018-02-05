@@ -12,6 +12,11 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.retry.Retry;
+import org.zstack.core.retry.RetryCondition;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.*;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
@@ -65,6 +70,8 @@ public class L3BasicNetwork implements L3Network {
     protected TagManager tagMgr;
     @Autowired
     protected PluginRegistry pluginRgty;
+    @Autowired
+    private ThreadFacade thdf;
 
     private L3NetworkVO self;
 
@@ -78,6 +85,10 @@ public class L3BasicNetwork implements L3Network {
 
     protected L3NetworkInventory getSelfInventory() {
         return L3NetworkInventory.valueOf(getSelf());
+    }
+
+    private String getSyncId() {
+        return String.format("operate-l3-%s", self.getUuid());
     }
 
     @Override
@@ -169,39 +180,56 @@ public class L3BasicNetwork implements L3Network {
     }
 
     private void handle(IpRangeDeletionMsg msg) {
-        IpRangeDeletionReply reply = new IpRangeDeletionReply();
-
-        List<IpRangeDeletionExtensionPoint> exts = pluginRgty.getExtensionList(IpRangeDeletionExtensionPoint.class);
-        IpRangeVO iprvo = dbf.findByUuid(msg.getIpRangeUuid(), IpRangeVO.class);
-        if (iprvo == null) {
-            bus.reply(msg, reply);
-            return;
-        }
-
-        final IpRangeInventory inv = IpRangeInventory.valueOf(iprvo);
-
-        for (IpRangeDeletionExtensionPoint ext : exts) {
-            ext.preDeleteIpRange(inv);
-        }
-
-        CollectionUtils.safeForEach(exts, new ForEachFunction<IpRangeDeletionExtensionPoint>() {
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
-            public void run(IpRangeDeletionExtensionPoint arg) {
-                arg.beforeDeleteIpRange(inv);
+            public String getSyncSignature() {
+                return getSyncId();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                IpRangeDeletionReply reply = new IpRangeDeletionReply();
+
+                List<IpRangeDeletionExtensionPoint> exts = pluginRgty.getExtensionList(IpRangeDeletionExtensionPoint.class);
+                IpRangeVO iprvo = dbf.findByUuid(msg.getIpRangeUuid(), IpRangeVO.class);
+                if (iprvo == null) {
+                    bus.reply(msg, reply);
+                    return;
+                }
+
+                final IpRangeInventory inv = IpRangeInventory.valueOf(iprvo);
+
+                for (IpRangeDeletionExtensionPoint ext : exts) {
+                    ext.preDeleteIpRange(inv);
+                }
+
+                CollectionUtils.safeForEach(exts, new ForEachFunction<IpRangeDeletionExtensionPoint>() {
+                    @Override
+                    public void run(IpRangeDeletionExtensionPoint arg) {
+                        arg.beforeDeleteIpRange(inv);
+                    }
+                });
+
+
+                dbf.remove(iprvo);
+
+                CollectionUtils.safeForEach(exts, new ForEachFunction<IpRangeDeletionExtensionPoint>() {
+                    @Override
+                    public void run(IpRangeDeletionExtensionPoint arg) {
+                        arg.afterDeleteIpRange(inv);
+                    }
+                });
+
+                bus.reply(msg, reply);
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return String.format("ip-range-%s-deletion", msg.getIpRangeUuid());
             }
         });
 
-
-        dbf.remove(iprvo);
-
-        CollectionUtils.safeForEach(exts, new ForEachFunction<IpRangeDeletionExtensionPoint>() {
-            @Override
-            public void run(IpRangeDeletionExtensionPoint arg) {
-                arg.afterDeleteIpRange(inv);
-            }
-        });
-
-        bus.reply(msg, reply);
     }
 
     private void handle(L3NetworkDeletionMsg msg) {
@@ -216,7 +244,16 @@ public class L3BasicNetwork implements L3Network {
 
     private void handle(ReturnIpMsg msg) {
         ReturnIpReply reply = new ReturnIpReply();
-        SQL.New(UsedIpVO.class).eq(UsedIpVO_.uuid, msg.getUsedIpUuid()).hardDelete();
+        new Retry<Void>() {
+            String __name__ = String.format("return-ip-%s-for-l3-%s", msg.getUsedIpUuid(), msg.getL3NetworkUuid());
+
+            @Override
+            @RetryCondition(times = 6)
+            protected Void call() {
+                SQL.New(UsedIpVO.class).eq(UsedIpVO_.uuid, msg.getUsedIpUuid()).hardDelete();
+                return null;
+            }
+        }.run();
         logger.debug(String.format("Successfully released used ip[%s]", msg.getUsedIpUuid()));
         bus.reply(msg, reply);
     }
@@ -502,6 +539,23 @@ public class L3BasicNetwork implements L3Network {
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "remove-dns-from-db";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        SimpleQuery<L3NetworkDnsVO> q = dbf.createQuery(L3NetworkDnsVO.class);
+                        q.add(L3NetworkDnsVO_.dns, Op.EQ, msg.getDns());
+                        q.add(L3NetworkDnsVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
+                        L3NetworkDnsVO dns = q.find();
+                        if (dns != null) {
+                            //TODO: create extension points
+                            dbf.remove(dns);
+                        }
+                        trigger.next();
+                    }
+                });
+
                 if (!self.getNetworkServices().isEmpty()) {
                     flow(new NoRollbackFlow() {
                         String __name__ = "remove-dns-from-backend";
@@ -525,23 +579,6 @@ public class L3BasicNetwork implements L3Network {
                         }
                     });
                 }
-
-                flow(new NoRollbackFlow() {
-                    String __name__ = "remove-dns-from-db";
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        SimpleQuery<L3NetworkDnsVO> q = dbf.createQuery(L3NetworkDnsVO.class);
-                        q.add(L3NetworkDnsVO_.dns, Op.EQ, msg.getDns());
-                        q.add(L3NetworkDnsVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
-                        L3NetworkDnsVO dns = q.find();
-                        if (dns != null) {
-                            //TODO: create extension points
-                            dbf.remove(dns);
-                        }
-                        trigger.next();
-                    }
-                });
 
                 done(new FlowDoneHandler(msg) {
                     @Override
@@ -661,6 +698,8 @@ public class L3BasicNetwork implements L3Network {
 
     private void handle(APIDeleteIpRangeMsg msg) {
         IpRangeVO vo = dbf.findByUuid(msg.getUuid(), IpRangeVO.class);
+        self = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
+
         final APIDeleteIpRangeEvent evt = new APIDeleteIpRangeEvent(msg.getId());
         final String issuer = IpRangeVO.class.getSimpleName();
         final List<IpRangeInventory> ctx = IpRangeInventory.valueOf(Arrays.asList(vo));

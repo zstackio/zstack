@@ -8,6 +8,8 @@ public class CreateL2VlanNetworkAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
+    private static final HashMap<String, Parameter> nonAPIParameterMap = new HashMap<>();
+
     public static class Result {
         public ErrorCode error;
         public org.zstack.sdk.CreateL2VlanNetworkResult value;
@@ -53,9 +55,11 @@ public class CreateL2VlanNetworkAction extends AbstractAction {
     @Param(required = true)
     public String sessionId;
 
-    public long timeout;
-    
-    public long pollingInterval;
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -89,7 +93,15 @@ public class CreateL2VlanNetworkAction extends AbstractAction {
         return parameterMap;
     }
 
+<<<<<<< HEAD
     protected RestInfo getRestInfo() {
+=======
+    Map<String, Parameter> getNonAPIParameterMap() {
+        return nonAPIParameterMap;
+    }
+
+    RestInfo getRestInfo() {
+>>>>>>> upstream/master
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/l2-networks/vlan";

@@ -1,6 +1,7 @@
 package org.zstack.header.storage.primary;
 
 import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.utils.CollectionDSL;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,7 +11,8 @@ public class AllocatePrimaryStorageMsg extends NeedReplyMessage {
     private List<String> requiredClusterUuids;
     private String requiredHostUuid;
     private String requiredPrimaryStorageUuid;
-    private List<String> requiredPrimaryStorageTypes;
+    private List<String> possiblePrimaryStorageTypes;
+    private List<String> excludePrimaryStorageTypes;
 
     private long size;
     private boolean dryRun;
@@ -24,12 +26,27 @@ public class AllocatePrimaryStorageMsg extends NeedReplyMessage {
     private boolean noOverProvisioning;
     private String purpose;
 
-    public List<String> getRequiredPrimaryStorageTypes() {
-        return requiredPrimaryStorageTypes;
+    public List<String> getExcludePrimaryStorageTypes() {
+        return excludePrimaryStorageTypes;
     }
 
-    public void setRequiredPrimaryStorageTypes(List<String> requiredPrimaryStorageTypes) {
-        this.requiredPrimaryStorageTypes = requiredPrimaryStorageTypes;
+    public void addExcludePrimaryStorageTypes(List<String> excludePrimaryStorageTypes) {
+        if (this.excludePrimaryStorageTypes == null) {
+            this.excludePrimaryStorageTypes = CollectionDSL.list();
+        }
+        this.excludePrimaryStorageTypes.addAll(excludePrimaryStorageTypes);
+    }
+
+    public void setExcludePrimaryStorageTypes(List<String> excludePrimaryStorageTypes) {
+        this.excludePrimaryStorageTypes = excludePrimaryStorageTypes;
+    }
+
+    public List<String> getPossiblePrimaryStorageTypes() {
+        return possiblePrimaryStorageTypes;
+    }
+
+    public void setPossiblePrimaryStorageTypes(List<String> possiblePrimaryStorageTypes) {
+        this.possiblePrimaryStorageTypes = possiblePrimaryStorageTypes;
     }
 
     public String getPurpose() {

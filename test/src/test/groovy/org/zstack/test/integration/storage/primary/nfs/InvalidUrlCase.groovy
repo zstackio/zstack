@@ -287,24 +287,9 @@ class InvalidUrlCase extends SubCase {
             return rsp
         }
 
-        boolean success = false
-        bean(EventFacade.class).onLocal(HostCanonicalEvents.HOST_STATUS_CHANGED_PATH, new EventCallback() {
-            @Override
-            protected void run(Map tokens, Object data) {
-                def evt = (HostCanonicalEvents.HostStatusChangedData)data
-                if(evt.newStatus == HostStatus.Disconnected.toString() && evt.oldStatus == HostStatus.Connecting.toString()){
-                    success = true
-                }
-            }
-        })
-
         ReconnectPrimaryStorageAction a = new ReconnectPrimaryStorageAction()
         a.uuid = psInv.uuid
         a.sessionId = currentEnvSpec.session.uuid
         assert a.call().error != null
-
-        retryInSecs(){
-            assert success
-        }
     }
 }

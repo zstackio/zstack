@@ -4,7 +4,7 @@
     <parent>
         <artifactId>zstack</artifactId>
         <groupId>org.zstack</groupId>
-        <version>2.2.0</version>
+        <version>2.3.0</version>
         <relativePath>..</relativePath>
     </parent>
     <artifactId>build</artifactId>
@@ -43,6 +43,7 @@
                                         <exclude>zstack.xml</exclude>
                                         <exclude>persistence.xml</exclude>
                                         <exclude>springConfigXml/localStorage.xml</exclude>
+                                        <exclude>springConfigXml/HostAllocatorManager.xml</exclude>
                                         <exclude>springConfigXml/NfsPrimaryStorage.xml</exclude>
                                         <exclude>springConfigXml/sharedMountPointPrimaryStorage.xml</exclude>
                                         <exclude>springConfigXml/ceph.xml</exclude>
@@ -236,7 +237,11 @@
                     <artifactId>vxlan</artifactId>
                     <version>${project.version}</version>
                 </dependency>
-
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>longjob</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
                     <artifactId>mevoco</artifactId>
@@ -478,6 +483,11 @@
         <dependency>
             <groupId>org.zstack</groupId>
             <artifactId>vxlan</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>longjob</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

@@ -155,6 +155,7 @@ class MigrateVmToSameHostCase extends SubCase {
     void test() {
         env.create {
             testMigrateVmAfterMaintainHost()
+            testGetMigrationVm()
         }
     }
 
@@ -206,5 +207,30 @@ class MigrateVmToSameHostCase extends SubCase {
 
         assert ret.error != null
         assert ret2.error != null
+    }
+
+    void testGetMigrationVm(){
+        VmInstanceInventory vm = env.inventoryByName("vm1") as VmInstanceInventory
+        HostInventory toDeleteHost1 = env.inventoryByName("ceph-mon") as HostInventory
+        HostInventory toDeleteHost2 = env.inventoryByName("kvm1") as HostInventory
+        List<HostInventory> hosts = getVmMigrationCandidateHosts {
+            vmInstanceUuid = vm.uuid
+        } as List<HostInventory>
+
+        assert hosts.size() == 2
+
+        deleteHost {
+            uuid = toDeleteHost1.uuid
+        }
+
+        deleteHost {
+            uuid = toDeleteHost2.uuid
+        }
+
+        hosts = getVmMigrationCandidateHosts {
+            vmInstanceUuid = vm.uuid
+        } as List<HostInventory>
+
+        assert hosts.size() == 0
     }
 }

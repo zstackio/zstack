@@ -3,6 +3,9 @@ package org.zstack.network.service.vip;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+
 /**
  *@apiResult
  * api event for message :ref:`APICreateVipMsg`
@@ -62,7 +65,7 @@ public class APICreateVipEvent extends APIEvent {
         inventory.setNetmask("255.255.0.0");
         inventory.setIp("192.168.0.1");
         inventory.setIpRangeUuid(uuid());
-        inventory.setPeerL3NetworkUuid(uuid());
+        inventory.setPeerL3NetworkUuids(Arrays.asList(uuid()));
         inventory.setState(VipState.Enabled.toString());
 
         event.setInventory(inventory);

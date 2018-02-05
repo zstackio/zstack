@@ -29,6 +29,7 @@
             <zstack:extension interface="org.zstack.header.Component" />
             <zstack:extension interface="org.zstack.header.Service" />
             <zstack:extension interface="org.zstack.header.identity.ReportQuotaExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.vm.ReleaseNetworkServiceOnDetachingNicExtensionPoint" />
         </zstack:plugin>
 
 
@@ -39,4 +40,5 @@
             </list>
         </property>
     </bean>
+
 </beans>

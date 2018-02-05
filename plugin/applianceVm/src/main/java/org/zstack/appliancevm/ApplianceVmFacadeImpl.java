@@ -13,12 +13,14 @@ import org.zstack.core.componentloader.PluginExtension;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.job.JobQueueFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
+import org.zstack.header.allocator.SetApplianceVmSystemTags;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.Flow;
@@ -28,6 +30,11 @@ import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.network.l2.L2NetworkGetVniExtensionPoint;
+import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.network.l2.L2NetworkVO_;
+import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.vm.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
@@ -66,6 +73,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
     private List<String> createApplianceVmWorkFlow;
     private FlowChainBuilder createApplianceVmWorkFlowBuilder;
     private Map<String, ApplianceVmBootstrapFlowFactory> bootstrapInfoFlowFactories = new HashMap<String, ApplianceVmBootstrapFlowFactory>();
+    private Map<String, L2NetworkGetVniExtensionPoint> l2NetworkGetVniExtensionPointMap = new HashMap<>();
 
     private String OWNER = String.format("ApplianceVm.%s", Platform.getManagementServerId());
 
@@ -193,6 +201,15 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
 
             bootstrapInfoFlowFactories.put(extp.getHypervisorTypeForApplianceVmBootstrapFlow().toString(), extp);
         }
+        for (L2NetworkGetVniExtensionPoint ext : pluginRgty.getExtensionList(L2NetworkGetVniExtensionPoint.class)) {
+            L2NetworkGetVniExtensionPoint old = l2NetworkGetVniExtensionPointMap.get(ext.getL2NetworkVniType());
+            if (old != null) {
+                throw new CloudRuntimeException(String.format("two extensions[%s, %s] declare L2NetworkGetVniExtensionPoint for l2 netwoork type[%s]", old.getClass().getName(), ext.getClass().getName(), ext.getL2NetworkVniType()));
+            }
+
+            l2NetworkGetVniExtensionPointMap.put(ext.getL2NetworkVniType(), ext);
+            logger.debug(String.format("add new l2NetworkGetVniExtensionPoint, %s: %s", ext.getL2NetworkVniType(), ext.getClass().getCanonicalName()));
+        }
     }
 
     private void deployAnsible() {
@@ -264,6 +281,22 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
         if (mgmtNic.getL3NetworkUuid().equals(defaultL3Uuid)) {
             mto.setDefaultRoute(true);
         }
+
+        L3NetworkVO l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, mgmtNic.getL3NetworkUuid()).find();
+        L2NetworkVO l2NetworkVO = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, l3NetworkVO.getL2NetworkUuid()).find();
+
+        mto.setCategory(l3NetworkVO.getCategory().toString());
+        mto.setL2type(l2NetworkVO.getType());
+        mto.setPhysicalInterface(l2NetworkVO.getPhysicalInterface());
+        if (l2NetworkGetVniExtensionPointMap == null || l2NetworkGetVniExtensionPointMap.isEmpty() ||
+                l2NetworkGetVniExtensionPointMap.get(l2NetworkVO.getType()) == null) {
+            logger.debug("l2NetworkGetVniExtensionPointMap is null. skip to get vni");
+        } else {
+            mto.setVni(l2NetworkGetVniExtensionPointMap
+                    .get(l2NetworkVO.getType())
+                    .getL2NetworkVni(l2NetworkVO.getUuid()));
+        }
+
         ret.put(ApplianceVmConstant.BootstrapParams.managementNic.toString(), mto);
 
         List<ApplianceVmNicTO> extraTos = new ArrayList<ApplianceVmNicTO>();
@@ -284,6 +317,14 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
             ApplianceVmNicTO t = new ApplianceVmNicTO(defaultRouteNic);
             t.setDeviceName(String.format("eth%s", deviceId));
             t.setDefaultRoute(true);
+
+            l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, defaultRouteNic.getL3NetworkUuid()).find();
+            l2NetworkVO = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, l3NetworkVO.getL2NetworkUuid()).find();
+
+            t.setCategory(l3NetworkVO.getCategory().toString());
+            t.setL2type(l2NetworkVO.getType());
+            t.setVni(l2NetworkGetVniExtensionPointMap.get(l2NetworkVO.getType()).getL2NetworkVni(l2NetworkVO.getUuid()));
+            t.setPhysicalInterface(l2NetworkVO.getPhysicalInterface());
             deviceId ++;
             extraTos.add(t);
             additionalNics = reduceNic(additionalNics, defaultRouteNic);
@@ -292,6 +333,13 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
         for (VmNicInventory nic : additionalNics) {
             ApplianceVmNicTO nto = new ApplianceVmNicTO(nic);
             nto.setDeviceName(String.format("eth%s", deviceId));
+            l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, nic.getL3NetworkUuid()).find();
+            l2NetworkVO = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, l3NetworkVO.getL2NetworkUuid()).find();
+
+            nto.setCategory(l3NetworkVO.getCategory().toString());
+            nto.setL2type(l2NetworkVO.getType());
+            nto.setVni(l2NetworkGetVniExtensionPointMap.get(l2NetworkVO.getType()).getL2NetworkVni(l2NetworkVO.getUuid()));
+            nto.setPhysicalInterface(l2NetworkVO.getPhysicalInterface());
             extraTos.add(nto);
             deviceId ++;
         }
@@ -299,6 +347,8 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
         String publicKey = asf.getPublicKey();
         ret.put(ApplianceVmConstant.BootstrapParams.publicKey.toString(), publicKey);
         ret.put(BootstrapParams.sshPort.toString(), sshPort);
+        ret.put(BootstrapParams.uuid.toString(), spec.getVmInventory().getUuid());
+        ret.put(BootstrapParams.managementNodeIp.toString(), Platform.getManagementServerIp());
 
         for (ApplianceVmPrepareBootstrapInfoExtensionPoint ext : pluginRgty.getExtensionList(ApplianceVmPrepareBootstrapInfoExtensionPoint.class)) {
             ext.applianceVmPrepareBootstrapInfo(spec, ret);
@@ -469,5 +519,11 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
     @Override
     public String getId() {
         return bus.makeLocalServiceId(ApplianceVmConstant.SERVICE_ID);
+    }
+
+    public void setApplianceVmSystemTags(String vmUuid, String applianceType) {
+        for (SetApplianceVmSystemTags ext : pluginRgty.getExtensionList(SetApplianceVmSystemTags.class)){
+            ext.setApplianceVmSystemTags(vmUuid, applianceType);
+        }
     }
 }

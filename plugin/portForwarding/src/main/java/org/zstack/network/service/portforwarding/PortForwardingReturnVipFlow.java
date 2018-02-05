@@ -23,8 +23,11 @@ public class PortForwardingReturnVipFlow extends NoRollbackFlow {
     @Override
     public void run(final FlowTrigger trigger, Map data) {
         VipInventory v = (VipInventory) data.get(VipConstant.Params.VIP.toString());
-
-        new Vip(v.getUuid()).release(new Completion(trigger) {
+        ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+        struct.setUseFor( PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
+        Vip vip = new Vip(v.getUuid());
+        vip.setStruct(struct);
+        vip.release(new Completion(trigger) {
             @Override
             public void success() {
                 trigger.next();

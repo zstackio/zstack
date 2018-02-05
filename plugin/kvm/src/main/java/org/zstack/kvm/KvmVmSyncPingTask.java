@@ -77,6 +77,7 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
                 if (ret.isSuccess()) {
                     Map<String, VmInstanceState> states = new HashMap<String, VmInstanceState>(ret.getStates().size());
                     for (Map.Entry<String, String> e : ret.getStates().entrySet()) {
+                        logger.debug(String.format("state from vmsync vm %s state %s", e.getKey(), e.getValue()));
                         VmInstanceState state = KvmVmState.valueOf(e.getValue()).toVmInstanceState();
                         if (state == VmInstanceState.Running || state == VmInstanceState.Paused || state == VmInstanceState.Unknown) {
                             states.put(e.getKey(), state);
@@ -122,7 +123,7 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
                         q.add(VmInstanceVO_.uuid, Op.EQ, cmd.vmUuid);
                         VmInstanceState stateInDb = q.findValue();
                         if (stateInDb == null) {
-                            N.New(HostVO.class, cmd.hostUuid).warn_("an anonymous VM[uuid:%s, state:%s] is detected on the host[uuid:%s]", cmd.hostUuid, state, cmd.hostUuid);
+                            N.New(HostVO.class, cmd.hostUuid).warn_("an anonymous VM[uuid:%s, state:%s] is detected on the host[uuid:%s]", cmd.vmUuid, state, cmd.hostUuid);
                             chain.next();
                             return;
                         }

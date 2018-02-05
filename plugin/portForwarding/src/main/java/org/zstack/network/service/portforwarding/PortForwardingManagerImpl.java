@@ -9,6 +9,9 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
@@ -40,12 +43,11 @@ import org.zstack.identity.QuotaUtil;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.vip.*;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.DebugUtils;
-import org.zstack.utils.Utils;
+import org.zstack.utils.*;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.identity.QuotaGlobalConfig;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -54,9 +56,10 @@ import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.VipUseForList.SNAT_NETWORK_SERVICE_TYPE;
 
 public class PortForwardingManagerImpl extends AbstractService implements PortForwardingManager,
-        VipReleaseExtensionPoint, AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint {
+        VipReleaseExtensionPoint, AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint, VipGetUsedPortRangeExtensionPoint, VipGetServiceReferencePoint {
     private static CLogger logger = Utils.getLogger(PortForwardingManagerImpl.class);
 
     @Autowired
@@ -75,6 +78,8 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
     private ErrorFacade errf;
     @Autowired
     private VipManager vipMgr;
+    @Autowired
+    private ThreadFacade thdf;
 
     private Map<String, PortForwardingBackend> backends = new HashMap<String, PortForwardingBackend>();
     private List<AttachPortForwardingRuleExtensionPoint> attachRuleExts = new ArrayList<AttachPortForwardingRuleExtensionPoint>();
@@ -127,12 +132,12 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         final PortForwardingRuleDeletionReply reply = new PortForwardingRuleDeletionReply();
         removePortforwardingRule(msg.getRuleUuids().iterator(), new Completion(msg) {
             @Override
-            public void success() {
+            public void success () {
                 bus.reply(msg, reply);
             }
 
             @Override
-            public void fail(ErrorCode errorCode) {
+            public void fail (ErrorCode errorCode){
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }
@@ -187,7 +192,15 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
             @Override
             protected List<VmNicInventory> scripts() {
-                Tuple t = sql("select l3.zoneUuid, vip.uuid, vip.peerL3NetworkUuid" +
+                String vmNicUuid = Q.New(PortForwardingRuleVO.class)
+                        .select(PortForwardingRuleVO_.vmNicUuid)
+                        .eq(PortForwardingRuleVO_.uuid, ruleUuid)
+                        .findValue();
+                if (vmNicUuid != null) {
+                    return new ArrayList<>();
+                }
+
+                Tuple t = sql("select l3.zoneUuid, vip.uuid" +
                         " from L3NetworkVO l3, VipVO vip, PortForwardingRuleVO rule" +
                         " where vip.l3NetworkUuid = l3.uuid" +
                         " and vip.uuid = rule.vipUuid" +
@@ -195,29 +208,69 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                         .param("ruleUuid", ruleUuid).find();
                 String zoneUuid = t.get(0, String.class);
                 String vipUuid = t.get(1, String.class);
-                String vipPeerL3Uuid = t.get(2, String.class);
+                List<VipPeerL3NetworkRefVO> vipPeerL3Refs = Q.New(VipPeerL3NetworkRefVO.class)
+                        .eq(VipPeerL3NetworkRefVO_.vipUuid, vipUuid)
+                        .list();
+                List<String> vipPeerL3Uuids = new ArrayList<>();
+                if (vipPeerL3Refs != null && !vipPeerL3Refs.isEmpty()) {
+                    vipPeerL3Uuids = vipPeerL3Refs.stream()
+                            .map(ref -> ref.getL3NetworkUuid())
+                            .collect(Collectors.toList());
+                }
+                VipVO vipVO = Q.New(VipVO.class).eq(VipVO_.uuid, vipUuid).find();
 
                 //0.check the l3 of vm nic has been attached to port forwarding service
-                List<String> l3Uuids;
-                if (vipPeerL3Uuid == null) {
-                    l3Uuids = sql("select l3.uuid" +
-                            " from L3NetworkVO l3, VipVO vip, NetworkServiceL3NetworkRefVO ref" +
-                            " where l3.system = :system" +
-                            " and l3.uuid != vip.l3NetworkUuid" +
-                            " and l3.uuid = ref.l3NetworkUuid" +
-                            " and ref.networkServiceType = :nsType" +
-                            " and l3.zoneUuid = :zoneUuid" +
-                            " and vip.uuid = :vipUuid")
-                            .param("vipUuid", vipUuid)
-                            .param("system", false)
-                            .param("zoneUuid", zoneUuid)
-                            .param("nsType", PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE).list();
+                List<String> l3Uuids = new ArrayList<>();
+                if (vipPeerL3Uuids == null || vipPeerL3Uuids.isEmpty()) {
+                    if (vipVO.getUseFor().contains(SNAT_NETWORK_SERVICE_TYPE)) {
+                        l3Uuids = sql("select l3.uuid" +
+                                " from L3NetworkVO l3, VipVO vip, NetworkServiceL3NetworkRefVO ref, " +
+                                " VmNicVO vmnic, VirtualRouterVipVO vrVip" +
+                                " where vip.uuid = :vipUuid" +
+                                " and vrVip.uuid = vip.uuid" +
+                                " and vmnic.vmInstanceUuid = vrVip.virtualRouterVmUuid" +
+                                " and vmnic.l3NetworkUuid = l3.uuid" +
+                                " and l3.uuid != vip.l3NetworkUuid" +
+                                " and l3.uuid = ref.l3NetworkUuid" +
+                                " and ref.networkServiceType = :nsType" +
+                                " and l3.zoneUuid = :zoneUuid")
+                                .param("vipUuid", vipUuid)
+                                .param("zoneUuid", zoneUuid)
+                                .param("nsType", PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE).list();
+                    } else {
+                        l3Uuids = sql("select l3.uuid" +
+                                " from L3NetworkVO l3, VipVO vip, NetworkServiceL3NetworkRefVO ref" +
+                                " where l3.system = :system" +
+                                " and l3.uuid != vip.l3NetworkUuid" +
+                                " and l3.uuid = ref.l3NetworkUuid" +
+                                " and ref.networkServiceType = :nsType" +
+                                " and l3.zoneUuid = :zoneUuid" +
+                                " and vip.uuid = :vipUuid")
+                                .param("vipUuid", vipUuid)
+                                .param("system", false)
+                                .param("zoneUuid", zoneUuid)
+                                .param("nsType", PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE).list();
+                    }
                 } else {
-                    l3Uuids = Collections.singletonList(vipPeerL3Uuid);
+                    VmNicVO rnic = Q.New(VmNicVO.class).in(VmNicVO_.l3NetworkUuid, vipPeerL3Uuids)
+                            .notNull(VmNicVO_.metaData).limit(1).find();
+                    if (rnic == null) {
+                        l3Uuids.addAll(vipPeerL3Uuids);
+                    } else {
+                        List<String> vrAttachedL3Uuids = Q.New(VmNicVO.class)
+                                .select(VmNicVO_.l3NetworkUuid)
+                                .eq(VmNicVO_.vmInstanceUuid, rnic.getVmInstanceUuid())
+                                .listValues();
+                        Set l3UuidSet = new HashSet<>(vipPeerL3Uuids);
+                        l3UuidSet.addAll(vrAttachedL3Uuids);
+                        l3Uuids.addAll(l3UuidSet);
+                    }
                 }
 
                 if (l3Uuids.isEmpty()) {
                     return new ArrayList<>();
+                } else {
+                    logger.debug(String.format("selected l3s for portforwarding[uuid:%s] attach: %s", ruleUuid, l3Uuids));
                 }
 
 
@@ -353,18 +406,29 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
         VmInstanceState vmState = getVmStateFromVmNicUuid(msg.getVmNicUuid());
         if (VmInstanceState.Running != vmState) {
-            //TODO: dirty fix that should be refixed in 1.9 https://github.com/zxwing/premium/issues/1496
-            SimpleQuery<VipVO> q = dbf.createQuery(VipVO.class);
-            q.add(VipVO_.uuid, Op.EQ, vo.getVipUuid());
-            VipVO vip = q.find();
-            if (vip.getPeerL3NetworkUuid() == null) {
-                vip.setPeerL3NetworkUuid(nicvo.getL3NetworkUuid());
-                dbf.update(vip);
-            }
+            Vip vip = new Vip(vo.getVipUuid());
+            ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+            struct.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
+            final NetworkServiceProviderType providerType =
+                    nwServiceMgr.getTypeOfNetworkServiceProviderForService(
+                            nicvo.getL3NetworkUuid(), NetworkServiceType.PortForwarding);
+            struct.setServiceProvider(providerType.toString());
+            struct.setPeerL3NetworkUuid(nicvo.getL3NetworkUuid());
+            vip.setStruct(struct);
+            vip.acquire(new Completion(msg) {
+                @Override
+                public void success() {
+                    evt.setInventory(inv);
+                    bus.publish(evt);
+                    return;
+                }
 
-            evt.setInventory(inv);
-            bus.publish(evt);
-            return;
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    evt.setError(errorCode);
+                    bus.publish(evt);
+                }
+            });
         }
 
         final PortForwardingStruct struct = makePortForwardingStruct(inv);
@@ -407,7 +471,11 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         final PortForwardingRuleInventory inv = PortForwardingRuleInventory.valueOf(vo);
 
         if (vo.getVmNicUuid() == null) {
-            new Vip(vo.getVipUuid()).release(false, new Completion(complete) {
+            ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+            struct.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
+            Vip v = new Vip(vo.getVipUuid());
+            v.setStruct(struct);
+            v.release(new Completion(complete) {
                 @Override
                 public void success() {
                     dbf.remove(vo);
@@ -459,7 +527,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                             @Override
                             public void success() {
                                 logger.debug(String.format("successfully detached %s", struct.toString()));
-                                dbf.remove(vo);
+
                                 trigger.next();
                             }
 
@@ -476,17 +544,15 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        if (Q.New(PortForwardingRuleVO.class).eq(PortForwardingRuleVO_.vipUuid, inv.getVipUuid())
-                                .notNull(PortForwardingRuleVO_.vmNicUuid).isExists()) {
-                            trigger.next();
-                            return;
-                        }
 
-                        // no port forwarding rules use this VIP, release it
-                        new Vip(vo.getVipUuid()).release(new Completion(trigger) {
+                        ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+                        struct.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
+                        Vip v = new Vip(inv.getVipUuid());
+                        v.setStruct(struct);
+                        v.release(new Completion(trigger){
                             @Override
                             public void success() {
-                                logger.debug(String.format("released VIP[uuid:%s] from port forwarding", vo.getVipUuid()));
+                                logger.debug(String.format("delete backend for VIP[uuid:%s] from port forwarding", vo.getVipUuid()));
                                 trigger.next();
                             }
 
@@ -503,6 +569,8 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                 done(new FlowDoneHandler(complete) {
                     @Override
                     public void handle(Map data) {
+                        dbf.remove(vo);
+
                         CollectionUtils.safeForEach(revokeRuleExts, new ForEachFunction<RevokePortForwardingRuleExtensionPoint>() {
                             @Override
                             public void run(RevokePortForwardingRuleExtensionPoint extp) {
@@ -534,17 +602,35 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
     }
 
     private void handle(APIDeletePortForwardingRuleMsg msg) {
-        final APIDeletePortForwardingRuleEvent evt = new APIDeletePortForwardingRuleEvent(msg.getId());
-        removePortforwardingRule(msg.getUuid(), new Completion(msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
-            public void success() {
-                bus.publish(evt);
+            public String getSyncSignature() {
+                String vipUuid = Q.New(PortForwardingRuleVO.class).eq(PortForwardingRuleVO_.uuid, msg.getUuid()).select(PortForwardingRuleVO_.vipUuid).findValue();
+                return String.format("api-delete-portforwardingrule-vip-%s", vipUuid);
             }
 
             @Override
-            public void fail(ErrorCode errorCode) {
-                evt.setError(errorCode);
-                bus.publish(evt);
+            public void run(SyncTaskChain chain) {
+                final APIDeletePortForwardingRuleEvent evt = new APIDeletePortForwardingRuleEvent(msg.getId());
+                removePortforwardingRule(msg.getUuid(), new Completion(msg) {
+                    @Override
+                    public void success() {
+                        bus.publish(evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setError(errorCode);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("api-delete-portforwardingrule-%s", msg.getUuid());
             }
         });
     }
@@ -586,11 +672,11 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
         VipInventory vipInventory = VipInventory.valueOf(vip);
         if (msg.getVmNicUuid() == null) {
-            Vip v = new Vip(vipInventory.getUuid());
-            v.setServiceProvider(vipInventory.getServiceProvider());
-            v.setPeerL3NetworkUuid(vipInventory.getPeerL3NetworkUuid());
-            v.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
-            v.acquire(false, new Completion(msg) {
+            ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+            struct.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
+            Vip v = new Vip(vo.getVipUuid());
+            v.setStruct(struct);
+            v.acquire(new Completion(msg) {
                 @Override
                 public void success() {
                     evt.setInventory(PortForwardingRuleInventory.valueOf(vo));
@@ -613,11 +699,11 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         q.add(VmInstanceVO_.uuid, Op.EQ, vmNic.getVmInstanceUuid());
         VmInstanceState vmState = q.findValue();
         if (VmInstanceState.Running != vmState) {
-            Vip v = new Vip(vipInventory.getUuid());
-            v.setServiceProvider(vipInventory.getServiceProvider());
-            v.setPeerL3NetworkUuid(vipInventory.getPeerL3NetworkUuid());
-            v.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
-            v.acquire(false, new Completion(msg) {
+            ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+            struct.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
+            Vip v = new Vip(vo.getVipUuid());
+            v.setStruct(struct);
+            v.acquire(new Completion(msg) {
                 @Override
                 public void success() {
                     evt.setInventory(PortForwardingRuleInventory.valueOf(vo));
@@ -803,10 +889,12 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
+                        ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
+                        vipStruct.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
+                        vipStruct.setServiceProvider(providerType);
+                        vipStruct.setPeerL3NetworkUuid(struct.getGuestL3Network().getUuid());
                         Vip vip = new Vip(struct.getVip().getUuid());
-                        vip.setPeerL3NetworkUuid(struct.getGuestL3Network().getUuid());
-                        vip.setServiceProvider(providerType);
-                        vip.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
+                        vip.setStruct(vipStruct);
                         vip.acquire(new Completion(trigger) {
                             @Override
                             public void success() {
@@ -823,12 +911,11 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        if (!s) {
-                            trigger.rollback();
-                            return;
-                        }
-
-                        new Vip(struct.getVip().getUuid()).release(new Completion(trigger) {
+                        ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
+                        vipStruct.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
+                        Vip v = new Vip(struct.getVip().getUuid());
+                        v.setStruct(vipStruct);
+                        v.release(new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.rollback();
@@ -899,34 +986,6 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                             @Override
                             public void success() {
                                 logger.debug(String.format("successfully detached %s", struct.toString()));
-                                trigger.next();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
-                            }
-                        });
-                    }
-                });
-
-                flow(new NoRollbackFlow() {
-                    String __name__ = "delete-vip-from-backend-if-no-rules";
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        SimpleQuery<PortForwardingRuleVO> q = dbf.createQuery(PortForwardingRuleVO.class);
-                        q.add(PortForwardingRuleVO_.vipUuid, Op.EQ, struct.getVip().getUuid());
-                        q.add(PortForwardingRuleVO_.vmNicUuid, Op.NOT_NULL);
-                        q.add(PortForwardingRuleVO_.uuid, Op.NOT_EQ, struct.getRule().getUuid());
-                        if (q.isExists()) {
-                            trigger.next();
-                            return;
-                        }
-
-                        new Vip(struct.getVip().getUuid()).deleteFromBackend(new Completion(trigger) {
-                            @Override
-                            public void success() {
                                 trigger.next();
                             }
 
@@ -1010,7 +1069,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
             @Override
             public List<Quota.QuotaUsage> getQuotaUsageByAccount(String accountUuid) {
                 Quota.QuotaUsage usage = new Quota.QuotaUsage();
-                usage.setName(PortForwardingConstant.QUOTA_PF_NUM);
+                usage.setName(QuotaConstant.PF_NUM);
                 usage.setUsed(getUsedPf(accountUuid));
                 return list(usage);
             }
@@ -1028,13 +1087,13 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
             }
 
             private void check(APICreatePortForwardingRuleMsg msg, Map<String, QuotaPair> pairs) {
-                long pfNum = pairs.get(PortForwardingConstant.QUOTA_PF_NUM).getValue();
+                long pfNum = pairs.get(QuotaConstant.PF_NUM).getValue();
                 long pfn = getUsedPf(msg.getSession().getAccountUuid());
 
                 if (pfn + 1 > pfNum) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                             String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    msg.getSession().getAccountUuid(), PortForwardingConstant.QUOTA_PF_NUM, pfNum)
+                                    msg.getSession().getAccountUuid(), QuotaConstant.PF_NUM, pfNum)
                     ));
                 }
             }
@@ -1045,9 +1104,38 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         quota.addMessageNeedValidation(APICreatePortForwardingRuleMsg.class);
 
         QuotaPair p = new QuotaPair();
-        p.setName(PortForwardingConstant.QUOTA_PF_NUM);
-        p.setValue(QuotaConstant.QUOTA_PF_NUM);
+        p.setName(QuotaConstant.PF_NUM);
+        p.setValue(QuotaGlobalConfig.PF_NUM.defaultValue(Long.class));
         quota.addPair(p);
         return list(quota);
+    }
+
+    @Override
+    public RangeSet getVipUsePortRange(String vipUuid, String protocol, VipUseForList useForList){
+        RangeSet portRangeList = new RangeSet();
+        List<RangeSet.Range> portRanges = new ArrayList<RangeSet.Range>();
+
+        if (protocol.toUpperCase().equals(PortForwardingProtocolType.UDP.toString()) || protocol.toUpperCase().equals(PortForwardingProtocolType.TCP.toString())) {
+            List<Tuple> pfPortList = Q.New(PortForwardingRuleVO.class).select(PortForwardingRuleVO_.vipPortStart, PortForwardingRuleVO_.vipPortEnd)
+                    .eq(PortForwardingRuleVO_.vipUuid, vipUuid).eq(PortForwardingRuleVO_.protocolType, PortForwardingProtocolType.valueOf(protocol.toUpperCase())).listTuple();
+            Iterator<Tuple> it = pfPortList.iterator();
+            while (it.hasNext()){
+                Tuple strRange = it.next();
+                int start = strRange.get(0, Integer.class);
+                int end = strRange.get(1, Integer.class);
+
+                RangeSet.Range range = new RangeSet.Range(start, end);
+                portRanges.add(range);
+            }
+        }
+
+        portRangeList.setRanges(portRanges);
+        return portRangeList;
+    }
+
+    @Override
+    public ServiceReference getServiceReference(String vipUuid) {
+        long count = Q.New(PortForwardingRuleVO.class).eq(PortForwardingRuleVO_.vipUuid, vipUuid).count();
+        return new VipGetServiceReferencePoint.ServiceReference(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE, count);
     }
 }

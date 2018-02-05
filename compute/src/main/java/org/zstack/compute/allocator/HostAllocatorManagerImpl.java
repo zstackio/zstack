@@ -38,14 +38,13 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.operr;
-
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.concurrent.Callable;
 
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
 public class HostAllocatorManagerImpl extends AbstractService implements HostAllocatorManager, VmAbnormalLifeCycleExtensionPoint {
@@ -316,16 +315,35 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
         }
 
         HostAllocatorStrategyFactory factory = getHostAllocatorStrategyFactory(HostAllocatorStrategyType.valueOf(allocatorStrategyType));
+        logger.debug("found strategy factory: " + factory.getClass().getSimpleName());
         HostAllocatorStrategy strategy = factory.getHostAllocatorStrategy();
+        HostSortorStrategy sortors = factory.getHostSortorStrategy();
+
         factory.marshalSpec(spec, msg);
 
         if (msg.isDryRun()) {
             final AllocateHostDryRunReply reply = new AllocateHostDryRunReply();
             strategy.dryRun(spec, new ReturnValueCompletion<List<HostInventory>>(msg) {
                 @Override
-                public void success(List<HostInventory> returnValue) {
-                    reply.setHosts(returnValue);
-                    bus.reply(msg, reply);
+                public void success(List<HostInventory> hosts) {
+                    if (hosts.isEmpty()){
+                        reply.setHosts(new ArrayList<>());
+                        bus.reply(msg, reply);
+                        return;
+                    }
+                    sortors.dryRunSort(spec, hosts, new ReturnValueCompletion<List<HostInventory>>(msg) {
+                        @Override
+                        public void success(List<HostInventory> returnValue) {
+                            reply.setHosts(returnValue);
+                            bus.reply(msg, reply);
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            reply.setError(errorCode);
+                            bus.reply(msg, reply);
+                        }
+                    });
                 }
 
                 @Override
@@ -336,11 +354,22 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
             });
         } else {
             final AllocateHostReply reply = new AllocateHostReply();
-            strategy.allocate(spec, new ReturnValueCompletion<HostInventory>(msg) {
+            strategy.allocate(spec, new ReturnValueCompletion<List<HostInventory>>(msg) {
                 @Override
-                public void success(HostInventory returnValue) {
-                    reply.setHost(returnValue);
-                    bus.reply(msg, reply);
+                public void success(List<HostInventory> hosts) {
+                    sortors.sort(spec, hosts, new ReturnValueCompletion<HostInventory>(msg) {
+                        @Override
+                        public void success(HostInventory returnValue) {
+                            reply.setHost(returnValue);
+                            bus.reply(msg, reply);
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            reply.setError(errorCode);
+                            bus.reply(msg, reply);
+                        }
+                    });
                 }
 
                 @Override

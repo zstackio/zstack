@@ -3,6 +3,8 @@ package org.zstack.network.service.vip;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
 
+import java.util.Arrays;
+
 /**
  * Created by frank on 6/15/2015.
  */
@@ -35,7 +37,7 @@ public class APIUpdateVipEvent extends APIEvent {
         inventory.setNetmask("255.255.0.0");
         inventory.setIp("192.168.0.1");
         inventory.setIpRangeUuid(uuid());
-        inventory.setPeerL3NetworkUuid(uuid());
+        inventory.setPeerL3NetworkUuids(Arrays.asList(uuid()));
         inventory.setState(VipState.Enabled.toString());
 
         event.setInventory(inventory);

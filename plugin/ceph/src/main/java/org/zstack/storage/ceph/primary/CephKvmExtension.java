@@ -2,11 +2,17 @@ package org.zstack.storage.ceph.primary;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.FutureCompletion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostConnectionReestablishExtensionPoint;
 import org.zstack.header.host.HostException;
@@ -23,9 +29,11 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
 import javax.persistence.TypedQuery;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -43,7 +51,24 @@ public class CephKvmExtension implements KVMHostConnectExtensionPoint, HostConne
             return;
         }
 
-        createSecret(inv.getUuid(), inv.getClusterUuid());
+        FutureCompletion completion = new FutureCompletion(null);
+        createSecret(inv.getUuid(), inv.getClusterUuid(), new Completion(completion) {
+            @Override
+            public void success() {
+                completion.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+
+        completion.await();
+
+        if (!completion.isSuccess()) {
+            throw new OperationFailureException(completion.getErrorCode());
+        }
     }
 
     @Override
@@ -61,11 +86,13 @@ public class CephKvmExtension implements KVMHostConnectExtensionPoint, HostConne
         return q.getResultList();
     }
 
-    private void createSecret(final String hostUuid, String clusterUuid) {
+    private void createSecret(final String hostUuid, String clusterUuid, Completion completion) {
         List<String> psUuids = findCephPrimaryStorage(clusterUuid);
         if (psUuids.isEmpty()) {
+            completion.success();
             return;
         }
+
 
         List<CreateKvmSecretMsg> msgs = CollectionUtils.transformToList(psUuids, new Function<CreateKvmSecretMsg, String>() {
             @Override
@@ -78,12 +105,29 @@ public class CephKvmExtension implements KVMHostConnectExtensionPoint, HostConne
             }
         });
 
-        List<MessageReply> replies = bus.call(msgs);
-        for (MessageReply r : replies) {
-            if (!r.isSuccess()) {
-                throw new OperationFailureException(r.getError());
+        List<ErrorCode> errorCodeList = new ArrayList<>();
+
+        new While<>(msgs).all((msg, noErrorCompletion) -> {
+            bus.send(msg, new CloudBusCallBack(noErrorCompletion) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        errorCodeList.add(reply.getError());
+                    }
+
+                    noErrorCompletion.done();
+                }
+            });
+        }).run(new NoErrorCompletion(completion) {
+            @Override
+            public void done() {
+                if (!errorCodeList.isEmpty()) {
+                    completion.fail(errorCodeList.get(0));
+                } else {
+                    completion.success();
+                }
             }
-        }
+        });
     }
 
     @Override
@@ -93,9 +137,17 @@ public class CephKvmExtension implements KVMHostConnectExtensionPoint, HostConne
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                //TODO: change to async
-                createSecret(context.getInventory().getUuid(), context.getInventory().getClusterUuid());
-                trigger.next();
+                createSecret(context.getInventory().getUuid(), context.getInventory().getClusterUuid(), new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
             }
         };
     }

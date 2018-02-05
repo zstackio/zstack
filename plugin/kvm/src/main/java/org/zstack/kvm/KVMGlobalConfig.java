@@ -16,7 +16,7 @@ public class KVMGlobalConfig {
     public static GlobalConfig RESERVED_CPU_CAPACITY = new GlobalConfig(CATEGORY, "reservedCpu");
     @GlobalConfigValidation
     public static GlobalConfig RESERVED_MEMORY_CAPACITY = new GlobalConfig(CATEGORY, "reservedMemory");
-    @GlobalConfigValidation(inNumberRange = {0, 24})
+    @GlobalConfigValidation(inNumberRange = {0, 1024})
     public static GlobalConfig MAX_DATA_VOLUME_NUM = new GlobalConfig(CATEGORY, "dataVolume.maxNum");
     @GlobalConfigValidation(numberGreaterThan = 2)
     public static GlobalConfig HOST_SYNC_LEVEL = new GlobalConfig(CATEGORY, "host.syncLevel");

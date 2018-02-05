@@ -1,9 +1,11 @@
 package org.zstack.test.integration.kvm.vm.attachvolume
 
 import org.zstack.header.vm.VmInstanceVO
+import org.zstack.kvm.KVMGlobalConfig
 import org.zstack.sdk.AttachDataVolumeToVmAction
 import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.HostInventory
+import org.zstack.sdk.UpdateGlobalConfigAction
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VolumeInventory
 import org.zstack.test.integration.kvm.KvmTest
@@ -122,6 +124,7 @@ class AttachVolumeToStoppedVmCase extends SubCase {
         env.create {
             testAttachWhenVmLastHostUuidIsNotNull()
             testAttachWhenVmLastHostUuidIsNull()
+            testAttachVolumeGlobalConfig()
         }
     }
 
@@ -177,4 +180,19 @@ class AttachVolumeToStoppedVmCase extends SubCase {
         assert action.call().error.details.indexOf("not find the vm's host") > 0
     }
 
+    void testAttachVolumeGlobalConfig(){
+        updateGlobalConfig {
+            category = KVMGlobalConfig.CATEGORY
+            name = KVMGlobalConfig.MAX_DATA_VOLUME_NUM.name
+            value = "1024"
+        }
+
+        def a = new UpdateGlobalConfigAction()
+        a.category = KVMGlobalConfig.CATEGORY
+        a.name = KVMGlobalConfig.MAX_DATA_VOLUME_NUM.name
+        a.value = "1025"
+        a.sessionId = adminSession()
+
+        assert a.call().error != null
+    }
 }

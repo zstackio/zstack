@@ -7,16 +7,19 @@ import org.zstack.appliancevm.ApplianceVmCommands.RefreshFirewallRsp;
 import org.zstack.compute.vm.VmInstanceBase;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.workflow.*;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
-import org.zstack.header.configuration.*;
+import org.zstack.header.configuration.DiskOfferingInventory;
+import org.zstack.header.configuration.DiskOfferingVO;
+import org.zstack.header.configuration.DiskOfferingVO_;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
@@ -35,11 +38,10 @@ import org.zstack.utils.RangeSet;
 import org.zstack.utils.RangeSet.Range;
 import org.zstack.utils.function.Function;
 
-import static org.zstack.core.Platform.operr;
-
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
 public abstract class ApplianceVmBase extends VmInstanceBase implements ApplianceVm {
@@ -93,7 +95,9 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
     @Override
     protected void destroyHook(VmInstanceDeletionPolicy deletionPolicy, final Completion completion){
         logger.debug(String.format("deleting appliance vm[uuid:%s], always use Direct deletion policy", self.getUuid()));
-        super.doDestroy(VmInstanceDeletionPolicy.Direct, completion);
+        VmInstanceDeletionPolicy policy = (deletionPolicy == VmInstanceDeletionPolicy.DBOnly)
+                ? deletionPolicy : VmInstanceDeletionPolicy.Direct;
+        super.doDestroy(policy, completion);
     }
 
     @Override
@@ -351,7 +355,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
                 if (!ret.isSuccess()) {
                     logger.warn(String.format("failed to refresh firewall rules on appliance vm[uuid:%s, name:%s], %s",
                             self.getUuid(), self.getName(), ret.getError()));
-                    reply.setError(operr(ret.getError()));
+                    reply.setError(operr("operation error, because:%s", ret.getError()));
                 }
 
                 bus.reply(msg, reply);
@@ -714,14 +718,18 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
                 @Override
                 public void handle(Map data) {
                     VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-                    self = dbf.reload(self);
-                    self.setLastHostUuid(spec.getDestHost().getUuid());
-                    self.setHostUuid(spec.getDestHost().getUuid());
-                    self.setClusterUuid(spec.getDestHost().getClusterUuid());
-                    self.setZoneUuid(spec.getDestHost().getZoneUuid());
-                    self.setHypervisorType(spec.getDestHost().getHypervisorType());
-                    self.setRootVolumeUuid(spec.getDestRootVolume().getUuid());
-                    changeVmStateInDb(VmInstanceStateEvent.running);
+                    changeVmStateInDb(VmInstanceStateEvent.running, () -> new SQLBatch() {
+                        @Override
+                        protected void scripts() {
+                            self.setLastHostUuid(spec.getDestHost().getUuid());
+                            self.setHostUuid(spec.getDestHost().getUuid());
+                            self.setClusterUuid(spec.getDestHost().getClusterUuid());
+                            self.setZoneUuid(spec.getDestHost().getZoneUuid());
+                            self.setHypervisorType(spec.getDestHost().getHypervisorType());
+                            self.setRootVolumeUuid(spec.getDestRootVolume().getUuid());
+                        }
+                    }.execute());
+
                     logger.debug(String.format("appliance vm[uuid:%s, name: %s, type:%s] is running ..",
                             self.getUuid(), self.getName(), getSelf().getApplianceVmType()));
                     VmInstanceInventory inv = VmInstanceInventory.valueOf(self);

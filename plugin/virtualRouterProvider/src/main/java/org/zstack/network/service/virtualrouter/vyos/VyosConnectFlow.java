@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.appliancevm.ApplianceVmConstant;
 import org.zstack.appliancevm.ApplianceVmSpec;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
@@ -19,6 +20,7 @@ import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.InitCommand;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.InitRsp;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
+import org.zstack.network.service.virtualrouter.VirtualRouterGlobalConfig;
 import org.zstack.network.service.virtualrouter.VirtualRouterManager;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
 import org.zstack.utils.DebugUtils;
@@ -26,6 +28,7 @@ import org.zstack.utils.DebugUtils;
 import static org.zstack.core.Platform.operr;
 
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by xing5 on 2016/10/31.
@@ -76,7 +79,7 @@ public class VyosConnectFlow extends NoRollbackFlow {
                             public void fail(ErrorCode errorCode) {
                                 trigger.fail(errorCode);
                             }
-                        });
+                        }, TimeUnit.SECONDS.toMillis(1), TimeUnit.SECONDS.toMillis(Long.parseLong(VirtualRouterGlobalConfig.VYOS_ECHO_TIMEOUT.value())));
                     }
                 });
 
@@ -99,7 +102,7 @@ public class VyosConnectFlow extends NoRollbackFlow {
                                 if (ret.isSuccess()) {
                                     trigger.next();
                                 } else {
-                                    trigger.fail(operr(ret.getError()));
+                                    trigger.fail(operr("operation error, because:%s", ret.getError()));
                                 }
                             }
 

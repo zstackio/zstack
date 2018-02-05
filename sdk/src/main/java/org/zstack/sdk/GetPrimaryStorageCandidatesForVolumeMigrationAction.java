@@ -8,6 +8,8 @@ public class GetPrimaryStorageCandidatesForVolumeMigrationAction extends Abstrac
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
+    private static final HashMap<String, Parameter> nonAPIParameterMap = new HashMap<>();
+
     public static class Result {
         public ErrorCode error;
         public org.zstack.sdk.GetPrimaryStorageCandidatesForVolumeMigrationResult value;
@@ -67,7 +69,15 @@ public class GetPrimaryStorageCandidatesForVolumeMigrationAction extends Abstrac
         return parameterMap;
     }
 
+<<<<<<< HEAD
     protected RestInfo getRestInfo() {
+=======
+    Map<String, Parameter> getNonAPIParameterMap() {
+        return nonAPIParameterMap;
+    }
+
+    RestInfo getRestInfo() {
+>>>>>>> upstream/master
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/primary-storage/volumes/{volumeUuid}/migration-candidates";

@@ -28,6 +28,8 @@ import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceSpec.VolumeSpec;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -36,6 +38,7 @@ import java.util.Map;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmAllocatePrimaryStorageFlow implements Flow {
+    private static final CLogger logger = Utils.getLogger(VmAllocatePrimaryStorageFlow.class);
     @Autowired
     protected DatabaseFacade dbf;
     @Autowired
@@ -64,7 +67,9 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
         AllocatePrimaryStorageMsg rmsg = new AllocatePrimaryStorageMsg();
         rmsg.setRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForRootVolume());
         rmsg.setVmInstanceUuid(spec.getVmInventory().getUuid());
-        rmsg.setImageUuid(spec.getImageSpec().getInventory().getUuid());
+        if (spec.getImageSpec() != null) {
+            rmsg.setImageUuid(spec.getImageSpec().getInventory().getUuid());
+        }
         if (ImageMediaType.ISO.toString().equals(iminv.getMediaType())) {
             rmsg.setSize(spec.getRootDiskOffering().getDiskSize());
             rmsg.setAllocationStrategy(spec.getRootDiskOffering().getAllocatorStrategy());
@@ -76,7 +81,7 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
             rmsg.setRequiredHostUuid(destHost.getUuid());
         }
         rmsg.setPurpose(PrimaryStorageAllocationPurpose.CreateNewVm.toString());
-        rmsg.setRequiredPrimaryStorageTypes(primaryStorageTypes);
+        rmsg.setPossiblePrimaryStorageTypes(primaryStorageTypes);
         bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
         msgs.add(rmsg);
 
@@ -89,7 +94,7 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
             amsg.setRequiredHostUuid(destHost.getUuid());
             amsg.setAllocationStrategy(dinv.getAllocatorStrategy());
             amsg.setDiskOfferingUuid(dinv.getUuid());
-            amsg.setRequiredPrimaryStorageTypes(primaryStorageTypes);
+            amsg.setPossiblePrimaryStorageTypes(primaryStorageTypes);
             bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
             msgs.add(amsg);
         }

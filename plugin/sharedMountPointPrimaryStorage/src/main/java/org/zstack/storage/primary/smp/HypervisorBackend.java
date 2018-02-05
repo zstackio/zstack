@@ -1,5 +1,6 @@
 package org.zstack.storage.primary.smp;
 
+import org.zstack.header.cluster.ClusterConnectionStatus;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.image.ImageInventory;
@@ -22,7 +23,13 @@ public abstract class HypervisorBackend extends SMPPrimaryStorageBase {
 
     abstract void handle(DownloadDataVolumeToPrimaryStorageMsg msg, ReturnValueCompletion<DownloadDataVolumeToPrimaryStorageReply> completion);
 
+    abstract void handle(GetInstallPathForDataVolumeDownloadMsg msg, ReturnValueCompletion<GetInstallPathForDataVolumeDownloadReply> completion);
+
+    abstract void handle(DeleteVolumeBitsOnPrimaryStorageMsg msg, ReturnValueCompletion<DeleteVolumeBitsOnPrimaryStorageReply> completion);
+
     abstract void handle(DeleteBitsOnPrimaryStorageMsg msg, ReturnValueCompletion<DeleteBitsOnPrimaryStorageReply> completion);
+
+    abstract void handle(GetPrimaryStorageFolderListMsg msg, ReturnValueCompletion<GetPrimaryStorageFolderListReply> completion);
 
     abstract void handle(DownloadIsoToPrimaryStorageMsg msg, ReturnValueCompletion<DownloadIsoToPrimaryStorageReply> completion);
 
@@ -42,13 +49,15 @@ public abstract class HypervisorBackend extends SMPPrimaryStorageBase {
 
     abstract void deleteBits(String path, Completion completion);
 
+    abstract void deleteBits(String path, boolean folder, Completion completion);
+
     abstract void handle(CreateTemplateFromVolumeOnPrimaryStorageMsg msg, ReturnValueCompletion<CreateTemplateFromVolumeOnPrimaryStorageReply> completion);
 
     abstract void handle(UploadBitsToBackupStorageMsg msg, ReturnValueCompletion<UploadBitsToBackupStorageReply> completion);
 
     abstract void handleHypervisorSpecificMessage(SMPPrimaryStorageHypervisorSpecificMessage msg);
 
-    abstract void connectByClusterUuid(String clusterUuid, Completion completion);
+    abstract void connectByClusterUuid(String clusterUuid, ReturnValueCompletion<ClusterConnectionStatus> completion);
 
     abstract void handle(SyncVolumeSizeOnPrimaryStorageMsg msg, ReturnValueCompletion<SyncVolumeSizeOnPrimaryStorageReply> completion);
 

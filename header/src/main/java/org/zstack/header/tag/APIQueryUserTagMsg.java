@@ -18,7 +18,7 @@ import static java.util.Arrays.asList;
 @RestRequest(
         path = "/user-tags",
         optionalPaths = {"/user-tags/{uuid}"},
-        responseClass = APIQueryUserReply.class,
+        responseClass = APIQueryUserTagReply.class,
         method = HttpMethod.GET
 )
 public class APIQueryUserTagMsg extends APIQueryMessage {

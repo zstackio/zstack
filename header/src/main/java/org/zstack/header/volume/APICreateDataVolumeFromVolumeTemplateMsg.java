@@ -94,10 +94,8 @@ public class APICreateDataVolumeFromVolumeTemplateMsg extends APICreateMessage i
         return new ApiNotification() {
             @Override
             public void after(APIEvent evt) {
-                if (evt.isSuccess()) {
-                    ntfy(NotificationConstant.Volume.CREATED_FROM_VOLUME_TEMPLATE).resource(((APICreateDataVolumeFromVolumeTemplateEvent) evt).getInventory().getUuid(), VolumeVO.class.getSimpleName())
-                            .messageAndEvent(that, evt).done();
-                }
+                ntfy(NotificationConstant.Volume.CREATED_FROM_VOLUME_TEMPLATE).resource(((APICreateDataVolumeFromVolumeTemplateEvent) evt).getInventory().getUuid(), VolumeVO.class.getSimpleName())
+                        .messageAndEvent(that, evt).done();
             }
         };
     }

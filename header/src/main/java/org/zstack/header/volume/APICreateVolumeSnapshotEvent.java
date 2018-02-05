@@ -65,8 +65,8 @@ public class APICreateVolumeSnapshotEvent extends APIEvent {
         String snapshotUuid = uuid();
         VolumeSnapshotInventory inv = new VolumeSnapshotInventory();
         inv.setName("Snapshot-1");
-        inv.setCreateDate(new Timestamp(System.currentTimeMillis()));
-        inv.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        inv.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        inv.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         inv.setParentUuid(uuid());
         inv.setDescription("create-snapshot-from-volume");
         inv.setState(VolumeState.Enabled.toString());

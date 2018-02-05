@@ -18,6 +18,7 @@ import org.zstack.header.identity.QuotaInventory;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.quota.QuotaConstant;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.simulator.storage.backup.sftp.SftpBackupStorageSimulatorConfig;
 import org.zstack.test.Api;
@@ -77,7 +78,7 @@ public class TestQuotaUsageForImageOnSftpBackupStorage {
         AccountInventory test = identityCreator.useAccount("test");
 
         //some image set in xml,some below,the amount should one more than the quota to get expected exceeding exception.
-        api.updateQuota(test.getUuid(), ImageConstant.QUOTA_IMAGE_NUM, 4);
+        api.updateQuota(test.getUuid(), QuotaConstant.IMAGE_NUM, 4);
 
         BackupStorageInventory sftpBackupStorageInv = deployer.backupStorages.get("TestSftpBackupStorage");
 
@@ -131,7 +132,7 @@ public class TestQuotaUsageForImageOnSftpBackupStorage {
 
         thrown.expect(ApiSenderException.class);
         thrown.expectMessage("The user exceeds a quota of a resource");
-        thrown.expectMessage(ImageConstant.QUOTA_IMAGE_NUM);
+        thrown.expectMessage(QuotaConstant.IMAGE_NUM);
 
         sftpConfig.getImageSizeCmdSize.put(iinv.getUuid(), SizeUnit.MEGABYTE.toByte(233));
         iinv = api.addImage(iinv, identityCreator.getAccountSession(), sftpBackupStorageInv.getUuid());
@@ -141,22 +142,22 @@ public class TestQuotaUsageForImageOnSftpBackupStorage {
         Quota.QuotaUsage imageNum = CollectionUtils.find(usages, new Function<Quota.QuotaUsage, Quota.QuotaUsage>() {
             @Override
             public Quota.QuotaUsage call(Quota.QuotaUsage arg) {
-                return ImageConstant.QUOTA_IMAGE_NUM.equals(arg.getName()) ? arg : null;
+                return QuotaConstant.IMAGE_NUM.equals(arg.getName()) ? arg : null;
             }
         });
         Assert.assertNotNull(imageNum);
-        QuotaInventory qvm = api.getQuota(ImageConstant.QUOTA_IMAGE_NUM, test.getUuid(), identityCreator.getAccountSession());
+        QuotaInventory qvm = api.getQuota(QuotaConstant.IMAGE_NUM, test.getUuid(), identityCreator.getAccountSession());
         Assert.assertEquals(qvm.getValue(), imageNum.getTotal().longValue());
         Assert.assertEquals(2, imageNum.getUsed().longValue());
         //
         Quota.QuotaUsage imageSize = CollectionUtils.find(usages, new Function<Quota.QuotaUsage, Quota.QuotaUsage>() {
             @Override
             public Quota.QuotaUsage call(Quota.QuotaUsage arg) {
-                return ImageConstant.QUOTA_IMAGE_SIZE.equals(arg.getName()) ? arg : null;
+                return QuotaConstant.IMAGE_SIZE.equals(arg.getName()) ? arg : null;
             }
         });
         Assert.assertNotNull(imageSize);
-        qvm = api.getQuota(ImageConstant.QUOTA_IMAGE_SIZE, test.getUuid(), identityCreator.getAccountSession());
+        qvm = api.getQuota(QuotaConstant.IMAGE_SIZE, test.getUuid(), identityCreator.getAccountSession());
         Assert.assertEquals(qvm.getValue(), imageSize.getTotal().longValue());
         Assert.assertTrue(imageSize.getUsed().longValue() <= imageSize.getTotal().longValue());
 

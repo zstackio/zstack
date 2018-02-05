@@ -28,6 +28,7 @@ import org.zstack.sdk.PortForwardingRuleInventory
 import org.zstack.sdk.VipInventory
 import org.zstack.network.service.vip.VipVO
 import org.zstack.network.service.vip.VipVO_
+import org.zstack.sdk.VirtualRouterVmInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
@@ -205,6 +206,8 @@ class AttachAndDeleteEipCase extends SubCase{
             }
             testCreatePortForwarding()
             env.recreate("eip")
+            testVipInVirtualRouterInv()
+
             testDeleteEipAfterTheVmDestroyed()
         }
     }
@@ -343,6 +346,11 @@ class AttachAndDeleteEipCase extends SubCase{
         testDeleteVipAction(vipInv.uuid)
         assert !Q.New(PortForwardingRuleVO.class).eq(PortForwardingRuleVO_.uuid, port.uuid).isExists()
         assert Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm.uuid).select(VmInstanceVO_.state).findValue() == VmInstanceState.Running
+    }
+
+    void testVipInVirtualRouterInv() {
+        VirtualRouterVmInventory inv = queryVirtualRouterVm {}[0]
+        assert inv.virtualRouterVips != null
     }
 
     void testDeleteEipAfterTheVmDestroyed() {

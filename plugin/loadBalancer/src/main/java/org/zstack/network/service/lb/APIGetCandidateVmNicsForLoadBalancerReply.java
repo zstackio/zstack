@@ -28,8 +28,8 @@ public class APIGetCandidateVmNicsForLoadBalancerReply extends APIReply {
         VmNicInventory nic = new VmNicInventory();
 
         nic.setVmInstanceUuid(uuid());
-        nic.setCreateDate(new Timestamp(System.currentTimeMillis()));
-        nic.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        nic.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        nic.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         nic.setDeviceId(0);
         nic.setGateway("192.168.1.1");
         nic.setIp("192.168.1.10");

@@ -53,6 +53,7 @@ public abstract class VmTracer {
 
             for (Tuple t : ts) {
                 mgmtSideStates.put(t.get(0, String.class), t.get(1, VmInstanceState.class));
+                logger.debug(String.format("ManagementServerSideVmStates vm %s, state %s", t.get(0, String.class), t.get(1, VmInstanceState.class).toString()));
             }
         }
 
@@ -105,7 +106,7 @@ public abstract class VmTracer {
             for (Map.Entry<String, VmInstanceState> e : mgmtSideStates.entrySet()) {
                 String vmUuid = e.getKey();
                 VmInstanceState expectedState = e.getValue();
-                if (expectedState != VmInstanceState.Stopped && !hostSideStates.containsKey(vmUuid)) {
+                if (expectedState != VmInstanceState.Stopped && expectedState != VmInstanceState.Created && !hostSideStates.containsKey(vmUuid)) {
                     handleMissingVm(vmUuid, expectedState);
                 }
             }
@@ -129,6 +130,10 @@ public abstract class VmTracer {
     }
 
     protected void reportVmState(final String hostUuid, final Map<String, VmInstanceState> vmStates) {
+        for (Map.Entry<String, VmInstanceState> e : vmStates.entrySet()) {
+            logger.debug(String.format("reportVmState vm: %s, state: %s", e.getKey(), e.getValue().toString()));
+        }
+
         for (VmInstanceState state : vmStates.values()) {
             if (state != VmInstanceState.Running && state != VmInstanceState.Stopped && state != VmInstanceState.Paused) {
                 throw new CloudRuntimeException(String.format("host can only report vm state as Running, Stopped or Paused, got %s", state));

@@ -20,6 +20,7 @@ import org.zstack.header.vm.VmNicVO_;
 import org.zstack.network.service.vip.VipState;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.utils.Utils;
+import org.zstack.utils.VipUseForList;
 import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.argerr;
@@ -176,7 +177,10 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
     private void validate(APICreateEipMsg msg) {
         VipVO vip = dbf.findByUuid(msg.getVipUuid(), VipVO.class);
         if (vip.getUseFor() != null) {
-            throw new ApiMessageInterceptionException(operr("vip[uuid:%s] has been occupied other network service entity[%s]", msg.getVipUuid(), vip.getUseFor()));
+            VipUseForList useForList = new VipUseForList(vip.getUseFor());
+            if(!useForList.validateNewAdded(EipConstant.EIP_NETWORK_SERVICE_TYPE)) {
+                throw new ApiMessageInterceptionException(operr("vip[uuid:%s] has been occupied other network service entity[%s]", msg.getVipUuid(), vip.getUseFor()));
+            }
         }
 
         if (vip.getState() != VipState.Enabled) {

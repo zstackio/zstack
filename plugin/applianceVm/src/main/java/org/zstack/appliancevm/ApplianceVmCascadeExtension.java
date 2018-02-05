@@ -7,6 +7,7 @@ import org.zstack.core.cascade.CascadeAction;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -53,15 +54,17 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
     private DatabaseFacade dbf;
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     private static String NAME = ApplianceVmVO.class.getSimpleName();
 
 
-    private static final int OP_NOPE = 0;
-    private static final int OP_MIGRATE = 1;
-    private static final int OP_DELETION = 2;
+    protected static final int OP_NOPE = 0;
+    protected static final int OP_MIGRATE = 1;
+    protected static final int OP_DELETION = 2;
 
-    private int toDeleteOpCode(CascadeAction action) {
+    protected int toDeleteOpCode(CascadeAction action) {
         if (PrimaryStorageVO.class.getSimpleName().equals(action.getParentIssuer())) {
             return OP_DELETION;
         }
@@ -307,7 +310,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
         completion.success();
     }
 
-    private void handleDeletion(final CascadeAction action, final Completion completion) {
+    protected void handleDeletion(final CascadeAction action, final Completion completion) {
         int op = toDeleteOpCode(action);
 
         if (op == OP_NOPE) {
@@ -507,7 +510,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
     }
 
     @Transactional
-    private List<ApplianceVmInventory> apvmFromDeleteAction(CascadeAction action) {
+    protected List<ApplianceVmInventory> apvmFromDeleteAction(CascadeAction action) {
         List<ApplianceVmInventory> ret = null;
 
         if (HostVO.class.getSimpleName().equals(action.getParentIssuer())) {
@@ -600,6 +603,9 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
             q.setParameter("l3Uuids", l3uuids);
             List<ApplianceVmVO> apvms = q.getResultList();
             if (!apvms.isEmpty()) {
+                for (ApvmCascadeFilterExtensionPoint ext : pluginRgty.getExtensionList(ApvmCascadeFilterExtensionPoint.class)) {
+                    apvms = ext.filterApplianceVmCascade(apvms, action.getParentIssuer(), l3uuids);
+                }
                 ret = ApplianceVmInventory.valueOf1(apvms);
             }
         } else if (IpRangeVO.class.getSimpleName().equals(action.getParentIssuer())) {
@@ -652,6 +658,9 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
                         }
                     }
                 }
+            }
+            for (ApvmCascadeFilterExtensionPoint ext : pluginRgty.getExtensionList(ApvmCascadeFilterExtensionPoint.class)) {
+                vmvos = ext.filterApplianceVmCascade(vmvos, action.getParentIssuer(), ipruuids);
             }
 
             if (!vmvos.isEmpty()) {

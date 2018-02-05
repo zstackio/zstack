@@ -12,4 +12,12 @@ public class VirtualRouterVmInventory extends org.zstack.sdk.ApplianceVmInventor
         return this.publicNetworkUuid;
     }
 
+    public java.util.List<String> virtualRouterVips;
+    public void setVirtualRouterVips(java.util.List<String> virtualRouterVips) {
+        this.virtualRouterVips = virtualRouterVips;
+    }
+    public java.util.List<String> getVirtualRouterVips() {
+        return this.virtualRouterVips;
+    }
+
 }

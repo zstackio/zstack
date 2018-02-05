@@ -193,9 +193,9 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
                     throw new ApiMessageInterceptionException(operr("the volume[uuid:%s] is in status of deleted, cannot do the operation", vol.getUuid()));
                 }
 
-                if (vol.getVmInstanceUuid() != null) {
-                    throw new ApiMessageInterceptionException(operr("data volume[%s] has been attached to vm[uuid:%s], can't attach again",
-                            vol.getUuid(), vol.getVmInstanceUuid()));
+                if (vol.isAttached() && !vol.isShareable()) {
+                    throw new ApiMessageInterceptionException(operr("data volume[uuid:%s] has been attached to some vm, can't attach again",
+                            vol.getUuid()));
                 }
 
                 if (VolumeStatus.Ready != vol.getStatus() && VolumeStatus.NotInstantiated != vol.getStatus()) {
@@ -218,7 +218,7 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
                     maxDataVolumeNum = ext.getMaxDataVolumeNumber();
                 }
 
-                count = Q.New(VolumeVO.class).eq(VolumeVO_.type, VolumeType.Data).eq(VolumeVO_.vmInstanceUuid, msg.getVolumeUuid()).count();
+                count = Q.New(VolumeVO.class).eq(VolumeVO_.type, VolumeType.Data).eq(VolumeVO_.vmInstanceUuid, msg.getVmInstanceUuid()).count();
                 if (count + 1 > maxDataVolumeNum) {
                     throw new ApiMessageInterceptionException(operr("hypervisor[%s] only allows max %s data volumes to be attached to a single vm; there have been %s data volumes attached to vm[uuid:%s]",
                             hvType, maxDataVolumeNum, count, msg.getVmInstanceUuid()));

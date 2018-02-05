@@ -11,6 +11,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.TransactionalCallback.Operation;
 import org.zstack.header.Component;
+import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIListMessage;
 import org.zstack.header.vo.EO;
@@ -538,6 +539,7 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
 
     @Override
     @Transactional
+    @ExceptionSafe
     public void hardDeleteCollectionSelectedBySQL(String sql, Class entityClass) {
         EntityInfo info = getEntityInfo(entityClass);
         Query q = getEntityManager().createQuery(sql);
@@ -713,13 +715,43 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
         }
 
         info.hardDelete(ids);
+    }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    private void _eoCleanup(Class VOClazz, List ids) {
+        EntityInfo info = getEntityInfo(VOClazz);
+        if (!info.hasEO()) {
+            logger.warn(String.format("Class[%s] doesn't has EO.", VOClazz));
+            return;
+        }
+
+        String deleted = info.eoSoftDeleteColumn.getName();
+        String sql = String.format("select eo.%s from %s eo where eo.%s is not null and eo.%s in (:ids)", info.voPrimaryKeyField.getName(),
+                info.eoClass.getSimpleName(), deleted, info.voPrimaryKeyField.getName());
+        Query q = getEntityManager().createQuery(sql);
+        q.setParameter("ids", ids);
+        ids = q.getResultList();
+        if (ids.isEmpty()) {
+            return;
+        }
+
+        info.hardDelete(ids);
     }
 
     @Override
     @DeadlockAutoRestart
     public void eoCleanup(Class VOClazz) {
         _eoCleanup(VOClazz);
+    }
+
+    @Override
+    @DeadlockAutoRestart
+    public void eoCleanup(Class VOClazz, List ids) {
+        if(ids.isEmpty()) {
+            return;
+        }
+
+        _eoCleanup(VOClazz, ids);
     }
 
     @Override

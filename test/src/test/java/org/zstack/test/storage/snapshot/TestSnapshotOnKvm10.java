@@ -27,7 +27,10 @@ import org.zstack.utils.logging.CLogger;
 * 3. create another snapshot
 *
 * confirm snapshot 3,4 are deleted on primary storage
+*
+* @Deprecated, Covered by new style test case CreateSnapshotOnRootVolumeCase
 */
+@Deprecated
 public class TestSnapshotOnKvm10 {
     CLogger logger = Utils.getLogger(TestSnapshotOnKvm10.class);
     Deployer deployer;

@@ -8,6 +8,8 @@ public class StopVmInstanceAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
+    private static final HashMap<String, Parameter> nonAPIParameterMap = new HashMap<>();
+
     public static class Result {
         public ErrorCode error;
         public org.zstack.sdk.StopVmInstanceResult value;
@@ -29,6 +31,9 @@ public class StopVmInstanceAction extends AbstractAction {
     @Param(required = false, validValues = {"grace","cold"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type = "grace";
 
+    @Param(required = false, validValues = {"true"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String stopHA;
+
     @Param(required = false)
     public java.util.List systemTags;
 
@@ -38,9 +43,11 @@ public class StopVmInstanceAction extends AbstractAction {
     @Param(required = true)
     public String sessionId;
 
-    public long timeout;
-    
-    public long pollingInterval;
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -74,7 +81,15 @@ public class StopVmInstanceAction extends AbstractAction {
         return parameterMap;
     }
 
+<<<<<<< HEAD
     protected RestInfo getRestInfo() {
+=======
+    Map<String, Parameter> getNonAPIParameterMap() {
+        return nonAPIParameterMap;
+    }
+
+    RestInfo getRestInfo() {
+>>>>>>> upstream/master
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/vm-instances/{uuid}/actions";

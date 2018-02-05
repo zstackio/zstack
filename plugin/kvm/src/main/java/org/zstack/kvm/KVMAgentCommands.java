@@ -5,6 +5,7 @@ import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotMsg;
 import org.zstack.header.vm.APICreateVmInstanceMsg;
+import org.zstack.header.vm.APIMigrateVmMsg;
 import org.zstack.header.vm.VmBootDevice;
 import org.zstack.header.volume.APICreateVolumeSnapshotMsg;
 import org.zstack.network.securitygroup.SecurityGroupMembersTO;
@@ -343,6 +344,15 @@ public class KVMAgentCommands {
     public static class CreateBridgeCmd extends AgentCommand {
         private String physicalInterfaceName;
         private String bridgeName;
+        private String l2NetworkUuid;
+
+        public String getL2NetworkUuid() {
+            return l2NetworkUuid;
+        }
+
+        public void setL2NetworkUuid(String l2NetworkUuid) {
+            this.l2NetworkUuid = l2NetworkUuid;
+        }
 
         public String getPhysicalInterfaceName() {
             return physicalInterfaceName;
@@ -727,11 +737,20 @@ public class KVMAgentCommands {
         private String hostManagementIp;
         private String clock;
         private String videoType;
+        private String spiceStreamingMode;
         private boolean useNuma;
         private String usbRedirect;
         private Integer VDIMonitorNumber;
         private boolean useBootMenu;
         private boolean kvmHiddenState;
+
+        public String getSpiceStreamingMode() {
+            return spiceStreamingMode;
+        }
+
+        public void setSpiceStreamingMode(String spiceStreamingMode) {
+            this.spiceStreamingMode = spiceStreamingMode;
+        }
 
         public Integer getVDIMonitorNumber() {
             return VDIMonitorNumber;
@@ -1315,6 +1334,7 @@ public class KVMAgentCommands {
     public static class ApplySecurityGroupRuleResponse extends AgentResponse {
     }
 
+    @ApiTimeout(apiClasses = {APIMigrateVmMsg.class})
     public static class MigrateVmCmd extends AgentCommand {
         private String vmUuid;
         private String destHostIp;
@@ -1625,5 +1645,9 @@ public class KVMAgentCommands {
         public String hostUuid;
         public List<String> psUuids;
         public String psStatus;
+    }
+
+    public static class ReportHostDeviceEventCmd {
+        public String hostUuid;
     }
 }

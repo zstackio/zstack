@@ -12,7 +12,6 @@ import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -52,7 +51,6 @@ import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.volume.FireSnapShotCanonicalEvent;
-import org.zstack.storage.volume.FireVolumeCanonicalEvent;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -379,33 +377,27 @@ public class VolumeSnapshotTreeBase {
         chain.done(new FlowDoneHandler(msg, completion) {
             @Override
             public void handle(Map data) {
-                if (msg.isVolumeDeletion()) {
-                    new Runnable() {
-                        @Override
-                        @Transactional
-                        public void run() {
-                            String sql = "update VolumeSnapshotTreeVO tree set tree.volumeUuid = NULL where tree.volumeUuid = :volUuid";
-                            Query q = dbf.getEntityManager().createQuery(sql);
-                            q.setParameter("volUuid", currentRoot.getVolumeUuid());
-                            q.executeUpdate();
+                new SQLBatch() {
+                    @Override
+                    protected void scripts() {
+                        if (msg.isVolumeDeletion()) {
+                            sql("update VolumeSnapshotTreeVO tree set tree.volumeUuid = NULL where tree.volumeUuid = :volUuid")
+                                    .param("volUuid", currentRoot.getVolumeUuid()).execute();
 
-                            sql = "update VolumeSnapshotVO s set s.volumeUuid = NULL where s.volumeUuid = :volUuid";
-                            q = dbf.getEntityManager().createQuery(sql);
-                            q.setParameter("volUuid", currentRoot.getVolumeUuid());
-                            q.executeUpdate();
+                            sql("update VolumeSnapshotVO s set s.volumeUuid = NULL where s.volumeUuid = :volUuid")
+                                    .param("volUuid", currentRoot.getVolumeUuid()).execute();
                         }
-                    }.run();
-                }
 
-                if (!msg.isVolumeDeletion() && finalAncestorOfLatest && currentRoot.getParentUuid() != null) {
-                    // reset latest
-                    VolumeSnapshotVO vo = dbf.findByUuid(currentRoot.getParentUuid(), VolumeSnapshotVO.class);
-                    vo.setLatest(true);
-                    dbf.update(vo);
-                    logger.debug(String.format("reset latest snapshot of tree[uuid:%s] to snapshot[uuid:%s]",
-                            currentRoot.getTreeUuid(), currentRoot.getParentUuid()));
-                }
 
+                        if (!msg.isVolumeDeletion() && finalAncestorOfLatest && currentRoot.getParentUuid() != null) {
+                            // reset latest
+                            sql(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.uuid, currentRoot.getParentUuid())
+                                    .set(VolumeSnapshotVO_.latest, true).update();
+                            logger.debug(String.format("reset latest snapshot of tree[uuid:%s] to snapshot[uuid:%s]",
+                                    currentRoot.getTreeUuid(), currentRoot.getParentUuid()));
+                        }
+                    }
+                }.execute();
 
                 if (!cleanup()) {
                     changeStatusOfSnapshots(StatusEvent.ready, currentLeaf.getDescendants(), new Completion(msg, completion) {
@@ -510,7 +502,7 @@ public class VolumeSnapshotTreeBase {
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
                         if (installPath != null) {
-                            DeleteBitsOnPrimaryStorageMsg dmsg = new DeleteBitsOnPrimaryStorageMsg();
+                            DeleteVolumeBitsOnPrimaryStorageMsg dmsg = new DeleteVolumeBitsOnPrimaryStorageMsg();
                             dmsg.setHypervisorType(VolumeFormat.getMasterHypervisorTypeByVolumeFormat(getSelfInventory().getFormat()).toString());
                             dmsg.setPrimaryStorageUuid(currentRoot.getPrimaryStorageUuid());
                             dmsg.setInstallPath(installPath);

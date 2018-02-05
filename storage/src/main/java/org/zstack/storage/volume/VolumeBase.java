@@ -37,7 +37,10 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.OverlayMessage;
 import org.zstack.header.storage.primary.*;
-import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.storage.snapshot.CreateVolumeSnapshotMsg;
+import org.zstack.header.storage.snapshot.CreateVolumeSnapshotReply;
+import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
 import org.zstack.header.volume.VolumeConstant.Capability;
@@ -50,12 +53,11 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.operr;
-
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -186,6 +188,7 @@ public class VolumeBase implements Volume {
                             AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
                             amsg.setRequiredPrimaryStorageUuid(msg.getPrimaryStorageUuid());
                             amsg.setSize(self.getSize());
+
                             bus.makeTargetServiceIdByResourceUuid(amsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
                             bus.send(amsg, new CloudBusCallBack(trigger) {
                                 @Override
@@ -1134,16 +1137,17 @@ public class VolumeBase implements Volume {
                     return ret;
                 }
 
-                //the vm doesn't suport to online attach volume when  image platform type is other
+                //the vm doesn't suport to online attach volume when vm platform type is other
                 List<String> exclude = sql("select vm.uuid" +
-                        " from VmInstanceVO vm, ImageVO image" +
+                        " from VmInstanceVO vm" +
                         " where vm.uuid in :vmUuids" +
-                        " and vm.imageUuid = image.uuid" +
-                        " and image.platform = :platformType" +
+                        " and vm.platform = :platformType" +
                         " and vm.state != :vmState")
                         .param("vmUuids",ret.stream().map(VmInstanceVO::getUuid).collect(Collectors.toList()))
                         .param("vmState", VmInstanceState.Stopped)
-                        .param("platformType", ImagePlatform.Other).list();
+                        .param("platformType", ImagePlatform.Other.toString())
+                        .list();
+
                 ret = ret.stream().filter(vm -> !exclude.contains(vm.getUuid())).collect(Collectors.toList());
                 if (ret.isEmpty()) {
                     return ret;
@@ -1199,8 +1203,9 @@ public class VolumeBase implements Volume {
                         self = dbf.reload(self);
                         if (reply.isSuccess()) {
                             AttachDataVolumeToVmReply ar = reply.castReply();
-                            self.setVmInstanceUuid(msg.getVmInstanceUuid());
-                            self.setFormat(VolumeFormat.getVolumeFormatByMasterHypervisorType(ar.getHypervisorType()).toString());
+                            self.setVmInstanceUuid(self.isShareable() ? null : msg.getVmInstanceUuid());
+                            self.setFormat(self.getFormat() != null ? self.getFormat() :
+                                    VolumeFormat.getVolumeFormatByMasterHypervisorType(ar.getHypervisorType()).toString());
                             self = dbf.updateAndRefresh(self);
 
                             evt.setInventory(getSelfInventory());
@@ -1208,11 +1213,6 @@ public class VolumeBase implements Volume {
                             self.setVmInstanceUuid(null);
                             dbf.update(self);
                             evt.setError(reply.getError());
-                        }
-
-                        if (self.isShareable()) {
-                            self.setVmInstanceUuid(null);
-                            dbf.update(self);
                         }
 
                         bus.publish(evt);

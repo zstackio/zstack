@@ -72,10 +72,19 @@ public class CephApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIAddCephPrimaryStoragePoolMsg msg) {
-        if (Q.New(CephPrimaryStoragePoolVO.class)
+        String duplicatePoolUuid = Q.New(CephPrimaryStoragePoolVO.class)
                 .eq(CephPrimaryStoragePoolVO_.primaryStorageUuid, msg.getPrimaryStorageUuid())
-                .eq(CephPrimaryStoragePoolVO_.poolName, msg.getPoolName()).isExists()) {
-            throw new ApiMessageInterceptionException(argerr("duplicate poolName[%s]. There has been a pool with the same name existing", msg.getPoolName()));
+                .eq(CephPrimaryStoragePoolVO_.poolName, msg.getPoolName())
+                .select(CephPrimaryStoragePoolVO_.uuid).findValue();
+        if (duplicatePoolUuid != null && msg.isCreate()) {
+            throw new ApiMessageInterceptionException(argerr(
+                    "creation failure, duplicate poolName[%s]. There has been a pool[uuid:%s] with the same name existing.",
+                    msg.getPoolName(), duplicatePoolUuid));
+
+        } else if (duplicatePoolUuid != null && !msg.isCreate()) {
+            throw new ApiMessageInterceptionException(argerr(
+                    "Ceph pool[uuid:%s] with this name is already added into ZStack and used elsewhere, cannot reuse the ceph pool.",
+                    msg.getPoolName(), duplicatePoolUuid));
         }
 
     }
@@ -105,6 +114,18 @@ public class CephApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
+    private void distinctMons(List<String> mons) {
+        List<String> monUrls = new ArrayList<>();
+        for(String mon: mons) {
+            MonUri uri = new MonUri(mon);
+            if (!monUrls.contains(uri.getHostname())) {
+                monUrls.add(uri.getHostname());
+            } else {
+                throw new ApiMessageInterceptionException(argerr("Cannot add same host[%s] in mons", uri.getHostname()));
+            }
+        }
+    }
+
     private void validate(APIAddMonToCephPrimaryStorageMsg msg) {
         checkMonUrls(msg.getMonUrls());
         List<String> hostnames = msg.getMonUrls().stream()
@@ -119,6 +140,15 @@ public class CephApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APIAddMonToCephBackupStorageMsg msg) {
         checkMonUrls(msg.getMonUrls());
+
+        List<String> hostnames = msg.getMonUrls().stream()
+                .map(MonUri::new)
+                .map(MonUri::getHostname)
+                .collect(Collectors.toList());
+
+        if (Q.New(CephBackupStorageMonVO.class).in(CephBackupStorageMonVO_.hostname, hostnames).isExists()){
+            throw new ApiMessageInterceptionException(argerr("Adding the same Mon node is not allowed"));
+        }
     }
     private void validate(APIUpdateCephBackupStorageMonMsg msg) {
         if (msg.getHostname() != null && !NetworkUtils.isIpv4Address(msg.getHostname()) && !NetworkUtils.isHostname(msg.getHostname())) {
@@ -146,7 +176,8 @@ public class CephApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void checkMonUrls(List<String> monUrls) {
-        List<String> urls = new ArrayList<String>();
+        distinctMons(monUrls);
+
         for (String monUrl : monUrls) {
             String url = String.format("ssh://%s", monUrl);
             try {

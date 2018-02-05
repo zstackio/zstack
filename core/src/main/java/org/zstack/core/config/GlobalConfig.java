@@ -10,7 +10,9 @@ import org.zstack.core.config.GlobalConfigCanonicalEvents.UpdateEvent;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.DebugUtils;
 import org.zstack.utils.TypeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
@@ -61,6 +63,24 @@ public class GlobalConfig {
                 e("value", value),
                 e("validatorRegularExpression", validatorRegularExpression)
         ));
+    }
+
+    public void normalize() {
+        if (type == null) {
+            // means String, no need to normalize
+            return;
+        }
+
+        // for bug: http://dev.zstack.io/browse/ZSTAC-8753
+        DebugUtils.Assert(value != null, String.format("value cannot be null, category: %s, name: %s", category, name));
+
+        try {
+            Class clz = Class.forName(type);
+            Object v = TypeUtils.stringToValue(value, clz);
+            value = v.toString();
+        } catch (ClassNotFoundException e) {
+            throw new CloudRuntimeException(e);
+        }
     }
 
     public GlobalConfig(String category, String name) {

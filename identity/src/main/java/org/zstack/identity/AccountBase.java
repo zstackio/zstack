@@ -500,22 +500,26 @@ public class AccountBase extends AbstractAccount {
                         svo.setResourceType(resourceType);
                         svo.setResourceUuid(ruuid);
                         svo.setToPublic(true);
-                        dbf.getEntityManager().persist(svo);
+                        dbf.persist(svo);
                         N.New(resourceType, ruuid).info_("Shared resource[uuid:%s type:%s] to public", ruuid, resourceType);
                     }
                 } else {
                     for (String ruuid : msg.getResourceUuids()) {
                         String resourceType = uuidType.get(ruuid);
-
                         for (String auuid : msg.getAccountUuids()) {
-                            SharedResourceVO svo = new SharedResourceVO();
-                            svo.setOwnerAccountUuid(msg.getAccountUuid());
-                            svo.setResourceType(resourceType);
-                            svo.setResourceUuid(ruuid);
-                            svo.setReceiverAccountUuid(auuid);
-                            dbf.getEntityManager().persist(svo);
-
-                            N.New(resourceType, ruuid).info_("Shared resource[uuid:%s type:%s] to account[uuid:%s]", ruuid, resourceType, auuid);
+                            if (! Q.New(SharedResourceVO.class)
+                                    .eq(SharedResourceVO_.ownerAccountUuid, msg.getAccountUuid())
+                                    .eq(SharedResourceVO_.resourceUuid, ruuid)
+                                    .eq(SharedResourceVO_.receiverAccountUuid,auuid)
+                                    .isExists()){
+                                SharedResourceVO svo = new SharedResourceVO();
+                                svo.setOwnerAccountUuid(msg.getAccountUuid());
+                                svo.setResourceType(resourceType);
+                                svo.setResourceUuid(ruuid);
+                                svo.setReceiverAccountUuid(auuid);
+                                dbf.persist(svo);
+                                N.New(resourceType, ruuid).info_("Shared resource[uuid:%s type:%s] to account[uuid:%s]", ruuid, resourceType, auuid);
+                            }
                         }
                     }
                 }

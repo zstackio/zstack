@@ -27,8 +27,8 @@ public class APIQuerySecurityGroupReply extends APIQueryReply {
         sec.setName("web");
         sec.setDescription("for test");
         sec.setState(SecurityGroupState.Enabled.toString());
-        sec.setCreateDate(new Timestamp(System.currentTimeMillis()));
-        sec.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        sec.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        sec.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         reply.setInventories(asList(sec));
         reply.setSuccess(true);
         return reply;

@@ -5,6 +5,7 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -29,14 +30,7 @@ public class HostExtensionPointEmitter implements Component {
 
     public void preDelete(HostInventory hinv) throws HostException {
         for (HostDeleteExtensionPoint extp : deleteHostExts) {
-            try {
-                extp.preDeleteHost(hinv);
-            } catch (HostException he) {
-                logger.debug(String.format("extension[%s] refuses to delete host[uuid:%s] because %s", extp.getClass().getName(), hinv.getUuid(), he.getMessage()), he);
-                throw he;
-            } catch (Exception e) {
-                logger.warn(String.format("Unhandled exception happened while calling %s", extp.getClass().getName()), e);
-            }
+            extp.preDeleteHost(hinv);
         }
     }
 
@@ -44,15 +38,7 @@ public class HostExtensionPointEmitter implements Component {
         HostState next = vo.getState().nextState(event);
         HostInventory hinv = HostInventory.valueOf(vo);
         for (HostChangeStateExtensionPoint extp : changeStateExts) {
-            try {
-                extp.preChangeHostState(hinv, event, next);
-            } catch (HostException he) {
-                logger.debug(String.format("%s refuse to change host state by[HostStateEvent:%s] because %s", extp.getClass()
-                        .getCanonicalName(), event, he.getMessage()), he);
-                throw he;
-            } catch (Exception e) {
-                logger.warn(String.format("Unhandled exception happened while calling %s", extp.getClass().getName()), e);
-            }
+            extp.preChangeHostState(hinv, event, next);
         }
     }
 
@@ -115,13 +101,7 @@ public class HostExtensionPointEmitter implements Component {
     public void connectionReestablished(HypervisorType hvType, HostInventory host) throws HostException {
         for (HostConnectionReestablishExtensionPoint ext : connetionReestablishExts) {
             if (ext.getHypervisorTypeForReestablishExtensionPoint().equals(hvType)) {
-                try {
-                    ext.connectionReestablished(host);
-                } catch (HostException he) {
-                    throw he;
-                } catch (Exception e) {
-                    logger.warn(String.format("Unhandled exception happened while calling %s", ext.getClass().getName()), e);
-                }
+                ext.connectionReestablished(host);
             }
         }
     }

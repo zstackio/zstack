@@ -58,6 +58,10 @@ class SharedMountPointPrimaryStorageSpec extends PrimaryStorageSpec {
             return new KvmBackend.AgentRsp()
         }
 
+        simulator(KvmBackend.GET_SUBPATH_PATH) {
+            return new KvmBackend.GetSubPathRsp()
+        }
+
         simulator(KvmBackend.CREATE_TEMPLATE_FROM_VOLUME_PATH) {
             return new KvmBackend.AgentRsp()
         }

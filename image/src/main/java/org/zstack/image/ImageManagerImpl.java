@@ -27,6 +27,7 @@ import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
@@ -51,6 +52,7 @@ import org.zstack.header.vm.CreateTemplateFromVmRootVolumeReply;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
+import org.zstack.identity.QuotaGlobalConfig;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
@@ -65,6 +67,8 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -259,7 +263,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
                                         for (BackupStorageInventory bs: backupStorages) {
                                             for (CreateImageExtensionPoint ext : pluginRgty.getExtensionList(CreateImageExtensionPoint.class)) {
-                                                ext.beforeCreateImage(ImageInventory.valueOf(image), bs.getUuid());
+                                                VolumeVO volume = dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class);
+                                                ext.beforeCreateImage(ImageInventory.valueOf(image), bs.getUuid(), volume.getPrimaryStorageUuid());
                                             }
                                         }
                                         trigger.next();
@@ -300,7 +305,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                         saveRefVOByBsInventorys(backupStorages, image.getUuid());
                                         for (BackupStorageInventory bs: backupStorages) {
                                             for (CreateImageExtensionPoint ext : pluginRgty.getExtensionList(CreateImageExtensionPoint.class)) {
-                                                ext.beforeCreateImage(ImageInventory.valueOf(image), bs.getUuid());
+                                                VolumeVO volume = dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class);
+
+                                                ext.beforeCreateImage(ImageInventory.valueOf(image), bs.getUuid(), volume.getPrimaryStorageUuid());
                                             }
                                         }
                                         trigger.next();
@@ -450,7 +457,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         vo.setSystem(msg.isSystem());
         vo.setDescription(msg.getDescription());
         vo.setPlatform(ImagePlatform.valueOf(msg.getPlatform()));
-        vo.setGuestOsType(vo.getGuestOsType());
+        vo.setGuestOsType(msg.getGuestOsType());
         vo.setStatus(ImageStatus.Creating);
         vo.setState(ImageState.Enabled);
         vo.setFormat(format);
@@ -929,6 +936,10 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         bus.reply(msg, reply);
     }
 
+    private static boolean isUpload(final APIAddImageMsg msg) {
+        return msg.getUrl().startsWith("upload://");
+    }
+
     @Deferred
     private void handle(final APIAddImageMsg msg) {
         String imageType = msg.getType();
@@ -1003,6 +1014,30 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         new LoopAsyncBatch<DownloadImageMsg>(msg) {
             AtomicBoolean success = new AtomicBoolean(false);
 
+            class TrackContext {
+                String name;
+                String imageUuid;
+                String bsUuid;
+                String hostname;
+            }
+
+            List<TrackContext> ctxs = new ArrayList<>();
+
+            private void addTrackTask(String name, String imageUuid, String bsUuid, String installPath) throws URISyntaxException {
+                TrackContext ctx = new TrackContext();
+                ctx.name = name;
+                ctx.imageUuid = imageUuid;
+                ctx.bsUuid = bsUuid;
+                ctx.hostname = new URI(installPath).getHost();
+                ctxs.add(ctx);
+            }
+
+            private void runTrackTask() {
+                for (TrackContext ctx: ctxs) {
+                    trackUpload(ctx.name, ctx.imageUuid, ctx.bsUuid, ctx.hostname);
+                }
+            }
+
             @Override
             protected Collection<DownloadImageMsg> collect() {
                 return dmsgs;
@@ -1025,8 +1060,12 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                     dbf.remove(ref);
                                 } else {
                                     DownloadImageReply re = reply.castReply();
-                                    if (msg.getUrl().startsWith("upload://")) {
-                                        trackUpload(ivo.getName(), ivo.getUuid(), ref.getBackupStorageUuid());
+                                    if (isUpload(msg)) {
+                                        try {
+                                            addTrackTask(ivo.getName(), ivo.getUuid(), ref.getBackupStorageUuid(), re.getInstallPath());
+                                        } catch (URISyntaxException e) {
+                                            throw new OperationFailureException(errf.throwableToOperationError(e));
+                                        }
                                     } else {
                                         ref.setStatus(ImageStatus.Ready);
                                     }
@@ -1050,8 +1089,13 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                         dbf.update(vo);
                                     }
 
-                                    logger.debug(String.format("successfully downloaded image[uuid:%s, name:%s] to backup storage[uuid:%s]",
-                                            inv.getUuid(), inv.getName(), dmsg.getBackupStorageUuid()));
+                                    if (isUpload(msg)) {
+                                        logger.debug(String.format("created upload request, image[uuid:%s, name:%s] to backup storage[uuid:%s]",
+                                                inv.getUuid(), inv.getName(), dmsg.getBackupStorageUuid()));
+                                    } else {
+                                        logger.debug(String.format("successfully downloaded image[uuid:%s, name:%s] to backup storage[uuid:%s]",
+                                                inv.getUuid(), inv.getName(), dmsg.getBackupStorageUuid()));
+                                    }
                                 }
 
                                 completion.done();
@@ -1102,6 +1146,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     evt.setError(err);
                 }
 
+                runTrackTask();
                 bus.publish(evt);
             }
         }.start();
@@ -1294,12 +1339,12 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 ImageQuotaUtil.ImageQuota imageQuota = new ImageQuotaUtil().getUsed(accountUuid);
 
                 Quota.QuotaUsage usage = new Quota.QuotaUsage();
-                usage.setName(ImageConstant.QUOTA_IMAGE_NUM);
+                usage.setName(QuotaConstant.IMAGE_NUM);
                 usage.setUsed(imageQuota.imageNum);
                 usages.add(usage);
 
                 usage = new Quota.QuotaUsage();
-                usage.setName(ImageConstant.QUOTA_IMAGE_SIZE);
+                usage.setName(QuotaConstant.IMAGE_SIZE);
                 usage.setUsed(imageQuota.imageSize);
                 usages.add(usage);
 
@@ -1320,8 +1365,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
 
                 if (accResRefVO.getResourceType().equals(ImageVO.class.getSimpleName())) {
-                    long imageNumQuota = pairs.get(ImageConstant.QUOTA_IMAGE_NUM).getValue();
-                    long imageSizeQuota = pairs.get(ImageConstant.QUOTA_IMAGE_SIZE).getValue();
+                    long imageNumQuota = pairs.get(QuotaConstant.IMAGE_NUM).getValue();
+                    long imageSizeQuota = pairs.get(QuotaConstant.IMAGE_SIZE).getValue();
 
                     long imageNumUsed = new ImageQuotaUtil().getUsedImageNum(resourceTargetOwnerAccountUuid);
                     long imageSizeUsed = new ImageQuotaUtil().getUsedImageSize(resourceTargetOwnerAccountUuid);
@@ -1336,7 +1381,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                         quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
                         quotaCompareInfo.currentAccountUuid = currentAccountUuid;
                         quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                        quotaCompareInfo.quotaName = ImageConstant.QUOTA_IMAGE_NUM;
+                        quotaCompareInfo.quotaName = QuotaConstant.IMAGE_NUM;
                         quotaCompareInfo.quotaValue = imageNumQuota;
                         quotaCompareInfo.currentUsed = imageNumUsed;
                         quotaCompareInfo.request = imageNumAsked;
@@ -1347,7 +1392,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                         quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
                         quotaCompareInfo.currentAccountUuid = currentAccountUuid;
                         quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                        quotaCompareInfo.quotaName = ImageConstant.QUOTA_IMAGE_SIZE;
+                        quotaCompareInfo.quotaName = QuotaConstant.IMAGE_SIZE;
                         quotaCompareInfo.quotaValue = imageSizeQuota;
                         quotaCompareInfo.currentUsed = imageSizeUsed;
                         quotaCompareInfo.request = imageSizeAsked;
@@ -1362,8 +1407,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 String currentAccountUuid = msg.getSession().getAccountUuid();
                 String resourceTargetOwnerAccountUuid = new QuotaUtil().getResourceOwnerAccountUuid(msg.getImageUuid());
 
-                long imageNumQuota = pairs.get(ImageConstant.QUOTA_IMAGE_NUM).getValue();
-                long imageSizeQuota = pairs.get(ImageConstant.QUOTA_IMAGE_SIZE).getValue();
+                long imageNumQuota = pairs.get(QuotaConstant.IMAGE_NUM).getValue();
+                long imageSizeQuota = pairs.get(QuotaConstant.IMAGE_SIZE).getValue();
                 long imageNumUsed = new ImageQuotaUtil().getUsedImageNum(resourceTargetOwnerAccountUuid);
                 long imageSizeUsed = new ImageQuotaUtil().getUsedImageSize(resourceTargetOwnerAccountUuid);
 
@@ -1376,7 +1421,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
                     quotaCompareInfo.currentAccountUuid = currentAccountUuid;
                     quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                    quotaCompareInfo.quotaName = ImageConstant.QUOTA_IMAGE_NUM;
+                    quotaCompareInfo.quotaName = QuotaConstant.IMAGE_NUM;
                     quotaCompareInfo.quotaValue = imageNumQuota;
                     quotaCompareInfo.currentUsed = imageNumUsed;
                     quotaCompareInfo.request = imageNumAsked;
@@ -1387,7 +1432,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
                     quotaCompareInfo.currentAccountUuid = currentAccountUuid;
                     quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                    quotaCompareInfo.quotaName = ImageConstant.QUOTA_IMAGE_SIZE;
+                    quotaCompareInfo.quotaName = QuotaConstant.IMAGE_SIZE;
                     quotaCompareInfo.quotaValue = imageSizeQuota;
                     quotaCompareInfo.currentUsed = imageSizeUsed;
                     quotaCompareInfo.request = imageSizeAsked;
@@ -1399,7 +1444,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             private void check(APIAddImageMsg msg, Map<String, Quota.QuotaPair> pairs) {
                 String currentAccountUuid = msg.getSession().getAccountUuid();
                 String resourceTargetOwnerAccountUuid = msg.getSession().getAccountUuid();
-                long imageNumQuota = pairs.get(ImageConstant.QUOTA_IMAGE_NUM).getValue();
+                long imageNumQuota = pairs.get(QuotaConstant.IMAGE_NUM).getValue();
                 long imageNumUsed = new ImageQuotaUtil().getUsedImageNum(resourceTargetOwnerAccountUuid);
                 long imageNumAsked = 1;
 
@@ -1408,7 +1453,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
                     quotaCompareInfo.currentAccountUuid = currentAccountUuid;
                     quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                    quotaCompareInfo.quotaName = ImageConstant.QUOTA_IMAGE_NUM;
+                    quotaCompareInfo.quotaName = QuotaConstant.IMAGE_NUM;
                     quotaCompareInfo.quotaValue = imageNumQuota;
                     quotaCompareInfo.currentUsed = imageNumUsed;
                     quotaCompareInfo.request = imageNumAsked;
@@ -1417,7 +1462,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 new ImageQuotaUtil().checkImageSizeQuotaUseHttpHead(msg, pairs);
             }
         };
-
         Quota quota = new Quota();
         quota.setOperator(checker);
         quota.addMessageNeedValidation(APIAddImageMsg.class);
@@ -1425,13 +1469,13 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         quota.addMessageNeedValidation(APIChangeResourceOwnerMsg.class);
 
         Quota.QuotaPair p = new Quota.QuotaPair();
-        p.setName(ImageConstant.QUOTA_IMAGE_NUM);
-        p.setValue(QuotaConstant.QUOTA_IMAGE_NUM);
+        p.setName(QuotaConstant.IMAGE_NUM);
+        p.setValue(QuotaGlobalConfig.IMAGE_NUM.defaultValue(Long.class));
         quota.addPair(p);
 
         p = new Quota.QuotaPair();
-        p.setName(ImageConstant.QUOTA_IMAGE_SIZE);
-        p.setValue(QuotaConstant.QUOTA_IMAGE_SIZE);
+        p.setName(QuotaConstant.IMAGE_SIZE);
+        p.setValue(QuotaGlobalConfig.IMAGE_SIZE.defaultValue(Long.class));
         quota.addPair(p);
 
         return list(quota);
@@ -1462,9 +1506,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         reportProgress(String.valueOf(progress));
     }
 
-    private void trackUpload(String name, String imageUuid, String bsUuid) {
+    private void trackUpload(String name, String imageUuid, String bsUuid, String hostname) {
         final int maxNumOfFailure = 3;
-        final int maxIdleSecond = 600;
+        final int maxIdleSecond = 30;
 
         thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask() {
             private long numError = 0;
@@ -1495,6 +1539,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             private void markFailure(ErrorCode reason) {
                 N.New(ImageVO.class, imageUuid).error_("upload image [name: %s, uuid: %s] failed: %s",
                         name, imageUuid, reason.toString());
+
+                // Note, the handler of ImageDeletionMsg will deal with storage capacity.
                 ImageDeletionMsg msg = new ImageDeletionMsg();
                 msg.setImageUuid(imageUuid);
                 msg.setBackupStorageUuids(Collections.singletonList(bsUuid));
@@ -1518,30 +1564,43 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     return true;
                 }
 
-                GetImageDownloadProgressMsg dmsg = new GetImageDownloadProgressMsg();
+                final GetImageDownloadProgressMsg dmsg = new GetImageDownloadProgressMsg();
                 dmsg.setBackupStorageUuid(bsUuid);
                 dmsg.setImageUuid(imageUuid);
+                dmsg.setHostname(hostname);
                 bus.makeTargetServiceIdByResourceUuid(dmsg, BackupStorageConstant.SERVICE_ID, bsUuid);
 
-                MessageReply reply = bus.call(dmsg);
+                final MessageReply reply = bus.call(dmsg);
                 if (reply.isSuccess()) {
                     // reset the error counter
                     numError = 0;
 
-                    GetImageDownloadProgressReply dr = reply.castReply();
+                    final GetImageDownloadProgressReply dr = reply.castReply();
 
                     if (dr.isCompleted()) {
-                        doReportProgress(imageUuid, "adding to image store", 100);
-                        markCompletion(dr);
+                        if (!dr.isSuccess()) {
+                            markFailure(dr.getError());
+                        } else {
+                            doReportProgress(imageUuid, "adding to image store", 100);
+                            markCompletion(dr);
+                        }
                         return true;
                     }
 
-                    long progress = dr.getActualSize() == 0 ? 0 : dr.getDownloaded() * 100 / dr.getActualSize();
-                    doReportProgress(imageUuid, "uploading image", progress * 8 / 10);
-
+                    doReportProgress(imageUuid, "uploading image", dr.getProgress());
                     if (ivo.getActualSize() == 0 && dr.getActualSize() != 0) {
                         ivo.setActualSize(dr.getActualSize());
                         dbf.updateAndRefresh(ivo);
+
+                        AllocateBackupStorageMsg amsg = new AllocateBackupStorageMsg();
+                        amsg.setBackupStorageUuid(bsUuid);
+                        amsg.setSize(dr.getActualSize());
+                        bus.makeLocalServiceId(amsg, BackupStorageConstant.SERVICE_ID);
+                        MessageReply areply = bus.call(amsg);
+                        if (!areply.isSuccess()) {
+                            markFailure(areply.getError());
+                            return true;
+                        }
                     }
 
                     return false;

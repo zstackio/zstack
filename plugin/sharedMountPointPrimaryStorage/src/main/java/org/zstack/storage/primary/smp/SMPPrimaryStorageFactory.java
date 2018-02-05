@@ -151,7 +151,7 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
             @Override
             public void rollback(FlowRollback trigger, Map data) {
                 if (ctx.temporaryInstallPath != null) {
-                    DeleteBitsOnPrimaryStorageMsg msg = new DeleteBitsOnPrimaryStorageMsg();
+                    DeleteVolumeBitsOnPrimaryStorageMsg msg = new DeleteVolumeBitsOnPrimaryStorageMsg();
                     msg.setHypervisorType(hvType.toString());
                     msg.setPrimaryStorageUuid(paramIn.getPrimaryStorageUuid());
                     msg.setInstallPath(ctx.temporaryInstallPath);
@@ -226,7 +226,7 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                DeleteBitsOnPrimaryStorageMsg msg = new DeleteBitsOnPrimaryStorageMsg();
+                DeleteVolumeBitsOnPrimaryStorageMsg msg = new DeleteVolumeBitsOnPrimaryStorageMsg();
                 msg.setInstallPath(ctx.temporaryInstallPath);
                 msg.setPrimaryStorageUuid(paramIn.getPrimaryStorageUuid());
                 msg.setHypervisorType(hvType.toString());

@@ -1,7 +1,8 @@
 package org.zstack.core.gc;
 
-import org.zstack.header.vo.BaseResource;
-import org.zstack.header.vo.ResourceVO;
+import org.zstack.header.managementnode.ManagementNodeVO;
+import org.zstack.header.vo.*;
+import org.zstack.header.vo.ForeignKey;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
@@ -17,6 +18,10 @@ public class GarbageCollectorVO extends ResourceVO {
     private String name;
 
     @Column
+    @ForeignKey(parentEntityClass = ManagementNodeVO.class, onDeleteAction = ForeignKey.ReferenceOption.SET_NULL)
+    private String managementNodeUuid;
+
+    @Column
     private String runnerClass;
 
     @Column
@@ -27,9 +32,6 @@ public class GarbageCollectorVO extends ResourceVO {
     private GCStatus status;
 
     @Column
-    private String managementNodeUuid;
-
-    @Column
     private String type;
 
     @Column
@@ -37,6 +39,11 @@ public class GarbageCollectorVO extends ResourceVO {
 
     @Column
     private Timestamp lastOpDate;
+
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
 
     public String getName() {
         return name;

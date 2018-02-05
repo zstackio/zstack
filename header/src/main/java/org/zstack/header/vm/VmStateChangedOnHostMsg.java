@@ -11,6 +11,8 @@ public class VmStateChangedOnHostMsg extends NeedReplyMessage implements VmInsta
     private String hostUuid;
     private String stateOnHost;
 
+    public VmStateChangedOnHostMsg() { }
+
     public String getVmStateAtTracingMoment() {
         return vmStateAtTracingMoment;
     }

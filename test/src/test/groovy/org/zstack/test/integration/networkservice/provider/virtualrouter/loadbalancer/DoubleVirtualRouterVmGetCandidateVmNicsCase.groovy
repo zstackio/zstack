@@ -333,7 +333,7 @@ class DoubleVirtualRouterVmGetCandidateVmNicsCase extends SubCase{
         }
 
         def vip = dbFindByUuid(lb.getVipUuid(),VipVO.class) as VipVO
-        assert vip.getPeerL3NetworkUuid() == null
+        assert (vip.getPeerL3NetworkUuids() == null || vip.getPeerL3NetworkUuids().isEmpty())
     }
 
     @Override

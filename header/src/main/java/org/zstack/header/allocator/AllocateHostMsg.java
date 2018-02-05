@@ -14,6 +14,7 @@ public class AllocateHostMsg extends NeedReplyMessage {
     private long diskSize;
     private String allocatorStrategy;
     private List<String> avoidHostUuids;
+    private List<String> softAvoidHostUuids;
     private List<String> l3NetworkUuids;
     private VmInstanceInventory vmInstance;
     private ImageInventory image;
@@ -130,6 +131,14 @@ public class AllocateHostMsg extends NeedReplyMessage {
 
     public void setAvoidHostUuids(List<String> avoidHostUuids) {
         this.avoidHostUuids = avoidHostUuids;
+    }
+
+    public List<String> getSoftAvoidHostUuids() {
+        return softAvoidHostUuids;
+    }
+
+    public void setSoftAvoidHostUuids(List<String> softAvoidHostUuids) {
+        this.softAvoidHostUuids = softAvoidHostUuids;
     }
 
     public List<String> getL3NetworkUuids() {

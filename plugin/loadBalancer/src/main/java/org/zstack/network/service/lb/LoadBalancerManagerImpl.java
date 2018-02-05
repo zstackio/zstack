@@ -7,9 +7,9 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.thread.ChainTask;
-import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
@@ -36,22 +36,21 @@ import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.identity.AccountManager;
+import org.zstack.identity.QuotaGlobalConfig;
 import org.zstack.identity.QuotaUtil;
-import org.zstack.network.service.vip.Vip;
-import org.zstack.network.service.vip.VipInventory;
-import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.vip.*;
 import org.zstack.tag.TagManager;
+import org.zstack.utils.RangeSet;
 import org.zstack.utils.Utils;
+import org.zstack.utils.VipUseForList;
 import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 
+import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -59,7 +58,7 @@ import static org.zstack.utils.CollectionDSL.list;
  * Created by frank on 8/8/2015.
  */
 public class LoadBalancerManagerImpl extends AbstractService implements LoadBalancerManager,
-        AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint {
+        AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint, VipGetUsedPortRangeExtensionPoint, VipGetServiceReferencePoint {
     private static final CLogger logger = Utils.getLogger(LoadBalancerManagerImpl.class);
 
     @Autowired
@@ -122,6 +121,35 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
 
             @Override
             public void setup() {
+
+                flow(new Flow() {
+                    String __name__ = "write-to-db";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        vo = new LoadBalancerVO();
+                        vo.setName(msg.getName());
+                        vo.setUuid(msg.getResourceUuid() == null ? Platform.getUuid() : msg.getResourceUuid());
+                        vo.setDescription(msg.getDescription());
+                        vo.setVipUuid(msg.getVipUuid());
+                        vo.setState(LoadBalancerState.Enabled);
+                        vo = dbf.persistAndRefresh(vo);
+
+                        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), LoadBalancerVO.class);
+                        tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), LoadBalancerVO.class.getSimpleName());
+                        /* put vo to data for rollback */
+                        data.put(LoadBalancerConstants.Param.LOAD_BALANCER_VO, vo);
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        LoadBalancerVO vo = (LoadBalancerVO)data.get(LoadBalancerConstants.Param.LOAD_BALANCER_VO);
+                        dbf.remove(vo);
+                        trigger.rollback();
+                    }
+                });
+
                 flow(new Flow() {
                     String __name__ = "acquire-vip";
 
@@ -129,9 +157,11 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
+                        ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+                        struct.setUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
                         Vip v = new Vip(vip.getUuid());
-                        v.setUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
-                        v.acquire(false, new Completion(trigger) {
+                        v.setStruct(struct);
+                        v.acquire(new Completion(trigger) {
                             @Override
                             public void success() {
                                 s = true;
@@ -147,12 +177,12 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        if (!s) {
-                            trigger.rollback();
-                            return;
-                        }
-
-                        new Vip(vip.getUuid()).release(false, new Completion(trigger) {
+                        LoadBalancerVO vo = (LoadBalancerVO)data.get(LoadBalancerConstants.Param.LOAD_BALANCER_VO);
+                        ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+                        struct.setUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+                        Vip v = new Vip(vip.getUuid());
+                        v.setStruct(struct);
+                        v.release(new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.rollback();
@@ -165,25 +195,6 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                                 trigger.rollback();
                             }
                         });
-                    }
-                });
-
-                flow(new NoRollbackFlow() {
-                    String __name__ = "write-to-db";
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        vo = new LoadBalancerVO();
-                        vo.setName(msg.getName());
-                        vo.setUuid(msg.getResourceUuid() == null ? Platform.getUuid() : msg.getResourceUuid());
-                        vo.setDescription(msg.getDescription());
-                        vo.setVipUuid(msg.getVipUuid());
-                        vo.setState(LoadBalancerState.Enabled);
-                        vo = dbf.persistAndRefresh(vo);
-
-                        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), LoadBalancerVO.class);
-                        tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), LoadBalancerVO.class.getSimpleName());
-                        trigger.next();
                     }
                 });
 
@@ -440,7 +451,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
             @Override
             public List<Quota.QuotaUsage> getQuotaUsageByAccount(String accountUuid) {
                 Quota.QuotaUsage usage = new Quota.QuotaUsage();
-                usage.setName(LoadBalancerConstants.QUOTA_LOAD_BALANCER_NUM);
+                usage.setName(QuotaConstant.LOAD_BALANCER_NUM);
                 usage.setUsed(getUsedLb(accountUuid));
                 return list(usage);
             }
@@ -459,13 +470,13 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
             }
 
             private void check(APICreateLoadBalancerMsg msg, Map<String, QuotaPair> pairs) {
-                long lbNum = pairs.get(LoadBalancerConstants.QUOTA_LOAD_BALANCER_NUM).getValue();
+                long lbNum = pairs.get(QuotaConstant.LOAD_BALANCER_NUM).getValue();
                 long en = getUsedLb(msg.getSession().getAccountUuid());
 
                 if (en + 1 > lbNum) {
                     throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
                             String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    msg.getSession().getAccountUuid(), LoadBalancerConstants.QUOTA_LOAD_BALANCER_NUM, lbNum)
+                                    msg.getSession().getAccountUuid(), QuotaConstant.LOAD_BALANCER_NUM, lbNum)
                     ));
                 }
             }
@@ -476,10 +487,44 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         quota.setOperator(checker);
 
         QuotaPair p = new QuotaPair();
-        p.setName(LoadBalancerConstants.QUOTA_LOAD_BALANCER_NUM);
-        p.setValue(QuotaConstant.QUOTA_LOAD_BALANCER_NUM);
+        p.setName(QuotaConstant.LOAD_BALANCER_NUM);
+        p.setValue(QuotaGlobalConfig.LOAD_BALANCER_NUM.defaultValue(Long.class));
         quota.addPair(p);
 
         return list(quota);
+    }
+
+    @Override
+    public RangeSet getVipUsePortRange(String vipUuid, String protocol, VipUseForList useForList){
+
+        RangeSet portRangeList = new RangeSet();
+        List<RangeSet.Range> portRanges = new ArrayList<RangeSet.Range>();
+
+        /* no matter TCP or HTTP, retrieve all the ports of TCP and HTTP */
+        if (protocol.toLowerCase().equals(LoadBalancerConstants.LB_PROTOCOL_TCP) ||
+                protocol.toLowerCase().equals(LoadBalancerConstants.LB_PROTOCOL_HTTP)) {
+            List<Tuple> lbPortList = SQL.New("select lbl.loadBalancerPort, lbl.loadBalancerPort from LoadBalancerListenerVO lbl, LoadBalancerVO lb "
+                    + "where lbl.loadBalancerUuid=lb.uuid and lb.vipUuid = :vipUuid", Tuple.class).
+                    param("vipUuid", vipUuid).list();
+
+            Iterator<Tuple> it = lbPortList.iterator();
+            while (it.hasNext()) {
+                Tuple strRange = it.next();
+                int start = strRange.get(0, Integer.class);
+                int end = strRange.get(1, Integer.class);
+
+                RangeSet.Range range = new RangeSet.Range(start, end);
+                portRanges.add(range);
+            }
+            portRangeList.setRanges(portRanges);
+        }
+
+        return portRangeList;
+    }
+
+    @Override
+    public ServiceReference getServiceReference(String vipUuid) {
+        long count = Q.New(LoadBalancerVO.class).eq(LoadBalancerVO_.vipUuid, vipUuid).count();
+        return new VipGetServiceReferencePoint.ServiceReference(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING, count);
     }
 }

@@ -15,6 +15,8 @@ import org.zstack.network.service.userdata.UserdataConstant
 import org.zstack.network.service.vip.VipVO
 import org.zstack.network.service.vip.VipVO_
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
+import org.zstack.sdk.AttachEipAction
+import org.zstack.sdk.CreateEipAction
 import org.zstack.sdk.EipInventory
 import org.zstack.sdk.GetEipAttachableVmNicsAction
 import org.zstack.sdk.L3NetworkInventory
@@ -85,6 +87,20 @@ class OperateEipCase extends SubCase {
                     attachL2Network("l2")
                 }
 
+                cluster {
+                    name = "cluster2"
+                    hypervisorType = "KVM"
+
+                    kvm {
+                        name = "kvm2"
+                        managementIp = "127.0.0.2"
+                        username = "root"
+                        password = "password"
+                    }
+
+                    attachL2Network("l2vlan")
+                }
+
                 localPrimaryStorage {
                     name = "local"
                     url = "/local_ps"
@@ -138,6 +154,23 @@ class OperateEipCase extends SubCase {
                     }
                 }
 
+                l2VlanNetwork {
+                    name = "l2vlan"
+                    physicalInterface = "eth0"
+                    vlan = 1001
+
+                    l3Network {
+                        name = "pubL3_2"
+
+                        ip {
+                            startIp = "12.168.100.10"
+                            endIp = "12.168.100.100"
+                            netmask = "255.255.255.0"
+                            gateway = "12.168.100.1"
+                        }
+                    }
+                }
+
                 attachBackupStorage("sftp")
 
                 eip {
@@ -150,6 +183,11 @@ class OperateEipCase extends SubCase {
                     name = "eip-2"
 
                     useVip("pubL3")
+                }
+
+                eip {
+                    name = "eip-3"
+                    useVip("pubL3_2")
                 }
 
                 virtualRouterOffering {
@@ -190,6 +228,7 @@ class OperateEipCase extends SubCase {
             testReconnectHostBatchApplyEips()
             testDeleteEip()
             testAttachEipToOverlapCidrVmNic()
+            testAttachEipDifferentClusterAttached()
         }
     }
 
@@ -284,6 +323,29 @@ class OperateEipCase extends SubCase {
         retryInSecs() {
             assert dbFindByUuid(host.uuid, HostVO.class).getStatus() == HostStatus.Connected
         }
+    }
+
+    void testAttachEipDifferentClusterAttached(){
+        def eip_3 = env.inventoryByName("eip-3") as EipInventory
+        def vm = env.inventoryByName("vm") as VmInstanceInventory
+        String vipUuid = eip_3.vipUuid
+
+        def a = new AttachEipAction()
+        a.eipUuid = eip_3.uuid
+        a.vmNicUuid = vm.vmNics.get(0).uuid
+        a.sessionId = currentEnvSpec.session.uuid
+        assert a.call().error != null
+
+        deleteEip {
+            uuid = eip_3.uuid
+        }
+
+        a = new CreateEipAction()
+        a.name = "test"
+        a.vmNicUuid = vm.vmNics.get(0).uuid
+        a.vipUuid = vipUuid
+        a.sessionId = currentEnvSpec.session.uuid
+        assert a.call().error != null
     }
 
     @Override

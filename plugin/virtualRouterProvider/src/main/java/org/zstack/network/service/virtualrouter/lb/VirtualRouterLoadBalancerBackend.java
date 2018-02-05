@@ -3,29 +3,37 @@ package org.zstack.network.service.virtualrouter.lb;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SQLBatch;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.apimediator.ApiMessageInterceptor;
+import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.network.service.portforwarding.PortForwardingConstant;
+import org.zstack.network.service.vip.ModifyVipAttributesStruct;
+import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
+import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.lb.*;
 import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.*;
@@ -40,20 +48,23 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.VipUseForList;
 
+import static java.util.Arrays.asList;
+import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
  * Created by frank on 8/9/2015.
  */
-public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBackend implements LoadBalancerBackend {
+public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBackend
+        implements LoadBalancerBackend, GlobalApiMessageInterceptor, ApiMessageInterceptor {
     private static CLogger logger = Utils.getLogger(VirtualRouterLoadBalancerBackend.class);
 
     @Autowired
@@ -71,6 +82,93 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     private TagManager tagMgr;
     @Autowired
     private ApiTimeoutManager apiTimeoutManager;
+    @Autowired
+    private NetworkServiceManager nwServiceMgr;
+
+    @Override
+    public List<Class> getMessageClassToIntercept() {
+        return asList(APIAddVmNicToLoadBalancerMsg.class);
+    }
+
+    @Override
+    public InterceptorPosition getPosition() {
+        return InterceptorPosition.END;
+    }
+
+    @Override
+    public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
+        if (msg instanceof APIAddVmNicToLoadBalancerMsg) {
+            validate((APIAddVmNicToLoadBalancerMsg) msg);
+        }
+
+        return msg;
+    }
+
+    @Transactional(readOnly = true)
+    private void validate(APIAddVmNicToLoadBalancerMsg msg) {
+        List<String> attachedVmNicUuids = SQL.New("select ref.vmNicUuid " +
+                "from LoadBalancerListenerVmNicRefVO ref, LoadBalancerListenerVO lbl " +
+                "where ref.listenerUuid = lbl.uuid " +
+                "and lbl.loadBalancerUuid = :lbUuid")
+                .param("lbUuid", msg.getLoadBalancerUuid())
+                .list();
+
+        attachedVmNicUuids.addAll(msg.getVmNicUuids());
+
+        Set<String> l3NetworkUuids = new HashSet<>(
+                Q.New(VmNicVO.class).select(VmNicVO_.l3NetworkUuid)
+                        .in(VmNicVO_.uuid, attachedVmNicUuids)
+                        .listValues());
+
+        Set<String> vrUuids = new HashSet<>(
+                Q.New(VmNicVO.class).select(VmNicVO_.vmInstanceUuid)
+                        .in(VmNicVO_.l3NetworkUuid, l3NetworkUuids)
+                        .eq(VmNicVO_.metaData, VirtualRouterNicMetaData.GUEST_NIC_MASK)
+                        .listValues());
+
+        if (vrUuids.size() == 2
+                && LoadBalancerSystemTags.SEPARATE_VR.hasTag(msg.getLoadBalancerUuid())
+                && vrUuids.stream().anyMatch(uuid -> VirtualRouterSystemTags.DEDICATED_ROLE_VR.hasTag(uuid))) {
+            logger.debug(String.format(
+                    "there are two virtual routers[uuids:%s] on l3 networks[uuids:%s] which vmnics[uuids:%s]" +
+                            "attached", vrUuids, l3NetworkUuids, attachedVmNicUuids
+            ));
+        } else if (vrUuids.size() > 1) {
+            throw new ApiMessageInterceptionException(argerr(
+                    "new add vm nics[uuids:%s] and attached vmnics are not on the same vrouter, " +
+                            "they are on vrouters[uuids:%s]", msg.getVmNicUuids(), vrUuids));
+        }
+
+        List<String> peerL3NetworkUuids = SQL.New("select peer.l3NetworkUuid " +
+                "from LoadBalancerVO lb, VipVO vip, VipPeerL3NetworkRefVO peer " +
+                "where lb.vipUuid = vip.uuid " +
+                "and vip.uuid = peer.vipUuid " +
+                "and lb.uuid = :lbUuid")
+                .param("lbUuid", msg.getLoadBalancerUuid())
+                .list();
+
+        if (peerL3NetworkUuids == null || peerL3NetworkUuids.isEmpty()) {
+            return;
+        }
+
+        List<String> requestVmNicsL3NetworkUuids = Q.New(VmNicVO.class)
+                .select(VmNicVO_.l3NetworkUuid)
+                .in(VmNicVO_.uuid, msg.getVmNicUuids())
+                .listValues();
+
+        requestVmNicsL3NetworkUuids.addAll(peerL3NetworkUuids);
+        vrUuids = new HashSet<>(
+                Q.New(VmNicVO.class).select(VmNicVO_.vmInstanceUuid)
+                        .in(VmNicVO_.l3NetworkUuid, requestVmNicsL3NetworkUuids)
+                        .eq(VmNicVO_.metaData, VirtualRouterNicMetaData.GUEST_NIC_MASK)
+                        .listValues());
+
+        if (vrUuids.size() > 1) {
+            throw new ApiMessageInterceptionException(argerr(
+                    "new add vm nics[uuids:%s] and peer l3s[uuids:%s] of loadbalancer[uuid: %s]'s vip are not on the same vrouter, " +
+                            "they are on vrouters[uuids:%s]", msg.getVmNicUuids(), peerL3NetworkUuids, msg.getLoadBalancerUuid(), vrUuids));
+        }
+    }
 
     @Transactional(readOnly = true)
     private VirtualRouterVmInventory findVirtualRouterVm(String lbUuid) {
@@ -79,6 +177,52 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         TypedQuery<VirtualRouterVmVO> q = dbf.getEntityManager().createQuery(sql, VirtualRouterVmVO.class);
         q.setParameter("lbUuid", lbUuid);
         List<VirtualRouterVmVO> vrs = q.getResultList();
+
+        if (LoadBalancerSystemTags.SEPARATE_VR.hasTag(lbUuid)) {
+            Optional<VirtualRouterVmInventory> vr = vrs.stream()
+                    .filter(v -> VirtualRouterSystemTags.DEDICATED_ROLE_VR.hasTag(v.getUuid()))
+                    .map(v -> VirtualRouterVmInventory.valueOf(v))
+                    .findFirst();
+
+            return vr.orElse(null);
+        }
+
+        DebugUtils.Assert(vrs.size() <= 1, String.format("multiple virtual routers[uuids:%s] found",
+                vrs.stream().map(v -> v.getUuid()).collect(Collectors.toList())));
+        return vrs.isEmpty() ? null : VirtualRouterVmInventory.valueOf(vrs.get(0));
+    }
+
+    @Transactional(readOnly = true)
+    private VirtualRouterVmInventory findVirtualRouterVm(String lbUuid, List<String> vmNics) {
+        String sql = "select vr from VirtualRouterVmVO vr, VirtualRouterLoadBalancerRefVO ref where ref.virtualRouterVmUuid =" +
+                " vr.uuid and ref.loadBalancerUuid = :lbUuid";
+        TypedQuery<VirtualRouterVmVO> q = dbf.getEntityManager().createQuery(sql, VirtualRouterVmVO.class);
+        q.setParameter("lbUuid", lbUuid);
+        List<VirtualRouterVmVO> vrs = q.getResultList();
+
+        if (LoadBalancerSystemTags.SEPARATE_VR.hasTag(lbUuid)) {
+            Optional<VirtualRouterVmVO> vr = vrs.stream()
+                    .filter(v -> VirtualRouterSystemTags.DEDICATED_ROLE_VR.hasTag(v.getUuid()))
+                    .findFirst();
+
+            if (!vr.isPresent()) {
+                return null;
+            }
+
+            List<String> vmNicL3NetworkUuids = Q.New(VmNicVO.class).select(VmNicVO_.l3NetworkUuid).in(VmNicVO_.uuid, vmNics).listValues();
+
+            VirtualRouterVmInventory vrInventory = VirtualRouterVmInventory.valueOf(vr.get());
+            vmNicL3NetworkUuids.removeAll(vrInventory.getGuestL3Networks());
+
+            if (!vmNicL3NetworkUuids.isEmpty()) {
+                logger.debug(String.format("found l3 networks[uuids:%s] not attached to separate vr[uuid:%s] for loadbalancer[uuid:%s]",
+                        vmNicL3NetworkUuids, vr.get().getUuid(), lbUuid));
+                throw new CloudRuntimeException(String.format("not support separate vr with multiple networks vpc!"));
+            }
+        }
+
+        DebugUtils.Assert(vrs.size() <= 1, String.format("multiple virtual routers[uuids:%s] found",
+                vrs.stream().map(v -> v.getUuid()).collect(Collectors.toList())));
         return vrs.isEmpty() ? null : VirtualRouterVmInventory.valueOf(vrs.get(0));
     }
 
@@ -250,11 +394,66 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     if (rsp.isSuccess()) {
                         completion.success();
                     } else {
-                        completion.fail(operr(rsp.getError()));
+                        completion.fail(operr("operation error, because:%s", rsp.getError()));
                     }
                 } else {
                     completion.fail(reply.getError());
                 }
+            }
+        });
+    }
+
+    private void acquireVip(final VirtualRouterVmInventory vr, final LoadBalancerStruct struct, final List<VmNicInventory> nics, final Completion completion) {
+        ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
+        vipStruct.setUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+        NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(vr.getGuestL3Networks().get(0),
+                LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE);
+        vipStruct.setServiceProvider(providerType.toString());
+
+        Set<String> guestL3NetworkUuids = nics.stream()
+                .map(nic -> nic.getL3NetworkUuid())
+                .collect(Collectors.toSet());
+        ErrorCodeList errList = new ErrorCodeList();
+
+        new While<>(guestL3NetworkUuids).all((guestL3NetworkUuid, completion1) -> {
+            vipStruct.setPeerL3NetworkUuid(guestL3NetworkUuid);
+
+            Vip v = new Vip(struct.getLb().getVipUuid());
+            v.setStruct(vipStruct);
+            v.acquire(new Completion(completion1) {
+                @Override
+                public void success() {
+                    completion1.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    errList.getCauses().add(errorCode);
+                    completion1.done();
+                }
+            });
+        }).run(new NoErrorCompletion() {
+            @Override
+            public void done() {
+                if (!errList.getCauses().isEmpty()) {
+                    completion.fail(errList.getCauses().get(0));
+                } else {
+                    completion.success();
+                }
+            }
+        });
+    }
+
+    private void startVrIfNeededAndRefresh(final VirtualRouterVmInventory vr, final LoadBalancerStruct struct, List<VmNicInventory> nics, final Completion completion) {
+        acquireVip(vr, struct, nics, new Completion(completion) {
+            @Override
+            public void success() {
+                startVrIfNeededAndRefresh(vr, struct, completion);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
             }
         });
     }
@@ -299,24 +498,39 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        SimpleQuery<VirtualRouterVipVO> q = dbf.createQuery(VirtualRouterVipVO.class);
-                        q.add(VirtualRouterVipVO_.uuid, Op.EQ, vip.getUuid());
-                        q.add(VirtualRouterVipVO_.virtualRouterVmUuid, Op.EQ, vr.getUuid());
-                        if (q.isExists()) {
-                            trigger.next();
-                            return;
-                        }
+                        ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
+                        vipStruct.setUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+                        NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(vr.getGuestL3Networks().get(0),
+                                LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE);
+                        vipStruct.setServiceProvider(providerType.toString());
 
-                        vipVrBkd.acquireVipOnVirtualRouterVm(vr, vip, new Completion(trigger) {
-                            @Override
-                            public void success() {
-                                success = true;
-                                trigger.next();
-                            }
+                        ErrorCodeList errList = new ErrorCodeList();
 
+                        new While<>(vr.getGuestL3Networks()).all((guestL3NetworkUuid, completion1) -> {
+                            vipStruct.setPeerL3NetworkUuid(guestL3NetworkUuid);
+
+                            Vip v = new Vip(vip.getUuid());
+                            v.setStruct(vipStruct);
+                            v.acquire(new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    completion1.done();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    errList.getCauses().add(errorCode);
+                                    completion1.done();
+                                }
+                            });
+                        }).run(new NoErrorCompletion() {
                             @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
+                            public void done() {
+                                if (!errList.getCauses().isEmpty()) {
+                                    trigger.fail(errList.getCauses().get(0));
+                                } else {
+                                    trigger.next();
+                                }
                             }
                         });
                     }
@@ -328,7 +542,11 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                             return;
                         }
 
-                        vipVrBkd.releaseVipOnVirtualRouterVm(vr, vip, new Completion(trigger) {
+                        ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
+                        vipStruct.setUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+                        Vip v = new Vip(vip.getUuid());
+                        v.setStruct(vipStruct);
+                        v.release(new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.rollback();
@@ -336,56 +554,6 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
                             @Override
                             public void fail(ErrorCode errorCode) {
-                                logger.warn(String.format("failed to release vip[uuid:%s, ip:%s] on vr[uuid:%s], continue to rollback",
-                                        vip.getUuid(), vip.getIp(), vr.getUuid()));
-                                trigger.rollback();
-                            }
-                        });
-                    }
-                });
-
-                flow(new Flow() {
-                    String __name__ = "lock-vip";
-
-                    UnmodifyVip rollback;
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        ModifyVipAttributesStruct s = new ModifyVipAttributesStruct();
-                        s.setServiceProvider(VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE);
-                        s.setPeerL3NetworkUuid(vr.getGuestNic().getL3NetworkUuid());
-
-                        new Vip(struct.getLb().getVipUuid()).modify(s, new ReturnValueCompletion<UnmodifyVip>(trigger) {
-                            @Override
-                            public void success(UnmodifyVip ret) {
-                                rollback = ret;
-                                trigger.next();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
-                            }
-                        });
-                    }
-
-                    @Override
-                    public void rollback(FlowRollback trigger, Map data) {
-                        if (rollback == null) {
-                            trigger.rollback();
-                            return;
-                        }
-
-                        rollback.unmodify(new Completion(trigger) {
-                            @Override
-                            public void success() {
-                                trigger.rollback();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                //TODO GC
-                                logger.warn(errorCode.toString());
                                 trigger.rollback();
                             }
                         });
@@ -430,9 +598,10 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
     @Override
     public void addVmNics(final LoadBalancerStruct struct, List<VmNicInventory> nics, final Completion completion) {
-        VirtualRouterVmInventory vr = findVirtualRouterVm(struct.getLb().getUuid());
+        VirtualRouterVmInventory vr = findVirtualRouterVm(struct.getLb().getUuid(),
+                nics.stream().map(n -> n.getUuid()).collect(Collectors.toList()));
         if (vr != null) {
-            startVrIfNeededAndRefresh(vr, struct, completion);
+            startVrIfNeededAndRefresh(vr, struct, nics, completion);
             return;
         }
 
@@ -440,7 +609,8 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         final L3NetworkInventory l3 = L3NetworkInventory.valueOf(dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class));
         final VipInventory vip = VipInventory.valueOf(dbf.findByUuid(struct.getLb().getVipUuid(), VipVO.class));
 
-        DebugUtils.Assert(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING.equals(vip.getUseFor()),
+        VipUseForList useForList = new VipUseForList(vip.getUseFor());
+        DebugUtils.Assert(useForList.isIncluded(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING),
                 String.format("the vip[uuid:%s, name:%s, ip:%s, useFor: %s] is not for load balancer", vip.getUuid(),
                         vip.getName(), vip.getIp(), vip.getUseFor()));
 
@@ -456,39 +626,66 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 flow(new Flow() {
                     String __name__ = "lock-vip";
 
-                    boolean success = false;
-                    UnmodifyVip rollback;
-
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        ModifyVipAttributesStruct s = new ModifyVipAttributesStruct();
-                        s.setPeerL3NetworkUuid(l3.getUuid());
-                        s.setServiceProvider(VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE);
-                        s.setUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+                        ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
+                        vipStruct.setUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
 
-                        new Vip(vip.getUuid()).modify(s, new ReturnValueCompletion<UnmodifyVip>(trigger) {
-                            @Override
-                            public void success(UnmodifyVip ret) {
-                                success = true;
-                                rollback = ret;
-                                trigger.next();
-                            }
+                        Set<String> guestL3NetworkUuids = nics.stream()
+                                .map(nic -> nic.getL3NetworkUuid())
+                                .collect(Collectors.toSet());
+                        ErrorCodeList errList = new ErrorCodeList();
 
+                        new While<>(guestL3NetworkUuids).all((guestL3NetworkUuid, completion1) -> {
+                            vipStruct.setPeerL3NetworkUuid(guestL3NetworkUuid);
+
+                            Vip v = new Vip(vip.getUuid());
+                            v.setStruct(vipStruct);
+                            v.acquire(new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    completion1.done();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    errList.getCauses().add(errorCode);
+                                    completion1.done();
+                                }
+                            });
+                        }).run(new NoErrorCompletion() {
                             @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
+                            public void done() {
+                                if (!errList.getCauses().isEmpty()) {
+                                    trigger.fail(errList.getCauses().get(0));
+                                } else {
+                                    trigger.next();
+                                }
                             }
                         });
                     }
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        if (!success) {
+                        List<String> attachedVmNicUuids = new ArrayList<>();
+                        for (LoadBalancerListenerInventory ll : struct.getLb().getListeners()) {
+                            attachedVmNicUuids.addAll(ll.getVmNicRefs().stream()
+                                    .map(r -> r.getVmNicUuid()).collect(Collectors.toList()));
+                        }
+                        attachedVmNicUuids.removeAll(
+                                nics.stream().map(n -> n.getUuid()).collect(Collectors.toSet()));
+                        if (attachedVmNicUuids != null && !attachedVmNicUuids.isEmpty()) {
+                            logger.debug(String.format("there are vmnics[uuids:%s] attached on loadbalancer[uuid:%s], " +
+                                    "wont release vip[uuid: %s]", attachedVmNicUuids, struct.getLb().getUuid(), vip.getUuid()));
                             trigger.rollback();
                             return;
                         }
 
-                        rollback.unmodify(new Completion(trigger) {
+                        ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
+                        vipStruct.setUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+                        Vip v = new Vip(vip.getUuid());
+                        v.setStruct(vipStruct);
+                        v.release(new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.rollback();
@@ -558,6 +755,50 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                             });
                         }
                     });
+
+                    flow(new Flow() {
+                        String __name__ = "create-vip-on-vr";
+                        boolean success = false;
+
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            vipVrBkd.acquireVipOnVirtualRouterVm(vr, vip, new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    success = true;
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void rollback(final FlowRollback trigger, Map data) {
+                            if (!success) {
+                                trigger.rollback();
+                                return;
+                            }
+
+                            vipVrBkd.releaseVipOnVirtualRouterVm(vr, vip, new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    trigger.rollback();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    logger.warn(String.format("failed to release vip[uuid:%s, ip:%s] on vr[uuid:%s], continue to rollback",
+                                            vip.getUuid(), vip.getIp(), vr.getUuid()));
+                                    trigger.rollback();
+                                }
+                            });
+                        }
+                    });
+
                 } else {
                     flow(new NoRollbackFlow() {
                         String __name__ = "acquire-vr";
@@ -582,51 +823,95 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                             });
                         }
                     });
-                }
 
-                flow(new Flow() {
-                    String __name__ = "create-vip-on-vr";
-                    boolean success = false;
+                    flow(new Flow() {
+                        String __name__ = "create-vip-on-vr";
+                        boolean success = false;
 
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        vipVrBkd.acquireVipOnVirtualRouterVm(vr, vip, new Completion(trigger) {
-                            @Override
-                            public void success() {
-                                success = true;
-                                trigger.next();
-                            }
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
+                            vipStruct.setUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+                            NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(vr.getGuestL3Networks().get(0),
+                                    LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE);
+                            vipStruct.setServiceProvider(providerType.toString());
 
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
-                            }
-                        });
-                    }
+                            Set<String> guestL3NetworkUuids = nics.stream()
+                                    .map(nic -> nic.getL3NetworkUuid())
+                                    .collect(Collectors.toSet());
+                            ErrorCodeList errList = new ErrorCodeList();
 
-                    @Override
-                    public void rollback(final FlowRollback trigger, Map data) {
-                        if (!success) {
-                            trigger.rollback();
-                            return;
+                            new While<>(guestL3NetworkUuids).all((guestL3NetworkUuid, completion1) -> {
+                                vipStruct.setPeerL3NetworkUuid(guestL3NetworkUuid);
+
+                                Vip v = new Vip(vip.getUuid());
+                                v.setStruct(vipStruct);
+                                v.acquire(new Completion(trigger) {
+                                    @Override
+                                    public void success() {
+                                        completion1.done();
+                                    }
+
+                                    @Override
+                                    public void fail(ErrorCode errorCode) {
+                                        errList.getCauses().add(errorCode);
+                                        completion1.done();
+                                    }
+                                });
+                            }).run(new NoErrorCompletion() {
+                                @Override
+                                public void done() {
+                                    if (!errList.getCauses().isEmpty()) {
+                                        success = true;
+                                        trigger.fail(errList.getCauses().get(0));
+                                    } else {
+                                        trigger.next();
+                                    }
+                                }
+                            });
                         }
 
-                        vipVrBkd.releaseVipOnVirtualRouterVm(vr, vip, new Completion(trigger) {
-                            @Override
-                            public void success() {
+                        @Override
+                        public void rollback(final FlowRollback trigger, Map data) {
+                            if (!success) {
                                 trigger.rollback();
+                                return;
                             }
 
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                logger.warn(String.format("failed to release vip[uuid:%s, ip:%s] on vr[uuid:%s], continue to rollback",
-                                        vip.getUuid(), vip.getIp(), vr.getUuid()));
-                                trigger.rollback();
+                            List<String> attachedVmNicUuids = new ArrayList<>();
+                            for (LoadBalancerListenerInventory ll : struct.getLb().getListeners()) {
+                                attachedVmNicUuids.addAll(ll.getVmNicRefs().stream()
+                                        .map(r -> r.getVmNicUuid()).collect(Collectors.toList()));
                             }
-                        });
-                    }
-                });
+                            attachedVmNicUuids.removeAll(
+                                    nics.stream().map(n -> n.getUuid()).collect(Collectors.toSet()));
+                            if (attachedVmNicUuids != null && !attachedVmNicUuids.isEmpty()) {
+                                logger.debug(String.format("there are vmnics[uuids:%s] attached on loadbalancer[uuid:%s], " +
+                                        "wont release vip[uuid: %s]", attachedVmNicUuids, struct.getLb().getUuid(), vip.getUuid()));
+                                trigger.rollback();
+                                return;
+                            }
 
+                            ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
+                            vipStruct.setUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+                            Vip v = new Vip(vip.getUuid());
+                            v.setStruct(vipStruct);
+                            v.release(new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    trigger.rollback();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    logger.warn(String.format("failed to release vip[uuid:%s, ip:%s] on vr[uuid:%s], continue to rollback",
+                                            vip.getUuid(), vip.getIp(), vr.getUuid()));
+                                    trigger.rollback();
+                                }
+                            });
+                        }
+                    });
+                }
 
                 flow(new NoRollbackFlow() {
                     String __name__ = "refresh-lb-on-vr";
@@ -768,7 +1053,6 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                                 @Override
                                 public void run(MessageReply reply) {
                                     if (reply.isSuccess()) {
-                                        dbf.remove(ref);
                                         trigger.next();
                                     } else {
                                         trigger.fail(reply.getError());
@@ -791,10 +1075,9 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                                     if (reply.isSuccess()) {
                                         DeleteLbRsp rsp = ((VirtualRouterAsyncHttpCallReply)reply).toResponse(DeleteLbRsp.class);
                                         if (rsp.isSuccess()) {
-                                            dbf.remove(ref);
                                             trigger.next();
                                         } else {
-                                            trigger.fail(operr(rsp.getError()));
+                                            trigger.fail(operr("operation error, because:%s", rsp.getError()));
                                         }
                                     } else {
                                         trigger.fail(reply.getError());
@@ -863,7 +1146,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     if (rsp.isSuccess()) {
                         completion.success();
                     } else {
-                        completion.fail(operr(rsp.getError()));
+                        completion.fail(operr("operation error, because:%s", rsp.getError()));
                     }
                 } else {
                     completion.fail(reply.getError());

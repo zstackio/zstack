@@ -29,6 +29,7 @@
             <list>
                 <value>org.zstack.network.service.virtualrouter.lifecycle.VirtualRouterAssembleDecoratorFlow</value>
                 <value>org.zstack.network.service.virtualrouter.lifecycle.VirtualRouterDeployAgentFlow</value>
+                <value>org.zstack.network.service.virtualrouter.vip.VirtualRouterCreateVipForPublicIpFlow</value>
                 <value>org.zstack.network.service.virtualrouter.dns.VirtualRouterSyncDnsOnStartFlow</value>
                 <value>org.zstack.network.service.virtualrouter.dhcp.VirtualRouterSyncDHCPOnStartFlow</value>
                 <value>org.zstack.network.service.virtualrouter.nat.VirtualRouterSyncSNATOnStartFlow</value>
@@ -73,6 +74,7 @@
                 <value>org.zstack.network.service.virtualrouter.lifecycle.VirtualRouterAssembleDecoratorFlow</value>
                 <value>org.zstack.network.service.virtualrouter.eip.VirtualRouterCleanupEipOnDestroyFlow</value>
                 <value>org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterCleanupPortforwardingOnDestroyFlow</value>
+                <value>org.zstack.network.service.virtualrouter.lb.VirtualRouterCleanupLoadBalancerOnDestroyFlow</value>
                 <value>org.zstack.network.service.virtualrouter.vip.VirtualRouterCleanupVipOnDestroyFlow</value>
                 <value>org.zstack.network.service.virtualrouter.lifecycle.UntrackVirtualRouterVmFlow</value>
             </list>
@@ -134,6 +136,7 @@
     <bean id="VirtualRouterVipBackend" class="org.zstack.network.service.virtualrouter.vip.VirtualRouterVipBackend">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.network.service.vip.VipBackend" />
+            <zstack:extension interface="org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint" order="999"/>
         </zstack:plugin>
     </bean>
 
@@ -146,12 +149,15 @@
     <bean id="VirtualRouterSnatBackend" class="org.zstack.network.service.virtualrouter.nat.VirtualRouterSnatBackend">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.network.service.NetworkServiceSnatBackend" />
+            <zstack:extension interface="org.zstack.header.network.service.VirtualRouterBeforeDetachNicExtensionPoint" />
         </zstack:plugin>
     </bean>
 
     <bean id="VirtualRouterDnsBackend" class="org.zstack.network.service.virtualrouter.dns.VirtualRouterDnsBackend">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.network.service.NetworkServiceDnsBackend" />
+            <zstack:extension interface="org.zstack.header.network.service.VirtualRouterBeforeDetachNicExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint" />
         </zstack:plugin>
     </bean>
 
@@ -164,6 +170,7 @@
     <bean id="VirtualRouterEipBackend" class="org.zstack.network.service.virtualrouter.eip.VirtualRouterEipBackend">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.network.service.eip.EipBackend" />
+            <zstack:extension interface="org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint" />
         </zstack:plugin>
     </bean>
 
@@ -177,6 +184,7 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />
             <zstack:extension interface="org.zstack.network.service.portforwarding.PortForwardingBackend"/>
+            <zstack:extension interface="org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint"/>
         </zstack:plugin>
 
         <property name="applyPortForwardingRuleElements">
@@ -197,6 +205,8 @@
     <bean id="VirtualRouterLoadBalancerBackend" class="org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.network.service.lb.LoadBalancerBackend" />
+            <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor" />
+            <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
         </zstack:plugin>
     </bean>
 

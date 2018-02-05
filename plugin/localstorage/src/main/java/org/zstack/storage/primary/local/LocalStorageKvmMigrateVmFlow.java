@@ -854,7 +854,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                 KVMHostAsyncHttpCallReply r = reply.castReply();
                 T rsp = r.toResponse(rspType);
                 if (!rsp.isSuccess()) {
-                    completion.fail(operr(rsp.getError()));
+                    completion.fail(operr("operation error, because:%s", rsp.getError()));
                     return;
                 }
 
@@ -903,6 +903,11 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                         q.setParameter("c", true);
                         q.setParameter("l", true);
                         q.setParameter("volUuid", vol.getUuid());
+
+                        if(q.getResultList().isEmpty()){
+                            return null;
+                        }
+
                         VolumeSnapshotVO vo = q.getSingleResult();
                         return VolumeSnapshotInventory.valueOf(vo);
                     }
@@ -1099,7 +1104,12 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                     cmd.setInstallUrl(p.volume.getInstallPath());
                     cmd.setSize(p.volume.getSize());
                     cmd.setVolumeUuid(p.volume.getUuid());
-                    cmd.setBackingFile(p.latest.getPrimaryStorageInstallPath());
+
+                    if (p.latest == null){
+                         cmd.setBackingFile(image.path);
+                    } else {
+                        cmd.setBackingFile(p.latest.getPrimaryStorageInstallPath());
+                    }
 
                     callKvmHost(dstHostUuid, p.volume.getPrimaryStorageUuid(), LocalStorageKvmBackend.CREATE_EMPTY_VOLUME_PATH, cmd, CreateEmptyVolumeRsp.class,
                             new ReturnValueCompletion<CreateEmptyVolumeRsp>(trigger) {
@@ -1171,7 +1181,12 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
 
                     // the volume links to the latest snapshot
                     SnapshotTO to = new SnapshotTO();
-                    to.parentPath = p.latest.getPrimaryStorageInstallPath();
+
+                    if (p.latest == null){
+                        to.parentPath = image.path;
+                    } else {
+                        to.parentPath = p.latest.getPrimaryStorageInstallPath();
+                    }
                     to.path = p.volume.getInstallPath();
                     to.snapshotUuid = p.volume.getUuid();
                     s.add(to);

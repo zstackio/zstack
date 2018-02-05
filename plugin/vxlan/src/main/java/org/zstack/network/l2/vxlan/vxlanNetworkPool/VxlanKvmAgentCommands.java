@@ -45,7 +45,16 @@ public class VxlanKvmAgentCommands {
         private String bridgeName;
         private String vtepIp;
         private Integer vni;
+        private String l2NetworkUuid;
         private List<String> peers;
+
+        public String getL2NetworkUuid() {
+            return l2NetworkUuid;
+        }
+
+        public void setL2NetworkUuid(String l2NetworkUuid) {
+            this.l2NetworkUuid = l2NetworkUuid;
+        }
 
         public String getBridgeName() {
             return bridgeName;
@@ -83,6 +92,57 @@ public class VxlanKvmAgentCommands {
     public static class CreateVxlanBridgeResponse extends CreateBridgeResponse {
     }
 
+    public static class CreateVxlanBridgesCmd extends AgentCommand {
+        private String bridgeName;
+        private String vtepIp;
+        private List<Integer> vnis;
+        private String l2NetworkUuid;
+        private List<String> peers;
+
+        public String getL2NetworkUuid() {
+            return l2NetworkUuid;
+        }
+
+        public void setL2NetworkUuid(String l2NetworkUuid) {
+            this.l2NetworkUuid = l2NetworkUuid;
+        }
+
+        public String getBridgeName() {
+            return bridgeName;
+        }
+
+        public void setBridgeName(String bridgeName) {
+            this.bridgeName = bridgeName;
+        }
+
+        public String getVtepIp() {
+            return vtepIp;
+        }
+
+        public void setVtepIp(String vtepIp) {
+            this.vtepIp = vtepIp;
+        }
+
+        public List<Integer> getVnis() {
+            return vnis;
+        }
+
+        public void setVnis(List<Integer> vnis) {
+            this.vnis = vnis;
+        }
+
+        public List<String> getPeers() {
+            return peers;
+        }
+
+        public void setPeers(List<String> peers) {
+            this.peers = peers;
+        }
+    }
+
+    public static class CreateVxlanBridgesResponse extends CreateBridgeResponse {
+    }
+
     public static class PopulateVxlanFdbCmd extends AgentCommand {
         private Integer vni;
         private List<String> peers;
@@ -105,6 +165,30 @@ public class VxlanKvmAgentCommands {
     }
 
     public static class PopulateVxlanFdbResponse extends AgentResponse {
+    }
+
+    public static class PopulateVxlanNetworksFdbCmd extends AgentCommand {
+        private List<String> networkUuids;
+        private List<String> peers;
+
+        public List<String> getNetworkUuids() {
+            return networkUuids;
+        }
+
+        public void setNetworkUuids(List<String> networkUuids) {
+            this.networkUuids = networkUuids;
+        }
+
+        public List<String> getPeers() {
+            return peers;
+        }
+
+        public void setPeers(List<String> peers) {
+            this.peers = peers;
+        }
+    }
+
+    public static class PopulateVxlanNetworksFdbResponse extends AgentResponse {
     }
 
     public static class CheckVxlanCidrCmd extends AgentCommand {

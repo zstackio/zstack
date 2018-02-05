@@ -27,8 +27,8 @@ public class APIGetAttachablePublicL3ForVRouterReply extends APIReply {
 
         L3NetworkInventory inventory = new L3NetworkInventory();
         inventory.setName("test-pub-l3");
-        inventory.setCreateDate(new Timestamp(System.currentTimeMillis()));
-        inventory.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        inventory.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        inventory.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         inventory.setDescription("test pub l3");
         inventory.setL2NetworkUuid(uuid());
         inventory.setSystem(true);
@@ -36,8 +36,8 @@ public class APIGetAttachablePublicL3ForVRouterReply extends APIReply {
         inventory.setZoneUuid(uuid());
 
         IpRangeInventory ipRangeInventory = new IpRangeInventory();
-        ipRangeInventory.setCreateDate(new Timestamp(System.currentTimeMillis()));
-        ipRangeInventory.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        ipRangeInventory.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        ipRangeInventory.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         ipRangeInventory.setStartIp("100.64.0.10");
         ipRangeInventory.setEndIp("100.64.0.100");
         ipRangeInventory.setName("test ip range");

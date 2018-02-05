@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -23,12 +24,11 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.function.Function;
 
-import static org.zstack.core.Platform.operr;
-
 import javax.persistence.TypedQuery;
 import java.util.List;
 import java.util.Map;
 
+import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.taskProgress;
 
 /**
@@ -39,6 +39,8 @@ public class VmImageSelectBackupStorageFlow extends NoRollbackFlow {
     private DatabaseFacade dbf;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     private String findBackupStorage(VmInstanceSpec spec, String imageUuid) {
         taskProgress("Choose backup storage for downloading the image");
@@ -119,7 +121,8 @@ public class VmImageSelectBackupStorageFlow extends NoRollbackFlow {
     public void run(FlowTrigger trigger, Map data) {
         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
-        if (VmOperation.NewCreate == spec.getCurrentVmOperation()) {
+        if (VmOperation.NewCreate == spec.getCurrentVmOperation()
+                || VmOperation.ChangeImage == spec.getCurrentVmOperation()) {
             final String bsUuid = findBackupStorage(spec, spec.getImageSpec().getInventory().getUuid());
             spec.getImageSpec().setSelectedBackupStorage(CollectionUtils.find(
                     spec.getImageSpec().getInventory().getBackupStorageRefs(),

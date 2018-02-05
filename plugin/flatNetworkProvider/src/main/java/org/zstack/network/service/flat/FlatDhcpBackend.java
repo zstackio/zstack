@@ -10,6 +10,7 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.GLock;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -435,7 +436,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
         new KvmCommandSender(huuids).send(cmd, DHCP_DELETE_NAMESPACE_PATH, wrapper -> {
             DeleteNamespaceRsp rsp = wrapper.getResponse(DeleteNamespaceRsp.class);
-            return rsp.isSuccess() ? null : operr(rsp.getError());
+            return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
         }, new SteppingSendCallback<KvmResponseWrapper>() {
             @Override
             public void success(KvmResponseWrapper w) {
@@ -979,7 +980,17 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 info.ip = arg.getIp();
                 info.netmask = arg.getNetmask();
                 info.mac = arg.getMac();
-                info.dns = arg.getL3Network().getDns();
+                info.dns = new Callable<List<String>>() {
+                    @Override
+                    public List<String> call() {
+                        List<String> dns = Q.New(L3NetworkDnsVO.class).eq(L3NetworkDnsVO_.l3NetworkUuid, arg.getL3Network().getUuid())
+                                .select(L3NetworkDnsVO_.dns).orderBy(L3NetworkDnsVO_.id, SimpleQuery.Od.ASC).listValues();
+                        if (dns == null) {
+                            dns = new ArrayList<String>();
+                        }
+                        return dns;
+                    }
+                }.call();
                 info.l3NetworkUuid = arg.getL3Network().getUuid();
                 info.bridgeName = l3Bridges.get(arg.getL3Network().getUuid());
                 info.namespaceName = makeNamespaceName(info.bridgeName, arg.getL3Network().getUuid());
@@ -1078,7 +1089,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                                         KVMHostAsyncHttpCallReply ar = reply.castReply();
                                         PrepareDhcpRsp rsp = ar.toResponse(PrepareDhcpRsp.class);
                                         if (!rsp.isSuccess()) {
-                                            trigger.fail(operr(rsp.getError()));
+                                            trigger.fail(operr("operation error, because:%s", rsp.getError()));
                                             return;
                                         }
 
@@ -1116,7 +1127,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                                         KVMHostAsyncHttpCallReply r = reply.castReply();
                                         ApplyDhcpRsp rsp = r.toResponse(ApplyDhcpRsp.class);
                                         if (!rsp.isSuccess()) {
-                                            trigger.fail(operr(rsp.getError()));
+                                            trigger.fail(operr("operation error, because:%s", rsp.getError()));
                                             return;
                                         }
 
@@ -1239,7 +1250,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         KvmCommandSender sender = new KvmCommandSender(vm.getHostUuid());
         sender.send(cmd, RESET_DEFAULT_GATEWAY_PATH, wrapper -> {
             ResetDefaultGatewayRsp rsp = wrapper.getResponse(ResetDefaultGatewayRsp.class);
-            return rsp.isSuccess() ? null : operr(rsp.getError());
+            return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
         }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
             @Override
             public void success(KvmResponseWrapper returnValue) {

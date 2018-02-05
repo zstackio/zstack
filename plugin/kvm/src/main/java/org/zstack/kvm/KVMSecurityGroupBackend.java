@@ -139,7 +139,7 @@ public class KVMSecurityGroupBackend implements SecurityGroupHypervisorBackend, 
                 KVMHostAsyncHttpCallReply hreply = reply.castReply();
                 KVMAgentCommands.UpdateGroupMemberResponse rsp = hreply.toResponse(KVMAgentCommands.UpdateGroupMemberResponse.class);
                 if (!rsp.isSuccess()) {
-                    completion.fail(operr(rsp.getError()));
+                    completion.fail(operr("operation error, because:%s", rsp.getError()));
                     return;
                 }
 
@@ -168,7 +168,7 @@ public class KVMSecurityGroupBackend implements SecurityGroupHypervisorBackend, 
                 KVMHostAsyncHttpCallReply hreply = reply.castReply();
                 CleanupUnusedRulesOnHostResponse  rsp = hreply.toResponse(CleanupUnusedRulesOnHostResponse.class);
                 if (!rsp.isSuccess()) {
-                    completion.fail(operr(rsp.getError()));
+                    completion.fail(operr("operation error, because:%s", rsp.getError()));
                     return;
                 }
 

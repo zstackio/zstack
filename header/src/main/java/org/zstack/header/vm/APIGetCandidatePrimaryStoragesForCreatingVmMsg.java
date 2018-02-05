@@ -2,13 +2,13 @@ package org.zstack.header.vm;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.configuration.DiskOfferingVO;
-import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.identity.Action;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.storage.backup.BackupStorageVO;
 
 import java.util.List;
 
@@ -27,6 +27,8 @@ import static java.util.Arrays.asList;
 public class APIGetCandidatePrimaryStoragesForCreatingVmMsg extends APISyncCallMessage {
     @APIParam(resourceType = ImageVO.class, checkAccount = true)
     private String imageUuid;
+    @APIParam(resourceType = BackupStorageVO.class, checkAccount = true, required = false)
+    private String backupStorageUuid;
     @APIParam(resourceType = L3NetworkVO.class, nonempty = true, checkAccount = true)
     private List<String> l3NetworkUuids;
     @APIParam(required = false, resourceType = DiskOfferingVO.class, checkAccount = true)
@@ -93,12 +95,20 @@ public class APIGetCandidatePrimaryStoragesForCreatingVmMsg extends APISyncCallM
         this.dataDiskOfferingUuids = dataDiskOfferingUuids;
     }
 
-    public static APIGetCandidateZonesClustersHostsForCreatingVmMsg __example__() {
-        APIGetCandidateZonesClustersHostsForCreatingVmMsg msg = new APIGetCandidateZonesClustersHostsForCreatingVmMsg();
+    public String getBackupStorageUuid() {
+        return backupStorageUuid;
+    }
+
+    public void setBackupStorageUuid(String backupStorageUuid) {
+        this.backupStorageUuid = backupStorageUuid;
+    }
+
+    public static APIGetCandidatePrimaryStoragesForCreatingVmMsg __example__() {
+        APIGetCandidatePrimaryStoragesForCreatingVmMsg msg = new APIGetCandidatePrimaryStoragesForCreatingVmMsg();
         msg.setClusterUuid(uuid());
         msg.setDataDiskOfferingUuids(asList(uuid(), uuid()));
         msg.setImageUuid(uuid());
-        msg.setInstanceOfferingUuid(uuid());
+        msg.setBackupStorageUuid(uuid());
         msg.setL3NetworkUuids(asList(uuid()));
         return msg;
     }

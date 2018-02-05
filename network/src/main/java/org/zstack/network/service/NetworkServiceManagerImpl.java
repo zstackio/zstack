@@ -1,11 +1,13 @@
 package org.zstack.network.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.DbEntityLister;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -25,6 +27,7 @@ import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.network.service.*;
 import org.zstack.header.network.service.NetworkServiceExtensionPoint.NetworkServiceExtensionPosition;
 import org.zstack.header.vm.*;
@@ -355,8 +358,9 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
 	}
 
     @Override
+    @Transactional(readOnly = true)
     public NetworkServiceProviderType getTypeOfNetworkServiceProviderForService(String l3NetworkUuid, NetworkServiceType serviceType) {
-        L3NetworkVO l3vo = dbf.findByUuid(l3NetworkUuid, L3NetworkVO.class);
+        L3NetworkVO l3vo = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3NetworkUuid).find();
         L3NetworkInventory l3inv = L3NetworkInventory.valueOf(l3vo);
         NetworkServiceL3NetworkRefInventory targetRef = null;
         for (NetworkServiceL3NetworkRefInventory ref : l3inv.getNetworkServices()) {
@@ -370,11 +374,11 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
             throw new OperationFailureException(operr("L3Network[uuid:%s] doesn't have network service[type:%s] enabled or no provider provides this network service",
                     l3NetworkUuid, serviceType));
         }
-        
-        SimpleQuery<NetworkServiceProviderVO> q = dbf.createQuery(NetworkServiceProviderVO.class);
-        q.select(NetworkServiceProviderVO_.type);
-        q.add(NetworkServiceProviderVO_.uuid, Op.EQ, targetRef.getNetworkServiceProviderUuid());
-        String providerType = q.findValue();
+
+        String providerType = Q.New(NetworkServiceProviderVO.class)
+                .select(NetworkServiceProviderVO_.type)
+                .eq(NetworkServiceProviderVO_.uuid, targetRef.getNetworkServiceProviderUuid())
+                .findValue();
         return NetworkServiceProviderType.valueOf(providerType);
     }
 

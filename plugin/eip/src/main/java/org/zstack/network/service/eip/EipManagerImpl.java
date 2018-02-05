@@ -31,6 +31,7 @@ import org.zstack.header.query.ExpandedQueryStruct;
 import org.zstack.header.quota.QuotaConstant;
 import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
+import org.zstack.identity.QuotaGlobalConfig;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.vip.*;
@@ -52,7 +53,7 @@ import static org.zstack.utils.CollectionDSL.list;
  */
 public class EipManagerImpl extends AbstractService implements EipManager, VipReleaseExtensionPoint,
         AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint, VmPreAttachL3NetworkExtensionPoint,
-        VmIpChangedExtensionPoint, ResourceOwnerAfterChangeExtensionPoint {
+        VmIpChangedExtensionPoint, ResourceOwnerAfterChangeExtensionPoint, VipGetServiceReferencePoint {
     private static final CLogger logger = Utils.getLogger(EipManagerImpl.class);
 
     @Autowired
@@ -151,7 +152,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
     @Transactional(readOnly = true)
     private List<VmNicInventory> getAttachableVmNicForEip(VipInventory vip) {
         String providerType = vip.getServiceProvider();
-        String peerL3NetworkUuid = vip.getPeerL3NetworkUuid();
+        List<String> peerL3NetworkUuids = vip.getPeerL3NetworkUuids();
         String zoneUuid = Q.New(L3NetworkVO.class)
                 .select(L3NetworkVO_.zoneUuid)
                 .eq(L3NetworkVO_.uuid, vip.getL3NetworkUuid())
@@ -192,8 +193,17 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                     .list();
         }
 
-        if (peerL3NetworkUuid != null) {
-            l3Uuids = l3Uuids.stream().filter(l -> l.equals(peerL3NetworkUuid)).collect(Collectors.toList());
+        if (peerL3NetworkUuids != null) {
+            VmNicVO rnic = Q.New(VmNicVO.class).in(VmNicVO_.l3NetworkUuid, peerL3NetworkUuids)
+                    .notNull(VmNicVO_.metaData).limit(1).find();
+            if (rnic != null) {
+                List<String> vrAttachedL3Uuids = Q.New(VmNicVO.class)
+                        .select(VmNicVO_.l3NetworkUuid)
+                        .eq(VmNicVO_.vmInstanceUuid, rnic.getVmInstanceUuid())
+                        .listValues();
+                Set l3UuidSet = new HashSet<>(vrAttachedL3Uuids);
+                l3Uuids = l3Uuids.stream().filter(l -> l3UuidSet.contains(l)).collect(Collectors.toList());
+            }
         }
 
         if (l3Uuids.isEmpty()) {
@@ -238,7 +248,16 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                         .find();
         VipInventory vipInv = VipInventory.valueOf(vipvo);
         List<VmNicInventory> nics = getAttachableVmNicForEip(vipInv);
-        return filterVmNicsForEipInVirtualRouterExtensionPoint(vipInv, nics);
+        if (nics != null && !nics.isEmpty()) {
+            logger.debug(String.format("get eip[uuid:%s] attachable vm nics[%s] before filter extension point",
+                    msg.getEipUuid(), nics.stream().map(n -> n.getUuid()).collect(Collectors.toList())));
+        }
+        nics = filterVmNicsForEipInVirtualRouterExtensionPoint(vipInv, nics);
+        if (nics != null && !nics.isEmpty()) {
+            logger.debug(String.format("get eip[uuid:%s] attachable vm nics[%s] after filter extension point",
+                    msg.getEipUuid(), nics.stream().map(n -> n.getUuid()).collect(Collectors.toList())));
+        }
+        return nics;
     }
 
     private void handle(APIGetEipAttachableVmNicsMsg msg) {
@@ -342,7 +361,11 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         VipInventory vipInventory = VipInventory.valueOf(vipvo);
 
         if (vo.getVmNicUuid() == null) {
-            new Vip(vipvo.getUuid()).release(new Completion(completion) {
+            ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+            struct.setUseFor(EipConstant.EIP_NETWORK_SERVICE_TYPE);
+            Vip vip = new Vip(vo.getVipUuid());
+            vip.setStruct(struct);
+            vip.release(new Completion(completion) {
                 @Override
                 public void success() {
                     dbf.remove(vo);
@@ -402,7 +425,11 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        new Vip(vipInventory.getUuid()).release(new Completion(trigger) {
+                        ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+                        struct.setUseFor(EipConstant.EIP_NETWORK_SERVICE_TYPE);
+                        Vip vip = new Vip(vipInventory.getUuid());
+                        vip.setStruct(struct);
+                        vip.release(new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();
@@ -490,9 +517,11 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
         if (vo.getVmNicUuid() == null) {
             EipVO finalVo = vo;
-            Vip vip = new Vip(vipvo.getUuid());
-            vip.setUseFor(EipConstant.EIP_NETWORK_SERVICE_TYPE);
-            vip.acquire(false, new Completion(msg) {
+            ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+            struct.setUseFor(EipConstant.EIP_NETWORK_SERVICE_TYPE);
+            Vip vip = new Vip(vipInventory.getUuid());
+            vip.setStruct(struct);
+            vip.acquire(new Completion(msg) {
                 @Override
                 public void success() {
                     evt.setInventory(EipInventory.valueOf(finalVo));
@@ -525,7 +554,11 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
         if (state != VmInstanceState.Running) {
             EipVO finalVo = vo;
-            new Vip(vipvo.getUuid()).acquire(false, new Completion(msg) {
+            ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+            struct.setUseFor(EipConstant.EIP_NETWORK_SERVICE_TYPE);
+            Vip vip = new Vip(vipInventory.getUuid());
+            vip.setStruct(struct);
+            vip.acquire(new Completion(msg) {
                 @Override
                 public void success() {
                     evt.setInventory(EipInventory.valueOf(finalVo));
@@ -563,10 +596,12 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
+                        ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+                        struct.setUseFor(EipConstant.EIP_NETWORK_SERVICE_TYPE);
+                        struct.setPeerL3NetworkUuid(nicInventory.getL3NetworkUuid());
+                        struct.setServiceProvider(providerType.toString());
                         Vip vip = new Vip(vipInventory.getUuid());
-                        vip.setServiceProvider(providerType.toString());
-                        vip.setUseFor(EipConstant.EIP_NETWORK_SERVICE_TYPE);
-                        vip.setPeerL3NetworkUuid(nicInventory.getL3NetworkUuid());
+                        vip.setStruct(struct);
                         vip.acquire(new Completion(trigger) {
                             @Override
                             public void success() {
@@ -588,7 +623,10 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                             return;
                         }
 
+                        ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+                        struct.setUseFor(EipConstant.EIP_NETWORK_SERVICE_TYPE);
                         Vip vip = new Vip(vipInventory.getUuid());
+                        vip.setStruct(struct);
                         vip.release(new Completion(trigger) {
                             @Override
                             public void success() {
@@ -718,25 +756,6 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                     }
                 });
 
-                flow(new NoRollbackFlow() {
-                    String __name__ = "delete-vip-from-backend";
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        new Vip(eip.getVipUuid()).deleteFromBackend(new Completion(trigger) {
-                            @Override
-                            public void success() {
-                                trigger.next();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
-                            }
-                        });
-                    }
-                });
-
                 if (updateDb) {
                     flow(new NoRollbackFlow() {
                         String __name__ = "udpate-eip";
@@ -799,10 +818,12 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
+                        ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
+                        vipStruct.setUseFor(EipConstant.EIP_NETWORK_SERVICE_TYPE);
+                        vipStruct.setServiceProvider(providerType);
+                        vipStruct.setPeerL3NetworkUuid(nic.getL3NetworkUuid());
                         Vip vip = new Vip(struct.getVip().getUuid());
-                        vip.setServiceProvider(providerType);
-                        vip.setUseFor(EipConstant.EIP_NETWORK_SERVICE_TYPE);
-                        vip.setPeerL3NetworkUuid(nic.getL3NetworkUuid());
+                        vip.setStruct(vipStruct);
                         vip.acquire(new Completion(trigger) {
                             @Override
                             public void success() {
@@ -824,7 +845,10 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                             return;
                         }
 
+                        ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
+                        vipStruct.setUseFor(EipConstant.EIP_NETWORK_SERVICE_TYPE);
                         Vip vip = new Vip(struct.getVip().getUuid());
+                        vip.setStruct(vipStruct);
                         vip.release(new Completion(trigger) {
                             @Override
                             public void success() {
@@ -887,8 +911,10 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         SimpleQuery<EipVO> eq = dbf.createQuery(EipVO.class);
         eq.add(EipVO_.vipUuid, SimpleQuery.Op.EQ, vip.getUuid());
         final EipVO vo = eq.find();
-        if (vo.getVmNicUuid() == null) {
-            dbf.remove(vo);
+        if (vo == null || vo.getVmNicUuid() == null) {
+            if (vo != null) {
+                dbf.remove(vo);
+            }
             completion.success();
             return;
         }
@@ -983,7 +1009,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
             @Override
             public List<Quota.QuotaUsage> getQuotaUsageByAccount(String accountUuid) {
                 Quota.QuotaUsage usage = new Quota.QuotaUsage();
-                usage.setName(EipConstant.QUOTA_EIP_NUM);
+                usage.setName(QuotaConstant.EIP_NUM);
                 usage.setUsed(getUsedEipNum(accountUuid));
                 return list(usage);
             }
@@ -1023,7 +1049,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                 String currentAccountUuid = msg.getSession().getAccountUuid();
                 String resourceTargetOwnerAccountUuid = msg.getSession().getAccountUuid();
 
-                long eipNumQuota = pairs.get(EipConstant.QUOTA_EIP_NUM).getValue();
+                long eipNumQuota = pairs.get(QuotaConstant.EIP_NUM).getValue();
                 long usedEipNum = getUsedEipNum(msg.getSession().getAccountUuid());
                 long askedEipNum = 1;
 
@@ -1031,7 +1057,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                 quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
                 quotaCompareInfo.currentAccountUuid = currentAccountUuid;
                 quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                quotaCompareInfo.quotaName = EipConstant.QUOTA_EIP_NUM;
+                quotaCompareInfo.quotaName = QuotaConstant.EIP_NUM;
                 quotaCompareInfo.quotaValue = eipNumQuota;
                 quotaCompareInfo.currentUsed = usedEipNum;
                 quotaCompareInfo.request = askedEipNum;
@@ -1052,7 +1078,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
 
                 if (accResRefVO.getResourceType().equals(VmInstanceVO.class.getSimpleName())) {
-                    long eipNumQuota = pairs.get(EipConstant.QUOTA_EIP_NUM).getValue();
+                    long eipNumQuota = pairs.get(QuotaConstant.EIP_NUM).getValue();
                     long usedEipNum = getUsedEipNum(resourceTargetOwnerAccountUuid);
                     long askedEipNum = getVmEipNum(msg.getResourceUuid());
 
@@ -1060,7 +1086,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                     quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
                     quotaCompareInfo.currentAccountUuid = currentAccountUuid;
                     quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                    quotaCompareInfo.quotaName = EipConstant.QUOTA_EIP_NUM;
+                    quotaCompareInfo.quotaName = QuotaConstant.EIP_NUM;
                     quotaCompareInfo.quotaValue = eipNumQuota;
                     quotaCompareInfo.currentUsed = usedEipNum;
                     quotaCompareInfo.request = askedEipNum;
@@ -1075,8 +1101,8 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         quota.setOperator(checker);
 
         QuotaPair p = new QuotaPair();
-        p.setName(EipConstant.QUOTA_EIP_NUM);
-        p.setValue(QuotaConstant.QUOTA_EIP_NUM);
+        p.setName(QuotaConstant.EIP_NUM);
+        p.setValue(QuotaGlobalConfig.EIP_NUM.defaultValue(Long.class));
         quota.addPair(p);
 
         return list(quota);
@@ -1166,5 +1192,8 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         }
     }
 
-
+    @Override
+    public ServiceReference getServiceReference(String vipUuid) {
+        return new VipGetServiceReferencePoint.ServiceReference(EipConstant.EIP_NETWORK_SERVICE_TYPE, 0);
+    }
 }

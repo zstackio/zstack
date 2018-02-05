@@ -68,6 +68,8 @@ public interface DatabaseFacade {
 
     void eoCleanup(Class VOClazz);
 
+    void eoCleanup(Class VOClazz, List ids);
+
     DataSource getDataSource();
 
     DataSource getExtraDataSource();

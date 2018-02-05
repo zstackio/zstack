@@ -85,7 +85,7 @@ doc {
 	}
 	field {
 		name "state"
-		desc "规则可用状态, 当前版本中未实现"
+		desc "规则可用状态"
 		type "String"
 		since "0.6"
 	}

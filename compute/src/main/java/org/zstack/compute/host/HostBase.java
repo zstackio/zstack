@@ -1,8 +1,10 @@
 package org.zstack.compute.host;
 
+import org.apache.commons.collections.list.SynchronizedList;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.*;
@@ -44,10 +46,8 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.operr;
 
@@ -225,26 +225,26 @@ public abstract class HostBase extends AbstractHost {
                                 }
                             }
 
-                            final List<MigrateVmMsg> msgs = new ArrayList<MigrateVmMsg>();
-                            for (String uuid : vmUuids) {
+                            new While<>(vmUuids).step((vmUuid, compl) -> {
                                 MigrateVmMsg msg = new MigrateVmMsg();
-                                msg.setVmInstanceUuid(uuid);
-                                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, uuid);
-                                msgs.add(msg);
-                            }
-
-                            bus.send(msgs, migrateQuantity, new CloudBusListCallBack(trigger) {
-                                @Override
-                                public void run(List<MessageReply> replies) {
-                                    for (MessageReply reply : replies) {
+                                msg.setVmInstanceUuid(vmUuid);
+                                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vmUuid);
+                                bus.send(msg, new CloudBusCallBack(compl) {
+                                    @Override
+                                    public void run(MessageReply reply) {
                                         if (!reply.isSuccess()) {
-                                            MigrateVmMsg msg = msgs.get(replies.indexOf(reply));
-                                            logger.warn(String.format("failed to migrate vm[uuid:%s] on host[uuid:%s, name:%s, ip:%s], will try stopping it. %s",
-                                                    msg.getVmInstanceUuid(), self.getUuid(), self.getName(), self.getManagementIp(), reply.getError()));
                                             vmFailedToMigrate.add(msg.getVmInstanceUuid());
                                         }
+                                        compl.done();
                                     }
-
+                                });
+                            }, migrateQuantity).run(new NoErrorCompletion() {
+                                @Override
+                                public void done() {
+                                    if (!vmFailedToMigrate.isEmpty()) {
+                                        logger.warn(String.format("failed to migrate vm[uuids:%s] on host[uuid:%s, name:%s, ip:%s], will try stopping it.",
+                                                vmFailedToMigrate, self.getUuid(), self.getName(), self.getManagementIp()));
+                                    }
                                     trigger.next();
                                 }
                             });
@@ -266,50 +266,44 @@ public abstract class HostBase extends AbstractHost {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        List<String> vmUuids = new ArrayList<String>();
-                        vmUuids.addAll(vmFailedToMigrate);
-                        vmUuids = CollectionUtils.removeDuplicateFromList(vmUuids);
-
-                        if (vmUuids.isEmpty()) {
+                        if (vmFailedToMigrate.isEmpty()) {
                             trigger.next();
                             return;
                         }
 
+                        List<String> vmUuids = Q.New(VmInstanceVO.class).select(VmInstanceVO_.uuid)
+                                .in(VmInstanceVO_.uuid, vmFailedToMigrate).listValues();
                         stopFailedToMigrateVms(vmUuids, trigger);
                     }
 
                     private void stopFailedToMigrateVms(List<String> vmUuids, final FlowTrigger trigger) {
-                        final List<StopVmInstanceMsg> msgs = new ArrayList<StopVmInstanceMsg>();
-                        for (String vmUuid : vmUuids) {
+                        List<ErrorCode> errors = Collections.synchronizedList(new ArrayList<>());
+                        List<String> vmFailedToStop = Collections.synchronizedList(new ArrayList<>());
+                        new While<>(vmUuids).step((vmUuid, coml) -> {
                             StopVmInstanceMsg msg = new StopVmInstanceMsg();
                             msg.setVmInstanceUuid(vmUuid);
                             bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vmUuid);
-                            msgs.add(msg);
-                        }
-
-                        bus.send(msgs, quantity, new CloudBusListCallBack(trigger) {
-                            @Override
-                            public void run(List<MessageReply> replies) {
-                                StringBuilder sb = new StringBuilder();
-                                boolean success = true;
-                                for (MessageReply r : replies) {
-                                    if (!r.isSuccess()) {
-                                        StopVmInstanceMsg msg = msgs.get(replies.indexOf(r));
-                                        String err = String.format("\nfailed to stop vm[uuid:%s] on host[uuid:%s, name:%s, ip:%s], %s",
-                                                msg.getVmInstanceUuid(), self.getUuid(), self.getName(), self.getManagementIp(), r.getError());
-                                        sb.append(err);
-                                        success = false;
+                            bus.send(msg, new CloudBusCallBack(coml) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    logger.debug(String.format("stop vm[uuid:%s] call back", vmUuid));
+                                    if (!reply.isSuccess() && dbf.isExist(vmUuid, VmInstanceVO.class)) {
+                                        errors.add(reply.getError());
+                                        vmFailedToStop.add(vmUuid);
                                     }
+                                    coml.done();
                                 }
-
-                                if (!success) {
-                                    logger.warn(sb.toString());
-                                }
-
-                                if (success || HostGlobalConfig.IGNORE_ERROR_ON_MAINTENANCE_MODE.value(Boolean.class)) {
+                            });
+                        }, quantity).run(new NoErrorCompletion() {
+                            @Override
+                            public void done() {
+                                if (errors.isEmpty() || HostGlobalConfig.IGNORE_ERROR_ON_MAINTENANCE_MODE.value(Boolean.class)) {
                                     trigger.next();
                                 } else {
-                                    trigger.fail(operr(sb.toString()));
+                                    trigger.fail(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
+                                            String.format("failed to stop vm[uuids:%s] on host[uuid:%s, name:%s, ip:%s]",
+                                                    vmFailedToStop, self.getUuid(), self.getName(), self.getManagementIp()),
+                                            errors));
                                 }
                             }
                         });
@@ -466,10 +460,6 @@ public abstract class HostBase extends AbstractHost {
             public void run(final SyncTaskChain chain) {
                 final APIChangeHostStateEvent evt = new APIChangeHostStateEvent(msg.getId());
                 HostStateEvent stateEvent = HostStateEvent.valueOf(msg.getStateEvent());
-
-                if (self.getStatus() == HostStatus.Disconnected && stateEvent == HostStateEvent.maintain) {
-                    throw new ApiMessageInterceptionException(operr("cannot change the state of Disconnected host into Maintenance "));
-                }
                 stateEvent = stateEvent == HostStateEvent.maintain ? HostStateEvent.preMaintain : stateEvent;
                 try {
                     extpEmitter.preChange(self, stateEvent);
@@ -481,6 +471,7 @@ public abstract class HostBase extends AbstractHost {
                 }
 
                 if (HostStateEvent.preMaintain == stateEvent) {
+                    HostState originState = self.getState();
                     changeState(HostStateEvent.preMaintain);
                     maintenanceHook(new Completion(msg, chain) {
                         @Override
@@ -494,7 +485,9 @@ public abstract class HostBase extends AbstractHost {
                         @Override
                         public void fail(ErrorCode errorCode) {
                             evt.setError(errf.instantiateErrorCode(HostErrors.UNABLE_TO_ENTER_MAINTENANCE_MODE, errorCode.getDetails(), errorCode));
-                            changeState(HostStateEvent.enable);
+                            HostStateEvent rollbackEvent = dbf.reload(self).getState().getTargetStateDrivenEvent(originState);
+                            DebugUtils.Assert(rollbackEvent != null, "rollbackEvent not found!");
+                            changeState(rollbackEvent);
                             bus.publish(evt);
                             done(chain);
                         }
@@ -587,37 +580,64 @@ public abstract class HostBase extends AbstractHost {
             return;
         }
 
-        pingHook(new Completion(msg) {
-            @Override
-            public void success() {
-                reply.setConnected(true);
-                reply.setCurrentHostStatus(self.getStatus().toString());
-                bus.reply(msg, reply);
+        final Integer MAX_PING_CNT = HostGlobalConfig.MAXIMUM_PING_FAILURE.value(Integer.class);
+        final List<Integer> stepCount = new ArrayList<>();
+        for(int i = 1; i <= MAX_PING_CNT; i ++){
+            stepCount.add(i);
+        }
 
-                extpEmitter.hostPingTask(HypervisorType.valueOf(self.getHypervisorType()), getSelfInventory());
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                reply.setConnected(false);
-                reply.setCurrentHostStatus(self.getStatus().toString());
-                reply.setError(errorCode);
-                reply.setSuccess(true);
-
-                Boolean noReconnect = (Boolean) errorCode.getFromOpaque(Opaque.NO_RECONNECT_AFTER_PING_FAILURE.toString());
-                reply.setNoReconnect(noReconnect != null && noReconnect);
-
-                if(!Q.New(HostVO.class).eq(HostVO_.uuid, msg.getHostUuid()).isExists()){
-                    reply.setNoReconnect(true);
-                    bus.reply(msg, reply);
-                    return;
+        final List<ErrorCode> errs = new ArrayList<>();
+        new While<>(stepCount).each((currentStep, compl) -> {
+            pingHook(new Completion(compl) {
+                @Override
+                public void success() {
+                    compl.allDone();
                 }
 
-                new HostDisconnectedCanonicalEvent(self.getUuid(), errorCode).fire();
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    logger.warn(String.format("ping host failed (%d/%d): %s", currentStep, MAX_PING_CNT, errorCode.toString()));
+                    errs.add(errorCode);
+                    if (errs.size() != stepCount.size()) {
+                        try {
+                            TimeUnit.SECONDS.sleep(1);
+                        } catch (InterruptedException ignored) {
+                        }
+                    }
+                    compl.done();
+                }
+            });
+        }).run(new NoErrorCompletion(msg) {
+            @Override
+            public void done() {
+                if (errs.size() == stepCount.size()){
+                    final ErrorCode errorCode = errs.get(0);
+                    reply.setConnected(false);
+                    reply.setCurrentHostStatus(self.getStatus().toString());
+                    reply.setError(errorCode);
+                    reply.setSuccess(true);
 
-                changeConnectionState(HostStatusEvent.disconnected);
-                
-                bus.reply(msg, reply);
+                    Boolean noReconnect = (Boolean) errorCode.getFromOpaque(Opaque.NO_RECONNECT_AFTER_PING_FAILURE.toString());
+                    reply.setNoReconnect(noReconnect != null && noReconnect);
+
+                    if(!Q.New(HostVO.class).eq(HostVO_.uuid, msg.getHostUuid()).isExists()){
+                        reply.setNoReconnect(true);
+                        bus.reply(msg, reply);
+                        return;
+                    }
+
+                    new HostDisconnectedCanonicalEvent(self.getUuid(), errorCode).fire();
+
+                    changeConnectionState(HostStatusEvent.disconnected);
+
+                    bus.reply(msg, reply);
+                } else {
+                    reply.setConnected(true);
+                    reply.setCurrentHostStatus(self.getStatus().toString());
+                    bus.reply(msg, reply);
+
+                    extpEmitter.hostPingTask(HypervisorType.valueOf(self.getHypervisorType()), getSelfInventory());
+                }
             }
         });
     }
@@ -672,7 +692,6 @@ public abstract class HostBase extends AbstractHost {
                     return;
                 }
 
-                changeConnectionState(HostStatusEvent.disconnected);
                 ConnectHostMsg connectMsg = new ConnectHostMsg(self.getUuid());
                 connectMsg.setNewAdd(false);
                 bus.makeTargetServiceIdByResourceUuid(connectMsg, HostConstant.SERVICE_ID, self.getUuid());

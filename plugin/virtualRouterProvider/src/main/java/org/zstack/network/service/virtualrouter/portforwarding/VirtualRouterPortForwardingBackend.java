@@ -1,12 +1,19 @@
 package org.zstack.network.service.virtualrouter.portforwarding;
 
+import com.google.common.collect.ImmutableSet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.timeout.ApiTimeoutManager;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.workflow.FlowDoneHandler;
@@ -14,27 +21,37 @@ import org.zstack.header.core.workflow.FlowErrorHandler;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.workflow.WhileCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.service.NetworkServiceProviderType;
-import org.zstack.header.vm.VmInstanceState;
-import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint;
+import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
-import org.zstack.network.service.portforwarding.PortForwardingBackend;
-import org.zstack.network.service.portforwarding.PortForwardingRuleInventory;
-import org.zstack.network.service.portforwarding.PortForwardingStruct;
+import org.zstack.network.service.NetworkServiceManager;
+import org.zstack.network.service.eip.EipConstant;
+import org.zstack.network.service.portforwarding.*;
 import org.zstack.network.service.virtualrouter.*;
+import org.zstack.network.service.virtualrouter.eip.EipTO;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.operr;
 
+import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
+import java.util.stream.Collectors;
 
-public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBackend implements PortForwardingBackend, Component {
+public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBackend implements
+        PortForwardingBackend, Component, VirtualRouterAfterAttachNicExtensionPoint {
+    private static final CLogger logger = Utils.getLogger(VirtualRouterPortForwardingBackend.class);
+
     @Autowired
     protected DatabaseFacade dbf;
     @Autowired
@@ -43,6 +60,14 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
     protected ErrorFacade errf;
     @Autowired
     protected AccountManager acntMgr;
+    @Autowired
+    private ApiTimeoutManager apiTimeoutManager;
+    @Autowired
+    private NetworkServiceManager nwServiceMgr;
+
+    public static final Set<VmInstanceState> SYNC_PF_VM_STATES = ImmutableSet.<VmInstanceState> of(
+            VmInstanceState.Running
+    );
 
     private List<String> applyPortForwardingRuleElements;
     private FlowChainBuilder applyRuleChainBuilder;
@@ -246,5 +271,104 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
     @Override
     public void revokePortForwardingRule(PortForwardingStruct struct, Completion completion) {
         revokeRule(struct, completion);
+    }
+
+    private static List<PortForwardingRuleTO> findPortforwardingsOnVirtualRouter(VmNicInventory nic) {
+        List<Tuple> pfs = SQL.New("select pf, nic.ip, nic.mac " +
+                "from PortForwardingRuleVO pf, VmNicVO nic, VmInstanceVO vm " +
+                "where pf.vmNicUuid = nic.uuid " +
+                "and nic.vmInstanceUuid = vm.uuid " +
+                "and nic.l3NetworkUuid = :l3Uuid " +
+                "and vm.state in (:syncPfVmStates) " +
+                "and pf.state = :enabledState", Tuple.class)
+                .param("l3Uuid", nic.getL3NetworkUuid())
+                .param("syncPfVmStates", SYNC_PF_VM_STATES)
+                .param("enabledState", PortForwardingRuleState.Enabled)
+                .list();
+
+        if (pfs == null || pfs.isEmpty()) {
+            return null;
+        }
+
+        List<PortForwardingRuleTO> tos = new ArrayList<>();
+        for (Tuple t : pfs) {
+            PortForwardingRuleVO pf = t.get(0, PortForwardingRuleVO.class);
+            PortForwardingRuleTO to = new PortForwardingRuleTO();
+            to.setAllowedCidr(pf.getAllowedCidr());
+            to.setPrivateIp(t.get(1, String.class));
+            to.setPrivateMac(t.get(2, String.class));
+            to.setPrivatePortStart(pf.getPrivatePortStart());
+            to.setPrivatePortEnd(pf.getPrivatePortEnd());
+            to.setProtocolType(pf.getProtocolType().toString());
+            to.setSnatInboundTraffic(PortForwardingGlobalConfig.SNAT_INBOUND_TRAFFIC.value(Boolean.class));
+            to.setVipIp(pf.getVipIp());
+            to.setVipPortStart(pf.getVipPortStart());
+            to.setVipPortEnd(pf.getVipPortEnd());
+            tos.add(to);
+        }
+
+        return tos;
+    }
+
+    @Override
+    public void afterAttachNic(VmNicInventory nic, Completion completion) {
+        if (!VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST.contains(nic.getMetaData())) {
+            completion.success();
+            return;
+        }
+
+        try {
+            nwServiceMgr.getTypeOfNetworkServiceProviderForService(nic.getL3NetworkUuid(), PortForwardingConstant.PORTFORWARDING_TYPE);
+        } catch (OperationFailureException e) {
+            completion.success();
+            return;
+        }
+
+        VirtualRouterVmVO vr = Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, nic.getVmInstanceUuid()).find();
+        DebugUtils.Assert(vr != null,
+                String.format("can not find virtual router[uuid: %s] for nic[uuid: %s, ip: %s, l3NetworkUuid: %s]",
+                        nic.getVmInstanceUuid(), nic.getUuid(), nic.getIp(), nic.getL3NetworkUuid()));
+
+        List<PortForwardingRuleTO> pfs = findPortforwardingsOnVirtualRouter(nic);
+        if (pfs == null || pfs.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        VirtualRouterCommands.CreatePortForwardingRuleCmd cmd = new VirtualRouterCommands.CreatePortForwardingRuleCmd();
+        cmd.setRules(pfs);
+        VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
+        msg.setPath(VirtualRouterConstant.VR_CREATE_PORT_FORWARDING);
+        msg.setCommand(cmd);
+        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
+        msg.setVmInstanceUuid(vr.getUuid());
+        bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                VirtualRouterAsyncHttpCallReply re = reply.castReply();
+                VirtualRouterCommands.SyncEipRsp ret = re.toResponse(VirtualRouterCommands.SyncEipRsp.class);
+                if (!ret.isSuccess()) {
+                    ErrorCode err = operr("failed to add portforwardings on virtual router[uuid:%s], %s",
+                            vr.getUuid(), ret.getError());
+                    completion.fail(err);
+                } else {
+                    String info = String.format("sync port forwardings on virtual router[uuid:%s] successfully",
+                            vr.getUuid());
+                    logger.debug(info);
+                    completion.success();
+                }
+            }
+        });
+    }
+
+    @Override
+    public void afterAttachNicRollback(VmNicInventory nic, NoErrorCompletion completion) {
+        completion.done();
     }
 }

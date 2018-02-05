@@ -59,7 +59,6 @@ import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.ssh.Ssh;
 import org.zstack.utils.ssh.SshResult;
@@ -68,6 +67,7 @@ import org.zstack.utils.ssh.SshShell;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.i18n;
@@ -368,7 +368,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(IncreaseCpuResponse ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(operr(ret.getError()));
+                    reply.setError(operr("operation error, because:%s", ret.getError()));
                 } else {
                     reply.setCpuNum(ret.getCpuNum());
                 }
@@ -393,7 +393,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(IncreaseMemoryResponse ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(operr(ret.getError()));
+                    reply.setError(operr("operation error, because:%s", ret.getError()));
                 } else {
                     reply.setMemorySize(ret.getMemorySize());
                 }
@@ -497,7 +497,7 @@ public class KVMHost extends HostBase implements Host {
 //            @Override
 //            public void success(ChangeCpuMemoryResponse ret) {
 //                if (!ret.isSuccess()) {
-//                    reply.setError(operr(ret.getError()));
+//                    reply.setError(operr("operation error, because:%s", ret.getError()));
 //                } else {
 //                    reply.setCpuNum(ret.getCpuNum());
 //                    reply.setMemorySize(ret.getMemorySize());
@@ -522,7 +522,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(GetVncPortResponse ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(operr(ret.getError()));
+                    reply.setError(operr("operation error, because:%s", ret.getError()));
                 } else {
                     reply.setHostIp(self.getManagementIp());
                     reply.setProtocol(ret.getProtocol());
@@ -557,7 +557,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(CheckVmStateRsp ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(operr(ret.getError()));
+                    reply.setError(operr("operation error, because:%s", ret.getError()));
                 } else {
                     Map<String, String> m = new HashMap<>();
                     for (Map.Entry<String, String> e : ret.states.entrySet()) {
@@ -621,7 +621,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(DetachIsoRsp ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(operr(ret.getError()));
+                    reply.setError(operr("operation error, because:%s", ret.getError()));
                 }
 
                 bus.reply(msg, reply);
@@ -686,7 +686,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(AttachIsoRsp ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(operr(ret.getError()));
+                    reply.setError(operr("operation error, because:%s", ret.getError()));
                 }
 
                 bus.reply(msg, reply);
@@ -743,7 +743,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(DetachNicRsp ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(operr(ret.getError()));
+                    reply.setError(operr("operation error, because:%s", ret.getError()));
                 }
                 bus.reply(msg, reply);
                 completion.done();
@@ -943,7 +943,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(MergeSnapshotRsp ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(operr(ret.getError()));
+                    reply.setError(operr("operation error, because:%s", ret.getError()));
                 }
                 bus.reply(msg, reply);
                 completion.done();
@@ -1027,7 +1027,7 @@ public class KVMHost extends HostBase implements Host {
                     reply.setSnapshotInstallPath(ret.getSnapshotInstallPath());
                     reply.setSize(ret.getSize());
                 } else {
-                    reply.setError(operr(ret.getError()));
+                    reply.setError(operr("operation error, because:%s", ret.getError()));
                 }
                 bus.reply(msg, reply);
                 completion.done();
@@ -1567,7 +1567,7 @@ public class KVMHost extends HostBase implements Host {
             public void fail(ErrorCode err) {
                 DestroyVmOnHypervisorReply reply = new DestroyVmOnHypervisorReply();
 
-                if (err.isError(SysErrors.HTTP_ERROR, SysErrors.IO_ERROR)) {
+                if (err.isError(SysErrors.HTTP_ERROR, SysErrors.IO_ERROR, SysErrors.TIMEOUT)) {
                     err = errf.instantiateErrorCode(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, "unable to destroy a vm", err);
                 }
 
@@ -1885,6 +1885,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setVideoType(VmGlobalConfig.VM_VIDEO_TYPE.value(String.class));
         cmd.setInstanceOfferingOnlineChange(VmSystemTags.INSTANCEOFFERING_ONLIECHANGE.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmSystemTags.INSTANCEOFFERING_ONLINECHANGE_TOKEN) != null);
         cmd.setKvmHiddenState(VmGlobalConfig.KVM_HIDDEN_STATE.value(Boolean.class));
+        cmd.setSpiceStreamingMode(VmGlobalConfig.VM_SPICE_STREAMING_MODE.value(String.class));
 
         VolumeTO rootVolume = new VolumeTO();
         rootVolume.setInstallPath(spec.getDestRootVolume().getInstallPath());
@@ -1927,6 +1928,7 @@ public class KVMHost extends HostBase implements Host {
             }
             nics.add(completeNicInfo(nic));
         }
+        nics = nics.stream().sorted(Comparator.comparing(NicTO::getDeviceId)).collect(Collectors.toList());
         cmd.setNics(nics);
 
         if (spec.getDestIso() != null) {
@@ -2187,7 +2189,7 @@ public class KVMHost extends HostBase implements Host {
         CheckPhysicalNetworkInterfaceResponse rsp = restf.syncJsonPost(checkPhysicalNetworkInterfacePath, cmd, CheckPhysicalNetworkInterfaceResponse.class);
         if (!rsp.isSuccess()) {
             if (rsp.getFailedInterfaceNames().isEmpty()) {
-                reply.setError(operr(rsp.getError()));
+                reply.setError(operr("operation error, because:%s", rsp.getError()));
             } else {
                 reply.setError(operr("%s, failed to check physical network interfaces[names : %s] on kvm host[uuid:%s, ip:%s]",
                         rsp.getError(), msg.getPhysicalInterface(), context.getInventory().getUuid(), context.getInventory().getManagementIp()));
@@ -2237,13 +2239,6 @@ public class KVMHost extends HostBase implements Host {
                     @AfterDone
                     List<Runnable> afterDone = new ArrayList<>();
 
-                    private boolean isSshPortOpen() {
-                        if (CoreGlobalProperty.UNIT_TEST_ON) {
-                            return false;
-                        }
-                        return NetworkUtils.isRemotePortOpen(self.getManagementIp(), getSelf().getPort(), 2);
-                    }
-
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         PingCmd cmd = new PingCmd();
@@ -2251,13 +2246,7 @@ public class KVMHost extends HostBase implements Host {
                         restf.asyncJsonPost(pingPath, cmd, new JsonAsyncRESTCallback<PingResponse>(trigger) {
                             @Override
                             public void fail(ErrorCode err) {
-                                if (isSshPortOpen()) {
-                                    logger.debug(String.format("ssh port of host[uuid:%s, ip:%s] is open, ping success",
-                                            self.getUuid(), self.getManagementIp()));
-                                    trigger.next();
-                                } else {
-                                    trigger.fail(err);
-                                }
+                                trigger.fail(err);
                             }
 
                             @Override
@@ -2281,13 +2270,7 @@ public class KVMHost extends HostBase implements Host {
 
                                     trigger.next();
                                 } else {
-                                    if (isSshPortOpen()) {
-                                        logger.debug(String.format("ssh port of host[uuid:%s, ip:%s] is open, ping success",
-                                                self.getUuid(), self.getManagementIp()));
-                                        trigger.next();
-                                    } else {
-                                        trigger.fail(operr(ret.getError()));
-                                    }
+                                     trigger.fail(operr(ret.getError()));
                                 }
                             }
 
@@ -2503,16 +2486,26 @@ public class KVMHost extends HostBase implements Host {
     public void connectHook(final ConnectHostInfo info, final Completion complete) {
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             if (info.isNewAdded()) {
+                SystemTagCreator creator;
                 createHostVersionSystemTags("zstack", "kvmSimulator", "0.1");
-                SystemTagCreator creator = KVMSystemTags.LIBVIRT_VERSION.newSystemTagCreator(self.getUuid());
-                creator.inherent = true;
-                creator.setTagByTokens(map(e(KVMSystemTags.LIBVIRT_VERSION_TOKEN, "1.2.9")));
-                creator.create();
+                if (null == KVMSystemTags.LIBVIRT_VERSION.getTokenByResourceUuid(self.getUuid(), KVMSystemTags.LIBVIRT_VERSION_TOKEN)) {
+                    creator = KVMSystemTags.LIBVIRT_VERSION.newSystemTagCreator(self.getUuid());
+                    creator.inherent = true;
+                    creator.setTagByTokens(map(e(KVMSystemTags.LIBVIRT_VERSION_TOKEN, "1.2.9")));
+                    creator.create();
+                }
 
-                creator = KVMSystemTags.QEMU_IMG_VERSION.newSystemTagCreator(self.getUuid());
-                creator.inherent = true;
-                creator.setTagByTokens(map(e(KVMSystemTags.QEMU_IMG_VERSION_TOKEN, "2.0.0")));
-                creator.create();
+                if (null == KVMSystemTags.QEMU_IMG_VERSION.getTokenByResourceUuid(self.getUuid(), KVMSystemTags.QEMU_IMG_VERSION_TOKEN)) {
+                    creator = KVMSystemTags.QEMU_IMG_VERSION.newSystemTagCreator(self.getUuid());
+                    creator.inherent = true;
+                    creator.setTagByTokens(map(e(KVMSystemTags.QEMU_IMG_VERSION_TOKEN, "2.0.0")));
+                    creator.create();
+                }
+
+                if (!checkQemuLibvirtVersionOfHost()) {
+                    complete.fail(operr("host [uuid:%s] cannot be added to cluster [uuid:%s] because qemu/libvirt version does not match",
+                            self.getUuid(), self.getClusterUuid()));
+                }
             }
 
             continueConnect(info.isNewAdded(), complete);
@@ -2616,6 +2609,9 @@ public class KVMHost extends HostBase implements Host {
                             }
                             runner.putArgument("pkg_kvmagent", agentPackageName);
                             runner.putArgument("hostname", String.format("%s.zstack.org", self.getManagementIp().replaceAll("\\.", "-")));
+                            if (CoreGlobalProperty.CHRONY_SERVERS != null && !CoreGlobalProperty.CHRONY_SERVERS.isEmpty()) {
+                                runner.putArgument("chrony_servers", String.join(",", CoreGlobalProperty.CHRONY_SERVERS));
+                            }
 
                             UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(restf.getBaseUrl());
                             ub.path(new StringBind(KVMConstant.KVM_ANSIBLE_LOG_PATH_FROMAT).bind("uuid", self.getUuid()).toString());
@@ -2702,7 +2698,7 @@ public class KVMHost extends HostBase implements Host {
                                 @Override
                                 public void success(HostFactResponse ret) {
                                     if (!ret.isSuccess()) {
-                                        trigger.fail(operr(ret.getError()));
+                                        trigger.fail(operr("operation error, because:%s", ret.getError()));
                                         return;
                                     }
 
@@ -2754,6 +2750,22 @@ public class KVMHost extends HostBase implements Host {
                         }
                     });
 
+                    if (info.isNewAdded()) {
+                        flow(new NoRollbackFlow() {
+                            String __name__ = "check-qemu-libvirt-version";
+
+                            @Override
+                            public void run(FlowTrigger trigger, Map data) {
+                                if (checkQemuLibvirtVersionOfHost()) {
+                                    trigger.next();
+                                } else {
+                                    trigger.fail(operr("host [uuid:%s] cannot be added to cluster [uuid:%s] because qemu/libvirt version does not match",
+                                            self.getUuid(), self.getClusterUuid()));
+                                }
+                            }
+                        });
+                    }
+
                     flow(new NoRollbackFlow() {
                         String __name__ = "prepare-host-env";
 
@@ -2781,6 +2793,51 @@ public class KVMHost extends HostBase implements Host {
                 }
             }).start();
         }
+    }
+
+    private boolean checkQemuLibvirtVersionOfHost() {
+        List<String> hostUuidsInCluster = Q.New(HostVO.class)
+                .select(HostVO_.uuid)
+                .eq(HostVO_.clusterUuid, self.getClusterUuid())
+                .notEq(HostVO_.uuid, self.getUuid())
+                .listValues();
+        if (hostUuidsInCluster.isEmpty()) {
+            return true;
+        }
+
+        Map<String, List<String>> qemuVersions = KVMSystemTags.QEMU_IMG_VERSION.getTags(hostUuidsInCluster);
+        if (qemuVersions != null && qemuVersions.size() != 0) {
+            String clusterQemuVer = KVMSystemTags.QEMU_IMG_VERSION.getTokenByTag(
+                    qemuVersions.values().iterator().next().get(0),
+                    KVMSystemTags.QEMU_IMG_VERSION_TOKEN
+            );
+
+            String hostQemuVer = KVMSystemTags.QEMU_IMG_VERSION.getTokenByResourceUuid(
+                    self.getUuid(), KVMSystemTags.QEMU_IMG_VERSION_TOKEN
+            );
+
+            if (clusterQemuVer != null && !clusterQemuVer.equals(hostQemuVer)) {
+                return false;
+            }
+        }
+
+        Map<String, List<String>> libvirtVersions = KVMSystemTags.LIBVIRT_VERSION.getTags(hostUuidsInCluster);
+        if (libvirtVersions != null && libvirtVersions.size() != 0) {
+            String clusterLibvirtVer = KVMSystemTags.LIBVIRT_VERSION.getTokenByTag(
+                    libvirtVersions.values().iterator().next().get(0),
+                    KVMSystemTags.LIBVIRT_VERSION_TOKEN
+            );
+
+            String hostLibvirtVer = KVMSystemTags.LIBVIRT_VERSION.getTokenByResourceUuid(
+                    self.getUuid(), KVMSystemTags.LIBVIRT_VERSION_TOKEN
+            );
+
+            if (clusterLibvirtVer != null && !clusterLibvirtVer.equals(hostLibvirtVer)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     @Override

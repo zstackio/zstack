@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>query</id>
+
+    <message>
+        <name>org.zstack.query.APIBatchQueryMsg</name>
+    </message>
+</service>

@@ -27,8 +27,6 @@ public class LoadBalancerConstants {
 
     public static final String ACTION_CATEGORY = "loadBalancer";
 
-    public static final String QUOTA_LOAD_BALANCER_NUM = "loadBalancer.num";
-
     public static final String LB_PROTOCOL_TCP = "tcp";
     public static final String LB_PROTOCOL_HTTP = "http";
 
@@ -38,6 +36,10 @@ public class LoadBalancerConstants {
         BALANCE_ALGORITHMS.add(BALANCE_ALGORITHM_LEAST_SOURCE);
 
         HEALTH_CHECK_TARGET_PROTOCOLS.add(HEALTH_CHECK_TARGET_PROTOCL_TCP);
+    }
+
+    public static enum Param {
+        LOAD_BALANCER_VO,
     }
 
 }

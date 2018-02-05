@@ -36,8 +36,8 @@ public class APICreateSystemTagEvent extends APIEvent {
         tag.setResourceType("HostVO");
         tag.setTag("reservedMemory::1G");
         tag.setUuid(uuid()  );
-        tag.setCreateDate(new Timestamp(System.currentTimeMillis()));
-        tag.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        tag.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        tag.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         event.setInventory(tag);
         return event;
     }

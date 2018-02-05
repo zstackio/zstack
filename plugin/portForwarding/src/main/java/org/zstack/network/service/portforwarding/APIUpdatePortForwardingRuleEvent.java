@@ -44,8 +44,8 @@ public class APIUpdatePortForwardingRuleEvent extends APIEvent {
         rule.setVipIp("192.168.0.187");
         rule.setVipUuid(uuid());
         rule.setVmNicUuid(uuid());
-        rule.setCreateDate(new Timestamp(System.currentTimeMillis()));
-        rule.setLastOpDate(new Timestamp(System.currentTimeMillis()));
+        rule.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        rule.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         event.setInventory(rule);
         event.setSuccess(true);
         return event;

@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -22,8 +24,10 @@ import org.zstack.header.vm.*;
 import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.operr;
@@ -46,6 +50,8 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
     protected VirtualRouterManager vrMgr;
     @Autowired
     private ApiTimeoutManager apiTimeoutManager;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     public VirtualRouterVipBaseBackend(VipVO self) {
         super(self);
@@ -184,6 +190,8 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
 
     @Override
     protected void acquireVipOnBackend(Completion completion) {
+        refresh();
+
         VirtualRouterVipVO vipvo = dbf.findByUuid(self.getUuid(), VirtualRouterVipVO.class);
 
         if (vipvo != null) {
@@ -196,6 +204,15 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
                 completion.fail(operr("virtual router[uuid:%s, state:%s] is not running",
                         vipvo.getVirtualRouterVmUuid(), vrState));
             } else {
+                CollectionUtils.safeForEach(pluginRgty.getExtensionList(AfterAcquireVipExtensionPoint.class),
+                        new ForEachFunction<AfterAcquireVipExtensionPoint>() {
+                            @Override
+                            public void run(AfterAcquireVipExtensionPoint ext) {
+                                logger.debug(String.format("execute after acquire vip extension point %s", ext));
+                                ext.afterAcquireVip(VipInventory.valueOf(getSelf()));
+                            }
+                        });
+
                 completion.success();
             }
 
@@ -207,10 +224,10 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(final FlowTrigger trigger, final Map data) {
-                DebugUtils.Assert(self.getPeerL3NetworkUuid() != null, "peerL3NetworkUuid cannot be null");
+                DebugUtils.Assert(self.getPeerL3NetworkUuids() != null, "peerL3NetworkUuid cannot be null");
 
                 VirtualRouterStruct s = new VirtualRouterStruct();
-                s.setL3Network(L3NetworkInventory.valueOf(dbf.findByUuid(self.getPeerL3NetworkUuid(), L3NetworkVO.class)));
+                s.setL3Network(L3NetworkInventory.valueOf(dbf.findByUuid(self.getPeerL3NetworkUuids().iterator().next(), L3NetworkVO.class)));
 
                 String appVmType;
                 if (self.getServiceProvider().equals(VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE)) {
@@ -272,6 +289,15 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
                     vrvip.setVirtualRouterVmUuid(vr.getUuid());
                     dbf.persist(vrvip);
                 }
+
+                CollectionUtils.safeForEach(pluginRgty.getExtensionList(AfterAcquireVipExtensionPoint.class),
+                        new ForEachFunction<AfterAcquireVipExtensionPoint>() {
+                            @Override
+                            public void run(AfterAcquireVipExtensionPoint ext) {
+                                logger.debug(String.format("execute after acquire vip extension point %s", ext));
+                                ext.afterAcquireVip(VipInventory.valueOf(getSelf()));
+                            }
+                        });
 
                 completion.success();
             }

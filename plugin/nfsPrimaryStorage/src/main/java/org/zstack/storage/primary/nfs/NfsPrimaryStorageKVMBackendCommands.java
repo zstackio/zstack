@@ -1,5 +1,6 @@
 package org.zstack.storage.primary.nfs;
 
+import org.zstack.header.HasThreadContext;
 import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeMsg;
@@ -343,6 +344,30 @@ public class NfsPrimaryStorageKVMBackendCommands {
 
     public static class DeleteResponse extends NfsPrimaryStorageAgentResponse {
     }
+
+    public static class ListDirectionCmd extends NfsPrimaryStorageAgentCommand {
+        private String path;
+
+        public String getPath() {
+            return path;
+        }
+
+        public void setPath(String path) {
+            this.path = path;
+        }
+    }
+
+    public static class ListDirectionResponse extends NfsPrimaryStorageAgentResponse {
+        private List<String> paths;
+
+        public List<String> getPaths() {
+            return paths;
+        }
+
+        public void setPaths(List<String> paths) {
+            this.paths = paths;
+        }
+    }
     
     public static class RevertVolumeFromSnapshotCmd extends NfsPrimaryStorageAgentCommand {
         private String snapshotInstallPath;
@@ -620,6 +645,8 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class PingCmd extends NfsPrimaryStorageAgentCommand {
+        public String mountPath;
+        public String url;
     }
 
     public static class GetVolumeBaseImagePathCmd extends NfsPrimaryStorageAgentCommand {
@@ -639,5 +666,24 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     public static class UpdateMountPointRsp extends NfsPrimaryStorageAgentResponse {
+    }
+
+    public static class NfsToNfsMigrateVolumeCmd extends NfsPrimaryStorageAgentCommand implements HasThreadContext {
+        public String srcVolumeFolderPath;
+        public String dstVolumeFolderPath;
+    }
+
+    public static class NfsToNfsMigrateVolumeRsp extends NfsPrimaryStorageAgentResponse {
+
+    }
+
+    public static class NfsRebaseVolumeBackingFileCmd extends NfsPrimaryStorageAgentCommand {
+        public String srcPsMountPath;
+        public String dstPsMountPath;
+        public String dstVolumeFolderPath;
+    }
+
+    public static class NfsRebaseVolumeBackingFileRsp extends NfsPrimaryStorageAgentResponse {
+
     }
 }

@@ -166,6 +166,7 @@ public class VmInstanceSpec implements Serializable {
     private List<VolumeSpec> volumeSpecs = new ArrayList<>();
     private String requiredClusterUuid;
     private String requiredHostUuid;
+    private List<String> softAvoidHostUuids;
     private String requiredPrimaryStorageUuidForRootVolume;
     private String requiredPrimaryStorageUuidForDataVolume;
 
@@ -234,6 +235,14 @@ public class VmInstanceSpec implements Serializable {
 
     public void setRequiredHostUuid(String requiredHostUuid) {
         this.requiredHostUuid = requiredHostUuid;
+    }
+
+    public List<String> getSoftAvoidHostUuids() {
+        return softAvoidHostUuids;
+    }
+
+    public void setSoftAvoidHostUuids(List<String> softAvoidHostUuids) {
+        this.softAvoidHostUuids = softAvoidHostUuids;
     }
 
     public boolean isGcOnStopFailure() {

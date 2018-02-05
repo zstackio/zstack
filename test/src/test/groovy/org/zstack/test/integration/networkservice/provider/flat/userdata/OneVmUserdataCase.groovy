@@ -30,7 +30,7 @@ class OneVmUserdataCase extends SubCase {
 
     VmInstanceInventory vm
     L3NetworkInventory l3
-    String userdata = "this test user data"
+    String userdata
 
     @Override
     void setup() {
@@ -119,6 +119,11 @@ class OneVmUserdataCase extends SubCase {
     @Override
     void test() {
         env.create {
+            userdata = "this test user data"
+            for(int i = 0; i < 10000; i++){
+                userdata += 1
+            }
+
             l3 = (env.specByName("l3") as L3NetworkSpec).inventory
             def oldValue =  FlatUserdataBackend.UserdataReleseGC.INTERVAL
             FlatUserdataBackend.UserdataReleseGC.INTERVAL = 1

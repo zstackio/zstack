@@ -20,7 +20,6 @@ class KVMSimulator implements Simulator {
     @Override
     void registerSimulators(EnvSpec spec) {
         spec.simulator(KVMConstant.KVM_HOST_CAPACITY_PATH) { HttpEntity<String> e, EnvSpec espec ->
-            Spec.checkHttpCallType(e, true)
             def rsp = new KVMAgentCommands.HostCapacityResponse()
 
             KVMHostSpec kspec = espec.specByUuid(e.getHeaders().getFirst(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID))

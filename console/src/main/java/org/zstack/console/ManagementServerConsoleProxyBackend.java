@@ -21,6 +21,7 @@ import org.zstack.header.console.*;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.managementnode.ManagementNodeVO;
@@ -37,13 +38,13 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
-import static org.zstack.core.Platform.argerr;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.zstack.core.Platform.argerr;
 
 /**
  * Created with IntelliJ IDEA.
@@ -146,6 +147,9 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                     runner.setTargetIp(Platform.getManagementServerIp());
                     runner.setPlayBookName(ANSIBLE_PLAYBOOK_NAME);
                     runner.putArgument("pkg_consoleproxy", agentPackageName);
+                    if (CoreGlobalProperty.CHRONY_SERVERS != null && !CoreGlobalProperty.CHRONY_SERVERS.isEmpty()) {
+                        runner.putArgument("chrony_servers", String.join(",", CoreGlobalProperty.CHRONY_SERVERS));
+                    }
                     runner.run(new Completion(completion, chain) {
                         @Override
                         public void success() {
@@ -323,6 +327,8 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
         });
 
         bus.send(rmsgs, new CloudBusListCallBack(msg) {
+            ErrorCodeList errorCodes = new ErrorCodeList();
+
             @Override
             public void run(List<MessageReply> replies) {
                 for (MessageReply r : replies) {
@@ -331,11 +337,13 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                         errors.put(mgmgUuid, true);
                     } else {
                         errors.put(mgmgUuid, r.getError());
+                        errorCodes.getCauses().add(r.getError());
                     }
                 }
-
+                if (!errorCodes.getCauses().isEmpty()) {
+                    evt.setError(errorCodes);
+                }
                 evt.setInventory(errors);
-
                 bus.publish(evt);
             }
         });

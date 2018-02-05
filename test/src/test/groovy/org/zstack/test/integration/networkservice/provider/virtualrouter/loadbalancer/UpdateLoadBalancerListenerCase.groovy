@@ -211,6 +211,7 @@ class UpdateLoadBalancerListenerCase extends SubCase {
         assert lbRes.error == null
         LoadBalancerInventory loadBalancerInventory = lbRes.value.inventory
 
+        String desc = "desc"
         CreateLoadBalancerListenerAction createLoadBalancerListenerAction = new CreateLoadBalancerListenerAction()
         createLoadBalancerListenerAction.loadBalancerUuid = loadBalancerInventory.uuid
         createLoadBalancerListenerAction.loadBalancerPort = 22
@@ -218,9 +219,11 @@ class UpdateLoadBalancerListenerCase extends SubCase {
         createLoadBalancerListenerAction.name = "ssh"
         createLoadBalancerListenerAction.protocol = "tcp"
         createLoadBalancerListenerAction.sessionId = adminSession()
+        createLoadBalancerListenerAction.description = desc
         CreateLoadBalancerListenerAction.Result lblRes = createLoadBalancerListenerAction.call()
         assert lblRes.error == null
         LoadBalancerListenerInventory loadBalancerListenerInventory = lblRes.value.inventory
+        assert desc == loadBalancerListenerInventory.description
 
         UpdateLoadBalancerListenerAction action = new UpdateLoadBalancerListenerAction()
         action.uuid = loadBalancerListenerInventory.uuid
@@ -234,6 +237,22 @@ class UpdateLoadBalancerListenerCase extends SubCase {
         assert ubllRes.value.inventory.uuid == lblVo.uuid
         assert ubllRes.value.inventory.name == lblVo.name
         assert ubllRes.value.inventory.description == lblVo.description
+
+        deleteVip {
+            uuid = vipInventory.getUuid()
+        }
+
+        deleteVip {
+            uuid = vipInventory2.getUuid()
+        }
+
+        deleteEip{
+            uuid = eipInventory.getUuid()
+        }
+
+        deleteLoadBalancer {
+            uuid = loadBalancerInventory.getUuid()
+        }
     }
 
     void testUpdateLBListenerwithSamePort() {
@@ -268,7 +287,8 @@ class UpdateLoadBalancerListenerCase extends SubCase {
         LoadBalancerListenerInventory loadBalancerListenerInventory1 = lblRes1.value.inventory
         
         /*create lb-2 with same vip as lb-1, then attach loadBalancerPort woth same port number 22
-         * it return an exception */
+         * it return an exception, then attach instancePort withe same port number, will raise other
+          * exception with different reason*/
         CreateLoadBalancerAction createLoadBalancerAction2 = new CreateLoadBalancerAction()
         createLoadBalancerAction2.name = "lb-2"
         createLoadBalancerAction2.vipUuid = vipInventory1.uuid
@@ -281,12 +301,20 @@ class UpdateLoadBalancerListenerCase extends SubCase {
         CreateLoadBalancerListenerAction createLoadBalancerListenerAction2 = new CreateLoadBalancerListenerAction()
         createLoadBalancerListenerAction2.loadBalancerUuid = loadBalancerInventory2.uuid
         createLoadBalancerListenerAction2.loadBalancerPort = 22
-        createLoadBalancerListenerAction2.instancePort = 22
+        createLoadBalancerListenerAction2.instancePort = 23
         createLoadBalancerListenerAction2.name = "ssh"
         createLoadBalancerListenerAction2.protocol = "tcp"
         createLoadBalancerListenerAction2.sessionId = adminSession()
         CreateLoadBalancerListenerAction.Result lblRes2 = createLoadBalancerListenerAction2.call()
         assert lblRes2.error != null
+        assert lblRes2.error.details.indexOf("loadBalancerPort") > -1
+
+        createLoadBalancerListenerAction2.loadBalancerPort = 23
+        createLoadBalancerListenerAction2.instancePort = 22
+        CreateLoadBalancerListenerAction.Result lblRes21 = createLoadBalancerListenerAction2.call()
+        assert lblRes21.error != null
+        assert lblRes21.error.details.indexOf("instancePort") > -1
+
 
         /* delete lb-1, then create again, it will success */
         deleteLoadBalancer {
@@ -332,6 +360,8 @@ class UpdateLoadBalancerListenerCase extends SubCase {
         assert lblRes3.error == null
         LoadBalancerListenerInventory lblInv3 = lblRes3.value.inventory
 
+
+
         /* create loadbalancer with different port but same vip */
         CreateLoadBalancerListenerAction createLoadBalancerListenerAction4 = new CreateLoadBalancerListenerAction()
         createLoadBalancerListenerAction4.loadBalancerUuid = loadBalancerInventory3.uuid
@@ -346,6 +376,10 @@ class UpdateLoadBalancerListenerCase extends SubCase {
 
     void testDeleteLBListener() {
         L3NetworkInventory publicL3 = env.inventoryByName("PUBLIC-MANAGEMENT-L3") as L3NetworkInventory
+        VmInstanceInventory vm1 = env.inventoryByName("vm1") as VmInstanceInventory
+        VmInstanceInventory vm2 = env.inventoryByName("vm2") as VmInstanceInventory
+        VmNicInventory vm1Nic1 = vm1.vmNics.get(0)
+        VmNicInventory vm2Nic1 = vm2.vmNics.get(0)
 
         CreateVipAction createVipAction1 = new CreateVipAction()
         createVipAction1.name = "vip-1"
@@ -403,6 +437,26 @@ class UpdateLoadBalancerListenerCase extends SubCase {
         createLoadBalancerListenerAction3.sessionId = adminSession()
         CreateLoadBalancerListenerAction.Result lblRes3 = createLoadBalancerListenerAction3.call()
         assert lblRes3.error == null
+        LoadBalancerListenerInventory lbl3Inv = lblRes3.value.inventory
+
+        AddVmNicToLoadBalancerAction addAction = new AddVmNicToLoadBalancerAction()
+        addAction.listenerUuid = lbl3Inv.uuid
+        addAction.vmNicUuids = asList(vm1Nic1.getUuid())
+        addAction.sessionId = adminSession()
+        AddVmNicToLoadBalancerAction.Result addResult = addAction.call()
+        assert addResult.error == null
+
+        AddVmNicToLoadBalancerAction addAction1 = new AddVmNicToLoadBalancerAction()
+        addAction1.listenerUuid = loadBalancerListenerInventory1.uuid
+        addAction1.vmNicUuids = asList(vm2Nic1.getUuid())
+        addAction1.sessionId = adminSession()
+        AddVmNicToLoadBalancerAction.Result addResult1 = addAction1.call()
+        assert addResult1.error == null
+
+        removeVmNicFromLoadBalancer {
+            listenerUuid = lbl3Inv.uuid
+            vmNicUuids = asList(vm1Nic1.getUuid())
+        }
 
         /* delete lb-2 , check lb listener attached to lb is deleted cascaded */
         deleteLoadBalancer {

@@ -1,6 +1,5 @@
 package org.zstack.test.integration.networkservice.provider.flat
 
-import org.junit.Assert
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.SimpleQuery
@@ -23,8 +22,8 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
-import static org.zstack.utils.CollectionDSL.list
 
+import static org.zstack.utils.CollectionDSL.list
 /**
  * Created by lining on 2017/4/4.
  */
@@ -197,17 +196,19 @@ class ChangeNetworkSerivceCase extends SubCase{
         env.afterSimulator(FlatDhcpBackend.APPLY_DHCP_PATH) { rsp, HttpEntity<String> e ->
             acmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.ApplyDhcpCmd.class)
 
-            Assert.assertFalse(acmd.dhcp.isEmpty());
-            FlatDhcpBackend.DhcpInfo dhcp = acmd.dhcp.get(0);
-            assert nic.getIp() == dhcp.ip
-            assert nic.getMac() == dhcp.mac
-            assert nic.getGateway() == dhcp.gateway
-            assert nic.getNetmask() == dhcp.netmask
-            assert dhcp.isDefaultL3Network
-            assert dhcp.dns != null
-            assert dhcp.bridgeName != null
-            assert dhcp.namespaceName != null
+            assert !acmd.dhcp.empty
 
+            assert acmd.dhcp.stream().filter({dhcp -> nic.ip == dhcp.ip})
+                .filter({
+                dhcp -> dhcp != null
+                    dhcp.mac == nic.mac &&
+                    dhcp.gateway == nic.gateway &&
+                    dhcp.netmask == nic.netmask &&
+                    dhcp.isDefaultL3Network &&
+                    dhcp.dns != null &&
+                    dhcp.bridgeName != null &&
+                    dhcp.namespaceName != null
+            }).count() == 1
             return rsp
         }
 
@@ -227,8 +228,11 @@ class ChangeNetworkSerivceCase extends SubCase{
         }
 
         HostInventory host = env.inventoryByName("kvm")
-        reconnectHost {
-            uuid = host.uuid
+
+        retryInSecs(3) {
+            reconnectHost {
+                uuid = host.uuid
+            }
         }
 
         assert FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.hasTag(l3.getUuid())

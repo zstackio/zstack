@@ -37,6 +37,13 @@
     </config>
     <config>
         <category>host</category>
+        <name>ping.maxFailure</name>
+        <description>The maximum count of ping failure before reconnecting host</description>
+        <defaultValue>3</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
+    <config>
+        <category>host</category>
         <name>maintenanceMode.ignoreError</name>
         <description>A boolean value indicating whether management server ignores errors that happen during host enters maintenance mode. The errors are, for example, failing to stop a vm that had failed to migrate; stopping a vm which is in Unknown state. When setting to true, some vm may still run on the host which has entered maintenance mode.</description>
         <defaultValue>false</defaultValue>

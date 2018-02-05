@@ -40,6 +40,7 @@ public class DesignatedHostAllocatorFlow extends AbstractHostAllocatorFlow {
             sql.append(String.format("h.hypervisorType = '%s' and ", hypervisorType));
         }
         sql.append(String.format("h.status = '%s' and h.state = '%s'", HostStatus.Connected, HostState.Enabled));
+        logger.debug("DesignatedHostAllocatorFlow sql: " + sql);
         TypedQuery<HostVO> query = dbf.getEntityManager().createQuery(sql.toString(), HostVO.class);
 
         if (usePagination()) {

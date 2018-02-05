@@ -1,17 +1,16 @@
 package org.zstack.compute.vm;
 
+
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.allocator.HostAllocatorManager;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SQLBatch;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
@@ -25,6 +24,7 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.allocator.*;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.cluster.ClusterInventory;
+import org.zstack.header.cluster.ClusterState;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.configuration.*;
@@ -39,10 +39,7 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
-import org.zstack.header.image.ImageEO;
-import org.zstack.header.image.ImageInventory;
-import org.zstack.header.image.ImageStatus;
-import org.zstack.header.image.ImageVO;
+import org.zstack.header.image.*;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.primary.*;
@@ -72,11 +69,10 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
+import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.*;
@@ -125,7 +121,6 @@ public class VmInstanceBase extends AbstractVmInstance {
                 if (!reply.isSuccess()) {
                     N.New(VmInstanceVO.class, self.getUuid()).warn_("unable to check state of the vm[uuid:%s] on the host[uuid:%s], %s;" +
                             "put the VM into the Unknown state", self.getUuid(), hostUuid, reply.getError());
-                    self = dbf.reload(self);
                     changeVmStateInDb(VmInstanceStateEvent.unknown);
                     completion.done();
                     return;
@@ -133,13 +128,12 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                 CheckVmStateOnHypervisorReply r = reply.castReply();
                 String state = r.getStates().get(self.getUuid());
-                self = dbf.reload(self);
                 if (state == null) {
                     changeVmStateInDb(VmInstanceStateEvent.unknown);
                 }
+
                 if (VmInstanceState.Running.toString().equals(state)) {
-                    self.setHostUuid(hostUuid);
-                    changeVmStateInDb(VmInstanceStateEvent.running);
+                    changeVmStateInDb(VmInstanceStateEvent.running, ()-> self.setHostUuid(hostUuid));
                 } else if (VmInstanceState.Stopped.toString().equals(state) && self.getState().equals(VmInstanceState.Destroying)) {
                     changeVmStateInDb(VmInstanceStateEvent.destroyed);
                 } else if (VmInstanceState.Stopped.toString().equals(state)) {
@@ -193,7 +187,6 @@ public class VmInstanceBase extends AbstractVmInstance {
                         }
                     });
                 } else {
-                    self = dbf.reload(self);
                     changeVmStateInDb(VmInstanceStateEvent.unknown);
                     completion.fail(errCode);
                 }
@@ -283,19 +276,39 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     protected VmInstanceVO changeVmStateInDb(VmInstanceStateEvent stateEvent) {
+        return changeVmStateInDb(stateEvent, null);
+    }
+
+    protected VmInstanceVO changeVmStateInDb(VmInstanceStateEvent stateEvent, Runnable runnable) {
         VmInstanceState bs = self.getState();
         final VmInstanceState state = self.getState().nextState(stateEvent);
 
-        if (state == VmInstanceState.Stopped) {
-            // cleanup the hostUuid if the VM is stopped
-            if (self.getHostUuid() != null) {
-                self.setLastHostUuid(self.getHostUuid());
-            }
-            self.setHostUuid(null);
-        }
+        SQLBatch sql = new SQLBatch(){
+            @Override
+            protected void scripts() {
+                self = findByUuid(self.getUuid(), self.getClass());
 
-        self.setState(state);
-        self = dbf.updateAndRefresh(self);
+                if (runnable != null) {
+                    runnable.run();
+                }
+
+                if (state == VmInstanceState.Stopped) {
+                    // cleanup the hostUuid if the VM is stopped
+                    if (self.getHostUuid() != null) {
+                        self.setLastHostUuid(self.getHostUuid());
+                    }
+                    self.setHostUuid(null);
+                }
+
+                self.setState(state);
+                self = merge(self);
+            }
+        };
+        try {
+            sql.execute();
+        } catch (DataIntegrityViolationException e){
+            sql.execute();
+        }
 
         if (bs != state) {
             logger.debug(String.format("vm[uuid:%s] changed state from %s to %s in db", self.getUuid(), bs, self.getState()));
@@ -490,6 +503,9 @@ public class VmInstanceBase extends AbstractVmInstance {
         amsg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
         amsg.setAllocatorStrategy(self.getAllocatorStrategy());
         amsg.setVmOperation(VmOperation.Start.toString());
+        if (self.getImageUuid() != null && dbf.findByUuid(self.getImageUuid(), ImageVO.class) != null) {
+            amsg.setImage(ImageInventory.valueOf(dbf.findByUuid(self.getImageUuid(), ImageVO.class)));
+        }
         amsg.setL3NetworkUuids(CollectionUtils.transformToList(self.getVmNics(), new Function<String, VmNicVO>() {
             @Override
             public String call(VmNicVO arg) {
@@ -539,8 +555,9 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                 logger.debug(String.format("HaStartVmJudger[%s] says the VM[uuid:%s, name:%s] is qualified for HA start, now we are starting it",
                         judger.getClass(), self.getUuid(), self.getName()));
-                self.setState(VmInstanceState.Stopped);
-                dbf.update(self);
+                SQL.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, self.getUuid())
+                        .set(VmInstanceVO_.state, VmInstanceState.Stopped)
+                        .update();
                 startVm(msg, new Completion(msg, chain) {
                     @Override
                     public void success() {
@@ -823,6 +840,8 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void handle(final VmStateChangedOnHostMsg msg) {
+        logger.debug(String.format("get VmStateChangedOnHostMsg for vm[uuid:%s], on host[uuid:%s], which tracing state is [%s]" +
+                " and current state on host is [%s]", msg.getVmInstanceUuid(), msg.getHostUuid(), msg.getVmStateAtTracingMoment(), msg.getStateOnHost()));
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
@@ -831,6 +850,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void run(final SyncTaskChain chain) {
+                logger.debug(String.format("running sync task %s with sync signature %s", getName(), getSyncSignature()));
                 vmStateChangeOnHost(msg, new NoErrorCompletion(chain) {
                     @Override
                     public void done() {
@@ -981,8 +1001,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         if (operation == VmAbnormalLifeCycleOperation.VmRunningFromUnknownStateHostNotChanged) {
             // the vm is detected on the host again. It's largely because the host disconnected before
             // and now reconnected
-            self.setHostUuid(msg.getHostUuid());
-            changeVmStateInDb(VmInstanceStateEvent.running);
+            changeVmStateInDb(VmInstanceStateEvent.running, ()-> self.setHostUuid(msg.getHostUuid()));
             fireEvent.run();
             bus.reply(msg, reply);
             completion.done();
@@ -991,39 +1010,34 @@ public class VmInstanceBase extends AbstractVmInstance {
             // the vm comes out of the unknown state to the stopped state
             // it happens when an operation failure led the vm from the stopped state to the unknown state,
             // and later on the vm was detected as stopped on the host again
-            self.setHostUuid(null);
-            changeVmStateInDb(VmInstanceStateEvent.stopped);
+            changeVmStateInDb(VmInstanceStateEvent.stopped, ()-> self.setHostUuid(null));
             fireEvent.run();
             bus.reply(msg, reply);
             completion.done();
             return;
         } else if (operation == VmAbnormalLifeCycleOperation.VmStoppedFromPausedStateHostNotChanged) {
-            self.setHostUuid(msg.getHostUuid());
-            changeVmStateInDb(VmInstanceStateEvent.stopped);
+            changeVmStateInDb(VmInstanceStateEvent.stopped, ()-> self.setHostUuid(msg.getHostUuid()));
             fireEvent.run();
             bus.reply(msg, reply);
             completion.done();
             return;
         } else if (operation == VmAbnormalLifeCycleOperation.VmPausedFromUnknownStateHostNotChanged) {
             //some reason led vm to unknown state and the paused vm are detected on the host again
-            self.setHostUuid(msg.getHostUuid());
-            changeVmStateInDb(VmInstanceStateEvent.paused);
+            changeVmStateInDb(VmInstanceStateEvent.paused, ()-> self.setHostUuid(msg.getHostUuid()));
             fireEvent.run();
             bus.reply(msg, reply);
             completion.done();
             return;
         } else if (operation == VmAbnormalLifeCycleOperation.VmPausedFromRunningStateHostNotChanged) {
             // just synchronize database
-            self.setHostUuid(msg.getHostUuid());
-            changeVmStateInDb(VmInstanceStateEvent.paused);
+            changeVmStateInDb(VmInstanceStateEvent.paused, ()->self.setHostUuid(msg.getHostUuid()));
             fireEvent.run();
             bus.reply(msg, reply);
             completion.done();
             return;
         } else if (operation == VmAbnormalLifeCycleOperation.VmRunningFromPausedStateHostNotChanged) {
             // just synchronize database
-            self.setHostUuid(msg.getHostUuid());
-            changeVmStateInDb(VmInstanceStateEvent.running);
+            changeVmStateInDb(VmInstanceStateEvent.running, ()->self.setHostUuid(msg.getHostUuid()));
             fireEvent.run();
             bus.reply(msg, reply);
             completion.done();
@@ -1057,11 +1071,9 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void handle(Map data) {
                 if (currentState == VmInstanceState.Running) {
-                    self.setHostUuid(currentHostUuid);
-                    changeVmStateInDb(VmInstanceStateEvent.running);
+                    changeVmStateInDb(VmInstanceStateEvent.running, ()-> self.setHostUuid(currentHostUuid));
                 } else if (currentState == VmInstanceState.Stopped) {
-                    self.setHostUuid(null);
-                    changeVmStateInDb(VmInstanceStateEvent.stopped);
+                    changeVmStateInDb(VmInstanceStateEvent.stopped, ()-> self.setHostUuid(null));
                 }
 
                 fireEvent.run();
@@ -1126,26 +1138,63 @@ public class VmInstanceBase extends AbstractVmInstance {
                     return;
                 }
 
-                detachNic(msg.getVmNicUuid(), new Completion(msg, chain) {
+                FlowChain fchain = FlowChainBuilder.newSimpleFlowChain();
+                fchain.setName(String.format("l3-network-detach-from-vm-%s", msg.getVmInstanceUuid()));
+                fchain.then(new NoRollbackFlow() {
+                    String __name__ = "before-detach-nic";
+
                     @Override
-                    public void success() {
+                    public void run(FlowTrigger trigger, Map data) {
+                        VmNicInventory nic = VmNicInventory.valueOf((VmNicVO) Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find());
+                        beforeDetachNic(nic, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                }).then(new NoRollbackFlow() {
+                    String __name__ = "detach-nic";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        detachNic(msg.getVmNicUuid(), new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                }).done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        self = dbf.reload(self);
                         bus.reply(msg, reply);
                         chain.next();
                     }
-
+                }).error(new FlowErrorHandler(msg) {
                     @Override
-                    public void fail(ErrorCode errorCode) {
-                        reply.setError(errorCode);
+                    public void handle(ErrorCode errCode, Map data) {
+                        reply.setError(errCode);
                         bus.reply(msg, reply);
                         chain.next();
                     }
-                });
-
+                }).start();
             }
 
             @Override
             public String getName() {
-                return "detach-nic";
+                return "nic-detach";
             }
         });
     }
@@ -1220,11 +1269,12 @@ public class VmInstanceBase extends AbstractVmInstance {
             if (s != null && h != null && s.getExpected() == self.getState()) {
                 if ((h.getExpected() == null && self.getHostUuid() == null) ||
                         (h.getExpected() != null && h.getExpected().equals(self.getHostUuid()))) {
-                    changeVmStateInDb(s.getValue().getDrivenEvent());
-                    reply.setChangeStateDone(true);
 
-                    self.setHostUuid(h.getValue());
-                    dbf.update(self);
+                    changeVmStateInDb(s.getValue().getDrivenEvent(), ()-> {
+                        self.setHostUuid(h.getValue());
+                    });
+
+                    reply.setChangeStateDone(true);
                     reply.setChangeHostUuidDone(true);
                 }
             }
@@ -1255,10 +1305,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             completion.fail(allowed);
             return;
         }
-        if (self.getVmNics().size() == 0) {
-            completion.fail(operr("cannot get target migration host without any nics on vm"));
-            return;
-        }
+
         final DesignatedAllocateHostMsg amsg = new DesignatedAllocateHostMsg();
         amsg.setCpuCapacity(self.getCpuNum());
         amsg.setMemoryCapacity(self.getMemorySize());
@@ -1267,6 +1314,12 @@ public class VmInstanceBase extends AbstractVmInstance {
             GetVmMigrationTargetHostMsg gmsg = (GetVmMigrationTargetHostMsg) msg;
             if (gmsg.getAvoidHostUuids() != null) {
                 amsg.getAvoidHostUuids().addAll(gmsg.getAvoidHostUuids());
+            }
+        } else {
+            if (msg instanceof APIMessage){
+                if (((APIMessage) msg).getSystemTags() != null){
+                    amsg.setSystemTags(new ArrayList<String>(((APIMessage) msg).getSystemTags()));
+                }
             }
         }
         amsg.setVmInstance(VmInstanceInventory.valueOf(self));
@@ -1596,7 +1649,6 @@ public class VmInstanceBase extends AbstractVmInstance {
                 extEmitter.afterDestroyVm(inv);
                 logger.debug(String.format("successfully deleted vm instance[name:%s, uuid:%s]", self.getName(), self.getUuid()));
                 if (deletionPolicy == VmInstanceDeletionPolicy.Direct) {
-                    self = dbf.reload(self);
                     changeVmStateInDb(VmInstanceStateEvent.destroyed);
                     callVmJustBeforeDeleteFromDbExtensionPoint();
                     dbf.remove(getSelf());
@@ -1614,15 +1666,11 @@ public class VmInstanceBase extends AbstractVmInstance {
                         }
                     }.execute();
                 } else if (deletionPolicy == VmInstanceDeletionPolicy.Delay) {
-                    self = dbf.reload(self);
-                    self.setHostUuid(null);
-                    changeVmStateInDb(VmInstanceStateEvent.destroyed);
+                    changeVmStateInDb(VmInstanceStateEvent.destroyed, ()-> self.setHostUuid(null));
                 } else if (deletionPolicy == VmInstanceDeletionPolicy.Never) {
                     logger.warn(String.format("the vm[uuid:%s] is deleted, but by it's deletion policy[Never]," +
                             " the root volume is not deleted on the primary storage", self.getUuid()));
-                    self = dbf.reload(self);
-                    self.setHostUuid(null);
-                    changeVmStateInDb(VmInstanceStateEvent.destroyed);
+                    changeVmStateInDb(VmInstanceStateEvent.destroyed, ()-> self.setHostUuid(null));
                 }
 
                 completion.success();
@@ -1954,12 +2002,9 @@ public class VmInstanceBase extends AbstractVmInstance {
             public void run(SyncTaskChain chain) {
                 refreshVO();
 
-                Defer.defer(new Runnable() {
-                    @Override
-                    public void run() {
-                        ChangeVmStateReply reply = new ChangeVmStateReply();
-                        bus.reply(msg, reply);
-                    }
+                Defer.defer(() -> {
+                    ChangeVmStateReply reply = new ChangeVmStateReply();
+                    bus.reply(msg, reply);
                 });
 
                 if (self == null) {
@@ -2068,6 +2113,58 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
+    @Transactional(readOnly = true)
+    protected List<ImageInventory> getImageCandidatesForVm(ImageMediaType type) {
+        String psUuid = getSelfInventory().getRootVolume().getPrimaryStorageUuid();
+        PrimaryStorageVO ps = dbf.getEntityManager().find(PrimaryStorageVO.class, psUuid);
+        PrimaryStorageType psType = PrimaryStorageType.valueOf(ps.getType());
+        List<String> bsUuids = psType.findBackupStorage(psUuid);
+
+        if (bsUuids == null) {
+            String sql = "select img" +
+                    " from ImageVO img, ImageBackupStorageRefVO ref, BackupStorageVO bs, BackupStorageZoneRefVO bsRef" +
+                    " where ref.imageUuid = img.uuid" +
+                    " and img.mediaType = :imgType" +
+                    " and img.status = :status" +
+                    " and img.system = :system" +
+                    " and bs.uuid = ref.backupStorageUuid" +
+                    " and bs.type in (:bsTypes)" +
+                    " and bs.uuid = bsRef.backupStorageUuid" +
+                    " and bsRef.zoneUuid = :zoneUuid";
+            TypedQuery<ImageVO> q = dbf.getEntityManager().createQuery(sql, ImageVO.class);
+            q.setParameter("zoneUuid", getSelfInventory().getZoneUuid());
+            if (type != null) {
+                q.setParameter("imgType", type);
+            }
+            q.setParameter("status", ImageStatus.Ready);
+            q.setParameter("system", false);
+            q.setParameter("bsTypes", hostAllocatorMgr.getBackupStorageTypesByPrimaryStorageTypeFromMetrics(ps.getType()));
+            return ImageInventory.valueOf(q.getResultList());
+        } else if (!bsUuids.isEmpty()) {
+            String sql = "select img" +
+                    " from ImageVO img, ImageBackupStorageRefVO ref, BackupStorageVO bs, BackupStorageZoneRefVO bsRef" +
+                    " where ref.imageUuid = img.uuid" +
+                    " and img.mediaType = :imgType" +
+                    " and img.status = :status" +
+                    " and img.system = :system" +
+                    " and bs.uuid = ref.backupStorageUuid" +
+                    " and bs.uuid in (:bsUuids)" +
+                    " and bs.uuid = bsRef.backupStorageUuid" +
+                    " and bsRef.zoneUuid = :zoneUuid";
+            TypedQuery<ImageVO> q = dbf.getEntityManager().createQuery(sql, ImageVO.class);
+            q.setParameter("zoneUuid", getSelfInventory().getZoneUuid());
+            if (type != null) {
+                q.setParameter("imgType", type);
+            }
+            q.setParameter("status", ImageStatus.Ready);
+            q.setParameter("system", false);
+            q.setParameter("bsUuids", bsUuids);
+            return ImageInventory.valueOf(q.getResultList());
+        } else {
+            return new ArrayList<>();
+        }
+    }
+
     protected void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIStopVmInstanceMsg) {
             handle((APIStopVmInstanceMsg) msg);
@@ -2152,7 +2249,6 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
     }
 
-    @Transactional(readOnly = true)
     private void handle(APIGetCandidateIsoForAttachingVmMsg msg) {
         APIGetCandidateIsoForAttachingVmReply reply = new APIGetCandidateIsoForAttachingVmReply();
         if (self.getState() != VmInstanceState.Running && self.getState() != VmInstanceState.Stopped) {
@@ -2161,47 +2257,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
-        String psUuid = getSelfInventory().getRootVolume().getPrimaryStorageUuid();
-        PrimaryStorageVO ps = dbf.getEntityManager().find(PrimaryStorageVO.class, psUuid);
-        PrimaryStorageType psType = PrimaryStorageType.valueOf(ps.getType());
-        List<String> bsUuids = psType.findBackupStorage(psUuid);
-
-        if (bsUuids == null) {
-            String sql = "select img" +
-                    " from ImageVO img, ImageBackupStorageRefVO ref, BackupStorageVO bs, BackupStorageZoneRefVO bsRef" +
-                    " where ref.imageUuid = img.uuid" +
-                    " and img.mediaType = :imgType" +
-                    " and img.status = :status" +
-                    " and bs.uuid = ref.backupStorageUuid" +
-                    " and bs.type in (:bsTypes)" +
-                    " and bs.uuid = bsRef.backupStorageUuid" +
-                    " and bsRef.zoneUuid = :zoneUuid";
-            TypedQuery<ImageVO> q = dbf.getEntityManager().createQuery(sql, ImageVO.class);
-            q.setParameter("zoneUuid", getSelfInventory().getZoneUuid());
-            q.setParameter("imgType", ImageMediaType.ISO);
-            q.setParameter("status", ImageStatus.Ready);
-            q.setParameter("bsTypes", hostAllocatorMgr.getBackupStorageTypesByPrimaryStorageTypeFromMetrics(ps.getType()));
-            reply.setInventories(ImageInventory.valueOf(q.getResultList()));
-        } else if (!bsUuids.isEmpty()) {
-            String sql = "select img" +
-                    " from ImageVO img, ImageBackupStorageRefVO ref, BackupStorageVO bs, BackupStorageZoneRefVO bsRef" +
-                    " where ref.imageUuid = img.uuid" +
-                    " and img.mediaType = :imgType" +
-                    " and img.status = :status" +
-                    " and bs.uuid = ref.backupStorageUuid" +
-                    " and bs.uuid in (:bsUuids)" +
-                    " and bs.uuid = bsRef.backupStorageUuid" +
-                    " and bsRef.zoneUuid = :zoneUuid";
-            TypedQuery<ImageVO> q = dbf.getEntityManager().createQuery(sql, ImageVO.class);
-            q.setParameter("zoneUuid", getSelfInventory().getZoneUuid());
-            q.setParameter("imgType", ImageMediaType.ISO);
-            q.setParameter("status", ImageStatus.Ready);
-            q.setParameter("bsUuids", bsUuids);
-            reply.setInventories(ImageInventory.valueOf(q.getResultList()));
-        } else {
-            reply.setInventories(new ArrayList<>());
-        }
-
+        reply.setInventories(getImageCandidatesForVm(ImageMediaType.ISO));
         bus.reply(msg, reply);
     }
 
@@ -2733,7 +2789,9 @@ public class VmInstanceBase extends AbstractVmInstance {
         if (l3Uuids != null && l3Uuids.isEmpty()) {
             return new ArrayList<L3NetworkInventory>();
         }
-
+        if (self.getClusterUuid() == null){
+            return getAttachableL3NetworkWhenClusterUuidSetNull(l3Uuids);
+        }
         String sql;
         TypedQuery<L3NetworkVO> q;
         if (self.getVmNics().isEmpty()) {
@@ -2798,6 +2856,77 @@ public class VmInstanceBase extends AbstractVmInstance {
         q.setParameter("uuid", self.getUuid());
         List<L3NetworkVO> l3s = q.getResultList();
         return L3NetworkInventory.valueOf(l3s);
+    }
+
+    @Transactional(readOnly = true)
+    private List<L3NetworkInventory> getAttachableL3NetworkWhenClusterUuidSetNull(List<String> uuids){
+        return new SQLBatchWithReturn<List<L3NetworkInventory>>() {
+
+            @Override
+            protected List<L3NetworkInventory> scripts(){
+                String rootPsUuid = self.getRootVolume().getPrimaryStorageUuid();
+
+                //Get Candidate ClusterUuids From Primary Storage
+                List<String> clusterUuids =  q(PrimaryStorageClusterRefVO.class)
+                        .select(PrimaryStorageClusterRefVO_.clusterUuid)
+                        .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, rootPsUuid)
+                        .listValues();
+
+                //filtering the ClusterUuid by vmNic L3s one by one
+                if (!self.getVmNics().isEmpty()){
+                    for (String l3uuid: self.getVmNics().stream().map(nic -> nic.getL3NetworkUuid()).collect(Collectors.toList())){
+                        clusterUuids = getCandidateClusterUuidsFromAttachedL3(l3uuid, clusterUuids);
+                        if (clusterUuids.isEmpty()){
+                            return new ArrayList<>();
+                        }
+                    }
+                }
+
+                //Get enabled l3 from the Candidate ClusterUuids
+                List<L3NetworkVO> l3s = sql("select l3" +
+                        " from L3NetworkVO l3, L2NetworkVO l2, " +
+                        " L2NetworkClusterRefVO l2ref" +
+                        " where l2.uuid = l3.l2NetworkUuid " +
+                        " and l2.uuid = l2ref.l2NetworkUuid " +
+                        " and l2ref.clusterUuid in (:Uuids)" +
+                        " and l3.state = :l3State " +
+                        " group by l3.uuid")
+                        .param("Uuids", clusterUuids)
+                        .param("l3State", L3NetworkState.Enabled).list();
+
+               if (l3s.isEmpty()){
+                   return new ArrayList<>();
+               }
+
+               //filter result if normal user
+               if (uuids != null) {
+                   l3s = l3s.stream().filter(l3 -> uuids.contains(l3.getUuid())).collect(Collectors.toList());
+               }
+
+               if (l3s.isEmpty()){
+                   return new ArrayList<>();
+               }
+               //filter l3 that already attached
+               if (!self.getVmNics().isEmpty()) {
+                   List<String> vmL3Uuids = self.getVmNics().stream().map(nic -> nic.getL3NetworkUuid()).collect(Collectors.toList());
+                   l3s = l3s.stream().filter(l3 -> !vmL3Uuids.contains(l3.getUuid())).collect(Collectors.toList());
+               }
+
+               return L3NetworkInventory.valueOf(l3s);
+            }
+
+            private List<String> getCandidateClusterUuidsFromAttachedL3(String l3Uuid, List<String> clusterUuids) {
+                return sql("select l2ref.clusterUuid " +
+                        " from L3NetworkVO l3, L2NetworkVO l2, L2NetworkClusterRefVO l2ref " +
+                        " where l3.uuid = :l3Uuid " +
+                        " and l3.l2NetworkUuid = l2.uuid " +
+                        " and l2.uuid = l2ref.l2NetworkUuid" +
+                        " and l2ref.clusterUuid in (:uuids) " +
+                        " group by l2ref.clusterUuid", String.class)
+                        .param("l3Uuid", l3Uuid)
+                        .param("uuids", clusterUuids).list();
+            }
+        }.execute();
     }
 
     private void handle(APIGetVmAttachableL3NetworkMsg msg) {
@@ -2958,7 +3087,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 }
 
                 FlowChain fchain = FlowChainBuilder.newSimpleFlowChain();
-                fchain.setName(String.format("detach-l3-network-to-vm-%s", msg.getVmInstanceUuid()));
+                fchain.setName(String.format("detach-l3-network-from-vm-%s", msg.getVmInstanceUuid()));
                 fchain.then(new NoRollbackFlow() {
                     String __name__ = "before-detach-nic";
 
@@ -2990,7 +3119,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                             @Override
                             public void fail(ErrorCode errorCode) {
-                                trigger.next();
+                                trigger.fail(errorCode);
                             }
                         });
                     }
@@ -3068,6 +3197,16 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void detachNic(final String nicUuid, final Completion completion) {
+        VmNicVO vmNicVO = CollectionUtils.find(self.getVmNics(), new Function<VmNicVO, VmNicVO>() {
+            @Override
+            public VmNicVO call(VmNicVO arg) {
+                return arg.getUuid().equals(nicUuid) ? arg : null;
+            }
+        });
+        if (vmNicVO == null) {
+            completion.success();
+            return;
+        }
         final VmNicInventory nic = VmNicInventory.valueOf(
                 CollectionUtils.find(self.getVmNics(), new Function<VmNicVO, VmNicVO>() {
                     @Override
@@ -3270,6 +3409,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                 msg.setMemoryCapacity(struct.alignedMemory - oldMemorySize);
                 msg.setAllocatorStrategy(HostAllocatorConstant.DESIGNATED_HOST_ALLOCATOR_STRATEGY_TYPE);
                 msg.setVmInstance(VmInstanceInventory.valueOf(self));
+                if (self.getImageUuid() != null && dbf.findByUuid(self.getImageUuid(), ImageVO.class) != null) {
+                    msg.setImage(ImageInventory.valueOf(dbf.findByUuid(self.getImageUuid(), ImageVO.class)));
+                }
                 msg.setHostUuid(self.getHostUuid());
                 msg.setL3NetworkUuids(CollectionUtils.transformToList(self.getVmNics(), new Function<String, VmNicVO>() {
                     @Override
@@ -3486,9 +3628,12 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     @Transactional(readOnly = true)
     private List<VolumeVO> getAttachableVolume(String accountUuid) {
+        if (!self.getState().equals(VmInstanceState.Stopped) && self.getPlatform().equals(ImagePlatform.Other.toString())) {
+            return Collections.emptyList();
+        }
         List<String> volUuids = acntMgr.getResourceUuidsCanAccessByAccount(accountUuid, VolumeVO.class);
         if (volUuids != null && volUuids.isEmpty()) {
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
 
         List<String> formats = VolumeFormat.getVolumeFormatSupportedByHypervisorTypeInString(self.getHypervisorType());
@@ -3499,8 +3644,52 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         String sql;
         List<VolumeVO> vos;
-        if (volUuids == null) {
-            // accessed by a system admin
+
+        /*
+         * Cluster1: [PS1, PS2, PS3]
+         * Cluster2: [PS1, PS2]
+         * Cluster3: [PS1, PS2, PS3]
+         *
+         * Assume a stopped vm which has no clusterUuid and root volume on PS1
+         * then it can attach all suitable data volumes from [PS1, PS2]
+         * because PS1 is attached to [Cluster1, Cluster2, Cluster3]
+         * and they all have [PS1, PS2] attached
+         */
+        List<String> psUuids = null;
+        if (self.getClusterUuid() == null) {
+            // 1. get clusterUuids of VM->RV->PS
+            sql = "select cls.uuid from" +
+                    " ClusterVO cls, VolumeVO vol, VmInstanceVO vm, PrimaryStorageClusterRefVO ref" +
+                    " where vm.uuid = :vmUuid" +
+                    " and vol.uuid = vm.rootVolumeUuid" +
+                    " and ref.primaryStorageUuid = vol.primaryStorageUuid" +
+                    " and cls.uuid = ref.clusterUuid" +
+                    " and cls.state = :clsState" +
+                    " group by cls.uuid";
+            List<String> clusterUuids = SQL.New(sql)
+                    .param("vmUuid", self.getUuid())
+                    .param("clsState", ClusterState.Enabled)
+                    .list();
+
+            // 2. get all PS that attachs to clusterUuids
+            sql = "select ps.uuid from PrimaryStorageVO ps" +
+                    " inner join PrimaryStorageClusterRefVO ref on ref.primaryStorageUuid = ps.uuid" +
+                    " inner join ClusterVO cls on cls.uuid = ref.clusterUuid" +
+                    " where cls.uuid in (:clusterUuids)" +
+                    " and ps.state = :psState" +
+                    " and ps.status = :psStatus" +
+                    " group by ps.uuid" +
+                    " having count(distinct cls.uuid) = :clsCount";
+            psUuids = SQL.New(sql)
+                    .param("clusterUuids", clusterUuids)
+                    .param("psState", PrimaryStorageState.Enabled)
+                    .param("psStatus", PrimaryStorageStatus.Connected)
+                    .param("clsCount", (long)clusterUuids.size())
+                    .list();
+        }
+
+        if (volUuids == null) {                             // accessed by a system admin
+            // if vm.clusterUuid is not null
             sql = "select vol" +
                     " from VolumeVO vol, VmInstanceVO vm, PrimaryStorageClusterRefVO ref" +
                     " where vol.type = :type" +
@@ -3520,6 +3709,28 @@ public class VmInstanceBase extends AbstractVmInstance {
             q.setParameter("type", VolumeType.Data);
             vos = q.getResultList();
 
+            // if vm.clusterUuid is null
+            if (self.getClusterUuid() == null) {
+                // 3. get data volume candidates from psUuids
+                sql = "select vol from VolumeVO vol" +
+                        " where vol.primaryStorageUuid in (:psUuids)" +
+                        " and vol.type = :volType" +
+                        " and vol.state = :volState" +
+                        " and vol.status = :volStatus" +
+                        " and vol.format in (:formats)" +
+                        " and vol.vmInstanceUuid is null" +
+                        " group by vol.uuid";
+                List<VolumeVO> dvs = SQL.New(sql)
+                        .param("psUuids", psUuids)
+                        .param("volType", VolumeType.Data)
+                        .param("volState", VolumeState.Enabled)
+                        .param("volStatus", VolumeStatus.Ready)
+                        .param("formats", formats)
+                        .list();
+                vos.addAll(dvs);
+            }
+
+            // for NotInstantiated data volumes
             sql = "select vol" +
                     " from VolumeVO vol" +
                     " where vol.type = :type" +
@@ -3531,8 +3742,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             q.setParameter("volState", VolumeState.Enabled);
             q.setParameter("volStatus", VolumeStatus.NotInstantiated);
             vos.addAll(q.getResultList());
-        } else {
-            // accessed by a normal account
+        } else {                                            // accessed by a normal account
+            // if vm.clusterUuid is not null
             sql = "select vol" +
                     " from VolumeVO vol, VmInstanceVO vm, PrimaryStorageClusterRefVO ref" +
                     " where vol.type = :type" +
@@ -3554,6 +3765,30 @@ public class VmInstanceBase extends AbstractVmInstance {
             q.setParameter("volUuids", volUuids);
             vos = q.getResultList();
 
+            // if vm.clusterUuid is null
+            if (self.getClusterUuid() == null) {
+                // 3. get data volume candidates from psUuids
+                sql = "select vol from VolumeVO vol" +
+                        " where vol.primaryStorageUuid in (:psUuids)" +
+                        " and vol.type = :volType" +
+                        " and vol.state = :volState" +
+                        " and vol.status = :volStatus" +
+                        " and vol.format in (:formats)" +
+                        " and vol.vmInstanceUuid is null" +
+                        " and vol.uuid in (:volUuids)" +
+                        " group by vol.uuid";
+                List<VolumeVO> dvs = SQL.New(sql)
+                        .param("psUuids", psUuids)
+                        .param("volType", VolumeType.Data)
+                        .param("volState", VolumeState.Enabled)
+                        .param("volStatus", VolumeStatus.Ready)
+                        .param("formats", formats)
+                        .param("volUuids", volUuids)
+                        .list();
+                vos.addAll(dvs);
+            }
+
+            // for NotInstantiated data volumes
             sql = "select vol" +
                     " from VolumeVO vol" +
                     " where vol.type = :type" +
@@ -3568,7 +3803,6 @@ public class VmInstanceBase extends AbstractVmInstance {
             q.setParameter("volStatus", VolumeStatus.NotInstantiated);
             vos.addAll(q.getResultList());
         }
-
 
         for (GetAttachableVolumeExtensionPoint ext : pluginRgty.getExtensionList(GetAttachableVolumeExtensionPoint.class)) {
             if (!vos.isEmpty()) {
@@ -3739,7 +3973,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         new VmAttachVolumeValidator().validate(msg.getVmInstanceUuid(), volume.getUuid());
         extEmitter.preAttachVolume(getSelfInventory(), volume);
         extEmitter.beforeAttachVolume(getSelfInventory(), volume);
-        
+
         VmInstanceSpec spec = new VmInstanceSpec();
         spec.setMessage(msg);
         spec.setVmInventory(VmInstanceInventory.valueOf(self));
@@ -3809,11 +4043,12 @@ public class VmInstanceBase extends AbstractVmInstance {
             public void handle(final Map data) {
                 VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
                 HostInventory host = spec.getDestHost();
-                self.setZoneUuid(host.getZoneUuid());
-                self.setClusterUuid(host.getClusterUuid());
-                self.setLastHostUuid(self.getHostUuid());
-                self.setHostUuid(host.getUuid());
-                self = changeVmStateInDb(VmInstanceStateEvent.running);
+                self = changeVmStateInDb(VmInstanceStateEvent.running, ()-> {
+                    self.setZoneUuid(host.getZoneUuid());
+                    self.setClusterUuid(host.getClusterUuid());
+                    self.setLastHostUuid(self.getHostUuid());
+                    self.setHostUuid(host.getUuid());
+                });
                 VmInstanceInventory vm = VmInstanceInventory.valueOf(self);
                 extEmitter.afterMigrateVm(vm, vm.getLastHostUuid());
                 completion.success();
@@ -3908,6 +4143,12 @@ public class VmInstanceBase extends AbstractVmInstance {
             spec.setVDIMonitorNumber(VmSystemTags.VDI_MONITOR_NUMBER.getTokenByResourceUuid(self.getUuid(), VmSystemTags.VDI_MONITOR_NUMBER_TOKEN));
         }
 
+        if (msg instanceof HaStartVmInstanceMsg) {
+            spec.setSoftAvoidHostUuids(((HaStartVmInstanceMsg) msg).getSoftAvoidHostUuids());
+        } else if (msg instanceof StartVmInstanceMsg) {
+            spec.setSoftAvoidHostUuids(((StartVmInstanceMsg) msg).getSoftAvoidHostUuids());
+        }
+
         if (spec.getDestNics().isEmpty()) {
             throw new OperationFailureException(operr("unable to start the vm[uuid:%s]." +
                             " It doesn't have any nic, please attach a nic and try again", self.getUuid()));
@@ -3930,14 +4171,22 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void handle(final Map data) {
                 VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-                // reload self because some nics may have been deleted in start phase because a former L3Network deletion.
-                // reload to avoid JPA EntityNotFoundException
-                self = dbf.reload(self);
-                self.setLastHostUuid(recentHostUuid);
-                self.setHostUuid(spec.getDestHost().getUuid());
-                self.setClusterUuid(spec.getDestHost().getClusterUuid());
-                self.setZoneUuid(spec.getDestHost().getZoneUuid());
-                self = changeVmStateInDb(VmInstanceStateEvent.running);
+                self = changeVmStateInDb(VmInstanceStateEvent.running, ()-> new SQLBatch() {
+                    @Override
+                    protected void scripts() {
+                        // reload self because some nics may have been deleted in start phase because a former L3Network deletion.
+                        // reload to avoid JPA EntityNotFoundException
+                        self = findByUuid(self.getUuid(), VmInstanceVO.class);
+                        if (q(HostVO.class).eq(HostVO_.uuid, recentHostUuid).isExists()) {
+                            self.setLastHostUuid(recentHostUuid);
+                        } else {
+                            self.setLastHostUuid(null);
+                        }
+                        self.setHostUuid(spec.getDestHost().getUuid());
+                        self.setClusterUuid(spec.getDestHost().getClusterUuid());
+                        self.setZoneUuid(spec.getDestHost().getZoneUuid());
+                    }
+                }.execute());
                 logger.debug(String.format("vm[uuid:%s] is running ..", self.getUuid()));
                 VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
                 extEmitter.afterStartVm(inv);
@@ -3958,13 +4207,19 @@ public class VmInstanceBase extends AbstractVmInstance {
                             completion.fail(errCode);
                         }
                     });
-                } else {
-                    self.setState(originState);
-                    self.setHostUuid(vmHostUuid);
-                    self.setLastHostUuid(vmLastHostUuid);
-                    self = dbf.updateAndRefresh(self);
-                    completion.fail(errCode);
+                    return;
                 }
+
+                new SQLBatch() {
+                    @Override
+                    protected void scripts() {
+                        self.setState(originState);
+                        self.setHostUuid(vmHostUuid);
+                        self.setLastHostUuid(q(HostVO.class).eq(HostVO_.uuid, vmLastHostUuid).isExists() ? vmLastHostUuid : null);
+                        self = merge(self);
+                    }
+                }.execute();
+                completion.fail(errCode);
             }
         }).start();
     }
@@ -4077,13 +4332,14 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void handle(final Map data) {
                 VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-                self.setLastHostUuid(spec.getDestHost().getUuid());
-                self.setHostUuid(spec.getDestHost().getUuid());
-                self.setClusterUuid(spec.getDestHost().getClusterUuid());
-                self.setZoneUuid(spec.getDestHost().getZoneUuid());
-                self.setHypervisorType(spec.getDestHost().getHypervisorType());
-                self.setRootVolumeUuid(spec.getDestRootVolume().getUuid());
-                changeVmStateInDb(VmInstanceStateEvent.running);
+                changeVmStateInDb(VmInstanceStateEvent.running, ()-> {
+                    self.setLastHostUuid(spec.getDestHost().getUuid());
+                    self.setHostUuid(spec.getDestHost().getUuid());
+                    self.setClusterUuid(spec.getDestHost().getClusterUuid());
+                    self.setZoneUuid(spec.getDestHost().getZoneUuid());
+                    self.setHypervisorType(spec.getDestHost().getHypervisorType());
+                    self.setRootVolumeUuid(spec.getDestRootVolume().getUuid());
+                });
                 logger.debug(String.format("vm[uuid:%s] is running ..", self.getUuid()));
                 VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
                 extEmitter.afterStartNewCreatedVm(inv);
@@ -4096,7 +4352,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 dbf.remove(self);
                 // clean up EO, otherwise API-retry may cause conflict if
                 // the resource uuid is set
-                dbf.eoCleanup(VmInstanceVO.class);
+                dbf.eoCleanup(VmInstanceVO.class, asList(self.getUuid()));
                 completion.fail(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR, errCode));
             }
         }).start();
@@ -4516,9 +4772,10 @@ public class VmInstanceBase extends AbstractVmInstance {
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
-                self.setLastHostUuid(self.getHostUuid());
-                self.setHostUuid(null);
-                self = changeVmStateInDb(VmInstanceStateEvent.stopped);
+                self = changeVmStateInDb(VmInstanceStateEvent.stopped, ()->{
+                    self.setLastHostUuid(self.getHostUuid());
+                    self.setHostUuid(null);
+                });
                 VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
                 extEmitter.afterStopVm(inv);
                 completion.success();

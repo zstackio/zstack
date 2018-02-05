@@ -157,6 +157,13 @@ public class VmAllocateVolumeFlow implements Flow {
         bus.send(msgs, new CloudBusListCallBack(chain) {
             @Override
             public void run(List<MessageReply> replies) {
+                // if ChangeImage, resume rootVolumeUuid
+                if (spec.getCurrentVmOperation() == VmInstanceConstant.VmOperation.ChangeImage) {
+                    VmInstanceVO vm = dbf.findByUuid(spec.getVmInventory().getUuid(), VmInstanceVO.class);
+                    vm.setRootVolumeUuid(spec.getVmInventory().getRootVolumeUuid());
+                    dbf.update(vm);
+                }
+
                 chain.rollback();
             }
         });

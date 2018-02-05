@@ -7,6 +7,7 @@ import org.zstack.header.volume.VolumeConstant
 import org.zstack.sdk.AddCephPrimaryStorageAction
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.VmInstanceInventory
+import org.zstack.sdk.VolumeInventory
 import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
 import org.zstack.test.integration.storage.CephEnv
 import org.zstack.test.integration.storage.StorageTest
@@ -42,6 +43,7 @@ class CephStorageOneVmAndImageCase extends SubCase{
         env.create {
             createImageFromRootVolume()
             testCreateWithNoCephx()
+            testSyncVolumeActualSize()
         }
     }
 
@@ -99,6 +101,36 @@ class CephStorageOneVmAndImageCase extends SubCase{
         assert res != null
         assert nocephx
         assert res.error == null
+    }
+
+    void testSyncVolumeActualSize(){
+        VmInstanceInventory vm = env.inventoryByName("test-vm") as VmInstanceInventory
+        env.simulator(CephPrimaryStorageBase.GET_VOLUME_SIZE_PATH) {
+            def rsp = new CephPrimaryStorageBase.GetVolumeSizeRsp()
+            rsp.size = 0
+            return rsp
+        }
+
+        env.simulator(CephPrimaryStorageBase.CREATE_SNAPSHOT_PATH) {
+            def rsp = new CephPrimaryStorageBase.CreateSnapshotRsp()
+            rsp.size = 0
+            return rsp
+        }
+
+        createVolumeSnapshot {
+            volumeUuid = vm.rootVolumeUuid
+            name = "test_snap"
+        }
+
+        def vol1 = syncVolumeSize {
+            uuid = vm.rootVolumeUuid
+        } as VolumeInventory
+
+        def vol2 = syncVolumeSize {
+            uuid = vm.rootVolumeUuid
+        } as VolumeInventory
+
+        assert vol1.actualSize == vol2.actualSize
     }
     
     @Override

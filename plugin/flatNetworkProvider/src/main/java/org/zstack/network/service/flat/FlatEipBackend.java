@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -20,7 +21,10 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostErrors;
+import org.zstack.header.host.HostVO;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.network.service.AfterApplyFlatEipExtensionPoint;
+import org.zstack.header.search.DeleteVO;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperation;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
@@ -28,12 +32,10 @@ import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.kvm.KVMHostConnectExtensionPoint;
 import org.zstack.kvm.KVMHostConnectedContext;
 import org.zstack.network.service.NetworkServiceFilter;
-import org.zstack.network.service.eip.EipBackend;
-import org.zstack.network.service.eip.EipConstant;
-import org.zstack.network.service.eip.EipStruct;
-import org.zstack.network.service.eip.EipVO;
+import org.zstack.network.service.eip.*;
 import org.zstack.network.service.flat.FlatNetworkServiceConstant.AgentCmd;
 import org.zstack.network.service.flat.FlatNetworkServiceConstant.AgentRsp;
+import org.zstack.network.service.vip.VipGetServiceReferencePoint;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
@@ -48,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -66,6 +69,8 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
     private ApiTimeoutManager timeoutMgr;
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     public static class EipTO {
         public String eipUuid;
@@ -82,6 +87,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         public String nicName;
         public String vmBridgeName;
         public String publicBridgeName;
+        public String vipUuid;
     }
 
     public static class ApplyEipCmd extends AgentCmd {
@@ -386,6 +392,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                 to.vipUuid = eip.getVipUuid();
                 to.vipGateway = vip.getGateway();
                 to.vipNetmask = vip.getNetmask();
+                to.vipUuid = vip.getUuid();
                 to.vmBridgeName = bridgeNames.get(nic.getL3NetworkUuid());
                 to.publicBridgeName = pubBridgeNames.get(eip.getVipUuid());
                 return to;
@@ -433,7 +440,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                 KVMHostAsyncHttpCallReply ar = reply.castReply();
                 AgentRsp rsp = ar.toResponse(AgentRsp.class);
                 if (!rsp.success) {
-                    completion.fail(operr(rsp.error));
+                    completion.fail(operr("operation error, because:%s", rsp.error));
                     return;
                 }
 
@@ -468,8 +475,18 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                 KVMHostAsyncHttpCallReply ar = reply.castReply();
                 AgentRsp rsp = ar.toResponse(AgentRsp.class);
                 if (!rsp.success) {
-                    completion.fail(operr(rsp.error));
+                    completion.fail(operr("operation error, because:%s", rsp.error));
                     return;
+                }
+
+                List<String> vipUuids = CollectionUtils.transformToList(eips, new Function<String, EipTO>() {
+                    @Override
+                    public String call(EipTO arg) {
+                        return arg.vipUuid;
+                    }
+                });
+                for (AfterApplyFlatEipExtensionPoint ext : pluginRgty.getExtensionList(AfterApplyFlatEipExtensionPoint.class)) {
+                    ext.AfterApplyFlatEip(vipUuids, hostUuid);
                 }
 
                 completion.success();
@@ -550,6 +567,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         to.vip = struct.getVip().getIp();
         to.vipGateway = struct.getVip().getGateway();
         to.vipNetmask = struct.getVip().getNetmask();
+        to.vipUuid = struct.getVip().getUuid();
         to.vmBridgeName = new BridgeNameFinder().findByL3Uuid(struct.getNic().getL3NetworkUuid());
         to.publicBridgeName = new BridgeNameFinder().findByL3Uuid(struct.getVip().getL3NetworkUuid());
         return to;
@@ -560,9 +578,10 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         ApplyEipCmd cmd = new ApplyEipCmd();
         cmd.eip = eipStructToEipTO(struct);
 
+        String hostUuid = getHostUuidByVmUuid(cmd.eip.vmUuid);
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
-        msg.setHostUuid(getHostUuidByVmUuid(cmd.eip.vmUuid));
+        msg.setHostUuid(hostUuid);
         msg.setPath(APPLY_EIP_PATH);
         msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
@@ -577,8 +596,12 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                 KVMHostAsyncHttpCallReply ar = reply.castReply();
                 AgentRsp rsp = ar.toResponse(AgentRsp.class);
                 if (!rsp.success) {
-                    completion.fail(operr(rsp.error));
+                    completion.fail(operr("operation error, because:%s", rsp.error));
                     return;
+                }
+
+                for (AfterApplyFlatEipExtensionPoint ext : pluginRgty.getExtensionList(AfterApplyFlatEipExtensionPoint.class)) {
+                    ext.AfterApplyFlatEip(asList(struct.getVip().getUuid()), hostUuid);
                 }
 
                 completion.success();
@@ -632,7 +655,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                 KVMHostAsyncHttpCallReply ar = reply.castReply();
                 AgentRsp rsp = ar.toResponse(AgentRsp.class);
                 if (!rsp.success) {
-                    completion.fail(operr(rsp.error));
+                    completion.fail(operr("operation error, because:%s", rsp.error));
                     return;
                 }
 

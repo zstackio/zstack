@@ -5,11 +5,14 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.*;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -17,9 +20,12 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint;
 import org.zstack.header.vm.*;
 import org.zstack.network.service.vip.VipBackend;
 import org.zstack.network.service.vip.VipInventory;
+import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.vip.VipVO_;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.*;
 import org.zstack.utils.Utils;
@@ -31,10 +37,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.zstack.utils.CollectionDSL.list;
 
-public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implements VipBackend {
+public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implements
+        VipBackend, VirtualRouterAfterAttachNicExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VirtualRouterVipBackend.class);
 
     @Autowired
@@ -287,6 +295,81 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
                 completion.fail(errorCode);
             }
         });
+    }
+
+    @Override
+    public void afterAttachNicRollback(VmNicInventory nic, NoErrorCompletion completion) {
+        completion.done();
+    }
+
+    @Override
+    public void afterAttachNic(VmNicInventory nic, Completion completion) {
+        List<VipTO> vips = findVipsOnVirtualRouter(nic);
+
+        if (vips == null || vips.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        CreateVipCmd cmd = new CreateVipCmd();
+        cmd.setVips(vips);
+
+        VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
+        msg.setVmInstanceUuid(nic.getVmInstanceUuid());
+        msg.setCommand(cmd);
+        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
+        msg.setPath(VirtualRouterConstant.VR_CREATE_VIP);
+        bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, nic.getVmInstanceUuid());
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                VirtualRouterAsyncHttpCallReply re = reply.castReply();
+                CreateVipRsp ret = re.toResponse(CreateVipRsp.class);
+                if (!ret.isSuccess()) {
+                    ErrorCode err = operr("failed to sync vips[ips: %s] on virtual router[uuid:%s]" +
+                            " for attaching nic[uuid: %s, ip: %s], because %s",
+                            vips.stream().map(v -> v.getIp()).collect(Collectors.toList()),
+                            nic.getVmInstanceUuid(), nic.getUuid(), nic.getIp(), ret.getError());
+                    completion.fail(err);
+                } else {
+                    completion.success();
+                }
+            }
+        });
+    }
+
+    private static List<VipTO> findVipsOnVirtualRouter(VmNicInventory nic) {
+        List<VipVO> vips = SQL.New("select vip from VipVO vip, VipPeerL3NetworkRefVO ref " +
+                "where ref.vipUuid = vip.uuid " +
+                "and ref.l3NetworkUuid = :l3Uuid")
+                .param("l3Uuid", nic.getL3NetworkUuid())
+                .list();
+
+        if (vips == null || vips.isEmpty()) {
+            return null;
+        }
+
+        VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf((VirtualRouterVmVO)
+                Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, nic.getVmInstanceUuid()).find());
+
+        List<VipTO> vipTOS = new ArrayList<>();
+        for (VipVO vip : vips) {
+            VipTO to = new VipTO();
+            to.setIp(vip.getIp());
+            to.setGateway(vip.getGateway());
+            to.setNetmask(vip.getNetmask());
+            to.setOwnerEthernetMac(vr.getVmNics().stream()
+                    .filter(n -> n.getL3NetworkUuid().equals(vip.getL3NetworkUuid()))
+                    .findFirst().get().getMac());
+            vipTOS.add(to);
+        }
+
+        return vipTOS;
     }
 
     @Override

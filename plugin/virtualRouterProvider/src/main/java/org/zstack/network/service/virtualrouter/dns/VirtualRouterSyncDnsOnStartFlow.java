@@ -3,9 +3,11 @@ package org.zstack.network.service.virtualrouter.dns;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -44,12 +46,19 @@ public class VirtualRouterSyncDnsOnStartFlow extends NoRollbackFlow {
     private ErrorFacade errf;
     @Autowired
     private ApiTimeoutManager apiTimeoutManager;
+    @Autowired
+    @Qualifier("VirtualRouterDnsBackend")
+    VirtualRouterDnsBackend dnsBackend;
 
     @Override
     public void run(final FlowTrigger chain, final Map data) {
         final VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
 
         List<String> nwServed = vr.getGuestL3Networks();
+        if (nwServed == null || nwServed.isEmpty()) {
+            chain.next();
+            return;
+        }
         List<String> l3Uuids = vrMgr.selectL3NetworksNeedingSpecificNetworkService(nwServed, NetworkServiceType.DNS);
         if (l3Uuids.isEmpty()) {
             chain.next();
@@ -66,25 +75,27 @@ public class VirtualRouterSyncDnsOnStartFlow extends NoRollbackFlow {
         SimpleQuery<L3NetworkDnsVO> query = dbf.createQuery(L3NetworkDnsVO.class);
         query.select(L3NetworkDnsVO_.dns);
         query.add(L3NetworkDnsVO_.l3NetworkUuid, Op.IN, l3Uuids);
+        List<L3NetworkDnsVO> l3NetworkDnsVOS =  Q.New(L3NetworkDnsVO.class).in(L3NetworkDnsVO_.l3NetworkUuid, l3Uuids).list();
+
+        final List<DnsInfo> dns = new ArrayList<DnsInfo>(l3NetworkDnsVOS.size());
+        for (L3NetworkDnsVO vo : l3NetworkDnsVOS) {
+            DnsInfo dinfo = new DnsInfo();
+            dinfo.setDnsAddress(vo.getDns());
+            dinfo.setNicMac(vr.getGuestNics()
+                    .stream()
+                    .filter(nic -> nic.getL3NetworkUuid().equals(vo.getL3NetworkUuid()))
+                    .findFirst().get()
+                    .getMac());
+            dns.add(dinfo);
+        }
         List<String> lst = query.listValue();
         if (lst.isEmpty()) {
             chain.next();
             return;
         }
 
-        Set<String> dnsAddresses = new HashSet<String>(lst.size());
-        dnsAddresses.addAll(lst);
-
-        final List<DnsInfo> dns = new ArrayList<DnsInfo>(dnsAddresses.size());
-        for (String d : dnsAddresses) {
-            DnsInfo dinfo = new DnsInfo();
-            dinfo.setDnsAddress(d);
-            dinfo.setNicMac(vr.getGuestNic().getMac());
-            dns.add(dinfo);
-        }
-
         SetDnsCmd cmd = new SetDnsCmd();
-        cmd.setDns(dns);
+        cmd.setDns(dnsBackend.getDnsInfoOfVr(vr.getUuid(), null));
 
         VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
         msg.setVmInstanceUuid(vr.getUuid());

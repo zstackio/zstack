@@ -18,8 +18,6 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.VolumeInventory;
-import org.zstack.utils.DebugUtils;
-import org.zstack.utils.gson.JSONObjectUtil;
 
 import java.util.Map;
 
