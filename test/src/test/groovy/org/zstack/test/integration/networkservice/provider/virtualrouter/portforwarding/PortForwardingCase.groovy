@@ -247,6 +247,8 @@ class PortForwardingCase extends SubCase {
             ruleUuid = portForwarding.uuid
         }
         assert Q.New(VirtualRouterVipVO.class).select(VirtualRouterVipVO_.uuid).eq(VirtualRouterVipVO_.uuid, vip.uuid).listValues().size() == 1
+        VipVO vipVO = dbFindByUuid(vip.uuid, VipVO.class)
+        assert vipVO.serviceProvider != null
 
         PortForwardingRuleInventory portForwarding2 = createPortForwardingRule {
             name = "test"
@@ -257,7 +259,7 @@ class PortForwardingCase extends SubCase {
             privatePortStart = 3306
             protocolType = PortForwardingProtocolType.TCP.toString()
         }
-        VipVO vipVO = dbFindByUuid(vip.uuid, VipVO.class)
+        vipVO = dbFindByUuid(vip.uuid, VipVO.class)
         assert vipVO.serviceProvider != null
 
         deletePortForwardingRule {
