@@ -21,11 +21,9 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint;
+import org.zstack.header.network.service.VirtualRouterBeforeDetachNicExtensionPoint;
 import org.zstack.header.vm.*;
-import org.zstack.network.service.vip.VipBackend;
-import org.zstack.network.service.vip.VipInventory;
-import org.zstack.network.service.vip.VipVO;
-import org.zstack.network.service.vip.VipVO_;
+import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.*;
 import org.zstack.utils.Utils;
@@ -42,7 +40,7 @@ import java.util.stream.Collectors;
 import static org.zstack.utils.CollectionDSL.list;
 
 public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implements
-        VipBackend, VirtualRouterAfterAttachNicExtensionPoint {
+        VipBackend, VirtualRouterAfterAttachNicExtensionPoint, VirtualRouterBeforeDetachNicExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VirtualRouterVipBackend.class);
 
     @Autowired
@@ -410,5 +408,15 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
     @Override
     public String getServiceProviderTypeForVip() {
         return VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE;
+    }
+
+    @Override
+    public void beforeDetachNic(VmNicInventory nic, Completion completion) {
+        completion.success();
+    }
+
+    @Override
+    public void beforeDetachNicRollback(VmNicInventory nic, NoErrorCompletion completion) {
+        completion.done();
     }
 }

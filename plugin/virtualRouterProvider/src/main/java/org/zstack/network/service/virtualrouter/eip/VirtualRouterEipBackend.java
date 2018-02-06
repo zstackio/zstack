@@ -7,10 +7,7 @@ import org.zstack.appliancevm.ApplianceVmFirewallProtocol;
 import org.zstack.appliancevm.ApplianceVmFirewallRuleInventory;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SQL;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
@@ -24,8 +21,11 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.network.service.NetworkServiceProviderType;
+import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint;
+import org.zstack.header.network.service.VirtualRouterBeforeDetachNicExtensionPoint;
 import org.zstack.header.vm.*;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.eip.*;
@@ -41,12 +41,13 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.Tuple;
 import java.util.*;
 
+import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 
 /**
  */
 public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implements
-        EipBackend, VirtualRouterAfterAttachNicExtensionPoint {
+        EipBackend, VirtualRouterAfterAttachNicExtensionPoint, VirtualRouterBeforeDetachNicExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VirtualRouterEipBackend.class);
 
     @Autowired
@@ -353,6 +354,10 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
 
     @Override
     public void afterAttachNic(VmNicInventory nic, Completion completion) {
+        syncEipsOnVirtualRouter(nic, completion);
+    }
+
+    private void syncEipsOnVirtualRouter(VmNicInventory nic, Completion completion) {
         if (!VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST.contains(nic.getMetaData())) {
             completion.success();
             return;
@@ -501,6 +506,49 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
 
     @Override
     public void afterAttachNicRollback(VmNicInventory nic, NoErrorCompletion completion) {
+        completion.done();
+    }
+
+    @Override
+    public void beforeDetachNic(VmNicInventory nic, Completion completion) {
+        syncEipsOnVirtualRouter(nic, new Completion(completion) {
+            @Override
+            public void success() {
+                List<Tuple> eips = findEipOnVmNic(nic);
+                if (eips == null || eips.isEmpty()) {
+                    completion.success();
+                } else {
+                    for (Tuple eipTuple : eips) {
+                        if (Q.New(VirtualRouterEipRefVO.class)
+                                .eq(VirtualRouterEipRefVO_.eipUuid, eipTuple.get(5, String.class))
+                                .eq(VirtualRouterEipRefVO_.virtualRouterVmUuid, nic.getVmInstanceUuid())
+                                .isExists()) {
+                            VirtualRouterEipRefVO ref = new VirtualRouterEipRefVO();
+                            ref.setEipUuid(eipTuple.get(5, String.class));
+                            ref.setVirtualRouterVmUuid(nic.getVmInstanceUuid());
+                            dbf.remove(ref);
+
+                            UpdateQuery q = UpdateQuery.New(EipVO.class);
+                            q.condAnd(EipVO_.uuid, Op.EQ, eipTuple.get(5, String.class));
+                            q.set(EipVO_.vmNicUuid, null);
+                            q.set(EipVO_.guestIp, null);
+                            q.update();
+                        }
+                    }
+
+                    completion.success();
+                }
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    public void beforeDetachNicRollback(VmNicInventory nic, NoErrorCompletion completion) {
         completion.done();
     }
 }

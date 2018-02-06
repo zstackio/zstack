@@ -248,10 +248,9 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
             return;
         }
 
-        final NetworkServiceProviderType providerType =
-                nwServiceMgr.getTypeOfNetworkServiceProviderForService(nic.getL3NetworkUuid(), NetworkServiceType.SNAT);
-
-        if (providerType == null) {
+        try {
+            nwServiceMgr.getTypeOfNetworkServiceProviderForService(nic.getL3NetworkUuid(), NetworkServiceType.SNAT);
+        } catch (OperationFailureException e) {
             completion.success();
             return;
         }
