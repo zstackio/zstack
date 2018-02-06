@@ -705,8 +705,8 @@ public class VirtualRouter extends ApplianceVmBase {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("release-services-before-detach-nic-%s-from-virtualrouter-%s", nicInventory.getUuid(), nicInventory.getVmInstanceUuid()));
         chain.setData(data);
-        chain.insert(new virtualRouterbeforeDetachNic());
-        chain.then(new virtualRouterReleaseServicesbeforeDetachNicFlow());
+        chain.insert(new virtualRouterReleaseServicesbeforeDetachNicFlow());
+        chain.then(new virtualRouterbeforeDetachNic());
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
