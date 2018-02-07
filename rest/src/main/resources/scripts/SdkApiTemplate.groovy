@@ -244,7 +244,7 @@ class SdkApiTemplate implements SdkTemplate {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 """)

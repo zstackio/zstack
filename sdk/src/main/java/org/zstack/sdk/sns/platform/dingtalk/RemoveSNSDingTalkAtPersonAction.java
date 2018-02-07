@@ -88,7 +88,7 @@ public class RemoveSNSDingTalkAtPersonAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
-        info.path = "/sns/application-endpoints/ding-talk/at-persons/{uuid}";
+        info.path = "/sns/application-endpoints/ding-talk/{endpointUuid}/at-persons/{phoneNumber}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";
