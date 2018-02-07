@@ -40,6 +40,8 @@ abstract class Test implements ApiHelper, Retry {
     private final static long DEFAULT_MESSAGE_TIMEOUT_SECS = TimeUnit.SECONDS.toMillis(25)
     static Map<Class, Closure> functionForMockTestObjectFactory = new ConcurrentHashMap<>()
 
+    protected List<Closure> methodsOnClean = []
+
     static {
         Platform.functionForMockTestObject = { supplier ->
             def obj = supplier.get()
@@ -106,6 +108,10 @@ abstract class Test implements ApiHelper, Retry {
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()
         return spec
+    }
+
+    protected void onCleanExecute(Closure c) {
+        methodsOnClean.add(c)
     }
 
     protected EnvSpec env(@DelegatesTo(strategy=Closure.DELEGATE_FIRST, value=EnvSpec.class) Closure c) {

@@ -16,6 +16,7 @@ abstract class SubCase extends Test implements Case {
             logger.info("start cleanup for case ${this.class}")
             try{
                 clean()
+                methodsOnClean.each { it() }
             }catch (Throwable t){
                 collectErrorLog()
                 throw t
