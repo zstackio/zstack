@@ -354,10 +354,10 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
 
     @Override
     public void afterAttachNic(VmNicInventory nic, Completion completion) {
-        syncEipsOnVirtualRouter(nic, completion);
+        syncEipsOnVirtualRouter(nic, true, completion);
     }
 
-    private void syncEipsOnVirtualRouter(VmNicInventory nic, Completion completion) {
+    private void syncEipsOnVirtualRouter(VmNicInventory nic, Boolean attach, Completion completion) {
         if (!VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST.contains(nic.getMetaData())) {
             completion.success();
             return;
@@ -380,10 +380,12 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
                 String.format("can not find virtual router[uuid: %s] for nic[uuid: %s, ip: %s, l3NetworkUuid: %s]",
                         nic.getVmInstanceUuid(), nic.getUuid(), nic.getIp(), nic.getL3NetworkUuid()));
 
-        List<EipTO> eips = findEipsOnVirtualRouter(nic);
-        if (eips == null || eips.isEmpty()) {
+        List<EipTO> eips = findEipsOnVirtualRouter(nic, attach);
+        if (attach && (eips == null || eips.isEmpty())) {
             completion.success();
             return;
+        } else if (!attach && eips == null) {
+            eips = new ArrayList<>();
         }
 
         VirtualRouterCommands.SyncEipCmd cmd = new VirtualRouterCommands.SyncEipCmd();
@@ -420,9 +422,9 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
         });
     }
 
-    private List<EipTO> findEipsOnVirtualRouter(VmNicInventory nic) {
+    private List<EipTO> findEipsOnVirtualRouter(VmNicInventory nic, Boolean attach) {
         List<Tuple> eips = findEipOnVmNic(nic);
-        if (eips == null || eips.isEmpty()) {
+        if (attach && (eips == null || eips.isEmpty())) {
             return null;
         }
 
@@ -435,9 +437,28 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
                 .param("vrUuid", nic.getVmInstanceUuid())
                 .list();
 
-        if (existsEips != null && !existsEips.isEmpty()) {
+        if (existsEips != null && !existsEips.isEmpty() && attach) {
             eips.addAll(existsEips);
+        } else if (existsEips != null && !existsEips.isEmpty() && !attach) {
+            // TODO(WeiW) Optimize it
+            List<Tuple> remainEips = new ArrayList<>();
+            for (Tuple e : existsEips) {
+                Boolean add = true;
+                for (Tuple i : eips) {
+                    if (e.get(0, String.class).equals(i.get(0, String.class)) &&
+                            e.get(1, String.class).equals(i.get(1, String.class))) {
+                        add = false;
+                        break;
+                    }
+                }
+                if (add) {
+                    remainEips.add(e);
+                }
+            }
+            eips.clear();
+            eips.addAll(remainEips);
         }
+
 
         VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf((VirtualRouterVmVO)
                 Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, nic.getVmInstanceUuid()).find());
@@ -482,7 +503,7 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
                     .list();
 
         if (eips == null || eips.isEmpty()) {
-            return eips;
+            return new ArrayList<>();
         }
 
         List<VirtualRouterEipRefVO> refs = new ArrayList<VirtualRouterEipRefVO>();
@@ -511,7 +532,7 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
 
     @Override
     public void beforeDetachNic(VmNicInventory nic, Completion completion) {
-        syncEipsOnVirtualRouter(nic, new Completion(completion) {
+        syncEipsOnVirtualRouter(nic, false, new Completion(completion) {
             @Override
             public void success() {
                 List<Tuple> eips = findEipOnVmNic(nic);
