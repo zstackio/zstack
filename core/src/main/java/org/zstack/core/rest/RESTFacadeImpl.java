@@ -3,10 +3,7 @@ package org.zstack.core.rest;
 import org.apache.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.HttpStatusCodeException;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.*;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
@@ -251,7 +248,7 @@ public class RESTFacadeImpl implements RESTFacade {
 
         Retry<ResponseEntity<String>> retry = new Retry<ResponseEntity<String>>() {
             @Override
-            @RetryCondition(onExceptions = {IOException.class, RestClientException.class, HttpClientErrorException.class})
+            @RetryCondition(onExceptions = {ResourceAccessException.class, RestClientException.class, HttpClientErrorException.class})
             protected ResponseEntity<String> call() {
                 return template.exchange(url, HttpMethod.POST, req, String.class, taskUuid, unit.toMillis(timeout), unit.toMillis(timeout));
             }
@@ -367,7 +364,7 @@ public class RESTFacadeImpl implements RESTFacade {
             }
         } catch (Throwable e) {
             logger.warn(String.format("Unable to post to %s", url), e);
-            wrapper.fail(ExceptionDSL.isCausedBy(e, IOException.class) ? errf.instantiateErrorCode(SysErrors.IO_ERROR, e.getMessage()) : errf.throwableToInternalError(e));
+            wrapper.fail(ExceptionDSL.isCausedBy(e, ResourceAccessException.class) ? errf.instantiateErrorCode(SysErrors.IO_ERROR, e.getMessage()) : errf.throwableToInternalError(e));
         }
     }
 
@@ -489,7 +486,7 @@ public class RESTFacadeImpl implements RESTFacade {
             } else {
                 rsp = new Retry<ResponseEntity<String>>() {
                     @Override
-                    @RetryCondition(onExceptions = {IOException.class, HttpStatusCodeException.class})
+                    @RetryCondition(onExceptions = {ResourceAccessException.class, HttpStatusCodeException.class})
                     protected ResponseEntity<String> call() {
                         if (unit == null) {
                             return template.exchange(url, method, req, String.class);
@@ -501,6 +498,8 @@ public class RESTFacadeImpl implements RESTFacade {
             }
         } catch (HttpStatusCodeException e) {
             throw new OperationFailureException(operr("failed to %s to %s, status code: %s, response body: %s", method.toString().toLowerCase(), url, e.getStatusCode(), e.getResponseBodyAsString()));
+        } catch (ResourceAccessException e) {
+            throw new OperationFailureException(operr("failed to %s to %s, IO Error: %s", method.toString().toLowerCase(), url, e.getMessage()));
         }
 
 
