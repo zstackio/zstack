@@ -769,6 +769,22 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                 logger.debug(String.format("failed to create port forwarding rule %s, because %s", JSONObjectUtil.toJsonString(ruleInv), errorCode));
 
                 dbf.remove(vo);
+
+                /* pf is deleted, then release vip */
+                ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
+                vipStruct.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
+                Vip v = new Vip(struct.getVip().getUuid());
+                v.setStruct(vipStruct);
+                v.release(new Completion(msg) {
+                    @Override
+                    public void success() {
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                    }
+                });
+
                 evt.setError(errf.instantiateErrorCode(SysErrors.CREATE_RESOURCE_ERROR, errorCode));
                 bus.publish(evt);
             }
@@ -882,7 +898,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
-                flow(new Flow() {
+                flow(new NoRollbackFlow() {
                     String __name__ = "prepare-vip";
 
                     boolean s = false;
@@ -905,27 +921,6 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                             @Override
                             public void fail(ErrorCode errorCode) {
                                 trigger.fail(errorCode);
-                            }
-                        });
-                    }
-
-                    @Override
-                    public void rollback(FlowRollback trigger, Map data) {
-                        ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
-                        vipStruct.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
-                        Vip v = new Vip(struct.getVip().getUuid());
-                        v.setStruct(vipStruct);
-                        v.release(new Completion(trigger) {
-                            @Override
-                            public void success() {
-                                trigger.rollback();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                //TODO add GC
-                                logger.warn(errorCode.toString());
-                                trigger.rollback();
                             }
                         });
                     }
