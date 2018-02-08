@@ -43,11 +43,26 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>${project.compiler.version}</version>
 				<configuration>
+					<compilerId>groovy-eclipse-compiler</compilerId>
 					<source>${project.java.version}</source>
 					<target>${project.java.version}</target>
-                    			<debug>true</debug>
+					<debuglevel>lines,vars,source</debuglevel>
+					<debug>true</debug>
 				</configuration>
+				<dependencies>
+					<dependency>
+						<groupId>org.codehaus.groovy</groupId>
+						<artifactId>groovy-eclipse-compiler</artifactId>
+						<version>2.9.2-01</version>
+					</dependency>
+					<dependency>
+						<groupId>org.codehaus.groovy</groupId>
+						<artifactId>groovy-eclipse-batch</artifactId>
+						<version>2.4.3-01</version>
+					</dependency>
+				</dependencies>
 			</plugin>
+
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>aspectj-maven-plugin</artifactId>
