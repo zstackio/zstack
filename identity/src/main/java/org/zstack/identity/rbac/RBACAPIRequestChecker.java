@@ -13,18 +13,14 @@ import org.zstack.utils.logging.CLogger;
 import static org.zstack.core.Platform.operr;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 public class RBACAPIRequestChecker implements APIRequestChecker {
     private static final CLogger logger = Utils.getLogger(RBACAPIRequestChecker.class);
 
     private APIMessage message;
-
-    private List<PolicyInventory> getPolicies() {
-        return new ArrayList<>();
-    }
 
     @Override
     public void check(APIMessage msg) {
@@ -33,9 +29,9 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
     }
 
     private void check() {
-        List<PolicyInventory> polices = getPolicies();
-        List<PolicyInventory> denyStatements = collectDenyStatements(polices);
-        List<PolicyInventory> allowStatements = collectDenyStatements(polices);
+        List<PolicyInventory> polices = RBACManager.getPoliciesByAPI(message);
+        Map<PolicyInventory, List<PolicyInventory.Statement>> denyStatements = RBACManager.collectDenyStatements(polices);
+        Map<PolicyInventory, List<PolicyInventory.Statement>> allowStatements = RBACManager.collectAllowedStatements(polices);
 
         evalDenyStatements(denyStatements);
 
@@ -48,11 +44,12 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
         throw new OperationFailureException(operr("operation is denied by default"));
     }
 
-    private boolean evalAllowStatements(List<PolicyInventory> policies) {
-        for (PolicyInventory policy : policies) {
-            for (PolicyInventory.Statement statement : policy.getStatements()) {
+    private boolean evalAllowStatements(Map<PolicyInventory, List<PolicyInventory.Statement>> policies) {
+        for (Map.Entry<PolicyInventory, List<PolicyInventory.Statement>> e : policies.entrySet()) {
+            PolicyInventory policy = e.getKey();
+            for (PolicyInventory.Statement statement : e.getValue()) {
                 for (String as : statement.getActions()) {
-                    if (evalAllowStatement(policy, as)) {
+                    if (evalAllowStatement(as)) {
                         if (logger.isTraceEnabled()) {
                             logger.trace(String.format("[RBAC] policy[name:%s, uuid:%s]'s statement[%s] allows the API:\n%s", policy.getName(),
                                     policy.getUuid(), statement, JSONObjectUtil.toJsonString(message)));
@@ -66,7 +63,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
         return false;
     }
 
-    private boolean evalAllowStatement(PolicyInventory p, String as) {
+    private boolean evalAllowStatement(String as) {
         String[] ss = as.split(":",2);
         String apiName = ss[0];
 
@@ -74,10 +71,10 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
         return pattern.matcher(message.getClass().getName()).matches();
     }
 
-    private void evalDenyStatements(List<PolicyInventory> denyPolices) {
+    private void evalDenyStatements(Map<PolicyInventory, List<PolicyInventory.Statement>> denyPolices) {
         // action string format is:
         // api-full-name:optional-api-field-list-split-by-comma
-        denyPolices.forEach(p -> p.getStatements().forEach(st -> st.getActions().forEach(statement -> {
+        denyPolices.forEach((p, sts)-> sts.forEach(st->st.getActions().forEach(statement-> {
             String[] ss = statement.split(":",2);
             String apiName = ss[0];
             String apiFields = null;
@@ -120,9 +117,5 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
                 }
             }
         })));
-    }
-
-    private List<PolicyInventory> collectDenyStatements(List<PolicyInventory> polices) {
-        return null;
     }
 }
