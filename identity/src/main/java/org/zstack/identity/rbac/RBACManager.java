@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public interface RBACManager {
+    String SERVICE_ID = "rbac";
 
     static List<PolicyInventory> getPoliciesByAPI(APIMessage message) {
         return new SQLBatchWithReturn<List<PolicyInventory>>() {
