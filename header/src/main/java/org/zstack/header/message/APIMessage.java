@@ -32,15 +32,15 @@ public abstract class APIMessage extends NeedReplyMessage {
         this.session = session;
     }
 
-    private static class FieldParam {
-        Field field;
-        APIParam param;
+    public static class FieldParam {
+        public Field field;
+        public APIParam param;
     }
 
     @NoJsonSchema
     @APINoSee
     @GsonTransient
-    private static Map<Class, Collection<FieldParam>> apiParams = new HashMap<>();
+    public static Map<Class, Collection<FieldParam>> apiParams = new HashMap<>();
 
     static {
         collectApiParams();
