@@ -237,13 +237,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         if (msg instanceof InstantiateVolumeOnPrimaryStorageMsg) {
             new PrimaryStorageValidater().disable().maintenance()
                     .validate();
-        } else if (msg instanceof DeleteVolumeOnPrimaryStorageMsg) {
-            new PrimaryStorageValidater().maintenance()
-                    .validate();
         } else if (msg instanceof CreateTemplateFromVolumeOnPrimaryStorageMsg) {
-            new PrimaryStorageValidater().disable().maintenance()
-                    .validate();
-        } else if (msg instanceof PrimaryStorageDeletionMsg) {
             new PrimaryStorageValidater().disable().maintenance()
                     .validate();
         } else if (msg instanceof DownloadDataVolumeToPrimaryStorageMsg) {
@@ -259,9 +253,6 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             new PrimaryStorageValidater().disable().maintenance()
                     .validate();
         } else if (msg instanceof MergeVolumeSnapshotOnPrimaryStorageMsg) {
-            new PrimaryStorageValidater().maintenance()
-                    .validate();
-        } else if (msg instanceof DeleteSnapshotOnPrimaryStorageMsg) {
             new PrimaryStorageValidater().maintenance()
                     .validate();
         } else if (msg instanceof RevertVolumeFromSnapshotOnPrimaryStorageMsg) {

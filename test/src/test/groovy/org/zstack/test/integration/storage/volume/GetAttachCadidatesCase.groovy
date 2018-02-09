@@ -182,6 +182,14 @@ class GetAttachCadidatesCase extends SubCase {
         for (VmInstanceInventory inventory : result1.value.inventories){
             assert inventory.uuid!= vm1.uuid
         }
+
+        destroyVmInstance {
+            uuid = vm1.uuid
+        }
+
+        expungeVmInstance {
+            uuid = vm1.uuid
+        }
     }
 
     void testGetCandidateVmType(){
