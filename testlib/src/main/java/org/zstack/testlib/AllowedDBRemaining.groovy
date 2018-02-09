@@ -1,6 +1,5 @@
 package org.zstack.testlib
 
-import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
 import org.zstack.utils.Utils
 import org.zstack.utils.logging.CLogger

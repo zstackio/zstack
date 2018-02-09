@@ -41,6 +41,7 @@ import org.zstack.sdk.zwatch.alarm.UnsubscribeEventAction
 import org.zstack.sdk.zwatch.alarm.sns.CreateSNSTextTemplateAction
 import org.zstack.sdk.zwatch.alarm.sns.DeleteSNSTextTemplateAction
 import org.zstack.storage.volume.VolumeGlobalConfig
+import org.zstack.utils.BeanUtils
 import org.zstack.utils.DebugUtils
 import org.zstack.utils.FieldUtils
 import org.zstack.utils.data.Pair
@@ -137,6 +138,13 @@ class EnvSpec implements Node {
     static List<AllowedDBRemaining> allowedDBRemainingList = []
 
     protected ConcurrentLinkedQueue resourcesNeedDeletion = new ConcurrentLinkedQueue()
+
+    static {
+        BeanUtils.reflections.getSubTypesOf(DBRemaining.class).each {
+            def remaining = it.newInstance()
+            allowedDBRemainingList.add(remaining.reportRemaining())
+        }
+    }
 
     private void installDeletionMethods() {
         deletionMethods.each { it ->
