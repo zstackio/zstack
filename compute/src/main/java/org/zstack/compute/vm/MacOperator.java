@@ -6,9 +6,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
 import org.zstack.tag.PatternedSystemTag;
+import org.zstack.tag.SystemTag;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -19,6 +22,8 @@ import java.util.regex.Pattern;
 import java.math.BigInteger;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.map;
 
 /**
  * Created by camile on 2017/12/14.
@@ -61,6 +66,13 @@ public class MacOperator {
             }
         }
         return null;
+    }
+
+    public void deleteCustomMacSystemTag(String vmUuid, String l3uuid, String mac) {
+        String str = VmSystemTags.CUSTOM_MAC.instantiateTag(map(
+                e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, l3uuid),
+                e(VmSystemTags.MAC_TOKEN, mac)));
+        that.delete(vmUuid, str);
     }
 
     private boolean isMulticastMac(String mac) {
