@@ -150,18 +150,24 @@ public class VipBase {
             try {
                 if (s.isServiceProvider()) {
                     addPeerL3NetworkUuid(s.getPeerL3NetworkUuid());
+                    refresh();
                 }
             } catch (CloudRuntimeException e) {
                 throw new OperationFailureException(operr(e.getMessage()));
             }
         }
 
-        if (s.isPeerL3NetworkUuid() && s.isServiceProvider()){
+        if (s.isPeerL3NetworkUuid() && s.isServiceProvider()) {
             self.setServiceProvider(s.getServiceProvider());
-            dbf.update(self);
+            self = dbf.updateAndRefresh(self);
+            logger.debug(String.format("set vip[uuid: %s] service provider as[%s]", self.getUuid(), self.getServiceProvider()));
             return true;
-        } else {
+        }
+
+        if (self.getPeerL3NetworkUuids() == null || self.getServiceProvider() == null) {
             return false;
+        } else {
+            return true;
         }
     }
 
@@ -328,7 +334,7 @@ public class VipBase {
 
         refresh();
 
-        if (!acquireCheckModifyVipAttributeStruct(s)){
+        if (!acquireCheckModifyVipAttributeStruct(s)) {
             /* no need to install vip to backend */
             if (s.isUserFor()){
                 /* useFor is not changed */
@@ -337,11 +343,11 @@ public class VipBase {
                 self.setUseFor(useForList.toString());
                 dbf.update(self);
             }
-
             completion.success();
             return;
         }
-        VipFactory f = vipMgr.getVipFactory(s.getServiceProvider());
+
+        VipFactory f = vipMgr.getVipFactory(self.getServiceProvider());
         VipBaseBackend vip = f.getVip(getSelf());
         vip.acquireVipOnBackend(new Completion(completion) {
             @Override
@@ -353,7 +359,7 @@ public class VipBase {
                 useForList.add(s.getUseFor());
 
                 VipVO vo = Q.New(VipVO.class).eq(VipVO_.uuid, self.getUuid()).find();
-                vo.setServiceProvider(s.getServiceProvider());
+
                 vo.setUseFor(useForList.toString());
                 dbf.updateAndRefresh(vo);
 
@@ -678,6 +684,10 @@ public class VipBase {
     }
 
     public Boolean checkPeerL3Additive(String peerL3NetworkUuid) {
+        if (peerL3NetworkUuid == null) {
+            return false;
+        }
+
         refresh();
 
         if (self.getPeerL3NetworkRefs() == null || self.getPeerL3NetworkRefs().isEmpty()) {

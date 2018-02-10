@@ -7,10 +7,7 @@ import org.zstack.appliancevm.ApplianceVmFirewallProtocol;
 import org.zstack.appliancevm.ApplianceVmFirewallRuleInventory;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SQL;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
@@ -24,8 +21,11 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.network.service.NetworkServiceProviderType;
+import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint;
+import org.zstack.header.network.service.VirtualRouterBeforeDetachNicExtensionPoint;
 import org.zstack.header.vm.*;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.eip.*;
@@ -41,12 +41,13 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.Tuple;
 import java.util.*;
 
+import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 
 /**
  */
 public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implements
-        EipBackend, VirtualRouterAfterAttachNicExtensionPoint {
+        EipBackend, VirtualRouterAfterAttachNicExtensionPoint, VirtualRouterBeforeDetachNicExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VirtualRouterEipBackend.class);
 
     @Autowired
@@ -353,7 +354,16 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
 
     @Override
     public void afterAttachNic(VmNicInventory nic, Completion completion) {
+        syncEipsOnVirtualRouter(nic, true, completion);
+    }
+
+    private void syncEipsOnVirtualRouter(VmNicInventory nic, Boolean attach, Completion completion) {
         if (!VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST.contains(nic.getMetaData())) {
+            completion.success();
+            return;
+        }
+
+        if (VirtualRouterSystemTags.DEDICATED_ROLE_VR.hasTag(nic.getVmInstanceUuid())) {
             completion.success();
             return;
         }
@@ -370,10 +380,12 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
                 String.format("can not find virtual router[uuid: %s] for nic[uuid: %s, ip: %s, l3NetworkUuid: %s]",
                         nic.getVmInstanceUuid(), nic.getUuid(), nic.getIp(), nic.getL3NetworkUuid()));
 
-        List<EipTO> eips = findEipsOnVirtualRouter(nic);
-        if (eips == null || eips.isEmpty()) {
+        List<EipTO> eips = findEipsOnVirtualRouter(nic, attach);
+        if (attach && (eips == null || eips.isEmpty())) {
             completion.success();
             return;
+        } else if (!attach && eips == null) {
+            eips = new ArrayList<>();
         }
 
         VirtualRouterCommands.SyncEipCmd cmd = new VirtualRouterCommands.SyncEipCmd();
@@ -402,6 +414,7 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
                 } else {
                     String info = String.format("sync eip on virtual router[uuid:%s] successfully",
                             vr.getUuid());
+
                     logger.debug(info);
                     completion.success();
                 }
@@ -409,25 +422,13 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
         });
     }
 
-    private static List<EipTO> findEipsOnVirtualRouter(VmNicInventory nic) {
-        List<Tuple> eips = SQL.New("select eip.vipIp, eip.guestIp, nic.l3NetworkUuid, nic.mac, vip.l3NetworkUuid " +
-                "from EipVO eip, VmNicVO nic, VmInstanceVO vm, VipVO vip " +
-                "where eip.vmNicUuid = nic.uuid " +
-                "and nic.vmInstanceUuid = vm.uuid " +
-                "and nic.l3NetworkUuid = :l3Uuid " +
-                "and eip.vipUuid = vip.uuid " +
-                "and vm.state in (:syncEipVmStates) " +
-                "and eip.state = :enabledState", Tuple.class)
-                .param("l3Uuid", nic.getL3NetworkUuid())
-                .param("syncEipVmStates", SYNC_EIP_VM_STATES)
-                .param("enabledState", EipState.Enabled)
-                .list();
-
-        if (eips == null || eips.isEmpty()) {
+    private List<EipTO> findEipsOnVirtualRouter(VmNicInventory nic, Boolean attach) {
+        List<Tuple> eips = findEipOnVmNic(nic);
+        if (attach && (eips == null || eips.isEmpty())) {
             return null;
         }
 
-        List<Tuple> existsEips = SQL.New("select eip.vipIp, eip.guestIp, nic.l3NetworkUuid, nic.mac, vip.l3NetworkUuid " +
+        List<Tuple> existsEips = SQL.New("select eip.vipIp, eip.guestIp, nic.l3NetworkUuid, nic.mac, vip.l3NetworkUuid, eip.uuid " +
                 "from EipVO eip, VirtualRouterEipRefVO ref, VmNicVO nic, VipVO vip " +
                 "where eip.vmNicUuid = nic.uuid " +
                 "and eip.uuid = ref.eipUuid " +
@@ -436,15 +437,39 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
                 .param("vrUuid", nic.getVmInstanceUuid())
                 .list();
 
-        if (existsEips != null && !existsEips.isEmpty()) {
+        if (existsEips != null && !existsEips.isEmpty() && attach) {
             eips.addAll(existsEips);
+        } else if (existsEips != null && !existsEips.isEmpty() && !attach) {
+            // TODO(WeiW) Optimize it
+            List<Tuple> remainEips = new ArrayList<>();
+            for (Tuple e : existsEips) {
+                Boolean add = true;
+                for (Tuple i : eips) {
+                    if (e.get(0, String.class).equals(i.get(0, String.class)) &&
+                            e.get(1, String.class).equals(i.get(1, String.class))) {
+                        add = false;
+                        break;
+                    }
+                }
+                if (add) {
+                    remainEips.add(e);
+                }
+            }
+            eips.clear();
+            eips.addAll(remainEips);
         }
+
 
         VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf((VirtualRouterVmVO)
                 Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, nic.getVmInstanceUuid()).find());
 
         List<EipTO> ret = new ArrayList<EipTO>();
         for (Tuple t : eips) {
+            if (ret.stream().anyMatch(
+                    r -> r.getVipIp().equals(t.get(0, String.class)) &&
+                            r.getGuestIp().equals(t.get(1, String.class)))) {
+                continue;
+            }
             EipTO to = new EipTO();
             to.setVipIp(t.get(0, String.class));
             to.setGuestIp(t.get(1, String.class));
@@ -463,8 +488,88 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
         return ret;
     }
 
+    private List<Tuple> findEipOnVmNic(VmNicInventory nic) {
+        List<Tuple> eips = SQL.New("select eip.vipIp, eip.guestIp, nic.l3NetworkUuid, nic.mac, vip.l3NetworkUuid, eip.uuid " +
+                    "from EipVO eip, VmNicVO nic, VmInstanceVO vm, VipVO vip " +
+                    "where eip.vmNicUuid = nic.uuid " +
+                    "and nic.vmInstanceUuid = vm.uuid " +
+                    "and nic.l3NetworkUuid = :l3Uuid " +
+                    "and eip.vipUuid = vip.uuid " +
+                    "and vm.state in (:syncEipVmStates) " +
+                    "and eip.state = :enabledState", Tuple.class)
+                    .param("l3Uuid", nic.getL3NetworkUuid())
+                    .param("syncEipVmStates", SYNC_EIP_VM_STATES)
+                    .param("enabledState", EipState.Enabled)
+                    .list();
+
+        if (eips == null || eips.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<VirtualRouterEipRefVO> refs = new ArrayList<VirtualRouterEipRefVO>();
+        for (Tuple eipTuple : eips) {
+            if (!Q.New(VirtualRouterEipRefVO.class)
+                    .eq(VirtualRouterEipRefVO_.eipUuid, eipTuple.get(5, String.class))
+                    .eq(VirtualRouterEipRefVO_.virtualRouterVmUuid, nic.getVmInstanceUuid())
+                    .isExists()) {
+                VirtualRouterEipRefVO ref = new VirtualRouterEipRefVO();
+                ref.setEipUuid(eipTuple.get(5, String.class));
+                ref.setVirtualRouterVmUuid(nic.getVmInstanceUuid());
+                refs.add(ref);
+            }
+        }
+        if (!refs.isEmpty()) {
+            dbf.persistCollection(refs);
+        }
+
+        return eips;
+    }
+
     @Override
     public void afterAttachNicRollback(VmNicInventory nic, NoErrorCompletion completion) {
+        completion.done();
+    }
+
+    @Override
+    public void beforeDetachNic(VmNicInventory nic, Completion completion) {
+        syncEipsOnVirtualRouter(nic, false, new Completion(completion) {
+            @Override
+            public void success() {
+                List<Tuple> eips = findEipOnVmNic(nic);
+                if (eips == null || eips.isEmpty()) {
+                    completion.success();
+                } else {
+                    for (Tuple eipTuple : eips) {
+                        if (Q.New(VirtualRouterEipRefVO.class)
+                                .eq(VirtualRouterEipRefVO_.eipUuid, eipTuple.get(5, String.class))
+                                .eq(VirtualRouterEipRefVO_.virtualRouterVmUuid, nic.getVmInstanceUuid())
+                                .isExists()) {
+                            VirtualRouterEipRefVO ref = new VirtualRouterEipRefVO();
+                            ref.setEipUuid(eipTuple.get(5, String.class));
+                            ref.setVirtualRouterVmUuid(nic.getVmInstanceUuid());
+                            dbf.remove(ref);
+
+                            UpdateQuery q = UpdateQuery.New(EipVO.class);
+                            q.condAnd(EipVO_.uuid, Op.EQ, eipTuple.get(5, String.class));
+                            q.set(EipVO_.vmNicUuid, null);
+                            q.set(EipVO_.guestIp, null);
+                            q.update();
+                        }
+                    }
+
+                    completion.success();
+                }
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    public void beforeDetachNicRollback(VmNicInventory nic, NoErrorCompletion completion) {
         completion.done();
     }
 }

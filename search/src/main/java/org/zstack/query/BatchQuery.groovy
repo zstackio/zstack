@@ -15,10 +15,10 @@ import org.zstack.header.query.APIQueryMessage
 import org.zstack.header.query.AutoQuery
 import org.zstack.header.query.QueryCondition
 import org.zstack.header.query.QueryOp
-import org.zstack.header.search.Inventory
 import org.zstack.utils.gson.JSONObjectUtil
 
 import java.lang.reflect.Modifier
+import java.util.regex.Pattern
 
 class BatchQuery {
     private QueryFacade queryf
@@ -229,7 +229,7 @@ class BatchQuery {
                         throw new OperationFailureException(Platform.argerr("invalid query string[%s], word[%s] doesn't have a valid operator", qstr, word))
                     }
 
-                    List<String> ks = word.split(delimiter, 2)
+                    List<String> ks = word.split(Pattern.quote(delimiter), 2)
                     QueryCondition cond = new QueryCondition()
                     if (OP == QueryOp.IS_NULL.toString() || OP == QueryOp.NOT_NULL.toString()) {
                         cond.name = ks[0]

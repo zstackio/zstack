@@ -13,6 +13,9 @@ import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.Component;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
@@ -50,7 +53,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
-import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionDSL.*;
 
 /**
  * Created by frank on 6/30/2015.
@@ -531,8 +534,27 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         q.groupBy(LocalStorageResourceRefVO_.hostUuid);
         long count = q.count();
 
-        if (count < 2) {
+
+        if (count == 0) {
             return;
+        }
+
+        // if count is 1, multi primary storage is indicated
+        if (count == 1) {
+            if (!Q.New(LocalStorageResourceRefVO.class).eq(LocalStorageResourceRefVO_.resourceUuid, volume.getUuid()).isExists()) {
+                return;
+            }
+
+            String vmClusterUuid = vm.getClusterUuid();
+            String volumeHostUuid = Q.New(LocalStorageResourceRefVO.class)
+                    .select(LocalStorageResourceRefVO_.hostUuid)
+                    .eq(LocalStorageResourceRefVO_.resourceUuid, volume.getUuid()).findValue();
+
+            if (!Q.New(HostVO.class)
+                    .eq(HostVO_.uuid, volumeHostUuid)
+                    .eq(HostVO_.clusterUuid, vmClusterUuid).isExists()) {
+                throw new OperationFailureException(operr("Can't attach volume to VM, no qualified cluster"));
+            }
         }
 
         q = dbf.createQuery(LocalStorageResourceRefVO.class);
@@ -622,18 +644,21 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 
     @Override
     @Transactional(readOnly = true)
-    public HostMaintenancePolicy getHostMaintenancePolicy(HostInventory host) {
-        String sql = "select count(ps)" +
-                " from PrimaryStorageVO ps, PrimaryStorageClusterRefVO ref" +
+    public Map<String, HostMaintenancePolicy> getHostMaintenanceVmOperationPolicy(HostInventory host) {
+        Map<String, HostMaintenancePolicy> result = new HashMap<>();
+        String sql = "select vm.uuid" +
+                " from PrimaryStorageVO ps, PrimaryStorageClusterRefVO ref, VmInstanceVO vm, VolumeVO vol" +
                 " where ps.uuid = ref.primaryStorageUuid" +
                 " and ps.type = :type" +
-                " and ref.clusterUuid = :cuuid";
-        TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+                " and ref.clusterUuid = :cuuid" +
+                " and vol.primaryStorageUuid = ps.uuid" +
+                " and vm.rootVolumeUuid = vol.uuid";
+        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("type", LocalStorageConstants.LOCAL_STORAGE_TYPE);
         q.setParameter("cuuid", host.getClusterUuid());
-        q.setMaxResults(1);
-        Long count = q.getSingleResult();
-        return count > 0 ? HostMaintenancePolicy.StopVm : null;
+        List<String> vmUuids = q.getResultList();
+        vmUuids.forEach(it -> result.put(it, HostMaintenancePolicy.StopVm));
+        return result;
     }
 
     @Override

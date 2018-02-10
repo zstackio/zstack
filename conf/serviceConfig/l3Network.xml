@@ -30,13 +30,11 @@
     <message>
         <name>org.zstack.header.network.service.APIAttachNetworkServiceToL3NetworkMsg</name>
         <interceptor>NetworkServiceApiInterceptor</interceptor>
-        <interceptor>L3NetworkApiInterceptor</interceptor>
     </message>
 
     <message>
         <name>org.zstack.header.network.service.APIDetachNetworkServiceFromL3NetworkMsg</name>
         <interceptor>NetworkServiceApiInterceptor</interceptor>
-        <interceptor>L3NetworkApiInterceptor</interceptor>
     </message>
 
     <message>
