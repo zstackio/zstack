@@ -18,13 +18,11 @@ import java.util.*;
  * Created by frank on 1/4/2016.
  */
 @Action(category = L3NetworkConstant.ACTION_CATEGORY)
-/*
 @RestRequest(
         path = "/l3-networks/{l3NetworkUuid}/network-services",
         method = HttpMethod.DELETE,
         responseClass = APIDetachNetworkServiceFromL3NetworkEvent.class
 )
-*/
 public class APIDetachNetworkServiceFromL3NetworkMsg extends APIMessage implements L3NetworkMessage {
     /**
      * @desc l3Network uuid
