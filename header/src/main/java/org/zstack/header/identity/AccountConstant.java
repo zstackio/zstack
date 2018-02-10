@@ -24,6 +24,9 @@ public interface AccountConstant {
 
     String QUOTA_GLOBAL_CONFIG_CATETORY = "quota";
 
+    String PRINCIPAL_USER = "user";
+    String PRINCIPAL_ACCOUNT = "account";
+
     enum RoleDecision {
         EXPLICIT_DENY,
         DEFAULT_DENY,

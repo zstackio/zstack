@@ -8,10 +8,13 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQL;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
+import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.identity.InternalPolicy;
 import org.zstack.header.identity.role.*;
 import org.zstack.header.identity.role.api.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -41,6 +44,17 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
         } else {
             handleLocalMessage(msg);
         }
+    }
+
+    static {
+        BeanUtils.reflections.getSubTypesOf(InternalPolicy.class).forEach(clz -> {
+            try {
+                InternalPolicy p = clz.newInstance();
+                internalPolices.addAll(p.getPolices());
+            } catch (Exception e) {
+                throw new CloudRuntimeException(e);
+            }
+        });
     }
 
     private void handleLocalMessage(Message msg) {

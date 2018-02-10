@@ -6,7 +6,9 @@ import org.zstack.header.identity.PolicyInventory;
 import org.zstack.header.identity.PolicyVO;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.message.APIMessage;
+import org.zstack.utils.BeanUtils;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,16 +17,21 @@ import java.util.stream.Collectors;
 public interface RBACManager {
     String SERVICE_ID = "rbac";
 
+    List<PolicyInventory> internalPolices = new ArrayList<>();
+
     static List<PolicyInventory> getPoliciesByAPI(APIMessage message) {
         return new SQLBatchWithReturn<List<PolicyInventory>>() {
             @Override
             protected List<PolicyInventory> scripts() {
                 SessionInventory session = message.getSession();
+                List<PolicyInventory> ret = new ArrayList<>(internalPolices);
                 if (session.isAccountSession()) {
-                    return getPoliciesForAccount(session);
+                    ret.addAll(getPoliciesForAccount(session));
                 } else {
-                    return getPoliciesForUser(session);
+                    ret.addAll(getPoliciesForUser(session));
                 }
+
+                return ret;
             }
 
             private List<PolicyInventory> getPoliciesForUser(SessionInventory session) {

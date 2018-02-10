@@ -2,6 +2,7 @@ package org.zstack.identity.rbac;
 
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.PolicyInventory;
 import org.zstack.header.message.APIMessage;
 import org.zstack.identity.APIRequestChecker;
@@ -48,6 +49,10 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
         for (Map.Entry<PolicyInventory, List<PolicyInventory.Statement>> e : policies.entrySet()) {
             PolicyInventory policy = e.getKey();
             for (PolicyInventory.Statement statement : e.getValue()) {
+                if (!isPrincipalMatched(statement.getPrincipals())) {
+                    continue;
+                }
+
                 for (String as : statement.getActions()) {
                     if (evalAllowStatement(as)) {
                         if (logger.isTraceEnabled()) {
@@ -71,51 +76,95 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
         return pattern.matcher(message.getClass().getName()).matches();
     }
 
+    private boolean isPrincipalMatched(List<String> principals) {
+        // if not principals specified, means the statement applies for all accounts/users
+        // if principals specified, check if they matches current account/user
+        if (principals != null && !principals.isEmpty()) {
+            for (String s : principals) {
+                String[] ss = s.split(":", 2);
+                String principal = ss[0];
+                String uuidRegex = ss[1];
+
+                if (message.getSession().isAccountSession() && AccountConstant.PRINCIPAL_ACCOUNT.equals(principal)) {
+                    if (checkAccountPrincipal(uuidRegex)) {
+                        return true;
+                    }
+                } else if (message.getSession().isUserSession() && AccountConstant.PRINCIPAL_USER.equals(principal)) {
+                    if (checkUserPrincipal(uuidRegex)) {
+                        return true;
+                    }
+                } else {
+                    throw new CloudRuntimeException(String.format("unknown principal[%s]", principal));
+                }
+            }
+
+            return false;
+        } else {
+            return true;
+        }
+    }
+
     private void evalDenyStatements(Map<PolicyInventory, List<PolicyInventory.Statement>> denyPolices) {
         // action string format is:
         // api-full-name:optional-api-field-list-split-by-comma
-        denyPolices.forEach((p, sts)-> sts.forEach(st->st.getActions().forEach(statement-> {
-            String[] ss = statement.split(":",2);
-            String apiName = ss[0];
-            String apiFields = null;
-            if (ss.length > 1) {
-                apiFields = ss[1];
-            }
-
-            Pattern pattern = Pattern.compile(apiName);
-            if (!pattern.matcher(message.getClass().getName()).matches()) {
-                // the statement not matching this API
+        denyPolices.forEach((p, sts)-> sts.forEach(st-> {
+            if (!isPrincipalMatched(st.getPrincipals())) {
                 return;
             }
 
-            // the statement matching this API
-
-            if (apiFields == null) {
-                // no API fields specified, the API is denied by this statement
-                if (logger.isTraceEnabled()) {
-                    logger.trace(String.format("[RBAC] policy[name:%s, uuid:%s]'s statement[%s] denies the API:\n%s", p.getName(),
-                            p.getUuid(), statement, JSONObjectUtil.toJsonString(message)));
+            st.getActions().forEach(statement-> {
+                String[] ss = statement.split(":",2);
+                String apiName = ss[0];
+                String apiFields = null;
+                if (ss.length > 1) {
+                    apiFields = ss[1];
                 }
 
-                throw new OperationFailureException(operr("the operation is denied by the policy[uuid:%s]", p.getUuid()));
-            }
+                Pattern pattern = Pattern.compile(apiName);
+                if (!pattern.matcher(message.getClass().getName()).matches()) {
+                    // the statement not matching this API
+                    return;
+                }
 
-            Entity entity = Entity.getEntity(message.getClass());
+                // the statement matching this API
 
-            for (String fname : apiFields.split(",")) {
-                Field field = entity.getFields().get(fname);
-                try {
-                    if (field != null && field.get(message) != null) {
-                        if (logger.isTraceEnabled()) {
-                            logger.trace(String.format("[RBAC] policy[name:%s, uuid:%s]'s statement[%s] denies the API:\n%s", p.getName(),
-                                    p.getUuid(), statement, JSONObjectUtil.toJsonString(message)));
-                        }
-                        throw new OperationFailureException(operr("the operation is denied by the policy[uuid:%s], field[%s] is not permitted to set", p.getUuid(), fname));
+                if (apiFields == null) {
+                    // no API fields specified, the API is denied by this statement
+                    if (logger.isTraceEnabled()) {
+                        logger.trace(String.format("[RBAC] policy[name:%s, uuid:%s]'s statement[%s] denies the API:\n%s", p.getName(),
+                                p.getUuid(), statement, JSONObjectUtil.toJsonString(message)));
                     }
-                } catch (IllegalAccessException e) {
-                    throw new CloudRuntimeException(e);
+
+                    throw new OperationFailureException(operr("the operation is denied by the policy[uuid:%s]", p.getUuid()));
                 }
-            }
-        })));
+
+                Entity entity = Entity.getEntity(message.getClass());
+
+                for (String fname : apiFields.split(",")) {
+                    Field field = entity.getFields().get(fname);
+                    try {
+                        if (field != null && field.get(message) != null) {
+                            if (logger.isTraceEnabled()) {
+                                logger.trace(String.format("[RBAC] policy[name:%s, uuid:%s]'s statement[%s] denies the API:\n%s", p.getName(),
+                                        p.getUuid(), statement, JSONObjectUtil.toJsonString(message)));
+                            }
+                            throw new OperationFailureException(operr("the operation is denied by the policy[uuid:%s], field[%s] is not permitted to set", p.getUuid(), fname));
+                        }
+                    } catch (IllegalAccessException e) {
+                        throw new CloudRuntimeException(e);
+                    }
+                }
+            });
+        }));
+    }
+
+    private boolean checkUserPrincipal(String uuidRegex) {
+        Pattern p = Pattern.compile(uuidRegex);
+        return p.matcher(message.getSession().getUserUuid()).matches();
+    }
+
+    private boolean checkAccountPrincipal(String uuidRegex) {
+        Pattern p = Pattern.compile(uuidRegex);
+        return p.matcher(message.getSession().getAccountUuid()).matches();
     }
 }
