@@ -43,6 +43,7 @@ import org.zstack.header.vo.APIGetResourceNamesMsg;
 import org.zstack.header.vo.APIGetResourceNamesReply;
 import org.zstack.header.vo.ResourceInventory;
 import org.zstack.header.vo.ResourceVO;
+import org.zstack.identity.rbac.AdminOnlyStatements;
 import org.zstack.utils.*;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -64,6 +65,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -99,6 +101,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     private HashSet<Class> accountApiControl = new HashSet<>();
     private HashSet<Class> accountApiControlInternal = new HashSet<>();
     private List<Quota> definedQuotas = new ArrayList<>();
+
+    private AdminOnlyStatements adminOnlyStatements = new AdminOnlyStatements();
 
     @Override
     public Map<Class, ApiNotificationFactory> apiNotificationFactory() {
@@ -1844,6 +1848,24 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             if (s.getActions().isEmpty()) {
                 throw new ApiMessageInterceptionException(argerr("a statement must have a non-empty action field. Invalid statement[%s]",
                                 JSONObjectUtil.toJsonString(s)));
+            }
+
+            if (!isAdmin(msg.getSession())) {
+                if (s.getActions() != null) {
+                    adminOnlyStatements.getActionStatements().forEach(p -> s.getActions().forEach(as -> {
+                        if (p.matcher(as).matches()) {
+                            throw new OperationFailureException(err(IdentityErrors.PERMISSION_DENIED, "normal accounts can't create admin-only action polices[%s]", as));
+                        }
+                    }));
+                }
+
+                if (s.getResources() != null) {
+                    adminOnlyStatements.getResourceStatements().forEach(p -> s.getResources().forEach(rs -> {
+                        if (p.matcher(rs).matches()) {
+                            throw new OperationFailureException(err(IdentityErrors.PERMISSION_DENIED, "normal accounts can't create admin-only resource polices[%s]", rs));
+                        }
+                    }));
+                }
             }
         }
     }
