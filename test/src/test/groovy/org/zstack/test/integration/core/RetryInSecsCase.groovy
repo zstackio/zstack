@@ -78,7 +78,6 @@ class RetryInSecsCase extends SubCase {
                 actualExecutionTimes ++
                 assert 1 == 2
             }
-            assert false
         }catch (Throwable t){
             assert retryTimes == actualExecutionTimes
         }
@@ -113,7 +112,6 @@ class RetryInSecsCase extends SubCase {
                 assert new Object() == new Object().class
                 assert 1 == 2
             }
-            assert false
         }catch (Throwable e){
             endTime = System.currentTimeMillis()
             assert endTime - startTime > 1000 * (retryTimes -1)
