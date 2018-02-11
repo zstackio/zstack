@@ -20,6 +20,7 @@ import static java.util.Arrays.asList;
         method = HttpMethod.GET,
         responseClass = APIQueryPrimaryStorageReply.class
 )
+@Deprecated
 public class APIQueryFusionstorPrimaryStorageMsg extends APIQueryMessage {
 
     public static List<String> __example__() {

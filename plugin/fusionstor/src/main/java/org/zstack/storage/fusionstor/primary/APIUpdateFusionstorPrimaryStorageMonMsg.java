@@ -16,6 +16,7 @@ import org.zstack.header.storage.primary.PrimaryStorageMessage;
         method = HttpMethod.PUT,
         responseClass = APIUpdateMonToFusionstorPrimaryStorageEvent.class
 )
+@Deprecated
 public class APIUpdateFusionstorPrimaryStorageMonMsg extends APIMessage implements PrimaryStorageMessage {
     @APINoSee
     private String primaryStorageUuid;

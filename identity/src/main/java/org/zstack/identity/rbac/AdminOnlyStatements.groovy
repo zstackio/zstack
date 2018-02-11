@@ -27,6 +27,7 @@ class AdminOnlyStatements {
             p("org.zstack.header.cluster.*"),
             p("org.zstack.header.storage.backup.*"),
             p("org.zstack.storage.ceph.backup.*"),
+            p("org.zstack.storage.ceph.primary.*"),
             p("org.zstack.header.configuration.*"),
             p("org.zstack.core.gc.*"),
             p("org.zstack.header.allocator.*"),
@@ -49,6 +50,12 @@ class AdminOnlyStatements {
             p("org.zstack.storage.migration.*"),
             p("org.zstack.usbDevice.*"),
             p("org.zstack.vmware.*"),
+            p("org.zstack.network.service.flat.*"),
+            p("org.zstack.header.identity.(APICreateAccountMsg|APIUpdateAccountMsg|APIShareResourceMsg" +
+                    "|APIRevokeResourceSharingMsg|APIUpdateQuotaMsg|APIQueryAccountMsg" +
+                    "|APIQuerySharedResourceMsg|APIChangeResourceOwnerMsg)"),
+            p("org.zstack.header.simulator.*"),
+            p("org.zstack.header.core.webhooks.*"),
     ]
 
     List<Pattern> resourceStatements =[
