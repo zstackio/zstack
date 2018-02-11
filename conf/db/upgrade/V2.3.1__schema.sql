@@ -30,7 +30,7 @@ CREATE TABLE `RoleUserRefVO` (
     `userUuid` VARCHAR(32) NOT NULL,
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
-    PRIMARY KEY (`roleUuid`,`groupUuid`)
+    PRIMARY KEY (`roleUuid`,`userUuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `RoleVO` (
@@ -39,5 +39,5 @@ CREATE TABLE `RoleVO` (
     `description` VARCHAR(2048) DEFAULT NULL,
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
-    PRIMARY KEY (`roleUuid`,`groupUuid`)
+    PRIMARY KEY (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

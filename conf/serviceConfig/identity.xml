@@ -52,14 +52,6 @@
     </message>
     
     <message>
-        <name>org.zstack.header.identity.APISearchAccountMsg</name>
-    </message>
-    
-    <message>
-        <name>org.zstack.header.identity.APISearchPolicyMsg</name>
-    </message>
-    
-    <message>
         <name>org.zstack.header.identity.APIValidateSessionMsg</name>
     </message>
 

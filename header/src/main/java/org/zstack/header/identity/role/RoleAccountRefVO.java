@@ -6,7 +6,7 @@ import java.sql.Timestamp;
 
 @Table
 @Entity
-@IdClass(RoleAccountRefVO.class)
+@IdClass(RoleAccountRefVO.CompositeID.class)
 public class RoleAccountRefVO {
     static class CompositeID implements Serializable {
         private String roleUuid;

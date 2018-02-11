@@ -1,15 +1,14 @@
 package org.zstack.header.identity.role;
 
-import org.zstack.header.exception.SerialVersionUID;
-
 import javax.persistence.*;
+import java.io.Serializable;
 import java.sql.Timestamp;
 
 @Table
 @Entity
 @IdClass(RoleUserRefVO.CompositeID.class)
 public class RoleUserRefVO {
-    static class CompositeID implements SerialVersionUID {
+    static class CompositeID implements Serializable {
         private String roleUuid;
         private String userUuid;
 
