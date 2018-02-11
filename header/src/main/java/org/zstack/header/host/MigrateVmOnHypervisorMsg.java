@@ -13,6 +13,7 @@ public class MigrateVmOnHypervisorMsg extends NeedReplyMessage implements HostMe
     private HostInventory destHostInventory;
     private String srcHostUuid;
     private StorageMigrationPolicy storageMigrationPolicy;
+    private boolean migrateFromDestination;
 
     public StorageMigrationPolicy getStorageMigrationPolicy() {
         return storageMigrationPolicy;
@@ -40,7 +41,11 @@ public class MigrateVmOnHypervisorMsg extends NeedReplyMessage implements HostMe
 
     @Override
     public String getHostUuid() {
-        return getSrcHostUuid();
+        if (!isMigrateFromDestination()) {
+            return getSrcHostUuid();
+        } else {
+            return getDestHostInventory().getUuid();
+        }
     }
 
     public String getSrcHostUuid() {
@@ -49,5 +54,13 @@ public class MigrateVmOnHypervisorMsg extends NeedReplyMessage implements HostMe
 
     public void setSrcHostUuid(String srcHostUuid) {
         this.srcHostUuid = srcHostUuid;
+    }
+
+    public boolean isMigrateFromDestination() {
+        return migrateFromDestination;
+    }
+
+    public void setMigrateFromDestination(boolean migrateFromDestination) {
+        this.migrateFromDestination = migrateFromDestination;
     }
 }

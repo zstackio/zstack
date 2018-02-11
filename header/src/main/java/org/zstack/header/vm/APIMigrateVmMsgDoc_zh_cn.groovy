@@ -43,6 +43,16 @@ doc {
 					
 				}
 				column {
+					name "migrateFromDestination"
+					enclosedIn "migrateVm"
+					desc "从迁移目的物理机器发起迁移命令"
+					location "body"
+					type "Boolean"
+					optional true
+					since "2.3"
+					
+				}
+				column {
 					name "systemTags"
 					enclosedIn ""
 					desc ""

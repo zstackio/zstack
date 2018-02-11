@@ -1044,6 +1044,8 @@ public class KVMHost extends HostBase implements Host {
         final String hostIp;
         final String vmUuid;
         final StorageMigrationPolicy storageMigrationPolicy;
+        final boolean migrateFromDestination;
+        final String srcIp;
         synchronized (it) {
             if (!it.hasNext()) {
                 completion.success();
@@ -1054,6 +1056,8 @@ public class KVMHost extends HostBase implements Host {
             vmUuid = s.vmUuid;
             hostIp = s.dstHostIp;
             storageMigrationPolicy = s.storageMigrationPolicy;
+            migrateFromDestination = s.migrateFromDestition;
+            srcIp = s.srcHostIp;
         }
 
 
@@ -1074,7 +1078,8 @@ public class KVMHost extends HostBase implements Host {
                     public void run(final FlowTrigger trigger, Map data) {
                         MigrateVmCmd cmd = new MigrateVmCmd();
                         cmd.setDestHostIp(hostIp);
-                        cmd.setSrcHostIp(self.getManagementIp());
+                        cmd.setSrcHostIp(srcIp);
+                        cmd.setMigrateFromDestination(migrateFromDestination);
                         cmd.setStorageMigrationPolicy(storageMigrationPolicy == null ? null : storageMigrationPolicy.toString());
                         cmd.setVmUuid(vmUuid);
                         cmd.setUseNuma(VmGlobalConfig.NUMA.value(Boolean.class));
@@ -1229,16 +1234,21 @@ public class KVMHost extends HostBase implements Host {
         String vmUuid;
         String dstHostIp;
         StorageMigrationPolicy storageMigrationPolicy;
+        boolean migrateFromDestition;
+        String srcHostIp;
     }
 
     private void migrateVm(final MigrateVmOnHypervisorMsg msg, final NoErrorCompletion completion) {
         checkStatus();
 
+        HostVO vo = dbf.findByUuid(msg.getSrcHostUuid(), HostVO.class);
         List<MigrateStruct> lst = new ArrayList<>();
         MigrateStruct s = new MigrateStruct();
         s.vmUuid = msg.getVmInventory().getUuid();
         s.dstHostIp = msg.getDestHostInventory().getManagementIp();
         s.storageMigrationPolicy = msg.getStorageMigrationPolicy();
+        s.migrateFromDestition = msg.isMigrateFromDestination();
+        s.srcHostIp = vo.getManagementIp();
         lst.add(s);
         final MigrateVmOnHypervisorReply reply = new MigrateVmOnHypervisorReply();
         migrateVm(lst.iterator(), new Completion(msg, completion) {

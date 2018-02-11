@@ -1341,6 +1341,7 @@ public class KVMAgentCommands {
         private String storageMigrationPolicy;
         private String srcHostIp;
         private boolean useNuma;
+        private boolean migrateFromDestination;
 
         public boolean isUseNuma() {
             return useNuma;
@@ -1380,6 +1381,14 @@ public class KVMAgentCommands {
 
         public void setDestHostIp(String destHostIp) {
             this.destHostIp = destHostIp;
+        }
+
+        public boolean isMigrateFromDestination() {
+            return migrateFromDestination;
+        }
+
+        public void setMigrateFromDestination(boolean migrateFromDestination) {
+            this.migrateFromDestination = migrateFromDestination;
         }
     }
 

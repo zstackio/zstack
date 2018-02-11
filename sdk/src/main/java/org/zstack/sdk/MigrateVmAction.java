@@ -30,6 +30,9 @@ public class MigrateVmAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String hostUuid;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Boolean migrateFromDestination;
+
     @Param(required = false)
     public java.util.List systemTags;
 
