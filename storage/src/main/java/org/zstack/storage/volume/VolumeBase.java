@@ -1057,109 +1057,65 @@ public class VolumeBase implements Volume {
         bus.publish(evt);
     }
 
+    @Transactional
     private List<VmInstanceVO> getCandidateVmForAttaching(String accountUuid) {
+        List<String> vmUuids = acntMgr.getResourceUuidsCanAccessByAccount(accountUuid, VmInstanceVO.class);
+        if (vmUuids != null && vmUuids.isEmpty()) {
+            return new ArrayList<>();
+        }
 
-        return new SQLBatchWithReturn<List<VmInstanceVO>>(){
-            @Override
-            protected List<VmInstanceVO> scripts() {
+        SQL sql = null;
+        if (self.getStatus() == VolumeStatus.Ready) {
+            List<String> hvTypes = VolumeFormat.valueOf(self.getFormat()).getHypervisorTypesSupportingThisVolumeFormatInString();
+            sql = SQL.New("select vm" +
+                    " from VmInstanceVO vm, PrimaryStorageClusterRefVO ref, VolumeVO vol" +
+                    " where vol.uuid = :volUuid" +
+                    " and ref.primaryStorageUuid = vol.primaryStorageUuid" +
+                    (vmUuids == null ? "" : " and vm.uuid in (:vmUuids)") +
+                    " and vm.clusterUuid = ref.clusterUuid" +
+                    " and vm.type = :vmType" +
+                    " and vm.state in (:vmStates)" +
+                    " and vm.hypervisorType in (:hvTypes)" +
+                    " group by vm.uuid")
+                    .param("volUuid", self.getUuid())
+                    .param("vmType", VmInstanceConstant.USER_VM_TYPE)
+                    .param("hvTypes", hvTypes);
+        } else if (self.getStatus() == VolumeStatus.NotInstantiated) {
+            //not support vmtx volume temporarily, so filter ESX vm when volume is NotInstantiated.
+            sql = SQL.New("select vm" +
+                    " from VmInstanceVO vm, PrimaryStorageClusterRefVO ref, PrimaryStorageEO ps" +
+                    " where "+ (vmUuids == null ? "" : " vm.uuid in (:vmUuids) and") +
+                    " vm.state in (:vmStates)" +
+                    " and vm.type = :vmType" +
+                    " and vm.hypervisorType <> :hvType" +
+                    " and vm.clusterUuid = ref.clusterUuid" +
+                    " and ref.primaryStorageUuid = ps.uuid" +
+                    " and ps.state in (:psState)" +
+                    " group by vm.uuid")
+                    //TODO:  this is a dirty fix, delete it when VMWare support DataVolume
+                    .param("hvType", "ESX")
+                    .param("vmType", VmInstanceConstant.USER_VM_TYPE)
+                    .param("psState", PrimaryStorageState.Enabled);
+        } else {
+            DebugUtils.Assert(false, String.format("should not reach here, volume[uuid:%s]", self.getUuid()));
+        }
 
-                List<String> vmUuids = acntMgr.getResourceUuidsCanAccessByAccount(accountUuid, VmInstanceVO.class);
+        if (vmUuids != null) {
+            sql.param("vmUuids", vmUuids);
+        }
+        List<VmInstanceVO> ret = sql.param("vmStates", Arrays.asList(VmInstanceState.Running, VmInstanceState.Stopped)).list();
 
-                if (vmUuids != null && vmUuids.isEmpty()) {
-                    return new ArrayList<>();
-                }
+        //the vm doesn't suport to online attach volume when vm platform type is other
+        ret.removeIf(it -> it.getPlatform().equals(ImagePlatform.Other.toString()) && it.getState() != VmInstanceState.Stopped);
+        if (ret.isEmpty()) {
+            return ret;
+        }
 
-                SQL sql = null;
-                if (vmUuids == null) {
-                    // check all vms
-                    if (self.getStatus() == VolumeStatus.Ready) {
-                        List<String> hvTypes = VolumeFormat.valueOf(self.getFormat()).getHypervisorTypesSupportingThisVolumeFormatInString();
-                        sql = SQL.New("select vm " +
-                                "from VmInstanceVO vm, PrimaryStorageClusterRefVO ref, VolumeVO vol " +
-                                "where vm.state in (:vmStates) " +
-                                "and vol.uuid = :volUuid " +
-                                "and vm.hypervisorType in (:hvTypes) " +
-                                "and vm.clusterUuid = ref.clusterUuid " +
-                                "and ref.primaryStorageUuid = vol.primaryStorageUuid " +
-                                "group by vm.uuid")
-                                .param("volUuid", self.getUuid())
-                                .param("hvTypes", hvTypes);
-                    } else if (self.getStatus() == VolumeStatus.NotInstantiated) {
-                        //not support vmtx volume temporarily, so filter ESX vm when volume is NotInstantiated.
-                        sql = SQL.New("select vm " +
-                                "from VmInstanceVO vm,PrimaryStorageClusterRefVO ref,PrimaryStorageEO ps " +
-                                "where vm.state in (:vmStates) " +
-                                "and vm.hypervisorType <> :hvType  " +
-                                "and vm.clusterUuid = ref.clusterUuid " +
-                                "and ref.primaryStorageUuid = ps.uuid " +
-                                "and ps.state in (:psState) " +
-                                "group by vm.uuid")
-                                //TODO:  this is a dirty fix, delete it when VMWare support DataVolume
-                                .param("hvType", "ESX")
-                                .param("psState",PrimaryStorageState.Enabled);
-                    } else {
-                        DebugUtils.Assert(false, String.format("should not reach here, volume[uuid:%s]", self.getUuid()));
-                    }
-
-                } else {
-                    //check vms that belong to the account
-                    if (self.getStatus() == VolumeStatus.Ready) {
-                        List<String> hvTypes = VolumeFormat.valueOf(self.getFormat()).getHypervisorTypesSupportingThisVolumeFormatInString();
-                        sql = SQL.New("select vm "+
-                                "from VmInstanceVO vm, PrimaryStorageClusterRefVO ref, VolumeVO vol " +
-                                "where vm.uuid in (:vmUuids) " +
-                                "and vm.state in (:vmStates) " +
-                                "and vol.uuid = :volUuid " +
-                                "and vm.hypervisorType in (:hvTypes) " +
-                                "and vm.clusterUuid = ref.clusterUuid " +
-                                "and ref.primaryStorageUuid = vol.primaryStorageUuid " +
-                                "group by vm.uuid")
-                                .param("volUuid", self.getUuid())
-                                .param("hvTypes", hvTypes);
-                    } else if (self.getStatus() == VolumeStatus.NotInstantiated) {
-                        sql = SQL.New("select vm " +
-                                "from VmInstanceVO vm,PrimaryStorageClusterRefVO ref,PrimaryStorageEO ps " +
-                                "where vm.uuid in (:vmUuids) " +
-                                "and vm.state in (:vmStates) " +
-                                "and vm.clusterUuid = ref.clusterUuid " +
-                                "and ref.primaryStorageUuid = ps.uuid " +
-                                "and ps.state in (:psState) " +
-                                "group by vm.uuid")
-                                .param("psState",PrimaryStorageState.Enabled);
-                    } else {
-                        DebugUtils.Assert(false, String.format("should not reach here, volume[uuid:%s]", self.getUuid()));
-                    }
-
-                    sql.param("vmUuids", vmUuids);
-                }
-                List<VmInstanceVO> ret = sql.param("vmStates", Arrays.asList(VmInstanceState.Running, VmInstanceState.Stopped)).list();
-                if (ret.isEmpty()) {
-                    return ret;
-                }
-
-                //the vm doesn't suport to online attach volume when vm platform type is other
-                List<String> exclude = sql("select vm.uuid" +
-                        " from VmInstanceVO vm" +
-                        " where vm.uuid in :vmUuids" +
-                        " and vm.platform = :platformType" +
-                        " and vm.state != :vmState")
-                        .param("vmUuids",ret.stream().map(VmInstanceVO::getUuid).collect(Collectors.toList()))
-                        .param("vmState", VmInstanceState.Stopped)
-                        .param("platformType", ImagePlatform.Other.toString())
-                        .list();
-
-                ret = ret.stream().filter(vm -> !exclude.contains(vm.getUuid())).collect(Collectors.toList());
-                if (ret.isEmpty()) {
-                    return ret;
-                }
-
-                VolumeInventory vol = getSelfInventory();
-                for (VolumeGetAttachableVmExtensionPoint ext : pluginRgty.getExtensionList(VolumeGetAttachableVmExtensionPoint.class)) {
-                    ret = ext.returnAttachableVms(vol, ret);
-                }
-                return ret;
-            }
-        }.execute();
+        VolumeInventory vol = getSelfInventory();
+        for (VolumeGetAttachableVmExtensionPoint ext : pluginRgty.getExtensionList(VolumeGetAttachableVmExtensionPoint.class)) {
+            ret = ext.returnAttachableVms(vol, ret);
+        }
+        return ret;
     }
 
     private boolean volumeIsAttached(final String volumeUuid) {

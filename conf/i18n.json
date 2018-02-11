@@ -9082,7 +9082,7 @@
   {
     "raw": "To create data volume on the local primary storage, you must specify the host that the data volume is going to be created using the system tag [%s]",
     "en_US": "To create data volume on the local primary storage, you must specify the host that the data volume is going to be created using the system tag [{0}]",
-    "zh_CN": "要在本地主存储上创建数据云盘，必须用系统标签[0]指定创建数据云盘的物理机",
+    "zh_CN": "要在本地主存储上创建数据云盘，必须用系统标签[{0}]指定创建数据云盘的物理机",
     "arguments": [
       "LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.getTagFormat()"
     ],
