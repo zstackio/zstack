@@ -41,6 +41,8 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.X509TrustManager;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -67,7 +69,7 @@ public class RestServer implements Component, CloudBusEventListener {
     private static final Logger requestLogger = LogManager.getLogger("api.request");
     private static ThreadLocal<RequestInfo> requestInfo = new ThreadLocal<>();
 
-    private static final OkHttpClient http = new OkHttpClient();
+    private static final OkHttpClient http;
     private MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
     @Autowired
@@ -81,6 +83,18 @@ public class RestServer implements Component, CloudBusEventListener {
 
     public void registerRestServletRequestInterceptor(RestServletRequestInterceptor interceptor) {
         interceptors.add(interceptor);
+    }
+
+    static {
+        SSLSocketFactory factory = DefaultSSLVerifier.getSSLFactory(DefaultSSLVerifier.trustAllCerts);
+        if (factory == null) {
+            http = new OkHttpClient();
+        } else {
+            http = new OkHttpClient().newBuilder()
+                    .sslSocketFactory(factory, (X509TrustManager) DefaultSSLVerifier.trustAllCerts[0])
+                    .hostnameVerifier(DefaultSSLVerifier::verify)
+                    .build();
+        }
     }
 
     static class RequestInfo {
