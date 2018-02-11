@@ -1600,7 +1600,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
-        new Auth().validate(msg);
+        //new Auth().validate(msg);
 
         if (msg instanceof APIUpdateAccountMsg) {
             validate((APIUpdateAccountMsg) msg);

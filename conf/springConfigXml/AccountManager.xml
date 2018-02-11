@@ -12,6 +12,18 @@
          http://zstack.org/schema/zstack/plugin.xsd"
        default-init-method="init" default-destroy-method="destroy">
 
+    <bean id="AuthorizationManager" class="org.zstack.identity.AuthorizationManager">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="RBACManager" class="org.zstack.identity.rbac.RBACManagerImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component"/>
+        </zstack:plugin>
+    </bean>
+
     <bean id="AccountManager" class="org.zstack.identity.AccountManagerImpl">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component"/>
@@ -57,11 +69,13 @@
         </zstack:plugin>
     </bean>
 
+    <!--
     <bean id="QuotaChecker" class="org.zstack.identity.QuotaChecker">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor"/>
         </zstack:plugin>
     </bean>
+    -->
 
     <bean id="AccountCascadeExtension" class="org.zstack.identity.AccountCascadeExtension">
         <zstack:plugin>

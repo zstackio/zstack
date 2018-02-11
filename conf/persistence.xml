@@ -141,5 +141,10 @@
         <class>org.zstack.header.vo.ResourceVO</class>
         <class>org.zstack.header.core.webhooks.WebhookVO</class>
         <class>org.zstack.header.longjob.LongJobVO</class>
+        <class>org.zstack.header.identity.role.RoleAccountRefVO</class>
+        <class>org.zstack.header.identity.role.RolePolicyRefVO</class>
+        <class>org.zstack.header.identity.role.RoleUserGroupRefVO</class>
+        <class>org.zstack.header.identity.role.RoleUserRefVO</class>
+        <class>org.zstack.header.identity.role.RoleVO</class>
     </persistence-unit>
 </persistence>
