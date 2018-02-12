@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class AttachL3NetworkToVmAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class AttachL3NetworkToVmAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AttachL3NetworkToVmResult value;
+        public AttachL3NetworkToVmResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -57,8 +56,8 @@ public class AttachL3NetworkToVmAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AttachL3NetworkToVmResult value = res.getResult(org.zstack.sdk.AttachL3NetworkToVmResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AttachL3NetworkToVmResult() : value; 
+        AttachL3NetworkToVmResult value = res.getResult(AttachL3NetworkToVmResult.class);
+        ret.value = value == null ? new AttachL3NetworkToVmResult() : value; 
 
         return ret;
     }
@@ -77,15 +76,15 @@ public class AttachL3NetworkToVmAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/vm-instances/{vmInstanceUuid}/l3-networks/{l3NetworkUuid}";

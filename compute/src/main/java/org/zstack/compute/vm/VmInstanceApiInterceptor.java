@@ -31,12 +31,14 @@ import org.zstack.header.zone.ZoneState;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
 import org.zstack.utils.network.NetworkUtils;
-import static org.zstack.core.Platform.*;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
+import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -92,18 +94,12 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APIChangeInstanceOfferingMsg) msg);
         } else if (msg instanceof APIMigrateVmMsg) {
             validate((APIMigrateVmMsg) msg);
-        } else if (msg instanceof APIDetachIsoFromVmInstanceMsg) {
-            validate((APIDetachIsoFromVmInstanceMsg) msg);
         } else if (msg instanceof APIGetCandidatePrimaryStoragesForCreatingVmMsg) {
             validate((APIGetCandidatePrimaryStoragesForCreatingVmMsg) msg);
         }
 
         setServiceId(msg);
         return msg;
-    }
-
-    private void validate(APIDetachIsoFromVmInstanceMsg msg) {
-        msg.isoUuid = new IsoOperator().getIsoUuidByVmUuid(msg.getVmInstanceUuid());
     }
 
     private void validate(final APIGetCandidatePrimaryStoragesForCreatingVmMsg msg) {
@@ -348,8 +344,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
 
         msg.setVmInstanceUuid(vmUuid);
-
-        msg.l3Uuid = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).select(VmNicVO_.l3NetworkUuid).findValue();
     }
 
     private static <T> List<T> getDuplicateElements(List<T> list) {

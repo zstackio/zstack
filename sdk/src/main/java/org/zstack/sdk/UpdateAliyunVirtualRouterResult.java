@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.VpcVirtualRouterInventory;
-
 public class UpdateAliyunVirtualRouterResult {
     public VpcVirtualRouterInventory inventory;
     public void setInventory(VpcVirtualRouterInventory inventory) {

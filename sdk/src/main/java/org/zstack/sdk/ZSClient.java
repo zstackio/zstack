@@ -616,12 +616,12 @@ public class ZSClient {
         }
     }
 
-    public static void call(AbstractAction action, InternalCompletion completion) {
+    static void call(AbstractAction action, InternalCompletion completion) {
         errorIfNotConfigured();
         new Api(action).call(completion);
     }
 
-    public static ApiResult call(AbstractAction action) {
+    static ApiResult call(AbstractAction action) {
         errorIfNotConfigured();
         return new Api(action).call();
     }

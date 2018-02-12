@@ -6,7 +6,10 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
-import org.zstack.core.cloudbus.*;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.CloudBusListCallBack;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -83,9 +86,6 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     @Autowired
     protected PrimaryStoragePingTracker tracker;
 
-    public PrimaryStorageBase() {
-    }
-
     public static class PhysicalCapacityUsage {
         public long totalPhysicalSize;
         public long availablePhysicalSize;
@@ -151,13 +151,6 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     protected String getSyncId() {
         return String.format("primaryStorage-%s", self.getUuid());
-    }
-
-    protected void fireDisconnectedCanonicalEvent(ErrorCode reason) {
-        PrimaryStorageCanonicalEvent.DisconnectedData data = new PrimaryStorageCanonicalEvent.DisconnectedData();
-        data.setPrimaryStorageUuid(self.getUuid());
-        data.setReason(reason);
-        evtf.fire(PrimaryStorageCanonicalEvent.PRIMARY_STORAGE_DISCONNECTED, data);
     }
 
     @Override
@@ -427,10 +420,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                if (changeStatus(PrimaryStorageStatus.Disconnected)) {
-                    fireDisconnectedCanonicalEvent(errorCode);
-                }
-
+                changeStatus(PrimaryStorageStatus.Disconnected);
                 reply.setConnected(false);
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
@@ -478,12 +468,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                         tracker.track(self.getUuid());
 
                         self = dbf.reload(self);
-                        if (changeStatus(PrimaryStorageStatus.Disconnected)) {
-                            fireDisconnectedCanonicalEvent(errorCode);
-                        }
-
+                        changeStatus(PrimaryStorageStatus.Disconnected);
                         logger.debug(String.format("failed to connect primary storage[uuid:%s], %s", self.getUuid(), errorCode));
-
                         completion.fail(errorCode);
                         chain.next();
                     }
@@ -799,9 +785,9 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         });
     }
 
-    protected boolean changeStatus(PrimaryStorageStatus status) {
+    protected void changeStatus(PrimaryStorageStatus status) {
         if (status == self.getStatus()) {
-            return false;
+            return;
         }
 
         PrimaryStorageStatus oldStatus = self.getStatus();
@@ -817,8 +803,6 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
         logger.debug(String.format("the primary storage[uuid:%s, name:%s] changed status from %s to %s",
                 self.getUuid(), self.getName(), oldStatus, status));
-
-        return true;
     }
 
     protected void handle(APIReconnectPrimaryStorageMsg msg) {

@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class GetOssBackupBucketFromRemoteAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class GetOssBackupBucketFromRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetOssBackupBucketFromRemoteResult value;
+        public GetOssBackupBucketFromRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -42,8 +41,8 @@ public class GetOssBackupBucketFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetOssBackupBucketFromRemoteResult value = res.getResult(org.zstack.sdk.GetOssBackupBucketFromRemoteResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetOssBackupBucketFromRemoteResult() : value; 
+        GetOssBackupBucketFromRemoteResult value = res.getResult(GetOssBackupBucketFromRemoteResult.class);
+        ret.value = value == null ? new GetOssBackupBucketFromRemoteResult() : value; 
 
         return ret;
     }
@@ -62,15 +61,15 @@ public class GetOssBackupBucketFromRemoteAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/hybrid/backup-mysql/oss";

@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class ProgressProperty  {
 
     public java.lang.String progress;

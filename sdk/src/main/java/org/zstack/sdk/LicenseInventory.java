@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class LicenseInventory  {
 
     public java.lang.String licenseType;

@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class GetCandidateVmNicsForLoadBalancerAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class GetCandidateVmNicsForLoadBalancerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetCandidateVmNicsForLoadBalancerResult value;
+        public GetCandidateVmNicsForLoadBalancerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -45,8 +44,8 @@ public class GetCandidateVmNicsForLoadBalancerAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetCandidateVmNicsForLoadBalancerResult value = res.getResult(org.zstack.sdk.GetCandidateVmNicsForLoadBalancerResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetCandidateVmNicsForLoadBalancerResult() : value; 
+        GetCandidateVmNicsForLoadBalancerResult value = res.getResult(GetCandidateVmNicsForLoadBalancerResult.class);
+        ret.value = value == null ? new GetCandidateVmNicsForLoadBalancerResult() : value; 
 
         return ret;
     }
@@ -65,15 +64,15 @@ public class GetCandidateVmNicsForLoadBalancerAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/load-balancers/listeners/{listenerUuid}/vm-instances/candidate-nics";

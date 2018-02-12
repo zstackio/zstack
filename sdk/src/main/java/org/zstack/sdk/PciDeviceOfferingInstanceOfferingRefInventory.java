@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.PciDeviceMetaData;
-
 public class PciDeviceOfferingInstanceOfferingRefInventory  {
 
     public long id;

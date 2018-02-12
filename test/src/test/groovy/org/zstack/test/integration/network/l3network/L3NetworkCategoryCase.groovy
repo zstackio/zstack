@@ -125,7 +125,7 @@ class L3NetworkCategoryCase extends SubCase {
 
         updateL3Network {
             delegate.uuid = l3.uuid
-            delegate.category = "Public"
+            delegate.category = "public"
         }
     }
 }

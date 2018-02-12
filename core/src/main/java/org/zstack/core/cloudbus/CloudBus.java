@@ -7,7 +7,6 @@ import org.zstack.header.exception.CloudConfigureFailException;
 import org.zstack.header.message.*;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public interface CloudBus extends Component {
     void send(Message msg);
@@ -72,14 +71,4 @@ public interface CloudBus extends Component {
     void installBeforeSendMessageInterceptor(BeforeSendMessageInterceptor interceptor, Class<? extends Message>...classes);
 
     void installBeforePublishEventInterceptor(BeforePublishEventInterceptor interceptor, Class<? extends Event>...classes);
-
-    String HEADER_NO_NEED_REPLY_MSG = "noReply";
-    String HEADER_CORRELATION_ID = "correlationId";
-    String HEADER_REPLY_TO = "replyTo";
-    String HEADER_IS_MESSAGE_REPLY = "isReply";
-    String HEADER_MESSAGE_META_DATA = "metaData";
-    String HEADER_DEAD_LETTER = "dead-message";
-    String HEADER_TASK_STACK = "task-stack";
-    String HEADER_TASK_CONTEXT = "task-context";
-    String HEADER_SCHEMA = "schema";
 }

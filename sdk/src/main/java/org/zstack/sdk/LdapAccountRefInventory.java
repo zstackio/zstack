@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class LdapAccountRefInventory  {
 
     public java.lang.String uuid;

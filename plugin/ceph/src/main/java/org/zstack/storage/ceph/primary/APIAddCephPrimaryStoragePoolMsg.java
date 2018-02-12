@@ -6,7 +6,6 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
-import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.PrimaryStorageMessage;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
@@ -20,7 +19,7 @@ import org.zstack.header.storage.primary.PrimaryStorageVO;
         parameterName = "params",
         responseClass = APIAddCephPrimaryStoragePoolEvent.class
 )
-public class APIAddCephPrimaryStoragePoolMsg extends APICreateMessage implements PrimaryStorageMessage, APIAuditor {
+public class APIAddCephPrimaryStoragePoolMsg extends APICreateMessage implements PrimaryStorageMessage {
     @APIParam(resourceType = PrimaryStorageVO.class)
     private String primaryStorageUuid;
     @APIParam(maxLength = 255)
@@ -93,15 +92,5 @@ public class APIAddCephPrimaryStoragePoolMsg extends APICreateMessage implements
                         .messageAndEvent(that, evt).done();
             }
         };
-    }
-
-    @Override
-    public Result audit(APIMessage msg, APIEvent rsp) {
-        String resUuid = "";
-        if (rsp.isSuccess()) {
-            APIAddCephPrimaryStoragePoolEvent evt = (APIAddCephPrimaryStoragePoolEvent) rsp;
-            resUuid = evt.getInventory().getUuid();
-        }
-        return new Result(resUuid, CephPrimaryStoragePoolVO.class);
     }
 }

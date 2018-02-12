@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class DeleteCephPrimaryStoragePoolAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class DeleteCephPrimaryStoragePoolAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteCephPrimaryStoragePoolResult value;
+        public DeleteCephPrimaryStoragePoolResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -51,8 +50,8 @@ public class DeleteCephPrimaryStoragePoolAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteCephPrimaryStoragePoolResult value = res.getResult(org.zstack.sdk.DeleteCephPrimaryStoragePoolResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteCephPrimaryStoragePoolResult() : value; 
+        DeleteCephPrimaryStoragePoolResult value = res.getResult(DeleteCephPrimaryStoragePoolResult.class);
+        ret.value = value == null ? new DeleteCephPrimaryStoragePoolResult() : value; 
 
         return ret;
     }
@@ -71,15 +70,15 @@ public class DeleteCephPrimaryStoragePoolAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/primary-storage/ceph/pools/{uuid}";

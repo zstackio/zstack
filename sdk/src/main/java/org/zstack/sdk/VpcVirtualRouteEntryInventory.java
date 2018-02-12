@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class VpcVirtualRouteEntryInventory  {
 
     public java.lang.String uuid;

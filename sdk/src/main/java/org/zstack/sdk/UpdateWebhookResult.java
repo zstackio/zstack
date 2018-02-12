@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.WebhookInventory;
-
 public class UpdateWebhookResult {
     public WebhookInventory inventory;
     public void setInventory(WebhookInventory inventory) {

@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class ConnectionAccessPointInventory  {
 
     public java.lang.String uuid;

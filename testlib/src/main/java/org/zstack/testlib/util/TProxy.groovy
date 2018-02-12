@@ -22,13 +22,9 @@ class TProxy {
             Closure call = self[method.name] as Closure
 
             if (call != null) {
-                if (call.maximumNumberOfParameters == objects.length) {
-                    return call(*objects)
-                } else {
-                    return call({
-                        return methodProxy.invokeSuper(o, objects)
-                    }, *objects)
-                }
+                return call({
+                    return methodProxy.invokeSuper(o, objects)
+                }, *objects)
             } else {
                 return methodProxy.invokeSuper(o, objects)
             }
@@ -69,34 +65,11 @@ class TProxy {
         }
     }
 
-    TProxy mockMethod(String name, Closure c) {
+    void mockMethod(String name, Closure c) {
         self[name] = c
-        return this
     }
 
     Object asType(Class clz) {
         return proxyedObject
-    }
-
-    FieldProtector protect(bean, String...fnames) {
-        return new FieldProtector(bean, fnames)
-    }
-
-    class FieldProtector {
-        def bean
-        Map<String, Object> fields = [:]
-
-        FieldProtector(bean, String...fnames) {
-            this.bean = bean
-            fnames.each {
-                fields[it] = bean[it]
-            }
-        }
-
-        void recover() {
-            fields.each {k ,v ->
-                bean[k] = v
-            }
-        }
     }
 }

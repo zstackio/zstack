@@ -7,7 +7,6 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
-import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.tag.TagResourceType;
 import org.zstack.network.service.vip.VipVO;
@@ -25,7 +24,7 @@ import java.util.List;
         responseClass = APICreateLoadBalancerEvent.class,
         parameterName = "params"
 )
-public class APICreateLoadBalancerMsg extends APICreateMessage implements APIAuditor {
+public class APICreateLoadBalancerMsg extends APICreateMessage {
     @APIParam(maxLength = 255)
     private String name;
     @APIParam(maxLength = 2048, required = false)
@@ -78,10 +77,5 @@ public class APICreateLoadBalancerMsg extends APICreateMessage implements APIAud
                 }
             }
         };
-    }
-
-    @Override
-    public Result audit(APIMessage msg, APIEvent rsp) {
-        return new Result(rsp.isSuccess() ? ((APICreateLoadBalancerEvent)rsp).getInventory().getUuid() : "", LoadBalancerVO.class);
     }
 }

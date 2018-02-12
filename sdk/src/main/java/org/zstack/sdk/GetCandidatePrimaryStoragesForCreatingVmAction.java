@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class GetCandidatePrimaryStoragesForCreatingVmAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class GetCandidatePrimaryStoragesForCreatingVmAction extends AbstractActi
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetCandidatePrimaryStoragesForCreatingVmResult value;
+        public GetCandidatePrimaryStoragesForCreatingVmResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -66,8 +65,8 @@ public class GetCandidatePrimaryStoragesForCreatingVmAction extends AbstractActi
             return ret;
         }
         
-        org.zstack.sdk.GetCandidatePrimaryStoragesForCreatingVmResult value = res.getResult(org.zstack.sdk.GetCandidatePrimaryStoragesForCreatingVmResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetCandidatePrimaryStoragesForCreatingVmResult() : value; 
+        GetCandidatePrimaryStoragesForCreatingVmResult value = res.getResult(GetCandidatePrimaryStoragesForCreatingVmResult.class);
+        ret.value = value == null ? new GetCandidatePrimaryStoragesForCreatingVmResult() : value; 
 
         return ret;
     }
@@ -86,15 +85,15 @@ public class GetCandidatePrimaryStoragesForCreatingVmAction extends AbstractActi
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/vm-instances/candidate-storages";

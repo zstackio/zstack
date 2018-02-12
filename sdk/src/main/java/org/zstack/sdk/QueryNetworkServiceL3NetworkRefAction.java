@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class QueryNetworkServiceL3NetworkRefAction extends QueryAction {
 
@@ -12,7 +11,7 @@ public class QueryNetworkServiceL3NetworkRefAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.QueryNetworkServiceL3NetworkRefResult value;
+        public QueryNetworkServiceL3NetworkRefResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -34,8 +33,8 @@ public class QueryNetworkServiceL3NetworkRefAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.QueryNetworkServiceL3NetworkRefResult value = res.getResult(org.zstack.sdk.QueryNetworkServiceL3NetworkRefResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QueryNetworkServiceL3NetworkRefResult() : value; 
+        QueryNetworkServiceL3NetworkRefResult value = res.getResult(QueryNetworkServiceL3NetworkRefResult.class);
+        ret.value = value == null ? new QueryNetworkServiceL3NetworkRefResult() : value; 
 
         return ret;
     }
@@ -54,15 +53,15 @@ public class QueryNetworkServiceL3NetworkRefAction extends QueryAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/l3-networks/network-services/refs";

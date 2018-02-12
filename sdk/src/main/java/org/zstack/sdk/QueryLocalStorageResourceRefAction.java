@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class QueryLocalStorageResourceRefAction extends QueryAction {
 
@@ -12,7 +11,7 @@ public class QueryLocalStorageResourceRefAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.QueryLocalStorageResourceRefResult value;
+        public QueryLocalStorageResourceRefResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -34,8 +33,8 @@ public class QueryLocalStorageResourceRefAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.QueryLocalStorageResourceRefResult value = res.getResult(org.zstack.sdk.QueryLocalStorageResourceRefResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QueryLocalStorageResourceRefResult() : value; 
+        QueryLocalStorageResourceRefResult value = res.getResult(QueryLocalStorageResourceRefResult.class);
+        ret.value = value == null ? new QueryLocalStorageResourceRefResult() : value; 
 
         return ret;
     }
@@ -54,15 +53,15 @@ public class QueryLocalStorageResourceRefAction extends QueryAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/primary-storage/local-storage/resource-refs";

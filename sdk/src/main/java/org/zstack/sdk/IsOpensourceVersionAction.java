@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class IsOpensourceVersionAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class IsOpensourceVersionAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.IsOpensourceVersionResult value;
+        public IsOpensourceVersionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -39,8 +38,8 @@ public class IsOpensourceVersionAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.IsOpensourceVersionResult value = res.getResult(org.zstack.sdk.IsOpensourceVersionResult.class);
-        ret.value = value == null ? new org.zstack.sdk.IsOpensourceVersionResult() : value; 
+        IsOpensourceVersionResult value = res.getResult(IsOpensourceVersionResult.class);
+        ret.value = value == null ? new IsOpensourceVersionResult() : value; 
 
         return ret;
     }
@@ -59,15 +58,15 @@ public class IsOpensourceVersionAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/meta-data/opensource";

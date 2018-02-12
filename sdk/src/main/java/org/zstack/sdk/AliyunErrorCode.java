@@ -1,8 +1,6 @@
 package org.zstack.sdk;
 
-
-
-public class AliyunErrorCode extends org.zstack.sdk.ErrorCode {
+public class AliyunErrorCode extends ErrorCode {
 
     public java.lang.String ResourceNotFound;
     public void setResourceNotFound(java.lang.String ResourceNotFound) {

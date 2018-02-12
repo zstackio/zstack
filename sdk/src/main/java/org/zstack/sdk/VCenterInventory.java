@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class VCenterInventory  {
 
     public java.lang.String uuid;

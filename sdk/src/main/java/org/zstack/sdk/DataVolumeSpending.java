@@ -1,14 +1,12 @@
 package org.zstack.sdk;
 
+public class DataVolumeSpending extends SpendingDetails {
 
-
-public class DataVolumeSpending extends org.zstack.sdk.SpendingDetails {
-
-    public java.util.List sizeInventory;
-    public void setSizeInventory(java.util.List sizeInventory) {
+    public java.util.List<DataVolumeSpendingInventory> sizeInventory;
+    public void setSizeInventory(java.util.List<DataVolumeSpendingInventory> sizeInventory) {
         this.sizeInventory = sizeInventory;
     }
-    public java.util.List getSizeInventory() {
+    public java.util.List<DataVolumeSpendingInventory> getSizeInventory() {
         return this.sizeInventory;
     }
 

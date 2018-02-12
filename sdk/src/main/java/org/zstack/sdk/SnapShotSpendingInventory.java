@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class SnapShotSpendingInventory  {
 
     public long startTime;

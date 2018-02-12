@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class CreateLoadBalancerListenerAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class CreateLoadBalancerListenerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateLoadBalancerListenerResult value;
+        public CreateLoadBalancerListenerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -69,8 +68,8 @@ public class CreateLoadBalancerListenerAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateLoadBalancerListenerResult value = res.getResult(org.zstack.sdk.CreateLoadBalancerListenerResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateLoadBalancerListenerResult() : value; 
+        CreateLoadBalancerListenerResult value = res.getResult(CreateLoadBalancerListenerResult.class);
+        ret.value = value == null ? new CreateLoadBalancerListenerResult() : value; 
 
         return ret;
     }
@@ -89,15 +88,15 @@ public class CreateLoadBalancerListenerAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/load-balancers/{loadBalancerUuid}/listeners";

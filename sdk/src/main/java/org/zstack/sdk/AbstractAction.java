@@ -16,18 +16,18 @@ import java.util.regex.Pattern;
 public abstract class AbstractAction {
     public String apiId;
 
-    protected abstract RestInfo getRestInfo();
+    abstract RestInfo getRestInfo();
 
-    public static class Parameter {
+    static class Parameter {
         Field field;
         Param annotation;
     }
 
     // API parameter
-    protected abstract Map<String, Parameter> getParameterMap();
+    abstract Map<String, Parameter> getParameterMap();
 
     // Non-API parameter, likes: timeout, pollingInterval
-    protected abstract Map<String, Parameter> getNonAPIParameterMap();
+    abstract Map<String, Parameter> getNonAPIParameterMap();
 
     private void initializeParametersIfNot() {
         synchronized (getParameterMap()) {

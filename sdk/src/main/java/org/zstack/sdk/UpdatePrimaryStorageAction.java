@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class UpdatePrimaryStorageAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class UpdatePrimaryStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdatePrimaryStorageResult value;
+        public UpdatePrimaryStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -60,8 +59,8 @@ public class UpdatePrimaryStorageAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdatePrimaryStorageResult value = res.getResult(org.zstack.sdk.UpdatePrimaryStorageResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdatePrimaryStorageResult() : value; 
+        UpdatePrimaryStorageResult value = res.getResult(UpdatePrimaryStorageResult.class);
+        ret.value = value == null ? new UpdatePrimaryStorageResult() : value; 
 
         return ret;
     }
@@ -80,15 +79,15 @@ public class UpdatePrimaryStorageAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/primary-storage/{uuid}/actions";

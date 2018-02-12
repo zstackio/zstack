@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class DeleteL2NetworkAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class DeleteL2NetworkAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteL2NetworkResult value;
+        public DeleteL2NetworkResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -54,8 +53,8 @@ public class DeleteL2NetworkAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteL2NetworkResult value = res.getResult(org.zstack.sdk.DeleteL2NetworkResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteL2NetworkResult() : value; 
+        DeleteL2NetworkResult value = res.getResult(DeleteL2NetworkResult.class);
+        ret.value = value == null ? new DeleteL2NetworkResult() : value; 
 
         return ret;
     }
@@ -74,15 +73,15 @@ public class DeleteL2NetworkAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/l2-networks/{uuid}";

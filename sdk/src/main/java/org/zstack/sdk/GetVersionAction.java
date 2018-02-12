@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class GetVersionAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class GetVersionAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetVersionResult value;
+        public GetVersionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -39,8 +38,8 @@ public class GetVersionAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetVersionResult value = res.getResult(org.zstack.sdk.GetVersionResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetVersionResult() : value; 
+        GetVersionResult value = res.getResult(GetVersionResult.class);
+        ret.value = value == null ? new GetVersionResult() : value; 
 
         return ret;
     }
@@ -59,15 +58,15 @@ public class GetVersionAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/management-nodes/actions";

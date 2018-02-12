@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class CheckIpAvailabilityAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class CheckIpAvailabilityAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CheckIpAvailabilityResult value;
+        public CheckIpAvailabilityResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -48,8 +47,8 @@ public class CheckIpAvailabilityAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CheckIpAvailabilityResult value = res.getResult(org.zstack.sdk.CheckIpAvailabilityResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CheckIpAvailabilityResult() : value; 
+        CheckIpAvailabilityResult value = res.getResult(CheckIpAvailabilityResult.class);
+        ret.value = value == null ? new CheckIpAvailabilityResult() : value; 
 
         return ret;
     }
@@ -68,15 +67,15 @@ public class CheckIpAvailabilityAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/l3-networks/{l3NetworkUuid}/ip/{ip}/availability";

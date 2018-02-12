@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class QueryOssBucketFileNameAction extends QueryAction {
 
@@ -12,7 +11,7 @@ public class QueryOssBucketFileNameAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.QueryOssBucketFileNameResult value;
+        public QueryOssBucketFileNameResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -34,8 +33,8 @@ public class QueryOssBucketFileNameAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.QueryOssBucketFileNameResult value = res.getResult(org.zstack.sdk.QueryOssBucketFileNameResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QueryOssBucketFileNameResult() : value; 
+        QueryOssBucketFileNameResult value = res.getResult(QueryOssBucketFileNameResult.class);
+        ret.value = value == null ? new QueryOssBucketFileNameResult() : value; 
 
         return ret;
     }
@@ -54,15 +53,15 @@ public class QueryOssBucketFileNameAction extends QueryAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/hybrid/aliyun/oss-bucket";

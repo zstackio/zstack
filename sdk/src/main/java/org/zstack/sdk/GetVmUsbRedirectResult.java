@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class GetVmUsbRedirectResult {
     public boolean enable;
     public void setEnable(boolean enable) {

@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class AttachL3NetworksToIPsecConnectionAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class AttachL3NetworksToIPsecConnectionAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AttachL3NetworksToIPsecConnectionResult value;
+        public AttachL3NetworksToIPsecConnectionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -57,8 +56,8 @@ public class AttachL3NetworksToIPsecConnectionAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AttachL3NetworksToIPsecConnectionResult value = res.getResult(org.zstack.sdk.AttachL3NetworksToIPsecConnectionResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AttachL3NetworksToIPsecConnectionResult() : value; 
+        AttachL3NetworksToIPsecConnectionResult value = res.getResult(AttachL3NetworksToIPsecConnectionResult.class);
+        ret.value = value == null ? new AttachL3NetworksToIPsecConnectionResult() : value; 
 
         return ret;
     }
@@ -77,15 +76,15 @@ public class AttachL3NetworksToIPsecConnectionAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/ipsec/{uuid}/l3networks";

@@ -6,7 +6,6 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
-import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 
@@ -19,7 +18,7 @@ import org.zstack.header.rest.RestRequest;
         method = HttpMethod.DELETE,
         responseClass = APIDeleteLoadBalancerListenerEvent.class
 )
-public class APIDeleteLoadBalancerListenerMsg extends APIMessage implements LoadBalancerMessage, APIAuditor {
+public class APIDeleteLoadBalancerListenerMsg extends APIMessage implements LoadBalancerMessage {
     @APINoSee
     private String loadBalancerUuid;
     @APIParam(resourceType = LoadBalancerListenerVO.class, checkAccount = true, operationTarget = true)
@@ -62,8 +61,4 @@ public class APIDeleteLoadBalancerListenerMsg extends APIMessage implements Load
         };
     }
 
-    @Override
-    public Result audit(APIMessage msg, APIEvent rsp) {
-        return new Result(((APIDeleteLoadBalancerListenerMsg)msg).getUuid(), LoadBalancerVO.class);
-    }
 }

@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class SpendingDetails  {
 
     public java.lang.String resourceUuid;

@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class DeleteOssBucketNameLocalAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class DeleteOssBucketNameLocalAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteOssBucketNameLocalResult value;
+        public DeleteOssBucketNameLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -54,8 +53,8 @@ public class DeleteOssBucketNameLocalAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteOssBucketNameLocalResult value = res.getResult(org.zstack.sdk.DeleteOssBucketNameLocalResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteOssBucketNameLocalResult() : value; 
+        DeleteOssBucketNameLocalResult value = res.getResult(DeleteOssBucketNameLocalResult.class);
+        ret.value = value == null ? new DeleteOssBucketNameLocalResult() : value; 
 
         return ret;
     }
@@ -74,15 +73,15 @@ public class DeleteOssBucketNameLocalAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/hybrid/aliyun/oss-bucket/{uuid}";

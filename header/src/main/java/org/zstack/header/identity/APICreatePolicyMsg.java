@@ -7,7 +7,6 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
-import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 
 import java.util.List;
@@ -21,7 +20,7 @@ import static org.zstack.utils.CollectionDSL.list;
         responseClass = APICreatePolicyEvent.class,
         parameterName = "params"
 )
-public class APICreatePolicyMsg extends APICreateMessage implements AccountMessage, APIAuditor {
+public class APICreatePolicyMsg extends APICreateMessage implements AccountMessage {
     @APIParam(maxLength = 255)
     private String name;
     @APIParam(maxLength = 2048, required = false)
@@ -84,15 +83,5 @@ public class APICreatePolicyMsg extends APICreateMessage implements AccountMessa
                 }
             }
         };
-    }
-
-    @Override
-    public Result audit(APIMessage msg, APIEvent rsp) {
-        String uuid = "";
-        if (rsp.isSuccess()) {
-            uuid = ((APICreatePolicyEvent) rsp).getInventory().getUuid();
-        }
-
-        return new Result(uuid, PolicyVO.class);
     }
 }

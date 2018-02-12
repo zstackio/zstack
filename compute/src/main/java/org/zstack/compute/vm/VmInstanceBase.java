@@ -561,7 +561,6 @@ public class VmInstanceBase extends AbstractVmInstance {
                 startVm(msg, new Completion(msg, chain) {
                     @Override
                     public void success() {
-                        reply.setInventory(getSelfInventory());
                         bus.reply(msg, reply);
                         chain.next();
                     }
@@ -978,14 +977,17 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
-        final Runnable fireEvent = () -> {
-            VmTracerCanonicalEvents.VmStateChangedOnHostData data = new VmTracerCanonicalEvents.VmStateChangedOnHostData();
-            data.setVmUuid(self.getUuid());
-            data.setFrom(originalState);
-            data.setTo(self.getState());
-            data.setOriginalHostUuid(originalHostUuid);
-            data.setCurrentHostUuid(self.getHostUuid());
-            evtf.fire(VmTracerCanonicalEvents.VM_STATE_CHANGED_PATH, data);
+        final Runnable fireEvent = new Runnable() {
+            @Override
+            public void run() {
+                VmTracerCanonicalEvents.VmStateChangedOnHostData data = new VmTracerCanonicalEvents.VmStateChangedOnHostData();
+                data.setVmUuid(self.getUuid());
+                data.setFrom(originalState);
+                data.setTo(self.getState());
+                data.setOriginalHostUuid(originalHostUuid);
+                data.setCurrentHostUuid(self.getHostUuid());
+                evtf.fire(VmTracerCanonicalEvents.VM_STATE_CHANGED_PATH, data);
+            }
         };
 
         if (currentState == VmInstanceState.Unknown) {

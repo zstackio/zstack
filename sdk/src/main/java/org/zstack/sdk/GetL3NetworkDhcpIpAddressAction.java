@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class GetL3NetworkDhcpIpAddressAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class GetL3NetworkDhcpIpAddressAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetL3NetworkDhcpIpAddressResult value;
+        public GetL3NetworkDhcpIpAddressResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,7 +24,7 @@ public class GetL3NetworkDhcpIpAddressAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false)
     public java.lang.String l3NetworkUuid;
 
     @Param(required = false)
@@ -45,8 +44,8 @@ public class GetL3NetworkDhcpIpAddressAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetL3NetworkDhcpIpAddressResult value = res.getResult(org.zstack.sdk.GetL3NetworkDhcpIpAddressResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetL3NetworkDhcpIpAddressResult() : value; 
+        GetL3NetworkDhcpIpAddressResult value = res.getResult(GetL3NetworkDhcpIpAddressResult.class);
+        ret.value = value == null ? new GetL3NetworkDhcpIpAddressResult() : value; 
 
         return ret;
     }
@@ -65,18 +64,18 @@ public class GetL3NetworkDhcpIpAddressAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/l3-networks/{l3NetworkUuid}/dhcp-ip";
+        info.path = "/l3-networks/{l3NetworkUuid/dhcp-ip";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

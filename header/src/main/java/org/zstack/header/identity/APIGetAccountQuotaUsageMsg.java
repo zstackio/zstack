@@ -15,7 +15,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIGetAccountQuotaUsageReply.class
 )
 public class APIGetAccountQuotaUsageMsg extends APISyncCallMessage implements AccountMessage {
-    @APIParam(resourceType = AccountVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = AccountVO.class, checkAccount = true, operationTarget = true, required = false)
     private String uuid;
 
     @Override

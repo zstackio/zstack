@@ -2090,10 +2090,6 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
     @Override
     protected void handle(APIReconnectPrimaryStorageMsg msg) {
         final APIReconnectPrimaryStorageEvent evt = new APIReconnectPrimaryStorageEvent(msg.getId());
-
-        // fire disconnected canonical event only if the current status is connected
-        boolean fireEvent = self.getStatus() == PrimaryStorageStatus.Connected;
-
         self.setStatus(PrimaryStorageStatus.Connecting);
         dbf.update(self);
         connect(false, new Completion(msg) {
@@ -2111,11 +2107,6 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                 self = dbf.reload(self);
                 self.setStatus(PrimaryStorageStatus.Disconnected);
                 self = dbf.updateAndRefresh(self);
-
-                if (fireEvent) {
-                    fireDisconnectedCanonicalEvent(errorCode);
-                }
-
                 evt.setError(errorCode);
                 bus.publish(evt);
             }

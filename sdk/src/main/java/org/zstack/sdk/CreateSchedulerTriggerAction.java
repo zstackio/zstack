@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class CreateSchedulerTriggerAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class CreateSchedulerTriggerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateSchedulerTriggerResult value;
+        public CreateSchedulerTriggerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -72,8 +71,8 @@ public class CreateSchedulerTriggerAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateSchedulerTriggerResult value = res.getResult(org.zstack.sdk.CreateSchedulerTriggerResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateSchedulerTriggerResult() : value; 
+        CreateSchedulerTriggerResult value = res.getResult(CreateSchedulerTriggerResult.class);
+        ret.value = value == null ? new CreateSchedulerTriggerResult() : value; 
 
         return ret;
     }
@@ -92,15 +91,15 @@ public class CreateSchedulerTriggerAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/scheduler/triggers";

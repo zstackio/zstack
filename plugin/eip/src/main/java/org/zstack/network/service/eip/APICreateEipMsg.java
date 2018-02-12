@@ -7,7 +7,6 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
-import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.network.service.vip.VipVO;
@@ -63,7 +62,7 @@ import org.zstack.network.service.vip.VipVO;
         responseClass = APICreateEipEvent.class,
         parameterName = "params"
 )
-public class APICreateEipMsg extends APICreateMessage implements APIAuditor {
+public class APICreateEipMsg extends APICreateMessage {
     /**
      * @desc max length of 255 characters
      */
@@ -142,13 +141,4 @@ public class APICreateEipMsg extends APICreateMessage implements APIAuditor {
         };
     }
 
-    @Override
-    public Result audit(APIMessage msg, APIEvent rsp) {
-        String uuid = "";
-        if (rsp.isSuccess()) {
-            APICreateEipEvent evt = (APICreateEipEvent) rsp;
-            uuid = evt.getInventory().getUuid();
-        }
-        return new Result(uuid, EipVO.class);
-    }
 }

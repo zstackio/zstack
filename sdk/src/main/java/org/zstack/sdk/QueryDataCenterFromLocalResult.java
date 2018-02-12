@@ -1,13 +1,11 @@
 package org.zstack.sdk;
 
-
-
 public class QueryDataCenterFromLocalResult {
-    public java.util.List inventories;
-    public void setInventories(java.util.List inventories) {
+    public java.util.List<DataCenterInventory> inventories;
+    public void setInventories(java.util.List<DataCenterInventory> inventories) {
         this.inventories = inventories;
     }
-    public java.util.List getInventories() {
+    public java.util.List<DataCenterInventory> getInventories() {
         return this.inventories;
     }
 

@@ -7,7 +7,6 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
-import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 
 /**
@@ -53,7 +52,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APICreateSecurityGroupEvent.class,
         parameterName = "params"
 )
-public class APICreateSecurityGroupMsg extends APICreateMessage implements APIAuditor {
+public class APICreateSecurityGroupMsg extends APICreateMessage {
     /**
      * @desc max length of 255 characters
      */
@@ -102,8 +101,4 @@ public class APICreateSecurityGroupMsg extends APICreateMessage implements APIAu
         };
     }
 
-    @Override
-    public Result audit(APIMessage msg, APIEvent rsp) {
-        return new Result(rsp.isSuccess() ? ((APICreateSecurityGroupEvent)rsp).getInventory().getUuid() : "", SecurityGroupVO.class);
-    }
 }

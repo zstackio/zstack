@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class QuerySftpBackupStorageAction extends QueryAction {
 
@@ -12,7 +11,7 @@ public class QuerySftpBackupStorageAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.QuerySftpBackupStorageResult value;
+        public QuerySftpBackupStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -34,8 +33,8 @@ public class QuerySftpBackupStorageAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.QuerySftpBackupStorageResult value = res.getResult(org.zstack.sdk.QuerySftpBackupStorageResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QuerySftpBackupStorageResult() : value; 
+        QuerySftpBackupStorageResult value = res.getResult(QuerySftpBackupStorageResult.class);
+        ret.value = value == null ? new QuerySftpBackupStorageResult() : value; 
 
         return ret;
     }
@@ -54,15 +53,15 @@ public class QuerySftpBackupStorageAction extends QueryAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/backup-storage/sftp";

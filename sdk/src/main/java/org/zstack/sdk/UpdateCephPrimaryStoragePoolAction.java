@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class UpdateCephPrimaryStoragePoolAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class UpdateCephPrimaryStoragePoolAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateCephPrimaryStoragePoolResult value;
+        public UpdateCephPrimaryStoragePoolResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -57,8 +56,8 @@ public class UpdateCephPrimaryStoragePoolAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateCephPrimaryStoragePoolResult value = res.getResult(org.zstack.sdk.UpdateCephPrimaryStoragePoolResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateCephPrimaryStoragePoolResult() : value; 
+        UpdateCephPrimaryStoragePoolResult value = res.getResult(UpdateCephPrimaryStoragePoolResult.class);
+        ret.value = value == null ? new UpdateCephPrimaryStoragePoolResult() : value; 
 
         return ret;
     }
@@ -77,15 +76,15 @@ public class UpdateCephPrimaryStoragePoolAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/primary-storage/ceph/pools/{uuid}/actions";

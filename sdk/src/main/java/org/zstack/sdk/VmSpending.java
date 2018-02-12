@@ -1,30 +1,28 @@
 package org.zstack.sdk;
 
+public class VmSpending extends SpendingDetails {
 
-
-public class VmSpending extends org.zstack.sdk.SpendingDetails {
-
-    public java.util.List cpuInventory;
-    public void setCpuInventory(java.util.List cpuInventory) {
+    public java.util.List<VmSpendingDetails> cpuInventory;
+    public void setCpuInventory(java.util.List<VmSpendingDetails> cpuInventory) {
         this.cpuInventory = cpuInventory;
     }
-    public java.util.List getCpuInventory() {
+    public java.util.List<VmSpendingDetails> getCpuInventory() {
         return this.cpuInventory;
     }
 
-    public java.util.List memoryInventory;
-    public void setMemoryInventory(java.util.List memoryInventory) {
+    public java.util.List<VmSpendingDetails> memoryInventory;
+    public void setMemoryInventory(java.util.List<VmSpendingDetails> memoryInventory) {
         this.memoryInventory = memoryInventory;
     }
-    public java.util.List getMemoryInventory() {
+    public java.util.List<VmSpendingDetails> getMemoryInventory() {
         return this.memoryInventory;
     }
 
-    public java.util.List rootVolumeInventory;
-    public void setRootVolumeInventory(java.util.List rootVolumeInventory) {
+    public java.util.List<VmSpendingDetails> rootVolumeInventory;
+    public void setRootVolumeInventory(java.util.List<VmSpendingDetails> rootVolumeInventory) {
         this.rootVolumeInventory = rootVolumeInventory;
     }
-    public java.util.List getRootVolumeInventory() {
+    public java.util.List<VmSpendingDetails> getRootVolumeInventory() {
         return this.rootVolumeInventory;
     }
 

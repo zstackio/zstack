@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.SystemTagInventory;
-
 public class UpdateSystemTagResult {
     public SystemTagInventory inventory;
     public void setInventory(SystemTagInventory inventory) {

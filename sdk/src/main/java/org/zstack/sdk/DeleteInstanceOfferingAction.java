@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class DeleteInstanceOfferingAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class DeleteInstanceOfferingAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteInstanceOfferingResult value;
+        public DeleteInstanceOfferingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -54,8 +53,8 @@ public class DeleteInstanceOfferingAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteInstanceOfferingResult value = res.getResult(org.zstack.sdk.DeleteInstanceOfferingResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteInstanceOfferingResult() : value; 
+        DeleteInstanceOfferingResult value = res.getResult(DeleteInstanceOfferingResult.class);
+        ret.value = value == null ? new DeleteInstanceOfferingResult() : value; 
 
         return ret;
     }
@@ -74,15 +73,15 @@ public class DeleteInstanceOfferingAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/instance-offerings/{uuid}";

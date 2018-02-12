@@ -56,9 +56,6 @@ public class SftpBackupStorage extends BackupStorageBase {
 
     private String agentPackageName = SftpBackupStorageGlobalProperty.AGENT_PACKAGE_NAME;
 
-    public SftpBackupStorage() {
-    }
-
     public SftpBackupStorage(SftpBackupStorageVO vo) {
         super(vo);
     }

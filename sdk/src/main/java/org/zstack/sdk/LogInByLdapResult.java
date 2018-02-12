@@ -1,8 +1,5 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.SessionInventory;
-import org.zstack.sdk.AccountInventory;
-
 public class LogInByLdapResult {
     public SessionInventory inventory;
     public void setInventory(SessionInventory inventory) {

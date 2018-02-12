@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class WebhookInventory  {
 
     public java.lang.String uuid;

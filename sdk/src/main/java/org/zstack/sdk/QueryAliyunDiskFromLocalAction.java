@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class QueryAliyunDiskFromLocalAction extends QueryAction {
 
@@ -12,7 +11,7 @@ public class QueryAliyunDiskFromLocalAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.QueryAliyunDiskFromLocalResult value;
+        public QueryAliyunDiskFromLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -34,8 +33,8 @@ public class QueryAliyunDiskFromLocalAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.QueryAliyunDiskFromLocalResult value = res.getResult(org.zstack.sdk.QueryAliyunDiskFromLocalResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QueryAliyunDiskFromLocalResult() : value; 
+        QueryAliyunDiskFromLocalResult value = res.getResult(QueryAliyunDiskFromLocalResult.class);
+        ret.value = value == null ? new QueryAliyunDiskFromLocalResult() : value; 
 
         return ret;
     }
@@ -54,15 +53,15 @@ public class QueryAliyunDiskFromLocalAction extends QueryAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/hybrid/aliyun/disk";

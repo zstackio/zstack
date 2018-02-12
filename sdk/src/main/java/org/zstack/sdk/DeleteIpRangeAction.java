@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class DeleteIpRangeAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class DeleteIpRangeAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteIpRangeResult value;
+        public DeleteIpRangeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -54,8 +53,8 @@ public class DeleteIpRangeAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteIpRangeResult value = res.getResult(org.zstack.sdk.DeleteIpRangeResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteIpRangeResult() : value; 
+        DeleteIpRangeResult value = res.getResult(DeleteIpRangeResult.class);
+        ret.value = value == null ? new DeleteIpRangeResult() : value; 
 
         return ret;
     }
@@ -74,15 +73,15 @@ public class DeleteIpRangeAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/l3-networks/ip-ranges/{uuid}";

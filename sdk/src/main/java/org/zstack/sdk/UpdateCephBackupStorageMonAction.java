@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class UpdateCephBackupStorageMonAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class UpdateCephBackupStorageMonAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateCephBackupStorageMonResult value;
+        public UpdateCephBackupStorageMonResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -66,8 +65,8 @@ public class UpdateCephBackupStorageMonAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateCephBackupStorageMonResult value = res.getResult(org.zstack.sdk.UpdateCephBackupStorageMonResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateCephBackupStorageMonResult() : value; 
+        UpdateCephBackupStorageMonResult value = res.getResult(UpdateCephBackupStorageMonResult.class);
+        ret.value = value == null ? new UpdateCephBackupStorageMonResult() : value; 
 
         return ret;
     }
@@ -86,15 +85,15 @@ public class UpdateCephBackupStorageMonAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/backup-storage/ceph/mons/{monUuid}/actions";

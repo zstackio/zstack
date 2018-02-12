@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class L3NetworkInventory  {
 
     public java.lang.String uuid;
@@ -100,27 +98,27 @@ public class L3NetworkInventory  {
         return this.lastOpDate;
     }
 
-    public java.util.List dns;
-    public void setDns(java.util.List dns) {
+    public java.util.List<String> dns;
+    public void setDns(java.util.List<String> dns) {
         this.dns = dns;
     }
-    public java.util.List getDns() {
+    public java.util.List<String> getDns() {
         return this.dns;
     }
 
-    public java.util.List ipRanges;
-    public void setIpRanges(java.util.List ipRanges) {
+    public java.util.List<IpRangeInventory> ipRanges;
+    public void setIpRanges(java.util.List<IpRangeInventory> ipRanges) {
         this.ipRanges = ipRanges;
     }
-    public java.util.List getIpRanges() {
+    public java.util.List<IpRangeInventory> getIpRanges() {
         return this.ipRanges;
     }
 
-    public java.util.List networkServices;
-    public void setNetworkServices(java.util.List networkServices) {
+    public java.util.List<NetworkServiceL3NetworkRefInventory> networkServices;
+    public void setNetworkServices(java.util.List<NetworkServiceL3NetworkRefInventory> networkServices) {
         this.networkServices = networkServices;
     }
-    public java.util.List getNetworkServices() {
+    public java.util.List<NetworkServiceL3NetworkRefInventory> getNetworkServices() {
         return this.networkServices;
     }
 

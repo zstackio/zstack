@@ -15,7 +15,7 @@ public class APICreateLdapBindingMsg extends APIMessage {
     @APIParam(maxLength = 255)
     private String ldapUid;
 
-    @APIParam(resourceType = AccountVO.class, maxLength = 32)
+    @APIParam(maxLength = 32, resourceType = AccountVO.class)
     private String accountUuid;
 
     public String getLdapUid() {

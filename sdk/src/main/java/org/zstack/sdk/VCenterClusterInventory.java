@@ -1,8 +1,6 @@
 package org.zstack.sdk;
 
-
-
-public class VCenterClusterInventory extends org.zstack.sdk.ClusterInventory {
+public class VCenterClusterInventory extends ClusterInventory {
 
     public java.lang.String vCenterUuid;
     public void setVCenterUuid(java.lang.String vCenterUuid) {

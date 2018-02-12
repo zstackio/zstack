@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class CreateSchedulerJobAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class CreateSchedulerJobAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateSchedulerJobResult value;
+        public CreateSchedulerJobResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -66,8 +65,8 @@ public class CreateSchedulerJobAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateSchedulerJobResult value = res.getResult(org.zstack.sdk.CreateSchedulerJobResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateSchedulerJobResult() : value; 
+        CreateSchedulerJobResult value = res.getResult(CreateSchedulerJobResult.class);
+        ret.value = value == null ? new CreateSchedulerJobResult() : value; 
 
         return ret;
     }
@@ -86,15 +85,15 @@ public class CreateSchedulerJobAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/scheduler/jobs";

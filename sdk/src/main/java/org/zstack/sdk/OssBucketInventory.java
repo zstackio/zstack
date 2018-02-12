@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class OssBucketInventory  {
 
     public java.lang.String uuid;

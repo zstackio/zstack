@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class TerminateVirtualBorderRouterRemoteAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class TerminateVirtualBorderRouterRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.TerminateVirtualBorderRouterRemoteResult value;
+        public TerminateVirtualBorderRouterRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -51,8 +50,8 @@ public class TerminateVirtualBorderRouterRemoteAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.TerminateVirtualBorderRouterRemoteResult value = res.getResult(org.zstack.sdk.TerminateVirtualBorderRouterRemoteResult.class);
-        ret.value = value == null ? new org.zstack.sdk.TerminateVirtualBorderRouterRemoteResult() : value; 
+        TerminateVirtualBorderRouterRemoteResult value = res.getResult(TerminateVirtualBorderRouterRemoteResult.class);
+        ret.value = value == null ? new TerminateVirtualBorderRouterRemoteResult() : value; 
 
         return ret;
     }
@@ -71,15 +70,15 @@ public class TerminateVirtualBorderRouterRemoteAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/hybrid/aliyun/border-router/{uuid}/actions";

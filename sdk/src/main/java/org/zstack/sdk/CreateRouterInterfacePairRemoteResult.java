@@ -1,8 +1,5 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.VirtualRouterInterfaceInventory;
-import org.zstack.sdk.VirtualRouterInterfaceInventory;
-
 public class CreateRouterInterfacePairRemoteResult {
     public VirtualRouterInterfaceInventory inventory1;
     public void setInventory1(VirtualRouterInterfaceInventory inventory1) {

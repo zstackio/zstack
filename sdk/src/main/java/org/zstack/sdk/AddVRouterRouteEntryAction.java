@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class AddVRouterRouteEntryAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class AddVRouterRouteEntryAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddVRouterRouteEntryResult value;
+        public AddVRouterRouteEntryResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -69,8 +68,8 @@ public class AddVRouterRouteEntryAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddVRouterRouteEntryResult value = res.getResult(org.zstack.sdk.AddVRouterRouteEntryResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddVRouterRouteEntryResult() : value; 
+        AddVRouterRouteEntryResult value = res.getResult(AddVRouterRouteEntryResult.class);
+        ret.value = value == null ? new AddVRouterRouteEntryResult() : value; 
 
         return ret;
     }
@@ -89,15 +88,15 @@ public class AddVRouterRouteEntryAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/vrouter-route-tables/{routeTableUuid}/route-entries";

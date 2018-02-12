@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class GetPrimaryStorageTypesAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class GetPrimaryStorageTypesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetPrimaryStorageTypesResult value;
+        public GetPrimaryStorageTypesResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -42,8 +41,8 @@ public class GetPrimaryStorageTypesAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetPrimaryStorageTypesResult value = res.getResult(org.zstack.sdk.GetPrimaryStorageTypesResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetPrimaryStorageTypesResult() : value; 
+        GetPrimaryStorageTypesResult value = res.getResult(GetPrimaryStorageTypesResult.class);
+        ret.value = value == null ? new GetPrimaryStorageTypesResult() : value; 
 
         return ret;
     }
@@ -62,15 +61,15 @@ public class GetPrimaryStorageTypesAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/primary-storage/types";

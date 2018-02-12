@@ -1,13 +1,11 @@
 package org.zstack.sdk;
 
-
-
 public class QueryMediaResult {
-    public java.util.List inventories;
-    public void setInventories(java.util.List inventories) {
+    public java.util.List<MediaInventory> inventories;
+    public void setInventories(java.util.List<MediaInventory> inventories) {
         this.inventories = inventories;
     }
-    public java.util.List getInventories() {
+    public java.util.List<MediaInventory> getInventories() {
         return this.inventories;
     }
 

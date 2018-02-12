@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class LoadBalancerListenerInventory  {
 
     public java.lang.String uuid;
@@ -76,11 +74,11 @@ public class LoadBalancerListenerInventory  {
         return this.lastOpDate;
     }
 
-    public java.util.List vmNicRefs;
-    public void setVmNicRefs(java.util.List vmNicRefs) {
+    public java.util.List<LoadBalancerListenerVmNicRefInventory> vmNicRefs;
+    public void setVmNicRefs(java.util.List<LoadBalancerListenerVmNicRefInventory> vmNicRefs) {
         this.vmNicRefs = vmNicRefs;
     }
-    public java.util.List getVmNicRefs() {
+    public java.util.List<LoadBalancerListenerVmNicRefInventory> getVmNicRefs() {
         return this.vmNicRefs;
     }
 

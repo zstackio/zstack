@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.IPsecConnectionInventory;
-
 public class AddRemoteCidrsToIPsecConnectionResult {
     public IPsecConnectionInventory inventory;
     public void setInventory(IPsecConnectionInventory inventory) {

@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class RootVolumeSpendingInventory  {
 
     public long startTime;

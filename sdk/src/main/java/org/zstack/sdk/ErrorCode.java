@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.ErrorCode;
-
 public class ErrorCode  {
 
     public java.lang.String code;

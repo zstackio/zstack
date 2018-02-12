@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class SharedResourceInventory  {
 
     public java.lang.String ownerAccountUuid;

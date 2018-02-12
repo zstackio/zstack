@@ -1,10 +1,5 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.PciDeviceStatus;
-import org.zstack.sdk.PciDeviceState;
-import org.zstack.sdk.PciDeviceType;
-import org.zstack.sdk.PciDeviceMetaData;
-
 public class PciDeviceInventory  {
 
     public java.lang.String uuid;
@@ -127,11 +122,11 @@ public class PciDeviceInventory  {
         return this.lastOpDate;
     }
 
-    public java.util.List matchedPciDeviceOfferingRef;
-    public void setMatchedPciDeviceOfferingRef(java.util.List matchedPciDeviceOfferingRef) {
+    public java.util.List<PciDevicePciDeviceOfferingRefInventory> matchedPciDeviceOfferingRef;
+    public void setMatchedPciDeviceOfferingRef(java.util.List<PciDevicePciDeviceOfferingRefInventory> matchedPciDeviceOfferingRef) {
         this.matchedPciDeviceOfferingRef = matchedPciDeviceOfferingRef;
     }
-    public java.util.List getMatchedPciDeviceOfferingRef() {
+    public java.util.List<PciDevicePciDeviceOfferingRefInventory> getMatchedPciDeviceOfferingRef() {
         return this.matchedPciDeviceOfferingRef;
     }
 

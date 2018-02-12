@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class VmInstanceInventory  {
 
     public java.lang.String uuid;
@@ -172,19 +170,19 @@ public class VmInstanceInventory  {
         return this.state;
     }
 
-    public java.util.List vmNics;
-    public void setVmNics(java.util.List vmNics) {
+    public java.util.List<VmNicInventory> vmNics;
+    public void setVmNics(java.util.List<VmNicInventory> vmNics) {
         this.vmNics = vmNics;
     }
-    public java.util.List getVmNics() {
+    public java.util.List<VmNicInventory> getVmNics() {
         return this.vmNics;
     }
 
-    public java.util.List allVolumes;
-    public void setAllVolumes(java.util.List allVolumes) {
+    public java.util.List<VolumeInventory> allVolumes;
+    public void setAllVolumes(java.util.List<VolumeInventory> allVolumes) {
         this.allVolumes = allVolumes;
     }
-    public java.util.List getAllVolumes() {
+    public java.util.List<VolumeInventory> getAllVolumes() {
         return this.allVolumes;
     }
 

@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class DetachOssBucketFromEcsDataCenterAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class DetachOssBucketFromEcsDataCenterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DetachOssBucketFromEcsDataCenterResult value;
+        public DetachOssBucketFromEcsDataCenterResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -51,8 +50,8 @@ public class DetachOssBucketFromEcsDataCenterAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DetachOssBucketFromEcsDataCenterResult value = res.getResult(org.zstack.sdk.DetachOssBucketFromEcsDataCenterResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DetachOssBucketFromEcsDataCenterResult() : value; 
+        DetachOssBucketFromEcsDataCenterResult value = res.getResult(DetachOssBucketFromEcsDataCenterResult.class);
+        ret.value = value == null ? new DetachOssBucketFromEcsDataCenterResult() : value; 
 
         return ret;
     }
@@ -71,15 +70,15 @@ public class DetachOssBucketFromEcsDataCenterAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/hybrid/aliyun/oss-bucket/{ossBucketUuid}/detach";

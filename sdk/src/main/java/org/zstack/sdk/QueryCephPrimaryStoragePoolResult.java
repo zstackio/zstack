@@ -1,13 +1,11 @@
 package org.zstack.sdk;
 
-
-
 public class QueryCephPrimaryStoragePoolResult {
-    public java.util.List inventories;
-    public void setInventories(java.util.List inventories) {
+    public java.util.List<CephPrimaryStoragePoolInventory> inventories;
+    public void setInventories(java.util.List<CephPrimaryStoragePoolInventory> inventories) {
         this.inventories = inventories;
     }
-    public java.util.List getInventories() {
+    public java.util.List<CephPrimaryStoragePoolInventory> getInventories() {
         return this.inventories;
     }
 

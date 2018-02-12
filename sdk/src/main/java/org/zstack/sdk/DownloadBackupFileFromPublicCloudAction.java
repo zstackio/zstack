@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class DownloadBackupFileFromPublicCloudAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class DownloadBackupFileFromPublicCloudAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DownloadBackupFileFromPublicCloudResult value;
+        public DownloadBackupFileFromPublicCloudResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -57,8 +56,8 @@ public class DownloadBackupFileFromPublicCloudAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DownloadBackupFileFromPublicCloudResult value = res.getResult(org.zstack.sdk.DownloadBackupFileFromPublicCloudResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DownloadBackupFileFromPublicCloudResult() : value; 
+        DownloadBackupFileFromPublicCloudResult value = res.getResult(DownloadBackupFileFromPublicCloudResult.class);
+        ret.value = value == null ? new DownloadBackupFileFromPublicCloudResult() : value; 
 
         return ret;
     }
@@ -77,15 +76,15 @@ public class DownloadBackupFileFromPublicCloudAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/hybrid/backup-mysql/download";

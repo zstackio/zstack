@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class DeleteRouterInterfaceRemoteAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class DeleteRouterInterfaceRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteRouterInterfaceRemoteResult value;
+        public DeleteRouterInterfaceRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -57,8 +56,8 @@ public class DeleteRouterInterfaceRemoteAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteRouterInterfaceRemoteResult value = res.getResult(org.zstack.sdk.DeleteRouterInterfaceRemoteResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteRouterInterfaceRemoteResult() : value; 
+        DeleteRouterInterfaceRemoteResult value = res.getResult(DeleteRouterInterfaceRemoteResult.class);
+        ret.value = value == null ? new DeleteRouterInterfaceRemoteResult() : value; 
 
         return ret;
     }
@@ -77,15 +76,15 @@ public class DeleteRouterInterfaceRemoteAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/hybrid/aliyun/router-interface/remote/{uuid}";

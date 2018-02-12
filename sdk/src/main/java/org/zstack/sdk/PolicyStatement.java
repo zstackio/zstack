@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.PolicyStatementEffect;
-
 public class PolicyStatement  {
 
     public java.lang.String name;
@@ -20,27 +18,27 @@ public class PolicyStatement  {
         return this.effect;
     }
 
-    public java.util.List principals;
-    public void setPrincipals(java.util.List principals) {
+    public java.util.List<String> principals;
+    public void setPrincipals(java.util.List<String> principals) {
         this.principals = principals;
     }
-    public java.util.List getPrincipals() {
+    public java.util.List<String> getPrincipals() {
         return this.principals;
     }
 
-    public java.util.List actions;
-    public void setActions(java.util.List actions) {
+    public java.util.List<String> actions;
+    public void setActions(java.util.List<String> actions) {
         this.actions = actions;
     }
-    public java.util.List getActions() {
+    public java.util.List<String> getActions() {
         return this.actions;
     }
 
-    public java.util.List resources;
-    public void setResources(java.util.List resources) {
+    public java.util.List<String> resources;
+    public void setResources(java.util.List<String> resources) {
         this.resources = resources;
     }
-    public java.util.List getResources() {
+    public java.util.List<String> getResources() {
         return this.resources;
     }
 

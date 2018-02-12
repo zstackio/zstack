@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class PowerStatusBaremetalHostResult {
     public java.lang.String status;
     public void setStatus(java.lang.String status) {

@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class DeleteConnectionBetweenL3NetWorkAndAliyunVSwitchAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class DeleteConnectionBetweenL3NetWorkAndAliyunVSwitchAction extends Abst
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteConnectionBetweenL3NetWorkAndAliyunVSwitchResult value;
+        public DeleteConnectionBetweenL3NetWorkAndAliyunVSwitchResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -54,8 +53,8 @@ public class DeleteConnectionBetweenL3NetWorkAndAliyunVSwitchAction extends Abst
             return ret;
         }
         
-        org.zstack.sdk.DeleteConnectionBetweenL3NetWorkAndAliyunVSwitchResult value = res.getResult(org.zstack.sdk.DeleteConnectionBetweenL3NetWorkAndAliyunVSwitchResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteConnectionBetweenL3NetWorkAndAliyunVSwitchResult() : value; 
+        DeleteConnectionBetweenL3NetWorkAndAliyunVSwitchResult value = res.getResult(DeleteConnectionBetweenL3NetWorkAndAliyunVSwitchResult.class);
+        ret.value = value == null ? new DeleteConnectionBetweenL3NetWorkAndAliyunVSwitchResult() : value; 
 
         return ret;
     }
@@ -74,15 +73,15 @@ public class DeleteConnectionBetweenL3NetWorkAndAliyunVSwitchAction extends Abst
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/hybrid/aliyun/connections/{uuid}";

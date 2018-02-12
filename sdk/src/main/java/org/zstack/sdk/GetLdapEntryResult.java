@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class GetLdapEntryResult {
     public java.util.List inventories;
     public void setInventories(java.util.List inventories) {

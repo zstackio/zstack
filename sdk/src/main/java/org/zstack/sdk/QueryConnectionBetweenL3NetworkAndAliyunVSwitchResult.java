@@ -1,13 +1,11 @@
 package org.zstack.sdk;
 
-
-
 public class QueryConnectionBetweenL3NetworkAndAliyunVSwitchResult {
-    public java.util.List inventories;
-    public void setInventories(java.util.List inventories) {
+    public java.util.List<ConnectionRelationShipInventory> inventories;
+    public void setInventories(java.util.List<ConnectionRelationShipInventory> inventories) {
         this.inventories = inventories;
     }
-    public java.util.List getInventories() {
+    public java.util.List<ConnectionRelationShipInventory> getInventories() {
         return this.inventories;
     }
 

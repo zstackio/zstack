@@ -1,13 +1,11 @@
 package org.zstack.sdk;
 
-
-
 public class QueryVirtualRouterVRouterRouteTableRefResult {
-    public java.util.List inventories;
-    public void setInventories(java.util.List inventories) {
+    public java.util.List<VirtualRouterVRouterRouteTableRefInventory> inventories;
+    public void setInventories(java.util.List<VirtualRouterVRouterRouteTableRefInventory> inventories) {
         this.inventories = inventories;
     }
-    public java.util.List getInventories() {
+    public java.util.List<VirtualRouterVRouterRouteTableRefInventory> getInventories() {
         return this.inventories;
     }
 

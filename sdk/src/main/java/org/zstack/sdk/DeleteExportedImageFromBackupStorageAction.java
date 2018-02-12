@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class DeleteExportedImageFromBackupStorageAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class DeleteExportedImageFromBackupStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteExportedImageFromBackupStorageResult value;
+        public DeleteExportedImageFromBackupStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -28,7 +27,7 @@ public class DeleteExportedImageFromBackupStorageAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String backupStorageUuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String imageUuid;
 
     @Param(required = false)
@@ -54,8 +53,8 @@ public class DeleteExportedImageFromBackupStorageAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteExportedImageFromBackupStorageResult value = res.getResult(org.zstack.sdk.DeleteExportedImageFromBackupStorageResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteExportedImageFromBackupStorageResult() : value; 
+        DeleteExportedImageFromBackupStorageResult value = res.getResult(DeleteExportedImageFromBackupStorageResult.class);
+        ret.value = value == null ? new DeleteExportedImageFromBackupStorageResult() : value; 
 
         return ret;
     }
@@ -74,15 +73,15 @@ public class DeleteExportedImageFromBackupStorageAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/backup-storage/{backupStorageUuid}/exported-images/{imageUuid}";

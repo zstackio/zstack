@@ -6,10 +6,8 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
-import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
-import org.zstack.header.volume.VolumeVO;
 
 /**
  * @api revert a volume to one of its snapshot
@@ -45,7 +43,7 @@ import org.zstack.header.volume.VolumeVO;
         method = HttpMethod.PUT,
         responseClass = APIRevertVolumeFromSnapshotEvent.class
 )
-public class APIRevertVolumeFromSnapshotMsg extends APIMessage implements VolumeSnapshotMessage, APIAuditor {
+public class APIRevertVolumeFromSnapshotMsg extends APIMessage implements VolumeSnapshotMessage {
     /**
      * @desc volume snapshot uuid
      * <p>
@@ -117,8 +115,4 @@ public class APIRevertVolumeFromSnapshotMsg extends APIMessage implements Volume
         };
     }
 
-    @Override
-    public Result audit(APIMessage msg, APIEvent rsp) {
-        return new Result(((APIRevertVolumeFromSnapshotMsg)msg).volumeUuid, VolumeVO.class);
-    }
 }

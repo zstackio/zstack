@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class SyncIdentityFromRemoteAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class SyncIdentityFromRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.SyncIdentityFromRemoteResult value;
+        public SyncIdentityFromRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -54,8 +53,8 @@ public class SyncIdentityFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.SyncIdentityFromRemoteResult value = res.getResult(org.zstack.sdk.SyncIdentityFromRemoteResult.class);
-        ret.value = value == null ? new org.zstack.sdk.SyncIdentityFromRemoteResult() : value; 
+        SyncIdentityFromRemoteResult value = res.getResult(SyncIdentityFromRemoteResult.class);
+        ret.value = value == null ? new SyncIdentityFromRemoteResult() : value; 
 
         return ret;
     }
@@ -74,15 +73,15 @@ public class SyncIdentityFromRemoteAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/hybrid/identity-zone/{uuid}/sync";

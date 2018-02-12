@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class UpdateUserGroupAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class UpdateUserGroupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateUserGroupResult value;
+        public UpdateUserGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -57,8 +56,8 @@ public class UpdateUserGroupAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateUserGroupResult value = res.getResult(org.zstack.sdk.UpdateUserGroupResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateUserGroupResult() : value; 
+        UpdateUserGroupResult value = res.getResult(UpdateUserGroupResult.class);
+        ret.value = value == null ? new UpdateUserGroupResult() : value; 
 
         return ret;
     }
@@ -77,15 +76,15 @@ public class UpdateUserGroupAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/accounts/groups/actions";

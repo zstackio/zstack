@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.PortForwardingRuleInventory;
-
 public class AttachPortForwardingRuleResult {
     public PortForwardingRuleInventory inventory;
     public void setInventory(PortForwardingRuleInventory inventory) {

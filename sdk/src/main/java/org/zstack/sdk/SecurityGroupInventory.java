@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class SecurityGroupInventory  {
 
     public java.lang.String uuid;
@@ -52,19 +50,19 @@ public class SecurityGroupInventory  {
         return this.lastOpDate;
     }
 
-    public java.util.List rules;
-    public void setRules(java.util.List rules) {
+    public java.util.List<SecurityGroupRuleInventory> rules;
+    public void setRules(java.util.List<SecurityGroupRuleInventory> rules) {
         this.rules = rules;
     }
-    public java.util.List getRules() {
+    public java.util.List<SecurityGroupRuleInventory> getRules() {
         return this.rules;
     }
 
-    public java.util.Set attachedL3NetworkUuids;
-    public void setAttachedL3NetworkUuids(java.util.Set attachedL3NetworkUuids) {
+    public java.util.Set<String> attachedL3NetworkUuids;
+    public void setAttachedL3NetworkUuids(java.util.Set<String> attachedL3NetworkUuids) {
         this.attachedL3NetworkUuids = attachedL3NetworkUuids;
     }
-    public java.util.Set getAttachedL3NetworkUuids() {
+    public java.util.Set<String> getAttachedL3NetworkUuids() {
         return this.attachedL3NetworkUuids;
     }
 

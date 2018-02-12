@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class GetImageQgaResult {
     public boolean enable;
     public void setEnable(boolean enable) {

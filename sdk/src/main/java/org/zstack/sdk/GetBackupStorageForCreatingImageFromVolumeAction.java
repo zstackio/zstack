@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class GetBackupStorageForCreatingImageFromVolumeAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class GetBackupStorageForCreatingImageFromVolumeAction extends AbstractAc
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetCandidateBackupStorageForCreatingImageResult value;
+        public GetCandidateBackupStorageForCreatingImageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -48,8 +47,8 @@ public class GetBackupStorageForCreatingImageFromVolumeAction extends AbstractAc
             return ret;
         }
         
-        org.zstack.sdk.GetCandidateBackupStorageForCreatingImageResult value = res.getResult(org.zstack.sdk.GetCandidateBackupStorageForCreatingImageResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetCandidateBackupStorageForCreatingImageResult() : value; 
+        GetCandidateBackupStorageForCreatingImageResult value = res.getResult(GetCandidateBackupStorageForCreatingImageResult.class);
+        ret.value = value == null ? new GetCandidateBackupStorageForCreatingImageResult() : value; 
 
         return ret;
     }
@@ -68,15 +67,15 @@ public class GetBackupStorageForCreatingImageFromVolumeAction extends AbstractAc
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/images/volumes/{volumeUuid}/candidate-backup-storage";

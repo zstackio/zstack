@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class DeleteEcsInstanceLocalAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class DeleteEcsInstanceLocalAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteEcsInstanceLocalResult value;
+        public DeleteEcsInstanceLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -54,8 +53,8 @@ public class DeleteEcsInstanceLocalAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteEcsInstanceLocalResult value = res.getResult(org.zstack.sdk.DeleteEcsInstanceLocalResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteEcsInstanceLocalResult() : value; 
+        DeleteEcsInstanceLocalResult value = res.getResult(DeleteEcsInstanceLocalResult.class);
+        ret.value = value == null ? new DeleteEcsInstanceLocalResult() : value; 
 
         return ret;
     }
@@ -74,15 +73,15 @@ public class DeleteEcsInstanceLocalAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/hybrid/aliyun/ecs/{uuid}";

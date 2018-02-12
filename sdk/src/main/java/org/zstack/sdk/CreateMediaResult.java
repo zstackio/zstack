@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.MediaInventory;
-
 public class CreateMediaResult {
     public MediaInventory inventory;
     public void setInventory(MediaInventory inventory) {

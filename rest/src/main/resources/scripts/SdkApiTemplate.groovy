@@ -2,7 +2,6 @@ package scripts
 
 import org.apache.commons.lang.StringEscapeUtils
 import org.apache.commons.lang.StringUtils
-import org.zstack.core.Platform
 import org.zstack.header.exception.CloudRuntimeException
 import org.zstack.header.identity.SuppressCredentialCheck
 import org.zstack.header.message.*
@@ -10,7 +9,6 @@ import org.zstack.header.query.APIQueryMessage
 import org.zstack.header.rest.APINoSee
 import org.zstack.header.rest.RestRequest
 import org.zstack.header.rest.SDK
-import org.zstack.header.rest.SDKPackage
 import org.zstack.rest.sdk.SdkTemplate
 import org.zstack.rest.sdk.SdkFile
 import org.zstack.utils.FieldUtils
@@ -30,20 +28,9 @@ class SdkApiTemplate implements SdkTemplate {
 
     String resultClassName
     boolean isQueryApi
-    String packageName
-
-    private static Map<Package, SDKPackage> packageSDKAnnotations = [:]
-
-    static {
-        Platform.reflections.getTypesAnnotatedWith(SDKPackage.class).each {
-            packageSDKAnnotations[it.package] = it.getAnnotation(SDKPackage.class)
-        }
-    }
 
     SdkApiTemplate(Class apiMessageClass) {
         try {
-            packageName = getPackageName(apiMessageClass)
-
             this.apiMessageClass = apiMessageClass
             this.requestAnnotation = apiMessageClass.getAnnotation(RestRequest.class)
 
@@ -53,36 +40,12 @@ class SdkApiTemplate implements SdkTemplate {
             baseName = StringUtils.removeEnd(baseName, "Reply")
 
             resultClassName = StringUtils.capitalize(baseName)
-            resultClassName = "${getPackageName(requestAnnotation.responseClass())}.${resultClassName}Result"
+            resultClassName = "${resultClassName}Result"
 
             isQueryApi = APIQueryMessage.class.isAssignableFrom(apiMessageClass)
         } catch (Throwable t) {
             throw new CloudRuntimeException(String.format("failed to make SDK for the class[%s]", apiMessageClass), t)
         }
-    }
-
-    static String getPackageName(Class clz) {
-        String packageName = "org.zstack.sdk"
-
-        if (clz.getPackage() == null) {
-            return packageName
-        }
-
-        for (Map.Entry<Package, SDKPackage> e : packageSDKAnnotations.entrySet()) {
-            String parentName = e.key.getName()
-            String pname = clz.getPackage().getName()
-
-            if (parentName == pname || pname.startsWith(parentName + ".")) {
-                if (e.value.packageName().isEmpty()) {
-                    return packageName
-                } else {
-                    String subPackageName = pname.replaceFirst(parentName, "")
-                    return e.value.packageName() + subPackageName
-                }
-            }
-        }
-
-        return packageName
     }
 
     def normalizeApiName() {
@@ -240,17 +203,17 @@ class SdkApiTemplate implements SdkTemplate {
 """)
 
         ms.add("""\
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 """)
 
         ms.add("""\
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "${requestAnnotation.method().name()}";
         info.path = "${path}";
@@ -266,13 +229,11 @@ class SdkApiTemplate implements SdkTemplate {
 
     def generateAction(String clzName, String path) {
         def f = new SdkFile()
-        f.subPath = packageName.replaceAll("\\.", "/")
         f.fileName = "${clzName}.java"
-        f.content = """package ${packageName};
+        f.content = """package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class ${clzName} extends ${isQueryApi ? "QueryAction" : "AbstractAction"} {
 

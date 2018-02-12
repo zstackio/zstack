@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class DeleteConnectionAccessPointLocalAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class DeleteConnectionAccessPointLocalAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteConnectionAccessPointLocalResult value;
+        public DeleteConnectionAccessPointLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -54,8 +53,8 @@ public class DeleteConnectionAccessPointLocalAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteConnectionAccessPointLocalResult value = res.getResult(org.zstack.sdk.DeleteConnectionAccessPointLocalResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteConnectionAccessPointLocalResult() : value; 
+        DeleteConnectionAccessPointLocalResult value = res.getResult(DeleteConnectionAccessPointLocalResult.class);
+        ret.value = value == null ? new DeleteConnectionAccessPointLocalResult() : value; 
 
         return ret;
     }
@@ -74,15 +73,15 @@ public class DeleteConnectionAccessPointLocalAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/hybrid/aliyun/access-point/{uuid}";

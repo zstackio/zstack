@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.AffinityGroupInventory;
-
 public class CreateAffinityGroupResult {
     public AffinityGroupInventory inventory;
     public void setInventory(AffinityGroupInventory inventory) {

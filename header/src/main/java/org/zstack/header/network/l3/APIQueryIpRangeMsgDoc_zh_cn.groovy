@@ -14,7 +14,7 @@ doc {
     rest {
         request {
 			url "GET /v1/l3-networks/ip-ranges"
-			url "GET /v1/l3-networks/ip-ranges/{uuid}"
+			url "GET /v1l3-networks/ip-ranges/{uuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 

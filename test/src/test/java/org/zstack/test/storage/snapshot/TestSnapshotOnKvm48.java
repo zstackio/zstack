@@ -65,7 +65,7 @@ public class TestSnapshotOnKvm48 {
 
         bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
             @Override
-            public void beforeDeliveryMessage(Message msg) {
+            public void intercept(Message msg) {
                 success = false;
             }
         }, VolumeSnapshotPrimaryStorageDeletionMsg.class);

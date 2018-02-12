@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.LoadBalancerListenerInventory;
-
 public class CreateLoadBalancerListenerResult {
     public LoadBalancerListenerInventory inventory;
     public void setInventory(LoadBalancerListenerInventory inventory) {

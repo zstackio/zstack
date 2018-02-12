@@ -1,8 +1,5 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.HybridEipStatus;
-import org.zstack.sdk.HybridType;
-
 public class HybridEipAddressInventory  {
 
     public java.lang.String uuid;

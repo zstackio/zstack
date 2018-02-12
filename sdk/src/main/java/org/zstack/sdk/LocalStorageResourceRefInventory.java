@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class LocalStorageResourceRefInventory  {
 
     public java.lang.String resourceUuid;

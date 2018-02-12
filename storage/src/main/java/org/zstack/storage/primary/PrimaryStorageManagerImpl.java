@@ -226,8 +226,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         }
 
         PrimaryStorageFactory factory = getPrimaryStorageFactory(PrimaryStorageType.valueOf(vo.getType()));
-        PrimaryStorageVO finalVo = vo;
-        PrimaryStorage ps = Platform.New(()-> factory.getPrimaryStorage(finalVo));
+        PrimaryStorage ps = factory.getPrimaryStorage(vo);
         ps.handleMessage(msg);
     }
 

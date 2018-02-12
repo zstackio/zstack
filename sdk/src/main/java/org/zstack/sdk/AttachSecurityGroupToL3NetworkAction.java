@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class AttachSecurityGroupToL3NetworkAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class AttachSecurityGroupToL3NetworkAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AttachSecurityGroupToL3NetworkResult value;
+        public AttachSecurityGroupToL3NetworkResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -54,8 +53,8 @@ public class AttachSecurityGroupToL3NetworkAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AttachSecurityGroupToL3NetworkResult value = res.getResult(org.zstack.sdk.AttachSecurityGroupToL3NetworkResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AttachSecurityGroupToL3NetworkResult() : value; 
+        AttachSecurityGroupToL3NetworkResult value = res.getResult(AttachSecurityGroupToL3NetworkResult.class);
+        ret.value = value == null ? new AttachSecurityGroupToL3NetworkResult() : value; 
 
         return ret;
     }
@@ -74,15 +73,15 @@ public class AttachSecurityGroupToL3NetworkAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/security-groups/{securityGroupUuid}/l3-networks/{l3NetworkUuid}";

@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class GetVipUsedPortsAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class GetVipUsedPortsAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetVipUsedPortsResult value;
+        public GetVipUsedPortsResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -48,8 +47,8 @@ public class GetVipUsedPortsAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetVipUsedPortsResult value = res.getResult(org.zstack.sdk.GetVipUsedPortsResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetVipUsedPortsResult() : value; 
+        GetVipUsedPortsResult value = res.getResult(GetVipUsedPortsResult.class);
+        ret.value = value == null ? new GetVipUsedPortsResult() : value; 
 
         return ret;
     }
@@ -68,15 +67,15 @@ public class GetVipUsedPortsAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/vips/{uuid}/usedports";

@@ -7,7 +7,6 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
-import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.PrimaryStorageMessage;
@@ -25,7 +24,7 @@ import org.zstack.header.volume.VolumeVO;
         responseClass = APILocalStorageMigrateVolumeEvent.class,
         isAction = true
 )
-public class APILocalStorageMigrateVolumeMsg extends APIMessage implements PrimaryStorageMessage, APIAuditor {
+public class APILocalStorageMigrateVolumeMsg extends APIMessage implements PrimaryStorageMessage {
     @APIParam(resourceType = VolumeVO.class, checkAccount = true, operationTarget = true)
     private String volumeUuid;
     @APIParam(resourceType = HostVO.class)
@@ -84,8 +83,4 @@ public class APILocalStorageMigrateVolumeMsg extends APIMessage implements Prima
         };
     }
 
-    @Override
-    public Result audit(APIMessage msg, APIEvent rsp) {
-        return new Result(((APILocalStorageMigrateVolumeMsg)msg).primaryStorageUuid, PrimaryStorageVO.class);
-    }
 }

@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.ImageInventory;
-
 public class CreateRootVolumeTemplateFromVolumeSnapshotResult {
     public ImageInventory inventory;
     public void setInventory(ImageInventory inventory) {
@@ -11,11 +9,11 @@ public class CreateRootVolumeTemplateFromVolumeSnapshotResult {
         return this.inventory;
     }
 
-    public java.util.List failures;
-    public void setFailures(java.util.List failures) {
+    public java.util.List<CreateRootVolumeTemplateFromVolumeSnapshotFailure> failures;
+    public void setFailures(java.util.List<CreateRootVolumeTemplateFromVolumeSnapshotFailure> failures) {
         this.failures = failures;
     }
-    public java.util.List getFailures() {
+    public java.util.List<CreateRootVolumeTemplateFromVolumeSnapshotFailure> getFailures() {
         return this.failures;
     }
 

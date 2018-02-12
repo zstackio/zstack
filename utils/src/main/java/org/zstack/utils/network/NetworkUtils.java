@@ -381,13 +381,6 @@ public class NetworkUtils {
         return ret;
     }
 
-    /**
-     *
-     * @param ip
-     * @param port
-     * @param timeout in milliseconds
-     * @return
-     */
     public static boolean isRemotePortOpen(String ip, int port, int timeout) {
         Socket socket = null;
 

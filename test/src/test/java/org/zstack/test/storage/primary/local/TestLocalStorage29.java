@@ -103,7 +103,7 @@ public class TestLocalStorage29 {
 
         bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
             @Override
-            public void beforeDeliveryMessage(Message msg) {
+            public void intercept(Message msg) {
                 // when rollback, the volumes are deleted on the dst host
                 LocalStorageDirectlyDeleteBitsMsg lmsg = (LocalStorageDirectlyDeleteBitsMsg) msg;
                 if (lmsg.getHostUuid().equals(host2.getUuid())) {

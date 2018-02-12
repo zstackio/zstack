@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class AttachEipAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class AttachEipAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AttachEipResult value;
+        public AttachEipResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -54,8 +53,8 @@ public class AttachEipAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AttachEipResult value = res.getResult(org.zstack.sdk.AttachEipResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AttachEipResult() : value; 
+        AttachEipResult value = res.getResult(AttachEipResult.class);
+        ret.value = value == null ? new AttachEipResult() : value; 
 
         return ret;
     }
@@ -74,15 +73,15 @@ public class AttachEipAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/eips/{eipUuid}/vm-instances/nics/{vmNicUuid}";

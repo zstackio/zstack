@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class AliyunSnapshotInventory  {
 
     public java.lang.String uuid;

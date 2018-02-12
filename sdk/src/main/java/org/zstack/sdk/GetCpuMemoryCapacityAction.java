@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class GetCpuMemoryCapacityAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class GetCpuMemoryCapacityAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetCpuMemoryCapacityResult value;
+        public GetCpuMemoryCapacityResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -54,8 +53,8 @@ public class GetCpuMemoryCapacityAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetCpuMemoryCapacityResult value = res.getResult(org.zstack.sdk.GetCpuMemoryCapacityResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetCpuMemoryCapacityResult() : value; 
+        GetCpuMemoryCapacityResult value = res.getResult(GetCpuMemoryCapacityResult.class);
+        ret.value = value == null ? new GetCpuMemoryCapacityResult() : value; 
 
         return ret;
     }
@@ -74,15 +73,15 @@ public class GetCpuMemoryCapacityAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/hosts/capacities/cpu-memory";

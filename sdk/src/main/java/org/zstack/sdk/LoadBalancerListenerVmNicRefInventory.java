@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class LoadBalancerListenerVmNicRefInventory  {
 
     public java.lang.Long id;

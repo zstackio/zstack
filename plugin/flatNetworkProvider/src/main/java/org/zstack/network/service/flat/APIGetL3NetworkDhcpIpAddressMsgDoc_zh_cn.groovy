@@ -11,7 +11,7 @@ doc {
 
     rest {
         request {
-			url "GET /v1/l3-networks/{l3NetworkUuid}/dhcp-ip"
+			url "GET /v1/l3-networks/{l3NetworkUuid/dhcp-ip"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
@@ -26,9 +26,9 @@ doc {
 					name "l3NetworkUuid"
 					enclosedIn ""
 					desc "三层网络UUID"
-					location "url"
+					location "query"
 					type "String"
-					optional false
+					optional true
 					since "0.6"
 					
 				}

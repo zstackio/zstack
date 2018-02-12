@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class AffinityGroupInventory  {
 
     public java.lang.String uuid;
@@ -76,11 +74,11 @@ public class AffinityGroupInventory  {
         return this.lastOpDate;
     }
 
-    public java.util.List usages;
-    public void setUsages(java.util.List usages) {
+    public java.util.List<AffinityGroupUsageInventory> usages;
+    public void setUsages(java.util.List<AffinityGroupUsageInventory> usages) {
         this.usages = usages;
     }
-    public java.util.List getUsages() {
+    public java.util.List<AffinityGroupUsageInventory> getUsages() {
         return this.usages;
     }
 

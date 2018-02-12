@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class VpcVpnIpSecConfigStruct  {
 
     public java.lang.String IpsecEncAlg;

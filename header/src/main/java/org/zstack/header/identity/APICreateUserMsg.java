@@ -6,7 +6,6 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
-import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 
 @Action(category = AccountConstant.ACTION_CATEGORY, accountOnly = true)
@@ -16,7 +15,7 @@ import org.zstack.header.rest.RestRequest;
         parameterName = "params",
         responseClass = APICreateUserEvent.class
 )
-public class APICreateUserMsg extends APICreateMessage implements AccountMessage, APIAuditor {
+public class APICreateUserMsg extends APICreateMessage implements AccountMessage {
     @APIParam(maxLength = 255)
     private String name;
     @APIParam(maxLength = 255)
@@ -72,15 +71,5 @@ public class APICreateUserMsg extends APICreateMessage implements AccountMessage
                 }
             }
         };
-    }
-
-    @Override
-    public Result audit(APIMessage msg, APIEvent rsp) {
-        String uuid = "";
-        if (rsp.isSuccess()) {
-            APICreateUserEvent evt = (APICreateUserEvent) rsp;
-            uuid = evt.getInventory().getUuid();
-        }
-        return new Result(uuid, UserVO.class);
     }
 }

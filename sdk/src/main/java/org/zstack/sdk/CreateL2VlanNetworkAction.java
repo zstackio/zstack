@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class CreateL2VlanNetworkAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class CreateL2VlanNetworkAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateL2VlanNetworkResult value;
+        public CreateL2VlanNetworkResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -69,8 +68,8 @@ public class CreateL2VlanNetworkAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateL2VlanNetworkResult value = res.getResult(org.zstack.sdk.CreateL2VlanNetworkResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateL2VlanNetworkResult() : value; 
+        CreateL2VlanNetworkResult value = res.getResult(CreateL2VlanNetworkResult.class);
+        ret.value = value == null ? new CreateL2VlanNetworkResult() : value; 
 
         return ret;
     }
@@ -89,15 +88,15 @@ public class CreateL2VlanNetworkAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/l2-networks/vlan";

@@ -7,7 +7,6 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
-import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.tag.TagResourceType;
@@ -22,7 +21,7 @@ import static org.zstack.header.vm.VmInstanceConstant.USER_VM_TYPE;
         parameterName = "params",
         method = HttpMethod.POST
 )
-public class APICreateInstanceOfferingMsg extends APICreateMessage implements APIAuditor {
+public class APICreateInstanceOfferingMsg extends APICreateMessage {
     @APIParam(maxLength = 255)
     private String name;
     @APIParam(required = false, maxLength = 2048)
@@ -130,13 +129,4 @@ public class APICreateInstanceOfferingMsg extends APICreateMessage implements AP
         };
     }
 
-    @Override
-    public Result audit(APIMessage msg, APIEvent rsp) {
-        String uuid = "";
-        if (rsp.isSuccess()) {
-            APICreateInstanceOfferingEvent evt = (APICreateInstanceOfferingEvent) rsp;
-            uuid = evt.getInventory().getUuid();
-        }
-        return new Result(uuid, InstanceOfferingVO.class);
-    }
 }

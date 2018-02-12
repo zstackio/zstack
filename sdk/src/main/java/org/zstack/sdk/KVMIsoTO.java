@@ -1,8 +1,6 @@
 package org.zstack.sdk;
 
-
-
-public class KVMIsoTO extends org.zstack.sdk.ImageInventory {
+public class KVMIsoTO extends ImageInventory {
 
     public java.lang.String pathInCache;
     public void setPathInCache(java.lang.String pathInCache) {

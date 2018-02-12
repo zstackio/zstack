@@ -9,7 +9,6 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.notification.NotificationConstant;
-import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.tag.TagResourceType;
@@ -50,7 +49,7 @@ import org.zstack.header.tag.TagResourceType;
         parameterName = "params",
         responseClass = APICreateDataVolumeEvent.class
 )
-public class APICreateDataVolumeMsg extends APICreateMessage implements APIAuditor {
+public class APICreateDataVolumeMsg extends APICreateMessage {
     /**
      * @desc max length of 255 characters
      */
@@ -126,10 +125,5 @@ public class APICreateDataVolumeMsg extends APICreateMessage implements APIAudit
                 }
             }
         };
-    }
-
-    @Override
-    public Result audit(APIMessage msg, APIEvent rsp) {
-        return new Result(rsp.isSuccess() ? ((APICreateDataVolumeEvent)rsp).getInventory().getUuid() : "", VolumeVO.class);
     }
 }

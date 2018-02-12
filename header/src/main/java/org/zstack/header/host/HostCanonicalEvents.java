@@ -1,6 +1,5 @@
 package org.zstack.header.host;
 
-import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.NeedJsonSchema;
 
 /**
@@ -9,28 +8,6 @@ import org.zstack.header.message.NeedJsonSchema;
 public class HostCanonicalEvents {
     public static final String HOST_STATUS_CHANGED_PATH = "/host/status/change";
     public static final String HOST_DELETED_PATH = "/host/delete";
-    public static final String HOST_DISCONNECTED_PATH = "/host/disconnected";
-
-    public static class HostDisconnectedData {
-        public String hostUuid;
-        public ErrorCode reason;
-
-        public String getHostUuid() {
-            return hostUuid;
-        }
-
-        public void setHostUuid(String hostUuid) {
-            this.hostUuid = hostUuid;
-        }
-
-        public ErrorCode getReason() {
-            return reason;
-        }
-
-        public void setReason(ErrorCode reason) {
-            this.reason = reason;
-        }
-    }
 
     @NeedJsonSchema
     public static class HostStatusChangedData {

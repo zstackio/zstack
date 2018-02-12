@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class NetworkServiceL3NetworkRefInventory  {
 
     public java.lang.String l3NetworkUuid;

@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class UpdateBaremetalPxeServerAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class UpdateBaremetalPxeServerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateBaremetalPxeServerResult value;
+        public UpdateBaremetalPxeServerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -66,8 +65,8 @@ public class UpdateBaremetalPxeServerAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateBaremetalPxeServerResult value = res.getResult(org.zstack.sdk.UpdateBaremetalPxeServerResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateBaremetalPxeServerResult() : value; 
+        UpdateBaremetalPxeServerResult value = res.getResult(UpdateBaremetalPxeServerResult.class);
+        ret.value = value == null ? new UpdateBaremetalPxeServerResult() : value; 
 
         return ret;
     }
@@ -86,15 +85,15 @@ public class UpdateBaremetalPxeServerAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/baremetal/pxeserver/{uuid}/actions";

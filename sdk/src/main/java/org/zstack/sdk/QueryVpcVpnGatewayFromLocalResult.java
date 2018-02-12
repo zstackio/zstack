@@ -1,13 +1,11 @@
 package org.zstack.sdk;
 
-
-
 public class QueryVpcVpnGatewayFromLocalResult {
-    public java.util.List inventories;
-    public void setInventories(java.util.List inventories) {
+    public java.util.List<VpcVpnGatewayInventory> inventories;
+    public void setInventories(java.util.List<VpcVpnGatewayInventory> inventories) {
         this.inventories = inventories;
     }
-    public java.util.List getInventories() {
+    public java.util.List<VpcVpnGatewayInventory> getInventories() {
         return this.inventories;
     }
 

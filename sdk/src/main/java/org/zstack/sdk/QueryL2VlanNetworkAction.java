@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class QueryL2VlanNetworkAction extends QueryAction {
 
@@ -12,7 +11,7 @@ public class QueryL2VlanNetworkAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.QueryL2VlanNetworkResult value;
+        public QueryL2VlanNetworkResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -34,8 +33,8 @@ public class QueryL2VlanNetworkAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.QueryL2VlanNetworkResult value = res.getResult(org.zstack.sdk.QueryL2VlanNetworkResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QueryL2VlanNetworkResult() : value; 
+        QueryL2VlanNetworkResult value = res.getResult(QueryL2VlanNetworkResult.class);
+        ret.value = value == null ? new QueryL2VlanNetworkResult() : value; 
 
         return ret;
     }
@@ -54,15 +53,15 @@ public class QueryL2VlanNetworkAction extends QueryAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/l2-networks/vlan";

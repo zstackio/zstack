@@ -7,7 +7,6 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
-import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.vm.VmInstanceVO;
@@ -28,7 +27,7 @@ import java.util.List;
         method = HttpMethod.DELETE,
         responseClass = APIRemoveVmNicFromLoadBalancerEvent.class
 )
-public class APIRemoveVmNicFromLoadBalancerMsg extends APIMessage implements LoadBalancerMessage, APIAuditor {
+public class APIRemoveVmNicFromLoadBalancerMsg extends APIMessage implements LoadBalancerMessage {
     @APIParam(resourceType = VmNicVO.class, checkAccount = true, operationTarget = true, nonempty = true)
     private List<String> vmNicUuids;
     @APINoSee
@@ -101,8 +100,4 @@ public class APIRemoveVmNicFromLoadBalancerMsg extends APIMessage implements Loa
         };
     }
 
-    @Override
-    public Result audit(APIMessage msg, APIEvent rsp) {
-        return new Result(((APIRemoveVmNicFromLoadBalancerMsg)msg).loadBalancerUuid, LoadBalancerVO.class);
-    }
 }

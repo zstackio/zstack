@@ -10,7 +10,6 @@ import org.zstack.core.CoreGlobalProperty
 import org.zstack.core.Platform
 import org.zstack.core.asyncbatch.While
 import org.zstack.core.db.DatabaseFacade
-import org.zstack.core.db.DatabaseFacadeImpl
 import org.zstack.core.db.SQL
 import org.zstack.core.notification.NotificationVO
 import org.zstack.header.core.NoErrorCompletion
@@ -26,24 +25,8 @@ import org.zstack.header.vo.EO
 import org.zstack.header.volume.VolumeDeletionPolicyManager
 import org.zstack.image.ImageGlobalConfig
 import org.zstack.sdk.*
-import org.zstack.sdk.sns.CreateSNSTopicAction
-import org.zstack.sdk.sns.DeleteSNSApplicationEndpointAction
-import org.zstack.sdk.sns.DeleteSNSApplicationPlatformAction
-import org.zstack.sdk.sns.DeleteSNSTopicAction
-import org.zstack.sdk.sns.platform.dingtalk.CreateSNSDingTalkEndpointAction
-import org.zstack.sdk.sns.platform.email.CreateSNSEmailEndpointAction
-import org.zstack.sdk.sns.platform.email.CreateSNSEmailPlatformAction
-import org.zstack.sdk.sns.platform.http.CreateSNSHttpEndpointAction
-import org.zstack.sdk.zwatch.alarm.CreateAlarmAction
-import org.zstack.sdk.zwatch.alarm.DeleteAlarmAction
-import org.zstack.sdk.zwatch.alarm.SubscribeEventAction
-import org.zstack.sdk.zwatch.alarm.UnsubscribeEventAction
-import org.zstack.sdk.zwatch.alarm.sns.CreateSNSTextTemplateAction
-import org.zstack.sdk.zwatch.alarm.sns.DeleteSNSTextTemplateAction
 import org.zstack.storage.volume.VolumeGlobalConfig
-import org.zstack.utils.BeanUtils
 import org.zstack.utils.DebugUtils
-import org.zstack.utils.FieldUtils
 import org.zstack.utils.data.Pair
 import org.zstack.utils.gson.JSONObjectUtil
 
@@ -75,8 +58,6 @@ class EnvSpec implements Node {
     private ConcurrentHashMap<Class, List<Tuple>> defaultMessageHandlers = [:]
     private static RestTemplate restTemplate
     private static Set<Class> simulatorClasses = Platform.reflections.getSubTypesOf(Simulator.class)
-
-    private Set<Closure> cleanupClosures = []
 
     static List deletionMethods = [
             [CreateZoneAction.metaClass, CreateZoneAction.Result.metaClass, DeleteZoneAction.class],
@@ -120,31 +101,16 @@ class EnvSpec implements Node {
             [CreateBaremetalPxeServerAction.metaClass, CreateBaremetalPxeServerAction.Result.metaClass, DeleteBaremetalPxeServerAction.class],
             [CreateBaremetalChassisAction.metaClass, CreateBaremetalChassisAction.Result.metaClass, DeleteBaremetalChassisAction.class],
             [CreateBaremetalHostCfgAction.metaClass, CreateBaremetalHostCfgAction.Result.metaClass, DeleteBaremetalHostCfgAction.class],
-            [AddLdapServerAction.metaClass, AddLdapServerAction.Result.metaClass, DeleteLdapServerAction.class],
-            [CreateSNSEmailPlatformAction.metaClass, CreateSNSEmailPlatformAction.Result.metaClass, DeleteSNSApplicationPlatformAction.class],
-            [CreateSNSEmailEndpointAction.metaClass, CreateSNSEmailEndpointAction.Result.metaClass, DeleteSNSApplicationEndpointAction.class],
-            [CreateSNSTopicAction.metaClass, CreateSNSTopicAction.Result.metaClass, DeleteSNSTopicAction.class],
-            [CreateAlarmAction.metaClass, CreateAlarmAction.Result.metaClass, DeleteAlarmAction.class],
-            [SubscribeEventAction.metaClass, SubscribeEventAction.Result.metaClass, UnsubscribeEventAction.class],
-            [CreateSNSHttpEndpointAction.metaClass, CreateSNSHttpEndpointAction.Result.metaClass, DeleteSNSApplicationEndpointAction.class],
-            [CreateSNSDingTalkEndpointAction.metaClass, CreateSNSDingTalkEndpointAction.Result.metaClass, DeleteSNSApplicationEndpointAction.class],
-            [CreateSNSTextTemplateAction.metaClass, CreateSNSTextTemplateAction.Result.metaClass, DeleteSNSTextTemplateAction.class],
+            [CreateMonitorTriggerAction.metaClass, CreateMonitorTriggerAction.Result.metaClass, DeleteMonitorTriggerAction.class],
             [CreateEmailMonitorTriggerActionAction.metaClass, CreateEmailMonitorTriggerActionAction.Result.metaClass, DeleteMonitorTriggerActionAction.class],
             [CreateEmailMediaAction.metaClass, CreateEmailMediaAction.Result.metaClass, DeleteMediaAction.class],
+            [AddLdapServerAction.metaClass, AddLdapServerAction.Result.metaClass, DeleteLdapServerAction.class],
             [SubmitLongJobAction.metaClass, SubmitLongJobAction.Result.metaClass, DeleteLongJobAction.class],
     ]
 
     static Closure GLOBAL_DELETE_HOOK
-    static List<AllowedDBRemaining> allowedDBRemainingList = []
 
     protected ConcurrentLinkedQueue resourcesNeedDeletion = new ConcurrentLinkedQueue()
-
-    static {
-        BeanUtils.reflections.getSubTypesOf(DBRemaining.class).each {
-            def remaining = it.newInstance()
-            allowedDBRemainingList.add(remaining.reportRemaining())
-        }
-    }
 
     private void installDeletionMethods() {
         deletionMethods.each { it ->
@@ -180,11 +146,11 @@ class EnvSpec implements Node {
         restTemplate = new RestTemplate(factory)
     }
 
-    Closure getSimulator(String path) {
+    public Closure getSimulator(String path) {
         return httpHandlers[path]
     }
 
-    Closure getPostSimulator(String path) {
+    public Closure getPostSimulator(String path) {
         return httpPostHandlers[path]
     }
 
@@ -307,7 +273,6 @@ class EnvSpec implements Node {
     def inventoryByName(String name) {
         def spec = specByName(name)
 
-        assert spec != null : "cannot find spec[${name}]"
         assert spec.hasProperty("inventory"): "${spec.class} doesn't have inventory"
         return spec.inventory
     }
@@ -503,7 +468,7 @@ class EnvSpec implements Node {
     }
 
     private void makeSureAllEntitiesDeleted() {
-        DatabaseFacadeImpl dbf = Test.componentLoader.getComponent(DatabaseFacadeImpl.class)
+        DatabaseFacade dbf = Test.componentLoader.getComponent(DatabaseFacade.class)
         def entityTypes = dbf.entityManager.metamodel.entities
         entityTypes.each { type ->
             if (type.name in ["ManagementNodeVO", "SessionVO",
@@ -521,20 +486,7 @@ class EnvSpec implements Node {
             long count = SQL.New("select count(*) from ${type.name}".toString(), Long.class).find()
 
             if (count > 0) {
-                Class voClz = dbf.entityInfoMap.keySet().find { it.simpleName == type.name }
-                assert voClz != null: "cannot find the entity[${type.name}]"
-
-                List vos = SQL.New("select a from ${type.name} a".toString(), voClz).list()
-
-                for (AllowedDBRemaining a : allowedDBRemainingList) {
-                    vos = a.check(type.name, vos)
-                    if (vos.isEmpty()) {
-                        // the remaining rows are allowed by test
-                        return
-                    }
-                }
-
-                def err = "[${Test.CURRENT_SUB_CASE != null ? Test.CURRENT_SUB_CASE.class : this.class}] EnvSpec.delete() didn't cleanup the environment, there are still ${vos.size()} records in the database" +
+                def err = "[${Test.CURRENT_SUB_CASE != null ? Test.CURRENT_SUB_CASE.class : this.class}] EnvSpec.delete() didn't cleanup the environment, there are still records in the database" +
                         " table ${type.name}, go fix it immediately!!! Abort the system"
                 logger.fatal(err)
 
@@ -636,12 +588,9 @@ class EnvSpec implements Node {
             VolumeGlobalConfig.VOLUME_DELETION_POLICY.updateValue(VolumeDeletionPolicyManager.VolumeDeletionPolicy.Direct.toString())
             VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy.Direct.toString())
 
-            cleanupClosures.each { it() }
             cleanSimulatorAndMessageHandlers()
 
-            if (session != null) {
-                destroy(session.uuid)
-            }
+            destroy(session.uuid)
 
             resourcesNeedDeletion.each {
                 logger.info("run delete() method on ${it.class}")
@@ -663,7 +612,7 @@ class EnvSpec implements Node {
             throw e
         } catch (Throwable t) {
             logger.fatal("an error happened when running EnvSpec.delete() for" +
-                    " the case ${Test.CURRENT_SUB_CASE?.class}, we must stop the test suite, ${t.getMessage()}", t)
+                    " the case ${Test.CURRENT_SUB_CASE?.class}, we must stop the test suite, ${t.getMessage()}")
             throw new StopTestSuiteException(t)
         } finally {
             // set the currentEnvSpec to null anyway
@@ -705,11 +654,6 @@ class EnvSpec implements Node {
 
     void afterSimulator(String path, Closure c) {
         httpPostHandlers[path] = c
-    }
-
-    void mockFactory(Class clz, Closure c) {
-        Test.functionForMockTestObjectFactory.put(clz, c)
-        cleanupClosures.add({ Test.functionForMockTestObjectFactory.remove(clz) })
     }
 
     void handleSimulatorHttpRequests(HttpServletRequest req, HttpServletResponse rsp) {

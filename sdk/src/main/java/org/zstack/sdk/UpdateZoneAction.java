@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class UpdateZoneAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class UpdateZoneAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateZoneResult value;
+        public UpdateZoneResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -57,8 +56,8 @@ public class UpdateZoneAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateZoneResult value = res.getResult(org.zstack.sdk.UpdateZoneResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateZoneResult() : value; 
+        UpdateZoneResult value = res.getResult(UpdateZoneResult.class);
+        ret.value = value == null ? new UpdateZoneResult() : value; 
 
         return ret;
     }
@@ -77,15 +76,15 @@ public class UpdateZoneAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/zones/{uuid}/actions";

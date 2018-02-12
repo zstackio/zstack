@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class MediaInventory  {
 
     public java.lang.String uuid;

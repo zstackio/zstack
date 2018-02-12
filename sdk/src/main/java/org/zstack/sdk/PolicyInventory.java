@@ -1,14 +1,12 @@
 package org.zstack.sdk;
 
-
-
 public class PolicyInventory  {
 
-    public java.util.List statements;
-    public void setStatements(java.util.List statements) {
+    public java.util.List<PolicyStatement> statements;
+    public void setStatements(java.util.List<PolicyStatement> statements) {
         this.statements = statements;
     }
-    public java.util.List getStatements() {
+    public java.util.List<PolicyStatement> getStatements() {
         return this.statements;
     }
 

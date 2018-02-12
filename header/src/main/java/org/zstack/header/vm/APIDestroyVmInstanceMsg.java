@@ -46,7 +46,7 @@ public class APIDestroyVmInstanceMsg extends APIDeleteMessage implements VmInsta
     /**
      * @desc vm uuid
      */
-    @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true, successIfResourceNotExisting = true)
+    @APIParam(checkAccount = true, operationTarget = true)
     private String uuid;
 
     public String getUuid() {

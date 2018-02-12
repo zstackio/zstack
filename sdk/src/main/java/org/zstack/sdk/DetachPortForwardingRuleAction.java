@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class DetachPortForwardingRuleAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class DetachPortForwardingRuleAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DetachPortForwardingRuleResult value;
+        public DetachPortForwardingRuleResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -51,8 +50,8 @@ public class DetachPortForwardingRuleAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DetachPortForwardingRuleResult value = res.getResult(org.zstack.sdk.DetachPortForwardingRuleResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DetachPortForwardingRuleResult() : value; 
+        DetachPortForwardingRuleResult value = res.getResult(DetachPortForwardingRuleResult.class);
+        ret.value = value == null ? new DetachPortForwardingRuleResult() : value; 
 
         return ret;
     }
@@ -71,15 +70,15 @@ public class DetachPortForwardingRuleAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/port-forwarding/{uuid}/vm-instances/nics";

@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class QueryConnectionBetweenL3NetworkAndAliyunVSwitchAction extends QueryAction {
 
@@ -12,7 +11,7 @@ public class QueryConnectionBetweenL3NetworkAndAliyunVSwitchAction extends Query
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.QueryConnectionBetweenL3NetworkAndAliyunVSwitchResult value;
+        public QueryConnectionBetweenL3NetworkAndAliyunVSwitchResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -34,8 +33,8 @@ public class QueryConnectionBetweenL3NetworkAndAliyunVSwitchAction extends Query
             return ret;
         }
         
-        org.zstack.sdk.QueryConnectionBetweenL3NetworkAndAliyunVSwitchResult value = res.getResult(org.zstack.sdk.QueryConnectionBetweenL3NetworkAndAliyunVSwitchResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QueryConnectionBetweenL3NetworkAndAliyunVSwitchResult() : value; 
+        QueryConnectionBetweenL3NetworkAndAliyunVSwitchResult value = res.getResult(QueryConnectionBetweenL3NetworkAndAliyunVSwitchResult.class);
+        ret.value = value == null ? new QueryConnectionBetweenL3NetworkAndAliyunVSwitchResult() : value; 
 
         return ret;
     }
@@ -54,15 +53,15 @@ public class QueryConnectionBetweenL3NetworkAndAliyunVSwitchAction extends Query
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/hybrid/aliyun/relationships";

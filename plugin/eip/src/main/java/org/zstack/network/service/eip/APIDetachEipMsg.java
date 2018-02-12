@@ -7,16 +7,10 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
-import org.zstack.header.other.APIAuditor;
-import org.zstack.header.other.APIMultiAuditor;
-import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.header.vm.VmNicVO;
 
 import javax.persistence.Tuple;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * @api
@@ -60,16 +54,12 @@ import java.util.List;
         method = HttpMethod.DELETE,
         responseClass = APIDetachEipEvent.class
 )
-public class APIDetachEipMsg extends APIMessage implements EipMessage, APIMultiAuditor {
+public class APIDetachEipMsg extends APIMessage implements EipMessage {
     /**
      * @desc eip uuid
      */
     @APIParam(resourceType = EipVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
-
-    // for audit purpose only
-    @APINoSee
-    public String vmNicUuid;
 
     public String getUuid() {
         return uuid;
@@ -129,15 +119,5 @@ public class APIDetachEipMsg extends APIMessage implements EipMessage, APIMultiA
                         .done();
             }
         };
-    }
-
-    @Override
-    public List<APIAuditor.Result> multiAudit(APIMessage msg, APIEvent rsp) {
-        APIDetachEipMsg amsg = (APIDetachEipMsg) msg;
-        List<APIAuditor.Result> res = new ArrayList<>();
-        res.add(new APIAuditor.Result(amsg.getUuid(), EipVO.class));
-        res.add(new APIAuditor.Result(amsg.vmNicUuid, VmNicVO.class));
-
-        return res;
     }
 }

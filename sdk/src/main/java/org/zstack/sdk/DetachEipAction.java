@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class DetachEipAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class DetachEipAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DetachEipResult value;
+        public DetachEipResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -51,8 +50,8 @@ public class DetachEipAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DetachEipResult value = res.getResult(org.zstack.sdk.DetachEipResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DetachEipResult() : value; 
+        DetachEipResult value = res.getResult(DetachEipResult.class);
+        ret.value = value == null ? new DetachEipResult() : value; 
 
         return ret;
     }
@@ -71,15 +70,15 @@ public class DetachEipAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/eips/{uuid}/vm-instances/nics";

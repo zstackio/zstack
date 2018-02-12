@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class CreateL3NetworkAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class CreateL3NetworkAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateL3NetworkResult value;
+        public CreateL3NetworkResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -72,8 +71,8 @@ public class CreateL3NetworkAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateL3NetworkResult value = res.getResult(org.zstack.sdk.CreateL3NetworkResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateL3NetworkResult() : value; 
+        CreateL3NetworkResult value = res.getResult(CreateL3NetworkResult.class);
+        ret.value = value == null ? new CreateL3NetworkResult() : value; 
 
         return ret;
     }
@@ -92,15 +91,15 @@ public class CreateL3NetworkAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/l3-networks";

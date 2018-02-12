@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class GarbageCollectorInventory  {
 
     public java.lang.String uuid;

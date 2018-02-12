@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class Spending  {
 
     public java.lang.String spendingType;
@@ -36,11 +34,11 @@ public class Spending  {
         return this.dateEnd;
     }
 
-    public java.util.List details;
-    public void setDetails(java.util.List details) {
+    public java.util.List<SpendingDetails> details;
+    public void setDetails(java.util.List<SpendingDetails> details) {
         this.details = details;
     }
-    public java.util.List getDetails() {
+    public java.util.List<SpendingDetails> getDetails() {
         return this.details;
     }
 

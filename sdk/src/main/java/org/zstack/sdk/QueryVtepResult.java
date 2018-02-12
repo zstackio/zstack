@@ -1,13 +1,11 @@
 package org.zstack.sdk;
 
-
-
 public class QueryVtepResult {
-    public java.util.List inventories;
-    public void setInventories(java.util.List inventories) {
+    public java.util.List<VtepInventory> inventories;
+    public void setInventories(java.util.List<VtepInventory> inventories) {
         this.inventories = inventories;
     }
-    public java.util.List getInventories() {
+    public java.util.List<VtepInventory> getInventories() {
         return this.inventories;
     }
 

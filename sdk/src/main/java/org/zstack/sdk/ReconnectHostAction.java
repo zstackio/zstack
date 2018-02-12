@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class ReconnectHostAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class ReconnectHostAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.ReconnectHostResult value;
+        public ReconnectHostResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -51,8 +50,8 @@ public class ReconnectHostAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.ReconnectHostResult value = res.getResult(org.zstack.sdk.ReconnectHostResult.class);
-        ret.value = value == null ? new org.zstack.sdk.ReconnectHostResult() : value; 
+        ReconnectHostResult value = res.getResult(ReconnectHostResult.class);
+        ret.value = value == null ? new ReconnectHostResult() : value; 
 
         return ret;
     }
@@ -71,15 +70,15 @@ public class ReconnectHostAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/hosts/{uuid}/actions";

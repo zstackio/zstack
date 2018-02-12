@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.BackupStorageInventory;
-
 public class ReconnectBackupStorageResult {
     public BackupStorageInventory inventory;
     public void setInventory(BackupStorageInventory inventory) {

@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class GetLicenseCapabilitiesAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class GetLicenseCapabilitiesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetLicenseCapabilitiesResult value;
+        public GetLicenseCapabilitiesResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -42,8 +41,8 @@ public class GetLicenseCapabilitiesAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetLicenseCapabilitiesResult value = res.getResult(org.zstack.sdk.GetLicenseCapabilitiesResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetLicenseCapabilitiesResult() : value; 
+        GetLicenseCapabilitiesResult value = res.getResult(GetLicenseCapabilitiesResult.class);
+        ret.value = value == null ? new GetLicenseCapabilitiesResult() : value; 
 
         return ret;
     }
@@ -62,15 +61,15 @@ public class GetLicenseCapabilitiesAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/licenses/capabilities";

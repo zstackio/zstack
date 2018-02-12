@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class ExportImageFromBackupStorageResult {
     public java.lang.String imageUrl;
     public void setImageUrl(java.lang.String imageUrl) {

@@ -1,6 +1,5 @@
 package org.zstack.header.storage.primary;
 
-import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.NeedJsonSchema;
 
 /**
@@ -11,29 +10,6 @@ public class PrimaryStorageCanonicalEvent {
     public static final String PRIMARY_STORAGE_STATUS_CHANGED_PATH = "/primaryStorage/status/change";
     public static final String PRIMARY_STORAGE_STATE_CHANGED_PATH = "/primaryStorage/state/change";
     public static final String PRIMARY_STORAGE_HOST_STATUS_CHANGED_PATH = "/primaryStorage/host/status/change";
-    public static final String PRIMARY_STORAGE_DISCONNECTED = "/primaryStorage/disconnected";
-
-    public static class DisconnectedData {
-        private String primaryStorageUuid;
-        private ErrorCode reason;
-
-        public String getPrimaryStorageUuid() {
-            return primaryStorageUuid;
-        }
-
-        public void setPrimaryStorageUuid(String primaryStorageUuid) {
-            this.primaryStorageUuid = primaryStorageUuid;
-        }
-
-        public ErrorCode getReason() {
-            return reason;
-        }
-
-        public void setReason(ErrorCode reason) {
-            this.reason = reason;
-        }
-    }
-
     @NeedJsonSchema
     public static class PrimaryStorageDeletedData {
         private String primaryStorageUuid;

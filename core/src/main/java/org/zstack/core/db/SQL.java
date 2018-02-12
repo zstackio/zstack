@@ -4,14 +4,12 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.utils.DebugUtils;
 
 import javax.persistence.LockModeType;
 import javax.persistence.Query;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 
 /**
  * Created by xing5 on 2017/1/11.
@@ -108,20 +106,6 @@ public class SQL {
         int ret = query.executeUpdate();
         dbf.getEntityManager().flush();
         return ret;
-    }
-
-    public <T> void paginate(long total, Consumer<List<T>> consumer) {
-        DebugUtils.Assert(max != null, "call limit() before paginate");
-        if (first == null) {
-            first = 0;
-        }
-
-        int times = (int) (total / max) + (total % max != 0 ? 1 : 0);
-        for (int i=0; i<times; i++) {
-            rebuildQueryInTransaction();
-            consumer.accept(query.getResultList());
-            first += max;
-        }
     }
 
     public int execute() {

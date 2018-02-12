@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class AttachMonitorTriggerActionToTriggerAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class AttachMonitorTriggerActionToTriggerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AttachMonitorTriggerActionToTriggerResult value;
+        public AttachMonitorTriggerActionToTriggerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -54,8 +53,8 @@ public class AttachMonitorTriggerActionToTriggerAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AttachMonitorTriggerActionToTriggerResult value = res.getResult(org.zstack.sdk.AttachMonitorTriggerActionToTriggerResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AttachMonitorTriggerActionToTriggerResult() : value; 
+        AttachMonitorTriggerActionToTriggerResult value = res.getResult(AttachMonitorTriggerActionToTriggerResult.class);
+        ret.value = value == null ? new AttachMonitorTriggerActionToTriggerResult() : value; 
 
         return ret;
     }
@@ -74,15 +73,15 @@ public class AttachMonitorTriggerActionToTriggerAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/monitoring/triggers/{triggerUuid}/trigger-actions/{actionUuid}";

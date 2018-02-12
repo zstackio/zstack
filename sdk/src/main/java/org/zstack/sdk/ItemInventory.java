@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class ItemInventory  {
 
     public java.lang.String name;

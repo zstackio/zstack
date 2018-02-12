@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class AttachIsoToVmInstanceAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class AttachIsoToVmInstanceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AttachIsoToVmInstanceResult value;
+        public AttachIsoToVmInstanceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -54,8 +53,8 @@ public class AttachIsoToVmInstanceAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AttachIsoToVmInstanceResult value = res.getResult(org.zstack.sdk.AttachIsoToVmInstanceResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AttachIsoToVmInstanceResult() : value; 
+        AttachIsoToVmInstanceResult value = res.getResult(AttachIsoToVmInstanceResult.class);
+        ret.value = value == null ? new AttachIsoToVmInstanceResult() : value; 
 
         return ret;
     }
@@ -74,15 +73,15 @@ public class AttachIsoToVmInstanceAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/vm-instances/{vmInstanceUuid}/iso/{isoUuid}";

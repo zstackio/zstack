@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class DetachPrimaryStorageFromClusterAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class DetachPrimaryStorageFromClusterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DetachPrimaryStorageFromClusterResult value;
+        public DetachPrimaryStorageFromClusterResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -54,8 +53,8 @@ public class DetachPrimaryStorageFromClusterAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DetachPrimaryStorageFromClusterResult value = res.getResult(org.zstack.sdk.DetachPrimaryStorageFromClusterResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DetachPrimaryStorageFromClusterResult() : value; 
+        DetachPrimaryStorageFromClusterResult value = res.getResult(DetachPrimaryStorageFromClusterResult.class);
+        ret.value = value == null ? new DetachPrimaryStorageFromClusterResult() : value; 
 
         return ret;
     }
@@ -74,15 +73,15 @@ public class DetachPrimaryStorageFromClusterAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/clusters/{clusterUuid}/primary-storage/{primaryStorageUuid}";

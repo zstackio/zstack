@@ -7,7 +7,6 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
-import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
@@ -24,7 +23,7 @@ import java.util.List;
         method = HttpMethod.POST,
         parameterName = "params"
 )
-public class APICreateRootVolumeTemplateFromVolumeSnapshotMsg extends APICreateMessage implements APIAuditor {
+public class APICreateRootVolumeTemplateFromVolumeSnapshotMsg extends APICreateMessage {
     @APIParam(resourceType = VolumeSnapshotVO.class, checkAccount = true, operationTarget = true)
     private String snapshotUuid;
     @APIParam(maxLength = 255)
@@ -120,8 +119,4 @@ public class APICreateRootVolumeTemplateFromVolumeSnapshotMsg extends APICreateM
         };
     }
 
-    @Override
-    public Result audit(APIMessage msg, APIEvent rsp) {
-        return new Result(rsp.isSuccess() ? ((APICreateRootVolumeTemplateFromVolumeSnapshotEvent)rsp).getInventory().getUuid() : "", ImageVO.class);
-    }
 }

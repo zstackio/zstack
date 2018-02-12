@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class GetBackupStorageCandidatesForImageMigrationAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class GetBackupStorageCandidatesForImageMigrationAction extends AbstractA
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetBackupStorageCandidatesForImageMigrationResult value;
+        public GetBackupStorageCandidatesForImageMigrationResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -45,8 +44,8 @@ public class GetBackupStorageCandidatesForImageMigrationAction extends AbstractA
             return ret;
         }
         
-        org.zstack.sdk.GetBackupStorageCandidatesForImageMigrationResult value = res.getResult(org.zstack.sdk.GetBackupStorageCandidatesForImageMigrationResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetBackupStorageCandidatesForImageMigrationResult() : value; 
+        GetBackupStorageCandidatesForImageMigrationResult value = res.getResult(GetBackupStorageCandidatesForImageMigrationResult.class);
+        ret.value = value == null ? new GetBackupStorageCandidatesForImageMigrationResult() : value; 
 
         return ret;
     }
@@ -65,15 +64,15 @@ public class GetBackupStorageCandidatesForImageMigrationAction extends AbstractA
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/backup-storage/{srcBackupStorageUuid}/migration-candidates";

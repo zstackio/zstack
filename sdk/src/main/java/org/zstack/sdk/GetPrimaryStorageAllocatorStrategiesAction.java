@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class GetPrimaryStorageAllocatorStrategiesAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class GetPrimaryStorageAllocatorStrategiesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetPrimaryStorageAllocatorStrategiesResult value;
+        public GetPrimaryStorageAllocatorStrategiesResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -42,8 +41,8 @@ public class GetPrimaryStorageAllocatorStrategiesAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetPrimaryStorageAllocatorStrategiesResult value = res.getResult(org.zstack.sdk.GetPrimaryStorageAllocatorStrategiesResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetPrimaryStorageAllocatorStrategiesResult() : value; 
+        GetPrimaryStorageAllocatorStrategiesResult value = res.getResult(GetPrimaryStorageAllocatorStrategiesResult.class);
+        ret.value = value == null ? new GetPrimaryStorageAllocatorStrategiesResult() : value; 
 
         return ret;
     }
@@ -62,15 +61,15 @@ public class GetPrimaryStorageAllocatorStrategiesAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/primary-storage/allocators/strategies";

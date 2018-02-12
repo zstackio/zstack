@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class BackupStorageInventory  {
 
     public java.lang.String uuid;
@@ -92,11 +90,11 @@ public class BackupStorageInventory  {
         return this.lastOpDate;
     }
 
-    public java.util.List attachedZoneUuids;
-    public void setAttachedZoneUuids(java.util.List attachedZoneUuids) {
+    public java.util.List<String> attachedZoneUuids;
+    public void setAttachedZoneUuids(java.util.List<String> attachedZoneUuids) {
         this.attachedZoneUuids = attachedZoneUuids;
     }
-    public java.util.List getAttachedZoneUuids() {
+    public java.util.List<String> getAttachedZoneUuids() {
         return this.attachedZoneUuids;
     }
 

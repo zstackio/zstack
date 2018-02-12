@@ -28,7 +28,7 @@ doc {
 					desc "资源的UUID，唯一标示该资源"
 					location "url"
 					type "String"
-					optional false
+					optional true
 					since "0.6"
 					
 				}

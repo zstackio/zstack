@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class ShareableVolumeVmInstanceRefInventory  {
 
     public java.lang.String uuid;

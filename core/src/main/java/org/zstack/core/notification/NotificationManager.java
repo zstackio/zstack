@@ -170,7 +170,7 @@ public class NotificationManager extends AbstractService {
         }
 
         @Override
-        public void beforeDeliveryMessage(Message msg) {
+        public void intercept(Message msg) {
             if (!(msg instanceof APIMessage)) {
                 return;
             }

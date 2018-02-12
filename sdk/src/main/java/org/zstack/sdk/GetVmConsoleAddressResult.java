@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class GetVmConsoleAddressResult {
     public java.lang.String hostIp;
     public void setHostIp(java.lang.String hostIp) {

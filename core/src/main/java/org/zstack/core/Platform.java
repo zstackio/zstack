@@ -4,6 +4,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.LocaleUtils;
 import org.apache.commons.lang.StringUtils;
 import org.reflections.Reflections;
+import org.reflections.scanners.*;
+import org.reflections.util.ClasspathHelper;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.context.NoSuchMessageException;
@@ -41,7 +43,9 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -78,8 +82,6 @@ public class Platform {
     public static Set<Method> encryptedMethodsMap;
 
     public static Map<String, String> childResourceToBaseResourceMap = new HashMap<>();
-
-    static Map<Class, DynamicObjectMetadata> dynamicObjectMetadata = new HashMap<>();
 
     public static Locale getLocale() {
         return locale;
@@ -366,7 +368,6 @@ public class Platform {
             FileInputStream in = new FileInputStream(globalPropertiesFile);
             System.getProperties().load(in);
 
-            collectDynamicObjectMetadata();
             linkGlobalProperty();
             prepareDefaultDbProperties();
             callStaticInitMethods();
@@ -382,27 +383,6 @@ public class Platform {
             }
 
         }
-    }
-
-    private static void collectDynamicObjectMetadata() {
-        reflections.getSubTypesOf(DynamicObject.class).forEach(clz -> {
-            DynamicObjectMetadata metadata = new DynamicObjectMetadata();
-            FieldUtils.getAllFields(clz).forEach(f -> {
-                f.setAccessible(true);
-                metadata.fields.put(f.getName(), f);
-            });
-
-            Class p = clz;
-            while (p != Object.class) {
-                for (Method m : p.getDeclaredMethods()) {
-                    m.setAccessible(true);
-                    metadata.methods.put(m.getName(), m);
-                }
-                p = p.getSuperclass();
-            }
-
-            dynamicObjectMetadata.put(clz, metadata);
-        });
     }
 
     public static String getBaseResourceType(String childResourceType) {
@@ -660,14 +640,6 @@ public class Platform {
         return toI18nString(code, l, args.toArray(new Object[args.size()]));
     }
 
-    private static String stringFormat(String fmt, Object...args) {
-        if (args == null || args.length == 0) {
-            return fmt;
-        } else {
-            return String.format(fmt, args);
-        }
-    }
-
     public static String toI18nString(String code, Locale l, Object...args) {
         l = l == null ? locale : l;
 
@@ -681,14 +653,18 @@ public class Platform {
 
             // if the result is an empty string which means the string is not translated in the locale,
             // return the original string so users won't get a confusing, empty string
-            return ret.isEmpty() ? stringFormat(code, args) : ret;
+            return ret.isEmpty() ? String.format(code, args) : ret;
         } catch (NoSuchMessageException e) {
-            return stringFormat(code, args);
+            return String.format(code, args);
         }
     }
 
     public static String i18n(String str, Object...args) {
-        return stringFormat(str, args);
+        if (args == null || args.length == 0) {
+            return str;
+        } else {
+            return String.format(str, args);
+        }
     }
 
     public static String i18n(String str, Map<String, String> args) {
@@ -801,13 +777,5 @@ public class Platform {
     // }
     public static <T> T New(Supplier supplier) {
         return (T) functionForMockTestObject.apply(supplier);
-    }
-
-    public static final String EXIT_REASON = "zstack.quit.reason";
-
-    public static void exit(String reason) {
-        new BootErrorLog().write(reason);
-        System.setProperty(EXIT_REASON, reason);
-        System.exit(1);
     }
 }

@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class GetL3NetworkMtuAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class GetL3NetworkMtuAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetL3NetworkMtuResult value;
+        public GetL3NetworkMtuResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -45,8 +44,8 @@ public class GetL3NetworkMtuAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetL3NetworkMtuResult value = res.getResult(org.zstack.sdk.GetL3NetworkMtuResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetL3NetworkMtuResult() : value; 
+        GetL3NetworkMtuResult value = res.getResult(GetL3NetworkMtuResult.class);
+        ret.value = value == null ? new GetL3NetworkMtuResult() : value; 
 
         return ret;
     }
@@ -65,15 +64,15 @@ public class GetL3NetworkMtuAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/l3-networks/{l3NetworkUuid}/mtu";

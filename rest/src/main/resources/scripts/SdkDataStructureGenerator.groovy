@@ -4,10 +4,8 @@ import org.apache.commons.lang.StringUtils
 import org.reflections.Reflections
 import org.zstack.core.Platform
 import org.zstack.header.exception.CloudRuntimeException
-import org.zstack.header.message.Message
 import org.zstack.header.query.APIQueryReply
 import org.zstack.header.rest.APINoSee
-import org.zstack.header.rest.NoSDK
 import org.zstack.header.rest.RestResponse
 import org.zstack.header.rest.SDK
 import org.zstack.rest.sdk.SdkFile
@@ -17,7 +15,6 @@ import org.zstack.utils.Utils
 import org.zstack.utils.logging.CLogger
 
 import java.lang.reflect.Field
-import java.lang.reflect.Modifier
 
 /**
  * Created by xing5 on 2016/12/11.
@@ -36,8 +33,6 @@ class SdkDataStructureGenerator implements SdkTemplate {
     SdkDataStructureGenerator() {
         Reflections reflections = Platform.getReflections()
         responseClasses = reflections.getTypesAnnotatedWith(RestResponse.class)
-        laterResolvedClasses.addAll(reflections.getTypesAnnotatedWith(SDK.class)
-                .findAll() { !Message.class.isAssignableFrom(it) })
     }
 
     @Override
@@ -106,7 +101,7 @@ ${dstToSrc.join("\n")}
                 resolveClass(clz)
                 laterResolvedClasses.remove(clz)
             } catch (Throwable t) {
-                throw new CloudRuntimeException("failed to generate SDK for the class[${clz.getName()}]", t)
+                throw new CloudRuntimeException("failed to generate SDK for the class[${clz.name}]", t)
             }
         }
 
@@ -116,32 +111,22 @@ ${dstToSrc.join("\n")}
     def getTargetClassName(Class clz) {
         SDK at = clz.getAnnotation(SDK.class)
         if (at == null || at.sdkClassName().isEmpty()) {
-            return clz.getSimpleName()
+            return clz.simpleName
         }
 
         return at.sdkClassName()
     }
 
     def resolveClass(Class clz) {
-        if (clz.getName().contains("\$") && !Modifier.isStatic(clz.modifiers)) {
-            // ignore anonymous class
-            return
-        }
-
-        if (clz.isAnnotationPresent(NoSDK.class)) {
-            return
-        }
-
         if (sdkFileMap.containsKey(clz)) {
             return
         }
 
-        if (isZStackClass(clz.superclass)) {
+        if (!Object.class.isAssignableFrom(clz.superclass)) {
             addToLaterResolvedClassesIfNeed(clz.superclass)
         }
 
         def output = []
-        def imports = []
 
         if (!Enum.class.isAssignableFrom(clz)) {
             for (Field f : clz.getDeclaredFields()) {
@@ -149,11 +134,6 @@ ${dstToSrc.join("\n")}
                     continue
                 }
 
-                if (isZStackClass(f.type)) {
-                    SDK at = f.type.getAnnotation(SDK.class)
-                    String simpleName = at != null && !at.sdkClassName().isEmpty() ? at.sdkClassName() : f.type.getSimpleName()
-                    imports.add("${SdkApiTemplate.getPackageName(f.type)}.${simpleName}")
-                }
                 output.add(makeFieldText(f.name, f))
             }
         } else {
@@ -162,23 +142,18 @@ ${dstToSrc.join("\n")}
             }
         }
 
-        String packageName = SdkApiTemplate.getPackageName(clz)
-
         SdkFile file = new SdkFile()
-        file.subPath = packageName.replaceAll("\\.", "/")
         file.fileName = "${getTargetClassName(clz)}.java"
         if (!Enum.class.isAssignableFrom(clz)) {
-            file.content = """package ${packageName};
+            file.content = """package org.zstack.sdk;
 
-${imports.collect { "import ${it};" }.join("\n")}
-
-public class ${getTargetClassName(clz)} ${Object.class == clz.superclass ? "" : "extends " + SdkApiTemplate.getPackageName(clz.superclass) + "." + clz.superclass.simpleName} {
+public class ${getTargetClassName(clz)} ${Object.class == clz.superclass ? "" : "extends " + clz.superclass.simpleName} {
 
 ${output.join("\n")}
 }
 """
         } else {
-            file.content = """package ${packageName};
+            file.content = """package org.zstack.sdk;
 
 public enum ${getTargetClassName(clz)} {
 ${output.join("\n")}
@@ -186,19 +161,19 @@ ${output.join("\n")}
 """
         }
 
-        sourceClassMap[clz.name] = "${packageName}.${getTargetClassName(clz)}"
+        sourceClassMap[clz.name] = "org.zstack.sdk.${getTargetClassName(clz)}"
         sdkFileMap.put(clz, file)
     }
 
     def isZStackClass(Class clz) {
-        if (clz.getName().startsWith("java.") || int.class == clz || long.class == clz
+        if (clz.name.startsWith("java.") || int.class == clz || long.class == clz
                 || short.class == clz || char.class == clz || boolean.class == clz || float.class == clz
                 || double.class == clz) {
             return false
-        } else if (clz.getCanonicalName().startsWith("org.zstack")) {
+        } else if (clz.canonicalName.startsWith("org.zstack")) {
             return true
         } else {
-            throw new CloudRuntimeException("${clz.getName()} is neither JRE class nor ZStack class")
+            throw new CloudRuntimeException("${clz.name} is neither JRE class nor ZStack class")
         }
     }
 
@@ -206,7 +181,6 @@ ${output.join("\n")}
         if (!sdkFileMap.containsKey(clz)) {
             laterResolvedClasses.add(clz)
         }
-
         Platform.reflections.getSubTypesOf(clz).forEach({ i ->
             if (!sdkFileMap.containsKey(i)) {
                 laterResolvedClasses.add(i)
@@ -260,16 +234,9 @@ ${output.join("\n")}
         if (APIQueryReply.class.isAssignableFrom(responseClass)) {
             addToFields("total", responseClass.superclass.getDeclaredField("total"))
         }
-
-        def imports = []
+        
         def output = []
         fields.each { String name, Field f ->
-            if (isZStackClass(f.type)) {
-                SDK sdkat = f.type.getAnnotation(SDK.class)
-                String simpleName = sdkat != null && !sdkat.sdkClassName().isEmpty() ? sdkat.sdkClassName() : f.type.getSimpleName()
-                imports.add("${SdkApiTemplate.getPackageName(f.type)}.${simpleName}")
-            }
-
             output.add(makeFieldText(name, f))
         }
 
@@ -280,13 +247,9 @@ ${output.join("\n")}
         className = StringUtils.capitalize(className)
         className = "${className}Result"
 
-        String packageName = SdkApiTemplate.getPackageName(responseClass)
         SdkFile file = new SdkFile()
-        file.subPath = packageName.replaceAll("\\.", "/")
         file.fileName = "${className}.java"
-        file.content = """package ${packageName};
-
-${imports.collect { "import ${it};" }.join("\n")}
+        file.content = """package org.zstack.sdk;
 
 public class ${className} {
 ${output.join("\n")}
@@ -314,13 +277,25 @@ ${output.join("\n")}
         // java type
         if (Collection.class.isAssignableFrom(field.type)) {
             Class genericType = FieldUtils.getGenericType(field)
+
             if (genericType != null) {
                 if (isZStackClass(genericType)) {
                     addToLaterResolvedClassesIfNeed(genericType)
                 }
-            }
 
-            return """\
+                String genericClassName = getTargetClassName(genericType)
+
+                return """\
+    public ${field.type.name}<${genericClassName}> ${fname};
+    public void set${StringUtils.capitalize(fname)}(${field.type.name}<${genericClassName}> ${fname}) {
+        this.${fname} = ${fname};
+    }
+    public ${field.type.name}<${genericClassName}> get${StringUtils.capitalize(fname)}() {
+        return this.${fname};
+    }
+"""
+            } else {
+                return """\
     public ${field.type.name} ${fname};
     public void set${StringUtils.capitalize(fname)}(${field.type.name} ${fname}) {
         this.${fname} = ${fname};
@@ -329,15 +304,28 @@ ${output.join("\n")}
         return this.${fname};
     }
 """
+            }
         } else if (Map.class.isAssignableFrom(field.type)) {
             Class genericType = FieldUtils.getGenericType(field)
+
             if (genericType != null) {
                 if (isZStackClass(genericType)) {
                     addToLaterResolvedClassesIfNeed(genericType)
                 }
-            }
 
-            return """\
+                String genericClassName = getTargetClassName(genericType)
+
+                return """\
+    public ${field.type.name}<String, ${genericClassName}> ${fname};
+    public void set${StringUtils.capitalize(fname)}(${field.type.name}<String, ${genericClassName}> ${fname}) {
+        this.${fname} = ${fname};
+    }
+    public ${field.type.name}<String, ${genericClassName}> get${StringUtils.capitalize(fname)}() {
+        return this.${fname};
+    }
+"""
+            } else {
+                return """\
     public ${field.type.name} ${fname};
     public void set${StringUtils.capitalize(fname)}(${field.type.name} ${fname}) {
         this.${fname} = ${fname};
@@ -346,6 +334,7 @@ ${output.join("\n")}
         return this.${fname};
     }
 """
+            }
         } else {
             return """\
     public ${field.type.name} ${fname};

@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class AddSecurityGroupRuleAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class AddSecurityGroupRuleAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddSecurityGroupRuleResult value;
+        public AddSecurityGroupRuleResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -57,8 +56,8 @@ public class AddSecurityGroupRuleAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddSecurityGroupRuleResult value = res.getResult(org.zstack.sdk.AddSecurityGroupRuleResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddSecurityGroupRuleResult() : value; 
+        AddSecurityGroupRuleResult value = res.getResult(AddSecurityGroupRuleResult.class);
+        ret.value = value == null ? new AddSecurityGroupRuleResult() : value; 
 
         return ret;
     }
@@ -77,15 +76,15 @@ public class AddSecurityGroupRuleAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/security-groups/{securityGroupUuid}/rules";

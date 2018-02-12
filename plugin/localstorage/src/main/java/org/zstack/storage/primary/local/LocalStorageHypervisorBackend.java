@@ -13,9 +13,6 @@ import java.util.List;
  * Created by frank on 6/30/2015.
  */
 public abstract class LocalStorageHypervisorBackend extends LocalStorageBase {
-    public LocalStorageHypervisorBackend() {
-    }
-
     public LocalStorageHypervisorBackend(PrimaryStorageVO self) {
         super(self);
     }

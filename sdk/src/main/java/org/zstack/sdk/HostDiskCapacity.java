@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class HostDiskCapacity  {
 
     public java.lang.String hostUuid;

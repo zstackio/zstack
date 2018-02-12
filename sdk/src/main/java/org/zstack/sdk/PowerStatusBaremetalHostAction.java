@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class PowerStatusBaremetalHostAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class PowerStatusBaremetalHostAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.PowerStatusBaremetalHostResult value;
+        public PowerStatusBaremetalHostResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -51,8 +50,8 @@ public class PowerStatusBaremetalHostAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.PowerStatusBaremetalHostResult value = res.getResult(org.zstack.sdk.PowerStatusBaremetalHostResult.class);
-        ret.value = value == null ? new org.zstack.sdk.PowerStatusBaremetalHostResult() : value; 
+        PowerStatusBaremetalHostResult value = res.getResult(PowerStatusBaremetalHostResult.class);
+        ret.value = value == null ? new PowerStatusBaremetalHostResult() : value; 
 
         return ret;
     }
@@ -71,15 +70,15 @@ public class PowerStatusBaremetalHostAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/baremetal/chassis/{chassisUuid}/actions";

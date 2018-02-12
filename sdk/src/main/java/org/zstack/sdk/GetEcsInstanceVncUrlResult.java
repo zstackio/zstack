@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class GetEcsInstanceVncUrlResult {
     public java.lang.String ecsId;
     public void setEcsId(java.lang.String ecsId) {

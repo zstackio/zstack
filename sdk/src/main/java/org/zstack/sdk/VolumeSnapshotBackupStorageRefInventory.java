@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class VolumeSnapshotBackupStorageRefInventory  {
 
     public java.lang.String volumeSnapshotUuid;

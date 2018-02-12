@@ -1,7 +1,7 @@
 #!/bin/sh
 
 usage() {
-    echo "usage:$0 [deploydb|deploy|xml-java-schema|premium|sdk|doc|docpremium|md|mdpremium|openapi]"
+    echo "usage:$0 [deploydb|deploy|xml-java-schema|premium|sdk|doc|docpremium|md|mdpremium]"
 }
 
 py() {
@@ -40,36 +40,6 @@ doc() {
     cd test
     mvn test -Dtest=TestGenerateDocTemplate
     cd - > /dev/null
-}
-
-openapi() {
-    if [ ! -d premium/test-premium ]; then
-	echo "opensource version doesn't have this tool"
-        exit 1
-    fi
-
-    cd tool/doclet
-    mvn -Dmaven.test.skip=true package
-    cd -
-
-    javadoc -private -doclet org.zstack.tool.doclet.JsonDocLet -docletpath tool/doclet/target/doclet-*-jar-with-dependencies.jar  $(find -name *.java)
-
-    DOC_OUTPUT=`echo ~/zstack-doclet-output.json`
-    if [ ! -f $DOC_OUTPUT ]; then
-       echo "$DOC_OUTPUT not found"
-       exit 1
-    fi
-
-    cd premium/test-premium
-    mvn test -Dtest=GenerateSwaggerSpec -DdocletDoc=$DOC_OUTPUT
-    cd -
-
-    echo ""
-    echo ""
-    echo ""
-    echo "***********************************************"
-    echo "openapi spec generated at ~/zstack-api.yaml"
-    echo "***********************************************"
 }
 
 docpremium() {
@@ -160,20 +130,6 @@ triggerexpression() {
    cd - > /dev/null
 }
 
-cloudwatchfunction() {
-   if [ ! -d premium/zwatch ]; then
-	echo "this command needs premium source code"
-        exit 1
-   fi
-
-   cd premium/zwatch
-   mvn -P function generate-sources
-   mkdir -p src/main/java/org/zstack/zwatch/api/antlr4/
-   yes | cp target/generated-sources/antlr4/MetricFunction* src/main/java/org/zstack/zwatch/api/antlr4/
-   rm -f target/generated-sources/antlr4/MetricFunction*
-   cd - > /dev/null
-}
-
 sdk() {
     set -u
     rm -rf ~/zstack-sdk/java
@@ -193,7 +149,7 @@ sdk() {
     cd sdk/src/main/java/org/zstack/sdk/
     find . -type f  | grep -E -v "(ZSClient|ZSConfig|ApiException|AsyncRestState|Completion|Constants|ErrorCode|ErrorCodeList|InternalCompletion|ApiResult|Param|RestInfo|AbstractAction|QueryAction).java" | xargs rm -f
     cd -
-    yes | cp -r ~/zstack-sdk/java/* sdk/src/main/java/
+    yes | cp ~/zstack-sdk/java/* sdk/src/main/java/org/zstack/sdk/
     set +u
 }
 
@@ -230,10 +186,6 @@ run_profile() {
 	notificationapi
     elif test x$1 = x'triggerexpression'; then
 	triggerexpression
-    elif test x$1 = x'cloudwatchfunction'; then
-	cloudwatchfunction
-    elif test x$1 = x'openapi'; then
-        openapi
     else
         mvn -pl build -P $1 exec:exec -D$1
     fi

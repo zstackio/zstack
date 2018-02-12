@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class DeleteVmHostnameAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class DeleteVmHostnameAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteVmHostnameResult value;
+        public DeleteVmHostnameResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -54,8 +53,8 @@ public class DeleteVmHostnameAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteVmHostnameResult value = res.getResult(org.zstack.sdk.DeleteVmHostnameResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteVmHostnameResult() : value; 
+        DeleteVmHostnameResult value = res.getResult(DeleteVmHostnameResult.class);
+        ret.value = value == null ? new DeleteVmHostnameResult() : value; 
 
         return ret;
     }
@@ -74,15 +73,15 @@ public class DeleteVmHostnameAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/vm-instances/{uuid}/hostnames";

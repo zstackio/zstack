@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class GetVpcVRouterDistributedRoutingEnabledAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class GetVpcVRouterDistributedRoutingEnabledAction extends AbstractAction
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetVpcVRouterDistributedRoutingEnabledResult value;
+        public GetVpcVRouterDistributedRoutingEnabledResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -45,8 +44,8 @@ public class GetVpcVRouterDistributedRoutingEnabledAction extends AbstractAction
             return ret;
         }
         
-        org.zstack.sdk.GetVpcVRouterDistributedRoutingEnabledResult value = res.getResult(org.zstack.sdk.GetVpcVRouterDistributedRoutingEnabledResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetVpcVRouterDistributedRoutingEnabledResult() : value; 
+        GetVpcVRouterDistributedRoutingEnabledResult value = res.getResult(GetVpcVRouterDistributedRoutingEnabledResult.class);
+        ret.value = value == null ? new GetVpcVRouterDistributedRoutingEnabledResult() : value; 
 
         return ret;
     }
@@ -65,15 +64,15 @@ public class GetVpcVRouterDistributedRoutingEnabledAction extends AbstractAction
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/vpc/virtual-routers/{uuid}/distributed-routing";

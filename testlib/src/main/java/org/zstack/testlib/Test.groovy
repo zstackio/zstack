@@ -16,7 +16,6 @@ import org.zstack.sdk.SessionInventory
 import org.zstack.sdk.ZSClient
 import org.zstack.testlib.collectstrategy.SubCaseCollectionStrategyFactory
 import org.zstack.testlib.collectstrategy.SubCaseCollectionStrategy
-import org.zstack.testlib.util.Retry
 import org.zstack.utils.ShellUtils
 import org.zstack.utils.Utils
 import org.zstack.utils.gson.JSONObjectUtil
@@ -31,35 +30,13 @@ import java.util.logging.Logger
 /**
  * Created by xing5 on 2017/2/12.
  */
-abstract class Test implements ApiHelper, Retry {
+abstract class Test implements ApiHelper {
     final CLogger logger = Utils.getLogger(this.getClass())
 
     static Object deployer
     static Map<String, String> apiPaths = new ConcurrentHashMap<>()
 
     private final static long DEFAULT_MESSAGE_TIMEOUT_SECS = TimeUnit.SECONDS.toMillis(25)
-    static Map<Class, Closure> functionForMockTestObjectFactory = new ConcurrentHashMap<>()
-
-    protected List<Closure> methodsOnClean = []
-
-    static {
-        Platform.functionForMockTestObject = { supplier ->
-            def obj = supplier.get()
-            if (obj == null) {
-                return obj
-            }
-
-            def entry = functionForMockTestObjectFactory.find {
-                return it.key.isAssignableFrom(obj.getClass())
-            }
-
-            if (entry == null) {
-                return obj
-            }
-
-            return entry.value(obj)
-        }
-    }
 
     static long getMessageTimeoutMillsConfig(){
         String msgTimeoutStr = System.getProperty("msgTimeoutMins")
@@ -108,10 +85,6 @@ abstract class Test implements ApiHelper, Retry {
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()
         return spec
-    }
-
-    protected void onCleanExecute(Closure c) {
-        methodsOnClean.add(c)
     }
 
     protected EnvSpec env(@DelegatesTo(strategy=Closure.DELEGATE_FIRST, value=EnvSpec.class) Closure c) {
@@ -262,7 +235,7 @@ abstract class Test implements ApiHelper, Retry {
 
         bus.installBeforeSendMessageInterceptor(new AbstractBeforeSendMessageInterceptor() {
             @Override
-            void beforeSendMessage(Message msg) {
+            void intercept(Message msg) {
                 if (Event.class.isAssignableFrom(msg.class) || currentEnvSpec == null) {
                     return
                 }
@@ -419,7 +392,6 @@ abstract class Test implements ApiHelper, Retry {
 
         SubCaseCollectionStrategy strategy = getSubCaseCollectionStrategy()
         def caseTypes = strategy.collectSubCases(this)
-        caseTypes = caseTypes.findAll { !it.isAnnotationPresent(SkipTestSuite.class) }
 
         def cases = new File([dir.absolutePath, "cases"].join("/"))
         cases.write(caseTypes.collect {it.name}.join("\n"))
@@ -583,6 +555,33 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
         return getRetryReturnValue(ret, true)
     }
 
+    protected boolean retryInSecs(int total = 8, int interval = 1, Closure c) {
+        int count = 0
+        def ret = false
+
+        while (count < total) {
+            try {
+                def r = c()
+                ret = r == null || (r != null && r instanceof Boolean && r)
+            } catch (StopTestSuiteException e) {
+                throw e
+            } catch (Throwable t) {
+                logger.debug("[retryInSecs:${count + 1}/${total}]", t)
+                if (total - count == 1) {
+                    throw t
+                }
+            }
+
+            if (ret) {
+                return ret
+            }
+            TimeUnit.SECONDS.sleep(interval)
+            count ++
+        }
+
+        return false
+    }
+
     protected long costMillis(Closure c){
         long startTime = new Date().getTime()
         c()
@@ -634,7 +633,7 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
         }
     }
 
-    static void expect(exceptions, Closure c) {
+    protected static void expect(exceptions, Closure c) {
         List<Class> lst = []
         if (exceptions instanceof Collection) {
             lst.addAll(exceptions)

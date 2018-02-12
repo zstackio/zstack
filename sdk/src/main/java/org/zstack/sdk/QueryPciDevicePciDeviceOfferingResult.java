@@ -1,13 +1,11 @@
 package org.zstack.sdk;
 
-
-
 public class QueryPciDevicePciDeviceOfferingResult {
-    public java.util.List inventories;
-    public void setInventories(java.util.List inventories) {
+    public java.util.List<PciDevicePciDeviceOfferingRefInventory> inventories;
+    public void setInventories(java.util.List<PciDevicePciDeviceOfferingRefInventory> inventories) {
         this.inventories = inventories;
     }
-    public java.util.List getInventories() {
+    public java.util.List<PciDevicePciDeviceOfferingRefInventory> getInventories() {
         return this.inventories;
     }
 

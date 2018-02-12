@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class FusionstorPrimaryStorageMonInventory  {
 
     public java.lang.String hostname;

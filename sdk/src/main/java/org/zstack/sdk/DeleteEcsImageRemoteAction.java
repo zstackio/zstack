@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class DeleteEcsImageRemoteAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class DeleteEcsImageRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteEcsImageRemoteResult value;
+        public DeleteEcsImageRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -54,8 +53,8 @@ public class DeleteEcsImageRemoteAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteEcsImageRemoteResult value = res.getResult(org.zstack.sdk.DeleteEcsImageRemoteResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteEcsImageRemoteResult() : value; 
+        DeleteEcsImageRemoteResult value = res.getResult(DeleteEcsImageRemoteResult.class);
+        ret.value = value == null ? new DeleteEcsImageRemoteResult() : value; 
 
         return ret;
     }
@@ -74,15 +73,15 @@ public class DeleteEcsImageRemoteAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/hybrid/aliyun/image/remote/{uuid}";

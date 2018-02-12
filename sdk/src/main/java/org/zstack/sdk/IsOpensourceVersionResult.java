@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class IsOpensourceVersionResult {
     public boolean opensource;
     public void setOpensource(boolean opensource) {

@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.VmInstanceInventory;
-
 public class ReimageVmInstanceResult {
     public VmInstanceInventory inventory;
     public void setInventory(VmInstanceInventory inventory) {

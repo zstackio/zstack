@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.HybridType;
-
 public class VpcUserVpnGatewayInventory  {
 
     public java.lang.String uuid;

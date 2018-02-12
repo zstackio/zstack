@@ -15,7 +15,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIUpdateAccountEvent.class
 )
 public class APIUpdateAccountMsg extends APIMessage implements AccountMessage {
-    @APIParam(resourceType = AccountVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = AccountVO.class, required = false, checkAccount = true, operationTarget = true)
     private String uuid;
     @APIParam(maxLength = 255, required = false)
     private String password;

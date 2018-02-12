@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class QueryVolumeAction extends QueryAction {
 
@@ -12,7 +11,7 @@ public class QueryVolumeAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.QueryVolumeResult value;
+        public QueryVolumeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -34,8 +33,8 @@ public class QueryVolumeAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.QueryVolumeResult value = res.getResult(org.zstack.sdk.QueryVolumeResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QueryVolumeResult() : value; 
+        QueryVolumeResult value = res.getResult(QueryVolumeResult.class);
+        ret.value = value == null ? new QueryVolumeResult() : value; 
 
         return ret;
     }
@@ -54,15 +53,15 @@ public class QueryVolumeAction extends QueryAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/volumes";

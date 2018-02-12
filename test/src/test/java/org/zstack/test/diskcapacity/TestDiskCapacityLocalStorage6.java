@@ -134,7 +134,7 @@ public class TestDiskCapacityLocalStorage6 {
 
             bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
                 @Override
-                public void beforeDeliveryMessage(Message msg) {
+                public void intercept(Message msg) {
                     InstantiateVolumeOnPrimaryStorageMsg imsg = (InstantiateVolumeOnPrimaryStorageMsg) msg;
                     VolumeInventory vol = imsg.getVolume();
                     if (VolumeType.Root.toString().equals(vol.getType())) {

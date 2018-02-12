@@ -3,7 +3,6 @@ package org.zstack.header.message;
 import com.rabbitmq.client.AMQP.BasicProperties;
 import org.zstack.header.Constants;
 import org.zstack.header.core.AsyncBackup;
-import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.utils.DebugUtils;
 
@@ -14,7 +13,7 @@ import java.util.Map;
 import java.util.UUID;
 
 
-public abstract class Message implements Serializable, AsyncBackup, Cloneable {
+public abstract class Message implements Serializable, AsyncBackup {
     /**
      * @ignore
      */
@@ -131,14 +130,5 @@ public abstract class Message implements Serializable, AsyncBackup, Cloneable {
     @Override
     public int hashCode() {
         return getId().hashCode();
-    }
-
-    @Override
-    public Message clone() {
-        try {
-            return (Message) super.clone();
-        } catch (CloneNotSupportedException e) {
-            throw new CloudRuntimeException(e);
-        }
     }
 }

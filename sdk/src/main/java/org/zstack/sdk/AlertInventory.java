@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class AlertInventory  {
 
     public java.lang.String uuid;

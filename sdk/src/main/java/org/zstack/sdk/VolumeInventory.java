@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class VolumeInventory  {
 
     public java.lang.String uuid;

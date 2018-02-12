@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.VpcVpnIpSecConfigInventory;
-
 public class CreateVpnIpsecConfigResult {
     public VpcVpnIpSecConfigInventory inventory;
     public void setInventory(VpcVpnIpSecConfigInventory inventory) {

@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class AddDisasterImageStoreBackupStorageAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class AddDisasterImageStoreBackupStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddImageStoreBackupStorageResult value;
+        public AddImageStoreBackupStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -84,8 +83,8 @@ public class AddDisasterImageStoreBackupStorageAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddImageStoreBackupStorageResult value = res.getResult(org.zstack.sdk.AddImageStoreBackupStorageResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddImageStoreBackupStorageResult() : value; 
+        AddImageStoreBackupStorageResult value = res.getResult(AddImageStoreBackupStorageResult.class);
+        ret.value = value == null ? new AddImageStoreBackupStorageResult() : value; 
 
         return ret;
     }
@@ -104,15 +103,15 @@ public class AddDisasterImageStoreBackupStorageAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/backup-storage/image-store/disaster";

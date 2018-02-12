@@ -126,7 +126,7 @@ public class TestLocalStorage28 {
 
         bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
             @Override
-            public void beforeDeliveryMessage(Message msg) {
+            public void intercept(Message msg) {
                 if (msg instanceof DownloadImageToPrimaryStorageCacheMsg) {
                     downloadImageCalled = true;
                 }

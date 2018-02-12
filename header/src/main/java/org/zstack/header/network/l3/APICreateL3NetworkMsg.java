@@ -8,7 +8,6 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.notification.ApiNotification;
-import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.tag.TagResourceType;
 
@@ -52,7 +51,7 @@ import org.zstack.header.tag.TagResourceType;
         responseClass = APICreateL3NetworkEvent.class,
         parameterName = "params"
 )
-public class APICreateL3NetworkMsg extends APICreateMessage implements APIAuditor {
+public class APICreateL3NetworkMsg extends APICreateMessage {
     /**
      * @desc max length of 255 characters
      */
@@ -160,8 +159,4 @@ public class APICreateL3NetworkMsg extends APICreateMessage implements APIAudito
         };
     }
 
-    @Override
-    public Result audit(APIMessage msg, APIEvent rsp) {
-        return new Result(rsp.isSuccess() ? ((APICreateL3NetworkEvent) rsp).getInventory().getUuid() : "", L3NetworkVO.class);
-    }
 }

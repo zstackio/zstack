@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class GlobalConfigInventory  {
 
     public java.lang.String name;

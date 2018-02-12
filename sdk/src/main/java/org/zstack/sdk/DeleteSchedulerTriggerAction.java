@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class DeleteSchedulerTriggerAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class DeleteSchedulerTriggerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteSchedulerTriggerResult value;
+        public DeleteSchedulerTriggerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -54,8 +53,8 @@ public class DeleteSchedulerTriggerAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteSchedulerTriggerResult value = res.getResult(org.zstack.sdk.DeleteSchedulerTriggerResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteSchedulerTriggerResult() : value; 
+        DeleteSchedulerTriggerResult value = res.getResult(DeleteSchedulerTriggerResult.class);
+        ret.value = value == null ? new DeleteSchedulerTriggerResult() : value; 
 
         return ret;
     }
@@ -74,15 +73,15 @@ public class DeleteSchedulerTriggerAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/scheduler/triggers/{uuid}";

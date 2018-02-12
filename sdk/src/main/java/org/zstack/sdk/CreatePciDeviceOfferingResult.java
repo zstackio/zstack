@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.PciDeviceOfferingInventory;
-
 public class CreatePciDeviceOfferingResult {
     public PciDeviceOfferingInventory inventory;
     public void setInventory(PciDeviceOfferingInventory inventory) {

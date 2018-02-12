@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.PrimaryStorageInventory;
-
 public class DetachPrimaryStorageFromClusterResult {
     public PrimaryStorageInventory inventory;
     public void setInventory(PrimaryStorageInventory inventory) {

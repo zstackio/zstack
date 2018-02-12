@@ -1,13 +1,11 @@
 package org.zstack.sdk;
 
-
-
 public class QueryHybridEipFromLocalResult {
-    public java.util.List inventories;
-    public void setInventories(java.util.List inventories) {
+    public java.util.List<HybridEipAddressInventory> inventories;
+    public void setInventories(java.util.List<HybridEipAddressInventory> inventories) {
         this.inventories = inventories;
     }
-    public java.util.List getInventories() {
+    public java.util.List<HybridEipAddressInventory> getInventories() {
         return this.inventories;
     }
 

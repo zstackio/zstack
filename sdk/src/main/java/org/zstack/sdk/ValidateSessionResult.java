@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class ValidateSessionResult {
     public boolean valid;
     public void setValid(boolean valid) {

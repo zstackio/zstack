@@ -169,17 +169,4 @@ public class ErrorCode implements Serializable, Cloneable {
         sb.append(cause == null ? "" : cause.toString());
         return sb.toString().hashCode();
     }
-
-    public String getReadableDetails() {
-        ErrorCode root = this;
-        do {
-            if (root.cause != null) {
-                root = root.cause;
-            } else {
-                break;
-            }
-        } while (true);
-
-        return root.getDetails();
-    }
 }

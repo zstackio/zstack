@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class GetPrimaryStorageCapacityResult {
     public long totalCapacity;
     public void setTotalCapacity(long totalCapacity) {

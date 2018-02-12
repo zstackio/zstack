@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class GetHostAllocatorStrategiesAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class GetHostAllocatorStrategiesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetHostAllocatorStrategiesResult value;
+        public GetHostAllocatorStrategiesResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -42,8 +41,8 @@ public class GetHostAllocatorStrategiesAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetHostAllocatorStrategiesResult value = res.getResult(org.zstack.sdk.GetHostAllocatorStrategiesResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetHostAllocatorStrategiesResult() : value; 
+        GetHostAllocatorStrategiesResult value = res.getResult(GetHostAllocatorStrategiesResult.class);
+        ret.value = value == null ? new GetHostAllocatorStrategiesResult() : value; 
 
         return ret;
     }
@@ -62,15 +61,15 @@ public class GetHostAllocatorStrategiesAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/hosts/allocators/strategies";

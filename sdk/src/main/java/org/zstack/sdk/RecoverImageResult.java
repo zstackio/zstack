@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.ImageInventory;
-
 public class RecoverImageResult {
     public ImageInventory inventory;
     public void setInventory(ImageInventory inventory) {

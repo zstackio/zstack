@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class SetVmUsbRedirectAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class SetVmUsbRedirectAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.SetVmUsbRedirectResult value;
+        public SetVmUsbRedirectResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -54,8 +53,8 @@ public class SetVmUsbRedirectAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.SetVmUsbRedirectResult value = res.getResult(org.zstack.sdk.SetVmUsbRedirectResult.class);
-        ret.value = value == null ? new org.zstack.sdk.SetVmUsbRedirectResult() : value; 
+        SetVmUsbRedirectResult value = res.getResult(SetVmUsbRedirectResult.class);
+        ret.value = value == null ? new SetVmUsbRedirectResult() : value; 
 
         return ret;
     }
@@ -74,15 +73,15 @@ public class SetVmUsbRedirectAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/vm-instances/{uuid}/actions";

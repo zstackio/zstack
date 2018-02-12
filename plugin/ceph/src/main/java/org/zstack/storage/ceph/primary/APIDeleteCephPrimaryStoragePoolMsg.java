@@ -5,7 +5,6 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
-import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.PrimaryStorageMessage;
@@ -19,7 +18,7 @@ import org.zstack.header.storage.primary.PrimaryStorageVO;
         method = HttpMethod.DELETE,
         responseClass = APIDeleteCephPrimaryStoragePoolEvent.class
 )
-public class APIDeleteCephPrimaryStoragePoolMsg extends APIMessage implements PrimaryStorageMessage, APIAuditor {
+public class APIDeleteCephPrimaryStoragePoolMsg extends APIMessage implements PrimaryStorageMessage {
     @APIParam(resourceType = CephPrimaryStoragePoolVO.class, successIfResourceNotExisting = true)
     private String uuid;
 
@@ -58,11 +57,5 @@ public class APIDeleteCephPrimaryStoragePoolMsg extends APIMessage implements Pr
                         .messageAndEvent(that, evt).done();
             }
         };
-    }
-
-    @Override
-    public Result audit(APIMessage msg, APIEvent rsp) {
-        APIDeleteCephPrimaryStoragePoolMsg amsg = (APIDeleteCephPrimaryStoragePoolMsg) msg;
-        return new Result(amsg.getPrimaryStorageUuid(), PrimaryStorageVO.class);
     }
 }

@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class FreeIpInventory  {
 
     public java.lang.String ipRangeUuid;

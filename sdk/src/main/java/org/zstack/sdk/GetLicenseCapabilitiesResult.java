@@ -1,13 +1,11 @@
 package org.zstack.sdk;
 
-
-
 public class GetLicenseCapabilitiesResult {
-    public java.util.Map capabilities;
-    public void setCapabilities(java.util.Map capabilities) {
+    public java.util.Map<String, String> capabilities;
+    public void setCapabilities(java.util.Map<String, String> capabilities) {
         this.capabilities = capabilities;
     }
-    public java.util.Map getCapabilities() {
+    public java.util.Map<String, String> getCapabilities() {
         return this.capabilities;
     }
 

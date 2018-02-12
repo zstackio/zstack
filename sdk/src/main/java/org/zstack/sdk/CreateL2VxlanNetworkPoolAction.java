@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class CreateL2VxlanNetworkPoolAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class CreateL2VxlanNetworkPoolAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateL2VxlanNetworkPoolResult value;
+        public CreateL2VxlanNetworkPoolResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -66,8 +65,8 @@ public class CreateL2VxlanNetworkPoolAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateL2VxlanNetworkPoolResult value = res.getResult(org.zstack.sdk.CreateL2VxlanNetworkPoolResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateL2VxlanNetworkPoolResult() : value; 
+        CreateL2VxlanNetworkPoolResult value = res.getResult(CreateL2VxlanNetworkPoolResult.class);
+        ret.value = value == null ? new CreateL2VxlanNetworkPoolResult() : value; 
 
         return ret;
     }
@@ -86,15 +85,15 @@ public class CreateL2VxlanNetworkPoolAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/l2-networks/vxlan-pool";

@@ -162,11 +162,7 @@ public class RestServer implements Component, CloudBusEventListener {
 
             for (SdkFile f : allFiles) {
                 //logger.debug(String.format("\n%s", f.getContent()));
-                String fpath = PathUtil.join(path, f.getSubPath() == null ? "" : f.getSubPath(), f.getFileName());
-                File dir = new File(fpath).getParentFile();
-                if (!dir.exists()) {
-                    dir.mkdirs();
-                }
+                String fpath = PathUtil.join(path, f.getFileName());
                 FileUtils.writeStringToFile(new File(fpath), f.getContent());
             }
         } catch (Exception e) {
@@ -682,55 +678,6 @@ public class RestServer implements Component, CloudBusEventListener {
         handleApi(api, m, parameterName, entity, req, rsp);
     }
 
-    private void normalizeCollectionParameters(Map<String, String[]> queryParameters) {
-        class OrderValue {
-            int index;
-            String value;
-
-            public OrderValue(int index, String value) {
-                this.index = index;
-                this.value = value;
-            }
-        }
-        Map<String, List<OrderValue>> lstParameters = new HashMap<>();
-
-        Iterator<Map.Entry<String, String[]>> it = queryParameters.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<String, String[]> ie = it.next();
-            String k = ie.getKey();
-            String[] vals = ie.getValue();
-
-            if (!k.contains(".")) {
-                // not a list parameter
-                continue;
-            }
-
-            String[] pairs = k.split("\\.");
-            String fname = pairs[0];
-            String key = pairs[1];
-            try {
-                int index = Integer.parseInt(key);
-                List<OrderValue> values = lstParameters.computeIfAbsent(fname, x->new ArrayList<>());
-                values.add(new OrderValue(index, vals[0]));
-                it.remove();
-            } catch (NumberFormatException e) {
-                // not a number
-            }
-        }
-
-        lstParameters.forEach((k, v) -> {
-            String[] vals = new String[v.size()];
-
-            v.sort(Comparator.comparingInt(o -> o.index));
-
-            for (int i=0; i<v.size(); i++) {
-                vals[i] = v.get(i).value;
-            }
-
-            queryParameters.put(k, vals);
-        });
-    }
-
     private void handleApi(Api api, Map body, String parameterName, HttpEntity<String> entity, HttpServletRequest req, HttpServletResponse rsp) throws RestException, IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException, IOException {
         if (body == null) {
             // for some POST request, the body may be null, for example, attach primary storage to a cluster
@@ -762,9 +709,7 @@ public class RestServer implements Component, CloudBusEventListener {
             // GET uses query string to pass parameters
             Map<String, Object> m = new HashMap<>();
 
-            Map<String, String[]> queryParameters = new HashMap<>(req.getParameterMap());
-            normalizeCollectionParameters(queryParameters);
-
+            Map<String, String[]> queryParameters = req.getParameterMap();
             for (Map.Entry<String,  String[]> e : queryParameters.entrySet()) {
                 String k = e.getKey();
                 String[] vals = e.getValue();

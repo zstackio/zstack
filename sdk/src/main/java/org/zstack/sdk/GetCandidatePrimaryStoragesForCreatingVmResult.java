@@ -1,13 +1,11 @@
 package org.zstack.sdk;
 
-
-
 public class GetCandidatePrimaryStoragesForCreatingVmResult {
-    public java.util.List rootVolumePrimaryStorages;
-    public void setRootVolumePrimaryStorages(java.util.List rootVolumePrimaryStorages) {
+    public java.util.List<PrimaryStorageInventory> rootVolumePrimaryStorages;
+    public void setRootVolumePrimaryStorages(java.util.List<PrimaryStorageInventory> rootVolumePrimaryStorages) {
         this.rootVolumePrimaryStorages = rootVolumePrimaryStorages;
     }
-    public java.util.List getRootVolumePrimaryStorages() {
+    public java.util.List<PrimaryStorageInventory> getRootVolumePrimaryStorages() {
         return this.rootVolumePrimaryStorages;
     }
 

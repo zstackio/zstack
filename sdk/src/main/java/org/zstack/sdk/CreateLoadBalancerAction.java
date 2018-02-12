@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class CreateLoadBalancerAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class CreateLoadBalancerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateLoadBalancerResult value;
+        public CreateLoadBalancerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -60,8 +59,8 @@ public class CreateLoadBalancerAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateLoadBalancerResult value = res.getResult(org.zstack.sdk.CreateLoadBalancerResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateLoadBalancerResult() : value; 
+        CreateLoadBalancerResult value = res.getResult(CreateLoadBalancerResult.class);
+        ret.value = value == null ? new CreateLoadBalancerResult() : value; 
 
         return ret;
     }
@@ -80,15 +79,15 @@ public class CreateLoadBalancerAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/load-balancers";

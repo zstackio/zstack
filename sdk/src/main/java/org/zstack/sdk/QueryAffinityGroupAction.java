@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class QueryAffinityGroupAction extends QueryAction {
 
@@ -12,7 +11,7 @@ public class QueryAffinityGroupAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.QueryAffinityGroupResult value;
+        public QueryAffinityGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -34,8 +33,8 @@ public class QueryAffinityGroupAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.QueryAffinityGroupResult value = res.getResult(org.zstack.sdk.QueryAffinityGroupResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QueryAffinityGroupResult() : value; 
+        QueryAffinityGroupResult value = res.getResult(QueryAffinityGroupResult.class);
+        ret.value = value == null ? new QueryAffinityGroupResult() : value; 
 
         return ret;
     }
@@ -54,15 +53,15 @@ public class QueryAffinityGroupAction extends QueryAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/affinity-groups";

@@ -7,7 +7,6 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
-import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.network.service.vip.VipVO;
@@ -71,7 +70,7 @@ import org.zstack.network.service.vip.VipVO;
         responseClass = APICreatePortForwardingRuleEvent.class,
         parameterName = "params"
 )
-public class APICreatePortForwardingRuleMsg extends APICreateMessage implements APIAuditor {
+public class APICreatePortForwardingRuleMsg extends APICreateMessage {
     /**
      * @desc uuid of vip the rule is being created on
      */
@@ -236,11 +235,6 @@ public class APICreatePortForwardingRuleMsg extends APICreateMessage implements 
                 }
             }
         };
-    }
-
-    @Override
-    public Result audit(APIMessage msg, APIEvent rsp) {
-        return new Result(rsp.isSuccess() ? ((APICreatePortForwardingRuleEvent)rsp).getInventory().getUuid() : "", PortForwardingRuleVO.class);
     }
 }
 

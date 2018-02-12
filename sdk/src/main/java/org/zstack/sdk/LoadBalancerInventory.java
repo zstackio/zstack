@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class LoadBalancerInventory  {
 
     public java.lang.String name;
@@ -44,11 +42,11 @@ public class LoadBalancerInventory  {
         return this.vipUuid;
     }
 
-    public java.util.List listeners;
-    public void setListeners(java.util.List listeners) {
+    public java.util.List<LoadBalancerListenerInventory> listeners;
+    public void setListeners(java.util.List<LoadBalancerListenerInventory> listeners) {
         this.listeners = listeners;
     }
-    public java.util.List getListeners() {
+    public java.util.List<LoadBalancerListenerInventory> getListeners() {
         return this.listeners;
     }
 

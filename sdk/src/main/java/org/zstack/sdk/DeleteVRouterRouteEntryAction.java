@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class DeleteVRouterRouteEntryAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class DeleteVRouterRouteEntryAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteVRouterRouteEntryResult value;
+        public DeleteVRouterRouteEntryResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -57,8 +56,8 @@ public class DeleteVRouterRouteEntryAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteVRouterRouteEntryResult value = res.getResult(org.zstack.sdk.DeleteVRouterRouteEntryResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteVRouterRouteEntryResult() : value; 
+        DeleteVRouterRouteEntryResult value = res.getResult(DeleteVRouterRouteEntryResult.class);
+        ret.value = value == null ? new DeleteVRouterRouteEntryResult() : value; 
 
         return ret;
     }
@@ -77,15 +76,15 @@ public class DeleteVRouterRouteEntryAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/vrouter-route-tables/{routeTableUuid}/route-entries/{uuid}";

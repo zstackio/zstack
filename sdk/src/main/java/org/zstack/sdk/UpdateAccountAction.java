@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class UpdateAccountAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class UpdateAccountAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateAccountResult value;
+        public UpdateAccountResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,7 +24,7 @@ public class UpdateAccountAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
     @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
@@ -60,8 +59,8 @@ public class UpdateAccountAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateAccountResult value = res.getResult(org.zstack.sdk.UpdateAccountResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateAccountResult() : value; 
+        UpdateAccountResult value = res.getResult(UpdateAccountResult.class);
+        ret.value = value == null ? new UpdateAccountResult() : value; 
 
         return ret;
     }
@@ -80,15 +79,15 @@ public class UpdateAccountAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/accounts/{uuid}";

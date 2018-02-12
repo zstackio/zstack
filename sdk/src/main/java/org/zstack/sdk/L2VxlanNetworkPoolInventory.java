@@ -1,38 +1,36 @@
 package org.zstack.sdk;
 
+public class L2VxlanNetworkPoolInventory extends L2NetworkInventory {
 
-
-public class L2VxlanNetworkPoolInventory extends org.zstack.sdk.L2NetworkInventory {
-
-    public java.util.List attachedVtepRefs;
-    public void setAttachedVtepRefs(java.util.List attachedVtepRefs) {
+    public java.util.List<VtepInventory> attachedVtepRefs;
+    public void setAttachedVtepRefs(java.util.List<VtepInventory> attachedVtepRefs) {
         this.attachedVtepRefs = attachedVtepRefs;
     }
-    public java.util.List getAttachedVtepRefs() {
+    public java.util.List<VtepInventory> getAttachedVtepRefs() {
         return this.attachedVtepRefs;
     }
 
-    public java.util.List attachedVxlanNetworkRefs;
-    public void setAttachedVxlanNetworkRefs(java.util.List attachedVxlanNetworkRefs) {
+    public java.util.List<L2VxlanNetworkInventory> attachedVxlanNetworkRefs;
+    public void setAttachedVxlanNetworkRefs(java.util.List<L2VxlanNetworkInventory> attachedVxlanNetworkRefs) {
         this.attachedVxlanNetworkRefs = attachedVxlanNetworkRefs;
     }
-    public java.util.List getAttachedVxlanNetworkRefs() {
+    public java.util.List<L2VxlanNetworkInventory> getAttachedVxlanNetworkRefs() {
         return this.attachedVxlanNetworkRefs;
     }
 
-    public java.util.List attachedVniRanges;
-    public void setAttachedVniRanges(java.util.List attachedVniRanges) {
+    public java.util.List<VniRangeInventory> attachedVniRanges;
+    public void setAttachedVniRanges(java.util.List<VniRangeInventory> attachedVniRanges) {
         this.attachedVniRanges = attachedVniRanges;
     }
-    public java.util.List getAttachedVniRanges() {
+    public java.util.List<VniRangeInventory> getAttachedVniRanges() {
         return this.attachedVniRanges;
     }
 
-    public java.util.Map attachedCidrs;
-    public void setAttachedCidrs(java.util.Map attachedCidrs) {
+    public java.util.Map<String, String> attachedCidrs;
+    public void setAttachedCidrs(java.util.Map<String, String> attachedCidrs) {
         this.attachedCidrs = attachedCidrs;
     }
-    public java.util.Map getAttachedCidrs() {
+    public java.util.Map<String, String> getAttachedCidrs() {
         return this.attachedCidrs;
     }
 

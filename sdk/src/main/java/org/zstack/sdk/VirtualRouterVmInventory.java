@@ -1,8 +1,6 @@
 package org.zstack.sdk;
 
-
-
-public class VirtualRouterVmInventory extends org.zstack.sdk.ApplianceVmInventory {
+public class VirtualRouterVmInventory extends ApplianceVmInventory {
 
     public java.lang.String publicNetworkUuid;
     public void setPublicNetworkUuid(java.lang.String publicNetworkUuid) {
@@ -12,11 +10,11 @@ public class VirtualRouterVmInventory extends org.zstack.sdk.ApplianceVmInventor
         return this.publicNetworkUuid;
     }
 
-    public java.util.List virtualRouterVips;
-    public void setVirtualRouterVips(java.util.List virtualRouterVips) {
+    public java.util.List<String> virtualRouterVips;
+    public void setVirtualRouterVips(java.util.List<String> virtualRouterVips) {
         this.virtualRouterVips = virtualRouterVips;
     }
-    public java.util.List getVirtualRouterVips() {
+    public java.util.List<String> getVirtualRouterVips() {
         return this.virtualRouterVips;
     }
 

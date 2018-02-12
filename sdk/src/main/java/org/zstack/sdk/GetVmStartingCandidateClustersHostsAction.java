@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class GetVmStartingCandidateClustersHostsAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class GetVmStartingCandidateClustersHostsAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetVmStartingCandidateClustersHostsResult value;
+        public GetVmStartingCandidateClustersHostsResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -45,8 +44,8 @@ public class GetVmStartingCandidateClustersHostsAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetVmStartingCandidateClustersHostsResult value = res.getResult(org.zstack.sdk.GetVmStartingCandidateClustersHostsResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetVmStartingCandidateClustersHostsResult() : value; 
+        GetVmStartingCandidateClustersHostsResult value = res.getResult(GetVmStartingCandidateClustersHostsResult.class);
+        ret.value = value == null ? new GetVmStartingCandidateClustersHostsResult() : value; 
 
         return ret;
     }
@@ -65,15 +64,15 @@ public class GetVmStartingCandidateClustersHostsAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/vm-instances/{uuid}/starting-target-hosts";

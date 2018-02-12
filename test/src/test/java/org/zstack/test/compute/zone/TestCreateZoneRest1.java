@@ -78,7 +78,7 @@ public class TestCreateZoneRest1 {
         Assert.assertEquals(1, qr.inventories.size());
         logger.debug(JSONObjectUtil.toJsonString(r));
 
-        ZoneInventory zone = (ZoneInventory) r.value.inventories.get(0);
+        ZoneInventory zone = r.value.inventories.get(0);
         ChangeZoneStateAction ca = new ChangeZoneStateAction();
         ca.uuid = zone.uuid;
         ca.sessionId = api.getAdminSession().getUuid();

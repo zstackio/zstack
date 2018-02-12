@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class L2NetworkInventory  {
 
     public java.lang.String uuid;
@@ -68,11 +66,11 @@ public class L2NetworkInventory  {
         return this.lastOpDate;
     }
 
-    public java.util.List attachedClusterUuids;
-    public void setAttachedClusterUuids(java.util.List attachedClusterUuids) {
+    public java.util.List<String> attachedClusterUuids;
+    public void setAttachedClusterUuids(java.util.List<String> attachedClusterUuids) {
         this.attachedClusterUuids = attachedClusterUuids;
     }
-    public java.util.List getAttachedClusterUuids() {
+    public java.util.List<String> getAttachedClusterUuids() {
         return this.attachedClusterUuids;
     }
 

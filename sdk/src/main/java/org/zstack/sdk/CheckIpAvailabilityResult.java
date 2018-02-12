@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class CheckIpAvailabilityResult {
     public boolean available;
     public void setAvailable(boolean available) {

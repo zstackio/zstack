@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.SnapshotLeafInventory;
-
 public class VolumeSnapshotTreeInventory  {
 
     public java.lang.String uuid;

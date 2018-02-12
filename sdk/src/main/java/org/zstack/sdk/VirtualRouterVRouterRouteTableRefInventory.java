@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class VirtualRouterVRouterRouteTableRefInventory  {
 
     public java.lang.String virtualRouterVmUuid;

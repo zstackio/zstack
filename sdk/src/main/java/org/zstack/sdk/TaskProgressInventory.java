@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class TaskProgressInventory  {
 
     public java.lang.String taskUuid;
@@ -60,11 +58,11 @@ public class TaskProgressInventory  {
         return this.time;
     }
 
-    public java.util.List subTasks;
-    public void setSubTasks(java.util.List subTasks) {
+    public java.util.List<TaskProgressInventory> subTasks;
+    public void setSubTasks(java.util.List<TaskProgressInventory> subTasks) {
         this.subTasks = subTasks;
     }
-    public java.util.List getSubTasks() {
+    public java.util.List<TaskProgressInventory> getSubTasks() {
         return this.subTasks;
     }
 

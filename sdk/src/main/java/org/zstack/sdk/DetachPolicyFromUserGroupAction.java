@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class DetachPolicyFromUserGroupAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class DetachPolicyFromUserGroupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DetachPolicyFromUserGroupResult value;
+        public DetachPolicyFromUserGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -54,8 +53,8 @@ public class DetachPolicyFromUserGroupAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DetachPolicyFromUserGroupResult value = res.getResult(org.zstack.sdk.DetachPolicyFromUserGroupResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DetachPolicyFromUserGroupResult() : value; 
+        DetachPolicyFromUserGroupResult value = res.getResult(DetachPolicyFromUserGroupResult.class);
+        ret.value = value == null ? new DetachPolicyFromUserGroupResult() : value; 
 
         return ret;
     }
@@ -74,15 +73,15 @@ public class DetachPolicyFromUserGroupAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/accounts/groups/{groupUuid}/policies/{policyUuid}";

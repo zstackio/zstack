@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class BaremetalConsoleProxyInventory  {
 
     public java.lang.String uuid;

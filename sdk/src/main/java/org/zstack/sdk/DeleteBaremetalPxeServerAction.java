@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class DeleteBaremetalPxeServerAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class DeleteBaremetalPxeServerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteBaremetalPxeServerResult value;
+        public DeleteBaremetalPxeServerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -54,8 +53,8 @@ public class DeleteBaremetalPxeServerAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteBaremetalPxeServerResult value = res.getResult(org.zstack.sdk.DeleteBaremetalPxeServerResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteBaremetalPxeServerResult() : value; 
+        DeleteBaremetalPxeServerResult value = res.getResult(DeleteBaremetalPxeServerResult.class);
+        ret.value = value == null ? new DeleteBaremetalPxeServerResult() : value; 
 
         return ret;
     }
@@ -74,15 +73,15 @@ public class DeleteBaremetalPxeServerAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/baremetal/pxeserver/{uuid}";

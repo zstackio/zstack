@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.ApplianceVmInventory;
-
 public class ReconnectVirtualRouterResult {
     public ApplianceVmInventory inventory;
     public void setInventory(ApplianceVmInventory inventory) {

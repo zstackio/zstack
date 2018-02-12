@@ -83,9 +83,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
         List<ClusterInventory> clusters;
     }
 
-    public LocalStorageBase() {
-    }
-
     public LocalStorageBase(PrimaryStorageVO self) {
         super(self);
     }

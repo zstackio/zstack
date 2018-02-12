@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.HybridConnectionType;
-
 public class ConnectionRelationShipProperty  {
 
     public java.lang.String uuid;

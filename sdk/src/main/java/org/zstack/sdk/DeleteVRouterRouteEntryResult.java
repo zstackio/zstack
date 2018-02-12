@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.VRouterRouteTableInventory;
-
 public class DeleteVRouterRouteEntryResult {
     public VRouterRouteTableInventory inventory;
     public void setInventory(VRouterRouteTableInventory inventory) {

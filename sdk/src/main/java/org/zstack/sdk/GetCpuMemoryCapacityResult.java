@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class GetCpuMemoryCapacityResult {
     public long totalCpu;
     public void setTotalCpu(long totalCpu) {

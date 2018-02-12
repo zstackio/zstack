@@ -944,7 +944,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
             bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
                 @Override
-                public void beforeDeliveryMessage(Message msg) {
+                public void intercept(Message msg) {
                     if (msg instanceof NeedQuotaCheckMessage) {
                         if (((NeedQuotaCheckMessage) msg).getAccountUuid() == null ||
                                 ((NeedQuotaCheckMessage) msg).getAccountUuid().equals("")) {

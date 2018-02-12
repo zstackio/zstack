@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class GetL2NetworkTypesAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class GetL2NetworkTypesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetL2NetworkTypesResult value;
+        public GetL2NetworkTypesResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -42,8 +41,8 @@ public class GetL2NetworkTypesAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetL2NetworkTypesResult value = res.getResult(org.zstack.sdk.GetL2NetworkTypesResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetL2NetworkTypesResult() : value; 
+        GetL2NetworkTypesResult value = res.getResult(GetL2NetworkTypesResult.class);
+        ret.value = value == null ? new GetL2NetworkTypesResult() : value; 
 
         return ret;
     }
@@ -62,15 +61,15 @@ public class GetL2NetworkTypesAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/l2-networks/types";

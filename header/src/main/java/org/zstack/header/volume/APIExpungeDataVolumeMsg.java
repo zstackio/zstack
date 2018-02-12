@@ -4,7 +4,6 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
-import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.notification.NotificationConstant;
 import org.zstack.header.rest.RestRequest;
@@ -21,7 +20,6 @@ import org.zstack.header.vm.VmInstanceVO;
         responseClass = APIExpungeDataVolumeEvent.class
 )
 public class APIExpungeDataVolumeMsg extends APIMessage implements VolumeMessage {
-    @APIParam(resourceType = VolumeVO.class, checkAccount = true, operationTarget = true, successIfResourceNotExisting = true)
     private String uuid;
 
     public String getUuid() {

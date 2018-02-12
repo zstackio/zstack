@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class DeleteBackupFileInPublicAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class DeleteBackupFileInPublicAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteBackupDatabaseInPublicResult value;
+        public DeleteBackupDatabaseInPublicResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -60,8 +59,8 @@ public class DeleteBackupFileInPublicAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteBackupDatabaseInPublicResult value = res.getResult(org.zstack.sdk.DeleteBackupDatabaseInPublicResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteBackupDatabaseInPublicResult() : value; 
+        DeleteBackupDatabaseInPublicResult value = res.getResult(DeleteBackupDatabaseInPublicResult.class);
+        ret.value = value == null ? new DeleteBackupDatabaseInPublicResult() : value; 
 
         return ret;
     }
@@ -80,15 +79,15 @@ public class DeleteBackupFileInPublicAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/hybrid/backup-mysql";

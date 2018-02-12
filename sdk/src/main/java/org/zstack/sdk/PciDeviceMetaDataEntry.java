@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.PciDeviceMetaDataOperator;
-
 public class PciDeviceMetaDataEntry  {
 
     public java.lang.String key;

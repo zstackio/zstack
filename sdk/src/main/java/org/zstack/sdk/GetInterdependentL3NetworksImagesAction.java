@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class GetInterdependentL3NetworksImagesAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class GetInterdependentL3NetworksImagesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetInterdependentL3NetworkImageResult value;
+        public GetInterdependentL3NetworkImageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -51,8 +50,8 @@ public class GetInterdependentL3NetworksImagesAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetInterdependentL3NetworkImageResult value = res.getResult(org.zstack.sdk.GetInterdependentL3NetworkImageResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetInterdependentL3NetworkImageResult() : value; 
+        GetInterdependentL3NetworkImageResult value = res.getResult(GetInterdependentL3NetworkImageResult.class);
+        ret.value = value == null ? new GetInterdependentL3NetworkImageResult() : value; 
 
         return ret;
     }
@@ -71,15 +70,15 @@ public class GetInterdependentL3NetworksImagesAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/images-l3networks/dependencies";

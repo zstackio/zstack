@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class LocalStorageGetVolumeMigratableHostsAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class LocalStorageGetVolumeMigratableHostsAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.LocalStorageGetVolumeMigratableResult value;
+        public LocalStorageGetVolumeMigratableResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -45,8 +44,8 @@ public class LocalStorageGetVolumeMigratableHostsAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.LocalStorageGetVolumeMigratableResult value = res.getResult(org.zstack.sdk.LocalStorageGetVolumeMigratableResult.class);
-        ret.value = value == null ? new org.zstack.sdk.LocalStorageGetVolumeMigratableResult() : value; 
+        LocalStorageGetVolumeMigratableResult value = res.getResult(LocalStorageGetVolumeMigratableResult.class);
+        ret.value = value == null ? new LocalStorageGetVolumeMigratableResult() : value; 
 
         return ret;
     }
@@ -65,15 +64,15 @@ public class LocalStorageGetVolumeMigratableHostsAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/volumes/{volumeUuid}/migration-target-hosts";

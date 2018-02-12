@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-
-
 public class ClusterInventory  {
 
     public java.lang.String name;

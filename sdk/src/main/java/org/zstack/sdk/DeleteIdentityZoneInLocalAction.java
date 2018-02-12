@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class DeleteIdentityZoneInLocalAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class DeleteIdentityZoneInLocalAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteIdentityZoneInLocalResult value;
+        public DeleteIdentityZoneInLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -54,8 +53,8 @@ public class DeleteIdentityZoneInLocalAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteIdentityZoneInLocalResult value = res.getResult(org.zstack.sdk.DeleteIdentityZoneInLocalResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteIdentityZoneInLocalResult() : value; 
+        DeleteIdentityZoneInLocalResult value = res.getResult(DeleteIdentityZoneInLocalResult.class);
+        ret.value = value == null ? new DeleteIdentityZoneInLocalResult() : value; 
 
         return ret;
     }
@@ -74,15 +73,15 @@ public class DeleteIdentityZoneInLocalAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/hybrid/identity-zone/{uuid}";

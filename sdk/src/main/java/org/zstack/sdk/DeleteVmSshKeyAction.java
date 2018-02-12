@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class DeleteVmSshKeyAction extends AbstractAction {
 
@@ -12,7 +11,7 @@ public class DeleteVmSshKeyAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteVmSshKeyResult value;
+        public DeleteVmSshKeyResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -51,8 +50,8 @@ public class DeleteVmSshKeyAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteVmSshKeyResult value = res.getResult(org.zstack.sdk.DeleteVmSshKeyResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteVmSshKeyResult() : value; 
+        DeleteVmSshKeyResult value = res.getResult(DeleteVmSshKeyResult.class);
+        ret.value = value == null ? new DeleteVmSshKeyResult() : value; 
 
         return ret;
     }
@@ -71,15 +70,15 @@ public class DeleteVmSshKeyAction extends AbstractAction {
         });
     }
 
-    protected Map<String, Parameter> getParameterMap() {
+    Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    protected Map<String, Parameter> getNonAPIParameterMap() {
+    Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    protected RestInfo getRestInfo() {
+    RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/vm-instances/{uuid}/ssh-keys";

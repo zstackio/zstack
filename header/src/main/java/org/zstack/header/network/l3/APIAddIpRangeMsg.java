@@ -7,7 +7,6 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
-import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 
 /**
@@ -55,7 +54,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIAddIpRangeEvent.class,
         parameterName = "params"
 )
-public class APIAddIpRangeMsg extends APICreateMessage implements L3NetworkMessage, APIAuditor {
+public class APIAddIpRangeMsg extends APICreateMessage implements L3NetworkMessage {
     /**
      * @desc l3Network uuid
      */
@@ -175,8 +174,4 @@ public class APIAddIpRangeMsg extends APICreateMessage implements L3NetworkMessa
         };
     }
 
-    @Override
-    public Result audit(APIMessage msg, APIEvent rsp) {
-        return new Result(rsp.isSuccess() ? ((APIAddIpRangeEvent)rsp).getInventory().getUuid() : "", IpRangeVO.class);
-    }
 }
