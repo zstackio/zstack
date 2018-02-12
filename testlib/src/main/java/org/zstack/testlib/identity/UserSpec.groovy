@@ -24,7 +24,7 @@ class UserSpec extends Spec implements HasSession {
         super(envSpec)
     }
 
-    void userPolicy(String pname) {
+    void usePolicy(String pname) {
         preCreate {
             addDependency(pname, PolicySpec.class)
         }

@@ -1,5 +1,6 @@
 package org.zstack.test.integration.identity
 
+import org.zstack.header.identity.AccountConstant
 import org.zstack.test.integration.ZStackTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -23,18 +24,66 @@ class RBACPermissionCase extends SubCase {
     }
 
     void testAccountPermission() {
-        def senv = senv {
-            zone {
-                name = "zone"
+        def e = senv {
+            identities {
+                admin {
+                    policy {
+                        name = "admin-policy"
+                        statement {
+                            effect = AccountConstant.StatementEffect.Allow
+                            action(".*")
+                        }
+                    }
 
-                cluster {
-                    name = "cluster"
-                    hypervisorType = "KVM"
+                    role {
+                        name = "admin-role"
+                        usePolicy("admin-policy")
+                    }
+                }
+
+                account {
+                    name = "account1"
+                    password = "password"
+                    useRole("admin-role")
+                }
+
+                account {
+                    name = "test"
+                    password = "password"
+
+                    policy {
+                        name = "normal-policy"
+
+                        statement {
+                            effect = AccountConstant.StatementEffect.Allow
+                            action(".*")
+                        }
+                    }
+
+                    user {
+                        name = "user1"
+                        password = "password"
+
+                        usePolicy("normal-policy")
+                        useRole("role1")
+                    }
+
+                    role {
+                        name = "role1"
+                        usePolicy("normal-policy")
+                    }
+
+                    group {
+                        name = "group1"
+                        addUser("user1")
+                        usePolicy("normal-policy")
+                        useRole("role1")
+                    }
                 }
             }
         }
 
-        senv.delete()
+        //senv.delete()
     }
 
     @Override

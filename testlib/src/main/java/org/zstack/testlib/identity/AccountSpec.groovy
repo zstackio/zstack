@@ -35,7 +35,7 @@ class AccountSpec extends Spec {
     }
 
     void policy(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = PolicySpec.class) Closure c) {
-        def spec = new PolicySpec()
+        def spec = new PolicySpec(envSpec)
         c.delegate = spec
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()
@@ -43,7 +43,7 @@ class AccountSpec extends Spec {
     }
 
     void user(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = UserSpec.class) Closure c) {
-        def spec = new UserSpec()
+        def spec = new UserSpec(envSpec)
         c.delegate = spec
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()
@@ -51,7 +51,7 @@ class AccountSpec extends Spec {
     }
 
     void group(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = UserGroupSpec.class) Closure c) {
-        def spec = new UserGroupSpec()
+        def spec = new UserGroupSpec(envSpec)
         c.delegate = spec
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()
@@ -59,7 +59,7 @@ class AccountSpec extends Spec {
     }
 
     void role(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = RoleSpec.class) Closure c) {
-        def spec = new RoleSpec()
+        def spec = new RoleSpec(envSpec)
         c.delegate = spec
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()

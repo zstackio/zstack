@@ -19,8 +19,8 @@ class IdentitySpec extends Spec {
     void delete(String sessionId) {
     }
 
-    void adminRoles(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = AdminRoleSpec.class) Closure c) {
-        def spec = new AdminRoleSpec()
+    void admin(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = AdminSpec.class) Closure c) {
+        def spec = new AdminSpec(envSpec)
         c.delegate = spec
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()
@@ -29,7 +29,7 @@ class IdentitySpec extends Spec {
     }
 
     void account(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = AccountSpec.class) Closure c) {
-        def spec = new AccountSpec()
+        def spec = new AccountSpec(envSpec)
         c.delegate = spec
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()

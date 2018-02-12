@@ -20,6 +20,6 @@ class SimpleEnvSpec extends EnvSpec {
             cl()
         }
 
-        return this;
+        return this
     }
 }

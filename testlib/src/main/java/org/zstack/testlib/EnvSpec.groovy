@@ -180,8 +180,8 @@ class EnvSpec implements Node {
         cleanMessageHandlers()
     }
 
-    void identity(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = IdentitySpec.class) Closure c) {
-        def ispec = new IdentitySpec()
+    void identities(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = IdentitySpec.class) Closure c) {
+        def ispec = new IdentitySpec(this)
         c.delegate = ispec
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()

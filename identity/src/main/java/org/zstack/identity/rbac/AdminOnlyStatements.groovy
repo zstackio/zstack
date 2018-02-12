@@ -45,6 +45,7 @@ class AdminOnlyStatements {
             p("^org.zstack.core.config.*"),
             p("^org.zstack.header.console.*(?<!APIRequestConsoleAccessMsg)"),
             p("^org.zstack.network.service.virtualrouter.APICreateVirtualRouterOfferingMsg"),
+            p("^org.zstack.header.identity.role.api.(APIAttachRoleToAccountMsg|APIDetachRoleFromAccountMsg)"),
     ]
 
     List<Pattern> resourceStatements =[

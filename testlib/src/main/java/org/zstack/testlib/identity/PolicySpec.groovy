@@ -18,11 +18,11 @@ class PolicySpec extends Spec implements HasSession {
     private List<PolicyStatement> statements = []
 
     static class Statement {
-        private String name
-        private AccountConstant.StatementEffect effect
-        private List<String> principals = []
-        private List<String> actions = []
-        private List<String> resources = []
+        String name
+        AccountConstant.StatementEffect effect
+        List<String> principals = []
+        List<String> actions = []
+        List<String> resources = []
 
         void principal(String p)  {
             principals.add(p)

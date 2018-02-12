@@ -4,13 +4,21 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.Spec
 import org.zstack.testlib.SpecID
 
-class AdminRoleSpec extends Spec {
-    AdminRoleSpec(EnvSpec envSpec) {
+class AdminSpec extends Spec {
+    AdminSpec(EnvSpec envSpec) {
         super(envSpec)
     }
 
     void role(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = RoleSpec.class) Closure c) {
-        def spec = new RoleSpec()
+        def spec = new RoleSpec(envSpec)
+        c.delegate = spec
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c()
+        addChild(spec)
+    }
+
+    void policy(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = PolicySpec.class) Closure c) {
+        def spec = new PolicySpec(envSpec)
         c.delegate = spec
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()
