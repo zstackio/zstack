@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class UpdateVolumeSnapshotAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class UpdateVolumeSnapshotAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateVolumeSnapshotResult value;
+        public org.zstack.sdk.UpdateVolumeSnapshotResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +57,8 @@ public class UpdateVolumeSnapshotAction extends AbstractAction {
             return ret;
         }
         
-        UpdateVolumeSnapshotResult value = res.getResult(UpdateVolumeSnapshotResult.class);
-        ret.value = value == null ? new UpdateVolumeSnapshotResult() : value; 
+        org.zstack.sdk.UpdateVolumeSnapshotResult value = res.getResult(org.zstack.sdk.UpdateVolumeSnapshotResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateVolumeSnapshotResult() : value; 
 
         return ret;
     }
@@ -76,15 +77,15 @@ public class UpdateVolumeSnapshotAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/volume-snapshots/{uuid}/actions";

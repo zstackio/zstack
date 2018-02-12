@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteHostAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteHostAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteHostResult value;
+        public org.zstack.sdk.DeleteHostResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DeleteHostAction extends AbstractAction {
             return ret;
         }
         
-        DeleteHostResult value = res.getResult(DeleteHostResult.class);
-        ret.value = value == null ? new DeleteHostResult() : value; 
+        org.zstack.sdk.DeleteHostResult value = res.getResult(org.zstack.sdk.DeleteHostResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteHostResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DeleteHostAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/hosts/{uuid}";

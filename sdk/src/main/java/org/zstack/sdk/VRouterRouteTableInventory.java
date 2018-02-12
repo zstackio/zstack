@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class VRouterRouteTableInventory  {
 
     public java.lang.String uuid;
@@ -42,19 +44,19 @@ public class VRouterRouteTableInventory  {
         return this.lastOpDate;
     }
 
-    public java.util.List<VirtualRouterVRouterRouteTableRefInventory> attachedRouterRefs;
-    public void setAttachedRouterRefs(java.util.List<VirtualRouterVRouterRouteTableRefInventory> attachedRouterRefs) {
+    public java.util.List attachedRouterRefs;
+    public void setAttachedRouterRefs(java.util.List attachedRouterRefs) {
         this.attachedRouterRefs = attachedRouterRefs;
     }
-    public java.util.List<VirtualRouterVRouterRouteTableRefInventory> getAttachedRouterRefs() {
+    public java.util.List getAttachedRouterRefs() {
         return this.attachedRouterRefs;
     }
 
-    public java.util.List<VRouterRouteEntryInventory> routeEntries;
-    public void setRouteEntries(java.util.List<VRouterRouteEntryInventory> routeEntries) {
+    public java.util.List routeEntries;
+    public void setRouteEntries(java.util.List routeEntries) {
         this.routeEntries = routeEntries;
     }
-    public java.util.List<VRouterRouteEntryInventory> getRouteEntries() {
+    public java.util.List getRouteEntries() {
         return this.routeEntries;
     }
 

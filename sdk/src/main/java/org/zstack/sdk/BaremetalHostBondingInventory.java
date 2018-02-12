@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class BaremetalHostBondingInventory  {
 
     public java.lang.String uuid;

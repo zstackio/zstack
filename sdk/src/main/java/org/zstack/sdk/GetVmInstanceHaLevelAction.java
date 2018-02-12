@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class GetVmInstanceHaLevelAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class GetVmInstanceHaLevelAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetVmInstanceHaLevelResult value;
+        public org.zstack.sdk.GetVmInstanceHaLevelResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -44,8 +45,8 @@ public class GetVmInstanceHaLevelAction extends AbstractAction {
             return ret;
         }
         
-        GetVmInstanceHaLevelResult value = res.getResult(GetVmInstanceHaLevelResult.class);
-        ret.value = value == null ? new GetVmInstanceHaLevelResult() : value; 
+        org.zstack.sdk.GetVmInstanceHaLevelResult value = res.getResult(org.zstack.sdk.GetVmInstanceHaLevelResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetVmInstanceHaLevelResult() : value; 
 
         return ret;
     }
@@ -64,15 +65,15 @@ public class GetVmInstanceHaLevelAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/vm-instances/{uuid}/ha-levels";

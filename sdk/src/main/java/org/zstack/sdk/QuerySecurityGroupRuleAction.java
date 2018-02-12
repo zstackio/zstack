@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QuerySecurityGroupRuleAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QuerySecurityGroupRuleAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QuerySecurityGroupRuleResult value;
+        public org.zstack.sdk.QuerySecurityGroupRuleResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QuerySecurityGroupRuleAction extends QueryAction {
             return ret;
         }
         
-        QuerySecurityGroupRuleResult value = res.getResult(QuerySecurityGroupRuleResult.class);
-        ret.value = value == null ? new QuerySecurityGroupRuleResult() : value; 
+        org.zstack.sdk.QuerySecurityGroupRuleResult value = res.getResult(org.zstack.sdk.QuerySecurityGroupRuleResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QuerySecurityGroupRuleResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QuerySecurityGroupRuleAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/security-groups/rules";

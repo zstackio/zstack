@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class QuotaUsage  {
 
     public java.lang.String name;

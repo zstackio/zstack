@@ -46,7 +46,7 @@ public class ApiPathTracker {
 
         bus.installBeforeSendMessageInterceptor(new AbstractBeforeSendMessageInterceptor() {
             @Override
-            public void intercept(Message msg) {
+            public void beforeSendMessage(Message msg) {
                 if (msg instanceof MessageReply || msg instanceof CarrierMessage) {
                     return;
                 }

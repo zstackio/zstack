@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.MediaInventory;
+
 public class ChangeMediaStateResult {
     public MediaInventory inventory;
     public void setInventory(MediaInventory inventory) {

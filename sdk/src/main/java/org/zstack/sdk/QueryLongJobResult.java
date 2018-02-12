@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class QueryLongJobResult {
-    public java.util.List<LongJobInventory> inventories;
-    public void setInventories(java.util.List<LongJobInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<LongJobInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

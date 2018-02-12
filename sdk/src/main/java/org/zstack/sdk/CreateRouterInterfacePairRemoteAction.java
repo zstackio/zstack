@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class CreateRouterInterfacePairRemoteAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class CreateRouterInterfacePairRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateRouterInterfacePairRemoteResult value;
+        public org.zstack.sdk.CreateRouterInterfacePairRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -77,8 +78,8 @@ public class CreateRouterInterfacePairRemoteAction extends AbstractAction {
             return ret;
         }
         
-        CreateRouterInterfacePairRemoteResult value = res.getResult(CreateRouterInterfacePairRemoteResult.class);
-        ret.value = value == null ? new CreateRouterInterfacePairRemoteResult() : value; 
+        org.zstack.sdk.CreateRouterInterfacePairRemoteResult value = res.getResult(org.zstack.sdk.CreateRouterInterfacePairRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateRouterInterfacePairRemoteResult() : value; 
 
         return ret;
     }
@@ -97,15 +98,15 @@ public class CreateRouterInterfacePairRemoteAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/hybrid/aliyun/router-interface";

@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.LoadBalancerListenerInventory;
+
 public class AddVmNicToLoadBalancerResult {
     public LoadBalancerListenerInventory inventory;
     public void setInventory(LoadBalancerListenerInventory inventory) {

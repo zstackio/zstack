@@ -55,6 +55,9 @@ import static org.zstack.utils.CollectionDSL.list;
 public class CephBackupStorageBase extends BackupStorageBase {
     private static final CLogger logger = Utils.getLogger(CephBackupStorageBase.class);
 
+    public CephBackupStorageBase() {
+    }
+
     class ReconnectMonLock {
         AtomicBoolean hold = new AtomicBoolean(false);
 

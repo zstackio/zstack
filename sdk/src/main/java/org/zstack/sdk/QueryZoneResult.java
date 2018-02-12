@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class QueryZoneResult {
-    public java.util.List<ZoneInventory> inventories;
-    public void setInventories(java.util.List<ZoneInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<ZoneInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class AttachPoliciesToUserAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class AttachPoliciesToUserAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AttachPoliciesToUserResult value;
+        public org.zstack.sdk.AttachPoliciesToUserResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class AttachPoliciesToUserAction extends AbstractAction {
             return ret;
         }
         
-        AttachPoliciesToUserResult value = res.getResult(AttachPoliciesToUserResult.class);
-        ret.value = value == null ? new AttachPoliciesToUserResult() : value; 
+        org.zstack.sdk.AttachPoliciesToUserResult value = res.getResult(org.zstack.sdk.AttachPoliciesToUserResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AttachPoliciesToUserResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class AttachPoliciesToUserAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/accounts/users/{userUuid}/policy-collection";

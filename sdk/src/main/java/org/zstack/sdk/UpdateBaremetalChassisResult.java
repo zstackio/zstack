@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.BaremetalChassisInventory;
+
 public class UpdateBaremetalChassisResult {
     public BaremetalChassisInventory inventory;
     public void setInventory(BaremetalChassisInventory inventory) {

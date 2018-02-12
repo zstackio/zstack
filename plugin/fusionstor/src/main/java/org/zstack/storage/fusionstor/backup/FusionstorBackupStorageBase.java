@@ -47,6 +47,9 @@ import static org.zstack.utils.CollectionDSL.list;
 public class FusionstorBackupStorageBase extends BackupStorageBase {
     private static final CLogger logger = Utils.getLogger(FusionstorBackupStorageBase.class);
 
+    public FusionstorBackupStorageBase() {
+    }
+
     class ReconnectMonLock {
         AtomicBoolean hold = new AtomicBoolean(false);
 

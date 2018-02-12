@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class QueryDiskOfferingResult {
-    public java.util.List<DiskOfferingInventory> inventories;
-    public void setInventories(java.util.List<DiskOfferingInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<DiskOfferingInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

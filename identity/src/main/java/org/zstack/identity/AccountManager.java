@@ -28,4 +28,6 @@ public interface AccountManager {
     boolean isAdmin(SessionInventory session);
 
     void adminAdoptAllOrphanedResource();
+
+    Class getBaseResourceType(Class clz);
 }

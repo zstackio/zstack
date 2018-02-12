@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class QueryVmNicInSecurityGroupResult {
-    public java.util.List<VmNicSecurityGroupRefInventory> inventories;
-    public void setInventories(java.util.List<VmNicSecurityGroupRefInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<VmNicSecurityGroupRefInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

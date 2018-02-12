@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.UserInventory;
+
 public class CreateUserResult {
     public UserInventory inventory;
     public void setInventory(UserInventory inventory) {

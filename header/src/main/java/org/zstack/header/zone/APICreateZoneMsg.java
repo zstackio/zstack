@@ -6,6 +6,7 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
+import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 
@@ -42,7 +43,7 @@ import org.zstack.header.rest.RestRequest;
         parameterName = "params",
         responseClass = APICreateZoneEvent.class
 )
-public class APICreateZoneMsg extends APICreateMessage {
+public class APICreateZoneMsg extends APICreateMessage implements APIAuditor {
     /**
      * @desc max length of 255 characters
      * @required
@@ -107,4 +108,8 @@ public class APICreateZoneMsg extends APICreateMessage {
         };
     }
 
+    @Override
+    public Result audit(APIMessage msg, APIEvent rsp) {
+        return new Result(rsp.isSuccess() ? ((APICreateZoneEvent)rsp).getInventory().getUuid() : "", ZoneVO.class);
+    }
 }

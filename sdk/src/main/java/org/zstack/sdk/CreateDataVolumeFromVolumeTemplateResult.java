@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.VolumeInventory;
+
 public class CreateDataVolumeFromVolumeTemplateResult {
     public VolumeInventory inventory;
     public void setInventory(VolumeInventory inventory) {

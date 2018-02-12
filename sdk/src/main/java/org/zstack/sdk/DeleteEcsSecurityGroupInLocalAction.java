@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteEcsSecurityGroupInLocalAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteEcsSecurityGroupInLocalAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteEcsSecurityGroupInLocalResult value;
+        public org.zstack.sdk.DeleteEcsSecurityGroupInLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DeleteEcsSecurityGroupInLocalAction extends AbstractAction {
             return ret;
         }
         
-        DeleteEcsSecurityGroupInLocalResult value = res.getResult(DeleteEcsSecurityGroupInLocalResult.class);
-        ret.value = value == null ? new DeleteEcsSecurityGroupInLocalResult() : value; 
+        org.zstack.sdk.DeleteEcsSecurityGroupInLocalResult value = res.getResult(org.zstack.sdk.DeleteEcsSecurityGroupInLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteEcsSecurityGroupInLocalResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DeleteEcsSecurityGroupInLocalAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/hybrid/aliyun/security-group/{uuid}";

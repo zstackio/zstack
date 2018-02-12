@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class GetCandidateLdapEntryForBindingAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class GetCandidateLdapEntryForBindingAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetLdapEntryResult value;
+        public org.zstack.sdk.GetLdapEntryResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +48,8 @@ public class GetCandidateLdapEntryForBindingAction extends AbstractAction {
             return ret;
         }
         
-        GetLdapEntryResult value = res.getResult(GetLdapEntryResult.class);
-        ret.value = value == null ? new GetLdapEntryResult() : value; 
+        org.zstack.sdk.GetLdapEntryResult value = res.getResult(org.zstack.sdk.GetLdapEntryResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetLdapEntryResult() : value; 
 
         return ret;
     }
@@ -67,15 +68,15 @@ public class GetCandidateLdapEntryForBindingAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/ldap/entries/candidates";

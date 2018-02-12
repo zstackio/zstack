@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class UpdateEcsSecurityGroupAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class UpdateEcsSecurityGroupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateEcsSecurityGroupResult value;
+        public org.zstack.sdk.UpdateEcsSecurityGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +57,8 @@ public class UpdateEcsSecurityGroupAction extends AbstractAction {
             return ret;
         }
         
-        UpdateEcsSecurityGroupResult value = res.getResult(UpdateEcsSecurityGroupResult.class);
-        ret.value = value == null ? new UpdateEcsSecurityGroupResult() : value; 
+        org.zstack.sdk.UpdateEcsSecurityGroupResult value = res.getResult(org.zstack.sdk.UpdateEcsSecurityGroupResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateEcsSecurityGroupResult() : value; 
 
         return ret;
     }
@@ -76,15 +77,15 @@ public class UpdateEcsSecurityGroupAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/hybrid/aliyun/security-group/{uuid}/actions";

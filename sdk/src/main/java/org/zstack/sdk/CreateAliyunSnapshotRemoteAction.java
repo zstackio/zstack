@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class CreateAliyunSnapshotRemoteAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class CreateAliyunSnapshotRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateAliyunSnapshotRemoteResult value;
+        public org.zstack.sdk.CreateAliyunSnapshotRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -59,8 +60,8 @@ public class CreateAliyunSnapshotRemoteAction extends AbstractAction {
             return ret;
         }
         
-        CreateAliyunSnapshotRemoteResult value = res.getResult(CreateAliyunSnapshotRemoteResult.class);
-        ret.value = value == null ? new CreateAliyunSnapshotRemoteResult() : value; 
+        org.zstack.sdk.CreateAliyunSnapshotRemoteResult value = res.getResult(org.zstack.sdk.CreateAliyunSnapshotRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateAliyunSnapshotRemoteResult() : value; 
 
         return ret;
     }
@@ -79,15 +80,15 @@ public class CreateAliyunSnapshotRemoteAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/hybrid/aliyun/snapshot";

@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class ResourceInventory  {
 
     public java.lang.String uuid;

@@ -3,8 +3,11 @@ package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APICreateMessage;
+import org.zstack.header.message.APIEvent;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l2.L2NetworkMessage;
+import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 
 /**
@@ -16,7 +19,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APICreateVniRangeEvent.class,
         parameterName = "params"
 )
-public class APICreateVniRangeMsg extends APICreateMessage implements L2NetworkMessage {
+public class APICreateVniRangeMsg extends APICreateMessage implements L2NetworkMessage, APIAuditor {
 
     @APIParam(maxLength = 255)
     private String name;
@@ -83,5 +86,10 @@ public class APICreateVniRangeMsg extends APICreateMessage implements L2NetworkM
         msg.setL2NetworkUuid(uuid());
 
         return msg;
+    }
+
+    @Override
+    public Result audit(APIMessage msg, APIEvent rsp) {
+        return new Result(rsp.isSuccess() ? ((APICreateVniRangeEvent)rsp).getInventory().getUuid() : "", VniRangeVO.class);
     }
 }

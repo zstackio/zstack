@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class CreateEmailMonitorTriggerActionAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class CreateEmailMonitorTriggerActionAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateMonitorTriggerActionResult value;
+        public org.zstack.sdk.CreateMonitorTriggerActionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -65,8 +66,8 @@ public class CreateEmailMonitorTriggerActionAction extends AbstractAction {
             return ret;
         }
         
-        CreateMonitorTriggerActionResult value = res.getResult(CreateMonitorTriggerActionResult.class);
-        ret.value = value == null ? new CreateMonitorTriggerActionResult() : value; 
+        org.zstack.sdk.CreateMonitorTriggerActionResult value = res.getResult(org.zstack.sdk.CreateMonitorTriggerActionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateMonitorTriggerActionResult() : value; 
 
         return ret;
     }
@@ -85,15 +86,15 @@ public class CreateEmailMonitorTriggerActionAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/monitoring/trigger-actions/emails";

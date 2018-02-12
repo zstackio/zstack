@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class QueryOssBucketFileNameResult {
-    public java.util.List<OssBucketInventory> inventories;
-    public void setInventories(java.util.List<OssBucketInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<OssBucketInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

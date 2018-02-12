@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class CreateEcsSecurityGroupRuleRemoteAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class CreateEcsSecurityGroupRuleRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateEcsSecurityGroupRuleRemoteResult value;
+        public org.zstack.sdk.CreateEcsSecurityGroupRuleRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -77,8 +78,8 @@ public class CreateEcsSecurityGroupRuleRemoteAction extends AbstractAction {
             return ret;
         }
         
-        CreateEcsSecurityGroupRuleRemoteResult value = res.getResult(CreateEcsSecurityGroupRuleRemoteResult.class);
-        ret.value = value == null ? new CreateEcsSecurityGroupRuleRemoteResult() : value; 
+        org.zstack.sdk.CreateEcsSecurityGroupRuleRemoteResult value = res.getResult(org.zstack.sdk.CreateEcsSecurityGroupRuleRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateEcsSecurityGroupRuleRemoteResult() : value; 
 
         return ret;
     }
@@ -97,15 +98,15 @@ public class CreateEcsSecurityGroupRuleRemoteAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/hybrid/aliyun/security-group-rule";

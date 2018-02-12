@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class ValidateSessionAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class ValidateSessionAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ValidateSessionResult value;
+        public org.zstack.sdk.ValidateSessionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -41,8 +42,8 @@ public class ValidateSessionAction extends AbstractAction {
             return ret;
         }
         
-        ValidateSessionResult value = res.getResult(ValidateSessionResult.class);
-        ret.value = value == null ? new ValidateSessionResult() : value; 
+        org.zstack.sdk.ValidateSessionResult value = res.getResult(org.zstack.sdk.ValidateSessionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ValidateSessionResult() : value; 
 
         return ret;
     }
@@ -61,15 +62,15 @@ public class ValidateSessionAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/accounts/sessions/{sessionUuid}/valid";

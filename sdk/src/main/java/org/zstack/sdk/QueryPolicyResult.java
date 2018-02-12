@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class QueryPolicyResult {
-    public java.util.List<PolicyInventory> inventories;
-    public void setInventories(java.util.List<PolicyInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<PolicyInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

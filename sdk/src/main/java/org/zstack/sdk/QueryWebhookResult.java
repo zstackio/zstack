@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class QueryWebhookResult {
-    public java.util.List<WebhookInventory> inventories;
-    public void setInventories(java.util.List<WebhookInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<WebhookInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

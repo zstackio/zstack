@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class AddVmNicToLoadBalancerAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class AddVmNicToLoadBalancerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AddVmNicToLoadBalancerResult value;
+        public org.zstack.sdk.AddVmNicToLoadBalancerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class AddVmNicToLoadBalancerAction extends AbstractAction {
             return ret;
         }
         
-        AddVmNicToLoadBalancerResult value = res.getResult(AddVmNicToLoadBalancerResult.class);
-        ret.value = value == null ? new AddVmNicToLoadBalancerResult() : value; 
+        org.zstack.sdk.AddVmNicToLoadBalancerResult value = res.getResult(org.zstack.sdk.AddVmNicToLoadBalancerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddVmNicToLoadBalancerResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class AddVmNicToLoadBalancerAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/load-balancers/listeners/{listenerUuid}/vm-instances/nics";

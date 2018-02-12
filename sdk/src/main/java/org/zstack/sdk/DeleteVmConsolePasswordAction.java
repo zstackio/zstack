@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteVmConsolePasswordAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteVmConsolePasswordAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteVmConsolePasswordResult value;
+        public org.zstack.sdk.DeleteVmConsolePasswordResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +51,8 @@ public class DeleteVmConsolePasswordAction extends AbstractAction {
             return ret;
         }
         
-        DeleteVmConsolePasswordResult value = res.getResult(DeleteVmConsolePasswordResult.class);
-        ret.value = value == null ? new DeleteVmConsolePasswordResult() : value; 
+        org.zstack.sdk.DeleteVmConsolePasswordResult value = res.getResult(org.zstack.sdk.DeleteVmConsolePasswordResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteVmConsolePasswordResult() : value; 
 
         return ret;
     }
@@ -70,15 +71,15 @@ public class DeleteVmConsolePasswordAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/vm-instances/{uuid}/console-password";

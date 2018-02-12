@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryConsoleProxyAgentAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryConsoleProxyAgentAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryConsoleProxyAgentResult value;
+        public org.zstack.sdk.QueryConsoleProxyAgentResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryConsoleProxyAgentAction extends QueryAction {
             return ret;
         }
         
-        QueryConsoleProxyAgentResult value = res.getResult(QueryConsoleProxyAgentResult.class);
-        ret.value = value == null ? new QueryConsoleProxyAgentResult() : value; 
+        org.zstack.sdk.QueryConsoleProxyAgentResult value = res.getResult(org.zstack.sdk.QueryConsoleProxyAgentResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryConsoleProxyAgentResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QueryConsoleProxyAgentAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/consoles/agents";

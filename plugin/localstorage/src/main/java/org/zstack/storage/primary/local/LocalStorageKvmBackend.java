@@ -645,6 +645,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static final String GET_BASE_IMAGE_PATH = "/localstorage/volume/getbaseimagepath";
     public static final String GET_QCOW2_REFERENCE = "/localstorage/getqcow2reference";
 
+    public LocalStorageKvmBackend() {
+    }
 
     public LocalStorageKvmBackend(PrimaryStorageVO self) {
         super(self);

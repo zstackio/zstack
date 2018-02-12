@@ -19,7 +19,7 @@ public class APIGetVipUsedPortsMsg extends APISyncCallMessage {
     @APIParam(resourceType = VipVO.class, checkAccount = true)
     private String uuid;
 
-    @APIParam(validValues = {"tcp", "udp"})
+    @APIParam(validValues = {"TCP", "UDP"})
     private String protocol;
 
     public String getUuid() {
@@ -41,7 +41,7 @@ public class APIGetVipUsedPortsMsg extends APISyncCallMessage {
     public static APIGetVipUsedPortsMsg __example__() {
         APIGetVipUsedPortsMsg msg = new APIGetVipUsedPortsMsg();
         msg.setUuid(uuid());
-        msg.setProtocol("tcp");
+        msg.setProtocol("TCP");
         return msg;
     }
 

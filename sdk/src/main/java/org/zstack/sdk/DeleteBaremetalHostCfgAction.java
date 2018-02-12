@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteBaremetalHostCfgAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteBaremetalHostCfgAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteBaremetalHostCfgResult value;
+        public org.zstack.sdk.DeleteBaremetalHostCfgResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DeleteBaremetalHostCfgAction extends AbstractAction {
             return ret;
         }
         
-        DeleteBaremetalHostCfgResult value = res.getResult(DeleteBaremetalHostCfgResult.class);
-        ret.value = value == null ? new DeleteBaremetalHostCfgResult() : value; 
+        org.zstack.sdk.DeleteBaremetalHostCfgResult value = res.getResult(org.zstack.sdk.DeleteBaremetalHostCfgResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteBaremetalHostCfgResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DeleteBaremetalHostCfgAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/baremetal/hostcfg/{uuid}";

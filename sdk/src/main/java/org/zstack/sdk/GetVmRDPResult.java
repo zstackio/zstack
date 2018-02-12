@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class GetVmRDPResult {
     public boolean enable;
     public void setEnable(boolean enable) {

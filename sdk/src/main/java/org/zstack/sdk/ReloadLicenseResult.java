@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.LicenseInventory;
+
 public class ReloadLicenseResult {
     public LicenseInventory inventory;
     public void setInventory(LicenseInventory inventory) {

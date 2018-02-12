@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.VipInventory;
+
 public class CreateVipResult {
     public VipInventory inventory;
     public void setInventory(VipInventory inventory) {

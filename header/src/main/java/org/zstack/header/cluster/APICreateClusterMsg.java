@@ -6,6 +6,7 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
+import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.tag.TagResourceType;
 import org.zstack.header.zone.ZoneVO;
@@ -48,7 +49,7 @@ import org.zstack.header.zone.ZoneVO;
         method = HttpMethod.POST,
         responseClass = APICreateClusterEvent.class
 )
-public class APICreateClusterMsg extends APICreateMessage {
+public class APICreateClusterMsg extends APICreateMessage implements APIAuditor {
     /**
      * @desc uuid of zone this cluster is going to create in
      */
@@ -142,5 +143,15 @@ public class APICreateClusterMsg extends APICreateMessage {
                 }
             }
         };
+    }
+
+    @Override
+    public Result audit(APIMessage msg, APIEvent rsp) {
+        String resUuid = "";
+        if (rsp.isSuccess()) {
+            APICreateClusterEvent evt = (APICreateClusterEvent) rsp;
+            resUuid = evt.getInventory().getUuid();
+        }
+        return new Result(resUuid, ClusterVO.class);
     }
 }

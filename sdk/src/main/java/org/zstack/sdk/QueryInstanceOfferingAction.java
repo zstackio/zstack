@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryInstanceOfferingAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryInstanceOfferingAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryInstanceOfferingResult value;
+        public org.zstack.sdk.QueryInstanceOfferingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryInstanceOfferingAction extends QueryAction {
             return ret;
         }
         
-        QueryInstanceOfferingResult value = res.getResult(QueryInstanceOfferingResult.class);
-        ret.value = value == null ? new QueryInstanceOfferingResult() : value; 
+        org.zstack.sdk.QueryInstanceOfferingResult value = res.getResult(org.zstack.sdk.QueryInstanceOfferingResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryInstanceOfferingResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QueryInstanceOfferingAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/instance-offerings";

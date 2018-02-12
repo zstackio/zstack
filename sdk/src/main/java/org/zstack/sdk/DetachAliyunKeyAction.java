@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DetachAliyunKeyAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DetachAliyunKeyAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DetachAliyunKeyResult value;
+        public org.zstack.sdk.DetachAliyunKeyResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +51,8 @@ public class DetachAliyunKeyAction extends AbstractAction {
             return ret;
         }
         
-        DetachAliyunKeyResult value = res.getResult(DetachAliyunKeyResult.class);
-        ret.value = value == null ? new DetachAliyunKeyResult() : value; 
+        org.zstack.sdk.DetachAliyunKeyResult value = res.getResult(org.zstack.sdk.DetachAliyunKeyResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DetachAliyunKeyResult() : value; 
 
         return ret;
     }
@@ -70,15 +71,15 @@ public class DetachAliyunKeyAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/hybrid/aliyun/key/{uuid}/detach";

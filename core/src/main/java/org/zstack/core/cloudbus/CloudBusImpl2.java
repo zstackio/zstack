@@ -97,16 +97,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     private List<BeforeSendMessageInterceptor> beforeSendMessageInterceptorsForAll = new ArrayList<BeforeSendMessageInterceptor>();
     private List<BeforePublishEventInterceptor> beforeEventPublishInterceptorsForAll = new ArrayList<BeforePublishEventInterceptor>();
 
-    private final String NO_NEED_REPLY_MSG = "noReply";
-    private final String CORRELATION_ID = "correlationId";
-    private final String REPLY_TO = "replyTo";
-    private final String IS_MESSAGE_REPLY = "isReply";
-    private final String MESSAGE_META_DATA = "metaData";
     private long DEFAULT_MESSAGE_TIMEOUT = TimeUnit.MINUTES.toMillis(30);
-    private final String DEAD_LETTER = "dead-message";
-    private final String TASK_STACK = "task-stack";
-    private final String TASK_CONTEXT = "task-context";
-
     private final String AMQP_PROPERTY_HEADER__COMPRESSED = "compressed";
 
     private String SERVICE_ID = makeLocalServiceId("cloudbus");
@@ -291,7 +282,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                 @Override
                 public void run() {
                     Message msg = wire.toMessage(bytes, basicProperties);
-                    if (DEAD_LETTER.equals(envelope.getRoutingKey())) {
+                    if (CloudBus.HEADER_DEAD_LETTER.equals(envelope.getRoutingKey())) {
                         handleDeadLetter(msg);
                     } else {
                         handleNoRouteLetter(msg);
@@ -350,8 +341,10 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
             }
 
             if (msg instanceof MessageReply) {
+                beforeDeliverMessage(msg);
+
                 MessageReply r = (MessageReply) msg;
-                String correlationId = r.getHeaderEntry(CORRELATION_ID);
+                String correlationId = r.getHeaderEntry(CloudBus.HEADER_CORRELATION_ID);
                 Envelope e = envelopes.get(correlationId);
                 if (e == null) {
                     logger.warn(String.format("received a message reply but no envelope found," +
@@ -516,7 +509,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
             List<BeforeSendMessageInterceptor> interceptors = beforeSendMessageInterceptors.get(msg.getClass());
             if (interceptors != null) {
                 for (BeforeSendMessageInterceptor interceptor : interceptors) {
-                    interceptor.intercept(msg);
+                    interceptor.beforeSendMessage(msg);
 
                     /*
                     if (logger.isTraceEnabled()) {
@@ -527,7 +520,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
             }
 
             for (BeforeSendMessageInterceptor interceptor : beforeSendMessageInterceptorsForAll) {
-                interceptor.intercept(msg);
+                interceptor.beforeSendMessage(msg);
 
                 /*
                 if (logger.isTraceEnabled()) {
@@ -549,7 +542,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
 
         private void buildSchema(Message msg) {
             try {
-                msg.putHeaderEntry("schema", new JsonSchemaBuilder(msg).build());
+                msg.putHeaderEntry(CloudBus.HEADER_SCHEMA, new JsonSchemaBuilder(msg).build());
             } catch (Exception e) {
                 throw new CloudRuntimeException(e);
             }
@@ -617,7 +610,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         }
 
         private void restoreFromSchema(Message msg, byte[] binary) throws ClassNotFoundException {
-            Map<String, String> schema = msg.getHeaderEntry("schema");
+            Map<String, String> schema = msg.getHeaderEntry(CloudBus.HEADER_SCHEMA);
             if (schema == null) {
                 return;
             }
@@ -1016,11 +1009,11 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         public void handleDelivery(String s, com.rabbitmq.client.Envelope envelope, AMQP.BasicProperties basicProperties, byte[] bytes) throws IOException {
             try {
                 Map<String, Object> headers = basicProperties.getHeaders();
-                if (headers == null || !headers.containsKey(MESSAGE_META_DATA)) {
+                if (headers == null || !headers.containsKey(CloudBus.HEADER_MESSAGE_META_DATA)) {
                     return;
                 }
 
-                LongString metaData = (LongString) headers.get(MESSAGE_META_DATA);
+                LongString metaData = (LongString) headers.get(CloudBus.HEADER_MESSAGE_META_DATA);
                 Map m = JSONObjectUtil.toObject(new String(metaData.getBytes()), LinkedHashMap.class);
                 trackMessage((MessageMetaData) JSONObjectUtil.rehashObject(m, metaDataClassCache.get(m.get("className"))));
             } catch (Throwable t) {
@@ -1112,8 +1105,8 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                             reply.setError(err);
                             AMQP.BasicProperties.Builder builder = new AMQP.BasicProperties.Builder();
                             reply.setAMQPProperties(builder.deliveryMode(1).build());
-                            reply.getHeaders().put(IS_MESSAGE_REPLY, Boolean.TRUE.toString());
-                            reply.putHeaderEntry(CORRELATION_ID, rmeta.msgId);
+                            reply.getHeaders().put(CloudBus.HEADER_IS_MESSAGE_REPLY, Boolean.TRUE.toString());
+                            reply.putHeaderEntry(CloudBus.HEADER_CORRELATION_ID, rmeta.msgId);
                             reply.setServiceId(rmeta.replyTo);
                             wire.send(reply, false);
                         }
@@ -1259,7 +1252,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     }
 
     private void buildRequestMessageMetaData(Message msg) {
-        if (msg instanceof APIMessage || (msg instanceof NeedReplyMessage && !Boolean.valueOf((String)msg.getHeaderEntry(NO_NEED_REPLY_MSG)))) {
+        if (msg instanceof APIMessage || (msg instanceof NeedReplyMessage && !Boolean.valueOf(msg.getHeaderEntry(CloudBus.HEADER_NO_NEED_REPLY_MSG)))) {
             RequestMessageMetaData metaData;
             if (msg instanceof LockResourceMessage) {
                 LockResourceMessage lmsg = (LockResourceMessage) msg;
@@ -1274,12 +1267,12 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
 
             metaData.needApiEvent = msg instanceof APIMessage && !(msg instanceof APISyncCallMessage);
             metaData.msgId = msg.getId();
-            metaData.replyTo = msg.getHeaderEntry(REPLY_TO);
+            metaData.replyTo = msg.getHeaderEntry(CloudBus.HEADER_REPLY_TO);
             metaData.timeout = msg instanceof NeedReplyMessage ? ((NeedReplyMessage) msg).getTimeout() : null;
             metaData.serviceId = msg.getServiceId();
             metaData.messageName = msg.getClass().getName();
             metaData.className = metaData.getClass().getName();
-            msg.getAMQPHeaders().put(MESSAGE_META_DATA, JSONObjectUtil.toJsonString(metaData));
+            msg.getAMQPHeaders().put(CloudBus.HEADER_MESSAGE_META_DATA, JSONObjectUtil.toJsonString(metaData));
         }
     }
 
@@ -1290,15 +1283,15 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
 
         basicProperty(msg);
 
-        msg.putHeaderEntry(CORRELATION_ID, msg.getId());
-        msg.putHeaderEntry(REPLY_TO, outboundQueue.getBindingKey());
+        msg.putHeaderEntry(CloudBus.HEADER_CORRELATION_ID, msg.getId());
+        msg.putHeaderEntry(CloudBus.HEADER_REPLY_TO, outboundQueue.getBindingKey());
         if (msg instanceof APIMessage) {
             // API always need reply
-            msg.putHeaderEntry(NO_NEED_REPLY_MSG, Boolean.FALSE.toString());
+            msg.putHeaderEntry(CloudBus.HEADER_NO_NEED_REPLY_MSG, Boolean.FALSE.toString());
         } else if (msg instanceof NeedReplyMessage) {
             // for NeedReplyMessage sent without requiring receiver to reply,
             // mark it, then it will not be tracked and replied
-            msg.putHeaderEntry(NO_NEED_REPLY_MSG, noNeedReply.toString());
+            msg.putHeaderEntry(CloudBus.HEADER_NO_NEED_REPLY_MSG, noNeedReply.toString());
         }
 
         buildRequestMessageMetaData(msg);
@@ -1385,7 +1378,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
 
     private MessageReply createTimeoutReply(NeedReplyMessage m) {
         MessageReply r = new MessageReply();
-        r.putHeaderEntry(CORRELATION_ID, m.getId());
+        r.putHeaderEntry(CloudBus.HEADER_CORRELATION_ID, m.getId());
         AMQP.BasicProperties.Builder builder = new AMQP.BasicProperties.Builder();
         r.setAMQPProperties(builder.deliveryMode(1).build());
         r.setError(errf.stringToTimeoutError(m.toErrorString()));
@@ -1428,7 +1421,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
 
             private MessageReply findReply(final Message msg) {
                 for (MessageReply arg : replies.values()) {
-                    if (arg.getHeaderEntry(CORRELATION_ID).equals(msg.getId())) {
+                    if (arg.getHeaderEntry(CloudBus.HEADER_CORRELATION_ID).equals(msg.getId())) {
                         return arg;
                     }
                 }
@@ -1437,7 +1430,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
 
             private void doCount(MessageReply reply) {
                 for (Message msg : msgs) {
-                    if (msg.getId().equals(reply.getHeaderEntry(CORRELATION_ID))) {
+                    if (msg.getId().equals(reply.getHeaderEntry(CloudBus.HEADER_CORRELATION_ID))) {
                         count(msg);
                         return;
                     }
@@ -1452,7 +1445,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
 
                 doCount(reply);
 
-                replies.put((String) reply.getHeaderEntry(CORRELATION_ID), reply);
+                replies.put(reply.getHeaderEntry(CloudBus.HEADER_CORRELATION_ID), reply);
 
                 if (replies.size() == msgs.size()) {
                     cleanup(true);
@@ -1553,12 +1546,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
             send(nmsg, new CloudBusCallBack(null) {
 
                 private MessageReply findReply(final Message msg) {
-                    return CollectionUtils.find(replies, new Function<MessageReply, MessageReply>() {
-                        @Override
-                        public MessageReply call(MessageReply arg) {
-                            return arg.getHeaderEntry(CORRELATION_ID).equals(msg.getId()) ? arg : null;
-                        }
-                    });
+                    return CollectionUtils.find(replies, arg -> arg.getHeaderEntry(CloudBus.HEADER_CORRELATION_ID).equals(msg.getId()) ? arg : null);
                 }
 
                 private List<MessageReply> sortReplies() {
@@ -1687,15 +1675,15 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         metaData.messageName = msg.getClass().getName();
         metaData.serviceId = metaData.isApiEvent ? null : msg.getServiceId();
         metaData.className = metaData.getClass().getName();
-        metaData.correlationId = metaData.isApiEvent ? ((APIEvent)msg).getApiId() : (String) msg.getHeaderEntry(CORRELATION_ID);
-        msg.getAMQPHeaders().put(MESSAGE_META_DATA, JSONObjectUtil.toJsonString(metaData));
+        metaData.correlationId = metaData.isApiEvent ? ((APIEvent)msg).getApiId() : (String) msg.getHeaderEntry(CloudBus.HEADER_CORRELATION_ID);
+        msg.getAMQPHeaders().put(CloudBus.HEADER_MESSAGE_META_DATA, JSONObjectUtil.toJsonString(metaData));
     }
 
     @Override
     public void reply(Message request, MessageReply reply) {
-        if (Boolean.valueOf((String) request.getHeaderEntry(NO_NEED_REPLY_MSG))) {
+        if (Boolean.valueOf(request.getHeaderEntry(CloudBus.HEADER_NO_NEED_REPLY_MSG))) {
             if (logger.isTraceEnabled()) {
-                logger.trace(String.format("%s in message%s is set, drop reply%s", NO_NEED_REPLY_MSG,
+                logger.trace(String.format("%s in message%s is set, drop reply%s", CloudBus.HEADER_NO_NEED_REPLY_MSG,
                         wire.dumpMessage(request), wire.dumpMessage(reply)));
             }
 
@@ -1704,9 +1692,9 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
 
         AMQP.BasicProperties.Builder builder = new AMQP.BasicProperties.Builder();
         reply.setAMQPProperties(builder.deliveryMode(1).build());
-        reply.getHeaders().put(IS_MESSAGE_REPLY, Boolean.TRUE.toString());
-        reply.putHeaderEntry(CORRELATION_ID, request.getId());
-        reply.setServiceId((String) request.getHeaderEntry(REPLY_TO));
+        reply.getHeaders().put(CloudBus.HEADER_IS_MESSAGE_REPLY, Boolean.TRUE.toString());
+        reply.putHeaderEntry(CloudBus.HEADER_CORRELATION_ID, request.getId());
+        reply.setServiceId(request.getHeaderEntry(CloudBus.HEADER_REPLY_TO));
 
         buildResponseMessageMetaData(reply);
         if (request instanceof NeedReplyMessage) {
@@ -1844,7 +1832,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
 
             private void doCount(MessageReply reply) {
                 for (Message m : msgs) {
-                    if (m.getId().equals(reply.getHeaderEntry((CORRELATION_ID)))) {
+                    if (m.getId().equals(reply.getHeaderEntry(CloudBus.HEADER_CORRELATION_ID))) {
                         count(m);
                         return;
                     }
@@ -1859,7 +1847,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
 
                 doCount(reply);
 
-                replies.put((String) reply.getHeaderEntry(CORRELATION_ID), reply);
+                replies.put(reply.getHeaderEntry(CloudBus.HEADER_CORRELATION_ID), reply);
 
                 if (replies.size() == msgs.size()) {
                     cleanup();
@@ -1938,14 +1926,14 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
             ThreadContext.put(Constants.THREAD_CONTEXT_API, msg.getId());
             ThreadContext.put(Constants.THREAD_CONTEXT_TASK_NAME, msg.getClass().getName());
         } else {
-            Map<String, String> ctx = msg.getHeaderEntry(TASK_CONTEXT);
+            Map<String, String> ctx = msg.getHeaderEntry(CloudBus.HEADER_TASK_CONTEXT);
             if (ctx != null) {
                 ThreadContext.putAll(ctx);
             }
         }
 
-        if (msg.getHeaders().containsKey(TASK_STACK)) {
-            List<String> taskStack = msg.getHeaderEntry(TASK_STACK);
+        if (msg.getHeaders().containsKey(CloudBus.HEADER_TASK_STACK)) {
+            List<String> taskStack = msg.getHeaderEntry(CloudBus.HEADER_TASK_STACK);
             ThreadContext.setStack(taskStack);
         }
     }
@@ -1953,12 +1941,25 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     private void evalThreadContextToMessage(Message msg) {
         Map<String, String> ctx = ThreadContext.getImmutableContext();
         if (ctx != null) {
-            msg.putHeaderEntry(TASK_CONTEXT, ctx);
+            msg.putHeaderEntry(CloudBus.HEADER_TASK_CONTEXT, ctx);
         }
 
         List<String> taskStack = ThreadContext.getImmutableStack().asList();
         if (taskStack != null && !taskStack.isEmpty()) {
-            msg.putHeaderEntry(TASK_STACK, taskStack);
+            msg.putHeaderEntry(CloudBus.HEADER_TASK_STACK, taskStack);
+        }
+    }
+
+    private void beforeDeliverMessage(Message msg) {
+        List<BeforeDeliveryMessageInterceptor> is = beforeDeliveryMessageInterceptors.get(msg.getClass());
+        if (is != null) {
+            for (BeforeDeliveryMessageInterceptor i : is) {
+                i.beforeDeliveryMessage(msg);
+            }
+        }
+
+        for (BeforeDeliveryMessageInterceptor i : beforeDeliveryMessageInterceptorsForAll) {
+            i.beforeDeliveryMessage(msg);
         }
     }
 
@@ -2012,28 +2013,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                                     setThreadLoggingContext(msg);
 
                                     try {
-                                        List<BeforeDeliveryMessageInterceptor> is = beforeDeliveryMessageInterceptors.get(msg.getClass());
-                                        if (is != null) {
-                                            for (BeforeDeliveryMessageInterceptor i : is) {
-                                                i.intercept(msg);
-
-                                                /*
-                                                if (logger.isTraceEnabled()) {
-                                                    logger.trace(String.format("called BeforeDeliveryMessageInterceptor[%s] for message[%s]", i.getClass(), msg.getClass()));
-                                                }
-                                                */
-                                            }
-                                        }
-
-                                        for (BeforeDeliveryMessageInterceptor i : beforeDeliveryMessageInterceptorsForAll) {
-                                            i.intercept(msg);
-
-                                            /*
-                                            if (logger.isTraceEnabled()) {
-                                                logger.trace(String.format("called BeforeDeliveryMessageInterceptor[%s] for message[%s]", i.getClass(), msg.getClass()));
-                                            }
-                                            */
-                                        }
+                                        beforeDeliverMessage(msg);
 
                                         serv.handleMessage(msg);
                                     } catch (Throwable t) {
@@ -2341,7 +2321,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         if (classes.length == 0) {
             int order = 0;
             for (BeforeSendMessageInterceptor i : beforeSendMessageInterceptorsForAll) {
-                if (i.order() <= interceptor.order()) {
+                if (i.orderOfBeforeSendMessageInterceptor() <= interceptor.orderOfBeforeSendMessageInterceptor()) {
                     order = beforeSendMessageInterceptorsForAll.indexOf(i);
                     break;
                 }
@@ -2362,7 +2342,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                 synchronized (is) {
                     int order = 0;
                     for (BeforeSendMessageInterceptor i : is) {
-                        if (i.order() <= interceptor.order()) {
+                        if (i.orderOfBeforeSendMessageInterceptor() <= interceptor.orderOfBeforeSendMessageInterceptor()) {
                             order = is.indexOf(i);
                             break;
                         }
@@ -2581,9 +2561,9 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     }
 
     private Map<String, Object> queueArguments() {
-        Map<String, Object> ret = new HashMap<String, Object>();
+        Map<String, Object> ret = new HashMap<>();
         ret.put("x-dead-letter-exchange", BusExchange.NO_ROUTE.toString());
-        ret.put("x-dead-letter-routing-key", DEAD_LETTER);
+        ret.put("x-dead-letter-routing-key", CloudBus.HEADER_DEAD_LETTER);
         ret.put("x-expires", TimeUnit.MINUTES.toMillis(5));
         return ret;
     }

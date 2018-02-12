@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class IdentityZoneProperty  {
 
     public java.lang.String zoneId;
@@ -18,27 +20,27 @@ public class IdentityZoneProperty  {
         return this.localName;
     }
 
-    public java.util.List<String> availableInstanceTypes;
-    public void setAvailableInstanceTypes(java.util.List<String> availableInstanceTypes) {
+    public java.util.List availableInstanceTypes;
+    public void setAvailableInstanceTypes(java.util.List availableInstanceTypes) {
         this.availableInstanceTypes = availableInstanceTypes;
     }
-    public java.util.List<String> getAvailableInstanceTypes() {
+    public java.util.List getAvailableInstanceTypes() {
         return this.availableInstanceTypes;
     }
 
-    public java.util.List<String> availableResourceCreation;
-    public void setAvailableResourceCreation(java.util.List<String> availableResourceCreation) {
+    public java.util.List availableResourceCreation;
+    public void setAvailableResourceCreation(java.util.List availableResourceCreation) {
         this.availableResourceCreation = availableResourceCreation;
     }
-    public java.util.List<String> getAvailableResourceCreation() {
+    public java.util.List getAvailableResourceCreation() {
         return this.availableResourceCreation;
     }
 
-    public java.util.List<String> availableDiskCategories;
-    public void setAvailableDiskCategories(java.util.List<String> availableDiskCategories) {
+    public java.util.List availableDiskCategories;
+    public void setAvailableDiskCategories(java.util.List availableDiskCategories) {
         this.availableDiskCategories = availableDiskCategories;
     }
-    public java.util.List<String> getAvailableDiskCategories() {
+    public java.util.List getAvailableDiskCategories() {
         return this.availableDiskCategories;
     }
 

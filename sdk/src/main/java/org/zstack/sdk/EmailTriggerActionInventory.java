@@ -1,6 +1,8 @@
 package org.zstack.sdk;
 
-public class EmailTriggerActionInventory extends MonitorTriggerActionInventory {
+
+
+public class EmailTriggerActionInventory extends org.zstack.sdk.MonitorTriggerActionInventory {
 
     public java.lang.String email;
     public void setEmail(java.lang.String email) {

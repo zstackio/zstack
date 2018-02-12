@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class CreateEmailMediaAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class CreateEmailMediaAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateMediaResult value;
+        public org.zstack.sdk.CreateMediaResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -68,8 +69,8 @@ public class CreateEmailMediaAction extends AbstractAction {
             return ret;
         }
         
-        CreateMediaResult value = res.getResult(CreateMediaResult.class);
-        ret.value = value == null ? new CreateMediaResult() : value; 
+        org.zstack.sdk.CreateMediaResult value = res.getResult(org.zstack.sdk.CreateMediaResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateMediaResult() : value; 
 
         return ret;
     }
@@ -88,15 +89,15 @@ public class CreateEmailMediaAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/media/emails";

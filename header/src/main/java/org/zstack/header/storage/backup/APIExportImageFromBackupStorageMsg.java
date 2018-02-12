@@ -3,6 +3,7 @@ package org.zstack.header.storage.backup;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.image.ImageConstant;
+import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
@@ -20,7 +21,7 @@ public class APIExportImageFromBackupStorageMsg extends APIMessage implements Ba
     @APIParam(resourceType = BackupStorageVO.class, checkAccount = true, operationTarget = true)
     private String backupStorageUuid;
 
-    @APIParam(nonempty = true, maxLength = 2048)
+    @APIParam(resourceType = ImageVO.class)
     private String imageUuid;
 
     @Override
