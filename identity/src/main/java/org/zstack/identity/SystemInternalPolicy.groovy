@@ -49,6 +49,8 @@ class SystemInternalPolicy implements InternalPolicy {
                     action("org.zstack.mevoco.APIQueryShareableVolumeVmInstanceRefMsg")
                     action("org.zstack.vpc.*")
                     action("org.zstack.vrouterRoute.*")
+                    action("org.zstack.header.core.progress.*")
+                    action("org.zstack.header.vo.APIGetResourceNamesMsg")
                 }
 
                 statement {

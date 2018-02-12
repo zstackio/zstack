@@ -51,6 +51,7 @@ class RBACAPIRequestCheckerCase extends SubCase {
         msg.session = session
         RBACAPIRequestChecker checker = new RBACAPIRequestChecker()
         logger.debug("... checking API[${apiclz.name}, admin-only: ${adminOnly}] for normal accounts")
+
         if (adminOnly) {
             expect(OperationFailureException.class) {
                 checker.check(msg)
