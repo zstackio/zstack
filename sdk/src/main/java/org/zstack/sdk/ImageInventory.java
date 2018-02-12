@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class ImageInventory  {
 
     public java.lang.String uuid;
@@ -154,11 +156,11 @@ public class ImageInventory  {
         return this.lastOpDate;
     }
 
-    public java.util.List<ImageBackupStorageRefInventory> backupStorageRefs;
-    public void setBackupStorageRefs(java.util.List<ImageBackupStorageRefInventory> backupStorageRefs) {
+    public java.util.List backupStorageRefs;
+    public void setBackupStorageRefs(java.util.List backupStorageRefs) {
         this.backupStorageRefs = backupStorageRefs;
     }
-    public java.util.List<ImageBackupStorageRefInventory> getBackupStorageRefs() {
+    public java.util.List getBackupStorageRefs() {
         return this.backupStorageRefs;
     }
 

@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class CreateAccountAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class CreateAccountAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateAccountResult value;
+        public org.zstack.sdk.CreateAccountResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -62,8 +63,8 @@ public class CreateAccountAction extends AbstractAction {
             return ret;
         }
         
-        CreateAccountResult value = res.getResult(CreateAccountResult.class);
-        ret.value = value == null ? new CreateAccountResult() : value; 
+        org.zstack.sdk.CreateAccountResult value = res.getResult(org.zstack.sdk.CreateAccountResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateAccountResult() : value; 
 
         return ret;
     }
@@ -82,15 +83,15 @@ public class CreateAccountAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/accounts";

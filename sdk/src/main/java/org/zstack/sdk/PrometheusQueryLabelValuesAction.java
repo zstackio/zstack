@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class PrometheusQueryLabelValuesAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class PrometheusQueryLabelValuesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public PrometheusQueryLabelValuesResult value;
+        public org.zstack.sdk.PrometheusQueryLabelValuesResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -44,8 +45,8 @@ public class PrometheusQueryLabelValuesAction extends AbstractAction {
             return ret;
         }
         
-        PrometheusQueryLabelValuesResult value = res.getResult(PrometheusQueryLabelValuesResult.class);
-        ret.value = value == null ? new PrometheusQueryLabelValuesResult() : value; 
+        org.zstack.sdk.PrometheusQueryLabelValuesResult value = res.getResult(org.zstack.sdk.PrometheusQueryLabelValuesResult.class);
+        ret.value = value == null ? new org.zstack.sdk.PrometheusQueryLabelValuesResult() : value; 
 
         return ret;
     }
@@ -64,15 +65,15 @@ public class PrometheusQueryLabelValuesAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/prometheus/labels";

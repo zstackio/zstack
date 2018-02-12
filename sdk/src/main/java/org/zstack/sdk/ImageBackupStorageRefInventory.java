@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class ImageBackupStorageRefInventory  {
 
     public java.lang.String imageUuid;

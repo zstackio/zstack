@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryBaremetalPxeServerAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryBaremetalPxeServerAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryBaremetalPxeServerResult value;
+        public org.zstack.sdk.QueryBaremetalPxeServerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryBaremetalPxeServerAction extends QueryAction {
             return ret;
         }
         
-        QueryBaremetalPxeServerResult value = res.getResult(QueryBaremetalPxeServerResult.class);
-        ret.value = value == null ? new QueryBaremetalPxeServerResult() : value; 
+        org.zstack.sdk.QueryBaremetalPxeServerResult value = res.getResult(org.zstack.sdk.QueryBaremetalPxeServerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryBaremetalPxeServerResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QueryBaremetalPxeServerAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/baremetal/pxeserver";

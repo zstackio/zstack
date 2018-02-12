@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class GetVRouterRouteTableAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class GetVRouterRouteTableAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetVRouterRouteTableResult value;
+        public org.zstack.sdk.GetVRouterRouteTableResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -44,8 +45,8 @@ public class GetVRouterRouteTableAction extends AbstractAction {
             return ret;
         }
         
-        GetVRouterRouteTableResult value = res.getResult(GetVRouterRouteTableResult.class);
-        ret.value = value == null ? new GetVRouterRouteTableResult() : value; 
+        org.zstack.sdk.GetVRouterRouteTableResult value = res.getResult(org.zstack.sdk.GetVRouterRouteTableResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetVRouterRouteTableResult() : value; 
 
         return ret;
     }
@@ -64,15 +65,15 @@ public class GetVRouterRouteTableAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/vrouter-route-tables/vrouter/{virtualRouterVmUuid}";

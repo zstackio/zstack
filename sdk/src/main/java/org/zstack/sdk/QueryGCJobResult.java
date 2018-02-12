@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class QueryGCJobResult {
-    public java.util.List<GarbageCollectorInventory> inventories;
-    public void setInventories(java.util.List<GarbageCollectorInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<GarbageCollectorInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

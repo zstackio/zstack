@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class GetAttachablePublicL3ForVRouterResult {
-    public java.util.List<L3NetworkInventory> inventories;
-    public void setInventories(java.util.List<L3NetworkInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<L3NetworkInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

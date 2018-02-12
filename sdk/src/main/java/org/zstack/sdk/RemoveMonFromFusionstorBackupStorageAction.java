@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class RemoveMonFromFusionstorBackupStorageAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class RemoveMonFromFusionstorBackupStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public RemoveMonFromFusionstorBackupStorageResult value;
+        public org.zstack.sdk.RemoveMonFromFusionstorBackupStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class RemoveMonFromFusionstorBackupStorageAction extends AbstractAction {
             return ret;
         }
         
-        RemoveMonFromFusionstorBackupStorageResult value = res.getResult(RemoveMonFromFusionstorBackupStorageResult.class);
-        ret.value = value == null ? new RemoveMonFromFusionstorBackupStorageResult() : value; 
+        org.zstack.sdk.RemoveMonFromFusionstorBackupStorageResult value = res.getResult(org.zstack.sdk.RemoveMonFromFusionstorBackupStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.RemoveMonFromFusionstorBackupStorageResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class RemoveMonFromFusionstorBackupStorageAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/backup-storage/fusionstor/{uuid}/mons";

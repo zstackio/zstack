@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class IPsecL3NetworkRefInventory  {
 
     public java.lang.String uuid;

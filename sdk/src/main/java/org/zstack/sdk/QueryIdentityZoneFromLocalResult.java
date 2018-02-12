@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class QueryIdentityZoneFromLocalResult {
-    public java.util.List<IdentityZoneInventory> inventories;
-    public void setInventories(java.util.List<IdentityZoneInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<IdentityZoneInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

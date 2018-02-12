@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DetachNetworkServiceFromL3NetworkAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DetachNetworkServiceFromL3NetworkAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DetachNetworkServiceFromL3NetworkResult value;
+        public org.zstack.sdk.DetachNetworkServiceFromL3NetworkResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DetachNetworkServiceFromL3NetworkAction extends AbstractAction {
             return ret;
         }
         
-        DetachNetworkServiceFromL3NetworkResult value = res.getResult(DetachNetworkServiceFromL3NetworkResult.class);
-        ret.value = value == null ? new DetachNetworkServiceFromL3NetworkResult() : value; 
+        org.zstack.sdk.DetachNetworkServiceFromL3NetworkResult value = res.getResult(org.zstack.sdk.DetachNetworkServiceFromL3NetworkResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DetachNetworkServiceFromL3NetworkResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DetachNetworkServiceFromL3NetworkAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/l3-networks/{l3NetworkUuid}/network-services";

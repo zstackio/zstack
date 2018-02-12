@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryAlertAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryAlertAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryAlertResult value;
+        public org.zstack.sdk.QueryAlertResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryAlertAction extends QueryAction {
             return ret;
         }
         
-        QueryAlertResult value = res.getResult(QueryAlertResult.class);
-        ret.value = value == null ? new QueryAlertResult() : value; 
+        org.zstack.sdk.QueryAlertResult value = res.getResult(org.zstack.sdk.QueryAlertResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryAlertResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QueryAlertAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/monitoring/alerts";

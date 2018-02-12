@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class BaremetalChassisInventory  {
 
     public java.lang.String uuid;

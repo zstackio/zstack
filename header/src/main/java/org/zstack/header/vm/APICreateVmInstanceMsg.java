@@ -13,6 +13,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.notification.ApiNotification;
+import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.tag.TagResourceType;
@@ -67,6 +68,8 @@ import static java.util.Arrays.asList;
  * }
  * @result See :ref:`APICreateVmInstanceEvent`
  * @since 0.1.0
+ *
+ * @summary 创建云主机
  */
 @TagResourceType(VmInstanceVO.class)
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)
@@ -76,7 +79,7 @@ import static java.util.Arrays.asList;
         responseClass = APICreateVmInstanceEvent.class,
         parameterName = "params"
 )
-public class APICreateVmInstanceMsg extends APICreateMessage {
+public class APICreateVmInstanceMsg extends APICreateMessage implements APIAuditor {
     /**
      * @desc max length of 255 characters
      */
@@ -296,5 +299,10 @@ public class APICreateVmInstanceMsg extends APICreateMessage {
                 }
             }
         };
+    }
+
+    @Override
+    public Result audit(APIMessage msg, APIEvent rsp) {
+        return new Result(rsp.isSuccess() ? ((APICreateVmInstanceEvent)rsp).getInventory().getUuid() : "", VmInstanceVO.class);
     }
 }

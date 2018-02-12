@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryVirtualRouterOfferingAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryVirtualRouterOfferingAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryVirtualRouterOfferingResult value;
+        public org.zstack.sdk.QueryVirtualRouterOfferingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryVirtualRouterOfferingAction extends QueryAction {
             return ret;
         }
         
-        QueryVirtualRouterOfferingResult value = res.getResult(QueryVirtualRouterOfferingResult.class);
-        ret.value = value == null ? new QueryVirtualRouterOfferingResult() : value; 
+        org.zstack.sdk.QueryVirtualRouterOfferingResult value = res.getResult(org.zstack.sdk.QueryVirtualRouterOfferingResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryVirtualRouterOfferingResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QueryVirtualRouterOfferingAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/instance-offerings/virtual-routers";

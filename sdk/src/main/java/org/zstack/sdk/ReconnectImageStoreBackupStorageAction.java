@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class ReconnectImageStoreBackupStorageAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class ReconnectImageStoreBackupStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ReconnectImageStoreBackupStorageResult value;
+        public org.zstack.sdk.ReconnectImageStoreBackupStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +51,8 @@ public class ReconnectImageStoreBackupStorageAction extends AbstractAction {
             return ret;
         }
         
-        ReconnectImageStoreBackupStorageResult value = res.getResult(ReconnectImageStoreBackupStorageResult.class);
-        ret.value = value == null ? new ReconnectImageStoreBackupStorageResult() : value; 
+        org.zstack.sdk.ReconnectImageStoreBackupStorageResult value = res.getResult(org.zstack.sdk.ReconnectImageStoreBackupStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ReconnectImageStoreBackupStorageResult() : value; 
 
         return ret;
     }
@@ -70,15 +71,15 @@ public class ReconnectImageStoreBackupStorageAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/backup-storage/image-store/{uuid}/actions";

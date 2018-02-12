@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class NetworkServiceProviderInventory  {
 
     public java.lang.String uuid;
@@ -50,19 +52,19 @@ public class NetworkServiceProviderInventory  {
         return this.lastOpDate;
     }
 
-    public java.util.Set<String> networkServiceTypes;
-    public void setNetworkServiceTypes(java.util.Set<String> networkServiceTypes) {
+    public java.util.Set networkServiceTypes;
+    public void setNetworkServiceTypes(java.util.Set networkServiceTypes) {
         this.networkServiceTypes = networkServiceTypes;
     }
-    public java.util.Set<String> getNetworkServiceTypes() {
+    public java.util.Set getNetworkServiceTypes() {
         return this.networkServiceTypes;
     }
 
-    public java.util.Set<String> attachedL2NetworkUuids;
-    public void setAttachedL2NetworkUuids(java.util.Set<String> attachedL2NetworkUuids) {
+    public java.util.Set attachedL2NetworkUuids;
+    public void setAttachedL2NetworkUuids(java.util.Set attachedL2NetworkUuids) {
         this.attachedL2NetworkUuids = attachedL2NetworkUuids;
     }
-    public java.util.Set<String> getAttachedL2NetworkUuids() {
+    public java.util.Set getAttachedL2NetworkUuids() {
         return this.attachedL2NetworkUuids;
     }
 

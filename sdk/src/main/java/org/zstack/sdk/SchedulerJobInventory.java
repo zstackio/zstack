@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class SchedulerJobInventory  {
 
     public java.lang.String uuid;
@@ -58,11 +60,11 @@ public class SchedulerJobInventory  {
         return this.lastOpDate;
     }
 
-    public java.util.List<String> triggersUuid;
-    public void setTriggersUuid(java.util.List<String> triggersUuid) {
+    public java.util.List triggersUuid;
+    public void setTriggersUuid(java.util.List triggersUuid) {
         this.triggersUuid = triggersUuid;
     }
-    public java.util.List<String> getTriggersUuid() {
+    public java.util.List getTriggersUuid() {
         return this.triggersUuid;
     }
 

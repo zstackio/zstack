@@ -71,7 +71,7 @@ public class TestReconnectNfsPrimaryStorage3 {
 
         bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
             @Override
-            public void intercept(Message msg) {
+            public void beforeDeliveryMessage(Message msg) {
                 success1 = true;
             }
         }, ReconnectHostMsg.class);

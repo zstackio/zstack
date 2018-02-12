@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class PrometheusQueryPassThroughAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class PrometheusQueryPassThroughAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public PrometheusQueryPassThroughResult value;
+        public org.zstack.sdk.PrometheusQueryPassThroughResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -59,8 +60,8 @@ public class PrometheusQueryPassThroughAction extends AbstractAction {
             return ret;
         }
         
-        PrometheusQueryPassThroughResult value = res.getResult(PrometheusQueryPassThroughResult.class);
-        ret.value = value == null ? new PrometheusQueryPassThroughResult() : value; 
+        org.zstack.sdk.PrometheusQueryPassThroughResult value = res.getResult(org.zstack.sdk.PrometheusQueryPassThroughResult.class);
+        ret.value = value == null ? new org.zstack.sdk.PrometheusQueryPassThroughResult() : value; 
 
         return ret;
     }
@@ -79,15 +80,15 @@ public class PrometheusQueryPassThroughAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/prometheus/all";

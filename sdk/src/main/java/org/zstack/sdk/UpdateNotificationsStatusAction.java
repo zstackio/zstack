@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class UpdateNotificationsStatusAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class UpdateNotificationsStatusAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateNotificationsStatusResult value;
+        public org.zstack.sdk.UpdateNotificationsStatusResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class UpdateNotificationsStatusAction extends AbstractAction {
             return ret;
         }
         
-        UpdateNotificationsStatusResult value = res.getResult(UpdateNotificationsStatusResult.class);
-        ret.value = value == null ? new UpdateNotificationsStatusResult() : value; 
+        org.zstack.sdk.UpdateNotificationsStatusResult value = res.getResult(org.zstack.sdk.UpdateNotificationsStatusResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateNotificationsStatusResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class UpdateNotificationsStatusAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/notifications/actions";

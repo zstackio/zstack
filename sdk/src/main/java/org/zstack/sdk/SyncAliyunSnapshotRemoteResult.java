@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class SyncAliyunSnapshotRemoteResult {
-    public java.util.List<AliyunSnapshotInventory> inventories;
-    public void setInventories(java.util.List<AliyunSnapshotInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<AliyunSnapshotInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

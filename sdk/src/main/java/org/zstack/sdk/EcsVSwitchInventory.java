@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class EcsVSwitchInventory  {
 
     public java.lang.String uuid;

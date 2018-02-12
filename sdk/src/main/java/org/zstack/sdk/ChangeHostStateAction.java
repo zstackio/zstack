@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class ChangeHostStateAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class ChangeHostStateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ChangeHostStateResult value;
+        public org.zstack.sdk.ChangeHostStateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class ChangeHostStateAction extends AbstractAction {
             return ret;
         }
         
-        ChangeHostStateResult value = res.getResult(ChangeHostStateResult.class);
-        ret.value = value == null ? new ChangeHostStateResult() : value; 
+        org.zstack.sdk.ChangeHostStateResult value = res.getResult(org.zstack.sdk.ChangeHostStateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ChangeHostStateResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class ChangeHostStateAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/hosts/{uuid}/actions";

@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryNotificationAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryNotificationAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryNotificationResult value;
+        public org.zstack.sdk.QueryNotificationResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryNotificationAction extends QueryAction {
             return ret;
         }
         
-        QueryNotificationResult value = res.getResult(QueryNotificationResult.class);
-        ret.value = value == null ? new QueryNotificationResult() : value; 
+        org.zstack.sdk.QueryNotificationResult value = res.getResult(org.zstack.sdk.QueryNotificationResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryNotificationResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QueryNotificationAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/notifications";

@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class GetEcsInstanceVncUrlAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class GetEcsInstanceVncUrlAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetEcsInstanceVncUrlResult value;
+        public org.zstack.sdk.GetEcsInstanceVncUrlResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -44,8 +45,8 @@ public class GetEcsInstanceVncUrlAction extends AbstractAction {
             return ret;
         }
         
-        GetEcsInstanceVncUrlResult value = res.getResult(GetEcsInstanceVncUrlResult.class);
-        ret.value = value == null ? new GetEcsInstanceVncUrlResult() : value; 
+        org.zstack.sdk.GetEcsInstanceVncUrlResult value = res.getResult(org.zstack.sdk.GetEcsInstanceVncUrlResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetEcsInstanceVncUrlResult() : value; 
 
         return ret;
     }
@@ -64,15 +65,15 @@ public class GetEcsInstanceVncUrlAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/hybrid/aliyun/ecs-vnc/{uuid}";

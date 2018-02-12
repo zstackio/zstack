@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class SyncPrimaryStorageCapacityAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class SyncPrimaryStorageCapacityAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SyncPrimaryStorageCapacityResult value;
+        public org.zstack.sdk.SyncPrimaryStorageCapacityResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +51,8 @@ public class SyncPrimaryStorageCapacityAction extends AbstractAction {
             return ret;
         }
         
-        SyncPrimaryStorageCapacityResult value = res.getResult(SyncPrimaryStorageCapacityResult.class);
-        ret.value = value == null ? new SyncPrimaryStorageCapacityResult() : value; 
+        org.zstack.sdk.SyncPrimaryStorageCapacityResult value = res.getResult(org.zstack.sdk.SyncPrimaryStorageCapacityResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SyncPrimaryStorageCapacityResult() : value; 
 
         return ret;
     }
@@ -70,15 +71,15 @@ public class SyncPrimaryStorageCapacityAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/primary-storage/{primaryStorageUuid}/actions";

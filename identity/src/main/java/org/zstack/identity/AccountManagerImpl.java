@@ -1037,6 +1037,17 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         }.execute();
     }
 
+    @Override
+    public Class getBaseResourceType(Class clz) {
+        for (Class c : resourceTypes) {
+            if (c.isAssignableFrom(clz)) {
+                return c;
+            }
+        }
+
+        return null;
+    }
+
     private void startExpiredSessionCollector() {
         final int interval = IdentityGlobalConfig.SESSION_CLEANUP_INTERVAL.value(Integer.class);
         expiredSessionCollector = thdf.submitPeriodicTask(new PeriodicTask() {
@@ -1174,7 +1185,13 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
     @Override
     public boolean isResourceHavingAccountReference(Class entityClass) {
-        return resourceTypes.contains(entityClass);
+        for (Class clz : resourceTypes) {
+            if (clz.isAssignableFrom(entityClass)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
 

@@ -40,6 +40,7 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
 
+import static org.zstack.core.Platform.New;
 import static org.zstack.core.Platform.operr;
 
 public class BackupStorageManagerImpl extends AbstractService implements BackupStorageManager,
@@ -171,7 +172,8 @@ public class BackupStorageManagerImpl extends AbstractService implements BackupS
         }
 
         BackupStorageFactory factory = getBackupStorageFactory(BackupStorageType.valueOf(vo.getType()));
-        BackupStorage ss = factory.getBackupStorage(vo);
+        BackupStorageVO finalVo = vo;
+        BackupStorage ss = New(()-> factory.getBackupStorage(finalVo));
         ss.handleMessage(msg);
     }
 

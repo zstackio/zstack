@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteImageAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteImageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteImageResult value;
+        public org.zstack.sdk.DeleteImageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +57,8 @@ public class DeleteImageAction extends AbstractAction {
             return ret;
         }
         
-        DeleteImageResult value = res.getResult(DeleteImageResult.class);
-        ret.value = value == null ? new DeleteImageResult() : value; 
+        org.zstack.sdk.DeleteImageResult value = res.getResult(org.zstack.sdk.DeleteImageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteImageResult() : value; 
 
         return ret;
     }
@@ -76,15 +77,15 @@ public class DeleteImageAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/images/{uuid}";

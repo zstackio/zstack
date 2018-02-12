@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DetachPciDeviceFromVmAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DetachPciDeviceFromVmAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DetachPciDeviceFromVmResult value;
+        public org.zstack.sdk.DetachPciDeviceFromVmResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DetachPciDeviceFromVmAction extends AbstractAction {
             return ret;
         }
         
-        DetachPciDeviceFromVmResult value = res.getResult(DetachPciDeviceFromVmResult.class);
-        ret.value = value == null ? new DetachPciDeviceFromVmResult() : value; 
+        org.zstack.sdk.DetachPciDeviceFromVmResult value = res.getResult(org.zstack.sdk.DetachPciDeviceFromVmResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DetachPciDeviceFromVmResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DetachPciDeviceFromVmAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/pci-device/pci-devices/{pciDeviceUuid}/detach";

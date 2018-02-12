@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class SetVpcVRouterDistributedRoutingEnabledResult {
     public boolean enabled;
     public void setEnabled(boolean enabled) {

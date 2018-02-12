@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class SyncEcsSecurityGroupFromRemoteAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class SyncEcsSecurityGroupFromRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SyncEcsSecurityGroupFromRemoteResult value;
+        public org.zstack.sdk.SyncEcsSecurityGroupFromRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +57,8 @@ public class SyncEcsSecurityGroupFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        SyncEcsSecurityGroupFromRemoteResult value = res.getResult(SyncEcsSecurityGroupFromRemoteResult.class);
-        ret.value = value == null ? new SyncEcsSecurityGroupFromRemoteResult() : value; 
+        org.zstack.sdk.SyncEcsSecurityGroupFromRemoteResult value = res.getResult(org.zstack.sdk.SyncEcsSecurityGroupFromRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SyncEcsSecurityGroupFromRemoteResult() : value; 
 
         return ret;
     }
@@ -76,15 +77,15 @@ public class SyncEcsSecurityGroupFromRemoteAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/hybrid/aliyun/security-group/{ecsVpcUuid}/sync";

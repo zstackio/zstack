@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class SyncEcsVpcFromRemoteResult {
-    public java.util.List<EcsVpcInventory> inventories;
-    public void setInventories(java.util.List<EcsVpcInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<EcsVpcInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

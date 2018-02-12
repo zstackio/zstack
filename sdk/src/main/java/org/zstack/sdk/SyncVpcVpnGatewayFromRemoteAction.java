@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class SyncVpcVpnGatewayFromRemoteAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class SyncVpcVpnGatewayFromRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SyncVpcVpnGatewayFromRemoteResult value;
+        public org.zstack.sdk.SyncVpcVpnGatewayFromRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class SyncVpcVpnGatewayFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        SyncVpcVpnGatewayFromRemoteResult value = res.getResult(SyncVpcVpnGatewayFromRemoteResult.class);
-        ret.value = value == null ? new SyncVpcVpnGatewayFromRemoteResult() : value; 
+        org.zstack.sdk.SyncVpcVpnGatewayFromRemoteResult value = res.getResult(org.zstack.sdk.SyncVpcVpnGatewayFromRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SyncVpcVpnGatewayFromRemoteResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class SyncVpcVpnGatewayFromRemoteAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/hybrid/vpc-vpn/{dataCenterUuid}/sync";

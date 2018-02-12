@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteWebhookAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteWebhookAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteWebhookResult value;
+        public org.zstack.sdk.DeleteWebhookResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DeleteWebhookAction extends AbstractAction {
             return ret;
         }
         
-        DeleteWebhookResult value = res.getResult(DeleteWebhookResult.class);
-        ret.value = value == null ? new DeleteWebhookResult() : value; 
+        org.zstack.sdk.DeleteWebhookResult value = res.getResult(org.zstack.sdk.DeleteWebhookResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteWebhookResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DeleteWebhookAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/web-hooks/{uuid}";

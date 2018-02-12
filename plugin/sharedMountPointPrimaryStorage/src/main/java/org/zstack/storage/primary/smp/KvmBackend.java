@@ -76,6 +76,9 @@ public class KvmBackend extends HypervisorBackend {
     @Autowired
     protected SMPPrimaryStorageFactory primaryStorageFactory;
 
+    public KvmBackend() {
+    }
+
     public static class AgentCmd {
         public String mountPoint;
     }

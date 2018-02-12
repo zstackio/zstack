@@ -10,6 +10,7 @@ import org.zstack.header.network.l3.IpAllocateMessage;
 import org.zstack.header.network.l3.L3NetworkMessage;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.notification.ApiNotification;
+import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 
 /**
@@ -58,7 +59,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APICreateVipEvent.class,
         parameterName = "params"
 )
-public class APICreateVipMsg extends APICreateMessage implements L3NetworkMessage, IpAllocateMessage {
+public class APICreateVipMsg extends APICreateMessage implements L3NetworkMessage, IpAllocateMessage, APIAuditor {
     /**
      * @desc max length of 255 characters
      */
@@ -145,5 +146,10 @@ public class APICreateVipMsg extends APICreateMessage implements L3NetworkMessag
                 }
             }
         };
+    }
+
+    @Override
+    public Result audit(APIMessage msg, APIEvent rsp) {
+        return new Result(rsp.isSuccess() ? ((APICreateVipEvent)rsp).getInventory().getUuid() : "", VipVO.class);
     }
 }

@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryClusterAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryClusterAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryClusterResult value;
+        public org.zstack.sdk.QueryClusterResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryClusterAction extends QueryAction {
             return ret;
         }
         
-        QueryClusterResult value = res.getResult(QueryClusterResult.class);
-        ret.value = value == null ? new QueryClusterResult() : value; 
+        org.zstack.sdk.QueryClusterResult value = res.getResult(org.zstack.sdk.QueryClusterResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryClusterResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QueryClusterAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/clusters";

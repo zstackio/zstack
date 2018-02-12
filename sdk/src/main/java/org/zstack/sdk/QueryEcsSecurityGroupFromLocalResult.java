@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class QueryEcsSecurityGroupFromLocalResult {
-    public java.util.List<EcsSecurityGroupInventory> inventories;
-    public void setInventories(java.util.List<EcsSecurityGroupInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<EcsSecurityGroupInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

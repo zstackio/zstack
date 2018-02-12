@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryVpcVpnConnectionFromLocalAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryVpcVpnConnectionFromLocalAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryVpcVpnConnectionFromLocalResult value;
+        public org.zstack.sdk.QueryVpcVpnConnectionFromLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryVpcVpnConnectionFromLocalAction extends QueryAction {
             return ret;
         }
         
-        QueryVpcVpnConnectionFromLocalResult value = res.getResult(QueryVpcVpnConnectionFromLocalResult.class);
-        ret.value = value == null ? new QueryVpcVpnConnectionFromLocalResult() : value; 
+        org.zstack.sdk.QueryVpcVpnConnectionFromLocalResult value = res.getResult(org.zstack.sdk.QueryVpcVpnConnectionFromLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryVpcVpnConnectionFromLocalResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QueryVpcVpnConnectionFromLocalAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/hybrid/vpn-connection";

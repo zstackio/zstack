@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class GetImageCandidatesForVmToChangeResult {
-    public java.util.List<ImageInventory> inventories;
-    public void setInventories(java.util.List<ImageInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<ImageInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

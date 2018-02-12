@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class QueryShareableVolumeVmInstanceRefResult {
-    public java.util.List<ShareableVolumeVmInstanceRefInventory> inventories;
-    public void setInventories(java.util.List<ShareableVolumeVmInstanceRefInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<ShareableVolumeVmInstanceRefInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

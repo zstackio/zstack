@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class MonitorTriggerInventory  {
 
     public java.lang.String name;

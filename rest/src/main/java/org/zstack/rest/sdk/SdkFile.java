@@ -6,6 +6,15 @@ package org.zstack.rest.sdk;
 public class SdkFile {
     private String fileName;
     private String content;
+    private String subPath;
+
+    public String getSubPath() {
+        return subPath;
+    }
+
+    public void setSubPath(String subPath) {
+        this.subPath = subPath;
+    }
 
     public String getFileName() {
         return fileName;

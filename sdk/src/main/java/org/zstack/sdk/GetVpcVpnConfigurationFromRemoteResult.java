@@ -1,5 +1,8 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.VpcVpnIkeConfigStruct;
+import org.zstack.sdk.VpcVpnIpSecConfigStruct;
+
 public class GetVpcVpnConfigurationFromRemoteResult {
     public VpcVpnIkeConfigStruct ikeConf;
     public void setIkeConf(VpcVpnIkeConfigStruct ikeConf) {
