@@ -1,10 +1,12 @@
 package org.zstack.identity.rbac
 
 import org.zstack.header.identity.PolicyInventory
+import org.zstack.header.rest.NoSDK
 
 class InternalPolicyDefiner {
     private List<PolicyInventory> polices = []
 
+    @NoSDK
     static class Statement extends PolicyInventory.Statement {
         void principal(String p) {
             if (principals == null) {
@@ -31,6 +33,7 @@ class InternalPolicyDefiner {
         }
     }
 
+    @NoSDK
     static class Policy extends PolicyInventory {
         void statement(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = InternalPolicyDefiner.Statement.class) Closure c) {
             def s = new InternalPolicyDefiner.Statement()

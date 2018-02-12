@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 
 @Inventory(mappingVOClass = RoleVO.class)
 public class RoleInventory {
+    private String uuid;
     private String name;
     private String description;
     private Timestamp createDate;
@@ -16,6 +17,7 @@ public class RoleInventory {
 
     public static RoleInventory valueOf(RoleVO vo) {
         RoleInventory inv = new RoleInventory();
+        inv.uuid = vo.getUuid();
         inv.name = vo.getName();
         inv.description = vo.getDescription();
         inv.createDate = vo.getCreateDate();
@@ -25,6 +27,14 @@ public class RoleInventory {
 
     public static List<RoleInventory> valueOf(Collection<RoleVO> vos) {
         return vos.stream().map(RoleInventory::valueOf).collect(Collectors.toList());
+    }
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 
     public String getName() {

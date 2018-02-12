@@ -6,6 +6,7 @@ import org.zstack.core.Platform
 import org.zstack.header.exception.CloudRuntimeException
 import org.zstack.header.query.APIQueryReply
 import org.zstack.header.rest.APINoSee
+import org.zstack.header.rest.NoSDK
 import org.zstack.header.rest.RestResponse
 import org.zstack.header.rest.SDK
 import org.zstack.rest.sdk.SdkFile
@@ -178,11 +179,15 @@ ${output.join("\n")}
     }
 
     def addToLaterResolvedClassesIfNeed(Class clz) {
+        if (clz.isAnnotationPresent(NoSDK.class)) {
+            return
+        }
+
         if (!sdkFileMap.containsKey(clz)) {
             laterResolvedClasses.add(clz)
         }
         Platform.reflections.getSubTypesOf(clz).forEach({ i ->
-            if (!sdkFileMap.containsKey(i)) {
+            if (!sdkFileMap.containsKey(i) && !i.isAnnotationPresent(NoSDK.class)) {
                 laterResolvedClasses.add(i)
             }
         })

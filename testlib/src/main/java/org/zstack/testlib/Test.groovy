@@ -95,6 +95,14 @@ abstract class Test implements ApiHelper {
         return spec
     }
 
+    protected SimpleEnvSpec senv(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = SimpleEnvSpec.class) Closure c) {
+        def spec = new SimpleEnvSpec()
+        c.delegate = spec
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c()
+        return spec
+    }
+
     protected void spring(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = SpringSpec.class) Closure c) {
         c.delegate = _springSpec
         c.resolveStrategy = Closure.DELEGATE_FIRST

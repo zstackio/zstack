@@ -78,9 +78,27 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
             handle((APIAttachRoleToAccountMsg) msg);
         } else if (msg instanceof APIDetachRoleFromAccountMsg) {
             handle((APIDetachRoleFromAccountMsg) msg);
+        } else if (msg instanceof APIAttachPolicyToRoleMsg) {
+            handle((APIAttachPolicyToRoleMsg) msg);
+        } else if (msg instanceof APIDetachPolicyFromRoleMsg) {
+            handle((APIDetachPolicyFromRoleMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIDetachPolicyFromRoleMsg msg) {
+        SQL.New(RolePolicyRefVO.class).eq(RolePolicyRefVO_.policyUuid, msg.getPolicyUuid())
+                .eq(RolePolicyRefVO_.roleUuid, msg.getRoleUuid()).hardDelete();
+        bus.publish(new APIDetachPolicyFromRoleEvent(msg.getId()));
+    }
+
+    private void handle(APIAttachPolicyToRoleMsg msg) {
+        RolePolicyRefVO ref = new RolePolicyRefVO();
+        ref.setPolicyUuid(msg.getPolicyUuid());
+        ref.setRoleUuid(msg.getRoleUuid());
+        dbf.persist(ref);
+        bus.publish(new APIAttachPolicyToRoleEvent(msg.getId()));
     }
 
     private void handle(APIDetachRoleFromAccountMsg msg) {

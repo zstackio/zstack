@@ -23,9 +23,12 @@ import org.zstack.header.rest.RESTConstant
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager
 import org.zstack.header.vo.EO
 import org.zstack.header.volume.VolumeDeletionPolicyManager
+import org.zstack.identity.Account
 import org.zstack.image.ImageGlobalConfig
 import org.zstack.sdk.*
 import org.zstack.storage.volume.VolumeGlobalConfig
+import org.zstack.testlib.identity.AccountSpec
+import org.zstack.testlib.identity.IdentitySpec
 import org.zstack.utils.DebugUtils
 import org.zstack.utils.data.Pair
 import org.zstack.utils.gson.JSONObjectUtil
@@ -137,20 +140,22 @@ class EnvSpec implements Node {
         }
     }
 
-    EnvSpec() {
-        installDeletionMethods()
-
+    static {
         HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory()
         factory.setReadTimeout(CoreGlobalProperty.REST_FACADE_READ_TIMEOUT)
         factory.setConnectTimeout(CoreGlobalProperty.REST_FACADE_CONNECT_TIMEOUT)
         restTemplate = new RestTemplate(factory)
     }
 
-    public Closure getSimulator(String path) {
+    EnvSpec() {
+        installDeletionMethods()
+    }
+
+    Closure getSimulator(String path) {
         return httpHandlers[path]
     }
 
-    public Closure getPostSimulator(String path) {
+    Closure getPostSimulator(String path) {
         return httpPostHandlers[path]
     }
 
@@ -173,6 +178,14 @@ class EnvSpec implements Node {
         cleanSimulatorHandlers()
         cleanAfterSimulatorHandlers()
         cleanMessageHandlers()
+    }
+
+    void identity(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = IdentitySpec.class) Closure c) {
+        def ispec = new IdentitySpec()
+        c.delegate = ispec
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c()
+        addChild(ispec)
     }
 
     ZoneSpec zone(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = ZoneSpec.class) Closure c)  {
@@ -288,7 +301,10 @@ class EnvSpec implements Node {
             } else {
                 def n = it.parent
                 while (n != null) {
-                    if (!(n instanceof HasSession) || n.accountName == null) {
+                    if (n instanceof AccountSpec) {
+                        suuid = n.session.uuid
+                        break
+                    } else if (!(n instanceof HasSession) || n.accountName == null) {
                         n = n.parent
                     } else {
                         // one of the parent has the accountName set, use it
@@ -304,7 +320,7 @@ class EnvSpec implements Node {
         return suuid
     }
 
-    private void deploy() {
+    protected void deploy() {
         def allNodes = []
 
         walk {
