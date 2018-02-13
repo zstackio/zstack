@@ -578,6 +578,10 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         if (msg.hasSystemTag(VolumeSystemTags.SHAREABLE.getTagFormat())) {
             vo.setShareable(true);
         }
+        List<CreateDataVolumeExtensionPoint> exts = pluginRgty.getExtensionList(CreateDataVolumeExtensionPoint.class);
+        for (CreateDataVolumeExtensionPoint ext : exts) {
+            ext.beforeCreateVolume(VolumeInventory.valueOf(vo));
+        }
 
         VolumeVO finalVo1 = vo;
         vo = new SQLBatchWithReturn<VolumeVO>() {
@@ -592,7 +596,6 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             }
         }.execute();
 
-        List<CreateDataVolumeExtensionPoint> exts = pluginRgty.getExtensionList(CreateDataVolumeExtensionPoint.class);
         for (CreateDataVolumeExtensionPoint ext : exts) {
             ext.afterCreateVolume(VolumeInventory.valueOf(dbf.findByUuid(vo.getUuid(), VolumeVO.class)));
         }
