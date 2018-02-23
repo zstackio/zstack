@@ -1926,6 +1926,7 @@ public class KVMHost extends HostBase implements Host {
             v.setCacheMode(KVMGlobalConfig.LIBVIRT_CACHE_MODE.value());
             dataVolumes.add(v);
         }
+        dataVolumes.sort(Comparator.comparing(VolumeTO::getDeviceId));
         cmd.setDataVolumes(dataVolumes);
         cmd.setVmInternalId(spec.getVmInventory().getInternalId());
 
