@@ -6,23 +6,33 @@ import org.kohsuke.groovy.sandbox.GroovyInterceptor
 import org.kohsuke.groovy.sandbox.SandboxTransformer
 import org.kohsuke.groovy.sandbox.impl.Super
 import org.zstack.core.Platform
+import org.zstack.core.cloudbus.CloudBus
 import org.zstack.header.errorcode.OperationFailureException
 import org.zstack.header.exception.CloudRuntimeException
 import org.zstack.header.identity.AccountConstant
 import org.zstack.header.identity.Action
 import org.zstack.header.identity.SessionInventory
+import org.zstack.header.identity.SuppressCredentialCheck
+import org.zstack.header.message.APIResponse
+import org.zstack.header.message.APISyncCallMessage
+import org.zstack.header.message.MessageReply
 import org.zstack.header.query.APIQueryMessage
 import org.zstack.header.query.AutoQuery
 import org.zstack.header.query.QueryCondition
 import org.zstack.header.query.QueryOp
+import org.zstack.utils.Utils
 import org.zstack.utils.gson.JSONObjectUtil
+import org.zstack.utils.logging.CLogger
 
 import java.lang.reflect.Modifier
 import java.util.regex.Pattern
 
 class BatchQuery {
+    private static CLogger logger = Utils.getLogger(BatchQuery.class)
+
     private QueryFacade queryf
     private SessionInventory session
+    private CloudBus bus
 
     static class SandBox extends GroovyInterceptor {
         static List<Class> RECEIVER_WHITE_LIST = [
@@ -120,6 +130,7 @@ class BatchQuery {
 
     BatchQuery() {
         this.queryf = Platform.getComponentLoader().getComponent(QueryFacade.class)
+        this.bus = Platform.getComponentLoader().getComponent(CloudBus.class)
     }
     private static SandBox sandbox = new SandBox()
 
@@ -135,13 +146,18 @@ class BatchQuery {
     }
 
     static {
-        Platform.reflections.getSubTypesOf(APIQueryMessage.class).each { clz ->
+        Platform.reflections.getSubTypesOf(APISyncCallMessage.class).each { clz ->
             if (Modifier.isAbstract(clz.modifiers)) {
+                return
+            }
+
+            if (clz.isAnnotationPresent(SuppressCredentialCheck.class)) {
                 return
             }
 
             String name = lstrip(rstrip(clz.simpleName, "Msg"), "API")
             queryMessageClass[name.toLowerCase()] = clz
+            queryMessageClass[clz.name] = clz
         }
 
         // order is important, don't change it
@@ -157,6 +173,24 @@ class BatchQuery {
         QUERY_OP_MAPPING.put("=", QueryOp.EQ.toString())
         QUERY_OP_MAPPING.put(">", QueryOp.GT.toString())
         QUERY_OP_MAPPING.put("<", QueryOp.LT.toString())
+    }
+
+    private Map syncApiCall(String apiname, String jstr) {
+        Class msgClz = queryMessageClass[apiname]
+        if (msgClz == null) {
+            throw new OperationFailureException(Platform.argerr("no query API found for %s", apiname))
+        }
+
+        APISyncCallMessage msg = JSONObjectUtil.toObject(jstr, msgClz)
+        msg.setSession(session)
+        msg.setServiceId("api.portal")
+        MessageReply reply = bus.call(msg)
+        if (!reply.isSuccess()) {
+            throw new OperationFailureException(reply.error)
+        }
+
+        APIResponse rsp = reply as APIResponse
+        return ["result":rsp.toResponseMap(rsp)]
     }
 
     private Map doQuery(String qstr) {
@@ -282,30 +316,40 @@ class BatchQuery {
     }
 
     Map<String, Object> query(APIBatchQueryMsg msg) {
-        session = msg.getSession()
-        Binding binding = new Binding()
-        Map<String, Object> output = [:]
-
-        def query = { doQuery(it) }
-        def put = { k, v-> output[k] = v }
-
-        binding.setVariable("query", query)
-        binding.setVariable("put", put)
-
-        def cc = new CompilerConfiguration()
-        cc.addCompilationCustomizers(new SandboxTransformer())
-
-        def shell = new GroovyShell(binding, cc)
-        sandbox.register()
         try {
-            shell.evaluate(msg.script)
-        } catch (Throwable t) {
-            sandbox.unregister()
-            throw new OperationFailureException(Platform.operr("${errorLine(msg.script, t)}"))
-        } finally {
-            sandbox.unregister()
-        }
+            session = msg.getSession()
+            Binding binding = new Binding()
+            Map<String, Object> output = [:]
 
-        return output
+            def query = { doQuery(it) }
+            def put = { k, v -> output[k] = v }
+            def call = { apiName, value -> syncApiCall(apiName, value) }
+
+            binding.setVariable("query", query)
+            binding.setVariable("put", put)
+            binding.setVariable("call", call)
+
+            def cc = new CompilerConfiguration()
+            cc.addCompilationCustomizers(new SandboxTransformer())
+
+            def shell = new GroovyShell(binding, cc)
+            sandbox.register()
+            try {
+                shell.evaluate(msg.script)
+            } catch (Throwable t) {
+                sandbox.unregister()
+                throw new OperationFailureException(Platform.operr("${errorLine(msg.script, t)}"))
+            } finally {
+                sandbox.unregister()
+            }
+
+            return output
+        } catch (Throwable t) {
+            if (!(t instanceof OperationFailureException)) {
+                logger.warn(t.message, t)
+            }
+
+            throw t
+        }
     }
 }
