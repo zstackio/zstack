@@ -4,6 +4,7 @@ import org.apache.commons.lang.StringUtils;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.rest.APINoSee;
+import org.zstack.header.rest.RestResponse;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.FieldUtils;
@@ -44,6 +45,42 @@ public abstract class APIMessage extends NeedReplyMessage {
 
     static {
         collectApiParams();
+        collectResponseMappingFields();
+    }
+
+    private static void collectResponseMappingFields() {
+        BeanUtils.reflections.getSubTypesOf(APIResponse.class).stream().filter(clz-> clz != APIReply.class && clz != APIEvent.class
+         && !Modifier.isStatic(clz.getModifiers()) && clz.isAnnotationPresent(RestResponse.class)).forEach(clz -> {
+            RestResponse annotation = clz.getAnnotation(RestResponse.class);
+            Map responseMappingFields = new HashMap();
+
+            if (!annotation.allTo().equals("")) {
+                responseMappingFields.put(annotation.allTo(), annotation.allTo());
+            } else if (annotation.fieldsTo().length > 0) {
+                if (annotation.fieldsTo().length == 1 && "all".equals(annotation.fieldsTo()[0])) {
+                    List<Field> apiFields = FieldUtils.getAllFields(clz);
+                    apiFields = apiFields.stream().filter(f -> !f.isAnnotationPresent(APINoSee.class) && !Modifier.isStatic(f.getModifiers())).collect(Collectors.toList());
+
+                    for (Field f : apiFields) {
+                        responseMappingFields.put(f.getName(), f.getName());
+                    }
+                } else {
+                    for (String mf : annotation.fieldsTo()) {
+                        String[] kv = mf.split("=");
+                        if (kv.length == 2) {
+                            responseMappingFields.put(kv[0].trim(), kv[1].trim());
+                        } else if (kv.length == 1) {
+                            responseMappingFields.put(kv[0].trim(), kv[0].trim());
+                        } else {
+                            throw new CloudRuntimeException(String.format("bad mappingFields[%s] of %s", mf, clz));
+                        }
+
+                    }
+                }
+            }
+
+            APIResponse.responseMappingFields.put(clz, responseMappingFields);
+        });
     }
 
     private static void collectApiParams() {

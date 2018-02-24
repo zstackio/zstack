@@ -3,7 +3,7 @@ package org.zstack.header.message;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.rest.APINoSee;
 
-public class APIEvent extends Event {
+public class APIEvent extends Event implements APIResponse {
     /**
      * @ignore
      */
