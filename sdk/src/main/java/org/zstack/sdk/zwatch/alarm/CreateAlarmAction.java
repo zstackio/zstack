@@ -115,7 +115,7 @@ public class CreateAlarmAction extends AbstractAction {
         info.path = "/zwatch/alarms";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

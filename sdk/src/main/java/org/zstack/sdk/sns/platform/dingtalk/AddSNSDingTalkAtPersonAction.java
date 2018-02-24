@@ -91,7 +91,7 @@ public class AddSNSDingTalkAtPersonAction extends AbstractAction {
         info.path = "/sns/application-endpoints/ding-talk/at-persons";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

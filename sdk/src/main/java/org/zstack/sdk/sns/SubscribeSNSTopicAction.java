@@ -88,7 +88,7 @@ public class SubscribeSNSTopicAction extends AbstractAction {
         info.path = "/sns/topics/{topicUuid}/endpoints/{endpointUuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

@@ -97,7 +97,7 @@ public class CreateSNSEmailEndpointAction extends AbstractAction {
         info.path = "/sns/application-endpoints/emails";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

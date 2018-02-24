@@ -97,7 +97,7 @@ public class AddLabelToAlarmAction extends AbstractAction {
         info.path = "/zwatch/alarms/{alarmUuid}/labels";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

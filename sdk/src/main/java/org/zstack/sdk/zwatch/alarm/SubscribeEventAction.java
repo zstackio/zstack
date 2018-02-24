@@ -97,7 +97,7 @@ public class SubscribeEventAction extends AbstractAction {
         info.path = "/zwatch/events/subscriptions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

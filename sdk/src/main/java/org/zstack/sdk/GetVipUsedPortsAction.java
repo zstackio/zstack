@@ -28,7 +28,7 @@ public class GetVipUsedPortsAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = true, validValues = {"tcp","udp"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"TCP","UDP"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String protocol;
 
     @Param(required = false)

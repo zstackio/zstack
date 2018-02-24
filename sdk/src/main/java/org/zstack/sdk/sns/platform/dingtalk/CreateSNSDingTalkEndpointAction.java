@@ -103,7 +103,7 @@ public class CreateSNSDingTalkEndpointAction extends AbstractAction {
         info.path = "/sns/application-endpoints/ding-talk";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

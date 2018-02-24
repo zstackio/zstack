@@ -88,7 +88,7 @@ public class PutMetricDataAction extends AbstractAction {
         info.path = "/zwatch/metrics";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

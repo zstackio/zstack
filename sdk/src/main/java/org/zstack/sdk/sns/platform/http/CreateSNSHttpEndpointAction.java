@@ -103,7 +103,7 @@ public class CreateSNSHttpEndpointAction extends AbstractAction {
         info.path = "/sns/application-endpoints/http";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 
