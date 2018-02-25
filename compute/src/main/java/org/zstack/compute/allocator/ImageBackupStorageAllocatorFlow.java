@@ -89,15 +89,14 @@ public class ImageBackupStorageAllocatorFlow extends AbstractHostAllocatorFlow {
 
         SimpleQuery<BackupStorageVO> bq = dbf.createQuery(BackupStorageVO.class);
         bq.select(BackupStorageVO_.uuid);
-        bq.add(BackupStorageVO_.state, Op.EQ, BackupStorageState.Enabled);
         bq.add(BackupStorageVO_.status, Op.EQ, BackupStorageStatus.Connected);
         bq.add(BackupStorageVO_.uuid, Op.IN, bsUuids);
         bsUuids = bq.listValue();
         if (bsUuids.isEmpty()) {
             // we stop allocation on purpose, to prevent further pagination proceeding
             throw new OperationFailureException(errf.instantiateErrorCode(HostAllocatorError.NO_AVAILABLE_HOST,
-                    String.format("all backup storage that image[uuid:%s] is on can not satisfy conditions[state = %s, status = %s]",
-                            spec.getImage().getUuid(), BackupStorageState.Enabled, BackupStorageStatus.Connected)
+                    String.format("all backup storage that image[uuid:%s] is on can not satisfy conditions[status = %s]",
+                            spec.getImage().getUuid(), BackupStorageStatus.Connected)
             ));
         }
 
