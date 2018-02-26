@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class ChangeL3NetworkStateAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class ChangeL3NetworkStateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ChangeL3NetworkStateResult value;
+        public org.zstack.sdk.ChangeL3NetworkStateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class ChangeL3NetworkStateAction extends AbstractAction {
             return ret;
         }
         
-        ChangeL3NetworkStateResult value = res.getResult(ChangeL3NetworkStateResult.class);
-        ret.value = value == null ? new ChangeL3NetworkStateResult() : value; 
+        org.zstack.sdk.ChangeL3NetworkStateResult value = res.getResult(org.zstack.sdk.ChangeL3NetworkStateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ChangeL3NetworkStateResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class ChangeL3NetworkStateAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/l3-networks/{uuid}/actions";

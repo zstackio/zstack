@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.MonitorTriggerInventory;
+
 public class UpdateMonitorTriggerResult {
     public MonitorTriggerInventory inventory;
     public void setInventory(MonitorTriggerInventory inventory) {

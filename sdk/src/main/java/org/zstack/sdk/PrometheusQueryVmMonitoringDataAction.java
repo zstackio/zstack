@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class PrometheusQueryVmMonitoringDataAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class PrometheusQueryVmMonitoringDataAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public PrometheusQueryVmMonitoringDataResult value;
+        public org.zstack.sdk.PrometheusQueryVmMonitoringDataResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -62,8 +63,8 @@ public class PrometheusQueryVmMonitoringDataAction extends AbstractAction {
             return ret;
         }
         
-        PrometheusQueryVmMonitoringDataResult value = res.getResult(PrometheusQueryVmMonitoringDataResult.class);
-        ret.value = value == null ? new PrometheusQueryVmMonitoringDataResult() : value; 
+        org.zstack.sdk.PrometheusQueryVmMonitoringDataResult value = res.getResult(org.zstack.sdk.PrometheusQueryVmMonitoringDataResult.class);
+        ret.value = value == null ? new org.zstack.sdk.PrometheusQueryVmMonitoringDataResult() : value; 
 
         return ret;
     }
@@ -82,15 +83,15 @@ public class PrometheusQueryVmMonitoringDataAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/prometheus/vm-instances";

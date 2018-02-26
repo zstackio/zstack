@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.VRouterRouteEntryType;
+
 public class VRouterRouteEntryAO  {
 
     public java.lang.String destination;

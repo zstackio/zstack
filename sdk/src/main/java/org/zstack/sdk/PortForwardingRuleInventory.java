@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class PortForwardingRuleInventory  {
 
     public java.lang.String uuid;

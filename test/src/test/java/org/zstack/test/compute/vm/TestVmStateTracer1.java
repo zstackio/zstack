@@ -119,7 +119,7 @@ public class TestVmStateTracer1 {
 
         bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
             @Override
-            public void intercept(Message msg) {
+            public void beforeDeliveryMessage(Message msg) {
                 if (((RecalculateHostCapacityMsg) msg).getHostUuid().equals(hostUuid)) {
                     success3 = true;
                 }

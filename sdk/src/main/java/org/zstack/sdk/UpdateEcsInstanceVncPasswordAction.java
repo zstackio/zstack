@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class UpdateEcsInstanceVncPasswordAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class UpdateEcsInstanceVncPasswordAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateEcsInstanceVncPasswordResult value;
+        public org.zstack.sdk.UpdateEcsInstanceVncPasswordResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class UpdateEcsInstanceVncPasswordAction extends AbstractAction {
             return ret;
         }
         
-        UpdateEcsInstanceVncPasswordResult value = res.getResult(UpdateEcsInstanceVncPasswordResult.class);
-        ret.value = value == null ? new UpdateEcsInstanceVncPasswordResult() : value; 
+        org.zstack.sdk.UpdateEcsInstanceVncPasswordResult value = res.getResult(org.zstack.sdk.UpdateEcsInstanceVncPasswordResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateEcsInstanceVncPasswordResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class UpdateEcsInstanceVncPasswordAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/hybrid/aliyun/{uuid}/ecs-vnc";

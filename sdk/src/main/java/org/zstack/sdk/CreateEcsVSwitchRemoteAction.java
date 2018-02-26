@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class CreateEcsVSwitchRemoteAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class CreateEcsVSwitchRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateEcsVSwitchRemoteResult value;
+        public org.zstack.sdk.CreateEcsVSwitchRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -65,8 +66,8 @@ public class CreateEcsVSwitchRemoteAction extends AbstractAction {
             return ret;
         }
         
-        CreateEcsVSwitchRemoteResult value = res.getResult(CreateEcsVSwitchRemoteResult.class);
-        ret.value = value == null ? new CreateEcsVSwitchRemoteResult() : value; 
+        org.zstack.sdk.CreateEcsVSwitchRemoteResult value = res.getResult(org.zstack.sdk.CreateEcsVSwitchRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateEcsVSwitchRemoteResult() : value; 
 
         return ret;
     }
@@ -85,15 +86,15 @@ public class CreateEcsVSwitchRemoteAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/hybrid/aliyun/vswitch";

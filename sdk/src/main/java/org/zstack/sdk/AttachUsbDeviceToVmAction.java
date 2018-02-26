@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class AttachUsbDeviceToVmAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class AttachUsbDeviceToVmAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AttachUsbDeviceToVmResult value;
+        public org.zstack.sdk.AttachUsbDeviceToVmResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class AttachUsbDeviceToVmAction extends AbstractAction {
             return ret;
         }
         
-        AttachUsbDeviceToVmResult value = res.getResult(AttachUsbDeviceToVmResult.class);
-        ret.value = value == null ? new AttachUsbDeviceToVmResult() : value; 
+        org.zstack.sdk.AttachUsbDeviceToVmResult value = res.getResult(org.zstack.sdk.AttachUsbDeviceToVmResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AttachUsbDeviceToVmResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class AttachUsbDeviceToVmAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/usb-device/usb-devices/{usbDeviceUuid}/attach";

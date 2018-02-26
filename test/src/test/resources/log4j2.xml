@@ -75,6 +75,8 @@
 
         <Logger name="org.zstack" level="DEBUG" />
 
+        <Logger name="org.zstack.zwatch" level="TRACE" />
+
         <Logger name="org.zstack.utils" level="TRACE" />
 
         <Logger name="org.zstack.core.timeout" level="TRACE" />

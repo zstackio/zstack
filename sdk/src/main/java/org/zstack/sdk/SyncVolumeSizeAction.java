@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class SyncVolumeSizeAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class SyncVolumeSizeAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SyncVolumeSizeResult value;
+        public org.zstack.sdk.SyncVolumeSizeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +51,8 @@ public class SyncVolumeSizeAction extends AbstractAction {
             return ret;
         }
         
-        SyncVolumeSizeResult value = res.getResult(SyncVolumeSizeResult.class);
-        ret.value = value == null ? new SyncVolumeSizeResult() : value; 
+        org.zstack.sdk.SyncVolumeSizeResult value = res.getResult(org.zstack.sdk.SyncVolumeSizeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SyncVolumeSizeResult() : value; 
 
         return ret;
     }
@@ -70,15 +71,15 @@ public class SyncVolumeSizeAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/volumes/{uuid}/actions";

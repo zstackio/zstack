@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class CleanUpImageCacheOnPrimaryStorageAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class CleanUpImageCacheOnPrimaryStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CleanUpImageCacheOnPrimaryStorageResult value;
+        public org.zstack.sdk.CleanUpImageCacheOnPrimaryStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +51,8 @@ public class CleanUpImageCacheOnPrimaryStorageAction extends AbstractAction {
             return ret;
         }
         
-        CleanUpImageCacheOnPrimaryStorageResult value = res.getResult(CleanUpImageCacheOnPrimaryStorageResult.class);
-        ret.value = value == null ? new CleanUpImageCacheOnPrimaryStorageResult() : value; 
+        org.zstack.sdk.CleanUpImageCacheOnPrimaryStorageResult value = res.getResult(org.zstack.sdk.CleanUpImageCacheOnPrimaryStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CleanUpImageCacheOnPrimaryStorageResult() : value; 
 
         return ret;
     }
@@ -70,15 +71,15 @@ public class CleanUpImageCacheOnPrimaryStorageAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/primary-storage/{uuid}/actions";

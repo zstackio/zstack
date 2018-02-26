@@ -2,10 +2,13 @@ package org.zstack.header.vm;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
+import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
+import org.zstack.header.other.APIAuditor;
+import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 
 /**
@@ -17,9 +20,13 @@ import org.zstack.header.rest.RestRequest;
         method = HttpMethod.DELETE,
         responseClass = APIDetachIsoFromVmInstanceEvent.class
 )
-public class APIDetachIsoFromVmInstanceMsg extends APIMessage implements VmInstanceMessage {
+public class APIDetachIsoFromVmInstanceMsg extends APIMessage implements VmInstanceMessage, APIAuditor {
     @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
     private String vmInstanceUuid;
+
+    // for audit purpose only
+    @APINoSee
+    public String isoUuid;
 
     @Override
     public String getVmInstanceUuid() {
@@ -51,4 +58,8 @@ public class APIDetachIsoFromVmInstanceMsg extends APIMessage implements VmInsta
     }
 
 
+    @Override
+    public Result audit(APIMessage msg, APIEvent rsp) {
+        return new Result(((APIDetachIsoFromVmInstanceMsg)msg).isoUuid, ImageVO.class);
+    }
 }

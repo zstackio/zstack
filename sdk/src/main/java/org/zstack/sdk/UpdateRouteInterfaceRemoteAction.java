@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class UpdateRouteInterfaceRemoteAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class UpdateRouteInterfaceRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateRouteInterfaceRemoteResult value;
+        public org.zstack.sdk.UpdateRouteInterfaceRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +57,8 @@ public class UpdateRouteInterfaceRemoteAction extends AbstractAction {
             return ret;
         }
         
-        UpdateRouteInterfaceRemoteResult value = res.getResult(UpdateRouteInterfaceRemoteResult.class);
-        ret.value = value == null ? new UpdateRouteInterfaceRemoteResult() : value; 
+        org.zstack.sdk.UpdateRouteInterfaceRemoteResult value = res.getResult(org.zstack.sdk.UpdateRouteInterfaceRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateRouteInterfaceRemoteResult() : value; 
 
         return ret;
     }
@@ -76,15 +77,15 @@ public class UpdateRouteInterfaceRemoteAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/hybrid/aliyun/router-interface/{uuid}/actions";

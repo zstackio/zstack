@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class GetHypervisorTypesAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class GetHypervisorTypesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetHypervisorTypesResult value;
+        public org.zstack.sdk.GetHypervisorTypesResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -41,8 +42,8 @@ public class GetHypervisorTypesAction extends AbstractAction {
             return ret;
         }
         
-        GetHypervisorTypesResult value = res.getResult(GetHypervisorTypesResult.class);
-        ret.value = value == null ? new GetHypervisorTypesResult() : value; 
+        org.zstack.sdk.GetHypervisorTypesResult value = res.getResult(org.zstack.sdk.GetHypervisorTypesResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetHypervisorTypesResult() : value; 
 
         return ret;
     }
@@ -61,15 +62,15 @@ public class GetHypervisorTypesAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/hosts/hypervisor-types";

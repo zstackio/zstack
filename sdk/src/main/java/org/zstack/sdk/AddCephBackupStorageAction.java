@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class AddCephBackupStorageAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class AddCephBackupStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AddBackupStorageResult value;
+        public org.zstack.sdk.AddBackupStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -71,8 +72,8 @@ public class AddCephBackupStorageAction extends AbstractAction {
             return ret;
         }
         
-        AddBackupStorageResult value = res.getResult(AddBackupStorageResult.class);
-        ret.value = value == null ? new AddBackupStorageResult() : value; 
+        org.zstack.sdk.AddBackupStorageResult value = res.getResult(org.zstack.sdk.AddBackupStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddBackupStorageResult() : value; 
 
         return ret;
     }
@@ -91,15 +92,15 @@ public class AddCephBackupStorageAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/backup-storage/ceph";

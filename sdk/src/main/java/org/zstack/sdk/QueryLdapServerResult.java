@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class QueryLdapServerResult {
-    public java.util.List<LdapServerInventory> inventories;
-    public void setInventories(java.util.List<LdapServerInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<LdapServerInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

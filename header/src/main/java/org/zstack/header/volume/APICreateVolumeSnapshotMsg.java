@@ -8,6 +8,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.notification.NotificationConstant;
+import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
@@ -49,7 +50,7 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
         responseClass = APICreateVolumeSnapshotEvent.class,
         parameterName = "params"
 )
-public class APICreateVolumeSnapshotMsg extends APICreateMessage implements VolumeMessage {
+public class APICreateVolumeSnapshotMsg extends APICreateMessage implements VolumeMessage, APIAuditor {
     /**
      * @desc volume uuid. See :ref:`VolumeInventory`
      */
@@ -116,4 +117,8 @@ public class APICreateVolumeSnapshotMsg extends APICreateMessage implements Volu
         };
     }
 
+    @Override
+    public Result audit(APIMessage msg, APIEvent rsp) {
+        return new Result(rsp.isSuccess() ? ((APICreateVolumeSnapshotEvent)rsp).getInventory().getUuid() : "", VolumeSnapshotVO.class);
+    }
 }

@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class AccountResourceRefInventory  {
 
     public java.lang.String accountUuid;

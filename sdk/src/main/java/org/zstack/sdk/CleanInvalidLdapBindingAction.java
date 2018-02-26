@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class CleanInvalidLdapBindingAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class CleanInvalidLdapBindingAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CleanInvalidLdapBindingResult value;
+        public org.zstack.sdk.CleanInvalidLdapBindingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +48,8 @@ public class CleanInvalidLdapBindingAction extends AbstractAction {
             return ret;
         }
         
-        CleanInvalidLdapBindingResult value = res.getResult(CleanInvalidLdapBindingResult.class);
-        ret.value = value == null ? new CleanInvalidLdapBindingResult() : value; 
+        org.zstack.sdk.CleanInvalidLdapBindingResult value = res.getResult(org.zstack.sdk.CleanInvalidLdapBindingResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CleanInvalidLdapBindingResult() : value; 
 
         return ret;
     }
@@ -67,15 +68,15 @@ public class CleanInvalidLdapBindingAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/ldap/bindings/actions";

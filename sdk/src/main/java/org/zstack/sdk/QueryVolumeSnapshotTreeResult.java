@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class QueryVolumeSnapshotTreeResult {
-    public java.util.List<VolumeSnapshotTreeInventory> inventories;
-    public void setInventories(java.util.List<VolumeSnapshotTreeInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<VolumeSnapshotTreeInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

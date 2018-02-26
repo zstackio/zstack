@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class PciDeviceMetaData  {
 
     public java.lang.String metaData;
@@ -10,11 +12,11 @@ public class PciDeviceMetaData  {
         return this.metaData;
     }
 
-    public java.util.List<PciDeviceMetaDataEntry> metaDataEntries;
-    public void setMetaDataEntries(java.util.List<PciDeviceMetaDataEntry> metaDataEntries) {
+    public java.util.List metaDataEntries;
+    public void setMetaDataEntries(java.util.List metaDataEntries) {
         this.metaDataEntries = metaDataEntries;
     }
-    public java.util.List<PciDeviceMetaDataEntry> getMetaDataEntries() {
+    public java.util.List getMetaDataEntries() {
         return this.metaDataEntries;
     }
 

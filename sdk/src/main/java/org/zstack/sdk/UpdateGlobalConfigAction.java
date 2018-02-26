@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class UpdateGlobalConfigAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class UpdateGlobalConfigAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateGlobalConfigResult value;
+        public org.zstack.sdk.UpdateGlobalConfigResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +57,8 @@ public class UpdateGlobalConfigAction extends AbstractAction {
             return ret;
         }
         
-        UpdateGlobalConfigResult value = res.getResult(UpdateGlobalConfigResult.class);
-        ret.value = value == null ? new UpdateGlobalConfigResult() : value; 
+        org.zstack.sdk.UpdateGlobalConfigResult value = res.getResult(org.zstack.sdk.UpdateGlobalConfigResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateGlobalConfigResult() : value; 
 
         return ret;
     }
@@ -76,15 +77,15 @@ public class UpdateGlobalConfigAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/global-configurations/{category}/{name}/actions";

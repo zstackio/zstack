@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteClusterAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteClusterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteClusterResult value;
+        public org.zstack.sdk.DeleteClusterResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DeleteClusterAction extends AbstractAction {
             return ret;
         }
         
-        DeleteClusterResult value = res.getResult(DeleteClusterResult.class);
-        ret.value = value == null ? new DeleteClusterResult() : value; 
+        org.zstack.sdk.DeleteClusterResult value = res.getResult(org.zstack.sdk.DeleteClusterResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteClusterResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DeleteClusterAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/clusters/{uuid}";

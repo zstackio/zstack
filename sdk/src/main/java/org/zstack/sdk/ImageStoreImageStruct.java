@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class ImageStoreImageStruct  {
 
     public java.lang.String id;

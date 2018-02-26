@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class MonitorTriggerActionInventory  {
 
     public java.lang.String uuid;
@@ -58,11 +60,11 @@ public class MonitorTriggerActionInventory  {
         return this.type;
     }
 
-    public java.util.List<String> triggerUuids;
-    public void setTriggerUuids(java.util.List<String> triggerUuids) {
+    public java.util.List triggerUuids;
+    public void setTriggerUuids(java.util.List triggerUuids) {
         this.triggerUuids = triggerUuids;
     }
-    public java.util.List<String> getTriggerUuids() {
+    public java.util.List getTriggerUuids() {
         return this.triggerUuids;
     }
 

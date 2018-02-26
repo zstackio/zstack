@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.L2NetworkInventory;
+
 public class DetachL2NetworkFromClusterResult {
     public L2NetworkInventory inventory;
     public void setInventory(L2NetworkInventory inventory) {

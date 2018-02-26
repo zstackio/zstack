@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class DataCenterProperty  {
 
     public java.lang.String regionId;

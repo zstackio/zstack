@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class SetVipQosAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class SetVipQosAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SetVipQosResult value;
+        public org.zstack.sdk.SetVipQosResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -59,8 +60,8 @@ public class SetVipQosAction extends AbstractAction {
             return ret;
         }
         
-        SetVipQosResult value = res.getResult(SetVipQosResult.class);
-        ret.value = value == null ? new SetVipQosResult() : value; 
+        org.zstack.sdk.SetVipQosResult value = res.getResult(org.zstack.sdk.SetVipQosResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SetVipQosResult() : value; 
 
         return ret;
     }
@@ -79,15 +80,15 @@ public class SetVipQosAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/vips/{uuid}/actions";

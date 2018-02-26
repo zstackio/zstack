@@ -35,4 +35,6 @@ public @interface APIParam {
     boolean noTrim() default false;
 
     boolean successIfResourceNotExisting() default false;
+
+    boolean password() default false;
 }

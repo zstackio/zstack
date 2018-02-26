@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class RevokeResourceSharingAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class RevokeResourceSharingAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public RevokeResourceSharingResult value;
+        public org.zstack.sdk.RevokeResourceSharingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -59,8 +60,8 @@ public class RevokeResourceSharingAction extends AbstractAction {
             return ret;
         }
         
-        RevokeResourceSharingResult value = res.getResult(RevokeResourceSharingResult.class);
-        ret.value = value == null ? new RevokeResourceSharingResult() : value; 
+        org.zstack.sdk.RevokeResourceSharingResult value = res.getResult(org.zstack.sdk.RevokeResourceSharingResult.class);
+        ret.value = value == null ? new org.zstack.sdk.RevokeResourceSharingResult() : value; 
 
         return ret;
     }
@@ -79,15 +80,15 @@ public class RevokeResourceSharingAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/accounts/resources/actions";

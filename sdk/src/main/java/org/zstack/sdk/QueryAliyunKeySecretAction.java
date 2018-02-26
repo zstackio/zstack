@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryAliyunKeySecretAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryAliyunKeySecretAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryAliyunKeySecretResult value;
+        public org.zstack.sdk.QueryAliyunKeySecretResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryAliyunKeySecretAction extends QueryAction {
             return ret;
         }
         
-        QueryAliyunKeySecretResult value = res.getResult(QueryAliyunKeySecretResult.class);
-        ret.value = value == null ? new QueryAliyunKeySecretResult() : value; 
+        org.zstack.sdk.QueryAliyunKeySecretResult value = res.getResult(org.zstack.sdk.QueryAliyunKeySecretResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryAliyunKeySecretResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QueryAliyunKeySecretAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/hybrid/aliyun/key";

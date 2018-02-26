@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteVirtualRouterLocalAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteVirtualRouterLocalAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteVirtualRouterLocalResult value;
+        public org.zstack.sdk.DeleteVirtualRouterLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DeleteVirtualRouterLocalAction extends AbstractAction {
             return ret;
         }
         
-        DeleteVirtualRouterLocalResult value = res.getResult(DeleteVirtualRouterLocalResult.class);
-        ret.value = value == null ? new DeleteVirtualRouterLocalResult() : value; 
+        org.zstack.sdk.DeleteVirtualRouterLocalResult value = res.getResult(org.zstack.sdk.DeleteVirtualRouterLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteVirtualRouterLocalResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DeleteVirtualRouterLocalAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/hybrid/aliyun/vrouter/{uuid}";

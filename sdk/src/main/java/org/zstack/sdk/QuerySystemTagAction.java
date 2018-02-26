@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QuerySystemTagAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QuerySystemTagAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QuerySystemTagResult value;
+        public org.zstack.sdk.QuerySystemTagResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QuerySystemTagAction extends QueryAction {
             return ret;
         }
         
-        QuerySystemTagResult value = res.getResult(QuerySystemTagResult.class);
-        ret.value = value == null ? new QuerySystemTagResult() : value; 
+        org.zstack.sdk.QuerySystemTagResult value = res.getResult(org.zstack.sdk.QuerySystemTagResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QuerySystemTagResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QuerySystemTagAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/system-tags";

@@ -5,9 +5,10 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
+import org.zstack.header.other.APIAuditor;
 import org.zstack.header.zone.ZoneVO;
 
-public abstract class APIAddPrimaryStorageMsg extends APICreateMessage {
+public abstract class APIAddPrimaryStorageMsg extends APICreateMessage implements APIAuditor {
     /**
      * @desc depending on primary storage, formats of url are various. For example, NFS primary storage
      * uses *server_ip:mount_path* as url. Max length of 2048 characters
@@ -81,6 +82,16 @@ public abstract class APIAddPrimaryStorageMsg extends APICreateMessage {
 
     public void setZoneUuid(String zoneUuid) {
         this.zoneUuid = zoneUuid;
+    }
+
+    public Result audit(APIMessage msg, APIEvent rsp) {
+        String resUuid = "";
+        if (rsp.isSuccess()) {
+            APIAddPrimaryStorageEvent evt = (APIAddPrimaryStorageEvent) rsp;
+            resUuid = evt.getInventory().getUuid();
+        }
+
+        return new Result(resUuid, PrimaryStorageVO.class);
     }
 
     public ApiNotification __notification__() {

@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class AttachL2NetworkToClusterAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class AttachL2NetworkToClusterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AttachL2NetworkToClusterResult value;
+        public org.zstack.sdk.AttachL2NetworkToClusterResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class AttachL2NetworkToClusterAction extends AbstractAction {
             return ret;
         }
         
-        AttachL2NetworkToClusterResult value = res.getResult(AttachL2NetworkToClusterResult.class);
-        ret.value = value == null ? new AttachL2NetworkToClusterResult() : value; 
+        org.zstack.sdk.AttachL2NetworkToClusterResult value = res.getResult(org.zstack.sdk.AttachL2NetworkToClusterResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AttachL2NetworkToClusterResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class AttachL2NetworkToClusterAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/l2-networks/{l2NetworkUuid}/clusters/{clusterUuid}";

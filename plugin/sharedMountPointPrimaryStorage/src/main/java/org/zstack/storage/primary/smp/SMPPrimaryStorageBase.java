@@ -64,6 +64,9 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
     @Autowired
     private SMPPrimaryStorageImageCacheCleaner imageCacheCleaner;
 
+    public SMPPrimaryStorageBase() {
+    }
+
     public SMPPrimaryStorageBase(PrimaryStorageVO self) {
         super(self);
     }

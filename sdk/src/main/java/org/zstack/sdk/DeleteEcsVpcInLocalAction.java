@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteEcsVpcInLocalAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteEcsVpcInLocalAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteEcsVpcInLocalResult value;
+        public org.zstack.sdk.DeleteEcsVpcInLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DeleteEcsVpcInLocalAction extends AbstractAction {
             return ret;
         }
         
-        DeleteEcsVpcInLocalResult value = res.getResult(DeleteEcsVpcInLocalResult.class);
-        ret.value = value == null ? new DeleteEcsVpcInLocalResult() : value; 
+        org.zstack.sdk.DeleteEcsVpcInLocalResult value = res.getResult(org.zstack.sdk.DeleteEcsVpcInLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteEcsVpcInLocalResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DeleteEcsVpcInLocalAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/hybrid/aliyun/vpc/{uuid}";

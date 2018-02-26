@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class UpdateIpRangeAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class UpdateIpRangeAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateIpRangeResult value;
+        public org.zstack.sdk.UpdateIpRangeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +57,8 @@ public class UpdateIpRangeAction extends AbstractAction {
             return ret;
         }
         
-        UpdateIpRangeResult value = res.getResult(UpdateIpRangeResult.class);
-        ret.value = value == null ? new UpdateIpRangeResult() : value; 
+        org.zstack.sdk.UpdateIpRangeResult value = res.getResult(org.zstack.sdk.UpdateIpRangeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateIpRangeResult() : value; 
 
         return ret;
     }
@@ -76,15 +77,15 @@ public class UpdateIpRangeAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/l3-networks/ip-ranges/{uuid}/actions";

@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class RevertVolumeFromSnapshotAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class RevertVolumeFromSnapshotAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public RevertVolumeFromSnapshotResult value;
+        public org.zstack.sdk.RevertVolumeFromSnapshotResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +51,8 @@ public class RevertVolumeFromSnapshotAction extends AbstractAction {
             return ret;
         }
         
-        RevertVolumeFromSnapshotResult value = res.getResult(RevertVolumeFromSnapshotResult.class);
-        ret.value = value == null ? new RevertVolumeFromSnapshotResult() : value; 
+        org.zstack.sdk.RevertVolumeFromSnapshotResult value = res.getResult(org.zstack.sdk.RevertVolumeFromSnapshotResult.class);
+        ret.value = value == null ? new org.zstack.sdk.RevertVolumeFromSnapshotResult() : value; 
 
         return ret;
     }
@@ -70,15 +71,15 @@ public class RevertVolumeFromSnapshotAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/volume-snapshots/{uuid}/actions";

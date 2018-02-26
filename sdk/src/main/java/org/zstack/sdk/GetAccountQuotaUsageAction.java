@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class GetAccountQuotaUsageAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class GetAccountQuotaUsageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetAccountQuotaUsageResult value;
+        public org.zstack.sdk.GetAccountQuotaUsageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -24,7 +25,7 @@ public class GetAccountQuotaUsageAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
     @Param(required = false)
@@ -44,8 +45,8 @@ public class GetAccountQuotaUsageAction extends AbstractAction {
             return ret;
         }
         
-        GetAccountQuotaUsageResult value = res.getResult(GetAccountQuotaUsageResult.class);
-        ret.value = value == null ? new GetAccountQuotaUsageResult() : value; 
+        org.zstack.sdk.GetAccountQuotaUsageResult value = res.getResult(org.zstack.sdk.GetAccountQuotaUsageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetAccountQuotaUsageResult() : value; 
 
         return ret;
     }
@@ -64,15 +65,15 @@ public class GetAccountQuotaUsageAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/accounts/quota/{uuid}/usages";

@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class ChangeMonitorTriggerStateAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class ChangeMonitorTriggerStateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ChangeMonitorTriggerStateResult value;
+        public org.zstack.sdk.ChangeMonitorTriggerStateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class ChangeMonitorTriggerStateAction extends AbstractAction {
             return ret;
         }
         
-        ChangeMonitorTriggerStateResult value = res.getResult(ChangeMonitorTriggerStateResult.class);
-        ret.value = value == null ? new ChangeMonitorTriggerStateResult() : value; 
+        org.zstack.sdk.ChangeMonitorTriggerStateResult value = res.getResult(org.zstack.sdk.ChangeMonitorTriggerStateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ChangeMonitorTriggerStateResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class ChangeMonitorTriggerStateAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/monitoring/triggers/{uuid}/actions";

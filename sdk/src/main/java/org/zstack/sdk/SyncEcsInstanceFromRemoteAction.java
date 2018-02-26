@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class SyncEcsInstanceFromRemoteAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class SyncEcsInstanceFromRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SyncEcsInstanceFromRemoteResult value;
+        public org.zstack.sdk.SyncEcsInstanceFromRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +57,8 @@ public class SyncEcsInstanceFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        SyncEcsInstanceFromRemoteResult value = res.getResult(SyncEcsInstanceFromRemoteResult.class);
-        ret.value = value == null ? new SyncEcsInstanceFromRemoteResult() : value; 
+        org.zstack.sdk.SyncEcsInstanceFromRemoteResult value = res.getResult(org.zstack.sdk.SyncEcsInstanceFromRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SyncEcsInstanceFromRemoteResult() : value; 
 
         return ret;
     }
@@ -76,15 +77,15 @@ public class SyncEcsInstanceFromRemoteAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/hybrid/aliyun/ecs/{dataCenterUuid}/sync";

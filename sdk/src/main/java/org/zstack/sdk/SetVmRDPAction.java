@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class SetVmRDPAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class SetVmRDPAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SetVmRDPResult value;
+        public org.zstack.sdk.SetVmRDPResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class SetVmRDPAction extends AbstractAction {
             return ret;
         }
         
-        SetVmRDPResult value = res.getResult(SetVmRDPResult.class);
-        ret.value = value == null ? new SetVmRDPResult() : value; 
+        org.zstack.sdk.SetVmRDPResult value = res.getResult(org.zstack.sdk.SetVmRDPResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SetVmRDPResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class SetVmRDPAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/vm-instances/{uuid}/actions";

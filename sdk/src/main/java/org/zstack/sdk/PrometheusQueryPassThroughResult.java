@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class PrometheusQueryPassThroughResult {
     public java.util.Map inventories;
     public void setInventories(java.util.Map inventories) {

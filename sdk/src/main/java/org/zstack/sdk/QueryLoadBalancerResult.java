@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class QueryLoadBalancerResult {
-    public java.util.List<LoadBalancerInventory> inventories;
-    public void setInventories(java.util.List<LoadBalancerInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<LoadBalancerInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

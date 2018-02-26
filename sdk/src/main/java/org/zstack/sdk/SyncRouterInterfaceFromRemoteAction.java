@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class SyncRouterInterfaceFromRemoteAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class SyncRouterInterfaceFromRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SyncRouterInterfaceFromRemoteResult value;
+        public org.zstack.sdk.SyncRouterInterfaceFromRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class SyncRouterInterfaceFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        SyncRouterInterfaceFromRemoteResult value = res.getResult(SyncRouterInterfaceFromRemoteResult.class);
-        ret.value = value == null ? new SyncRouterInterfaceFromRemoteResult() : value; 
+        org.zstack.sdk.SyncRouterInterfaceFromRemoteResult value = res.getResult(org.zstack.sdk.SyncRouterInterfaceFromRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SyncRouterInterfaceFromRemoteResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class SyncRouterInterfaceFromRemoteAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/hybrid/aliyun/router-interface/{dataCenterUuid}/sync";

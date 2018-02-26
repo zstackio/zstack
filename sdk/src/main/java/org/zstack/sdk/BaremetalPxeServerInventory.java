@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class BaremetalPxeServerInventory  {
 
     public java.lang.String uuid;

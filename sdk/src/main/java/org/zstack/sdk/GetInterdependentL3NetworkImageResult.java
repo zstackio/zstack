@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class GetInterdependentL3NetworkImageResult {
     public java.util.List inventories;
     public void setInventories(java.util.List inventories) {

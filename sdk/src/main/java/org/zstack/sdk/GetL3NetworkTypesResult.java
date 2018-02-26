@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class GetL3NetworkTypesResult {
-    public java.util.List<String> types;
-    public void setTypes(java.util.List<String> types) {
+    public java.util.List types;
+    public void setTypes(java.util.List types) {
         this.types = types;
     }
-    public java.util.List<String> getTypes() {
+    public java.util.List getTypes() {
         return this.types;
     }
 

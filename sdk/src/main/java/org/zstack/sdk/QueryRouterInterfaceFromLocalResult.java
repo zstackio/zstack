@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class QueryRouterInterfaceFromLocalResult {
-    public java.util.List<VirtualRouterInterfaceInventory> inventories;
-    public void setInventories(java.util.List<VirtualRouterInterfaceInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<VirtualRouterInterfaceInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 
