@@ -50,14 +50,6 @@ public class BaremetalChassisInventory  {
         return this.ipmiUsername;
     }
 
-    public java.lang.String ipmiPassword;
-    public void setIpmiPassword(java.lang.String ipmiPassword) {
-        this.ipmiPassword = ipmiPassword;
-    }
-    public java.lang.String getIpmiPassword() {
-        return this.ipmiPassword;
-    }
-
     public java.lang.String status;
     public void setStatus(java.lang.String status) {
         this.status = status;
