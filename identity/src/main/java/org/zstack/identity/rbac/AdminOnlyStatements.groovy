@@ -1,14 +1,24 @@
 package org.zstack.identity.rbac
 
+import org.zstack.header.identity.rbac.RBACInfo
+
 import java.util.regex.Pattern
 
 class AdminOnlyStatements {
-    private Pattern p(String s) {
+    private static Pattern p(String s) {
         return Pattern.compile(s)
     }
+
+    static {
+        RBACInfo.infos.each { info ->
+            info.adminOnlyAPIs.each {
+                actionStatements.add(p(it))
+            }
+        }
+    }
     
-    List<Pattern> actionStatements =[
-            p("^org.zstack.header.host.*"),
+    static List<Pattern> actionStatements =[
+            //p("^org.zstack.header.host.*"),
             p("^org.zstack.header.zone.*"),
             p("^org.zstack.header.cluster.*"),
             p("^org.zstack.header.storage.backup.*"),
@@ -52,7 +62,7 @@ class AdminOnlyStatements {
 
     ]
 
-    List<Pattern> getActionStatements() {
+    static List<Pattern> getActionStatements() {
         return actionStatements
     }
 

@@ -3,6 +3,7 @@ package org.zstack.identity
 import org.zstack.header.identity.AccountConstant
 import org.zstack.header.identity.InternalPolicy
 import org.zstack.header.identity.PolicyInventory
+import org.zstack.header.identity.rbac.RBACInfo
 import org.zstack.identity.rbac.InternalPolicyDefiner
 
 class SystemInternalPolicy implements InternalPolicy {
@@ -13,15 +14,27 @@ class SystemInternalPolicy implements InternalPolicy {
                 name = "system-internal-policy"
 
                 statement {
+                    effect = AccountConstant.StatementEffect.Deny
+
+                    RBACInfo.infos.each { info ->
+                        info.adminOnlyAPIs.each { action(it) }
+                    }
+                }
+
+                statement {
                     name = "normal-account-allowed-apis"
                     effect = AccountConstant.StatementEffect.Allow
+
+                    RBACInfo.infos.each { info ->
+                        info.normalAPIs.each { action(it) }
+                    }
 
                     action("org.zstack.appliancevm.*")
                     action("org.zstack.header.console.APIRequestConsoleAccessMsg")
                     action("org.zstack.network.service.eip.*")
-                    action("org.zstack.header.identity.(?!APICreateAccountMsg|APIUpdateAccountMsg|APIShareResourceMsg" +
+                    action("org.zstack.header.identity.*(?<!APICreateAccountMsg|APIUpdateAccountMsg|APIShareResourceMsg" +
                             "|APIRevokeResourceSharingMsg|APIUpdateQuotaMsg|APIQueryAccountMsg" +
-                            "|APIQuerySharedResourceMsg|APIChangeResourceOwnerMsg).*")
+                            "|APIQuerySharedResourceMsg|APIChangeResourceOwnerMsg|APIAttachRoleToAccountMsg|APIDetachRoleFromAccountMsg)")
                     action("org.zstack.header.network.l3.*")
                     action("org.zstack.network.service.lb.*")
                     action("org.zstack.header.longjob.*")

@@ -7,6 +7,7 @@ import org.zstack.header.message.APIMessage
 import org.zstack.header.rest.RestRequest
 import org.zstack.identity.rbac.AdminOnlyStatements
 import org.zstack.identity.rbac.RBACAPIRequestChecker
+import org.zstack.identity.rbac.RBACManager
 import org.zstack.sdk.SessionInventory
 import org.zstack.test.integration.ZStackTest
 import org.zstack.testlib.EnvSpec
@@ -14,6 +15,7 @@ import org.zstack.testlib.SubCase
 import org.zstack.utils.BeanUtils
 
 import java.lang.reflect.Modifier
+import java.util.regex.Pattern
 
 class RBACAPIRequestCheckerCase extends SubCase {
     EnvSpec env
@@ -79,10 +81,16 @@ class RBACAPIRequestCheckerCase extends SubCase {
             && it.isAnnotationPresent(RestRequest.class) && !it.isAnnotationPresent(Deprecated.class)
         }
 
-        def adminOnlyStatements = new AdminOnlyStatements()
-
         apis.each { apiclz ->
-            boolean adminOnly = adminOnlyStatements.getActionStatements().any { it.matcher(apiclz.name).matches() }
+            boolean adminOnly = RBACManager.internalDenyStatements.any {_, statements ->
+                return statements.any { s ->
+                    return s.actions.any { Pattern.compile(it).matcher(apiclz.name).matches() }
+                }
+            } && !RBACManager.internalAllowStatements.any {_, statements ->
+                return statements.any { s ->
+                    return s.actions.any { Pattern.compile(it).matcher(apiclz.name).matches() }
+                }
+            }
 
             doAdminCheck(apiclz, a)
             doNormalAccountCheck(apiclz, n, adminOnly)

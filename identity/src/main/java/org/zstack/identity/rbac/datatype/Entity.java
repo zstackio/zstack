@@ -1,6 +1,6 @@
 package org.zstack.identity.rbac.datatype;
 
-import org.zstack.core.StaticInit;
+import org.zstack.header.core.StaticInit;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.search.Inventory;

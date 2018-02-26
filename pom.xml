@@ -9,6 +9,8 @@
         <hibernate.version>5.1.0.Final</hibernate.version>
         <aspectj.version>1.8.7</aspectj.version>
         <aspectj.plugin.version>1.8</aspectj.plugin.version>
+        <groovy.eclipse.compiler>2.9.2-01</groovy.eclipse.compiler>
+        <groovy.eclipse.batch>2.4.3-01</groovy.eclipse.batch>
     </properties>
 
     <modelVersion>4.0.0</modelVersion>
@@ -380,6 +382,11 @@
                 <groupId>org.xerial</groupId>
                 <artifactId>sqlite-jdbc</artifactId>
                 <version>3.20.0</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.lanwen.verbalregex</groupId>
+                <artifactId>java-verbal-expressions</artifactId>
+                <version>1.5</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

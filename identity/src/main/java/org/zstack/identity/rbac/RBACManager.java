@@ -18,13 +18,15 @@ public interface RBACManager {
     String SERVICE_ID = "rbac";
 
     List<PolicyInventory> internalPolices = new ArrayList<>();
+    Map<PolicyInventory, List<PolicyInventory.Statement>> internalDenyStatements = new HashMap<>();
+    Map<PolicyInventory, List<PolicyInventory.Statement>> internalAllowStatements = new HashMap<>();
 
     static List<PolicyInventory> getPoliciesByAPI(APIMessage message) {
         return new SQLBatchWithReturn<List<PolicyInventory>>() {
             @Override
             protected List<PolicyInventory> scripts() {
                 SessionInventory session = message.getSession();
-                List<PolicyInventory> ret = new ArrayList<>(internalPolices);
+                List<PolicyInventory> ret = new ArrayList<>();
                 if (session.isAccountSession()) {
                     ret.addAll(getPoliciesForAccount(session));
                 } else {

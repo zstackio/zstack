@@ -10,6 +10,7 @@ import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.InternalPolicy;
+import org.zstack.header.identity.PolicyInventory;
 import org.zstack.header.identity.role.*;
 import org.zstack.header.identity.role.api.*;
 import org.zstack.header.message.APIMessage;
@@ -17,6 +18,9 @@ import org.zstack.header.message.Message;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+
+import java.util.List;
+import java.util.regex.Pattern;
 
 public class RBACManagerImpl extends AbstractService implements RBACManager, Component {
     private static final CLogger logger = Utils.getLogger(RBACManagerImpl.class);
@@ -50,11 +54,45 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
         BeanUtils.reflections.getSubTypesOf(InternalPolicy.class).forEach(clz -> {
             try {
                 InternalPolicy p = clz.newInstance();
-                internalPolices.addAll(p.getPolices());
+
+                List<PolicyInventory> pis = p.getPolices();
+
+                for (PolicyInventory pi : pis) {
+                    for (PolicyInventory.Statement statement : pi.getStatements()) {
+                        if (statement.getActions() != null) {
+                            for (String s : statement.getActions()) {
+                                try {
+                                    Pattern.compile(s);
+                                } catch (Exception e) {
+                                    throw new CloudRuntimeException(String.format("invalid action[%s] defined by %s, it's not a regular expression string",
+                                            s, clz), e);
+                                }
+                            }
+                        }
+
+                        if (statement.getResources() != null) {
+                            for (String r : statement.getResources()) {
+                                try {
+                                    Pattern.compile(r);
+                                } catch (Exception e) {
+                                    throw new CloudRuntimeException(String.format("invalid resource[%s] defined by %s, it's not a regular expression string",
+                                            r, clz), e);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                internalPolices.addAll(pis);
+            } catch (CloudRuntimeException e) {
+                throw e;
             } catch (Exception e) {
                 throw new CloudRuntimeException(e);
             }
         });
+
+        internalAllowStatements.putAll(RBACManager.collectAllowedStatements(internalPolices));
+        internalDenyStatements.putAll(RBACManager.collectDenyStatements(internalPolices));
     }
 
     private void handleLocalMessage(Message msg) {

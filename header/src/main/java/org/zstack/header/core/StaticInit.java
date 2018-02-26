@@ -1,4 +1,4 @@
-package org.zstack.core;
+package org.zstack.header.core;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;

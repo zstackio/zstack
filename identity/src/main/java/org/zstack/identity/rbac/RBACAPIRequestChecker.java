@@ -18,6 +18,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.map;
+
 public class RBACAPIRequestChecker implements APIRequestChecker {
     private static final CLogger logger = Utils.getLogger(RBACAPIRequestChecker.class);
 
@@ -29,7 +32,21 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
         check();
     }
 
+    /**
+     * rule evaluation order:
+     * 1. if any internal policy allows the message, allow
+     * 2. if any internal policy denies the message, deny
+     * 3. if any user defined policy denies the message, deny
+     * 4. if any user defined policy allows the mssage, allow
+     * 5. then deny by default
+     */
     private void check() {
+        if (evalAllowStatements(RBACManager.internalAllowStatements)) {
+            return;
+        }
+
+        evalDenyStatements(RBACManager.internalDenyStatements);
+
         List<PolicyInventory> polices = RBACManager.getPoliciesByAPI(message);
         Map<PolicyInventory, List<PolicyInventory.Statement>> denyStatements = RBACManager.collectDenyStatements(polices);
         Map<PolicyInventory, List<PolicyInventory.Statement>> allowStatements = RBACManager.collectAllowedStatements(polices);
@@ -57,7 +74,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
                     if (evalAllowStatement(as)) {
                         if (logger.isTraceEnabled()) {
                             logger.trace(String.format("[RBAC] policy[name:%s, uuid:%s]'s statement[%s] allows the API:\n%s", policy.getName(),
-                                    policy.getUuid(), statement, JSONObjectUtil.toJsonString(message)));
+                                    policy.getUuid(), as, JSONObjectUtil.toJsonString(map(e(message.getClass().getName(), message)) )));
                         }
                         return true;
                     }
