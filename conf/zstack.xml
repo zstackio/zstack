@@ -31,6 +31,7 @@
     <bean id="messageSource" class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
         <property name="basename" value="i18n/messages"></property>
         <property name="defaultEncoding" value="UTF-8"></property>
+        <property name="alwaysUseMessageFormat" value="true"></property>
     </bean>
 
     <import resource="springConfigXml/AccountManager.xml"/>

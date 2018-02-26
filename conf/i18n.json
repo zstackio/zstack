@@ -18,7 +18,7 @@
   {
     "raw": "Bucket name is already existed (maybe created by other user), Please select a different name and try again.(aliyun request-id: %s)",
     "en_US": "Bucket name is already existed (maybe created by other user), Please select a different name and try again.(aliyun request-id: {0})",
-    "zh_CN": "Bucket名称已经存在（可能已经被别的用户使用了），请尝试使用一个新的命名。（阿里云请求ID：{0}）",
+    "zh_CN": "Bucket名称已经存在（可能已经被别的用户使用了），请尝试使用一个新的命名。（阿里云请求ID: {0}）",
     "arguments": [
       "e.getRequestId()"
     ],
@@ -64,7 +64,7 @@
   {
     "raw": "ecs image existed remote and local, ecs image uuid: %s, name: %s, created time: %s",
     "en_US": "ecs image existed remote and local, ecs image uuid: {0}, name: {1}, created time: {2}",
-    "zh_CN": "云主机镜像存在于阿里云服务器和本地，云主机镜像的uuid：{0}，名称：{1}，创建时间：{2}",
+    "zh_CN": "云主机镜像存在于阿里云服务器和本地，云主机镜像的uuid: {0}，名称: {1}，创建时间: {2}",
     "arguments": [
       "eivo.getUuid()",
       "eivo.getName()",
@@ -76,7 +76,7 @@
   {
     "raw": "ecs image existed remote, name: %s, created time: %s",
     "en_US": "ecs image existed remote, name: {0}, created time: {1}",
-    "zh_CN": "云主机镜像已经存在于阿里云服务器上，名称：{0}，创建时间：{1}",
+    "zh_CN": "云主机镜像已经存在于阿里云服务器上，名称: {0}，创建时间: {1}",
     "arguments": [
       "msg.getName()",
       "new SimpleDateFormat(\"yyyy/MM/dd HH:mm:ss\").format(HybridUtilsForAliyun.fmtTime(rpl.getCreateDate()))"
@@ -95,7 +95,7 @@
   {
     "raw": "no system disk found for ecs: [%s], ecs id is: [%s]",
     "en_US": "no system disk found for ecs: [{0}], ecs id is: [{1}]",
-    "zh_CN": "没有系统云盘可用来创建云主机，云主机id是：[{1}]",
+    "zh_CN": "没有系统云盘可用来创建云主机，云主机id是: [{1}]",
     "arguments": [
       "ecs.getUuid()",
       "ecs.getEcsInstanceId()"
@@ -116,7 +116,7 @@
   {
     "raw": "Only postpaid ecs support delete remote, the indicate ecs charge type is: %s",
     "en_US": "Only postpaid ecs support delete remote, the indicate ecs charge type is: {0}",
-    "zh_CN": "只有已付费的云主机支持删除，目前云主机付费状态是：{0}",
+    "zh_CN": "只有已付费的云主机支持删除，目前云主机付费状态是: {0}",
     "arguments": [
       "evo.getChargeType().toString()"
     ],
@@ -133,8 +133,8 @@
   },
   {
     "raw": "vSwitch availableIpAddress is not enough, now is (%d)",
-    "en_US": "vSwitch availableIpAddress is not enough, now is (%d)",
-    "zh_CN": "虚拟交换机可用IP地址不够，现有IP地址数量(%d)",
+    "en_US": "vSwitch availableIpAddress is not enough, now is ({0})",
+    "zh_CN": "虚拟交换机可用IP地址不够，现有IP地址数量({0})",
     "arguments": [
       "evo.getAvailableIpAddressCount()"
     ],
@@ -144,7 +144,7 @@
   {
     "raw": "%s is not in cidr range: %s",
     "en_US": "{0} is not in cidr range: {1}",
-    "zh_CN": "{0}没有在CIDR范围中：{1}",
+    "zh_CN": "{0}没有在CIDR范围中: {1}",
     "arguments": [
       "privateIp",
       "cidr"
@@ -155,7 +155,7 @@
   {
     "raw": "private ip is existed in vswitch: %s, allocated to ecs: %s",
     "en_US": "private ip is existed in vswitch: {0}, allocated to ecs: {1}",
-    "zh_CN": "私有IP已经存在虚拟交换机中：{0}，已分配给云主机：{1}",
+    "zh_CN": "私有IP已经存在虚拟交换机中: {0}，已分配给云主机: {1}",
     "arguments": [
       "vSwitchUuid",
       "ecs.getUuid()"
@@ -203,7 +203,7 @@
   {
     "raw": "decode url failed: %s",
     "en_US": "decode url failed: {0}",
-    "zh_CN": "url解码失败：{0}",
+    "zh_CN": "url解码失败: {0}",
     "arguments": [
       "rly1.getVncUrl()"
     ],
@@ -231,7 +231,7 @@
   {
     "raw": "modify-ecs-[%s]-console-vnc-password-failed, due to [code: %s, details: %s]",
     "en_US": "modify-ecs-[{0}]-console-vnc-password-failed, due to [code: {1}, details: {2}]",
-    "zh_CN": "修改云主机[{0}]控制台vnc密码失败，原因是[错误代码：{1}，详情：{2}]",
+    "zh_CN": "修改云主机[{0}]控制台vnc密码失败，原因是[错误代码: {1}，详情: {2}]",
     "arguments": [
       "ecs.getUuid()",
       "reply.getError().getCode()",
@@ -332,7 +332,7 @@
   {
     "raw": "valid platform:[%s] for aliyun image import, valid value are: [%s]",
     "en_US": "valid platform:[{0}] for aliyun image import, valid value are: [{1}]",
-    "zh_CN": "有效的导入阿里云镜像平台：[{0}]，有效值是[{1}]",
+    "zh_CN": "有效的导入阿里云镜像平台: [{0}]，有效值是[{1}]",
     "arguments": [
       "platform",
       "EcsImageConstant.ECS_IMAGE_PLATFORM.getValid()"
@@ -385,7 +385,7 @@
   {
     "raw": "virtual border: %s has been deleted",
     "en_US": "virtual border: {0} has been deleted",
-    "zh_CN": "边界路由器：{0}已经被删除",
+    "zh_CN": "边界路由器: {0}已经被删除",
     "arguments": [
       "msg.getUuid()"
     ],
@@ -417,7 +417,7 @@
   {
     "raw": "Vbr: [%s] is in create connection progress, please wait...",
     "en_US": "Vbr: [{0}] is in create connection progress, please wait...",
-    "zh_CN": "虚拟边界路由器：[{0}]正在创建连接中，请稍后...",
+    "zh_CN": "虚拟边界路由器: [{0}]正在创建连接中，请稍后...",
     "arguments": [
       "msg.getVbrUuid()"
     ],
@@ -501,7 +501,7 @@
   {
     "raw": "no such vpc found for: %s",
     "en_US": "no such vpc found for: {0}",
-    "zh_CN": "未找到该VPC：{0}",
+    "zh_CN": "未找到该VPC: {0}",
     "arguments": [
       "msg.getUuid()"
     ],
@@ -511,7 +511,7 @@
   {
     "raw": "no such vm found for: %s",
     "en_US": "no such vm found for: {0}",
-    "zh_CN": "没有找到该云主机：{0}",
+    "zh_CN": "没有找到该云主机: {0}",
     "arguments": [
       "msg.getUuid()"
     ],
@@ -521,7 +521,7 @@
   {
     "raw": "no such vbr found for: %s",
     "en_US": "no such vbr found for: {0}",
-    "zh_CN": "没有找到该虚拟边界路由器：{0}",
+    "zh_CN": "没有找到该虚拟边界路由器: {0}",
     "arguments": [
       "msg.getUuid()"
     ],
@@ -531,7 +531,7 @@
   {
     "raw": "no such l3network found for: %s",
     "en_US": "no such l3network found for: {0}",
-    "zh_CN": "没有找到该三层网络：{0}",
+    "zh_CN": "没有找到该三层网络: {0}",
     "arguments": [
       "msg.getUuid()"
     ],
@@ -541,7 +541,7 @@
   {
     "raw": "not a supported resource type: %s",
     "en_US": "not a supported resource type: {0}",
-    "zh_CN": "不支持资源类型：{0}",
+    "zh_CN": "不支持资源类型: {0}",
     "arguments": [
       "msg.getResourceType()"
     ],
@@ -1155,15 +1155,10 @@
     "fileName": "src/main/java/org/zstack/baremetal/power/BaremetalChassisApiInterceptor.java"
   },
   {
-    "raw": "Cannot reach remote server with IPMI address %s, IPMI port %s, IPMI username %s, IPMI password %s",
-    "en_US": "Cannot reach remote server with IPMI address {0}, IPMI port {1}, IPMI username {2}, IPMI password {3}",
-    "zh_CN": "通过IPMI地址{0}，IPMI端口{1}，IPMI用户名{2}，IPMI密码{3}无法连接远程服务",
-    "arguments": [
-      "address",
-      "port",
-      "username",
-      "password"
-    ],
+    "raw": "Please make sure the IPMI Address, Port, Username and Password of remote server are correct.",
+    "en_US": "Please make sure the IPMI Address, Port, Username and Password of remote server are correct.",
+    "zh_CN": "请确认远程服务的IPMI地址、端口、用户名和密码是否正确",
+    "arguments": [],
     "line": 71,
     "fileName": "src/main/java/org/zstack/baremetal/power/BaremetalChassisApiInterceptor.java"
   },
@@ -1175,7 +1170,7 @@
       "address",
       "port"
     ],
-    "line": 91,
+    "line": 90,
     "fileName": "src/main/java/org/zstack/baremetal/power/BaremetalChassisApiInterceptor.java"
   },
   {
@@ -1186,7 +1181,7 @@
       "address",
       "port"
     ],
-    "line": 117,
+    "line": 116,
     "fileName": "src/main/java/org/zstack/baremetal/power/BaremetalChassisApiInterceptor.java"
   },
   {
@@ -1196,7 +1191,7 @@
     "arguments": [
       "uuid"
     ],
-    "line": 127,
+    "line": 126,
     "fileName": "src/main/java/org/zstack/baremetal/power/BaremetalChassisApiInterceptor.java"
   },
   {
@@ -1531,7 +1526,7 @@
     "en_US": "host is connecting",
     "zh_CN": "物理机正在连接",
     "arguments": [],
-    "line": 563,
+    "line": 557,
     "fileName": "src/main/java/org/zstack/compute/host/HostBase.java"
   },
   {
@@ -1582,7 +1577,7 @@
   {
     "raw": "not system tag found on vm, vm must have the following system tag: qemuga, if you installed qemu-ga yourself, please use CreateSystemTag first.",
     "en_US": "not system tag found on vm, vm must have the following system tag: qemuga, if you installed qemu-ga yourself, please use CreateSystemTag first.",
-    "zh_CN": "没有发现系统标签在云主机上，云主机必须有系统标签：qemuga。如果你已经安装了qemu-ga，请先使用 CreateSystemTag",
+    "zh_CN": "没有发现系统标签在云主机上，云主机必须有系统标签: qemuga。如果你已经安装了qemu-ga，请先使用 CreateSystemTag",
     "arguments": [],
     "line": 51,
     "fileName": "src/main/java/org/zstack/compute/vm/ChangeVmPasswordFlow.java"
@@ -1612,7 +1607,7 @@
     "arguments": [
       "mac"
     ],
-    "line": 68,
+    "line": 80,
     "fileName": "src/main/java/org/zstack/compute/vm/MacOperator.java"
   },
   {
@@ -1622,7 +1617,7 @@
     "arguments": [
       "mac"
     ],
-    "line": 78,
+    "line": 90,
     "fileName": "src/main/java/org/zstack/compute/vm/MacOperator.java"
   },
   {
@@ -1630,7 +1625,7 @@
     "en_US": "Disallowed address",
     "zh_CN": "不被允许的MAC地址",
     "arguments": [],
-    "line": 81,
+    "line": 93,
     "fileName": "src/main/java/org/zstack/compute/vm/MacOperator.java"
   },
   {
@@ -1640,7 +1635,7 @@
     "arguments": [
       "mac"
     ],
-    "line": 84,
+    "line": 96,
     "fileName": "src/main/java/org/zstack/compute/vm/MacOperator.java"
   },
   {
@@ -1650,7 +1645,7 @@
     "arguments": [
       "lowercaseMac"
     ],
-    "line": 87,
+    "line": 99,
     "fileName": "src/main/java/org/zstack/compute/vm/MacOperator.java"
   },
   {
@@ -1692,7 +1687,7 @@
   {
     "raw": "cannot find the iso[uuid:%s] in any connected backup storage attached to the zone[uuid:%s]. check below:\n1. if the backup storage is attached to the zone where the VM[name: %s, uuid:%s] is running\n2. if the backup storage is in connected status, if not, try reconnecting it",
     "en_US": "cannot find the iso[uuid:{0}] in any connected backup storage attached to the zone[uuid:{1}]. check below:\n1. if the backup storage is attached to the zone where the VM[name: {2}, uuid:{3}] is running\n2. if the backup storage is in connected status, if not, try reconnecting it",
-    "zh_CN": "不能发现iso[uuid:{0}]在任何已经挂载到集群[uuid:{1}]上的并且处于Connected状态备份的镜像服务器。可以进行对以下选项的检查：1. 镜像服务器是否已经挂载到区域中的任何运行状态的云主机[name: {2}, uuid:{3}]上；2. 如果镜像服务器不是处于连接状态，请尝试重连",
+    "zh_CN": "不能发现iso[uuid:{0}]在任何已经挂载到集群[uuid:{1}]上的并且处于Connected状态备份的镜像服务器。可以进行对以下选项的检查: 1. 镜像服务器是否已经挂载到区域中的任何运行状态的云主机[name: {2}, uuid:{3}]上；2. 如果镜像服务器不是处于连接状态，请尝试重连",
     "arguments": [
       "iso.getUuid()",
       "host.getZoneUuid()",
@@ -1705,7 +1700,7 @@
   {
     "raw": "cannot find the image[uuid:%s] in any connected backup storage. check below:\n1. if the backup storage is attached to the zone where the VM[name: %s, uuid:%s] is in\n2. if the backup storage is in connected status, if not, try reconnecting it",
     "en_US": "cannot find the image[uuid:{0}] in any connected backup storage. check below:\n1. if the backup storage is attached to the zone where the VM[name: {1}, uuid:{2}] is in\n2. if the backup storage is in connected status, if not, try reconnecting it",
-    "zh_CN": "不能发现镜像[uuid:{0}]在任何处于Connected状态备份的镜像服务器。可以进行对以下选项的检查：1. 镜像服务器是否已经过载到区域中的云主机[name: {1}, uuid:{2}]中；2. 如果镜像服务器不是处于连接状态，请尝试重连",
+    "zh_CN": "不能发现镜像[uuid:{0}]在任何处于Connected状态备份的镜像服务器。可以进行对以下选项的检查: 1. 镜像服务器是否已经过载到区域中的云主机[name: {1}, uuid:{2}]中；2. 如果镜像服务器不是处于连接状态，请尝试重连",
     "arguments": [
       "imageUuid",
       "spec.getVmInventory().getName()",
@@ -1717,7 +1712,7 @@
   {
     "raw": "cannot find the image[uuid:%s] in any connected backup storage attached to the zone[uuid:%s]. check below:\n1. if the backup storage is attached to the zone where the VM[name: %s, uuid:%s] is in\n2. if the backup storage is in connected status, if not, try reconnecting it",
     "en_US": "cannot find the image[uuid:{0}] in any connected backup storage attached to the zone[uuid:{1}]. check below:\n1. if the backup storage is attached to the zone where the VM[name: {2}, uuid:{3}] is in\n2. if the backup storage is in connected status, if not, try reconnecting it",
-    "zh_CN": "不能发现镜像[uuid:{0}]在任何已经挂载到集群[uuid:{1}]上的并且处于Connected状态备份的镜像服务器。可以进行对以下选项的检查：1. 镜像服务器是否已经过载到区域中的云主机[name: {2}, uuid:{3}]中；2. 如果镜像服务器不是处于Connected状态，请尝试重连",
+    "zh_CN": "不能发现镜像[uuid:{0}]在任何已经挂载到集群[uuid:{1}]上的并且处于Connected状态备份的镜像服务器。可以进行对以下选项的检查: 1. 镜像服务器是否已经过载到区域中的云主机[name: {2}, uuid:{3}]中；2. 如果镜像服务器不是处于Connected状态，请尝试重连",
     "arguments": [
       "imageUuid",
       "spec.getVmInventory().getZoneUuid()",
@@ -2169,7 +2164,7 @@
   {
     "raw": "failed to handle abnormal lifecycle of the vm[uuid:%s, original state: %s, current state:%s,original host: %s, current host: %s], %s",
     "en_US": "failed to handle abnormal lifecycle of the vm[uuid:{0}, original state: {1}, current state:{2},original host: {3}, current host: {4}], {5}",
-    "zh_CN": "处理云主机[uuid:{0}, original state: {1}, current state:{2},original host: {3}, current host: {4}]的异常生命周期失败，原因：{5}",
+    "zh_CN": "处理云主机[uuid:{0}, original state: {1}, current state:{2},original host: {3}, current host: {4}]的异常生命周期失败，原因: {5}",
     "arguments": [
       "self.getUuid()",
       "originalState",
@@ -2208,7 +2203,7 @@
   {
     "raw": "host[uuid:%s] capacity is not enough to offer cpu[%s], memory[%s bytes]",
     "en_US": "host[uuid:{0}] capacity is not enough to offer cpu[{1}], memory[{2} bytes]",
-    "zh_CN": "物理机[uuid:{0}]无法提供CPU：[{1}]，内存：[{2} bytes]",
+    "zh_CN": "物理机[uuid:{0}]无法提供CPU: [{1}]，内存: [{2} bytes]",
     "arguments": [
       "self.getHostUuid()",
       "cpuNum - oldCpuNum",
@@ -2660,7 +2655,7 @@
   {
     "raw": "failed to delete a console proxy[vmUuid:%s, host IP: %s, host port: %s, proxy IP: %s, proxy port: %s], %s",
     "en_US": "failed to delete a console proxy[vmUuid:{0}, host IP: {1}, host port: {2}, proxy IP: {3}, proxy port: {4}], {5}",
-    "zh_CN": "无法删除控制台代理[vmUuid:{0}, host IP: {1}, host port: {2}, proxy IP: {3}, proxy port: {4}]]，原因：{5}",
+    "zh_CN": "无法删除控制台代理[vmUuid:{0}, host IP: {1}, host port: {2}, proxy IP: {3}, proxy port: {4}]]，原因: {5}",
     "arguments": [
       "vm.getUuid()",
       "vo.getTargetHostname()",
@@ -2686,7 +2681,7 @@
   {
     "raw": "unable to ping the console proxy agent[uuid:%s], %s",
     "en_US": "unable to ping the console proxy agent[uuid:{0}], {1}",
-    "zh_CN": "无法ping通控制台代理[uuid:{0}]，原因：{1}",
+    "zh_CN": "无法ping通控制台代理[uuid:{0}]，原因: {1}",
     "arguments": [
       "resourceUuid",
       "reply.getError()"
@@ -2707,7 +2702,7 @@
   {
     "raw": "failed to reconnect console proxy agent[uuid:%s], %s",
     "en_US": "failed to reconnect console proxy agent[uuid:{0}], {1}",
-    "zh_CN": "无法重连控制台代理[uuid:{0}]，原因：{1}",
+    "zh_CN": "无法重连控制台代理[uuid:{0}]，原因: {1}",
     "arguments": [
       "resourceUuid",
       "reply.getError()"
@@ -2854,14 +2849,26 @@
   {
     "raw": "failed to %s to %s, status code: %s, response body: %s",
     "en_US": "failed to {0} to {1}, status code: {2}, response body: {3}",
-    "zh_CN": "访问{1}时执行{0}方法失败，状态码：{2}，响应体：{3}",
+    "zh_CN": "访问{1}时执行{0}方法失败，状态码: {2}，响应体: {3}",
     "arguments": [
       "method.toString().toLowerCase()",
       "url",
       "rsp.getStatusCode()",
       "rsp.getBody()"
     ],
-    "line": 508,
+    "line": 507,
+    "fileName": "src/main/java/org/zstack/core/rest/RESTFacadeImpl.java"
+  },
+  {
+    "raw": "failed to %s to %s, IO Error: %s",
+    "en_US": "failed to {0} to {1}, IO Error: {2}",
+    "zh_CN": "",
+    "arguments": [
+      "method.toString().toLowerCase()",
+      "url",
+      "e.getMessage()"
+    ],
+    "line": 502,
     "fileName": "src/main/java/org/zstack/core/rest/RESTFacadeImpl.java"
   },
   {
@@ -2872,7 +2879,7 @@
       "url",
       "timeout"
     ],
-    "line": 554,
+    "line": 553,
     "fileName": "src/main/java/org/zstack/core/rest/RESTFacadeImpl.java"
   },
   {
@@ -2955,13 +2962,13 @@
     "arguments": [
       "vmUuid"
     ],
-    "line": 1055,
+    "line": 1106,
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
   },
   {
     "raw": "From agent[hostUuid:%s] report: it can connect primary storage[uuids:%s] again",
     "en_US": "From agent[hostUuid:{0}] report: it can connect primary storage[uuids:{1}] again",
-    "zh_CN": "根据物理机[hostUuid:{0}]报告：应该重新连接主存储",
+    "zh_CN": "根据物理机[hostUuid:{0}]报告: 应该重新连接主存储",
     "arguments": [
       "cmd.hostUuid",
       "cmd.psUuids"
@@ -2972,7 +2979,7 @@
   {
     "raw": "From agent[hostUuid:%s] report: it cannot connect primary storage[uuids:%s] all VMs whose root volume in these primary storages have been killed, HA VMs will be migrated to other available hosts.",
     "en_US": "From agent[hostUuid:{0}] report: it cannot connect primary storage[uuids:{1}] all VMs whose root volume in these primary storages have been killed, HA VMs will be migrated to other available hosts.",
-    "zh_CN": "根据物理机[hostUuid:{0}]报告：不能连接根云盘在主存储[uuids:{1}]上的所有的虚拟机，高可用虚拟机将自动迁移至其他可用物理机上",
+    "zh_CN": "根据物理机[hostUuid:{0}]报告: 不能连接根云盘在主存储[uuids:{1}]上的所有的虚拟机，高可用虚拟机将自动迁移至其他可用物理机上",
     "arguments": [
       "cmd.hostUuid",
       "cmd.psUuids"
@@ -2993,7 +3000,7 @@
   {
     "raw": "unable to HA start the VM[uuid:%s, name:%s], %s",
     "en_US": "unable to HA start the VM[uuid:{0}, name:{1}], {2}",
-    "zh_CN": "无法通过HA机制启动VM[uuid:{0}, name:{1}], 错误原因：{2}",
+    "zh_CN": "无法通过HA机制启动VM[uuid:{0}, name:{1}], 错误原因: {2}",
     "arguments": [
       "vmInv.getUuid()",
       "vmInv.getName()",
@@ -3011,7 +3018,7 @@
       "vm.getName()",
       "vm.getHypervisorType()"
     ],
-    "line": 709,
+    "line": 760,
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
   },
   {
@@ -3022,20 +3029,20 @@
       "vm.getUuid()",
       "vm.getName()"
     ],
-    "line": 732,
+    "line": 783,
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
   },
   {
     "raw": "failed to HA start the VM[uuid:%s, name:%s], %s.A GC job will retry it in interval of %s seconds",
     "en_US": "failed to HA start the VM[uuid:{0}, name:{1}], {2}.A GC job will retry it in interval of {3} seconds",
-    "zh_CN": "通过HA机制启动VM[uuid:{0}, name:{1}]失败, 错误原因：{2}。一个定时任务（GC job）将会以{3}秒的间隔重试",
+    "zh_CN": "通过HA机制启动VM[uuid:{0}, name:{1}]失败, 错误原因: {2}。一个定时任务（GC job）将会以{3}秒的间隔重试",
     "arguments": [
       "vm.getUuid()",
       "vm.getName()",
       "errorCode",
       "HaGlobalConfig.NEVER_STOP_VM_FAILURE_RETRY_DELAY.value(Long.class)"
     ],
-    "line": 742,
+    "line": 793,
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
   },
   {
@@ -3046,19 +3053,19 @@
       "host.getUuid()",
       "host.getName()"
     ],
-    "line": 951,
+    "line": 1002,
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
   },
   {
     "raw": "unable to cancel the self-fencer on the host[uuid:%s, name:%s], %s",
     "en_US": "unable to cancel the self-fencer on the host[uuid:{0}, name:{1}], {2}",
-    "zh_CN": "在物理机[uuid:{0}, name:{1}]上取消主机保护机制（Host Self-Fencer）失败，错误原因：{2}",
+    "zh_CN": "在物理机[uuid:{0}, name:{1}]上取消主机保护机制（Host Self-Fencer）失败，错误原因: {2}",
     "arguments": [
       "host.getUuid()",
       "host.getName()",
       "errorCode"
     ],
-    "line": 956,
+    "line": 1007,
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
   },
   {
@@ -3069,19 +3076,19 @@
       "host.getUuid()",
       "host.getName()"
     ],
-    "line": 989,
+    "line": 1040,
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
   },
   {
     "raw": "failed to setup the self-fencer on the host[uuid:%s, name:%s], %s",
     "en_US": "failed to setup the self-fencer on the host[uuid:{0}, name:{1}], {2}",
-    "zh_CN": "在物理机[uuid:{0}, name:{1}]上设置主机保护机制（Host Self-Fencer）失败，错误原因：{2}",
+    "zh_CN": "在物理机[uuid:{0}, name:{1}]上设置主机保护机制（Host Self-Fencer）失败，错误原因: {2}",
     "arguments": [
       "host.getUuid()",
       "host.getName()",
       "errorCode"
     ],
-    "line": 995,
+    "line": 1046,
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
   },
   {
@@ -3239,7 +3246,7 @@
   {
     "raw": "no such vpn gateway: %s",
     "en_US": "no such vpn gateway: {0}",
-    "zh_CN": "没有这样的VPN网关：{0}",
+    "zh_CN": "没有这样的VPN网关: {0}",
     "arguments": [
       "msg.getNextHopUuid()"
     ],
@@ -3260,7 +3267,7 @@
   {
     "raw": "no such ecs instance: %s",
     "en_US": "no such ecs instance: {0}",
-    "zh_CN": "没有这样的ESC云主机：{0}",
+    "zh_CN": "没有这样的ESC云主机: {0}",
     "arguments": [
       "msg.getNextHopUuid()"
     ],
@@ -3299,7 +3306,7 @@
   {
     "raw": "invalid CidrBlock: %s, which must subnet in \u002710.0.0.0/8\u0027, \u0027172.16.0.0/12\u0027, \u0027192.168.0.0/16\u0027",
     "en_US": "invalid CidrBlock: {0}, which must subnet in \u002710.0.0.0/8\u0027, \u0027172.16.0.0/12\u0027, \u0027192.168.0.0/16\u0027",
-    "zh_CN": "无效的CIDR块：{0}，CIDR必须在10.0.0.0/8、172.16.0.0/12和192.168.0.0/16子网内",
+    "zh_CN": "无效的CIDR块: {0}，CIDR必须在10.0.0.0/8、172.16.0.0/12和192.168.0.0/16子网内",
     "arguments": [
       "msg.getCidrBlock()"
     ],
@@ -3309,7 +3316,7 @@
   {
     "raw": "no such virtual router: %s",
     "en_US": "no such virtual router: {0}",
-    "zh_CN": "没有这个的虚拟路由：{0}",
+    "zh_CN": "没有这个的虚拟路由: {0}",
     "arguments": [
       "msg.getvRouterUuid()"
     ],
@@ -3319,7 +3326,7 @@
   {
     "raw": "no such virtual border router: %s",
     "en_US": "no such virtual border router: {0}",
-    "zh_CN": "没有这个虚拟边界路由器：{0}",
+    "zh_CN": "没有这个虚拟边界路由器: {0}",
     "arguments": [
       "msg.getvRouterUuid()"
     ],
@@ -3329,7 +3336,7 @@
   {
     "raw": "localGateway is not IPv4: %s",
     "en_US": "localGateway is not IPv4: {0}",
-    "zh_CN": "本地网关地址不是IPV4：{0}",
+    "zh_CN": "本地网关地址不是IPV4: {0}",
     "arguments": [
       "msg.getLocalGatewayIp()"
     ],
@@ -3339,7 +3346,7 @@
   {
     "raw": "peerGateway is not IPv4: %s",
     "en_US": "peerGateway is not IPv4: {0}",
-    "zh_CN": "对端网关地址不是IPV4：{0}",
+    "zh_CN": "对端网关地址不是IPV4: {0}",
     "arguments": [
       "msg.getPeerGatewayIp()"
     ],
@@ -3569,7 +3576,7 @@
   {
     "raw": "cannot find the resource[uuid:%s]; wrong resourceUuid or the resource is admin resource",
     "en_US": "cannot find the resource[uuid:{0}]; wrong resourceUuid or the resource is admin resource",
-    "zh_CN": "无法找到资源[uuid:{0}]：错误的资源uuid或者资源是管理员资源",
+    "zh_CN": "无法找到资源[uuid:{0}]: 错误的资源uuid或者资源是管理员资源",
     "arguments": [
       "resourceUuid"
     ],
@@ -3888,7 +3895,7 @@
   {
     "raw": "failed to return capacity[%s] to the backup storage[uuid:%s], %s",
     "en_US": "failed to return capacity[{0}] to the backup storage[uuid:{1}], {2}",
-    "zh_CN": "向镜像服务器[uuid:{1}]归还容量[{0}]失败，错误细节：{2}",
+    "zh_CN": "向镜像服务器[uuid:{1}]归还容量[{0}]失败，错误细节: {2}",
     "arguments": [
       "size",
       "bsUuid",
@@ -3970,7 +3977,7 @@
   {
     "raw": "unable to allocate backup storage specified by uuids%s, list errors are: %s",
     "en_US": "unable to allocate backup storage specified by uuids{0}, list errors are: {1}",
-    "zh_CN": "不能根据[uuids:{0}]分配镜像服务器，错误清单为：{1}",
+    "zh_CN": "不能根据[uuids:{0}]分配镜像服务器，错误清单为: {1}",
     "arguments": [
       "msg.getBackupStorageUuids()",
       "JSONObjectUtil.toJsonString(errs)"
@@ -3991,7 +3998,7 @@
   {
     "raw": "failed to expunge the image[uuid:%s] on the backup storage[uuid:%s], will try it later. %s",
     "en_US": "failed to expunge the image[uuid:{0}] on the backup storage[uuid:{1}], will try it later. {2}",
-    "zh_CN": "无法在镜像服务器[uuid:{1}]上彻底删除镜像[uuid:{0}]，稍后将会重试。错误细节：{2}",
+    "zh_CN": "无法在镜像服务器[uuid:{1}]上彻底删除镜像[uuid:{0}]，稍后将会重试。错误细节: {2}",
     "arguments": [
       "imageUuid",
       "bsUuid",
@@ -4228,7 +4235,7 @@
     "arguments": [
       "msg.getIPsecConnectionUuid()"
     ],
-    "line": 123,
+    "line": 127,
     "fileName": "src/main/java/org/zstack/ipsec/IPsecManagerImpl.java"
   },
   {
@@ -4242,7 +4249,20 @@
       "Long.toString(cur.getEnd())",
       "msg.getVipUuid()"
     ],
-    "line": 322,
+    "line": 329,
+    "fileName": "src/main/java/org/zstack/ipsec/IPsecManagerImpl.java"
+  },
+  {
+    "raw": "cidr[%s] of attached L3Network [uuid:%s] is overlapped with ipsec [uuid:%s] remote cidr[%s]",
+    "en_US": "cidr[{0}] of attached L3Network [uuid:{1}] is overlapped with ipsec [uuid:{2}] remote cidr[{3}]",
+    "zh_CN": "已绑定在三层网络[uuid:{1}]的CIDR与IPSec[uuid:{2}]远程CIDR存在重叠",
+    "arguments": [
+      "cidr",
+      "l3Inv.getUuid()",
+      "uuid",
+      "rCidr"
+    ],
+    "line": 362,
     "fileName": "src/main/java/org/zstack/ipsec/IPsecManagerImpl.java"
   },
   {
@@ -4250,7 +4270,7 @@
     "en_US": "vyos doesn\u0027t support aes-192 as IkeEncryptionAlgorithm, available options aes-128, aes-256, 3des",
     "zh_CN": "vyos不支持aes-192作为密钥交换加密算法，可用选择为aes-128, aes-256, 3des",
     "arguments": [],
-    "line": 253,
+    "line": 283,
     "fileName": "src/main/java/org/zstack/ipsec/vyos/VyosIPsecBackend.java"
   },
   {
@@ -4258,17 +4278,17 @@
     "en_US": "vyos doesn\u0027t support aes-192 as PolicyEncryptionAlgorithm, available options aes-128, aes-256, 3des",
     "zh_CN": "vyos不支持aes-192作为加密算法协议，可用选择为aes-128, aes-256, 3des",
     "arguments": [],
-    "line": 259,
+    "line": 289,
     "fileName": "src/main/java/org/zstack/ipsec/vyos/VyosIPsecBackend.java"
   },
   {
     "raw": "vyos doesn\u0027t support %d as Ike DhGroup ",
-    "en_US": "vyos doesn\u0027t support %d as Ike DhGroup ",
+    "en_US": "vyos doesn\u0027t support {0} as Ike DhGroup ",
     "zh_CN": "vyos不支持[{0}]作为Ike DhGroup",
     "arguments": [
       "msg.getIkeDhGroup()"
     ],
-    "line": 265,
+    "line": 295,
     "fileName": "src/main/java/org/zstack/ipsec/vyos/VyosIPsecBackend.java"
   },
   {
@@ -4293,7 +4313,7 @@
   },
   {
     "raw": "unable to connect to KVM[ip:%s, username:%s, sshPort:%d ] to do DNS check, please check if username/password is wrong; %s",
-    "en_US": "unable to connect to KVM[ip:{0}, username:{1}, sshPort:%d ] to do DNS check, please check if username/password is wrong; {2}",
+    "en_US": "unable to connect to KVM[ip:{0}, username:{1}, sshPort:{2} ] to do DNS check, please check if username/password is wrong; {3}",
     "zh_CN": "无法连接物理机[ip:{0}, 用户名:{1}, ssh端口:{2} ]做DNS检查，请检查用户名密码是否正确；{3}",
     "arguments": [
       "self.getManagementIp()",
@@ -4359,13 +4379,13 @@
       "self.getManagementIp()",
       "ret.getError()"
     ],
-    "line": 1308,
+    "line": 1318,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
     "raw": "failed to detach data volume[uuid:%s, installPath:%s] from vm[uuid:%s, name:%s] on kvm host[uuid:%s, ip:%s], because %s",
     "en_US": "failed to detach data volume[uuid:{0}, installPath:{1}] from vm[uuid:{2}, name:{3}] on kvm host[uuid:{4}, ip:{5}], because {6}",
-    "zh_CN": "无法在KVM物理机[uuid:{4}, ip:{5}]上为云主机[uuid:{2}, name:{3}]卸载数据云盘[uuid:{0}, installPath:{1}]，因为：{6}",
+    "zh_CN": "无法在KVM物理机[uuid:{4}, ip:{5}]上为云主机[uuid:{2}, name:{3}]卸载数据云盘[uuid:{0}, installPath:{1}]，因为: {6}",
     "arguments": [
       "vol.getUuid()",
       "vol.getInstallPath()",
@@ -4375,13 +4395,13 @@
       "getSelf().getManagementIp()",
       "ret.getError()"
     ],
-    "line": 1386,
+    "line": 1396,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
     "raw": "failed to attach data volume[uuid:%s, installPath:%s] to vm[uuid:%s, name:%s] on kvm host[uuid:%s, ip:%s], because %s",
     "en_US": "failed to attach data volume[uuid:{0}, installPath:{1}] to vm[uuid:{2}, name:{3}] on kvm host[uuid:{4}, ip:{5}], because {6}",
-    "zh_CN": "无法在KVM物理机[uuid:{4}, ip:{5}]上为云主机[uuid:{2}, name:{3}]挂载数据云盘[uuid:{0}, installPath:{1}]，因为：{6}",
+    "zh_CN": "无法在KVM物理机[uuid:{4}, ip:{5}]上为云主机[uuid:{2}, name:{3}]挂载数据云盘[uuid:{0}, installPath:{1}]，因为: {6}",
     "arguments": [
       "vol.getUuid()",
       "vol.getInstallPath()",
@@ -4391,13 +4411,13 @@
       "getSelf().getManagementIp()",
       "ret.getError()"
     ],
-    "line": 1482,
+    "line": 1492,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
     "raw": "failed to destroy vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s], because %s",
     "en_US": "failed to destroy vm[uuid:{0} name:{1}] on kvm host[uuid:{2}, ip:{3}], because {4}",
-    "zh_CN": "无法在物理机[uuid:{2}, ip:{3}]上删除云主机[uuid:{0} name:{1}]，原因：{4}",
+    "zh_CN": "无法在物理机[uuid:{2}, ip:{3}]上删除云主机[uuid:{0} name:{1}]，原因: {4}",
     "arguments": [
       "vminv.getUuid()",
       "vminv.getName()",
@@ -4405,7 +4425,7 @@
       "self.getManagementIp()",
       "e.getMessage()"
     ],
-    "line": 1540,
+    "line": 1550,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -4419,7 +4439,7 @@
       "self.getManagementIp()",
       "e.getMessage()"
     ],
-    "line": 1706,
+    "line": 1716,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -4433,7 +4453,7 @@
       "self.getManagementIp()",
       "e.getMessage()"
     ],
-    "line": 1952,
+    "line": 1963,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -4446,7 +4466,7 @@
       "context.getInventory().getUuid()",
       "context.getInventory().getManagementIp()"
     ],
-    "line": 2192,
+    "line": 2203,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -4459,7 +4479,7 @@
       "connectPath",
       "rsp.getError()"
     ],
-    "line": 2372,
+    "line": 2383,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -4467,7 +4487,7 @@
     "en_US": "host can not access any primary storage, please check network",
     "zh_CN": "物理机无法访问任何主存储，请检查网络",
     "arguments": [],
-    "line": 2429,
+    "line": 2440,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -4477,12 +4497,12 @@
     "arguments": [
       "checkList"
     ],
-    "line": 2542,
+    "line": 2553,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
     "raw": "unable to connect to KVM[ip:%s, username:%s, sshPort: %d, ] to do DNS check, please check if username/password is wrong; %s",
-    "en_US": "unable to connect to KVM[ip:{0}, username:{1}, sshPort: %d, ] to do DNS check, please check if username/password is wrong; {2}",
+    "en_US": "unable to connect to KVM[ip:{0}, username:{1}, sshPort: {2}, ] to do DNS check, please check if username/password is wrong; {3}",
     "zh_CN": "无法连接物理机[ip:{0}, 用户名:{1}, ssh端口:{2} ]做DNS检查，请检查用户名密码是否正确；{3}",
     "arguments": [
       "self.getManagementIp()",
@@ -4490,7 +4510,7 @@
       "getSelf().getPort()",
       "ret.getExitErrorMessage()"
     ],
-    "line": 2540,
+    "line": 2551,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -4503,12 +4523,12 @@
       "ret.getStderr()",
       "ret.getExitErrorMessage()"
     ],
-    "line": 2568,
+    "line": 2579,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
     "raw": "unable to connect to KVM[ip:%s, username:%s, sshPort:%d] to check the management node connectivity,please check if username/password is wrong; %s",
-    "en_US": "unable to connect to KVM[ip:{0}, username:{1}, sshPort:%d] to check the management node connectivity,please check if username/password is wrong; {2}",
+    "en_US": "unable to connect to KVM[ip:{0}, username:{1}, sshPort:{2}] to check the management node connectivity,please check if username/password is wrong; {3}",
     "zh_CN": "不能连接到物理机[ip:{0}, username:{1}, sshPort:{2}] 去检查与管理节点是否连通  ,请检查您的用户名或者密码是否有误; {3}",
     "arguments": [
       "self.getManagementIp()",
@@ -4516,7 +4536,7 @@
       "getSelf().getPort()",
       "ret.getExitErrorMessage()"
     ],
-    "line": 2565,
+    "line": 2576,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -4528,7 +4548,7 @@
       "self.getManagementIp()",
       "ret.getExecutionLog()"
     ],
-    "line": 2658,
+    "line": 2669,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -4538,7 +4558,7 @@
     "arguments": [
       "ret.getStdout()"
     ],
-    "line": 2664,
+    "line": 2675,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -4548,7 +4568,7 @@
     "arguments": [
       "ret.getStdout()"
     ],
-    "line": 2671,
+    "line": 2682,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -4556,7 +4576,7 @@
     "en_US": "cannot find either \u0027vmx\u0027 or \u0027svm\u0027 in /proc/cpuinfo, please make sure you have enabled virtualization in your BIOS setting",
     "zh_CN": "不能发现以下任意一个  \u0027vmx\u0027 or \u0027svm\u0027 在路径 /proc/cpuinfo 里, 请检查你是否在你的BIOS设置里开启了virtualization选项",
     "arguments": [],
-    "line": 2700,
+    "line": 2711,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -4567,7 +4587,7 @@
       "self.getUuid()",
       "self.getClusterUuid()"
     ],
-    "line": 2500,
+    "line": 2511,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -4584,7 +4604,7 @@
   {
     "raw": "failed to create bridge[%s] for l2Network[uuid:%s, type:%s] on kvm host[uuid:%s], because %s",
     "en_US": "failed to create bridge[{0}] for l2Network[uuid:{1}, type:{2}] on kvm host[uuid:{3}], because {4}",
-    "zh_CN": "在物理机[uuid:{3}]上为L2网络[uuid:{1}, type:{2}]创建网桥[{0}]失败，原因：{4}",
+    "zh_CN": "在物理机[uuid:{3}]上为L2网络[uuid:{1}, type:{2}]创建网桥[{0}]失败，原因: {4}",
     "arguments": [
       "cmd.getBridgeName()",
       "l2Network.getUuid()",
@@ -4612,7 +4632,7 @@
   {
     "raw": "failed to create bridge[%s] for l2Network[uuid:%s, type:%s, vlan:%s] on kvm host[uuid:%s], because %s",
     "en_US": "failed to create bridge[{0}] for l2Network[uuid:{1}, type:{2}, vlan:{3}] on kvm host[uuid:{4}], because {5}",
-    "zh_CN": "创建L2网络[uuid:{1}中的网桥[{0}]失败 , 类型为：{2}, vlan:{3}] 在物理机[uuid:{4}]上, 原因： {5}",
+    "zh_CN": "创建L2网络[uuid:{1}中的网桥[{0}]失败 , 类型为: {2}, vlan:{3}] 在物理机[uuid:{4}]上, 原因:  {5}",
     "arguments": [
       "cmd.getBridgeName()",
       "l2Network.getUuid()",
@@ -4676,7 +4696,7 @@
   {
     "raw": "failed to report state[%s] of the vm[uuid:%s] on the host[uuid:%s], %s",
     "en_US": "failed to report state[{0}] of the vm[uuid:{1}] on the host[uuid:{2}], {3}",
-    "zh_CN": "报告物理机[uuid:{2}]上的云主机[uuid:{1}]的状态[{0}]失败，错误细节：{3}",
+    "zh_CN": "报告物理机[uuid:{2}]上的云主机[uuid:{1}]的状态[{0}]失败，错误细节: {3}",
     "arguments": [
       "cmd.vmState",
       "cmd.vmUuid",
@@ -4689,7 +4709,7 @@
   {
     "raw": "failed to sync VM states on the host[uuid:%s, name:%s], %s",
     "en_US": "failed to sync VM states on the host[uuid:{0}, name:{1}], {2}",
-    "zh_CN": "同步物理机[uuid:{0}, name:{1}]上的云主机状态失败，错误细节：{2}",
+    "zh_CN": "同步物理机[uuid:{0}, name:{1}]上的云主机状态失败，错误细节: {2}",
     "arguments": [
       "host.getUuid()",
       "host.getName()",
@@ -4701,7 +4721,7 @@
   {
     "raw": "Wrong LdapServerType[%s], valid values: [%,%s]",
     "en_US": "Wrong LdapServerType[{0}], valid values: [%,{1}]",
-    "zh_CN": "错误的LDAP服务类型[{0}]，有效的值：[%,{1}]",
+    "zh_CN": "错误的LDAP服务类型[{0}]，有效的值: [%,{1}]",
     "arguments": [
       "type",
       "LdapConstant.OpenLdap.TYPE",
@@ -4778,7 +4798,7 @@
   {
     "raw": "License had been recovered because update license fail due to: %s",
     "en_US": "License had been recovered because update license fail due to: {0}",
-    "zh_CN": "证书已经被恢复因为更新证书失败，因为：{0}",
+    "zh_CN": "证书已经被恢复因为更新证书失败，因为: {0}",
     "arguments": [
       "errorCode.getDetails()"
     ],
@@ -4921,7 +4941,7 @@
   },
   {
     "raw": "invalid volume bandwidth[%s] is larger than %d",
-    "en_US": "invalid volume bandwidth[{0}] is larger than %d",
+    "en_US": "invalid volume bandwidth[{0}] is larger than {1}",
     "zh_CN": "云盘带宽[{0}]大于{1}是无效的",
     "arguments": [
       "bandwidth",
@@ -4972,7 +4992,7 @@
   },
   {
     "raw": "invalid volume IOPS[%s] is larger than %d",
-    "en_US": "invalid volume IOPS[{0}] is larger than %d",
+    "en_US": "invalid volume IOPS[{0}] is larger than {1}",
     "zh_CN": "云盘IOPS[{0}]大于{1}是无效的",
     "arguments": [
       "bandwidth",
@@ -5079,7 +5099,7 @@
     "arguments": [
       "hostUuid"
     ],
-    "line": 2325,
+    "line": 2332,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -5091,7 +5111,7 @@
       "displayNetworkCidr",
       "hostUuid"
     ],
-    "line": 2355,
+    "line": 2362,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -5102,7 +5122,7 @@
       "msg.getVolume().getUuid()",
       "msg.getVmInstanceUuid()"
     ],
-    "line": 472,
+    "line": 482,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoVolumeBase.java"
   },
   {
@@ -5112,7 +5132,7 @@
     "arguments": [
       "StringUtils.join(errors, \"\\n\\n\")"
     ],
-    "line": 484,
+    "line": 494,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoVolumeBase.java"
   },
   {
@@ -5232,7 +5252,7 @@
       "event.getTrigger().getUuid()",
       "errorCode.getDetails()"
     ],
-    "line": 211,
+    "line": 212,
     "fileName": "src/main/java/org/zstack/monitoring/MonitorTriggerBase.java"
   },
   {
@@ -5243,13 +5263,13 @@
       "self.getUuid()",
       "errCode"
     ],
-    "line": 383,
+    "line": 389,
     "fileName": "src/main/java/org/zstack/monitoring/MonitorTriggerBase.java"
   },
   {
     "raw": "failed to delete the trigger because of the error: %s",
     "en_US": "failed to delete the trigger because of the error: {0}",
-    "zh_CN": "删除触发器失败，因为：{0}",
+    "zh_CN": "删除触发器失败，因为: {0}",
     "arguments": [
       "reply.getError()"
     ],
@@ -5288,7 +5308,7 @@
   {
     "raw": "\\nalert details:",
     "en_US": "\\nalert details:",
-    "zh_CN": "\n提示的详细内容：",
+    "zh_CN": "\n提示的详细内容: ",
     "arguments": [],
     "line": 58,
     "fileName": "src/main/java/org/zstack/monitoring/items/AlertText.java"
@@ -5296,7 +5316,7 @@
   {
     "raw": "\\ncondition: {itemName} {operator} {threshold}",
     "en_US": "\\ncondition: {itemName} {operator} {threshold}",
-    "zh_CN": "\n环境：{itemName} {operator} {threshold}",
+    "zh_CN": "\n环境: {itemName} {operator} {threshold}",
     "arguments": [
       "args"
     ],
@@ -5306,7 +5326,7 @@
   {
     "raw": "\\ncurrent value: {value}",
     "en_US": "\\ncurrent value: {value}",
-    "zh_CN": "\n当前值：{value}",
+    "zh_CN": "\n当前值: {value}",
     "arguments": [
       "args"
     ],
@@ -5332,7 +5352,7 @@
   {
     "raw": "invalid expression: %s, %s",
     "en_US": "invalid expression: {0}, {1}",
-    "zh_CN": "无效的语句：{0}, {1}",
+    "zh_CN": "无效的语句: {0}, {1}",
     "arguments": [
       "expr",
       "e.getMessage()"
@@ -5343,7 +5363,7 @@
   {
     "raw": "invalid expression: %s, no expression found",
     "en_US": "invalid expression: {0}, no expression found",
-    "zh_CN": "无效的语句：{0}，未找到该语句",
+    "zh_CN": "无效的语句: {0}，未找到该语句",
     "arguments": [
       "expr"
     ],
@@ -5407,7 +5427,7 @@
   {
     "raw": "There has been a L2VlanNetwork[uuid:%s, name:%s] attached to cluster[uuid:%s] that has physical interface[%s], vlan[%s]. Failed to attach L2VlanNetwork[uuid:%s]",
     "en_US": "There has been a L2VlanNetwork[uuid:{0}, name:{1}] attached to cluster[uuid:{2}] that has physical interface[{3}], vlan[{4}]. Failed to attach L2VlanNetwork[uuid:{5}]",
-    "zh_CN": "L2网络挂载失败[uuid:{5}]：L2网络[uuid:{0}, name:{1}]的物理接口[{3}], vlan[{4}]已经挂载到集群[uuid:{2}]上",
+    "zh_CN": "L2网络挂载失败[uuid:{5}]: L2网络[uuid:{0}, name:{1}]的物理接口[{3}], vlan[{4}]已经挂载到集群[uuid:{2}]上",
     "arguments": [
       "vl2.getUuid()",
       "vl2.getName()",
@@ -5422,7 +5442,7 @@
   {
     "raw": "There has been a l2Network[uuid:%s, name:%s] attached to cluster[uuid:%s] that has physical interface[%s]. Failed to attach l2Network[uuid:%s]",
     "en_US": "There has been a l2Network[uuid:{0}, name:{1}] attached to cluster[uuid:{2}] that has physical interface[{3}]. Failed to attach l2Network[uuid:{4}]",
-    "zh_CN": "L2网络挂载失败[uuid:{4}]：L2网络[uuid:{0}, name:{1}]的物理接口[{3}]]已经挂载到集群[uuid:{2}]上",
+    "zh_CN": "L2网络挂载失败[uuid:{4}]: L2网络[uuid:{0}, name:{1}]的物理接口[{3}]]已经挂载到集群[uuid:{2}]上",
     "arguments": [
       "l2.getUuid()",
       "l2.getName()",
@@ -5458,7 +5478,7 @@
   {
     "raw": "failed to create bridge[%s] for l2Network[uuid:%s, type:%s, vni:%s] on kvm host[uuid:%s], because %s",
     "en_US": "failed to create bridge[{0}] for l2Network[uuid:{1}, type:{2}, vni:{3}] on kvm host[uuid:{4}], because {5}",
-    "zh_CN": "为L2网络[uuid:{1}, type:{2}, vni:{3}]在KVM物理机[uuid:{4}]上创建网桥[{0}]失败，错误细节：{5}",
+    "zh_CN": "为L2网络[uuid:{1}, type:{2}, vni:{3}]在KVM物理机[uuid:{4}]上创建网桥[{0}]失败，错误细节: {5}",
     "arguments": [
       "cmd.getBridgeName()",
       "l2Network.getUuid()",
@@ -5473,7 +5493,7 @@
   {
     "raw": "failed to check cidr[%s] for l2VxlanNetwork[uuid:%s, name:%s] on kvm host[uuid:%s], %s",
     "en_US": "failed to check cidr[{0}] for l2VxlanNetwork[uuid:{1}, name:{2}] on kvm host[uuid:{3}], {4}",
-    "zh_CN": "为KVM物理机[uuid:{3}]上的L2 VXLAN 网络[uuid:{1}, name:{2}]检查CIDR[{0}]失败，错误细节：{4}",
+    "zh_CN": "为KVM物理机[uuid:{3}]上的L2 VXLAN 网络[uuid:{1}, name:{2}]检查CIDR[{0}]失败，错误细节: {4}",
     "arguments": [
       "cmd.getCidr()",
       "l2vxlan.getUuid()",
@@ -5841,7 +5861,7 @@
   {
     "raw": "rule type can not be null. rule dump: %s",
     "en_US": "rule type can not be null. rule dump: {0}",
-    "zh_CN": "规则类型(rule type)不能为空(null)。规则内容为：{0}",
+    "zh_CN": "规则类型(rule type)不能为空(null)。规则内容为: {0}",
     "arguments": [
       "JSONObjectUtil.toJsonString(ao)"
     ],
@@ -5851,7 +5871,7 @@
   {
     "raw": "unknown rule type[%s], rule can only be Ingress/Egress. rule dump: %s",
     "en_US": "unknown rule type[{0}], rule can only be Ingress/Egress. rule dump: {1}",
-    "zh_CN": "未知的规则类型(rule type)[{0}]，规则类型只能为Ingress/Egress。规则内容为：{1}",
+    "zh_CN": "未知的规则类型(rule type)[{0}]，规则类型只能为Ingress/Egress。规则内容为: {1}",
     "arguments": [
       "ao.getType()",
       "JSONObjectUtil.toJsonString(ao)"
@@ -5862,7 +5882,7 @@
   {
     "raw": "protocol can not be null. rule dump: %s",
     "en_US": "protocol can not be null. rule dump: {0}",
-    "zh_CN": "协议(protocol)不能为空(null)。规则内容为：{0}",
+    "zh_CN": "协议(protocol)不能为空(null)。规则内容为: {0}",
     "arguments": [
       "JSONObjectUtil.toJsonString(ao)"
     ],
@@ -5872,7 +5892,7 @@
   {
     "raw": "invalid protocol[%s]. Valid protocols are [TCP, UDP, ICMP, ALL]. rule dump: %s",
     "en_US": "invalid protocol[{0}]. Valid protocols are [TCP, UDP, ICMP, ALL]. rule dump: {1}",
-    "zh_CN": "无效的协议(protocol)[{0}]。有效的协议类型为[TCP,UDP,ICMP,ALL]。规则内容为：{1}",
+    "zh_CN": "无效的协议(protocol)[{0}]。有效的协议类型为[TCP,UDP,ICMP,ALL]。规则内容为: {1}",
     "arguments": [
       "ao.getProtocol()",
       "JSONObjectUtil.toJsonString(ao)"
@@ -5893,7 +5913,7 @@
   {
     "raw": "startPort can not be null. rule dump: %s",
     "en_US": "startPort can not be null. rule dump: {0}",
-    "zh_CN": "起始端口(startPort)不能为空(null)。规则内容为：{0}",
+    "zh_CN": "起始端口(startPort)不能为空(null)。规则内容为: {0}",
     "arguments": [
       "JSONObjectUtil.toJsonString(ao)"
     ],
@@ -5903,7 +5923,7 @@
   {
     "raw": "invalid startPort[%s]. Valid range is [0, 65535]. rule dump: %s",
     "en_US": "invalid startPort[{0}]. Valid range is [0, 65535]. rule dump: {1}",
-    "zh_CN": "无效的起始端口(startPort)[{0}]。有效的范围为[0,65535]。规则内容为：{1}",
+    "zh_CN": "无效的起始端口(startPort)[{0}]。有效的范围为[0,65535]。规则内容为: {1}",
     "arguments": [
       "ao.getStartPort()",
       "JSONObjectUtil.toJsonString(ao)"
@@ -5914,7 +5934,7 @@
   {
     "raw": "invalid ICMP type[%s]. Valid type is [-1, 255]. rule dump: %s",
     "en_US": "invalid ICMP type[{0}]. Valid type is [-1, 255]. rule dump: {1}",
-    "zh_CN": "无效的ICMP类型[{0}]。有效的类型为[-1,255]。规则内容为：{1}",
+    "zh_CN": "无效的ICMP类型[{0}]。有效的类型为[-1,255]。规则内容为: {1}",
     "arguments": [
       "ao.getStartPort()",
       "JSONObjectUtil.toJsonString(ao)"
@@ -5925,7 +5945,7 @@
   {
     "raw": "invalid endPort[%s]. Valid range is [0, 65535]. rule dump: %s",
     "en_US": "invalid endPort[{0}]. Valid range is [0, 65535]. rule dump: {1}",
-    "zh_CN": "无效的结束端口(endPort)[{0}]。有效的范围为[0,65535]。规则内容为：{1}",
+    "zh_CN": "无效的结束端口(endPort)[{0}]。有效的范围为[0,65535]。规则内容为: {1}",
     "arguments": [
       "ao.getEndPort()",
       "JSONObjectUtil.toJsonString(ao)"
@@ -5936,7 +5956,7 @@
   {
     "raw": "invalid ICMP code[%s]. Valid range is [-1, 3]. rule dump: %s",
     "en_US": "invalid ICMP code[{0}]. Valid range is [-1, 3]. rule dump: {1}",
-    "zh_CN": "无效的ICMP编码[{0}]。有效的范围为[-1,3]。规则内容为：{1}",
+    "zh_CN": "无效的ICMP编码[{0}]。有效的范围为[-1,3]。规则内容为: {1}",
     "arguments": [
       "ao.getEndPort()",
       "JSONObjectUtil.toJsonString(ao)"
@@ -5947,7 +5967,7 @@
   {
     "raw": "invalid CIDR[%s]. rule dump: %s",
     "en_US": "invalid CIDR[{0}]. rule dump: {1}",
-    "zh_CN": "无效的CIDR[{0}]。规则内容为：{1}",
+    "zh_CN": "无效的CIDR[{0}]。规则内容为: {1}",
     "arguments": [
       "ao.getAllowedCidr()",
       "JSONObjectUtil.toJsonString(ao)"
@@ -5958,7 +5978,7 @@
   {
     "raw": "rule should not be duplicated. rule dump: %s",
     "en_US": "rule should not be duplicated. rule dump: {0}",
-    "zh_CN": "规则不应该重复。规则内容为：{0}",
+    "zh_CN": "规则不应该重复。规则内容为: {0}",
     "arguments": [
       "JSONObjectUtil.toJsonString(msg.getRules().get(j))"
     ],
@@ -5979,7 +5999,7 @@
   {
     "raw": "unable to change the VM[uuid:%s]\u0027s default L3 network in the DHCP backend, %s. You may need to reboot the VM to use the new default L3 network setting",
     "en_US": "unable to change the VM[uuid:{0}]\u0027s default L3 network in the DHCP backend, {1}. You may need to reboot the VM to use the new default L3 network setting",
-    "zh_CN": "无法在DHCP层面改变云主机[uuid:{0}]的默认L3网络，错误细节：{1}。您可能需要重启该云主机以解决问题",
+    "zh_CN": "无法在DHCP层面改变云主机[uuid:{0}]的默认L3网络，错误细节: {1}。您可能需要重启该云主机以解决问题",
     "arguments": [
       "vm.getUuid()",
       "errorCode"
@@ -6051,7 +6071,7 @@
   {
     "raw": "unable to release a network service of the VM[uuid:%s] when rolling back an attached L3 network[uuid: %s], %s. You may need to reboot the VM to fix the issue",
     "en_US": "unable to release a network service of the VM[uuid:{0}] when rolling back an attached L3 network[uuid: {1}], {2}. You may need to reboot the VM to fix the issue",
-    "zh_CN": "未能释放云主机[uuid:{0}]的一个网络服务，发生错误的操作为回滚一个已经挂载的L3网络[uuid: {1}]，错误细节：{2}。您可能需要重启该云主机以解决问题",
+    "zh_CN": "未能释放云主机[uuid:{0}]的一个网络服务，发生错误的操作为回滚一个已经挂载的L3网络[uuid: {1}]，错误细节: {2}。您可能需要重启该云主机以解决问题",
     "arguments": [
       "spec.getVmInventory().getUuid()",
       "l3.getUuid()",
@@ -6238,7 +6258,7 @@
   {
     "raw": "failed to re-apply DHCP configuration of the vm[uuid:%s] to the host[uuid:%s], %s. You may need to reboot the VM to make the DHCP works",
     "en_US": "failed to re-apply DHCP configuration of the vm[uuid:{0}] to the host[uuid:{1}], {2}. You may need to reboot the VM to make the DHCP works",
-    "zh_CN": "未能向物理机[uuid:{1}]重新应用云主机[uuid:{0}]的DHCP配置，错误细节：{2}。您可能需要重启该云主机以解决问题",
+    "zh_CN": "未能向物理机[uuid:{1}]重新应用云主机[uuid:{0}]的DHCP配置，错误细节: {2}。您可能需要重启该云主机以解决问题",
     "arguments": [
       "vm.getUuid()",
       "applyHostUuidForRollback",
@@ -6260,7 +6280,7 @@
   {
     "raw": "after migration, failed to apply EIPs[uuids:%s] to the vm[uuid:%s, name:%s] on the destination host[uuid:%s], %s",
     "en_US": "after migration, failed to apply EIPs[uuids:{0}] to the vm[uuid:{1}, name:{2}] on the destination host[uuid:{3}], {4}",
-    "zh_CN": "迁移后，未能向云主机（VM）[uuid:{1}, name:{2}]应用弹性IP（EIP）[uuids:{0}]，目标物理机为[uuid:{3}]，错误原因为：{4}",
+    "zh_CN": "迁移后，未能向云主机（VM）[uuid:{1}, name:{2}]应用弹性IP（EIP）[uuids:{0}]，目标物理机为[uuid:{3}]，错误原因为: {4}",
     "arguments": [
       "eips.stream().map( e -\u003e e.vip).collect(Collectors.toList())",
       "inv.getUuid()",
@@ -6274,7 +6294,7 @@
   {
     "raw": "after migration, failed to apply EIPs[uuids:%s] to the vm[uuid:%s, name:%s] on the destination host[uuid:%s], %s.You may need to reboot the VM to resolve the issue",
     "en_US": "after migration, failed to apply EIPs[uuids:{0}] to the vm[uuid:{1}, name:{2}] on the destination host[uuid:{3}], {4}.You may need to reboot the VM to resolve the issue",
-    "zh_CN": "迁移后，未能向云主机（VM）[uuid:{1}, name:{2}]应用弹性IP（EIP）[uuids:{0}]，目标物理机为[uuid:{3}]，错误原因为：{4}。您可能需要重启该云主机以解决问题",
+    "zh_CN": "迁移后，未能向云主机（VM）[uuid:{1}, name:{2}]应用弹性IP（EIP）[uuids:{0}]，目标物理机为[uuid:{3}]，错误原因为: {4}。您可能需要重启该云主机以解决问题",
     "arguments": [
       "eips.stream().map( e -\u003e e.vip).collect(Collectors.toList())",
       "vm.getUuid()",
@@ -6691,7 +6711,7 @@
       "self.getUuid()",
       "self.getIp()"
     ],
-    "line": 579,
+    "line": 585,
     "fileName": "src/main/java/org/zstack/network/service/vip/VipBase.java"
   },
   {
@@ -6773,7 +6793,7 @@
       "self.getUuid()",
       "self.getState()"
     ],
-    "line": 261,
+    "line": 263,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouter.java"
   },
   {
@@ -6785,7 +6805,7 @@
       "getSelf().getStatus()",
       "msg.getPath()"
     ],
-    "line": 266,
+    "line": 268,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouter.java"
   },
   {
@@ -6799,20 +6819,20 @@
       "vr.getManagementNic().getIp()",
       "rsp.getError()"
     ],
-    "line": 450,
+    "line": 452,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouter.java"
   },
   {
     "raw": "unable to detach nic[%s] from virtual router vm[uuid:%s ip:%s], because %s",
     "en_US": "unable to detach nic[{0}] from virtual router vm[uuid:{1} ip:{2}], because {3}",
-    "zh_CN": "无法从云路由设备[uuid:{1} ip:{2}]上卸载网卡[{0}]，错误细节：{3}",
+    "zh_CN": "无法从云路由设备[uuid:{1} ip:{2}]上卸载网卡[{0}]，错误细节: {3}",
     "arguments": [
       "info",
       "vr.getUuid()",
       "vr.getManagementNic().getIp()",
       "rsp.getError()"
     ],
-    "line": 602,
+    "line": 623,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouter.java"
   },
   {
@@ -6996,7 +7016,7 @@
   {
     "raw": "virtual router[uuid:%s, ip:%s] failed to configure dns%s for L3Network[uuid:%s, name:%s], %s",
     "en_US": "virtual router[uuid:{0}, ip:{1}] failed to configure dns{2} for L3Network[uuid:{3}, name:{4}], {5}",
-    "zh_CN": "云路由[uuid:{0}, ip:{1}]未能为L3网络[uuid:{3}, name:{4}]配置DNS{2}，错误细节：{5}",
+    "zh_CN": "云路由[uuid:{0}, ip:{1}]未能为L3网络[uuid:{3}, name:{4}]配置DNS{2}，错误细节: {5}",
     "arguments": [
       "vr.getUuid()",
       "vr.getManagementNic().getIp()",
@@ -7011,7 +7031,7 @@
   {
     "raw": "virtual router[name: %s, uuid: %s] failed to configure dns%s, %s ",
     "en_US": "virtual router[name: {0}, uuid: {1}] failed to configure dns{2}, {3} ",
-    "zh_CN": "云路由[name: {0}, uuid: {1}]未能配置DNS{2}，错误细节：{3}",
+    "zh_CN": "云路由[name: {0}, uuid: {1}]未能配置DNS{2}，错误细节: {3}",
     "arguments": [
       "vr.getName()",
       "vr.getUuid()",
@@ -7024,7 +7044,7 @@
   {
     "raw": "failed to create eip[uuid:%s, name:%s, ip:%s] for vm nic[uuid:%s] on virtual router[uuid:%s], %s",
     "en_US": "failed to create eip[uuid:{0}, name:{1}, ip:{2}] for vm nic[uuid:{3}] on virtual router[uuid:{4}], {5}",
-    "zh_CN": "无法为虚拟机网卡[uuid:{3}]在云路由[uuid:{4}]上创建EIP[uuid:{0}, name:{1}, ip:{2}]，错误细节：{5}",
+    "zh_CN": "无法为虚拟机网卡[uuid:{3}]在云路由[uuid:{4}]上创建EIP[uuid:{0}, name:{1}, ip:{2}]，错误细节: {5}",
     "arguments": [
       "struct.getEip().getUuid()",
       "struct.getEip().getName()",
@@ -7033,7 +7053,7 @@
       "vr.getUuid()",
       "ret.getError()"
     ],
-    "line": 162,
+    "line": 163,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/eip/VirtualRouterEipBackend.java"
   },
   {
@@ -7047,13 +7067,13 @@
       "struct.getVip().getL3NetworkUuid()",
       "struct.getEip().getUuid()"
     ],
-    "line": 198,
+    "line": 199,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/eip/VirtualRouterEipBackend.java"
   },
   {
     "raw": "failed to remove eip[uuid:%s, name:%s, ip:%s] for vm nic[uuid:%s] on virtual router[uuid:%s], %s",
     "en_US": "failed to remove eip[uuid:{0}, name:{1}, ip:{2}] for vm nic[uuid:{3}] on virtual router[uuid:{4}], {5}",
-    "zh_CN": "未能在云路由[uuid:{4}]上为虚拟机网卡[uuid:{3}]移除EIP[uuid:{0}, name:{1}, ip:{2}]，错误细节：{5}",
+    "zh_CN": "未能在云路由[uuid:{4}]上为虚拟机网卡[uuid:{3}]移除EIP[uuid:{0}, name:{1}, ip:{2}]，错误细节: {5}",
     "arguments": [
       "struct.getEip().getUuid()",
       "struct.getEip().getName()",
@@ -7062,13 +7082,13 @@
       "vr.getUuid()",
       "ret.getError()"
     ],
-    "line": 300,
+    "line": 301,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/eip/VirtualRouterEipBackend.java"
   },
   {
     "raw": "failed to sync eip on virtual router[uuid:%s], %s",
     "en_US": "failed to sync eip on virtual router[uuid:{0}], {1}",
-    "zh_CN": "未能在云路由[uuid:{0}]上同步EIP，错误细节：{1}",
+    "zh_CN": "未能在云路由[uuid:{0}]上同步EIP，错误细节: {1}",
     "arguments": [
       "vr.getUuid()",
       "ret.getError()"
@@ -7111,6 +7131,19 @@
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/lb/VirtualRouterLoadBalancerBackend.java"
   },
   {
+    "raw": "virtual router[name: %s, uuid: %s] failed to sync snat%s, %s",
+    "en_US": "virtual router[name: {0}, uuid: {1}] failed to sync snat{2}, {3}",
+    "zh_CN": "云路由[name: {0}, uuid: {1}]未能同步SNAT{2}，错误细节: {3}",
+    "arguments": [
+      "vr.getName()",
+      "vr.getUuid()",
+      "JSONObjectUtil.toJsonString(snatInfo)",
+      "ret.getError()"
+    ],
+    "line": 343,
+    "fileName": "src/main/java/org/zstack/network/service/virtualrouter/nat/VirtualRouterSnatBackend.java"
+  },
+  {
     "raw": "guest l3Network[uuid:%s, name:%s] needs SNAT service provided by virtual router, but public l3Network[uuid:%s] of virtual router offering[uuid: %s, name:%s] is the same to this guest l3Network",
     "en_US": "guest l3Network[uuid:{0}, name:{1}] needs SNAT service provided by virtual router, but public l3Network[uuid:{2}] of virtual router offering[uuid: {3}, name:{4}] is the same to this guest l3Network",
     "zh_CN": "用户L3网络[uuid:{0}, name:{1}]需要云路由提供的SNAT服务，但是云路由规格[uuid: {3}, name:{4}]的公共L3网络[uuid:{2}]与该客户L3网络相同",
@@ -7121,13 +7154,13 @@
       "offering.getUuid()",
       "offering.getName()"
     ],
-    "line": 77,
+    "line": 83,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/nat/VirtualRouterSnatBackend.java"
   },
   {
     "raw": "virtual router[uuid:%s, ip:%s] failed to apply snat[%s] for vm[uuid:%s, name:%s] on L3Network[uuid:%s, name:%s], because %s",
     "en_US": "virtual router[uuid:{0}, ip:{1}] failed to apply snat[{2}] for vm[uuid:{3}, name:{4}] on L3Network[uuid:{5}, name:{6}], because {7}",
-    "zh_CN": "云路由[uuid:{0}, ip:{1}]无法为虚拟机[uuid:{3}, name:{4}]在L3网络[uuid:{5}, name:{6}]上应用SNAT规则[{2}]，因为：{7}",
+    "zh_CN": "云路由[uuid:{0}, ip:{1}]无法为虚拟机[uuid:{3}, name:{4}]在L3网络[uuid:{5}, name:{6}]上应用SNAT规则[{2}]，因为: {7}",
     "arguments": [
       "vr.getUuid()",
       "vr.getManagementNic().getIp()",
@@ -7138,26 +7171,13 @@
       "struct.getL3Network().getName()",
       "ret.getError()"
     ],
-    "line": 128,
+    "line": 134,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/nat/VirtualRouterSnatBackend.java"
-  },
-  {
-    "raw": "virtual router[name: %s, uuid: %s] failed to sync snat%s, %s",
-    "en_US": "virtual router[name: {0}, uuid: {1}] failed to sync snat{2}, {3}",
-    "zh_CN": "云路由[name: {0}, uuid: {1}]未能同步SNAT{2}，错误细节：{3}",
-    "arguments": [
-      "vr.getName()",
-      "vr.getUuid()",
-      "JSONObjectUtil.toJsonString(snatInfo)",
-      "ret.getError()"
-    ],
-    "line": 105,
-    "fileName": "src/main/java/org/zstack/network/service/virtualrouter/nat/VirtualRouterSyncSNATOnStartFlow.java"
   },
   {
     "raw": "failed to create port forwarding rule[vip ip: %s, private ip: %s, vip start port: %s, vip end port: %s, private start port: %s, private end port: %s], because %s",
     "en_US": "failed to create port forwarding rule[vip ip: {0}, private ip: {1}, vip start port: {2}, vip end port: {3}, private start port: {4}, private end port: {5}], because {6}",
-    "zh_CN": "无法创建端口转发规则[vip ip: {0}, private ip: {1}, vip start port: {2}, vip end port: {3}, private start port: {4}, private end port: {5}]，错误细节：{6}",
+    "zh_CN": "无法创建端口转发规则[vip ip: {0}, private ip: {1}, vip start port: {2}, vip end port: {3}, private start port: {4}, private end port: {5}]，错误细节: {6}",
     "arguments": [
       "to.getVipIp()",
       "to.getPrivateIp()",
@@ -7173,7 +7193,7 @@
   {
     "raw": "failed to revoke port forwarding rules %s, because %s",
     "en_US": "failed to revoke port forwarding rules {0}, because {1}",
-    "zh_CN": "未能解除端口转发规则{0}，原因：{1}",
+    "zh_CN": "未能解除端口转发规则{0}，原因: {1}",
     "arguments": [
       "JSONObjectUtil.toJsonString(to)",
       "ret.getError()"
@@ -7192,20 +7212,20 @@
       "struct.getVip().getL3NetworkUuid()",
       "struct.getRule().getUuid()"
     ],
-    "line": 166,
+    "line": 162,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/portforwarding/VirtualRouterPortForwardingBackend.java"
   },
   {
     "raw": "virtual router doesn\u0027t support port forwarding range redirection, the vipPortStart must be equals to privatePortStart and vipPortEnd must be equals to privatePortEnd;but this rule rule has a mismatching range: vip port[%s, %s], private port[%s, %s]",
     "en_US": "virtual router doesn\u0027t support port forwarding range redirection, the vipPortStart must be equals to privatePortStart and vipPortEnd must be equals to privatePortEnd;but this rule rule has a mismatching range: vip port[{0}, {1}], private port[{2}, {3}]",
-    "zh_CN": "云路由不支持范围性的端口转发重定向，vipPortStart和privatePortStart必须一致，vipPortEnd和privatePortEnd必须一致，但这条规则有个不匹配的范围：vip端口范围[{0}, {1}]，私有端口范围[{2}, {3}]",
+    "zh_CN": "云路由不支持范围性的端口转发重定向，vipPortStart和privatePortStart必须一致，vipPortEnd和privatePortEnd必须一致，但这条规则有个不匹配的范围: vip端口范围[{0}, {1}]，私有端口范围[{2}, {3}]",
     "arguments": [
       "rule.getVipPortStart()",
       "rule.getVipPortEnd()",
       "rule.getPrivatePortStart()",
       "rule.getPrivatePortEnd()"
     ],
-    "line": 232,
+    "line": 228,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/portforwarding/VirtualRouterPortForwardingBackend.java"
   },
   {
@@ -7213,16 +7233,27 @@
     "en_US": "failed to add portforwardings on virtual router[uuid:{0}], {1}",
     "zh_CN": "在云路由[uuid:{0}]添加端口转发失败，{1}",
     "arguments": [
-      "vr.getUuid()",
+      "vrVO.getUuid()",
       "ret.getError()"
     ],
-    "line": 357,
+    "line": 384,
+    "fileName": "src/main/java/org/zstack/network/service/virtualrouter/portforwarding/VirtualRouterPortForwardingBackend.java"
+  },
+  {
+    "raw": "failed to revoke port forwardings on virtual router[uuid:%s], %s",
+    "en_US": "failed to revoke port forwardings on virtual router[uuid:{0}], {1}",
+    "zh_CN": "取消在云路由[uuid:{0}]上端口转发服务失败，{1}",
+    "arguments": [
+      "vrVO.getUuid()",
+      "ret.getError()"
+    ],
+    "line": 452,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/portforwarding/VirtualRouterPortForwardingBackend.java"
   },
   {
     "raw": "failed to sync port forwarding rules served by virtual router[name: %s, uuid: %s], because %s",
     "en_US": "failed to sync port forwarding rules served by virtual router[name: {0}, uuid: {1}], because {2}",
-    "zh_CN": "未能同步由云路由[name: {0}, uuid: {1}]提供的端口转发规则，因为：{2}",
+    "zh_CN": "未能同步由云路由[name: {0}, uuid: {1}]提供的端口转发规则，因为: {2}",
     "arguments": [
       "vr.getName()",
       "vr.getUuid()",
@@ -7252,7 +7283,7 @@
       "vipvo.getVirtualRouterVmUuid()",
       "vrState"
     ],
-    "line": 179,
+    "line": 177,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/vip/VirtualRouterVipBackend.java"
   },
   {
@@ -7266,7 +7297,7 @@
       "nic.getIp()",
       "ret.getError()"
     ],
-    "line": 334,
+    "line": 342,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/vip/VirtualRouterVipBackend.java"
   },
   {
@@ -7362,7 +7393,7 @@
   {
     "raw": "resourceUuid[%s] is not a valid uuid. A valid uuid is a UUID(v4 recommended) with \u0027-\u0027 stripped. see http://en.wikipedia.org/wiki/Universally_unique_identifier for format of UUID, the regular expression ZStack uses to validate a UUID is \u0027[0-9a-f]{8}[0-9a-f]{4}[1-5][0-9a-f]{3}[89ab][0-9a-f]{3}[0-9a-f]{12}\u0027",
     "en_US": "resourceUuid[{0}] is not a valid uuid. A valid uuid is a UUID(v4 recommended) with \u0027-\u0027 stripped. see http://en.wikipedia.org/wiki/Universally_unique_identifier for format of UUID, the regular expression ZStack uses to validate a UUID is \u0027[0-9a-f]{8}[0-9a-f]{4}[1-5][0-9a-f]{3}[89ab][0-9a-f]{3}[0-9a-f]{12}\u0027",
-    "zh_CN": "资源UUID（）不是一个有效的uuid。一个有效的UUID是一个没有-的UUID（建议为UUIDv4）.格式参见http://en.wikipedia.org/wiki/Universally_unique_identifier，ZStack中验证一个UUID的正则表达式为：[0-9a-f]{8}[0-9a-f]{4}[1-5][0-9a-f]{3}[89ab][0-9a-f]{3}[0-9a-f]{12}",
+    "zh_CN": "资源UUID（）不是一个有效的uuid。一个有效的UUID是一个没有-的UUID（建议为UUIDv4）.格式参见http://en.wikipedia.org/wiki/Universally_unique_identifier，ZStack中验证一个UUID的正则表达式为: [0-9a-f]{8}[0-9a-f]{4}[1-5][0-9a-f]{3}[89ab][0-9a-f]{3}[0-9a-f]{12}",
     "arguments": [
       "cmsg.getResourceUuid()"
     ],
@@ -7392,7 +7423,7 @@
   {
     "raw": "query failure; status code:%s,%s",
     "en_US": "query failure; status code:{0},{1}",
-    "zh_CN": "查询失败；失败码为：{0},{1}",
+    "zh_CN": "查询失败；失败码为: {0},{1}",
     "arguments": [
       "rsp.getStatusCode()",
       "rsp.getBody()"
@@ -7414,7 +7445,7 @@
   {
     "raw": "query failure, errorType:%s, error: %s",
     "en_US": "query failure, errorType:{0}, error: {1}",
-    "zh_CN": "查询失败，错误类型：{0}, 错误：{1}",
+    "zh_CN": "查询失败，错误类型: {0}, 错误: {1}",
     "arguments": [
       "ret.get(\"errorType\")",
       "ret.get(\"error\")"
@@ -7425,7 +7456,7 @@
   {
     "raw": "prometheus query error: %s",
     "en_US": "prometheus query error: {0}",
-    "zh_CN": "prometheus查询失败：{0}",
+    "zh_CN": "prometheus查询失败: {0}",
     "arguments": [
       "ret.get(\"error\")"
     ],
@@ -7446,7 +7477,7 @@
   {
     "raw": "ALERT:\n resource[name: %s, uuid: %s, type: %s]\nevent: %s %s %s\ncurrent value: %s\nduration: %s seconds\n",
     "en_US": "ALERT:\n resource[name: {0}, uuid: {1}, type: {2}]\nevent: {3} {4} {5}\ncurrent value: {6}\nduration: {7} seconds\n",
-    "zh_CN": "提示：\n资源：[name: {0}, uuid: {1}, type: {2}]\n事件：{3} {4} {5}\n当前值：{6}\n持续事件：{7}秒",
+    "zh_CN": "提示: \n资源: [name: {0}, uuid: {1}, type: {2}]\n事件: {3} {4} {5}\n当前值: {6}\n持续事件: {7}秒",
     "arguments": [
       "resourceName",
       "resourceUuid",
@@ -7735,7 +7766,7 @@
   {
     "raw": "cron task must follow format like this : \\\"0 0/3 17-23 * * ?\\\" ",
     "en_US": "cron task must follow format like this : \\\"0 0/3 17-23 * * ?\\\" ",
-    "zh_CN": "定时器任务必须符合以下格式：\\\"0 0/3 17-23 * * ?\\\" ",
+    "zh_CN": "定时器任务必须符合以下格式: \\\"0 0/3 17-23 * * ?\\\" ",
     "arguments": [],
     "line": 104,
     "fileName": "src/main/java/org/zstack/scheduler/SchedulerApiInterceptor.java"
@@ -7974,7 +8005,7 @@
   {
     "raw": "the backup storage[uuid:%s, name:%s] has not enough capacity to download the image[%s].Required size:%s, available size:%s",
     "en_US": "the backup storage[uuid:{0}, name:{1}] has not enough capacity to download the image[{2}].Required size:{3}, available size:{4}",
-    "zh_CN": "镜像服务器[uuid:{0}, name:{1}]没有足够的容量可供下载镜像[{2}]。需要的大小：{3}，可用的大小：{4}",
+    "zh_CN": "镜像服务器[uuid:{0}, name:{1}]没有足够的容量可供下载镜像[{2}]。需要的大小: {3}，可用的大小: {4}",
     "arguments": [
       "self.getUuid()",
       "self.getName()",
@@ -8052,7 +8083,7 @@
   {
     "raw": "unable to commit backup storage specified by uuids: %s, becasue: %s",
     "en_US": "unable to commit backup storage specified by uuids: {0}, becasue: {1}",
-    "zh_CN": "无法向镜像服务器[uuids:{0}]提交数据，因为：{1}",
+    "zh_CN": "无法向镜像服务器[uuids:{0}]提交数据，因为: {1}",
     "arguments": [
       "String.join(\",\", msg.getBackupStorageUuids())",
       "errorCodes.get(0).getDetails()"
@@ -8118,7 +8149,7 @@
   {
     "raw": "the uuid of imagestoreBackupStorage agent changed[expected:%s, actual:%s], it\u0027s most likely the agent was manually restarted. Issue a reconnect to sync the status",
     "en_US": "the uuid of imagestoreBackupStorage agent changed[expected:{0}, actual:{1}], it\u0027s most likely the agent was manually restarted. Issue a reconnect to sync the status",
-    "zh_CN": "镜像镜像服务器的代理的uuid发生了改变[期望：{0}，实际：{1}]，很有可能代理被手动重启了，需要重连同步状态",
+    "zh_CN": "镜像镜像服务器的代理的uuid发生了改变[期望: {0}，实际: {1}]，很有可能代理被手动重启了，需要重连同步状态",
     "arguments": [
       "self.getUuid()",
       "ret.getUuid()"
@@ -8161,7 +8192,7 @@
   {
     "raw": "duplicate backup storage. There has been an image store backup storage[hostname:%s]",
     "en_US": "duplicate backup storage. There has been an image store backup storage[hostname:{0}]",
-    "zh_CN": "重复的镜像服务器。已经存在一个镜像服务器[主机名：{0}]",
+    "zh_CN": "重复的镜像服务器。已经存在一个镜像服务器[主机名: {0}]",
     "arguments": [
       "msg.getHostname()"
     ],
@@ -8197,7 +8228,7 @@
   {
     "raw": "file path contains invalid character: %s",
     "en_US": "file path contains invalid character: {0}",
-    "zh_CN": "文件路径包含非法字符：{0}",
+    "zh_CN": "文件路径包含非法字符: {0}",
     "arguments": [
       "dir"
     ],
@@ -8276,7 +8307,7 @@
   {
     "raw": "delete image metadata file failed: %s",
     "en_US": "delete image metadata file failed: {0}",
-    "zh_CN": "删除镜像元数据文件失败：{0}",
+    "zh_CN": "删除镜像元数据文件失败: {0}",
     "arguments": [
       "rsp.getError()"
     ],
@@ -8296,7 +8327,7 @@
   {
     "raw": "Check image metadata file: %s failed",
     "en_US": "Check image metadata file: {0} failed",
-    "zh_CN": "检查镜像元数据文件：{0}失败",
+    "zh_CN": "检查镜像元数据文件: {0}失败",
     "arguments": [
       "rsp.getBackupStorageMetaFileName()"
     ],
@@ -8306,7 +8337,7 @@
   {
     "raw": "Create image metadata file : %s failed",
     "en_US": "Create image metadata file : {0} failed",
-    "zh_CN": "创建镜像元数据文件：{0}失败",
+    "zh_CN": "创建镜像元数据文件: {0}失败",
     "arguments": [
       "rsp.getBackupStorageMetaFileName()"
     ],
@@ -8326,7 +8357,7 @@
   {
     "raw": "Image metadata file: %s is not exist",
     "en_US": "Image metadata file: {0} is not exist",
-    "zh_CN": "镜像元数据文件：{0}不存在",
+    "zh_CN": "镜像元数据文件: {0}不存在",
     "arguments": [
       "rsp.getBackupStorageMetaFileName()"
     ],
@@ -8336,7 +8367,7 @@
   {
     "raw": "parse create time error: %s",
     "en_US": "parse create time error: {0}",
-    "zh_CN": "解析创建时间出错：{0}",
+    "zh_CN": "解析创建时间出错: {0}",
     "arguments": [
       "e.getMessage()"
     ],
@@ -8367,7 +8398,7 @@
   {
     "raw": "the uuid of sftpBackupStorage agent changed[expected:%s, actual:%s], it\u0027s most likely the agent was manually restarted. Issue a reconnect to sync the status",
     "en_US": "the uuid of sftpBackupStorage agent changed[expected:{0}, actual:{1}], it\u0027s most likely the agent was manually restarted. Issue a reconnect to sync the status",
-    "zh_CN": "Sftp镜像镜像服务器的代理的uuid发生了改变[期望：{0}，实际：{1}]，很有可能代理被手动重启了，需要重连同步状态",
+    "zh_CN": "Sftp镜像镜像服务器的代理的uuid发生了改变[期望: {0}，实际: {1}]，很有可能代理被手动重启了，需要重连同步状态",
     "arguments": [
       "self.getUuid()",
       "ret.getUuid()"
@@ -8378,7 +8409,7 @@
   {
     "raw": "duplicate backup storage. There has been a sftp backup storage[hostname:%s] existing",
     "en_US": "duplicate backup storage. There has been a sftp backup storage[hostname:{0}] existing",
-    "zh_CN": "重复的镜像服务器。已经存在一个镜像服务器[主机名：{0}]",
+    "zh_CN": "重复的镜像服务器。已经存在一个镜像服务器[主机名: {0}]",
     "arguments": [
       "msg.getHostname()"
     ],
@@ -8388,7 +8419,7 @@
   {
     "raw": "check image metadata file: %s failed",
     "en_US": "check image metadata file: {0} failed",
-    "zh_CN": "检查镜像元数据文件：{0}失败",
+    "zh_CN": "检查镜像元数据文件: {0}失败",
     "arguments": [
       "rsp.getBackupStorageMetaFileName()"
     ],
@@ -8398,7 +8429,7 @@
   {
     "raw": "create image metadata file : %s failed",
     "en_US": "create image metadata file : {0} failed",
-    "zh_CN": "创建镜像元数据文件：{0}失败",
+    "zh_CN": "创建镜像元数据文件: {0}失败",
     "arguments": [
       "rsp.getBackupStorageMetaFileName()"
     ],
@@ -8408,7 +8439,7 @@
   {
     "raw": "image metadata file: %s is not exist",
     "en_US": "image metadata file: {0} is not exist",
-    "zh_CN": "镜像元数据文件：{0}不存在",
+    "zh_CN": "镜像元数据文件: {0}不存在",
     "arguments": [
       "rsp.getBackupStorageMetaFileName()"
     ],
@@ -8440,7 +8471,7 @@
   {
     "raw": "cannot add ceph primary storage, there has been some ceph primary storage using mon[hostnames:%s]",
     "en_US": "cannot add ceph primary storage, there has been some ceph primary storage using mon[hostnames:{0}]",
-    "zh_CN": "无法添加ceph主存储，一定有某些ceph主存储使用了mon[主机名：{0}]",
+    "zh_CN": "无法添加ceph主存储，一定有某些ceph主存储使用了mon[主机名: {0}]",
     "arguments": [
       "existing"
     ],
@@ -8503,7 +8534,7 @@
   {
     "raw": "cannot add ceph backup storage, there has been some ceph backup storage using mon[hostnames:%s]",
     "en_US": "cannot add ceph backup storage, there has been some ceph backup storage using mon[hostnames:{0}]",
-    "zh_CN": "无法添加ceph镜像服务器，已经有某个ceph镜像服务器使用mon[主机名：{0}]",
+    "zh_CN": "无法添加ceph镜像服务器，已经有某个ceph镜像服务器使用mon[主机名: {0}]",
     "arguments": [
       "existing"
     ],
@@ -8675,7 +8706,7 @@
   {
     "raw": "failed to reconnect the mon[uuid:%s] server of the ceph primary storage[uuid:%s, name:%s], %s",
     "en_US": "failed to reconnect the mon[uuid:{0}] server of the ceph primary storage[uuid:{1}, name:{2}], {3}",
-    "zh_CN": "重连ceph主存储[uuid:{1}, name:{2}]的mon服务[uuid:{0}]失败，错误细节：{3}",
+    "zh_CN": "重连ceph主存储[uuid:{1}, name:{2}]的mon服务[uuid:{0}]失败，错误细节: {3}",
     "arguments": [
       "mon.getSelf().getUuid()",
       "self.getUuid()",
@@ -8936,7 +8967,7 @@
       "volumeUuid",
       "dstPsUuid"
     ],
-    "line": 81,
+    "line": 86,
     "fileName": "src/main/java/org/zstack/storage/migration/primary/ReserveCapacityFromDstPSFlow.java"
   },
   {
@@ -8970,7 +9001,7 @@
   {
     "raw": "cannot find the image[uuid:%s] in any connected backup storage attached to the zone[uuid:%s]. check below:\n1. whether the backup storage is attached to the zone[uuid:%s]\n2. whether the backup storage is in connected status; try to reconnect it if not",
     "en_US": "cannot find the image[uuid:{0}] in any connected backup storage attached to the zone[uuid:{1}]. check below:\n1. whether the backup storage is attached to the zone[uuid:{2}]\n2. whether the backup storage is in connected status; try to reconnect it if not",
-    "zh_CN": "在所有的已连接区域[uuid:{1}]的镜像服务器未找到镜像[uuid:{0}]。建议进行如下检查：\n1.镜像服务器是否连接到区域[uuid:{2}]\n2.镜像服务器是否是已连接状态，如果不是尝试重新连接",
+    "zh_CN": "在所有的已连接区域[uuid:{1}]的镜像服务器未找到镜像[uuid:{0}]。建议进行如下检查: \n1.镜像服务器是否连接到区域[uuid:{2}]\n2.镜像服务器是否是已连接状态，如果不是尝试重新连接",
     "arguments": [
       "imageUuid",
       "zoneUuid",
@@ -9042,9 +9073,9 @@
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageApiInterceptor.java"
   },
   {
-    "raw": "after removing primary storage%s to avoid, there is no candidate primary storage anymore",
-    "en_US": "after removing primary storage{0} to avoid, there is no candidate primary storage anymore",
-    "zh_CN": "把主存储{0}移到排除列表后，就没有可用的主存储了",
+    "raw": "after removing primary storage%s to avoid, there is no candidate primary storage anymore. please check primary storage status and state in the cluster.",
+    "en_US": "after removing primary storage{0} to avoid, there is no candidate primary storage anymore. please check primary storage status and state in the cluster.",
+    "zh_CN": "把主存储{0}移到排除列表后，就没有可用的主存储了，请确认集群中主存储的状态",
     "arguments": [
       "spec.getAvoidPrimaryStorageUuids()"
     ],
@@ -9137,7 +9168,7 @@
   {
     "raw": "after subtracting reserved capacity[%s], there is no primary storage having required size[%s bytes]",
     "en_US": "after subtracting reserved capacity[{0}], there is no primary storage having required size[{1} bytes]",
-    "zh_CN": "释放保留容量[{0}]后，就没有主存储拥有要求的大小：{1}字节了",
+    "zh_CN": "释放保留容量[{0}]后，就没有主存储拥有要求的大小: {1}字节了",
     "arguments": [
       "PrimaryStorageGlobalConfig.RESERVED_CAPACITY.value()",
       "spec.getSize()"
@@ -9277,7 +9308,7 @@
   {
     "raw": "failed to download bits from the imagestore backup storage[hostname:%s, path: %s] to the nfs primary storage[uuid:%s, path: %s], %s",
     "en_US": "failed to download bits from the imagestore backup storage[hostname:{0}, path: {1}] to the nfs primary storage[uuid:{2}, path: {3}], {4}",
-    "zh_CN": "无法从ImageStore镜像服务器[hostname:{0}, path: {1}]下载数据到NFS主存储[uuid:{2}, path: {3}]，错误细节：{4}",
+    "zh_CN": "无法从ImageStore镜像服务器[hostname:{0}, path: {1}]下载数据到NFS主存储[uuid:{2}, path: {3}]，错误细节: {4}",
     "arguments": [
       "greply.getHostname()",
       "backupStorageInstallPath",
@@ -9558,7 +9589,7 @@
       "hvType",
       "bsType"
     ],
-    "line": 268,
+    "line": 271,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageFactory.java"
   },
   {
@@ -9568,7 +9599,7 @@
     "arguments": [
       "spec.getVmInventory().getHypervisorType()"
     ],
-    "line": 353,
+    "line": 356,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageFactory.java"
   },
   {
@@ -9583,7 +9614,7 @@
       "volume.getUuid()",
       "dataHost"
     ],
-    "line": 549,
+    "line": 571,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageFactory.java"
   },
   {
@@ -9595,7 +9626,7 @@
       "vol.getUuid()",
       "vol.getPrimaryStorageUuid()"
     ],
-    "line": 739,
+    "line": 764,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageFactory.java"
   },
   {
@@ -9607,7 +9638,7 @@
       "vm.getName()",
       "psuuid"
     ],
-    "line": 782,
+    "line": 807,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageFactory.java"
   },
   {
@@ -9617,18 +9648,18 @@
     "arguments": [
       "vm.getUuid()"
     ],
-    "line": 821,
+    "line": 846,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageFactory.java"
   },
   {
     "raw": "unable to live migrate vm[uuid:%s] with local storage. Only linux guest is supported. Current platform is [%s]",
     "en_US": "unable to live migrate vm[uuid:{0}] with local storage. Only linux guest is supported. Current platform is [{1}]",
-    "zh_CN": "无法在本地存储上热迁移云主机[uuid:{0}]。只有Linux类型的云主机支持该操作。当前类型为：[{1}]",
+    "zh_CN": "无法在本地存储上热迁移云主机[uuid:{0}]。只有Linux类型的云主机支持该操作。当前类型为: [{1}]",
     "arguments": [
       "vm.getUuid()",
       "vm.getPlatform()"
     ],
-    "line": 826,
+    "line": 851,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageFactory.java"
   },
   {
@@ -9638,7 +9669,7 @@
     "arguments": [
       "vm.getUuid()"
     ],
-    "line": 850,
+    "line": 875,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageFactory.java"
   },
   {
@@ -9648,7 +9679,7 @@
     "arguments": [
       "LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.getTagFormat()"
     ],
-    "line": 898,
+    "line": 923,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageFactory.java"
   },
   {
@@ -9659,7 +9690,7 @@
       "hostUuid",
       "msg.getPrimaryStorageUuid()"
     ],
-    "line": 908,
+    "line": 933,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageFactory.java"
   },
   {
@@ -9724,7 +9755,7 @@
   {
     "raw": "invalid CIDR: %s",
     "en_US": "invalid CIDR: {0}",
-    "zh_CN": "无效CIDR：{0}",
+    "zh_CN": "无效CIDR: {0}",
     "arguments": [
       "cidr"
     ],
@@ -9745,7 +9776,7 @@
   {
     "raw": "there are %s running VMs on the NFS primary storage, please stop them and try again:\n%s\n",
     "en_US": "there are {0} running VMs on the NFS primary storage, please stop them and try again:\n{1}\n",
-    "zh_CN": "在NFS主存储上有{0}个运行中的VM，请先手动关闭再尝试：\n{1}\n",
+    "zh_CN": "在NFS主存储上有{0}个运行中的VM，请先手动关闭再尝试: \n{1}\n",
     "arguments": [
       "vms.size()",
       "StringUtils.join(vms, \"\\n\")"
@@ -9799,7 +9830,7 @@
   {
     "raw": "NFS primary storage[uuid:%s] failed to delete a volume snapshot[uuid:%s], %s. A GC job[uuid:%s] is scheduled to cleanup it in the interval of %s seconds",
     "en_US": "NFS primary storage[uuid:{0}] failed to delete a volume snapshot[uuid:{1}], {2}. A GC job[uuid:{3}] is scheduled to cleanup it in the interval of {4} seconds",
-    "zh_CN": "NFS主存储[uuid:{0}]删除一个云盘快照[uuid:{1}]失败，错误细节：{2}。一个定时任务（GC job）[uuid:{3}]被创建，以{4}秒的间隔重试清理",
+    "zh_CN": "NFS主存储[uuid:{0}]删除一个云盘快照[uuid:{1}]失败，错误细节: {2}。一个定时任务（GC job）[uuid:{3}]被创建，以{4}秒的间隔重试清理",
     "arguments": [
       "self.getUuid()",
       "sinv.getUuid()",
@@ -9960,7 +9991,7 @@
   {
     "raw": "failed to ping nfs primary storage[uuid:%s] from host[uuid:%s],because %s. disconnect this host-ps connection",
     "en_US": "failed to ping nfs primary storage[uuid:{0}] from host[uuid:{1}],because {2}. disconnect this host-ps connection",
-    "zh_CN": "从物理机[uuid:{1}]Ping NFS主存储[uuid:{0}]失败，原因：{2}。断开该 物理机-主存储 连接",
+    "zh_CN": "从物理机[uuid:{1}]Ping NFS主存储[uuid:{0}]失败，原因: {2}。断开该 物理机-主存储 连接",
     "arguments": [
       "psInv.getUuid()",
       "huuid",
@@ -10065,7 +10096,7 @@
   {
     "raw": "fail to mount nfs[uuid:%s] from host[uuid:%s], because:%s",
     "en_US": "fail to mount nfs[uuid:{0}] from host[uuid:{1}], because:{2}",
-    "zh_CN": "从物理机[uuid:{1}]挂载nfs[uuid:{0}]失败，因为：{2}",
+    "zh_CN": "从物理机[uuid:{1}]挂载nfs[uuid:{0}]失败，因为: {2}",
     "arguments": [
       "inv.getUuid()",
       "huuid",
@@ -10169,7 +10200,7 @@
   {
     "raw": "unable to reconnect the primary storage[uuid:%s, name:%s], %s",
     "en_US": "unable to reconnect the primary storage[uuid:{0}, name:{1}], {2}",
-    "zh_CN": "无法重连主存储[uuid:{0}, name:{1}]，错误细节：{2}",
+    "zh_CN": "无法重连主存储[uuid:{0}, name:{1}]，错误细节: {2}",
     "arguments": [
       "self.getUuid()",
       "self.getName()",
@@ -10532,13 +10563,21 @@
     "fileName": "src/main/java/org/zstack/storage/snapshot/VolumeSnapshotTreeBase.java"
   },
   {
+    "raw": "Can\u0027t attach volume to VM, no qualified cluster",
+    "en_US": "Can\u0027t attach volume to VM, no qualified cluster",
+    "zh_CN": "不能加载云盘到虚拟机上，没有可用集群",
+    "arguments": [],
+    "line": 201,
+    "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
+  },
+  {
     "raw": "the volume[uuid:%s] is not in status of deleted. This is operation is to recover a deleted data volume",
     "en_US": "the volume[uuid:{0}] is not in status of deleted. This is operation is to recover a deleted data volume",
     "zh_CN": "云盘[uuid:{0}]未处于删除状态。此操作将覆盖一个被删除的数据云盘",
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 93,
+    "line": 97,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -10548,7 +10587,7 @@
     "arguments": [
       "vol.getUuid()"
     ],
-    "line": 193,
+    "line": 228,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -10560,7 +10599,7 @@
       "ImageMediaType.DataVolumeTemplate",
       "type"
     ],
-    "line": 111,
+    "line": 115,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -10571,7 +10610,7 @@
       "img.getUuid()",
       "img.getState()"
     ],
-    "line": 115,
+    "line": 119,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -10582,7 +10621,7 @@
       "img.getUuid()",
       "img.getStatus()"
     ],
-    "line": 119,
+    "line": 123,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -10592,7 +10631,7 @@
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 131,
+    "line": 135,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -10604,7 +10643,7 @@
       "state",
       "VolumeState.Enabled"
     ],
-    "line": 138,
+    "line": 142,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -10617,7 +10656,7 @@
       "VolumeStatus.Ready",
       "VolumeStatus.NotInstantiated"
     ],
-    "line": 143,
+    "line": 147,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -10627,7 +10666,7 @@
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 150,
+    "line": 154,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -10637,7 +10676,7 @@
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 154,
+    "line": 158,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -10648,7 +10687,7 @@
       "vol.getUuid()",
       "vol.getName()"
     ],
-    "line": 159,
+    "line": 163,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -10659,7 +10698,7 @@
       "msg.getVmInstanceUuid()",
       "msg.getVolumeUuid()"
     ],
-    "line": 179,
+    "line": 214,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -10670,7 +10709,7 @@
       "vol.getUuid()",
       "vol.getName()"
     ],
-    "line": 184,
+    "line": 219,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -10680,7 +10719,7 @@
     "arguments": [
       "vol.getUuid()"
     ],
-    "line": 189,
+    "line": 224,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -10690,7 +10729,7 @@
     "arguments": [
       "vol.getUuid()"
     ],
-    "line": 197,
+    "line": 232,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -10702,7 +10741,7 @@
       "VolumeStatus.NotInstantiated",
       "vol.getStatus()"
     ],
-    "line": 202,
+    "line": 237,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -10716,7 +10755,7 @@
       "msg.getVmInstanceUuid()",
       "hvType"
     ],
-    "line": 210,
+    "line": 245,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -10729,7 +10768,7 @@
       "count",
       "msg.getVmInstanceUuid()"
     ],
-    "line": 223,
+    "line": 258,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -10739,7 +10778,7 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 235,
+    "line": 270,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -10749,7 +10788,7 @@
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 254,
+    "line": 289,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -10759,7 +10798,7 @@
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 259,
+    "line": 294,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -10769,7 +10808,7 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 273,
+    "line": 308,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -10797,7 +10836,7 @@
   {
     "raw": "cannot find a backup storage on which the image[uuid:%s] is that satisfies all conditions of: 1. has state Enabled 2. has status Connected. 3 has attached to zone in which primary storage[uuid:%s] is",
     "en_US": "cannot find a backup storage on which the image[uuid:{0}] is that satisfies all conditions of: 1. has state Enabled 2. has status Connected. 3 has attached to zone in which primary storage[uuid:{1}] is",
-    "zh_CN": "无法找到一个镜像[uuid:%s]所在的镜像服务器符合全部的下列条件：状态启动[state:Enabled]，已连接[status:Connected]，被挂载到主存储[uuid:{1}]所在的区域中",
+    "zh_CN": "无法找到一个镜像[uuid:%s]所在的镜像服务器符合全部的下列条件: 状态启动[state:Enabled]，已连接[status:Connected]，被挂载到主存储[uuid:{1}]所在的区域中",
     "arguments": [
       "template.getUuid()",
       "msg.getPrimaryStorageUuid()"
@@ -10812,7 +10851,7 @@
     "arguments": [
       "VolumeFactory.class.getSimpleName()"
     ],
-    "line": 671,
+    "line": 674,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeManagerImpl.java"
   },
   {
@@ -10927,7 +10966,7 @@
   {
     "raw": "The argument :\u0027resourceType\u0027 doesn\u0027t match uuid",
     "en_US": "The argument :\u0027resourceType\u0027 doesn\u0027t match uuid",
-    "zh_CN": "参数：资源类型（resourceType）与UUID不匹配",
+    "zh_CN": "参数: 资源类型（resourceType）与UUID不匹配",
     "arguments": [],
     "line": 99,
     "fileName": "src/main/java/org/zstack/tag/TagApiInterceptor.java"
@@ -11189,7 +11228,7 @@
   {
     "raw": "vSwitch/dvSwitch not found: %s",
     "en_US": "vSwitch/dvSwitch not found: {0}",
-    "zh_CN": "vSwitch/dvSwitch未找到：{0}",
+    "zh_CN": "vSwitch/dvSwitch未找到: {0}",
     "arguments": [
       "phyinf"
     ],
@@ -11211,23 +11250,23 @@
   {
     "raw": "Failed to list datastores from vCenter %s: %s",
     "en_US": "Failed to list datastores from vCenter {0}: {1}",
-    "zh_CN": "列举来自于vCenter{0}的datastores失败：{1}",
+    "zh_CN": "列举来自于vCenter{0}的datastores失败: {1}",
     "arguments": [
       "vcvo.getDomainName()",
       "ex.getMessage()"
     ],
-    "line": 2019,
+    "line": 2141,
     "fileName": "src/main/java/org/zstack/vmware/VCenterManagerImpl.java"
   },
   {
     "raw": "Monitor aborted for vCenter %s: %s",
     "en_US": "Monitor aborted for vCenter {0}: {1}",
-    "zh_CN": "vCenter{0}的监听器停止了：{1}",
+    "zh_CN": "vCenter{0}的监听器停止了: {1}",
     "arguments": [
       "vcvo.getDomainName()",
       "ex.getMessage()"
     ],
-    "line": 2028,
+    "line": 2150,
     "fileName": "src/main/java/org/zstack/vmware/VCenterManagerImpl.java"
   },
   {
@@ -11253,7 +11292,7 @@
   {
     "raw": "unable to detach a nic[uuid:%s] from the vm[uuid:%s], %s",
     "en_US": "unable to detach a nic[uuid:{0}] from the vm[uuid:{1}], {2}",
-    "zh_CN": "无法从云主机[uuid:{1}]卸载一个网卡[uuid:{0}]，错误细节：{2}",
+    "zh_CN": "无法从云主机[uuid:{1}]卸载一个网卡[uuid:{0}]，错误细节: {2}",
     "arguments": [
       "msg.getVmNicUuid()",
       "msg.getVmInstanceUuid()",
@@ -11317,8 +11356,8 @@
     "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
   },
   {
-    "raw": "the gateway[uuid:%s] of l3[uuid:%s] has been occupied",
-    "en_US": "the gateway[uuid:{0}] of l3[uuid:{1}] has been occupied",
+    "raw": "the gateway[ip:%s] of l3[uuid:%s] has been occupied",
+    "en_US": "the gateway[ip:{0}] of l3[uuid:{1}] has been occupied",
     "zh_CN": "三层网络[uuid:{1}]的网关[uuid:{0}]已经被占用",
     "arguments": [
       "gateway",
@@ -11386,9 +11425,9 @@
     "fileName": "src/main/java/org/zstack/vpc/VpcVRouterFactory.java"
   },
   {
-    "raw": "the gateway[uuid:%s] of l3[uuid:%s] has been occupied on vpc vr[uuid: %s]",
-    "en_US": "the gateway[uuid:{0}] of l3[uuid:{1}] has been occupied on vpc vr[uuid: {2}]",
-    "zh_CN": "在VPC的云路由上，三层网络[uuid:{1}]的网关[uuid:{0}]已经被占用",
+    "raw": "the gateway[ip:%s] of l3[uuid:%s] has been occupied on vpc vr[uuid: %s]",
+    "en_US": "the gateway[ip:{0}] of l3[uuid:{1}] has been occupied on vpc vr[uuid: {2}]",
+    "zh_CN": "在VPC的云路由[uuid: {2}]上，三层网络[uuid:{1}]的网关[uuid:{0}]已经被占用",
     "arguments": [
       "gateway",
       "l3.getUuid()",
