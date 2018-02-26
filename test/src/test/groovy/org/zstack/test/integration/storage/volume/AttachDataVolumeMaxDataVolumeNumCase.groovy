@@ -1,11 +1,12 @@
 package org.zstack.test.integration.storage.volume
 
+import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
-import org.zstack.header.apimediator.ApiMessageInterceptionException
-import org.zstack.header.volume.Volume
 import org.zstack.header.volume.VolumeType
 import org.zstack.header.volume.VolumeVO
 import org.zstack.header.volume.VolumeVO_
+import org.zstack.kvm.KVMAgentCommands
+import org.zstack.kvm.KVMConstant
 import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VolumeInventory
@@ -13,7 +14,9 @@ import org.zstack.test.integration.storage.Env
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
-import org.zstack.utils.data.SizeUnit
+import org.zstack.utils.gson.JSONObjectUtil
+
+import java.util.stream.Collectors
 
 /**
  * Created by ads6 on 2018/1/12.
@@ -21,6 +24,7 @@ import org.zstack.utils.data.SizeUnit
 
 class AttachDataVolumeMaxDataVolumeNumCase extends SubCase {
     EnvSpec env
+    VmInstanceInventory vm
     private static final int MAX_DATA_VOLUME_NUMBER = 24
 
     @Override
@@ -36,7 +40,9 @@ class AttachDataVolumeMaxDataVolumeNumCase extends SubCase {
     @Override
     void test() {
         env.create {
+            vm = env.inventoryByName("vm") as VmInstanceInventory
             attachMultiDataVolumestoVm()
+            testDataVolumeOrder()
         }
     }
 
@@ -46,7 +52,6 @@ class AttachDataVolumeMaxDataVolumeNumCase extends SubCase {
     }
 
     void attachMultiDataVolumestoVm() {
-        def vm = env.inventoryByName("vm") as VmInstanceInventory
         def diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory
 
         for (int i = 0; i < MAX_DATA_VOLUME_NUMBER; i++){
@@ -76,5 +81,24 @@ class AttachDataVolumeMaxDataVolumeNumCase extends SubCase {
         }
 
         assert Q.New(VolumeVO.class).eq(VolumeVO_.type, VolumeType.Data).eq(VolumeVO_.vmInstanceUuid, vm.uuid).count() == 24
+    }
+
+    void testDataVolumeOrder(){
+        env.simulator(KVMConstant.KVM_START_VM_PATH){ HttpEntity<String> e ->
+            KVMAgentCommands.StartVmCmd cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.StartVmCmd.class)
+            List<Integer> deviceIds = cmd.dataVolumes.stream().map({it -> it.getDeviceId()}).collect(Collectors.toList())
+            int lastId = 0
+            deviceIds.each {
+                assert it > lastId
+                lastId = it
+            }
+            return new KVMAgentCommands.StartVmResponse()
+        }
+
+        for (int i = 0; i < 3 ; i++) {
+            rebootVmInstance {
+                uuid = vm.uuid
+            }
+        }
     }
 }
