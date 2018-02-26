@@ -386,7 +386,14 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         }
 
         cmd.setDataVolumes(dtos);
-        cmd.setBootIso(convertIsoToCephIfNeeded(cmd.getBootIso()));
+
+        List<IsoTO> isoTOList = CollectionUtils.transformToList(cmd.getBootIso(), new Function<IsoTO, IsoTO>() {
+            @Override
+            public IsoTO call(IsoTO arg) {
+                return convertIsoToCephIfNeeded(arg);
+            }
+        });
+        cmd.setBootIso(isoTOList);
 
         CephPrimaryStorageVO cephPrimaryStorageVO = dbf.findByUuid(spec.getDestRootVolume().getPrimaryStorageUuid(), CephPrimaryStorageVO.class);
         if (cephPrimaryStorageVO != null && !CephSystemTags.NO_CEPHX.hasTag(cephPrimaryStorageVO.getUuid())) {

@@ -134,14 +134,16 @@ public class VmImageSelectBackupStorageFlow extends NoRollbackFlow {
                     }));
 
             if (ImageMediaType.ISO.toString().equals(spec.getImageSpec().getInventory().getMediaType())) {
-                spec.getDestIso().setBackupStorageUuid(bsUuid);
+                spec.getDestIsoList().get(0).setBackupStorageUuid(bsUuid);
             }
         } else if ((VmOperation.Start == spec.getCurrentVmOperation()
                 || VmOperation.Reboot == spec.getCurrentVmOperation())
-                && spec.getDestIso() != null) {
-            spec.getDestIso().setBackupStorageUuid(
-                    findIsoBsUuidInTheZone(spec.getDestIso().getImageUuid(), spec.getVmInventory().getZoneUuid())
-            );
+                && !spec.getDestIsoList().isEmpty()) {
+            spec.getDestIsoList().forEach(isoSpec -> {
+                isoSpec.setBackupStorageUuid(
+                        findIsoBsUuidInTheZone(isoSpec.getImageUuid(), spec.getVmInventory().getZoneUuid())
+                );
+            });
         }
 
         trigger.next();

@@ -52,6 +52,16 @@ doc {
 					since "0.6"
 					
 				}
+				column {
+					name "isoUuid"
+					enclosedIn ""
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "2.3.1"
+					
+				}
 			}
         }
 
