@@ -7,7 +7,7 @@ import static org.zstack.header.identity.rbac.RBACInfo.rbac
 @StaticInit
 static void init() {
     rbac {
-        adminOnlyAPIs("^org.zstack.header.console.*")
+        adminOnlyAPIs("org.zstack.header.console.**")
 
         normalAPIs(
                 APIRequestConsoleAccessMsg.class.name,

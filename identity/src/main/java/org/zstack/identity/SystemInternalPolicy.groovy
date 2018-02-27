@@ -70,7 +70,7 @@ class SystemInternalPolicy implements InternalPolicy {
                     name = "give-admin-all-apis"
                     effect = AccountConstant.StatementEffect.Allow
 
-                    action(".*")
+                    action("/**")
 
                     principal("${AccountConstant.PRINCIPAL_ACCOUNT}:${AccountConstant.INITIAL_SYSTEM_ADMIN_UUID}")
                 }

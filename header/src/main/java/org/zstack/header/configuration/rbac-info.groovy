@@ -7,7 +7,7 @@ import static org.zstack.header.identity.rbac.RBACInfo.rbac
 @StaticInit
 static void init() {
     rbac {
-        adminOnlyAPIs("^org.zstack.header.configuration.*")
+        adminOnlyAPIs("org.zstack.header.configuration.**")
 
         normalAPIs(
                 APIQueryDiskOfferingMsg.class.name,

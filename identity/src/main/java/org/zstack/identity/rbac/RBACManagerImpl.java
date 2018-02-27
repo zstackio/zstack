@@ -54,36 +54,7 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
         BeanUtils.reflections.getSubTypesOf(InternalPolicy.class).forEach(clz -> {
             try {
                 InternalPolicy p = clz.newInstance();
-
-                List<PolicyInventory> pis = p.getPolices();
-
-                for (PolicyInventory pi : pis) {
-                    for (PolicyInventory.Statement statement : pi.getStatements()) {
-                        if (statement.getActions() != null) {
-                            for (String s : statement.getActions()) {
-                                try {
-                                    Pattern.compile(s);
-                                } catch (Exception e) {
-                                    throw new CloudRuntimeException(String.format("invalid action[%s] defined by %s, it's not a regular expression string",
-                                            s, clz), e);
-                                }
-                            }
-                        }
-
-                        if (statement.getResources() != null) {
-                            for (String r : statement.getResources()) {
-                                try {
-                                    Pattern.compile(r);
-                                } catch (Exception e) {
-                                    throw new CloudRuntimeException(String.format("invalid resource[%s] defined by %s, it's not a regular expression string",
-                                            r, clz), e);
-                                }
-                            }
-                        }
-                    }
-                }
-
-                internalPolices.addAll(pis);
+                internalPolices.addAll(p.getPolices());
             } catch (CloudRuntimeException e) {
                 throw e;
             } catch (Exception e) {

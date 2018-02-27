@@ -1,8 +1,11 @@
 package org.zstack.test.integration.identity
 
 import org.zstack.header.errorcode.OperationFailureException
+import org.zstack.header.identity.APICreateAccountMsg
 import org.zstack.header.identity.SessionVO
 import org.zstack.header.identity.SuppressCredentialCheck
+import org.zstack.header.identity.rbac.PolicyMatcher
+import org.zstack.header.identity.rbac.RBACInfo
 import org.zstack.header.message.APIMessage
 import org.zstack.header.rest.RestRequest
 import org.zstack.identity.rbac.AdminOnlyStatements
@@ -81,17 +84,18 @@ class RBACAPIRequestCheckerCase extends SubCase {
             && it.isAnnotationPresent(RestRequest.class) && !it.isAnnotationPresent(Deprecated.class)
         }
 
+        Set<String> adminOnlyAPIs = []
+        RBACInfo.infos.each { info ->
+            adminOnlyAPIs.addAll(info.adminOnlyAPIs)
+        }
+
+        def matcher = new PolicyMatcher()
         apis.each { apiclz ->
-            boolean adminOnly = RBACManager.internalDenyStatements.any {_, statements ->
-                return statements.any { s ->
-                    return s.actions.any { Pattern.compile(it).matcher(apiclz.name).matches() }
-                }
-            } && !RBACManager.internalAllowStatements.any {_, statements ->
-                return statements.any { s ->
-                    return s.actions.any { Pattern.compile(it).matcher(apiclz.name).matches() }
-                }
+            if (!apiclz.name.startsWith(APICreateAccountMsg.class.package.name)) {
+                return
             }
 
+            boolean  adminOnly = adminOnlyAPIs.any { matcher.match(it, apiclz.name) }
             doAdminCheck(apiclz, a)
             doNormalAccountCheck(apiclz, n, adminOnly)
         }

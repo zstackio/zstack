@@ -4,19 +4,18 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.PolicyInventory;
+import org.zstack.header.identity.rbac.PolicyMatcher;
 import org.zstack.header.message.APIMessage;
 import org.zstack.identity.APIRequestChecker;
 import org.zstack.identity.rbac.datatype.Entity;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
-
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
@@ -25,6 +24,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
     private static final CLogger logger = Utils.getLogger(RBACAPIRequestChecker.class);
 
     private APIMessage message;
+    private PolicyMatcher policyMatcher = new PolicyMatcher();
 
     @Override
     public void check(APIMessage msg) {
@@ -34,19 +34,11 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
 
     /**
      * rule evaluation order:
-     * 1. if any internal policy allows the message, allow
-     * 2. if any internal policy denies the message, deny
-     * 3. if any user defined policy denies the message, deny
-     * 4. if any user defined policy allows the mssage, allow
+     * 3. if any user defined policy denies the API, deny
+     * 4. if any user defined policy allows the API, allow
      * 5. then deny by default
      */
     private void check() {
-        if (evalAllowStatements(RBACManager.internalAllowStatements)) {
-            return;
-        }
-
-        evalDenyStatements(RBACManager.internalDenyStatements);
-
         List<PolicyInventory> polices = RBACManager.getPoliciesByAPI(message);
         Map<PolicyInventory, List<PolicyInventory.Statement>> denyStatements = RBACManager.collectDenyStatements(polices);
         Map<PolicyInventory, List<PolicyInventory.Statement>> allowStatements = RBACManager.collectAllowedStatements(polices);
@@ -89,8 +81,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
         String[] ss = as.split(":",2);
         String apiName = ss[0];
 
-        Pattern pattern = Pattern.compile(apiName);
-        return pattern.matcher(message.getClass().getName()).matches();
+        return policyMatcher.match(apiName, message.getClass().getName());
     }
 
     private boolean isPrincipalMatched(List<String> principals) {
@@ -137,8 +128,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
                     apiFields = ss[1];
                 }
 
-                Pattern pattern = Pattern.compile(apiName);
-                if (!pattern.matcher(message.getClass().getName()).matches()) {
+                if (!policyMatcher.match(apiName, message.getClass().getName())) {
                     // the statement not matching this API
                     return;
                 }
@@ -176,12 +166,10 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
     }
 
     private boolean checkUserPrincipal(String uuidRegex) {
-        Pattern p = Pattern.compile(uuidRegex);
-        return p.matcher(message.getSession().getUserUuid()).matches();
+        return policyMatcher.match(uuidRegex, message.getSession().getUserUuid());
     }
 
     private boolean checkAccountPrincipal(String uuidRegex) {
-        Pattern p = Pattern.compile(uuidRegex);
-        return p.matcher(message.getSession().getAccountUuid()).matches();
+        return policyMatcher.match(uuidRegex, message.getSession().getAccountUuid());
     }
 }

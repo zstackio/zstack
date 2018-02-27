@@ -9,14 +9,6 @@ class AdminOnlyStatements {
         return Pattern.compile(s)
     }
 
-    static {
-        RBACInfo.infos.each { info ->
-            info.adminOnlyAPIs.each {
-                actionStatements.add(p(it))
-            }
-        }
-    }
-    
     static List<Pattern> actionStatements =[
             //p("^org.zstack.header.host.*"),
             p("^org.zstack.header.zone.*"),

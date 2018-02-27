@@ -7,9 +7,7 @@ import static org.zstack.header.identity.rbac.RBACInfo.rbac
 @StaticInit
 static void init() {
     rbac {
-        prefix "org.zstack.header.host"
-
-        adminOnlyAPIs("^org.zstack.header.host.*")
+        adminOnlyAPIs("org.zstack.header.host.**")
     }
 }
 

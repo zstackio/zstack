@@ -6,6 +6,7 @@ import org.zstack.header.identity.PolicyInventory;
 import org.zstack.header.identity.PolicyVO;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.message.APIMessage;
+import org.zstack.identity.SystemInternalPolicy;
 import org.zstack.utils.BeanUtils;
 
 import java.util.ArrayList;
@@ -26,7 +27,7 @@ public interface RBACManager {
             @Override
             protected List<PolicyInventory> scripts() {
                 SessionInventory session = message.getSession();
-                List<PolicyInventory> ret = new ArrayList<>();
+                List<PolicyInventory> ret = new ArrayList<>(internalPolices);
                 if (session.isAccountSession()) {
                     ret.addAll(getPoliciesForAccount(session));
                 } else {

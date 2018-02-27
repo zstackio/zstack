@@ -42,15 +42,18 @@ public abstract class APIMessage extends NeedReplyMessage {
     @GsonTransient
     public static Map<Class, Collection<FieldParam>> apiParams = new HashMap<>();
 
+    @NoJsonSchema
+    @APINoSee
+    @GsonTransient
+    public static Set<Class> apiMessageClasses = BeanUtils.reflections.getSubTypesOf(APIMessage.class)
+            .stream().filter(c -> !Modifier.isStatic(c.getModifiers())).collect(Collectors.toSet());
+
     static {
         collectApiParams();
     }
 
     private static void collectApiParams() {
-        Set<Class> apiClass = BeanUtils.reflections.getSubTypesOf(APIMessage.class)
-                .stream().filter(c -> !Modifier.isStatic(c.getModifiers())).collect(Collectors.toSet());
-
-        for (Class clz : apiClass) {
+        for (Class clz : apiMessageClasses) {
             List<Field> fields = FieldUtils.getAllFields(clz);
 
             Map<String, FieldParam> fmap = new HashMap<>();
