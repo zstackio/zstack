@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
+import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.utils.DebugUtils;
@@ -53,6 +54,7 @@ public abstract class AbstractLocalExternalService implements LocalExternalServi
         public Runnable action;
         public Callable<Boolean> upChecker;
         public int successTimes = 3;
+        public Runnable actionAfterUp;
 
         private long endTime = System.currentTimeMillis();
 
@@ -61,6 +63,13 @@ public abstract class AbstractLocalExternalService implements LocalExternalServi
 
         private void doAction() {
             action.run();
+        }
+
+        @AsyncThread
+        private void doActionAfterUp() {
+            if (actionAfterUp != null) {
+                actionAfterUp.run();
+            }
         }
 
         @Override
@@ -96,6 +105,7 @@ public abstract class AbstractLocalExternalService implements LocalExternalServi
                     try {
                         if (checkServiceUp()) {
                             // service up
+                            doActionAfterUp();
                             return true;
                         }
                     } catch (Throwable t) {
