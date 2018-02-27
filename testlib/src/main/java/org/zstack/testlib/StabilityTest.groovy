@@ -77,6 +77,9 @@ abstract class StabilityTest extends Test implements Case{
                 // create a new case for every run, otherwise
                 // the stateful cases will fail
                 Case subCase = buildCase(cname)
+                if (subCase.class.isAnnotationPresent(SkipTestSuite.class)) {
+                    break
+                }
 
                 index ++
 

@@ -69,6 +69,38 @@ class TProxy {
         }
     }
 
+    /**
+     *
+     * @param name: 要替换函数的名称
+     * @param c：函数体，其参数列表有两种形式：
+     *
+     * 1. 跟要替换的函数相同
+     *
+     * 例如要替换的write函数原型为：
+     *
+     * void write(Point p)
+     *
+     * 则传入的@c的应该是：
+     *
+     * mockMethod("write") { Point p -> }
+     *
+     * 2. 包含一个额外的invokeSuper参数
+     *
+     * 当要在@c中调用被替代的函数本身的实现时，@c的参数列表第一个参数必须是invokeSuper参数，
+     * 后面才是原函数的参数列表，例如：
+     *
+     *
+     * mockMethod("write") { invokeSuper, Point p ->
+     *     invokeSuper()
+     * }
+     *
+     * invokeSuper参数是一个函数，原型为void invokeSuper()
+     *
+     * 注意：这种方式只对用TProxy(Object adaptee)构造的TProxy object有意义
+     *
+     *
+     * @return TProxy object
+     */
     TProxy mockMethod(String name, Closure c) {
         self[name] = c
         return this
@@ -78,6 +110,12 @@ class TProxy {
         return proxyedObject
     }
 
+    /**
+     *
+     * @param bean: 要保护的bean对象
+     * @param fnames：要保护的字段名称数组
+     * @return FieldProtector 对象，调用其recover函数可以恢复@bean上被保护字段原来的值
+     */
     FieldProtector protect(bean, String...fnames) {
         return new FieldProtector(bean, fnames)
     }
