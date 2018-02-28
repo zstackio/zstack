@@ -35,12 +35,14 @@ class RBACAPIRequestCheckerCase extends SubCase {
 
     @Override
     void environment() {
+        /*
         env = env {
             account {
                 name = "test"
                 password = "password"
             }
         }
+        */
     }
 
     void doAdminCheck(Class apiclz, org.zstack.header.identity.SessionInventory session) {
@@ -103,8 +105,11 @@ class RBACAPIRequestCheckerCase extends SubCase {
 
     @Override
     void test() {
+        RBACInfo.checkIfAPIsMissingRBACInfo()
+        /*
         env.create {
             testAPIPermissions()
         }
+        */
     }
 }

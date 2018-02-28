@@ -2,8 +2,12 @@ package org.zstack.header.identity.rbac
 
 import org.zstack.header.exception.CloudRuntimeException
 import org.zstack.header.message.APIMessage
+import org.zstack.utils.Utils
+import org.zstack.utils.logging.CLogger
 
 class RBACInfo {
+    private static final CLogger logger = Utils.getLogger(RBACInfo.class)
+
     static List<RBACInfo> infos = []
     private static PolicyMatcher matcher = new PolicyMatcher()
 
@@ -23,7 +27,7 @@ class RBACInfo {
 
         Set<String> missing = []
         APIMessage.apiMessageClasses.each { clz ->
-            if (!allRules.any { matcher.match(it, clz.name)}) {
+            if (!allRules.any { matcher.match(it, clz.name) }) {
                 missing.add(clz.name)
             }
         }
@@ -59,8 +63,7 @@ class RBACInfo {
     }
 
     private static FlattenResult flatten(Set<String> adminInput, Set<String> normalInput) {
-        boolean is = adminInput.any { a -> normalInput.any { n-> matcher.match(a, n)} } ||
-                normalInput.any { n -> adminInput.any { a-> matcher.match(n, a)} }
+        boolean is = adminInput.any { a -> normalInput.any { n-> matcher.match(a, n) || matcher.match(n, a) } }
 
         FlattenResult ret = new FlattenResult()
 
@@ -91,9 +94,9 @@ class RBACInfo {
                 assert winner != null : "${adminRules}, ${normalRules}"
 
                 if (adminRules.contains(winner)) {
-                    ret.adminOnly.add(winner)
+                    ret.adminOnly.add(apiClz.name)
                 } else {
-                    ret.normal.add(winner)
+                    ret.normal.add(apiClz.name)
                 }
             }
         } else {
