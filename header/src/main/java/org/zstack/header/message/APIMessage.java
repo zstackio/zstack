@@ -4,6 +4,7 @@ import org.apache.commons.lang.StringUtils;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.rest.APINoSee;
+import org.zstack.header.rest.RestRequest;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.FieldUtils;
@@ -46,7 +47,8 @@ public abstract class APIMessage extends NeedReplyMessage {
     @APINoSee
     @GsonTransient
     public static Set<Class> apiMessageClasses = BeanUtils.reflections.getSubTypesOf(APIMessage.class)
-            .stream().filter(c -> !Modifier.isStatic(c.getModifiers())).collect(Collectors.toSet());
+            .stream().filter(c -> !Modifier.isStatic(c.getModifiers()) && c.isAnnotationPresent(RestRequest.class))
+            .collect(Collectors.toSet());
 
     static {
         collectApiParams();

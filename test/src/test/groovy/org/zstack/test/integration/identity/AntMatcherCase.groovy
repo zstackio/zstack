@@ -1,13 +1,13 @@
 package org.zstack.test.integration.identity
 
 import org.junit.Test
-import org.springframework.util.AntPathMatcher
+import org.zstack.core.Platform
+import org.zstack.header.identity.rbac.RBACInfo
 
 class AntMatcherCase {
     @Test
     void test() {
-        def matcher = new AntPathMatcher()
-        def out = matcher.match("!abcd", "abcd")
-        println(out)
+        Platform.getUuid()
+        RBACInfo.checkIfAPIsMissingRBACInfo()
     }
 }

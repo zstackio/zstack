@@ -341,13 +341,6 @@ public class Platform {
         try {
             msId = getUuid();
 
-            /*
-            reflections = new Reflections(ClasspathHelper.forPackage("org.zstack"),
-                    new SubTypesScanner(), new MethodAnnotationsScanner(), new FieldAnnotationsScanner(),
-                    new MemberUsageScanner(), new MethodParameterNamesScanner(), new ResourcesScanner(),
-                    new TypeAnnotationsScanner(), new TypeElementsScanner(), new MethodParameterScanner());
-                    */
-
             // TODO: get code version from MANIFEST file
             codeVersion = "0.1.0";
 
