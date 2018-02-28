@@ -205,3 +205,5 @@ ALTER TABLE EventSubscriptionLabelVO ADD CONSTRAINT fkEventSubscriptionLabelVOEv
 UPDATE SchedulerTriggerVO set repeatCount=0 where repeatCount is NULL;
 
 UPDATE SystemTagVO SET tag = CONCAT(tag, '::0') WHERE resourceType = "VmInstanceVO" AND type = "System" AND tag LIKE "iso::%" AND tag NOT LIKE "iso::%::%";
+
+ALTER TABLE AffinityGroupVO ADD COLUMN state varchar(128) DEFAULT "Enabled";

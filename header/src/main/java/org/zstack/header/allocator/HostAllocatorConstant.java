@@ -20,4 +20,10 @@ public interface HostAllocatorConstant {
             "NO_AVAILABLE_HOST_BUT_PAGINATION_HAS_NOT_DONE",
             "some allocator flow cannot find candidate hosts; given it's still in pagination process, will continue allocating"
     );
+
+    enum Param {
+        HOST,
+        SPEC,
+        CAP_SUCCESS,
+    }
 }
