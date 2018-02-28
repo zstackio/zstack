@@ -65,7 +65,7 @@ public class QuerySNSEmailPlatformAction extends QueryAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/sns/application-platforms/emails";
+        info.path = "/sns/application-platforms/email";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";
