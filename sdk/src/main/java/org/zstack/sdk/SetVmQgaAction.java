@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class SetVmQgaAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class SetVmQgaAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SetVmQgaResult value;
+        public org.zstack.sdk.SetVmQgaResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class SetVmQgaAction extends AbstractAction {
             return ret;
         }
         
-        SetVmQgaResult value = res.getResult(SetVmQgaResult.class);
-        ret.value = value == null ? new SetVmQgaResult() : value; 
+        org.zstack.sdk.SetVmQgaResult value = res.getResult(org.zstack.sdk.SetVmQgaResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SetVmQgaResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class SetVmQgaAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/vm-instances/{uuid}/actions";

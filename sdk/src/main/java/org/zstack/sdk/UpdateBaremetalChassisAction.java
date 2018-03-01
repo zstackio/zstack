@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class UpdateBaremetalChassisAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class UpdateBaremetalChassisAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateBaremetalChassisResult value;
+        public org.zstack.sdk.UpdateBaremetalChassisResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -71,8 +72,8 @@ public class UpdateBaremetalChassisAction extends AbstractAction {
             return ret;
         }
         
-        UpdateBaremetalChassisResult value = res.getResult(UpdateBaremetalChassisResult.class);
-        ret.value = value == null ? new UpdateBaremetalChassisResult() : value; 
+        org.zstack.sdk.UpdateBaremetalChassisResult value = res.getResult(org.zstack.sdk.UpdateBaremetalChassisResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateBaremetalChassisResult() : value; 
 
         return ret;
     }
@@ -91,15 +92,15 @@ public class UpdateBaremetalChassisAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/baremetal/chassis/{uuid}/actions";

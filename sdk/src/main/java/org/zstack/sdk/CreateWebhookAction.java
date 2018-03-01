@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class CreateWebhookAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class CreateWebhookAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateWebhookResult value;
+        public org.zstack.sdk.CreateWebhookResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -65,8 +66,8 @@ public class CreateWebhookAction extends AbstractAction {
             return ret;
         }
         
-        CreateWebhookResult value = res.getResult(CreateWebhookResult.class);
-        ret.value = value == null ? new CreateWebhookResult() : value; 
+        org.zstack.sdk.CreateWebhookResult value = res.getResult(org.zstack.sdk.CreateWebhookResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateWebhookResult() : value; 
 
         return ret;
     }
@@ -85,15 +86,15 @@ public class CreateWebhookAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/web-hooks";

@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryAliyunVirtualRouterFromLocalAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryAliyunVirtualRouterFromLocalAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryAliyunVirtualRouterFromLocalResult value;
+        public org.zstack.sdk.QueryAliyunVirtualRouterFromLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryAliyunVirtualRouterFromLocalAction extends QueryAction {
             return ret;
         }
         
-        QueryAliyunVirtualRouterFromLocalResult value = res.getResult(QueryAliyunVirtualRouterFromLocalResult.class);
-        ret.value = value == null ? new QueryAliyunVirtualRouterFromLocalResult() : value; 
+        org.zstack.sdk.QueryAliyunVirtualRouterFromLocalResult value = res.getResult(org.zstack.sdk.QueryAliyunVirtualRouterFromLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryAliyunVirtualRouterFromLocalResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QueryAliyunVirtualRouterFromLocalAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/hybrid/aliyun/vrouter";

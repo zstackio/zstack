@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class GetPciDeviceCandidatesForAttachingVmAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class GetPciDeviceCandidatesForAttachingVmAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetPciDeviceCandidatesForAttachingVmResult value;
+        public org.zstack.sdk.GetPciDeviceCandidatesForAttachingVmResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +48,8 @@ public class GetPciDeviceCandidatesForAttachingVmAction extends AbstractAction {
             return ret;
         }
         
-        GetPciDeviceCandidatesForAttachingVmResult value = res.getResult(GetPciDeviceCandidatesForAttachingVmResult.class);
-        ret.value = value == null ? new GetPciDeviceCandidatesForAttachingVmResult() : value; 
+        org.zstack.sdk.GetPciDeviceCandidatesForAttachingVmResult value = res.getResult(org.zstack.sdk.GetPciDeviceCandidatesForAttachingVmResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetPciDeviceCandidatesForAttachingVmResult() : value; 
 
         return ret;
     }
@@ -67,15 +68,15 @@ public class GetPciDeviceCandidatesForAttachingVmAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/vm-instances/{vmInstanceUuid}/candidate-pci-devices";

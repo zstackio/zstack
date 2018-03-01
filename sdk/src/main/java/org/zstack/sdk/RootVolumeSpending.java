@@ -1,12 +1,14 @@
 package org.zstack.sdk;
 
-public class RootVolumeSpending extends SpendingDetails {
 
-    public java.util.List<RootVolumeSpendingInventory> sizeInventory;
-    public void setSizeInventory(java.util.List<RootVolumeSpendingInventory> sizeInventory) {
+
+public class RootVolumeSpending extends org.zstack.sdk.SpendingDetails {
+
+    public java.util.List sizeInventory;
+    public void setSizeInventory(java.util.List sizeInventory) {
         this.sizeInventory = sizeInventory;
     }
-    public java.util.List<RootVolumeSpendingInventory> getSizeInventory() {
+    public java.util.List getSizeInventory() {
         return this.sizeInventory;
     }
 

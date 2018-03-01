@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryAccountAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryAccountAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryAccountResult value;
+        public org.zstack.sdk.QueryAccountResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryAccountAction extends QueryAction {
             return ret;
         }
         
-        QueryAccountResult value = res.getResult(QueryAccountResult.class);
-        ret.value = value == null ? new QueryAccountResult() : value; 
+        org.zstack.sdk.QueryAccountResult value = res.getResult(org.zstack.sdk.QueryAccountResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryAccountResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QueryAccountAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/accounts";

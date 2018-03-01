@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteMediaAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteMediaAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteMediaResult value;
+        public org.zstack.sdk.DeleteMediaResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DeleteMediaAction extends AbstractAction {
             return ret;
         }
         
-        DeleteMediaResult value = res.getResult(DeleteMediaResult.class);
-        ret.value = value == null ? new DeleteMediaResult() : value; 
+        org.zstack.sdk.DeleteMediaResult value = res.getResult(org.zstack.sdk.DeleteMediaResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteMediaResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DeleteMediaAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/media/{uuid}";

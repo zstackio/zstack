@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.IPsecConnectionInventory;
+
 public class ChangeIPSecConnectionStateResult {
     public IPsecConnectionInventory inventory;
     public void setInventory(IPsecConnectionInventory inventory) {

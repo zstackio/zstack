@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class QueryBackupStorageResult {
-    public java.util.List<BackupStorageInventory> inventories;
-    public void setInventories(java.util.List<BackupStorageInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<BackupStorageInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

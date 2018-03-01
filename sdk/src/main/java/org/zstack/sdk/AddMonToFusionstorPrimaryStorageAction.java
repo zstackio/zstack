@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class AddMonToFusionstorPrimaryStorageAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class AddMonToFusionstorPrimaryStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AddMonToFusionstorPrimaryStorageResult value;
+        public org.zstack.sdk.AddMonToFusionstorPrimaryStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class AddMonToFusionstorPrimaryStorageAction extends AbstractAction {
             return ret;
         }
         
-        AddMonToFusionstorPrimaryStorageResult value = res.getResult(AddMonToFusionstorPrimaryStorageResult.class);
-        ret.value = value == null ? new AddMonToFusionstorPrimaryStorageResult() : value; 
+        org.zstack.sdk.AddMonToFusionstorPrimaryStorageResult value = res.getResult(org.zstack.sdk.AddMonToFusionstorPrimaryStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddMonToFusionstorPrimaryStorageResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class AddMonToFusionstorPrimaryStorageAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/primary-storage/fusionstor/{uuid}/mons";

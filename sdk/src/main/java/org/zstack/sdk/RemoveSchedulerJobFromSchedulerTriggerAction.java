@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class RemoveSchedulerJobFromSchedulerTriggerAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class RemoveSchedulerJobFromSchedulerTriggerAction extends AbstractAction
 
     public static class Result {
         public ErrorCode error;
-        public RemoveSchedulerJobFromSchedulerTriggerResult value;
+        public org.zstack.sdk.RemoveSchedulerJobFromSchedulerTriggerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class RemoveSchedulerJobFromSchedulerTriggerAction extends AbstractAction
             return ret;
         }
         
-        RemoveSchedulerJobFromSchedulerTriggerResult value = res.getResult(RemoveSchedulerJobFromSchedulerTriggerResult.class);
-        ret.value = value == null ? new RemoveSchedulerJobFromSchedulerTriggerResult() : value; 
+        org.zstack.sdk.RemoveSchedulerJobFromSchedulerTriggerResult value = res.getResult(org.zstack.sdk.RemoveSchedulerJobFromSchedulerTriggerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.RemoveSchedulerJobFromSchedulerTriggerResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class RemoveSchedulerJobFromSchedulerTriggerAction extends AbstractAction
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/scheduler/jobs/{schedulerJobUuid}/scheduler/triggers/{schedulerTriggerUuid}";

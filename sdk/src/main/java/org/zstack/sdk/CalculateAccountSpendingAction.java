@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class CalculateAccountSpendingAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class CalculateAccountSpendingAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CalculateAccountSpendingResult value;
+        public org.zstack.sdk.CalculateAccountSpendingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +51,8 @@ public class CalculateAccountSpendingAction extends AbstractAction {
             return ret;
         }
         
-        CalculateAccountSpendingResult value = res.getResult(CalculateAccountSpendingResult.class);
-        ret.value = value == null ? new CalculateAccountSpendingResult() : value; 
+        org.zstack.sdk.CalculateAccountSpendingResult value = res.getResult(org.zstack.sdk.CalculateAccountSpendingResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CalculateAccountSpendingResult() : value; 
 
         return ret;
     }
@@ -70,15 +71,15 @@ public class CalculateAccountSpendingAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/billings/accounts/{accountUuid}/actions";

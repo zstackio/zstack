@@ -2,10 +2,13 @@ package org.zstack.test.integration.storage.primary.ceph
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
+import org.zstack.header.storage.primary.PrimaryStorageVO
+import org.zstack.header.storage.primary.PrimaryStorageVO_
 import org.zstack.kvm.KVMConstant
 import org.zstack.sdk.*
 import org.zstack.storage.ceph.CephSystemTags
 import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
+import org.zstack.storage.ceph.primary.CephPrimaryStoragePoolType
 import org.zstack.storage.ceph.primary.CephPrimaryStoragePoolVO
 import org.zstack.storage.ceph.primary.CephPrimaryStoragePoolVO_
 import org.zstack.test.integration.storage.StorageTest
@@ -227,6 +230,16 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
         assert inv.primaryStorageUuid == primaryStorage.uuid
     }
 
+    void testAddSameCephPool() {
+        AddCephPrimaryStoragePoolAction action = new AddCephPrimaryStoragePoolAction()
+        action.primaryStorageUuid = primaryStorage.uuid
+        action.poolName = HIGH_POOL_NAME
+        action.sessionId = adminSession()
+        def ret = action.call()
+
+        assert ret.error != null
+    }
+
     @Override
     void test() {
         env.create {
@@ -240,6 +253,7 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
             testAddAndDeletePool()
             testAddPoolWithCheckExistenceFailure()
             testQueryPool()
+            testAddSameCephPool()
         }
     }
 

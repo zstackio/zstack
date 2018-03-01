@@ -686,15 +686,6 @@ public class VolumeBase implements Volume {
                                         if (!reply.isSuccess()) {
                                             logger.warn(String.format("failed to delete volume[uuid:%s, name:%s], %s",
                                                     self.getUuid(), self.getName(), reply.getError()));
-
-                                            if(reply.getError().getCode().equals(PrimaryStorageErrors.ALLOCATE_ERROR.toString())){
-                                                PrimaryStorageVO psv = Q.New(PrimaryStorageVO.class).eq(PrimaryStorageVO_.uuid, self.getPrimaryStorageUuid()).find();
-                                                DeleteVolumeGC gc = new DeleteVolumeGC();
-                                                gc.NAME = String.format("gc-volume-%s-on-primary-storage-%s", self.getUuid(), psv.getUuid());
-                                                gc.primaryStorageUuid = psv.getUuid();
-                                                gc.volumeInventory = VolumeInventory.valueOf(self);
-                                                gc.submit();
-                                            }
                                         }
 
                                         trigger.next();

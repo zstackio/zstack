@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryEcsSecurityGroupRuleFromLocalAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryEcsSecurityGroupRuleFromLocalAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryEcsSecurityGroupRuleFromLocalResult value;
+        public org.zstack.sdk.QueryEcsSecurityGroupRuleFromLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryEcsSecurityGroupRuleFromLocalAction extends QueryAction {
             return ret;
         }
         
-        QueryEcsSecurityGroupRuleFromLocalResult value = res.getResult(QueryEcsSecurityGroupRuleFromLocalResult.class);
-        ret.value = value == null ? new QueryEcsSecurityGroupRuleFromLocalResult() : value; 
+        org.zstack.sdk.QueryEcsSecurityGroupRuleFromLocalResult value = res.getResult(org.zstack.sdk.QueryEcsSecurityGroupRuleFromLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryEcsSecurityGroupRuleFromLocalResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QueryEcsSecurityGroupRuleFromLocalAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/hybrid/aliyun/security-group-rule";

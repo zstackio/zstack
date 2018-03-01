@@ -32,7 +32,8 @@ class BeanConstructor {
             "encrypt.xml",
             "rest.xml",
             "Progress.xml",
-            "notification.xml"
+            "notification.xml",
+            "externalService.xml"
     ]
 
     private List<String> xmls = []
@@ -43,7 +44,7 @@ class BeanConstructor {
 
     BeanConstructor addXml(String xmlName) {
         if (this.getClass().getClassLoader().getResource(String.format("springConfigXml/%s", xmlName)) == null) {
-            throw new IllegalArgumentException(String.format("Cannot find %s in test/src/test/resources/springConfigXml/", xmlName))
+            throw new IllegalArgumentException(String.format("Cannot find %s in target/test-classes/springConfigXml/", xmlName))
         }
 
         xmls.add(xmlName)

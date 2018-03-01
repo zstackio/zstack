@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryEipAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryEipAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryEipResult value;
+        public org.zstack.sdk.QueryEipResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryEipAction extends QueryAction {
             return ret;
         }
         
-        QueryEipResult value = res.getResult(QueryEipResult.class);
-        ret.value = value == null ? new QueryEipResult() : value; 
+        org.zstack.sdk.QueryEipResult value = res.getResult(org.zstack.sdk.QueryEipResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryEipResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QueryEipAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/eips";

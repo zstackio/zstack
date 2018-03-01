@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class GetCandidateVmForAttachingIsoAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class GetCandidateVmForAttachingIsoAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetCandidateVmForAttachingIsoResult value;
+        public org.zstack.sdk.GetCandidateVmForAttachingIsoResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -44,8 +45,8 @@ public class GetCandidateVmForAttachingIsoAction extends AbstractAction {
             return ret;
         }
         
-        GetCandidateVmForAttachingIsoResult value = res.getResult(GetCandidateVmForAttachingIsoResult.class);
-        ret.value = value == null ? new GetCandidateVmForAttachingIsoResult() : value; 
+        org.zstack.sdk.GetCandidateVmForAttachingIsoResult value = res.getResult(org.zstack.sdk.GetCandidateVmForAttachingIsoResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetCandidateVmForAttachingIsoResult() : value; 
 
         return ret;
     }
@@ -64,15 +65,15 @@ public class GetCandidateVmForAttachingIsoAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/images/iso/{isoUuid}/vm-candidates";

@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.ErrorCode;
+
 public class CreateRootVolumeTemplateFromVolumeSnapshotFailure  {
 
     public java.lang.String backupStorageUuid;

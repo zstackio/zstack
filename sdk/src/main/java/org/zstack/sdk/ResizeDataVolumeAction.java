@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class ResizeDataVolumeAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class ResizeDataVolumeAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ResizeDataVolumeResult value;
+        public org.zstack.sdk.ResizeDataVolumeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class ResizeDataVolumeAction extends AbstractAction {
             return ret;
         }
         
-        ResizeDataVolumeResult value = res.getResult(ResizeDataVolumeResult.class);
-        ret.value = value == null ? new ResizeDataVolumeResult() : value; 
+        org.zstack.sdk.ResizeDataVolumeResult value = res.getResult(org.zstack.sdk.ResizeDataVolumeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ResizeDataVolumeResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class ResizeDataVolumeAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/volumes/data/resize/{uuid}/actions";

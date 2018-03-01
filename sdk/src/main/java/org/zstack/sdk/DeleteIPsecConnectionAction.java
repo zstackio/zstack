@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteIPsecConnectionAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteIPsecConnectionAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteIPsecConnectionResult value;
+        public org.zstack.sdk.DeleteIPsecConnectionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DeleteIPsecConnectionAction extends AbstractAction {
             return ret;
         }
         
-        DeleteIPsecConnectionResult value = res.getResult(DeleteIPsecConnectionResult.class);
-        ret.value = value == null ? new DeleteIPsecConnectionResult() : value; 
+        org.zstack.sdk.DeleteIPsecConnectionResult value = res.getResult(org.zstack.sdk.DeleteIPsecConnectionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteIPsecConnectionResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DeleteIPsecConnectionAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/ipsec/{uuid}";

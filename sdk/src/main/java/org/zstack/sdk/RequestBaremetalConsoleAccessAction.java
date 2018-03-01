@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class RequestBaremetalConsoleAccessAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class RequestBaremetalConsoleAccessAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public RequestBaremetalConsoleAccessResult value;
+        public org.zstack.sdk.RequestBaremetalConsoleAccessResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +51,8 @@ public class RequestBaremetalConsoleAccessAction extends AbstractAction {
             return ret;
         }
         
-        RequestBaremetalConsoleAccessResult value = res.getResult(RequestBaremetalConsoleAccessResult.class);
-        ret.value = value == null ? new RequestBaremetalConsoleAccessResult() : value; 
+        org.zstack.sdk.RequestBaremetalConsoleAccessResult value = res.getResult(org.zstack.sdk.RequestBaremetalConsoleAccessResult.class);
+        ret.value = value == null ? new org.zstack.sdk.RequestBaremetalConsoleAccessResult() : value; 
 
         return ret;
     }
@@ -70,15 +71,15 @@ public class RequestBaremetalConsoleAccessAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/baremetal/consoles";

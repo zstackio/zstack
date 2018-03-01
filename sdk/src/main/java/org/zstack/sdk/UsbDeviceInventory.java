@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.UsbDeviceState;
+
 public class UsbDeviceInventory  {
 
     public java.lang.String uuid;

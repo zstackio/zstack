@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class ChangeVipStateAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class ChangeVipStateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ChangeVipStateResult value;
+        public org.zstack.sdk.ChangeVipStateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class ChangeVipStateAction extends AbstractAction {
             return ret;
         }
         
-        ChangeVipStateResult value = res.getResult(ChangeVipStateResult.class);
-        ret.value = value == null ? new ChangeVipStateResult() : value; 
+        org.zstack.sdk.ChangeVipStateResult value = res.getResult(org.zstack.sdk.ChangeVipStateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ChangeVipStateResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class ChangeVipStateAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/vips/{uuid}/actions";

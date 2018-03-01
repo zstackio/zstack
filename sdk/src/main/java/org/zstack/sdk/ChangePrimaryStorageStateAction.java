@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class ChangePrimaryStorageStateAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class ChangePrimaryStorageStateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ChangePrimaryStorageStateResult value;
+        public org.zstack.sdk.ChangePrimaryStorageStateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class ChangePrimaryStorageStateAction extends AbstractAction {
             return ret;
         }
         
-        ChangePrimaryStorageStateResult value = res.getResult(ChangePrimaryStorageStateResult.class);
-        ret.value = value == null ? new ChangePrimaryStorageStateResult() : value; 
+        org.zstack.sdk.ChangePrimaryStorageStateResult value = res.getResult(org.zstack.sdk.ChangePrimaryStorageStateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ChangePrimaryStorageStateResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class ChangePrimaryStorageStateAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/primary-storage/{uuid}/actions";

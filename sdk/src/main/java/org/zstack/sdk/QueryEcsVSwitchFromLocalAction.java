@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryEcsVSwitchFromLocalAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryEcsVSwitchFromLocalAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryEcsVSwitchFromLocalResult value;
+        public org.zstack.sdk.QueryEcsVSwitchFromLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryEcsVSwitchFromLocalAction extends QueryAction {
             return ret;
         }
         
-        QueryEcsVSwitchFromLocalResult value = res.getResult(QueryEcsVSwitchFromLocalResult.class);
-        ret.value = value == null ? new QueryEcsVSwitchFromLocalResult() : value; 
+        org.zstack.sdk.QueryEcsVSwitchFromLocalResult value = res.getResult(org.zstack.sdk.QueryEcsVSwitchFromLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryEcsVSwitchFromLocalResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QueryEcsVSwitchFromLocalAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/hybrid/aliyun/vswitch";

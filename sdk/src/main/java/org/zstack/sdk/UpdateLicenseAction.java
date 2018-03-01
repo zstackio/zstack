@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class UpdateLicenseAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class UpdateLicenseAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateLicenseResult value;
+        public org.zstack.sdk.UpdateLicenseResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +48,8 @@ public class UpdateLicenseAction extends AbstractAction {
             return ret;
         }
         
-        UpdateLicenseResult value = res.getResult(UpdateLicenseResult.class);
-        ret.value = value == null ? new UpdateLicenseResult() : value; 
+        org.zstack.sdk.UpdateLicenseResult value = res.getResult(org.zstack.sdk.UpdateLicenseResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateLicenseResult() : value; 
 
         return ret;
     }
@@ -67,15 +68,15 @@ public class UpdateLicenseAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/licenses/mn/{managementNodeUuid}/actions";

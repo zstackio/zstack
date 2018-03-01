@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryResourcePriceAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryResourcePriceAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryResourcePriceResult value;
+        public org.zstack.sdk.QueryResourcePriceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryResourcePriceAction extends QueryAction {
             return ret;
         }
         
-        QueryResourcePriceResult value = res.getResult(QueryResourcePriceResult.class);
-        ret.value = value == null ? new QueryResourcePriceResult() : value; 
+        org.zstack.sdk.QueryResourcePriceResult value = res.getResult(org.zstack.sdk.QueryResourcePriceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryResourcePriceResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QueryResourcePriceAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/billings/prices";

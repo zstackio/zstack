@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class VpcVpnIkeConfigInventory  {
 
     public java.lang.String uuid;

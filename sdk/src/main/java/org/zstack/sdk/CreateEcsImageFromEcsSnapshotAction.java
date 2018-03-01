@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class CreateEcsImageFromEcsSnapshotAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class CreateEcsImageFromEcsSnapshotAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateEcsImageFromEcsSnapshotResult value;
+        public org.zstack.sdk.CreateEcsImageFromEcsSnapshotResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -59,8 +60,8 @@ public class CreateEcsImageFromEcsSnapshotAction extends AbstractAction {
             return ret;
         }
         
-        CreateEcsImageFromEcsSnapshotResult value = res.getResult(CreateEcsImageFromEcsSnapshotResult.class);
-        ret.value = value == null ? new CreateEcsImageFromEcsSnapshotResult() : value; 
+        org.zstack.sdk.CreateEcsImageFromEcsSnapshotResult value = res.getResult(org.zstack.sdk.CreateEcsImageFromEcsSnapshotResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateEcsImageFromEcsSnapshotResult() : value; 
 
         return ret;
     }
@@ -79,15 +80,15 @@ public class CreateEcsImageFromEcsSnapshotAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/hybrid/aliyun/image/snapshot";

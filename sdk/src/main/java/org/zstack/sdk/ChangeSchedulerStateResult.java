@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.SchedulerJobInventory;
+
 public class ChangeSchedulerStateResult {
     public SchedulerJobInventory inventory;
     public void setInventory(SchedulerJobInventory inventory) {

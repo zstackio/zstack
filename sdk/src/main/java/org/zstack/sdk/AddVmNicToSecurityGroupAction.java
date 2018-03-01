@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class AddVmNicToSecurityGroupAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class AddVmNicToSecurityGroupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AddVmNicToSecurityGroupResult value;
+        public org.zstack.sdk.AddVmNicToSecurityGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class AddVmNicToSecurityGroupAction extends AbstractAction {
             return ret;
         }
         
-        AddVmNicToSecurityGroupResult value = res.getResult(AddVmNicToSecurityGroupResult.class);
-        ret.value = value == null ? new AddVmNicToSecurityGroupResult() : value; 
+        org.zstack.sdk.AddVmNicToSecurityGroupResult value = res.getResult(org.zstack.sdk.AddVmNicToSecurityGroupResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddVmNicToSecurityGroupResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class AddVmNicToSecurityGroupAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/security-groups/{securityGroupUuid}/vm-instances/nics";

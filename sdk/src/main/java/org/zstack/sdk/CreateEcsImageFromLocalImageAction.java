@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class CreateEcsImageFromLocalImageAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class CreateEcsImageFromLocalImageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateEcsImageFromLocalImageResult value;
+        public org.zstack.sdk.CreateEcsImageFromLocalImageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -65,8 +66,8 @@ public class CreateEcsImageFromLocalImageAction extends AbstractAction {
             return ret;
         }
         
-        CreateEcsImageFromLocalImageResult value = res.getResult(CreateEcsImageFromLocalImageResult.class);
-        ret.value = value == null ? new CreateEcsImageFromLocalImageResult() : value; 
+        org.zstack.sdk.CreateEcsImageFromLocalImageResult value = res.getResult(org.zstack.sdk.CreateEcsImageFromLocalImageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateEcsImageFromLocalImageResult() : value; 
 
         return ret;
     }
@@ -85,15 +86,15 @@ public class CreateEcsImageFromLocalImageAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/hybrid/aliyun/image";

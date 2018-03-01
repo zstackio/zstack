@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class GetVRouterRouteTableResult {
-    public java.util.List<VRouterRouteEntryAO> inventories;
-    public void setInventories(java.util.List<VRouterRouteEntryAO> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<VRouterRouteEntryAO> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

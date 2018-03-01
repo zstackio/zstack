@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteVpcUserVpnGatewayLocalAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteVpcUserVpnGatewayLocalAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteVpcUserVpnGatewayLocalResult value;
+        public org.zstack.sdk.DeleteVpcUserVpnGatewayLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DeleteVpcUserVpnGatewayLocalAction extends AbstractAction {
             return ret;
         }
         
-        DeleteVpcUserVpnGatewayLocalResult value = res.getResult(DeleteVpcUserVpnGatewayLocalResult.class);
-        ret.value = value == null ? new DeleteVpcUserVpnGatewayLocalResult() : value; 
+        org.zstack.sdk.DeleteVpcUserVpnGatewayLocalResult value = res.getResult(org.zstack.sdk.DeleteVpcUserVpnGatewayLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteVpcUserVpnGatewayLocalResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DeleteVpcUserVpnGatewayLocalAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/hybrid/user-gateway/{uuid}";

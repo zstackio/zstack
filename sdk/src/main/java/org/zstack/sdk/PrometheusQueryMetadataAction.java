@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class PrometheusQueryMetadataAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class PrometheusQueryMetadataAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public PrometheusQueryMetadataResult value;
+        public org.zstack.sdk.PrometheusQueryMetadataResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -44,8 +45,8 @@ public class PrometheusQueryMetadataAction extends AbstractAction {
             return ret;
         }
         
-        PrometheusQueryMetadataResult value = res.getResult(PrometheusQueryMetadataResult.class);
-        ret.value = value == null ? new PrometheusQueryMetadataResult() : value; 
+        org.zstack.sdk.PrometheusQueryMetadataResult value = res.getResult(org.zstack.sdk.PrometheusQueryMetadataResult.class);
+        ret.value = value == null ? new org.zstack.sdk.PrometheusQueryMetadataResult() : value; 
 
         return ret;
     }
@@ -64,15 +65,15 @@ public class PrometheusQueryMetadataAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/prometheus/meta-data";

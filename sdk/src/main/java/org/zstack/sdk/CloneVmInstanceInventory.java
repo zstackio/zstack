@@ -1,5 +1,8 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.ErrorCode;
+import org.zstack.sdk.VmInstanceInventory;
+
 public class CloneVmInstanceInventory  {
 
     public ErrorCode error;

@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryRouterInterfaceFromLocalAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryRouterInterfaceFromLocalAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryRouterInterfaceFromLocalResult value;
+        public org.zstack.sdk.QueryRouterInterfaceFromLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryRouterInterfaceFromLocalAction extends QueryAction {
             return ret;
         }
         
-        QueryRouterInterfaceFromLocalResult value = res.getResult(QueryRouterInterfaceFromLocalResult.class);
-        ret.value = value == null ? new QueryRouterInterfaceFromLocalResult() : value; 
+        org.zstack.sdk.QueryRouterInterfaceFromLocalResult value = res.getResult(org.zstack.sdk.QueryRouterInterfaceFromLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryRouterInterfaceFromLocalResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QueryRouterInterfaceFromLocalAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/hybrid/aliyun/router-interface";

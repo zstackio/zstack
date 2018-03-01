@@ -1,6 +1,8 @@
 package org.zstack.sdk;
 
-public class ESXHostInventory extends HostInventory {
+
+
+public class ESXHostInventory extends org.zstack.sdk.HostInventory {
 
     public java.lang.String vCenterUuid;
     public void setVCenterUuid(java.lang.String vCenterUuid) {

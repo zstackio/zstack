@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DetachBackupStorageFromZoneAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DetachBackupStorageFromZoneAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DetachBackupStorageFromZoneResult value;
+        public org.zstack.sdk.DetachBackupStorageFromZoneResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DetachBackupStorageFromZoneAction extends AbstractAction {
             return ret;
         }
         
-        DetachBackupStorageFromZoneResult value = res.getResult(DetachBackupStorageFromZoneResult.class);
-        ret.value = value == null ? new DetachBackupStorageFromZoneResult() : value; 
+        org.zstack.sdk.DetachBackupStorageFromZoneResult value = res.getResult(org.zstack.sdk.DetachBackupStorageFromZoneResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DetachBackupStorageFromZoneResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DetachBackupStorageFromZoneAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/zones/{zoneUuid}/backup-storage/{backupStorageUuid}";

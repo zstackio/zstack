@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class LogInByLdapAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class LogInByLdapAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public LogInByLdapResult value;
+        public org.zstack.sdk.LogInByLdapResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -44,8 +45,8 @@ public class LogInByLdapAction extends AbstractAction {
             return ret;
         }
         
-        LogInByLdapResult value = res.getResult(LogInByLdapResult.class);
-        ret.value = value == null ? new LogInByLdapResult() : value; 
+        org.zstack.sdk.LogInByLdapResult value = res.getResult(org.zstack.sdk.LogInByLdapResult.class);
+        ret.value = value == null ? new org.zstack.sdk.LogInByLdapResult() : value; 
 
         return ret;
     }
@@ -64,15 +65,15 @@ public class LogInByLdapAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/ldap/login";

@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class QueryImageStoreBackupStorageResult {
-    public java.util.List<ImageStoreBackupStorageInventory> inventories;
-    public void setInventories(java.util.List<ImageStoreBackupStorageInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<ImageStoreBackupStorageInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

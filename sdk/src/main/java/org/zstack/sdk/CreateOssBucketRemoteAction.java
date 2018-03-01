@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class CreateOssBucketRemoteAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class CreateOssBucketRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateOssBucketRemoteResult value;
+        public org.zstack.sdk.CreateOssBucketRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -59,8 +60,8 @@ public class CreateOssBucketRemoteAction extends AbstractAction {
             return ret;
         }
         
-        CreateOssBucketRemoteResult value = res.getResult(CreateOssBucketRemoteResult.class);
-        ret.value = value == null ? new CreateOssBucketRemoteResult() : value; 
+        org.zstack.sdk.CreateOssBucketRemoteResult value = res.getResult(org.zstack.sdk.CreateOssBucketRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateOssBucketRemoteResult() : value; 
 
         return ret;
     }
@@ -79,15 +80,15 @@ public class CreateOssBucketRemoteAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/hybrid/aliyun/oss-bucket/remote";

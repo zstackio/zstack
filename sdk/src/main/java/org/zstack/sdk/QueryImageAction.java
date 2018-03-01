@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryImageAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryImageAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryImageResult value;
+        public org.zstack.sdk.QueryImageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryImageAction extends QueryAction {
             return ret;
         }
         
-        QueryImageResult value = res.getResult(QueryImageResult.class);
-        ret.value = value == null ? new QueryImageResult() : value; 
+        org.zstack.sdk.QueryImageResult value = res.getResult(org.zstack.sdk.QueryImageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryImageResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QueryImageAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/images";

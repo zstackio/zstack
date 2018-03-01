@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class QueryLocalStorageResourceRefResult {
-    public java.util.List<LocalStorageResourceRefInventory> inventories;
-    public void setInventories(java.util.List<LocalStorageResourceRefInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<LocalStorageResourceRefInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

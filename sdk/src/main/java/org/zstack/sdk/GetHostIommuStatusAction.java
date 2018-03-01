@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class GetHostIommuStatusAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class GetHostIommuStatusAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetHostIommuStatusResult value;
+        public org.zstack.sdk.GetHostIommuStatusResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -44,8 +45,8 @@ public class GetHostIommuStatusAction extends AbstractAction {
             return ret;
         }
         
-        GetHostIommuStatusResult value = res.getResult(GetHostIommuStatusResult.class);
-        ret.value = value == null ? new GetHostIommuStatusResult() : value; 
+        org.zstack.sdk.GetHostIommuStatusResult value = res.getResult(org.zstack.sdk.GetHostIommuStatusResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetHostIommuStatusResult() : value; 
 
         return ret;
     }
@@ -64,15 +65,15 @@ public class GetHostIommuStatusAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/pci-device/hosts/{uuid}/status";

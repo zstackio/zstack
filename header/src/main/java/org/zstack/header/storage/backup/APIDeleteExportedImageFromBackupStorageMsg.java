@@ -3,6 +3,7 @@ package org.zstack.header.storage.backup;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.image.ImageConstant;
+import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
@@ -22,7 +23,7 @@ public class APIDeleteExportedImageFromBackupStorageMsg extends APIMessage imple
     @APIParam(resourceType = BackupStorageVO.class, checkAccount = true, operationTarget = true)
     private String backupStorageUuid;
 
-    @APIParam(nonempty = true)
+    @APIParam(resourceType = ImageVO.class)
     private String imageUuid;
 
     @Override

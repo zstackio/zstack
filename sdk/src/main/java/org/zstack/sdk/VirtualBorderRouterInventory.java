@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class VirtualBorderRouterInventory  {
 
     public java.lang.String uuid;

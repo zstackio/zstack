@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class OssBucketProperty  {
 
     public java.lang.String bucketName;

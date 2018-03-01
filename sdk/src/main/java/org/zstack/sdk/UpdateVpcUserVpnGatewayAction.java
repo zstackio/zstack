@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class UpdateVpcUserVpnGatewayAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class UpdateVpcUserVpnGatewayAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateVpcUserVpnGatewayResult value;
+        public org.zstack.sdk.UpdateVpcUserVpnGatewayResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +57,8 @@ public class UpdateVpcUserVpnGatewayAction extends AbstractAction {
             return ret;
         }
         
-        UpdateVpcUserVpnGatewayResult value = res.getResult(UpdateVpcUserVpnGatewayResult.class);
-        ret.value = value == null ? new UpdateVpcUserVpnGatewayResult() : value; 
+        org.zstack.sdk.UpdateVpcUserVpnGatewayResult value = res.getResult(org.zstack.sdk.UpdateVpcUserVpnGatewayResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateVpcUserVpnGatewayResult() : value; 
 
         return ret;
     }
@@ -76,15 +77,15 @@ public class UpdateVpcUserVpnGatewayAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/hybrid/user-vpn/{uuid}/actions";

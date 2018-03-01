@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class UpdateDiskOfferingAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class UpdateDiskOfferingAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateDiskOfferingResult value;
+        public org.zstack.sdk.UpdateDiskOfferingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +57,8 @@ public class UpdateDiskOfferingAction extends AbstractAction {
             return ret;
         }
         
-        UpdateDiskOfferingResult value = res.getResult(UpdateDiskOfferingResult.class);
-        ret.value = value == null ? new UpdateDiskOfferingResult() : value; 
+        org.zstack.sdk.UpdateDiskOfferingResult value = res.getResult(org.zstack.sdk.UpdateDiskOfferingResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateDiskOfferingResult() : value; 
 
         return ret;
     }
@@ -76,15 +77,15 @@ public class UpdateDiskOfferingAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/disk-offerings/{uuid}/actions";

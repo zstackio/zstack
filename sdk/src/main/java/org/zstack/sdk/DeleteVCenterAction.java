@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteVCenterAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteVCenterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteVCenterResult value;
+        public org.zstack.sdk.DeleteVCenterResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DeleteVCenterAction extends AbstractAction {
             return ret;
         }
         
-        DeleteVCenterResult value = res.getResult(DeleteVCenterResult.class);
-        ret.value = value == null ? new DeleteVCenterResult() : value; 
+        org.zstack.sdk.DeleteVCenterResult value = res.getResult(org.zstack.sdk.DeleteVCenterResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteVCenterResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DeleteVCenterAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/vcenters/{uuid}";

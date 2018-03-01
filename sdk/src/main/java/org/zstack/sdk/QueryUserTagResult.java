@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class QueryUserTagResult {
-    public java.util.List<UserTagInventory> inventories;
-    public void setInventories(java.util.List<UserTagInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<UserTagInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

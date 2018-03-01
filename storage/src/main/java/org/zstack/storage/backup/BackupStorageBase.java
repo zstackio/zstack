@@ -39,6 +39,7 @@ import org.zstack.header.storage.backup.BackupStorageErrors.Opaque;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.childResourceToBaseResourceMap;
 import static org.zstack.core.Platform.operr;
 
 import javax.persistence.LockModeType;
@@ -95,6 +96,9 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
     public BackupStorageBase(BackupStorageVO self) {
         this.self = self;
+    }
+
+    public BackupStorageBase() {
     }
 
     @Override
@@ -232,7 +236,9 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                changeStatus(BackupStorageStatus.Disconnected);
+                if (changeStatus(BackupStorageStatus.Disconnected)) {
+                    fireDisconnectedCanonicalEvent(errorCode);
+                }
 
                 Boolean doReconnect = (Boolean) errorCode.getFromOpaque(Opaque.RECONNECT_AGENT.toString());
                 if (doReconnect != null && doReconnect) {
@@ -286,6 +292,8 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
             @Override
             public void run(final SyncTaskChain chain) {
+                boolean fireDisconnecteEvent = self.getStatus() == BackupStorageStatus.Connected;
+
                 final ConnectBackupStorageReply reply = new ConnectBackupStorageReply();
                 changeStatus(BackupStorageStatus.Connecting);
 
@@ -304,6 +312,11 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
                         if (!msg.isNewAdd()) {
                             changeStatus(BackupStorageStatus.Disconnected);
                         }
+
+                        if (fireDisconnecteEvent) {
+                            fireDisconnectedCanonicalEvent(errorCode);
+                        }
+
                         reply.setError(errorCode);
                         bus.reply(msg, reply);
                         chain.next();
@@ -651,9 +664,16 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         }
     }
 
-    protected void changeStatus(BackupStorageStatus status) {
+    protected void fireDisconnectedCanonicalEvent(ErrorCode reason) {
+        BackupStorageCanonicalEvents.DisconnectedData data = new BackupStorageCanonicalEvents.DisconnectedData();
+        data.setBackupStorageUuid(self.getUuid());
+        data.setReason(reason);
+        evtf.fire(BackupStorageCanonicalEvents.BACKUP_STORAGE_DISCONNECTED, data);
+    }
+
+    protected boolean changeStatus(BackupStorageStatus status) {
         if (status == self.getStatus()) {
-            return;
+            return false;
         }
 
         BackupStorageStatus oldStatus = self.getStatus();
@@ -669,5 +689,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         evtf.fire(BackupStorageCanonicalEvents.BACKUP_STORAGE_STATUS_CHANGED, d);
 
         logger.debug(String.format("change backup storage[uuid:%s] status to %s", self.getUuid(), status));
+
+        return true;
     }
 }

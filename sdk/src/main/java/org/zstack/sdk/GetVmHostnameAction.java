@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class GetVmHostnameAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class GetVmHostnameAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetVmHostnameResult value;
+        public org.zstack.sdk.GetVmHostnameResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -44,8 +45,8 @@ public class GetVmHostnameAction extends AbstractAction {
             return ret;
         }
         
-        GetVmHostnameResult value = res.getResult(GetVmHostnameResult.class);
-        ret.value = value == null ? new GetVmHostnameResult() : value; 
+        org.zstack.sdk.GetVmHostnameResult value = res.getResult(org.zstack.sdk.GetVmHostnameResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetVmHostnameResult() : value; 
 
         return ret;
     }
@@ -64,15 +65,15 @@ public class GetVmHostnameAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/vm-instances/{uuid}/hostnames";

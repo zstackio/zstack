@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryManagementNodeAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryManagementNodeAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryManagementNodeResult value;
+        public org.zstack.sdk.QueryManagementNodeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryManagementNodeAction extends QueryAction {
             return ret;
         }
         
-        QueryManagementNodeResult value = res.getResult(QueryManagementNodeResult.class);
-        ret.value = value == null ? new QueryManagementNodeResult() : value; 
+        org.zstack.sdk.QueryManagementNodeResult value = res.getResult(org.zstack.sdk.QueryManagementNodeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryManagementNodeResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QueryManagementNodeAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/management-nodes";

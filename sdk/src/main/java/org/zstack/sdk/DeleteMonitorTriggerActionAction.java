@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteMonitorTriggerActionAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteMonitorTriggerActionAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteMonitorTriggerActionResult value;
+        public org.zstack.sdk.DeleteMonitorTriggerActionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DeleteMonitorTriggerActionAction extends AbstractAction {
             return ret;
         }
         
-        DeleteMonitorTriggerActionResult value = res.getResult(DeleteMonitorTriggerActionResult.class);
-        ret.value = value == null ? new DeleteMonitorTriggerActionResult() : value; 
+        org.zstack.sdk.DeleteMonitorTriggerActionResult value = res.getResult(org.zstack.sdk.DeleteMonitorTriggerActionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteMonitorTriggerActionResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DeleteMonitorTriggerActionAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/monitoring/trigger-actions/{uuid}";

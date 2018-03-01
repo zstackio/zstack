@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class GetConnectionAccessPointFromRemoteResult {
-    public java.util.List<ConnectionAccessPointInventory> inventories;
-    public void setInventories(java.util.List<ConnectionAccessPointInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<ConnectionAccessPointInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

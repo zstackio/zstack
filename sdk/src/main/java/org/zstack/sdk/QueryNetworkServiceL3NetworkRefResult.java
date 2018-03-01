@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class QueryNetworkServiceL3NetworkRefResult {
-    public java.util.List<NetworkServiceL3NetworkRefInventory> inventories;
-    public void setInventories(java.util.List<NetworkServiceL3NetworkRefInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<NetworkServiceL3NetworkRefInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 
