@@ -201,3 +201,5 @@ ALTER TABLE EventSubscriptionActionVO ADD CONSTRAINT fkEventSubscriptionActionVO
 # Foreign keys for table EventSubscriptionLabelVO
 
 ALTER TABLE EventSubscriptionLabelVO ADD CONSTRAINT fkEventSubscriptionLabelVOEventSubscriptionVO FOREIGN KEY (subscriptionUuid) REFERENCES EventSubscriptionVO (uuid) ON DELETE CASCADE;
+
+UPDATE SchedulerTriggerVO set repeatCount=0 where repeatCount is NULL;
