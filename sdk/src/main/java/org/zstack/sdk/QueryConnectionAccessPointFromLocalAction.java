@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryConnectionAccessPointFromLocalAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryConnectionAccessPointFromLocalAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryConnectionAccessPointFromLocalResult value;
+        public org.zstack.sdk.QueryConnectionAccessPointFromLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryConnectionAccessPointFromLocalAction extends QueryAction {
             return ret;
         }
         
-        QueryConnectionAccessPointFromLocalResult value = res.getResult(QueryConnectionAccessPointFromLocalResult.class);
-        ret.value = value == null ? new QueryConnectionAccessPointFromLocalResult() : value; 
+        org.zstack.sdk.QueryConnectionAccessPointFromLocalResult value = res.getResult(org.zstack.sdk.QueryConnectionAccessPointFromLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryConnectionAccessPointFromLocalResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QueryConnectionAccessPointFromLocalAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/hybrid/aliyun/access-point";

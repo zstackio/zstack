@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class CephBackupStorageMonInventory  {
 
     public java.lang.String hostname;

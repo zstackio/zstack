@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteVipAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteVipAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteVipResult value;
+        public org.zstack.sdk.DeleteVipResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DeleteVipAction extends AbstractAction {
             return ret;
         }
         
-        DeleteVipResult value = res.getResult(DeleteVipResult.class);
-        ret.value = value == null ? new DeleteVipResult() : value; 
+        org.zstack.sdk.DeleteVipResult value = res.getResult(org.zstack.sdk.DeleteVipResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteVipResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DeleteVipAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/vips/{uuid}";

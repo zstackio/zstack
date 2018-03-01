@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryIPSecConnectionAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryIPSecConnectionAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryIPSecConnectionResult value;
+        public org.zstack.sdk.QueryIPSecConnectionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryIPSecConnectionAction extends QueryAction {
             return ret;
         }
         
-        QueryIPSecConnectionResult value = res.getResult(QueryIPSecConnectionResult.class);
-        ret.value = value == null ? new QueryIPSecConnectionResult() : value; 
+        org.zstack.sdk.QueryIPSecConnectionResult value = res.getResult(org.zstack.sdk.QueryIPSecConnectionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryIPSecConnectionResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QueryIPSecConnectionAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/ipsec";

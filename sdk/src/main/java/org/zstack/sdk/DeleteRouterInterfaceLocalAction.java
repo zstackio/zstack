@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteRouterInterfaceLocalAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteRouterInterfaceLocalAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteRouterInterfaceLocalResult value;
+        public org.zstack.sdk.DeleteRouterInterfaceLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DeleteRouterInterfaceLocalAction extends AbstractAction {
             return ret;
         }
         
-        DeleteRouterInterfaceLocalResult value = res.getResult(DeleteRouterInterfaceLocalResult.class);
-        ret.value = value == null ? new DeleteRouterInterfaceLocalResult() : value; 
+        org.zstack.sdk.DeleteRouterInterfaceLocalResult value = res.getResult(org.zstack.sdk.DeleteRouterInterfaceLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteRouterInterfaceLocalResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DeleteRouterInterfaceLocalAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/hybrid/aliyun/router-interface/{uuid}";

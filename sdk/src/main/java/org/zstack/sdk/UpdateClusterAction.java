@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class UpdateClusterAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class UpdateClusterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateClusterResult value;
+        public org.zstack.sdk.UpdateClusterResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +57,8 @@ public class UpdateClusterAction extends AbstractAction {
             return ret;
         }
         
-        UpdateClusterResult value = res.getResult(UpdateClusterResult.class);
-        ret.value = value == null ? new UpdateClusterResult() : value; 
+        org.zstack.sdk.UpdateClusterResult value = res.getResult(org.zstack.sdk.UpdateClusterResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateClusterResult() : value; 
 
         return ret;
     }
@@ -76,15 +77,15 @@ public class UpdateClusterAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/clusters/{uuid}/actions";

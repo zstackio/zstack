@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class ExpungeDataVolumeAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class ExpungeDataVolumeAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ExpungeDataVolumeResult value;
+        public org.zstack.sdk.ExpungeDataVolumeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -24,7 +25,7 @@ public class ExpungeDataVolumeAction extends AbstractAction {
         }
     }
 
-    @Param(required = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
     @Param(required = false)
@@ -50,8 +51,8 @@ public class ExpungeDataVolumeAction extends AbstractAction {
             return ret;
         }
         
-        ExpungeDataVolumeResult value = res.getResult(ExpungeDataVolumeResult.class);
-        ret.value = value == null ? new ExpungeDataVolumeResult() : value; 
+        org.zstack.sdk.ExpungeDataVolumeResult value = res.getResult(org.zstack.sdk.ExpungeDataVolumeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ExpungeDataVolumeResult() : value; 
 
         return ret;
     }
@@ -70,15 +71,15 @@ public class ExpungeDataVolumeAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/volumes/{uuid}/actions";

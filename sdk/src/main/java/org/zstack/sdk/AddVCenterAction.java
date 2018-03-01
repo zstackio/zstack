@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class AddVCenterAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class AddVCenterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AddVCenterResult value;
+        public org.zstack.sdk.AddVCenterResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -74,8 +75,8 @@ public class AddVCenterAction extends AbstractAction {
             return ret;
         }
         
-        AddVCenterResult value = res.getResult(AddVCenterResult.class);
-        ret.value = value == null ? new AddVCenterResult() : value; 
+        org.zstack.sdk.AddVCenterResult value = res.getResult(org.zstack.sdk.AddVCenterResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddVCenterResult() : value; 
 
         return ret;
     }
@@ -94,15 +95,15 @@ public class AddVCenterAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/vcenters";

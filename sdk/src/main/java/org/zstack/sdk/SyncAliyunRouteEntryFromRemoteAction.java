@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class SyncAliyunRouteEntryFromRemoteAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class SyncAliyunRouteEntryFromRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SyncAliyunRouteEntryFromRemoteResult value;
+        public org.zstack.sdk.SyncAliyunRouteEntryFromRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +57,8 @@ public class SyncAliyunRouteEntryFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        SyncAliyunRouteEntryFromRemoteResult value = res.getResult(SyncAliyunRouteEntryFromRemoteResult.class);
-        ret.value = value == null ? new SyncAliyunRouteEntryFromRemoteResult() : value; 
+        org.zstack.sdk.SyncAliyunRouteEntryFromRemoteResult value = res.getResult(org.zstack.sdk.SyncAliyunRouteEntryFromRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SyncAliyunRouteEntryFromRemoteResult() : value; 
 
         return ret;
     }
@@ -76,15 +77,15 @@ public class SyncAliyunRouteEntryFromRemoteAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/hybrid/aliyun/route-entry/{vRouterUuid}/sync";

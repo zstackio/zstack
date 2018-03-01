@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryVRouterRouteEntryAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryVRouterRouteEntryAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryVRouterRouteEntryResult value;
+        public org.zstack.sdk.QueryVRouterRouteEntryResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryVRouterRouteEntryAction extends QueryAction {
             return ret;
         }
         
-        QueryVRouterRouteEntryResult value = res.getResult(QueryVRouterRouteEntryResult.class);
-        ret.value = value == null ? new QueryVRouterRouteEntryResult() : value; 
+        org.zstack.sdk.QueryVRouterRouteEntryResult value = res.getResult(org.zstack.sdk.QueryVRouterRouteEntryResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryVRouterRouteEntryResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QueryVRouterRouteEntryAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/vrouter-route-tables/route-entries";

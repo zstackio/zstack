@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.VRouterRouteEntryType;
+
 public class VRouterRouteEntryInventory  {
 
     public java.lang.String uuid;

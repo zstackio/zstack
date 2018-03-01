@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class CheckApiPermissionAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class CheckApiPermissionAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CheckApiPermissionResult value;
+        public org.zstack.sdk.CheckApiPermissionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +48,8 @@ public class CheckApiPermissionAction extends AbstractAction {
             return ret;
         }
         
-        CheckApiPermissionResult value = res.getResult(CheckApiPermissionResult.class);
-        ret.value = value == null ? new CheckApiPermissionResult() : value; 
+        org.zstack.sdk.CheckApiPermissionResult value = res.getResult(org.zstack.sdk.CheckApiPermissionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CheckApiPermissionResult() : value; 
 
         return ret;
     }
@@ -67,15 +68,15 @@ public class CheckApiPermissionAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/accounts/permissions/actions";

@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class GetNetworkServiceTypesAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class GetNetworkServiceTypesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetNetworkServiceTypesResult value;
+        public org.zstack.sdk.GetNetworkServiceTypesResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -41,8 +42,8 @@ public class GetNetworkServiceTypesAction extends AbstractAction {
             return ret;
         }
         
-        GetNetworkServiceTypesResult value = res.getResult(GetNetworkServiceTypesResult.class);
-        ret.value = value == null ? new GetNetworkServiceTypesResult() : value; 
+        org.zstack.sdk.GetNetworkServiceTypesResult value = res.getResult(org.zstack.sdk.GetNetworkServiceTypesResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetNetworkServiceTypesResult() : value; 
 
         return ret;
     }
@@ -61,15 +62,15 @@ public class GetNetworkServiceTypesAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/network-services/types";

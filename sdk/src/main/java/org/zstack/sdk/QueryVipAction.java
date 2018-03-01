@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryVipAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryVipAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryVipResult value;
+        public org.zstack.sdk.QueryVipResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryVipAction extends QueryAction {
             return ret;
         }
         
-        QueryVipResult value = res.getResult(QueryVipResult.class);
-        ret.value = value == null ? new QueryVipResult() : value; 
+        org.zstack.sdk.QueryVipResult value = res.getResult(org.zstack.sdk.QueryVipResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryVipResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QueryVipAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/vips";

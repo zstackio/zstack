@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class ExportImageFromBackupStorageAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class ExportImageFromBackupStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ExportImageFromBackupStorageResult value;
+        public org.zstack.sdk.ExportImageFromBackupStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -27,7 +28,7 @@ public class ExportImageFromBackupStorageAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String backupStorageUuid;
 
-    @Param(required = true, maxLength = 2048, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String imageUuid;
 
     @Param(required = false)
@@ -53,8 +54,8 @@ public class ExportImageFromBackupStorageAction extends AbstractAction {
             return ret;
         }
         
-        ExportImageFromBackupStorageResult value = res.getResult(ExportImageFromBackupStorageResult.class);
-        ret.value = value == null ? new ExportImageFromBackupStorageResult() : value; 
+        org.zstack.sdk.ExportImageFromBackupStorageResult value = res.getResult(org.zstack.sdk.ExportImageFromBackupStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ExportImageFromBackupStorageResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class ExportImageFromBackupStorageAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/backup-storage/{backupStorageUuid}/actions";

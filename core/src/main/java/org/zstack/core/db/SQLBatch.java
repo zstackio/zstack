@@ -23,7 +23,7 @@ public abstract class SQLBatch {
     }
 
     protected void remove(Object k) {
-        databaseFacade.getEntityManager().remove(k);
+        databaseFacade.getEntityManager().remove(merge(k));
     }
 
     protected void flush() {

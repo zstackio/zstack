@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class PrometheusQueryVmMonitoringDataResult {
     public java.util.Map inventories;
     public void setInventories(java.util.Map inventories) {

@@ -4,6 +4,7 @@ import org.apache.commons.lang.StringUtils;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.rest.APINoSee;
+import org.zstack.header.rest.RestResponse;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.FieldUtils;
@@ -15,6 +16,8 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static org.codehaus.groovy.runtime.InvokerHelper.asList;
 
 public abstract class APIMessage extends NeedReplyMessage {
     /**
@@ -32,9 +35,9 @@ public abstract class APIMessage extends NeedReplyMessage {
         this.session = session;
     }
 
-    private static class FieldParam {
-        Field field;
-        APIParam param;
+    public static class FieldParam {
+        public Field field;
+        public APIParam param;
     }
 
     @NoJsonSchema
@@ -44,26 +47,88 @@ public abstract class APIMessage extends NeedReplyMessage {
 
     static {
         collectApiParams();
+        collectResponseMappingFields();
+    }
+
+    private static void collectResponseMappingFields() {
+        BeanUtils.reflections.getSubTypesOf(APIResponse.class).stream().filter(clz-> clz != APIReply.class && clz != APIEvent.class
+         && !Modifier.isStatic(clz.getModifiers()) && clz.isAnnotationPresent(RestResponse.class)).forEach(clz -> {
+            RestResponse annotation = clz.getAnnotation(RestResponse.class);
+            Map responseMappingFields = new HashMap();
+
+            if (!annotation.allTo().equals("")) {
+                responseMappingFields.put(annotation.allTo(), annotation.allTo());
+            } else if (annotation.fieldsTo().length > 0) {
+                if (annotation.fieldsTo().length == 1 && "all".equals(annotation.fieldsTo()[0])) {
+                    List<Field> apiFields = FieldUtils.getAllFields(clz);
+                    apiFields = apiFields.stream().filter(f -> !f.isAnnotationPresent(APINoSee.class) && !Modifier.isStatic(f.getModifiers())).collect(Collectors.toList());
+
+                    for (Field f : apiFields) {
+                        responseMappingFields.put(f.getName(), f.getName());
+                    }
+                } else {
+                    for (String mf : annotation.fieldsTo()) {
+                        String[] kv = mf.split("=");
+                        if (kv.length == 2) {
+                            responseMappingFields.put(kv[0].trim(), kv[1].trim());
+                        } else if (kv.length == 1) {
+                            responseMappingFields.put(kv[0].trim(), kv[0].trim());
+                        } else {
+                            throw new CloudRuntimeException(String.format("bad mappingFields[%s] of %s", mf, clz));
+                        }
+
+                    }
+                }
+            }
+
+            APIResponse.responseMappingFields.put(clz, responseMappingFields);
+        });
+    }
+
+    public static Map<Class, Collection<FieldParam>> getApiParams() {
+        return apiParams;
     }
 
     private static void collectApiParams() {
         Set<Class> apiClass = BeanUtils.reflections.getSubTypesOf(APIMessage.class)
                 .stream().filter(c -> !Modifier.isStatic(c.getModifiers())).collect(Collectors.toSet());
 
+        class Nothing { @APIParam(required = false) public String nothing;}
+
+        APIParam defaultAnnotation;
+        try {
+            defaultAnnotation = Nothing.class.getField("nothing").getAnnotation(APIParam.class);
+        } catch (NoSuchFieldException e) {
+            throw new CloudRuntimeException(e);
+        }
+
         for (Class clz : apiClass) {
             List<Field> fields = FieldUtils.getAllFields(clz);
 
             Map<String, FieldParam> fmap = new HashMap<>();
             for (Field f : fields) {
+                if (Modifier.isStatic(f.getModifiers())) {
+                    continue;
+                }
+                if (f.isAnnotationPresent(APINoSee.class)) {
+                    continue;
+                }
+                if (Modifier.isTransient(f.getModifiers())) {
+                    continue;
+                }
+                if (f.isAnnotationPresent(GsonTransient.class)) {
+                    continue;
+                }
+
                 APIParam at = f.getAnnotation(APIParam.class);
                 if (at == null) {
-                    continue;
+                    at = defaultAnnotation;
                 }
 
                 f.setAccessible(true);
                 FieldParam fp = new FieldParam();
                 fp.field = f;
-                fp.param = f.getAnnotation(APIParam.class);
+                fp.param = at;
                 fmap.put(f.getName(), fp);
             }
 
@@ -167,13 +232,17 @@ public abstract class APIMessage extends NeedReplyMessage {
             }
 
             if (value != null && at.validValues().length > 0) {
-                List<String> vals = new ArrayList<>();
-                for (String val: at.validValues()) {
-                    vals.add(val.toLowerCase());
+                boolean found = false;
+                for (String val : at.validValues()) {
+                    if (val.equals(value.toString())) {
+                        found = true;
+                        break;
+                    }
                 }
-                if (!vals.contains(value.toString().toLowerCase())) {
+
+                if (!found) {
                     throw new InvalidApiMessageException("valid value for field[%s] of message[%s] are %s, but %s found", f.getName(),
-                            getClass().getName(), vals, value);
+                            getClass().getName(), asList(at.validValues()), value);
                 }
             }
 

@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class GetCurrentTimeAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class GetCurrentTimeAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetCurrentTimeResult value;
+        public org.zstack.sdk.GetCurrentTimeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -38,8 +39,8 @@ public class GetCurrentTimeAction extends AbstractAction {
             return ret;
         }
         
-        GetCurrentTimeResult value = res.getResult(GetCurrentTimeResult.class);
-        ret.value = value == null ? new GetCurrentTimeResult() : value; 
+        org.zstack.sdk.GetCurrentTimeResult value = res.getResult(org.zstack.sdk.GetCurrentTimeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetCurrentTimeResult() : value; 
 
         return ret;
     }
@@ -58,15 +59,15 @@ public class GetCurrentTimeAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/management-nodes/actions";

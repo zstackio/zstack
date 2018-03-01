@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.SessionInventory;
+
 public class LogInResult {
     public SessionInventory inventory;
     public void setInventory(SessionInventory inventory) {

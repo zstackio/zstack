@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class VmNicSecurityGroupRefInventory  {
 
     public java.lang.String vmNicUuid;

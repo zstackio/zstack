@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.CephPrimaryStoragePoolInventory;
+
 public class AddCephPrimaryStoragePoolResult {
     public CephPrimaryStoragePoolInventory inventory;
     public void setInventory(CephPrimaryStoragePoolInventory inventory) {

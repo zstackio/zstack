@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryL3NetworkAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryL3NetworkAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryL3NetworkResult value;
+        public org.zstack.sdk.QueryL3NetworkResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryL3NetworkAction extends QueryAction {
             return ret;
         }
         
-        QueryL3NetworkResult value = res.getResult(QueryL3NetworkResult.class);
-        ret.value = value == null ? new QueryL3NetworkResult() : value; 
+        org.zstack.sdk.QueryL3NetworkResult value = res.getResult(org.zstack.sdk.QueryL3NetworkResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryL3NetworkResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QueryL3NetworkAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/l3-networks";

@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteBackupStorageAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteBackupStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteBackupStorageResult value;
+        public org.zstack.sdk.DeleteBackupStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DeleteBackupStorageAction extends AbstractAction {
             return ret;
         }
         
-        DeleteBackupStorageResult value = res.getResult(DeleteBackupStorageResult.class);
-        ret.value = value == null ? new DeleteBackupStorageResult() : value; 
+        org.zstack.sdk.DeleteBackupStorageResult value = res.getResult(org.zstack.sdk.DeleteBackupStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteBackupStorageResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DeleteBackupStorageAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/backup-storage/{uuid}";

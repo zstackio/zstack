@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteVpcIpSecConfigLocalAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteVpcIpSecConfigLocalAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteVpcIpSecConfigLocalResult value;
+        public org.zstack.sdk.DeleteVpcIpSecConfigLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DeleteVpcIpSecConfigLocalAction extends AbstractAction {
             return ret;
         }
         
-        DeleteVpcIpSecConfigLocalResult value = res.getResult(DeleteVpcIpSecConfigLocalResult.class);
-        ret.value = value == null ? new DeleteVpcIpSecConfigLocalResult() : value; 
+        org.zstack.sdk.DeleteVpcIpSecConfigLocalResult value = res.getResult(org.zstack.sdk.DeleteVpcIpSecConfigLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteVpcIpSecConfigLocalResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DeleteVpcIpSecConfigLocalAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/hybrid/vpn-connection/ipsec/{uuid}";

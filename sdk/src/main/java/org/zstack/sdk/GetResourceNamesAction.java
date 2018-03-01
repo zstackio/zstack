@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class GetResourceNamesAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class GetResourceNamesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetResourceNamesResult value;
+        public org.zstack.sdk.GetResourceNamesResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -44,8 +45,8 @@ public class GetResourceNamesAction extends AbstractAction {
             return ret;
         }
         
-        GetResourceNamesResult value = res.getResult(GetResourceNamesResult.class);
-        ret.value = value == null ? new GetResourceNamesResult() : value; 
+        org.zstack.sdk.GetResourceNamesResult value = res.getResult(org.zstack.sdk.GetResourceNamesResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetResourceNamesResult() : value; 
 
         return ret;
     }
@@ -64,15 +65,15 @@ public class GetResourceNamesAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/resources/names";

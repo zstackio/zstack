@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DetachPolicyFromUserAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DetachPolicyFromUserAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DetachPolicyFromUserResult value;
+        public org.zstack.sdk.DetachPolicyFromUserResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DetachPolicyFromUserAction extends AbstractAction {
             return ret;
         }
         
-        DetachPolicyFromUserResult value = res.getResult(DetachPolicyFromUserResult.class);
-        ret.value = value == null ? new DetachPolicyFromUserResult() : value; 
+        org.zstack.sdk.DetachPolicyFromUserResult value = res.getResult(org.zstack.sdk.DetachPolicyFromUserResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DetachPolicyFromUserResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DetachPolicyFromUserAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/accounts/users/{userUuid}/policies/{policyUuid}";

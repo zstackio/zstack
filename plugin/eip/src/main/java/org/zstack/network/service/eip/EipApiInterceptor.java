@@ -134,6 +134,8 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
         if (vmNicUuid == null) {
             throw new ApiMessageInterceptionException(operr("eip[uuid:%s] has not attached to any vm nic", msg.getUuid()));
         }
+
+        msg.vmNicUuid = vmNicUuid;
     }
 
     private void validate(APIDeleteEipMsg msg) {

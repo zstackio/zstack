@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.VolumeSnapshotInventory;
+
 public class SnapshotLeafInventory  {
 
     public VolumeSnapshotInventory inventory;
@@ -18,11 +20,11 @@ public class SnapshotLeafInventory  {
         return this.parentUuid;
     }
 
-    public java.util.List<SnapshotLeafInventory> children;
-    public void setChildren(java.util.List<SnapshotLeafInventory> children) {
+    public java.util.List children;
+    public void setChildren(java.util.List children) {
         this.children = children;
     }
-    public java.util.List<SnapshotLeafInventory> getChildren() {
+    public java.util.List getChildren() {
         return this.children;
     }
 

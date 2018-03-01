@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteLoadBalancerListenerAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteLoadBalancerListenerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteLoadBalancerListenerResult value;
+        public org.zstack.sdk.DeleteLoadBalancerListenerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +51,8 @@ public class DeleteLoadBalancerListenerAction extends AbstractAction {
             return ret;
         }
         
-        DeleteLoadBalancerListenerResult value = res.getResult(DeleteLoadBalancerListenerResult.class);
-        ret.value = value == null ? new DeleteLoadBalancerListenerResult() : value; 
+        org.zstack.sdk.DeleteLoadBalancerListenerResult value = res.getResult(org.zstack.sdk.DeleteLoadBalancerListenerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteLoadBalancerListenerResult() : value; 
 
         return ret;
     }
@@ -70,15 +71,15 @@ public class DeleteLoadBalancerListenerAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/load-balancers/listeners/{uuid}";

@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class GetFreeIpOfIpRangeAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class GetFreeIpOfIpRangeAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetFreeIpResult value;
+        public org.zstack.sdk.GetFreeIpResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class GetFreeIpOfIpRangeAction extends AbstractAction {
             return ret;
         }
         
-        GetFreeIpResult value = res.getResult(GetFreeIpResult.class);
-        ret.value = value == null ? new GetFreeIpResult() : value; 
+        org.zstack.sdk.GetFreeIpResult value = res.getResult(org.zstack.sdk.GetFreeIpResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetFreeIpResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class GetFreeIpOfIpRangeAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/l3-networks/ip-ranges/{ipRangeUuid}/ip/free";

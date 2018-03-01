@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class UpdateOssBucketAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class UpdateOssBucketAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateOssBucketResult value;
+        public org.zstack.sdk.UpdateOssBucketResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class UpdateOssBucketAction extends AbstractAction {
             return ret;
         }
         
-        UpdateOssBucketResult value = res.getResult(UpdateOssBucketResult.class);
-        ret.value = value == null ? new UpdateOssBucketResult() : value; 
+        org.zstack.sdk.UpdateOssBucketResult value = res.getResult(org.zstack.sdk.UpdateOssBucketResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateOssBucketResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class UpdateOssBucketAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/hybrid/aliyun/oss-bucket/{uuid}/actions";

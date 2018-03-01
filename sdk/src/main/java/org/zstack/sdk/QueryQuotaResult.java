@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class QueryQuotaResult {
-    public java.util.List<QuotaInventory> inventories;
-    public void setInventories(java.util.List<QuotaInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<QuotaInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

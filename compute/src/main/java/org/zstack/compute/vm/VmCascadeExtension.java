@@ -350,11 +350,30 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 @Override
                 public void done() {
                     if (ZoneVO.class.getSimpleName().equals(action.getRootIssuer())) {
-                        dbf.removeByPrimaryKeys(vminvs
-                                        .stream()
-                                        .map(p -> p.getInventory().getUuid())
-                                        .collect(Collectors.toList()),
-                                VmInstanceVO.class);
+                        new SQLBatch() {
+                            @Override
+                            protected void scripts() {
+                                sql(VmInstanceVO.class)
+                                        .in(VmInstanceVO_.uuid, vminvs
+                                                .stream()
+                                                .map(vm -> vm.getInventory().getUuid())
+                                                .collect(Collectors.toList()))
+                                        .delete();
+
+                                List<String> vmNicUuids = vminvs.stream().map(vm -> vm.getInventory().getVmNics()).flatMap(List::stream).collect(Collectors.toList())
+                                        .stream().map(VmNicInventory::getUuid).collect(Collectors.toList());
+                                if (!vmNicUuids.isEmpty()) {
+                                    sql(VmNicVO.class)
+                                            .in(VmNicVO_.uuid, vmNicUuids)
+                                            .delete();
+                                    sql(AccountResourceRefVO.class)
+                                            .in(AccountResourceRefVO_.resourceUuid, vmNicUuids)
+                                            .eq(AccountResourceRefVO_.resourceType, VmNicVO.class.getSimpleName())
+                                            .delete();
+                                }
+                            }
+                        }.execute();
+
                     }
 
                     completion.success();

@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class AttachBackupStorageToZoneAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class AttachBackupStorageToZoneAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AttachBackupStorageToZoneResult value;
+        public org.zstack.sdk.AttachBackupStorageToZoneResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class AttachBackupStorageToZoneAction extends AbstractAction {
             return ret;
         }
         
-        AttachBackupStorageToZoneResult value = res.getResult(AttachBackupStorageToZoneResult.class);
-        ret.value = value == null ? new AttachBackupStorageToZoneResult() : value; 
+        org.zstack.sdk.AttachBackupStorageToZoneResult value = res.getResult(org.zstack.sdk.AttachBackupStorageToZoneResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AttachBackupStorageToZoneResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class AttachBackupStorageToZoneAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/zones/{zoneUuid}/backup-storage/{backupStorageUuid}";

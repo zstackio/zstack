@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class AttachPolicyToUserGroupAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class AttachPolicyToUserGroupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AttachPolicyToUserGroupResult value;
+        public org.zstack.sdk.AttachPolicyToUserGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class AttachPolicyToUserGroupAction extends AbstractAction {
             return ret;
         }
         
-        AttachPolicyToUserGroupResult value = res.getResult(AttachPolicyToUserGroupResult.class);
-        ret.value = value == null ? new AttachPolicyToUserGroupResult() : value; 
+        org.zstack.sdk.AttachPolicyToUserGroupResult value = res.getResult(org.zstack.sdk.AttachPolicyToUserGroupResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AttachPolicyToUserGroupResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class AttachPolicyToUserGroupAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/accounts/groups/{groupUuid}/policies";

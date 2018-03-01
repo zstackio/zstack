@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class GetVmAttachableDataVolumeResult {
-    public java.util.List<VolumeInventory> inventories;
-    public void setInventories(java.util.List<VolumeInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<VolumeInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

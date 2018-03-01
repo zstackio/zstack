@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class UpdateL2NetworkAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class UpdateL2NetworkAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateL2NetworkResult value;
+        public org.zstack.sdk.UpdateL2NetworkResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +57,8 @@ public class UpdateL2NetworkAction extends AbstractAction {
             return ret;
         }
         
-        UpdateL2NetworkResult value = res.getResult(UpdateL2NetworkResult.class);
-        ret.value = value == null ? new UpdateL2NetworkResult() : value; 
+        org.zstack.sdk.UpdateL2NetworkResult value = res.getResult(org.zstack.sdk.UpdateL2NetworkResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateL2NetworkResult() : value; 
 
         return ret;
     }
@@ -76,15 +77,15 @@ public class UpdateL2NetworkAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/l2-networks/{uuid}/actions";
