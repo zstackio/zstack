@@ -5784,7 +5784,7 @@
   {
     "raw": "multiple CIDR on the same L3 network is not allowed. There has been a IP range[uuid:%s, CIDR:%s], the new IP range[CIDR:%s] is not in the CIDR with the existing one",
     "en_US": "multiple CIDR on the same L3 network is not allowed. There has been a IP range[uuid:{0}, CIDR:{1}], the new IP range[CIDR:{2}] is not in the CIDR with the existing one",
-    "zh_CN": "多个无类别域间路由在想通的L3网络上是不允许的，这发生在原有IP范围 [uuid: {0}，CIDR: {1}]。新的IP范围 [CIDR: {2}] 不在现有的一个CIDR",
+    "zh_CN": "在相同的三层网络上多个CIDR是不允许的，已有的IP范围 [uuid: {0}，CIDR: {1}]。新的IP范围 [CIDR: {2}] 不在现有的一个CIDR",
     "arguments": [
       "r.getUuid()",
       "rcidr",
