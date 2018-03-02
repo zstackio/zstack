@@ -1074,17 +1074,20 @@ public class VolumeBase implements Volume {
         } else if (self.getStatus() == VolumeStatus.NotInstantiated) {
             //not support vmtx volume temporarily, so filter ESX vm when volume is NotInstantiated.
             sql = SQL.New("select vm" +
-                    " from VmInstanceVO vm, PrimaryStorageClusterRefVO ref, PrimaryStorageEO ps" +
+                    " from VmInstanceVO vm, PrimaryStorageClusterRefVO ref, PrimaryStorageEO ps, PrimaryStorageCapacityVO capacity" +
                     " where "+ (vmUuids == null ? "" : " vm.uuid in (:vmUuids) and") +
                     " vm.state in (:vmStates)" +
                     " and vm.type = :vmType" +
                     " and vm.hypervisorType <> :hvType" +
                     " and vm.clusterUuid = ref.clusterUuid" +
+                    " and capacity.uuid = ps.uuid" +
+                    " and capacity.availableCapacity > :volumeSize" +
                     " and ref.primaryStorageUuid = ps.uuid" +
                     " and ps.state in (:psState)" +
                     " group by vm.uuid")
                     //TODO:  this is a dirty fix, delete it when VMWare support DataVolume
                     .param("hvType", "ESX")
+                    .param("volumeSize", self.getSize())
                     .param("vmType", VmInstanceConstant.USER_VM_TYPE)
                     .param("psState", PrimaryStorageState.Enabled);
         } else {

@@ -1,5 +1,6 @@
 package org.zstack.storage.primary.local;
 
+import com.google.common.collect.Lists;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.VmAllocatePrimaryStorageFlow;
@@ -13,9 +14,6 @@ import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.Component;
-import org.zstack.header.apimediator.ApiMessageInterceptionException;
-import org.zstack.header.cluster.ClusterVO;
-import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
@@ -706,9 +704,25 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             return candidates;
         }
 
+        List<VmInstanceVO> candidatesCopy = Lists.newArrayList(candidates);
+        for (VmInstanceVO vo : candidates) {
+            PrimaryStorageVO psVo = dbf.findByUuid(vo.getRootVolume().getPrimaryStorageUuid(), PrimaryStorageVO.class);
+            if (LocalStorageConstants.LOCAL_STORAGE_TYPE.equals(psVo.getType())) {
+                String volumeUuid = vo.getRootVolumeUuid();
+                VolumeVO rootVolumeVO = dbf.findByUuid(volumeUuid, VolumeVO.class);
+                boolean avaliableHost = Q.New(LocalStorageHostRefVO.class)
+                        .gte(LocalStorageHostRefVO_.availableCapacity, vol.getSize())
+                        .eq(LocalStorageHostRefVO_.primaryStorageUuid, rootVolumeVO.getPrimaryStorageUuid())
+                        .isExists();
+                if (!avaliableHost) {
+                    candidatesCopy.remove(vo);
+                }
+            }
+        }
+
         String hostUuid = ret.get(0);
 
-        List<String> vmRootVolumeUuids = CollectionUtils.transformToList(candidates, new Function<String, VmInstanceVO>() {
+        List<String> vmRootVolumeUuids = CollectionUtils.transformToList(candidatesCopy, new Function<String, VmInstanceVO>() {
             @Override
             public String call(VmInstanceVO arg) {
                 return arg.getRootVolumeUuid();
@@ -727,7 +741,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         q.setParameter("rtype", VolumeVO.class.getSimpleName());
         final List<String> toExclude = q.getResultList();
 
-        candidates = CollectionUtils.transformToList(candidates, new Function<VmInstanceVO, VmInstanceVO>() {
+        candidatesCopy = CollectionUtils.transformToList(candidatesCopy, new Function<VmInstanceVO, VmInstanceVO>() {
             @Override
             public VmInstanceVO call(VmInstanceVO arg) {
                 return toExclude.contains(arg.getRootVolumeUuid()) ? null : arg;
@@ -735,14 +749,14 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         });
 
         // exclude: vm hostUuid not equals target volume hostUuid
-        candidates = CollectionUtils.transformToList(candidates, new Function<VmInstanceVO, VmInstanceVO>() {
+        candidatesCopy = CollectionUtils.transformToList(candidatesCopy, new Function<VmInstanceVO, VmInstanceVO>() {
             @Override
             public VmInstanceVO call(VmInstanceVO arg) {
                 return arg.getHostUuid() != null && !hostUuid.equals(arg.getHostUuid()) ? null : arg;
             }
         });
 
-        return candidates;
+        return candidatesCopy;
     }
 
     @Override
