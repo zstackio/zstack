@@ -173,6 +173,7 @@ public class SourceClassMap {
 			put("org.zstack.pciDevice.PciDeviceType", "org.zstack.sdk.PciDeviceType");
 			put("org.zstack.sns.SNSApplicationEndpointInventory", "org.zstack.sdk.sns.SNSApplicationEndpointInventory");
 			put("org.zstack.sns.SNSApplicationPlatformInventory", "org.zstack.sdk.sns.SNSApplicationPlatformInventory");
+			put("org.zstack.sns.SNSSubscriberInventory", "org.zstack.sdk.sns.SNSSubscriberInventory");
 			put("org.zstack.sns.SNSTopicInventory", "org.zstack.sdk.sns.SNSTopicInventory");
 			put("org.zstack.sns.platform.dingtalk.SNSDingTalkAtPersonInventory", "org.zstack.sdk.sns.platform.dingtalk.SNSDingTalkAtPersonInventory");
 			put("org.zstack.sns.platform.dingtalk.SNSDingTalkEndpointInventory", "org.zstack.sdk.sns.platform.dingtalk.SNSDingTalkEndpointInventory");
@@ -427,6 +428,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ZoneInventory", "org.zstack.header.zone.ZoneInventory");
 			put("org.zstack.sdk.sns.SNSApplicationEndpointInventory", "org.zstack.sns.SNSApplicationEndpointInventory");
 			put("org.zstack.sdk.sns.SNSApplicationPlatformInventory", "org.zstack.sns.SNSApplicationPlatformInventory");
+			put("org.zstack.sdk.sns.SNSSubscriberInventory", "org.zstack.sns.SNSSubscriberInventory");
 			put("org.zstack.sdk.sns.SNSTopicInventory", "org.zstack.sns.SNSTopicInventory");
 			put("org.zstack.sdk.sns.platform.dingtalk.SNSDingTalkAtPersonInventory", "org.zstack.sns.platform.dingtalk.SNSDingTalkAtPersonInventory");
 			put("org.zstack.sdk.sns.platform.dingtalk.SNSDingTalkEndpointInventory", "org.zstack.sns.platform.dingtalk.SNSDingTalkEndpointInventory");
