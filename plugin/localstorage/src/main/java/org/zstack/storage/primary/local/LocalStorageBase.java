@@ -1118,9 +1118,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                         .param("resUuid", resUuid)
                         .find();
                 if (uuid == null) {
-                    ResourceVO vo = sql("select hostUuid from ResourceVO where uuid = :resUuid", String.class)
-                            .param("resUuid", resUuid)
-                            .find();
+                    ResourceVO vo = dbf.findByUuid(resUuid,ResourceVO.class);
                     if (vo != null) {
                         throw new OperationFailureException(operr("cannot find any host which has resource[uuid:%s], name :[%s], type :[%s]"
                                 , resUuid, vo.getResourceName(), vo.getResourceType()));
