@@ -1,10 +1,10 @@
-package org.zstack.sdk.zwatch.api;
+package org.zstack.sdk.sns;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetAlarmDataAction extends AbstractAction {
+public class QuerySNSTopicSubscriberAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetAlarmDataAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.zwatch.api.GetAlarmDataResult value;
+        public org.zstack.sdk.sns.QuerySNSTopicSubscriberResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,26 +25,6 @@ public class GetAlarmDataAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,9223372036854775807L}, noTrim = false)
-    public java.lang.Long startTime;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,9223372036854775807L}, noTrim = false)
-    public java.lang.Long endTime;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,2147483647L}, noTrim = false)
-    public java.lang.Integer limit = 100;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List conditions;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = true)
-    public String sessionId;
 
 
     private Result makeResult(ApiResult res) {
@@ -54,8 +34,8 @@ public class GetAlarmDataAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.zwatch.api.GetAlarmDataResult value = res.getResult(org.zstack.sdk.zwatch.api.GetAlarmDataResult.class);
-        ret.value = value == null ? new org.zstack.sdk.zwatch.api.GetAlarmDataResult() : value; 
+        org.zstack.sdk.sns.QuerySNSTopicSubscriberResult value = res.getResult(org.zstack.sdk.sns.QuerySNSTopicSubscriberResult.class);
+        ret.value = value == null ? new org.zstack.sdk.sns.QuerySNSTopicSubscriberResult() : value; 
 
         return ret;
     }
@@ -85,7 +65,7 @@ public class GetAlarmDataAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/zwatch/alarm-histories";
+        info.path = "/sns/topics/subscribers";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";
