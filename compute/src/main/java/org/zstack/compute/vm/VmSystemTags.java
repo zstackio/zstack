@@ -1,7 +1,6 @@
 package org.zstack.compute.vm;
 
 import org.zstack.header.tag.TagDefinition;
-import org.zstack.header.vm.VmInstance;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.tag.PatternedSystemTag;
 
@@ -36,6 +35,10 @@ public class VmSystemTags {
 
     public static String BOOT_ORDER_TOKEN = "bootOrder";
     public static PatternedSystemTag BOOT_ORDER = new PatternedSystemTag(String.format("bootOrder::{%s}", BOOT_ORDER_TOKEN), VmInstanceVO.class);
+
+    // set cdromBootOnce::true to set vm boot from cdrom once only
+    public static String CDROM_BOOT_ONCE_TOKEN = "cdromBootOnce";
+    public static PatternedSystemTag CDROM_BOOT_ONCE = new PatternedSystemTag(String.format("cdromBootOnce::{%s}", CDROM_BOOT_ONCE_TOKEN), VmInstanceVO.class);
 
     public static String CONSOLE_PASSWORD_TOKEN = "consolePassword";
     public static PatternedSystemTag CONSOLE_PASSWORD = new PatternedSystemTag(String.format("consolePassword::{%s}",CONSOLE_PASSWORD_TOKEN),VmInstanceVO.class);
