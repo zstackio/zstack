@@ -24,9 +24,10 @@ public class APIDetachIsoFromVmInstanceMsg extends APIMessage implements VmInsta
     @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
     private String vmInstanceUuid;
 
-    // for audit purpose only
-    @APINoSee
-    public String isoUuid;
+    // resourceType can not be set to ImageVO.class, because the image may have been deleted
+    // required can not be set to true, Because of the need to be compatible with the old API
+    @APIParam(required = false)
+    private String isoUuid;
 
     @Override
     public String getVmInstanceUuid() {
@@ -36,7 +37,15 @@ public class APIDetachIsoFromVmInstanceMsg extends APIMessage implements VmInsta
     public void setVmInstanceUuid(String vmInstanceUuid) {
         this.vmInstanceUuid = vmInstanceUuid;
     }
- 
+
+    public String getIsoUuid() {
+        return isoUuid;
+    }
+
+    public void setIsoUuid(String isoUuid) {
+        this.isoUuid = isoUuid;
+    }
+
     public static APIDetachIsoFromVmInstanceMsg __example__() {
         APIDetachIsoFromVmInstanceMsg msg = new APIDetachIsoFromVmInstanceMsg();
         msg.vmInstanceUuid = uuid();
