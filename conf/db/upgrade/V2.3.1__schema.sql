@@ -202,4 +202,6 @@ ALTER TABLE EventSubscriptionActionVO ADD CONSTRAINT fkEventSubscriptionActionVO
 
 ALTER TABLE EventSubscriptionLabelVO ADD CONSTRAINT fkEventSubscriptionLabelVOEventSubscriptionVO FOREIGN KEY (subscriptionUuid) REFERENCES EventSubscriptionVO (uuid) ON DELETE CASCADE;
 
+UPDATE SchedulerTriggerVO set repeatCount=0 where repeatCount is NULL;
+
 UPDATE SystemTagVO SET tag = CONCAT(tag, '::0') WHERE resourceType = "VmInstanceVO" AND type = "System" AND tag LIKE "iso::%" AND tag NOT LIKE "iso::%::%";
