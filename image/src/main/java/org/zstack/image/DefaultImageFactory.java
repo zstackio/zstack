@@ -20,7 +20,7 @@ public class DefaultImageFactory implements ImageFactory {
 
     @Override
     @Transactional
-    public ImageVO createImage(ImageVO vo, APIAddImageMsg msg) {
+    public ImageVO createImage(ImageVO vo) {
         dbf.getEntityManager().persist(vo);
         dbf.getEntityManager().flush();
         dbf.getEntityManager().refresh(vo);
