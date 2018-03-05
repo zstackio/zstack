@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger
  */
 class WhileCase extends SubCase{
     private static final CLogger logger = Utils.getLogger(WhileCase.class)
-    static TIME_OUT = TimeUnit.SECONDS.toMillis(1)
+    static TIME_OUT = TimeUnit.SECONDS.toMillis(15)
 
     @Override
     void clean() {
@@ -110,7 +110,7 @@ class WhileCase extends SubCase{
         new While<>([1, 2, 3]).step({item, completion ->
             Thread.start {
                 logger.debug("step " + item)
-                TimeUnitUtil.sleepMilliseconds(TimeUnit.SECONDS.toMillis(item as long)/5 as long)
+                sleep(item * 200 as long)
                 itemDoneCount.addAndGet(1)
                 completion.done()
             }
