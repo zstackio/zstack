@@ -1695,9 +1695,9 @@
     "fileName": "src/main/java/org/zstack/compute/vm/VmAllocatePrimaryStorageForAttachingDiskFlow.java"
   },
   {
-    "raw": "cannot find the iso[uuid:%s] in any connected backup storage attached to the zone[uuid:%s]. check below:\n1. if the backup storage is attached to the zone where the VM[name: %s, uuid:%s] is running\n2. if the backup storage is in connected status, if not, try reconnecting it",
-    "en_US": "cannot find the iso[uuid:{0}] in any connected backup storage attached to the zone[uuid:{1}]. check below:\n1. if the backup storage is attached to the zone where the VM[name: {2}, uuid:{3}] is running\n2. if the backup storage is in connected status, if not, try reconnecting it",
-    "zh_CN": "不能发现iso[uuid:{0}]在任何已经挂载到集群[uuid:{1}]上的并且处于Connected状态备份的镜像服务器。可以进行对以下选项的检查: 1. 镜像服务器是否已经挂载到区域中的任何运行状态的云主机[name: {2}, uuid:{3}]上；2. 如果镜像服务器不是处于连接状态，请尝试重连",
+    "raw": "cannot find the iso[uuid:%s] in any connected backup storage attached to the zone[uuid:%s]. check below:\\n1. if the backup storage is attached to the zone where the VM[name: %s, uuid:%s] is running\\n2. if the backup storage is in connected status, if not, try reconnecting it",
+    "en_US": "cannot find the iso[uuid:{0}] in any connected backup storage attached to the zone[uuid:{1}]. check below:\\n1. if the backup storage is attached to the zone where the VM[name: {2}, uuid:{3}] is running\\n2. if the backup storage is in connected status, if not, try reconnecting it",
+    "zh_CN": "不能发现iso[uuid:{0}]在任何已经挂载到集群[uuid:{1}]上的并且处于Connected状态备份的镜像服务器。可以进行对以下选项的检查: \\n1. 镜像服务器是否已经挂载到区域中的任何运行状态的云主机[name: {2}, uuid:{3}]上；\\n2. 如果镜像服务器不是处于连接状态，请尝试重连",
     "arguments": [
       "iso.getUuid()",
       "host.getZoneUuid()",
@@ -1708,9 +1708,9 @@
     "fileName": "src/main/java/org/zstack/compute/vm/VmDownloadIsoFlow.java"
   },
   {
-    "raw": "cannot find the image[uuid:%s] in any connected backup storage. check below:\n1. if the backup storage is attached to the zone where the VM[name: %s, uuid:%s] is in\n2. if the backup storage is in connected status, if not, try reconnecting it",
-    "en_US": "cannot find the image[uuid:{0}] in any connected backup storage. check below:\n1. if the backup storage is attached to the zone where the VM[name: {1}, uuid:{2}] is in\n2. if the backup storage is in connected status, if not, try reconnecting it",
-    "zh_CN": "不能发现镜像[uuid:{0}]在任何处于Connected状态备份的镜像服务器。可以进行对以下选项的检查: 1. 镜像服务器是否已经过载到区域中的云主机[name: {1}, uuid:{2}]中；2. 如果镜像服务器不是处于连接状态，请尝试重连",
+    "raw": "cannot find the image[uuid:%s] in any connected backup storage. check below:\\n1. if the backup storage is attached to the zone where the VM[name: %s, uuid:%s] is in\\n2. if the backup storage is in connected status, if not, try reconnecting it",
+    "en_US": "cannot find the image[uuid:{0}] in any connected backup storage. check below:\\n1. if the backup storage is attached to the zone where the VM[name: {1}, uuid:{2}] is in\\n2. if the backup storage is in connected status, if not, try reconnecting it",
+    "zh_CN": "不能发现镜像[uuid:{0}]在任何处于Connected状态备份的镜像服务器。可以进行对以下选项的检查: \\n1. 镜像服务器是否已经过载到区域中的云主机[name: {1}, uuid:{2}]中；\\n2. 如果镜像服务器不是处于连接状态，请尝试重连",
     "arguments": [
       "imageUuid",
       "spec.getVmInventory().getName()",
@@ -1720,9 +1720,9 @@
     "fileName": "src/main/java/org/zstack/compute/vm/VmImageSelectBackupStorageFlow.java"
   },
   {
-    "raw": "cannot find the image[uuid:%s] in any connected backup storage attached to the zone[uuid:%s]. check below:\n1. if the backup storage is attached to the zone where the VM[name: %s, uuid:%s] is in\n2. if the backup storage is in connected status, if not, try reconnecting it",
-    "en_US": "cannot find the image[uuid:{0}] in any connected backup storage attached to the zone[uuid:{1}]. check below:\n1. if the backup storage is attached to the zone where the VM[name: {2}, uuid:{3}] is in\n2. if the backup storage is in connected status, if not, try reconnecting it",
-    "zh_CN": "不能发现镜像[uuid:{0}]在任何已经挂载到集群[uuid:{1}]上的并且处于Connected状态备份的镜像服务器。可以进行对以下选项的检查: 1. 镜像服务器是否已经过载到区域中的云主机[name: {2}, uuid:{3}]中；2. 如果镜像服务器不是处于Connected状态，请尝试重连",
+    "raw": "cannot find the image[uuid:%s] in any connected backup storage attached to the zone[uuid:%s]. check below:\\n1. if the backup storage is attached to the zone where the VM[name: %s, uuid:%s] is in\\n2. if the backup storage is in connected status, if not, try reconnecting it",
+    "en_US": "cannot find the image[uuid:{0}] in any connected backup storage attached to the zone[uuid:{1}]. check below:\\n1. if the backup storage is attached to the zone where the VM[name: {2}, uuid:{3}] is in\\n2. if the backup storage is in connected status, if not, try reconnecting it",
+    "zh_CN": "不能发现镜像[uuid:{0}]在任何已经挂载到集群[uuid:{1}]上的并且处于Connected状态备份的镜像服务器。可以进行对以下选项的检查: \\n1. 镜像服务器是否已经过载到区域中的云主机[name: {2}, uuid:{3}]中；\\n2. 如果镜像服务器不是处于Connected状态，请尝试重连",
     "arguments": [
       "imageUuid",
       "spec.getVmInventory().getZoneUuid()",
@@ -5349,7 +5349,7 @@
   {
     "raw": "\\n\u003d\u003d\u003d BELOW ARE DETAILS OF THE PREVIOUS ALERT \u003d\u003d\u003d",
     "en_US": "\\n\u003d\u003d\u003d BELOW ARE DETAILS OF THE PREVIOUS ALERT \u003d\u003d\u003d",
-    "zh_CN": "\n\u003d\u003d\u003d 以下是上一次提示的详细内容 \u003d\u003d\u003d",
+    "zh_CN": "\\n\u003d\u003d\u003d 以下是上一次警告内容 \u003d\u003d\u003d",
     "arguments": [],
     "line": 55,
     "fileName": "src/main/java/org/zstack/monitoring/items/AlertText.java"
@@ -5357,7 +5357,7 @@
   {
     "raw": "\\nalert details:",
     "en_US": "\\nalert details:",
-    "zh_CN": "\n提示的详细内容: ",
+    "zh_CN": "\\n警告内容: ",
     "arguments": [],
     "line": 58,
     "fileName": "src/main/java/org/zstack/monitoring/items/AlertText.java"
@@ -5365,7 +5365,7 @@
   {
     "raw": "\\ncondition: {itemName} {operator} {threshold}",
     "en_US": "\\ncondition: {itemName} {operator} {threshold}",
-    "zh_CN": "\n环境: {itemName} {operator} {threshold}",
+    "zh_CN": "\\n环境: {itemName} {operator} {threshold}",
     "arguments": [
       "args"
     ],
@@ -5375,7 +5375,7 @@
   {
     "raw": "\\ncurrent value: {value}",
     "en_US": "\\ncurrent value: {value}",
-    "zh_CN": "\n当前值: {value}",
+    "zh_CN": "\\n当前值: {value}",
     "arguments": [
       "args"
     ],
@@ -5403,7 +5403,7 @@
     "en_US": "The problem may be caused by an incorrect user name or password or email permission denied",
     "zh_CN": "导致操作失败的原因可能是不正确的用户名、密码或邮件访问权限不足",
     "arguments": [],
-    "line": 39,
+    "line": 30,
     "fileName": "src/main/java/org/zstack/monitoring/media/EmailMediaFactory.java"
   },
   {
@@ -5414,7 +5414,7 @@
       "smtpServer",
       "smtpPort"
     ],
-    "line": 41,
+    "line": 32,
     "fileName": "src/main/java/org/zstack/monitoring/media/EmailMediaFactory.java"
   },
   {
@@ -5429,9 +5429,9 @@
     "fileName": "src/main/java/org/zstack/monitoring/prometheus/AlertRuleWriter.java"
   },
   {
-    "raw": "ALERT:\n resource[name: %s, uuid: %s, type: %s]\nevent: %s %s %s\ncurrent value: %s\nduration: %s seconds\n",
-    "en_US": "ALERT:\n resource[name: {0}, uuid: {1}, type: {2}]\nevent: {3} {4} {5}\ncurrent value: {6}\nduration: {7} seconds\n",
-    "zh_CN": "提示: \n资源: [name: {0}, uuid: {1}, type: {2}]\n事件: {3} {4} {5}\n当前值: {6}\n持续事件: {7}秒",
+    "raw": "ALERT:\\n resource[name: %s, uuid: %s, type: %s]\\nevent: %s %s %s\\ncurrent value: %s\\nduration: %s seconds\\n",
+    "en_US": "ALERT:\\n resource[name: {0}, uuid: {1}, type: {2}]\\nevent: {3} {4} {5}\\ncurrent value: {6}\\nduration: {7} seconds\\n",
+    "zh_CN": "警告:\\n 资源[名称: {0}, uuid: {1}, 类型: {2}]\\n 事件: {3} {4} {5}\\n 周期: {7}\\n",
     "arguments": [
       "resourceName",
       "resourceUuid",
@@ -9202,9 +9202,9 @@
     "fileName": "src/main/java/org/zstack/storage/migration/primary/nfs/NfsToNfsMigrateVolumeFlow.java"
   },
   {
-    "raw": "cannot find the image[uuid:%s] in any connected backup storage attached to the zone[uuid:%s]. check below:\n1. whether the backup storage is attached to the zone[uuid:%s]\n2. whether the backup storage is in connected status; try to reconnect it if not",
-    "en_US": "cannot find the image[uuid:{0}] in any connected backup storage attached to the zone[uuid:{1}]. check below:\n1. whether the backup storage is attached to the zone[uuid:{2}]\n2. whether the backup storage is in connected status; try to reconnect it if not",
-    "zh_CN": "在所有的已连接区域[uuid:{1}]的镜像服务器未找到镜像[uuid:{0}]。建议进行如下检查: \n1.镜像服务器是否连接到区域[uuid:{2}]\n2.镜像服务器是否是已连接状态，如果不是尝试重新连接",
+    "raw": "cannot find the image[uuid:%s] in any connected backup storage attached to the zone[uuid:%s]. check below:\\n1. whether the backup storage is attached to the zone[uuid:%s]\\n2. whether the backup storage is in connected status; try to reconnect it if not",
+    "en_US": "cannot find the image[uuid:{0}] in any connected backup storage attached to the zone[uuid:{1}]. check below:\\n1. whether the backup storage is attached to the zone[uuid:{2}]\\n2. whether the backup storage is in connected status; try to reconnect it if not",
+    "zh_CN": "在所有的已连接区域[uuid:{1}]的镜像服务器未找到镜像[uuid:{0}]。建议进行如下检查: \\n1.镜像服务器是否连接到区域[uuid:{2}]\\n2.镜像服务器是否是已连接状态，如果不是尝试重新连接",
     "arguments": [
       "imageUuid",
       "zoneUuid",
@@ -9977,9 +9977,9 @@
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsApiParamChecker.java"
   },
   {
-    "raw": "there are %s running VMs on the NFS primary storage, please stop them and try again:\n%s\n",
-    "en_US": "there are {0} running VMs on the NFS primary storage, please stop them and try again:\n{1}\n",
-    "zh_CN": "在NFS主存储上有{0}个运行中的VM，请先手动关闭再尝试: \n{1}\n",
+    "raw": "there are %s running VMs on the NFS primary storage, please stop them and try again:\\n%s\\n",
+    "en_US": "there are {0} running VMs on the NFS primary storage, please stop them and try again:\\n{1}\\n",
+    "zh_CN": "在NFS主存储上有{0}个运行中的VM，请先手动关闭再尝试: \\n{1}\\n",
     "arguments": [
       "vms.size()",
       "StringUtils.join(vms, \"\\n\")"
@@ -10521,9 +10521,9 @@
     "fileName": "src/main/java/org/zstack/storage/primary/zses/ZsesKvmBackend.java"
   },
   {
-    "raw": "the image[uuid:%s, name: %s] is not available to download on any backup storage:\n1. check if image is in status of Deleted\n2. check if the backup storage on which the image is shown as Ready is attached to the zone[uuid:%s]",
-    "en_US": "the image[uuid:{0}, name: {1}] is not available to download on any backup storage:\n1. check if image is in status of Deleted\n2. check if the backup storage on which the image is shown as Ready is attached to the zone[uuid:{2}]",
-    "zh_CN": "不能从镜像服务器中下载镜像[uuid:%s, name: %s]\n1.检查镜像是否处于被删除状态\n2.检查镜像处于就绪状态的镜像服务器是否挂载到区域[uuid:{2}]",
+    "raw": "the image[uuid:%s, name: %s] is not available to download on any backup storage:\\n1. check if image is in status of Deleted\\n2. check if the backup storage on which the image is shown as Ready is attached to the zone[uuid:%s]",
+    "en_US": "the image[uuid:{0}, name: {1}] is not available to download on any backup storage:\\n1. check if image is in status of Deleted\\n2. check if the backup storage on which the image is shown as Ready is attached to the zone[uuid:{2}]",
+    "zh_CN": "不能从镜像服务器中下载镜像[uuid:%s, name: %s]\\n1.检查镜像是否处于被删除状态\\n2.检查镜像处于就绪状态的镜像服务器是否挂载到区域[uuid:{2}]",
     "arguments": [
       "img.getUuid()",
       "img.getName()",
