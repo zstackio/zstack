@@ -1008,15 +1008,6 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         }
     }
 
-    private String getAvailableHostUuidForOperation() {
-        List<String> hostUuids = Q.New(PrimaryStorageHostRefVO.class).
-                eq(PrimaryStorageHostRefVO_.primaryStorageUuid, self.getUuid()).select(PrimaryStorageHostRefVO_.hostUuid).listValues();
-        if (hostUuids == null || hostUuids.size() == 0) {
-            return null;
-        }
-        return hostUuids.get(0);
-    }
-
     @Override
     protected void handle(final DeleteBitsOnPrimaryStorageMsg msg) {
         final DeleteVolumeBitsOnPrimaryStorageReply reply = new DeleteVolumeBitsOnPrimaryStorageReply();

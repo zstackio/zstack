@@ -3,7 +3,6 @@ package org.zstack.storage.primary.smp;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.asyncbatch.AsyncBatchRunner;
 import org.zstack.core.asyncbatch.LoopAsyncBatch;
 import org.zstack.core.cloudbus.AutoOffEventCallback;
@@ -41,10 +40,8 @@ import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.TypedQuery;
 import java.io.File;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -742,24 +739,6 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
                 bus.reply(msg, reply);
             }
         });
-    }
-
-    @Transactional(readOnly = true)
-    private String getAvailableHostUuidForOperation() {
-        String sql = "select host.uuid from PrimaryStorageClusterRefVO ref, HostVO host where" +
-                " ref.clusterUuid = host.clusterUuid and ref.primaryStorageUuid = :psUuid and host.status = :hstatus" +
-                " and host.state = :hstate";
-        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-        q.setParameter("psUuid", self.getUuid());
-        q.setParameter("hstatus", HostStatus.Connected);
-        q.setParameter("hstate", HostState.Enabled);
-        List<String> hostUuids = q.getResultList();
-        if (hostUuids.isEmpty()) {
-            return null;
-        }
-
-        Collections.shuffle(hostUuids);
-        return hostUuids.get(0);
     }
 
     protected HypervisorBackend getHypervisorBackendByVolumeUuid(String volUuid) {

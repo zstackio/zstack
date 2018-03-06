@@ -19,6 +19,7 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.configuration.DiskOfferingVO;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -797,8 +798,8 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
 
     }
 
-    public void afterDeleteVolume(VolumeInventory volume) {
-
+    public void afterDeleteVolume(VolumeInventory volume, Completion completion) {
+        completion.success();
     }
 
     public void failedToDeleteVolume(VolumeInventory volume, ErrorCode errorCode) {
@@ -813,8 +814,8 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
 
     }
 
-    public void beforeRecoverDataVolume(VolumeInventory volume) {
-
+    public void beforeRecoverDataVolume(VolumeInventory volume, Completion completion) {
+        completion.success();
     }
 
     public void afterRecoverDataVolume(VolumeInventory volume) {

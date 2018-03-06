@@ -28,6 +28,10 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.host.HostState;
+import org.zstack.header.host.HostStatus;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -50,10 +54,7 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.zstack.core.Platform.operr;
 
@@ -1139,5 +1140,22 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             throw new OperationFailureException(
                     operr("cannot attach volume[uuid:%s] whose primary storage is Maintenance", volumeUuid));
         }
+    }
+
+    @Transactional(readOnly = true)
+    public String getAvailableHostUuidForOperation() {
+        List<String> hostUuids = Q.New(PrimaryStorageHostRefVO.class).
+                eq(PrimaryStorageHostRefVO_.primaryStorageUuid, self.getUuid()).
+                eq(PrimaryStorageHostRefVO_.status, PrimaryStorageHostStatus.Connected).select(PrimaryStorageHostRefVO_.hostUuid).listValues();
+        if (hostUuids == null || hostUuids.size() == 0) {
+            return null;
+        }
+        List<String> results = Q.New(HostVO.class).eq(HostVO_.status, HostStatus.Connected).in(HostVO_.uuid, hostUuids).
+                eq(HostVO_.state, HostState.Enabled).select(HostVO_.uuid).listValues();
+        if (results == null || results.size() == 0) {
+            return null;
+        }
+        Collections.shuffle(results);
+        return results.get(0);
     }
 }

@@ -3,7 +3,7 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class AddDataCenterFromRemoteAction extends AbstractAction {
+public class DeleteNasFileSystemAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -11,7 +11,7 @@ public class AddDataCenterFromRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AddDataCenterFromRemoteResult value;
+        public DeleteNasFileSystemResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -24,17 +24,11 @@ public class AddDataCenterFromRemoteAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String regionId;
-
-    @Param(required = true, validValues = {"aliyun","privateAliyun"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type;
-
-    @Param(required = false, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String uuid;
 
     @Param(required = false)
-    public java.lang.String resourceUuid;
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -59,8 +53,8 @@ public class AddDataCenterFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        AddDataCenterFromRemoteResult value = res.getResult(AddDataCenterFromRemoteResult.class);
-        ret.value = value == null ? new AddDataCenterFromRemoteResult() : value; 
+        DeleteNasFileSystemResult value = res.getResult(DeleteNasFileSystemResult.class);
+        ret.value = value == null ? new DeleteNasFileSystemResult() : value; 
 
         return ret;
     }
@@ -89,11 +83,11 @@ public class AddDataCenterFromRemoteAction extends AbstractAction {
 
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/hybrid/data-center";
+        info.httpMethod = "DELETE";
+        info.path = "/primary-storage/nas/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

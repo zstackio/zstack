@@ -7,12 +7,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SQLBatch;
+import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.workflow.FlowTrigger;
-import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceConstant.Params;
@@ -38,6 +37,8 @@ public class VmDeleteVolumeFlow extends NoRollbackFlow {
     protected CloudBus bus;
     @Autowired
     private CascadeFacade casf;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     @Override
     public void run(final FlowTrigger trigger, Map data) {
@@ -75,17 +76,55 @@ public class VmDeleteVolumeFlow extends NoRollbackFlow {
         });
 
         final String issuer = VolumeVO.class.getSimpleName();
-        casf.asyncCascade(CascadeConstant.DELETION_FORCE_DELETE_CODE, issuer, ctx, new Completion(trigger) {
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName("delete-volumes-in-VmDeleteVolumeFlow");
+        chain.then(new NoRollbackFlow() {
             @Override
-            public void success() {
+            public void run(FlowTrigger trigger1, Map data1) {
+                casf.asyncCascade(CascadeConstant.DELETION_FORCE_DELETE_CODE, issuer, ctx, new Completion(trigger1) {
+                    @Override
+                    public void success() {
+                        pluginRgty.getExtensionList(VolumeAfterExpungeExtensionPoint.class).forEach(ext -> {
+                                    for(VolumeInventory volinv: spec.getVmInventory().getAllVolumes()) {
+                                        ext.volumeAfterExpunge(volinv);
+                                    }
+                                }
+                        );
+                        trigger1.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger1.fail(errorCode);
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger1, Map data1) {
+                casf.asyncCascade(CascadeConstant.DELETION_DELETE_CODE, issuer, ctx, new Completion(trigger1) {
+                    @Override
+                    public void success() {
+                        trigger1.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger1.fail(errorCode);
+                    }
+                });
+            }
+        }).done(new FlowDoneHandler(trigger) {
+            @Override
+            public void handle(Map data) {
                 trigger.next();
             }
-
+        }).error(new FlowErrorHandler(trigger) {
             @Override
-            public void fail(ErrorCode errorCode) {
-                trigger.fail(errorCode);
+            public void handle(ErrorCode errCode, Map data) {
+                trigger.fail(errCode);
             }
-        });
+        }).start();
     }
 
     @Transactional

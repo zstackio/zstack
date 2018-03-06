@@ -3,7 +3,7 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class AddDataCenterFromRemoteAction extends AbstractAction {
+public class AddAliyunNasPrimaryStorageAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -11,7 +11,7 @@ public class AddDataCenterFromRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AddDataCenterFromRemoteResult value;
+        public AddPrimaryStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -24,14 +24,26 @@ public class AddDataCenterFromRemoteAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String regionId;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String nasUuid;
 
-    @Param(required = true, validValues = {"aliyun","privateAliyun"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String accessGroupUuid;
+
+    @Param(required = true, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String url;
+
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
+
+    @Param(required = false)
     public java.lang.String type;
 
-    @Param(required = false, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String zoneUuid;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
@@ -59,8 +71,8 @@ public class AddDataCenterFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        AddDataCenterFromRemoteResult value = res.getResult(AddDataCenterFromRemoteResult.class);
-        ret.value = value == null ? new AddDataCenterFromRemoteResult() : value; 
+        AddPrimaryStorageResult value = res.getResult(AddPrimaryStorageResult.class);
+        ret.value = value == null ? new AddPrimaryStorageResult() : value; 
 
         return ret;
     }
@@ -90,7 +102,7 @@ public class AddDataCenterFromRemoteAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/hybrid/data-center";
+        info.path = "/primary-storage/aliyun/nas";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

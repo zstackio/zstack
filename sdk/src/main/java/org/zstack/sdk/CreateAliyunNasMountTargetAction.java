@@ -3,7 +3,7 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class AddDataCenterFromRemoteAction extends AbstractAction {
+public class CreateAliyunNasMountTargetAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -11,7 +11,7 @@ public class AddDataCenterFromRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AddDataCenterFromRemoteResult value;
+        public CreateNasMountTargetResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -24,11 +24,14 @@ public class AddDataCenterFromRemoteAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String regionId;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String nasAccessGroupUuid;
 
-    @Param(required = true, validValues = {"aliyun","privateAliyun"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String nasFSUuid;
+
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String name;
 
     @Param(required = false, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
@@ -59,8 +62,8 @@ public class AddDataCenterFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        AddDataCenterFromRemoteResult value = res.getResult(AddDataCenterFromRemoteResult.class);
-        ret.value = value == null ? new AddDataCenterFromRemoteResult() : value; 
+        CreateNasMountTargetResult value = res.getResult(CreateNasMountTargetResult.class);
+        ret.value = value == null ? new CreateNasMountTargetResult() : value; 
 
         return ret;
     }
@@ -90,7 +93,7 @@ public class AddDataCenterFromRemoteAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/hybrid/data-center";
+        info.path = "/nas/aliyun/mount";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
