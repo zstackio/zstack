@@ -36,17 +36,26 @@ class BatchQuery {
 
     static class SandBox extends GroovyInterceptor {
         static List<Class> RECEIVER_WHITE_LIST = [
+                Number[].class,
                 Number.class,
+                long[].class,
                 long.class,
+                int[].class,
                 int.class,
+                short[].class,
                 short.class,
+                double[].class,
                 double.class,
+                float[].class,
                 float.class,
+                String[].class,
                 String.class,
+                Date[].class,
                 Date.class,
                 Map.class,
                 Collection.class,
                 Script.class,
+                Enum[].class,
                 Enum.class
         ]
 
