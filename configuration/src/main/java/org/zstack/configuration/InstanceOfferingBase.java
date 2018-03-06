@@ -105,6 +105,10 @@ public class InstanceOfferingBase implements InstanceOffering {
             self.setDescription(msg.getDescription());
             update = true;
         }
+        if (msg.getAllocatorStrategy() != null) {
+            self.setAllocatorStrategy(msg.getAllocatorStrategy());
+            update = true;
+        }
 
         return update ? self : null;
     }
