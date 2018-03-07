@@ -989,7 +989,9 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 
     @Override
     public void afterAttachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
-        recalculatePrimaryStorageCapacity(clusterUuid);
+        if (inventory.getType().equals(LocalStorageConstants.LOCAL_STORAGE_TYPE)) {
+            recalculatePrimaryStorageCapacity(clusterUuid);
+        }
     }
 
     @Override
