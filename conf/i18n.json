@@ -4825,7 +4825,7 @@
     "arguments": [
       "e.getMessage()"
     ],
-    "line": 168,
+    "line": 167,
     "fileName": "src/main/java/org/zstack/license/LicenseManagerImpl.java"
   },
   {
@@ -4833,7 +4833,7 @@
     "en_US": "Fail to update license",
     "zh_CN": "更新证书失败",
     "arguments": [],
-    "line": 597,
+    "line": 596,
     "fileName": "src/main/java/org/zstack/license/LicenseManagerImpl.java"
   },
   {
@@ -4841,7 +4841,7 @@
     "en_US": "Failed to update license",
     "zh_CN": "更新证书失败",
     "arguments": [],
-    "line": 605,
+    "line": 604,
     "fileName": "src/main/java/org/zstack/license/LicenseManagerImpl.java"
   },
   {
@@ -4851,7 +4851,7 @@
     "arguments": [
       "errorCode.getDetails()"
     ],
-    "line": 580,
+    "line": 579,
     "fileName": "src/main/java/org/zstack/license/LicenseManagerImpl.java"
   },
   {
@@ -5203,7 +5203,7 @@
       "vo.getUuid()",
       "vo.getName()"
     ],
-    "line": 46,
+    "line": 47,
     "fileName": "src/main/java/org/zstack/monitoring/EmailTriggerEvent.java"
   },
   {
@@ -5385,7 +5385,7 @@
   {
     "raw": "Host CPU utilization",
     "en_US": "Host CPU utilization",
-    "zh_CN": "使用主机CPU",
+    "zh_CN": "CPU使用率",
     "arguments": [],
     "line": 31,
     "fileName": "src/main/java/org/zstack/monitoring/items/host/HostCpuUtilItem.java"
@@ -5393,10 +5393,29 @@
   {
     "raw": "VM CPU utilization",
     "en_US": "VM CPU utilization",
-    "zh_CN": "使用虚拟机的CPU",
+    "zh_CN": "虚拟机CPU使用率",
     "arguments": [],
     "line": 29,
     "fileName": "src/main/java/org/zstack/monitoring/items/vm/VmCpuUtilItem.java"
+  },
+  {
+    "raw": "The problem may be caused by an incorrect user name or password or email permission denied",
+    "en_US": "The problem may be caused by an incorrect user name or password or email permission denied",
+    "zh_CN": "导致操作失败的原因可能是不正确的用户名、密码或邮件访问权限不足",
+    "arguments": [],
+    "line": 39,
+    "fileName": "src/main/java/org/zstack/monitoring/media/EmailMediaFactory.java"
+  },
+  {
+    "raw": "Couldn\u0027t connect to host, port: %s, %d. The problem may be caused by an incorrect smtpServer or smtpPort",
+    "en_US": "Couldn\u0027t connect to host, port: {0}, {1}. The problem may be caused by an incorrect smtpServer or smtpPort",
+    "zh_CN": "连接{0}:{1}超时，导致原因可能是不正确的邮件服务器和邮件服务器端口",
+    "arguments": [
+      "smtpServer",
+      "smtpPort"
+    ],
+    "line": 41,
+    "fileName": "src/main/java/org/zstack/monitoring/media/EmailMediaFactory.java"
   },
   {
     "raw": "conflict alert rule[%s], there has been a rule[%s] with the same name",
@@ -5547,7 +5566,7 @@
   {
     "raw": "CPU Utilization",
     "en_US": "CPU Utilization",
-    "zh_CN": "CPU利用",
+    "zh_CN": "CPU使用率",
     "arguments": [],
     "line": 81,
     "fileName": "src/main/java/org/zstack/monitoring/prometheus/PrometheusVmCpuUtilAlertWriter.java"
@@ -5555,7 +5574,7 @@
   {
     "raw": "CPU utilization type",
     "en_US": "CPU utilization type",
-    "zh_CN": "CPU利用类型",
+    "zh_CN": "CPU使用类型",
     "arguments": [],
     "line": 84,
     "fileName": "src/main/java/org/zstack/monitoring/prometheus/PrometheusVmCpuUtilAlertWriter.java"
@@ -5584,7 +5603,7 @@
   {
     "raw": "Memory Utilization",
     "en_US": "Memory Utilization",
-    "zh_CN": "内存利用",
+    "zh_CN": "内存使用率",
     "arguments": [],
     "line": 77,
     "fileName": "src/main/java/org/zstack/monitoring/prometheus/PrometheusVmMemUtilAlertWriter.java"
@@ -11428,7 +11447,7 @@
       "vcvo.getDomainName()",
       "ex.getMessage()"
     ],
-    "line": 2154,
+    "line": 2155,
     "fileName": "src/main/java/org/zstack/vmware/VCenterManagerImpl.java"
   },
   {
@@ -11439,7 +11458,7 @@
       "vcvo.getDomainName()",
       "ex.getMessage()"
     ],
-    "line": 2163,
+    "line": 2164,
     "fileName": "src/main/java/org/zstack/vmware/VCenterManagerImpl.java"
   },
   {
