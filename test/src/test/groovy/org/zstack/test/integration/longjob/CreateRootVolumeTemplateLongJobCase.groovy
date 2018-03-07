@@ -66,8 +66,7 @@ class CreateRootVolumeTemplateLongJobCase extends SubCase {
 
         expect(AssertionError.class) {
             submitLongJob {
-                sessionId = adminSession()
-                jobName = "APICreateRootVolumeTemplateFromRootVolumeMsg"
+                jobName = msg.getClass().getSimpleName()
                 jobData = gson.toJson(msg)
             }
         }
@@ -109,13 +108,12 @@ class CreateRootVolumeTemplateLongJobCase extends SubCase {
         msg.backupStorageUuids = Collections.singletonList(bs.uuid)
 
         LongJobInventory jobInv = submitLongJob {
-            sessionId = adminSession()
-            jobName = "APICreateRootVolumeTemplateFromRootVolumeMsg"
+            jobName = msg.getClass().getSimpleName()
             jobData = gson.toJson(msg)
             description = myDescription
         } as LongJobInventory
 
-        assert jobInv.jobName == "APICreateRootVolumeTemplateFromRootVolumeMsg"
+        assert jobInv.jobName == msg.getClass().getSimpleName()
         assert jobInv.state == org.zstack.sdk.LongJobState.Running
 
         retryInSecs() {
@@ -128,7 +126,7 @@ class CreateRootVolumeTemplateLongJobCase extends SubCase {
         assert 3 == flag
     }
 
-    void testCreateRootVolumeTemplateAppointResourceUuid(){
+    void testCreateRootVolumeTemplateAppointResourceUuid() {
         myDescription = "my-test3"
         String uuid = Platform.uuid
 
@@ -140,13 +138,12 @@ class CreateRootVolumeTemplateLongJobCase extends SubCase {
         msg.resourceUuid = uuid
 
         LongJobInventory jobInv = submitLongJob {
-            sessionId = adminSession()
-            jobName = "APICreateRootVolumeTemplateFromRootVolumeMsg"
+            jobName = msg.getClass().getSimpleName()
             jobData = gson.toJson(msg)
             description = myDescription
         } as LongJobInventory
 
-        assert jobInv.jobName == "APICreateRootVolumeTemplateFromRootVolumeMsg"
+        assert jobInv.jobName == msg.getClass().getSimpleName()
         assert jobInv.state == org.zstack.sdk.LongJobState.Running
 
         retryInSecs() {
@@ -154,6 +151,6 @@ class CreateRootVolumeTemplateLongJobCase extends SubCase {
             assert job.state == LongJobState.Succeeded
         }
 
-        assert null != dbFindByUuid(uuid,ImageVO.class)
+        assert null != dbFindByUuid(uuid, ImageVO.class)
     }
 }

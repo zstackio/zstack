@@ -52,7 +52,7 @@
         <dependency>
             <groupId>org.zstack</groupId>
             <artifactId>longjob</artifactId>
-            <version>2.3.0</version>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
   
