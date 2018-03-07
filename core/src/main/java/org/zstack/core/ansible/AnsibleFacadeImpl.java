@@ -18,11 +18,8 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.Message;
-import org.zstack.utils.DebugUtils;
-import org.zstack.utils.ShellUtils;
+import org.zstack.utils.*;
 import org.zstack.utils.ShellUtils.ShellException;
-import org.zstack.utils.StringDSL;
-import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
@@ -35,6 +32,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  */
@@ -208,20 +206,21 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                    }
                 }
                 String executable = msg.getAnsibleExecutable() == null ? AnsibleGlobalProperty.EXECUTABLE : msg.getAnsibleExecutable();
+                long timeout = TimeUnit.MILLISECONDS.toSeconds(msg.getTimeout());
                 try {
                     String output;
                     if (AnsibleGlobalProperty.DEBUG_MODE2) {
                         output = ShellUtils.run(String.format("PYTHONPATH=%s %s %s -i %s -vvvv --private-key %s -e '%s' | tee -a %s",
                                         AnsibleConstant.ZSTACKLIB_ROOT, executable, playBookPath, AnsibleConstant.INVENTORY_FILE, msg.getPrivateKeyFile(), JSONObjectUtil.toJsonString(arguments), AnsibleConstant.LOG_PATH),
-                                AnsibleConstant.ROOT_DIR);
+                                AnsibleConstant.ROOT_DIR, timeout);
                     } else if (AnsibleGlobalProperty.DEBUG_MODE) {
                         output = ShellUtils.run(String.format("PYTHONPATH=%s %s %s -i %s -vvvv --private-key %s -e '%s'",
                                         AnsibleConstant.ZSTACKLIB_ROOT, executable, playBookPath, AnsibleConstant.INVENTORY_FILE, msg.getPrivateKeyFile(), JSONObjectUtil.toJsonString(arguments)),
-                                AnsibleConstant.ROOT_DIR);
+                                AnsibleConstant.ROOT_DIR, timeout);
                     } else {
                         output = ShellUtils.run(String.format("PYTHONPATH=%s %s %s -i %s --private-key %s -e '%s'",
                                         AnsibleConstant.ZSTACKLIB_ROOT, executable, playBookPath, AnsibleConstant.INVENTORY_FILE, msg.getPrivateKeyFile(), JSONObjectUtil.toJsonString(arguments)),
-                                AnsibleConstant.ROOT_DIR);
+                                AnsibleConstant.ROOT_DIR, timeout);
                     }
 
                     if (output.contains("skipping: no hosts matched")) {

@@ -71,15 +71,19 @@ public class ShellUtils {
     }
 
     public static String runVerbose(String cmdstr, String baseDir, boolean withSudo) {
-        return doRun(cmdstr, baseDir, withSudo, true);
+        return doRun(cmdstr, baseDir, withSudo, true, null);
     }
 
     public static String run(String cmdstr, String baseDir) {
         return doRun(cmdstr, baseDir, false);
     }
 
+    public static String run(String cmdstr, String baseDir, Long timeout) {
+        return doRun(cmdstr, baseDir, true, false, timeout);
+    }
+
     public static String run(String cmdstr, String baseDir, boolean withSudo) {
-        return doRun(cmdstr, baseDir, withSudo, false);
+        return doRun(cmdstr, baseDir, withSudo, false, null);
     }
 
     public static String run(String cmdsr) {
@@ -99,6 +103,7 @@ public class ShellUtils {
         private String stdoutFile;
         private Process process;
         private boolean withSudo = true;
+        private Long timeout = null;
 
         public void terminate() {
             DebugUtils.Assert(process!=null, String.format("you can only can call terminate() after calling run()"));
@@ -161,6 +166,14 @@ public class ShellUtils {
             this.suppressTraceLog = suppressTraceLog;
         }
 
+        public void setTimeout(Long timeout) {
+            this.timeout = timeout;
+        }
+
+        public Long getTimeout() {
+            return timeout;
+        }
+
         private static final int LOG_TO_FILE = 0;
         private static final int LOG_TO_SCREEN = 1;
         private static final int LOG_TO_STRING = 2;
@@ -203,6 +216,10 @@ public class ShellUtils {
             StopWatch watch = new StopWatch();
             watch.start();
             try {
+                if (timeout != null) {
+                    command = String.format("timeout %s %s", timeout, command);
+                }
+
                 if (withSudo) {
                     command = String.format("sudo %s", command);
                 }
@@ -280,15 +297,16 @@ public class ShellUtils {
     }
 
     private static String doRun(String cmdstr, String baseDir, boolean isVerbose) {
-        return doRun(cmdstr, baseDir, true, isVerbose);
+        return doRun(cmdstr, baseDir, true, isVerbose, null);
     }
 
-    private static String doRun(String cmdstr, String baseDir, boolean withRoot, boolean isVerbose) {
+    private static String doRun(String cmdstr, String baseDir, boolean withRoot, boolean isVerbose, Long timeout) {
         ShellRunner runner = new ShellRunner();
         runner.command = cmdstr;
         runner.baseDir = baseDir;
         runner.verbose = isVerbose;
         runner.withSudo = withRoot;
+        runner.timeout = timeout;
         ShellResult ret = runner.run();
 
         ret.raiseExceptionIfFail();
