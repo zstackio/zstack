@@ -134,8 +134,11 @@ elif [ $tool = 'zstack-dashboard' ]; then
 
 elif [ $tool = 'zstack-ui' ]; then
     cd $cwd
-    mkdir -p /usr/local/zstack/zstack-ui/
-    cp -f zstack-ui.war /usr/local/zstack/zstack-ui/
+    ui_home='/usr/local/zstack/zstack-ui/'
+    mkdir -p $ui_home
+    cp -f zstack-ui.war $ui_home
+    rm -rf $ui_home/tmp
+    unzip zstack-ui.war -d $ui_home/tmp
     cp -f zstack-ui /etc/init.d/
     chmod a+x /etc/init.d/zstack-ui
 else
