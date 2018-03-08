@@ -41,8 +41,9 @@ import static org.zstack.core.Platform.operr;
 /**
  * Created by xing5 on 2016/3/26.
  */
-public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTemplateFromVolumeSnapshotExtensionPoint, HostDeleteExtensionPoint, PrimaryStorageDetachExtensionPoint,
-        PostMarkRootVolumeAsSnapshotExtension{
+public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTemplateFromVolumeSnapshotExtensionPoint,
+        HostDeleteExtensionPoint, PrimaryStorageDetachExtensionPoint,
+        PostMarkRootVolumeAsSnapshotExtension, PrimaryStorageAttachExtensionPoint{
     private static final CLogger logger = Utils.getLogger(SMPPrimaryStorageFactory.class);
 
     public static final PrimaryStorageType type = new PrimaryStorageType(SMPConstants.SMP_TYPE);
@@ -365,5 +366,30 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
     @Override
     public void afterMarkRootVolumeAsSnapshot(VolumeSnapshotInventory snapshot) {
 
+    }
+
+    @Override
+    public void preAttachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) throws PrimaryStorageException {
+
+    }
+
+    @Override
+    public void beforeAttachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
+
+    }
+
+    @Override
+    public void failToAttachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
+
+    }
+
+    @Override
+    public void afterAttachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
+        if (inventory.getType().equals(SMPConstants.SMP_TYPE)) {
+            RecalculatePrimaryStorageCapacityMsg msg = new RecalculatePrimaryStorageCapacityMsg();
+            msg.setPrimaryStorageUuid(inventory.getUuid());
+            bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, inventory.getUuid());
+            bus.send(msg);
+        }
     }
 }

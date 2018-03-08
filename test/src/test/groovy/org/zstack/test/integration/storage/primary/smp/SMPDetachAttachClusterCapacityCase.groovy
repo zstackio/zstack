@@ -1,6 +1,9 @@
 package org.zstack.test.integration.storage.primary.smp
 
 import org.springframework.http.HttpEntity
+import org.zstack.core.db.Q
+import org.zstack.header.storage.primary.PrimaryStorageCapacityVO
+import org.zstack.header.storage.primary.PrimaryStorageCapacityVO_
 import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.GetPrimaryStorageCapacityResult
@@ -120,10 +123,13 @@ class SMPDetachAttachClusterCapacityCase extends SubCase {
             clusterUuid = cluster.uuid
         }
 
-        GetPrimaryStorageCapacityResult capacityResult2 = getPrimaryStorageCapacity {
-            primaryStorageUuids = [ps.uuid]
+
+        retryInSecs (3){
+            assert capacityResult.availableCapacity == Q.New(PrimaryStorageCapacityVO.class)
+                    .select(PrimaryStorageCapacityVO_.availableCapacity)
+                    .eq(PrimaryStorageCapacityVO_.uuid, ps.uuid)
+                    .findValue()
         }
-        assert capacityResult.availableCapacity == capacityResult2.availableCapacity
 
         reconnectPrimaryStorage {
             uuid = ps.uuid
