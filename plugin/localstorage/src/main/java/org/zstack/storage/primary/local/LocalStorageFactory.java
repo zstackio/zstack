@@ -557,24 +557,26 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             }
         }
 
-        q = dbf.createQuery(LocalStorageResourceRefVO.class);
-        q.select(LocalStorageResourceRefVO_.hostUuid);
-        q.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, vm.getRootVolumeUuid());
-        String rootHost = q.findValue();
+        if (count == 2) {
+            q = dbf.createQuery(LocalStorageResourceRefVO.class);
+            q.select(LocalStorageResourceRefVO_.hostUuid);
+            q.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, vm.getRootVolumeUuid());
+            String rootHost = q.findValue();
 
-        q = dbf.createQuery(LocalStorageResourceRefVO.class);
-        q.select(LocalStorageResourceRefVO_.hostUuid);
-        q.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, volume.getUuid());
-        String dataHost = q.findValue();
+            q = dbf.createQuery(LocalStorageResourceRefVO.class);
+            q.select(LocalStorageResourceRefVO_.hostUuid);
+            q.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, volume.getUuid());
+            String dataHost = q.findValue();
 
-        if (!rootHost.equals(dataHost)) {
-            throw new OperationFailureException(operr("cannot attach the data volume[uuid:%s] to the vm[uuid:%s]." +
-                            " Both vm's root volume and the data volume are" +
-                            " on local primary storage, but they are on different hosts." +
-                            " The root volume[uuid:%s] is on the host[uuid:%s] but the data volume[uuid: %s]" +
-                            " is on the host[uuid: %s]",
-                            volume.getUuid(), vm.getUuid(), vm.getRootVolumeUuid(),
-                            rootHost, volume.getUuid(), dataHost));
+            if (!rootHost.equals(dataHost)) {
+                throw new OperationFailureException(operr("cannot attach the data volume[uuid:%s] to the vm[uuid:%s]." +
+                                " Both vm's root volume and the data volume are" +
+                                " on local primary storage, but they are on different hosts." +
+                                " The root volume[uuid:%s] is on the host[uuid:%s] but the data volume[uuid: %s]" +
+                                " is on the host[uuid: %s]",
+                        volume.getUuid(), vm.getUuid(), vm.getRootVolumeUuid(),
+                        rootHost, volume.getUuid(), dataHost));
+            }
         }
     }
 
