@@ -13,7 +13,9 @@ import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @inventory inventory for l3Network
@@ -147,9 +149,8 @@ public class L3NetworkInventory implements Serializable {
         inv.setDnsDomain(vo.getDnsDomain());
         inv.setZoneUuid(vo.getZoneUuid());
         inv.setState(vo.getState().toString());
-        for (L3NetworkDnsVO dnsvo : vo.getDns()) {
-            inv.getDns().add(dnsvo.getDns());
-        }
+        vo.getDns().stream().sorted(Comparator.comparingLong(L3NetworkDnsVO::getId)).collect(Collectors.toList())
+                .forEach(dnsVo -> inv.getDns().add(dnsVo.getDns()));
         inv.setSystem(vo.isSystem());
         inv.setIpRanges(IpRangeInventory.valueOf(vo.getIpRanges()));
         inv.setLastOpDate(vo.getLastOpDate());
