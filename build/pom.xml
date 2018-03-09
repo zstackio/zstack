@@ -269,6 +269,11 @@
                 </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
+                    <artifactId>plugin-premium</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
                     <artifactId>sdk</artifactId>
                     <version>${project.version}</version>
                 </dependency>
