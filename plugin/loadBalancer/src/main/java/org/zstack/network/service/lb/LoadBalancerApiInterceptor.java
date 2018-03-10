@@ -239,19 +239,11 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(argerr("conflict loadBalancerPort[%s], a listener[uuid:%s] has used that port", msg.getLoadBalancerPort(), luuid));
         }
 
-        q = dbf.createQuery(LoadBalancerListenerVO.class);
-        q.select(LoadBalancerListenerVO_.uuid);
-        q.add(LoadBalancerListenerVO_.instancePort, Op.EQ, msg.getInstancePort());
-        q.add(LoadBalancerListenerVO_.loadBalancerUuid, Op.EQ, msg.getLoadBalancerUuid());
-        luuid = q.findValue();
-        if (luuid != null) {
-            throw new ApiMessageInterceptionException(argerr("conflict instancePort[%s], a listener[uuid:%s] has used that port", msg.getInstancePort(), luuid));
-        }
-
         /* there are 2 queries:
         * #1. get the vip of current LoadBalancer
-        * #2. get all vips who has listeners use current port
-         * if #1 is in #2, throw a exception */
+        * #2. get all vips who has loadBalancerPort use the  defined loadbalancePort
+        * if #1 is in #2, throw a exception
+        * no need to check the instance port*/
         LoadBalancerVO vo = dbf.findByUuid(msg.getLoadBalancerUuid(), LoadBalancerVO.class);
         String TargetVipUuids = vo.getVipUuid();
 
@@ -266,14 +258,6 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
                 throw new ApiMessageInterceptionException(argerr("conflict loadBalancerPort[%s], a vip[uuid:%s] has used that port", msg.getLoadBalancerPort(), TargetVipUuids));
             }
 
-            String lblUuid = SQL.New("select lbl.uuid from LoadBalancerVO lb, LoadBalancerListenerVO lbl where " +
-                    "lbl.instancePort=:port and lbl.loadBalancerUuid=lb.uuid and lb.vipUuid =:uuid", String.class)
-                    .param("port", msg.getInstancePort())
-                    .param("uuid", TargetVipUuids).find();
-
-            if (lblUuid != null){
-                throw new ApiMessageInterceptionException(argerr("conflict instancePort[%s], a listener[uuid:%s] has used that port", msg.getInstancePort(), lblUuid));
-            }
         }
     }
 
