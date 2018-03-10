@@ -39,4 +39,12 @@
         <defaultValue>500</defaultValue>
         <type>java.lang.Integer</type>
     </config>
+
+    <config>
+        <name>hostAllocator.concurrentLevel</name>
+        <description>maximum concurrency number of host allocator</description>
+        <category>hostAllocator</category>
+        <defaultValue>2</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
 </globalConfig>
