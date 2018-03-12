@@ -234,11 +234,7 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
                     logger.debug(String.format("connect nfs[uuid:%s] completed", d.getPrimaryStorageUuid()));
                 }
 
-                NfsRecalculatePrimaryStorageCapacityMsg msg = new NfsRecalculatePrimaryStorageCapacityMsg();
-                msg.setPrimaryStorageUuid(d.getPrimaryStorageUuid());
-                msg.setRelease(false);
-                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, d.getPrimaryStorageUuid());
-                bus.send(msg);
+                recalculateCapacity(d.getPrimaryStorageUuid());
             }
         });
     }
@@ -583,10 +579,7 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
         }.execute();
         logger.debug("succeed delete PrimaryStorageHostRef record");
 
-        RecalculatePrimaryStorageCapacityMsg rmsg = new RecalculatePrimaryStorageCapacityMsg();
-        rmsg.setPrimaryStorageUuid(inventory.getUuid());
-        bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, inventory.getUuid());
-        bus.send(rmsg);
+        recalculateCapacity(inventory.getUuid());
     }
 
     public void preDeleteHost(HostInventory inventory) throws HostException {
@@ -660,11 +653,20 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
                     .forEach(huuid ->
                             updateNfsHostStatus(inventory.getUuid(), (String)huuid, PrimaryStorageHostStatus.Connected));
             logger.debug("succeed add PrimaryStorageHostRef record");
+
+            recalculateCapacity(inventory.getUuid());
         }
     }
 
     @Override
     public void afterMarkRootVolumeAsSnapshot(VolumeSnapshotInventory snapshot) {
 
+    }
+
+    private void recalculateCapacity(String psUuid){
+        RecalculatePrimaryStorageCapacityMsg msg = new RecalculatePrimaryStorageCapacityMsg();
+        msg.setPrimaryStorageUuid(psUuid);
+        bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, psUuid);
+        bus.send(msg);
     }
 }

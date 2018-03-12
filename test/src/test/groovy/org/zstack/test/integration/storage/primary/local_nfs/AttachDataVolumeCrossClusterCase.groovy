@@ -164,6 +164,7 @@ class AttachDataVolumeCrossClusterCase extends SubCase {
             testDataVolumeCrossClusterAttachedForStoppedVm()
             testDataVolumeCrossClusterAttachedForJustCreatedVm()
             testDataVolumeCrossClusterAttachedInMultiPs()
+            testDataVolumeAttachedInMultiPs()
         }
     }
 
@@ -289,6 +290,52 @@ class AttachDataVolumeCrossClusterCase extends SubCase {
         detachPrimaryStorageFromCluster {
             primaryStorageUuid = local.uuid
             clusterUuid = cluster2.uuid
+        }
+    }
+
+    void testDataVolumeAttachedInMultiPs() {
+        DiskOfferingInventory diskOffering = env.inventoryByName("diskOffering")
+        PrimaryStorageInventory local = env.inventoryByName("local")
+        PrimaryStorageInventory nfs = env.inventoryByName("nfs")
+        HostInventory host = env.inventoryByName("kvm")
+        ImageInventory image = env.inventoryByName("image")
+        InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering")
+        L3NetworkInventory l3 = env.inventoryByName("l3")
+        ClusterInventory cluster = env.inventoryByName("cluster")
+
+        attachPrimaryStorageToCluster {
+            primaryStorageUuid = nfs.uuid
+            clusterUuid = cluster.uuid
+        }
+
+        VmInstanceInventory vm = createVmInstance {
+            name = "test-4"
+            imageUuid = image.uuid
+            instanceOfferingUuid = instanceOffering.uuid
+            l3NetworkUuids = [l3.uuid]
+            hostUuid = host.uuid
+            primaryStorageUuidForRootVolume = nfs.uuid
+            clusterUuid = cluster.uuid
+        }
+
+        VolumeInventory volume = createDataVolume {
+            name = "data-volume-4"
+            diskOfferingUuid = diskOffering.uuid
+            primaryStorageUuid = local.uuid
+            systemTags = ["localStorage::hostUuid::" + host.uuid]
+        }
+
+        AttachDataVolumeToVmAction action = new AttachDataVolumeToVmAction()
+        action.sessionId = adminSession()
+        action.vmInstanceUuid = vm.uuid
+        action.volumeUuid = volume.uuid
+        AttachDataVolumeToVmAction.Result ret = action.call()
+
+        assert ret.error == null
+
+        detachPrimaryStorageFromCluster {
+            primaryStorageUuid = nfs.uuid
+            clusterUuid = cluster.uuid
         }
     }
 }

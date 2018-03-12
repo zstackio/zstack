@@ -317,7 +317,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
                 // NOTE: don't open 22 port here; 22 port is default opened on mgmt network in virtual router with restricted rules
                 // open 22 here will cause a non-restricted rule to be added
-                openFirewall(aspec, mgmtNwUuid, 7272, ApplianceVmFirewallProtocol.tcp);
+                openFirewall(aspec, mgmtNwUuid, VirtualRouterGlobalProperty.AGENT_PORT, ApplianceVmFirewallProtocol.tcp);
                 openAdditionalPorts(aspec, mgmtNwUuid);
 
                 if (offering.getPublicNetworkUuid() != null && !offering.getManagementNetworkUuid().equals(offering.getPublicNetworkUuid())) {

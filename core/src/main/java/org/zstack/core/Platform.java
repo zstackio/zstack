@@ -688,7 +688,7 @@ public class Platform {
     }
 
     public static String i18n(String str, Object...args) {
-        return stringFormat(str, args);
+        return toI18nString(str, args);
     }
 
     public static String i18n(String str, Map<String, String> args) {

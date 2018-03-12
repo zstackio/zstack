@@ -727,6 +727,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             @Override
             public KVMHostAsyncHttpCallMsg call(String arg) {
                 GetPhysicalCapacityCmd cmd = new GetPhysicalCapacityCmd();
+                cmd.uuid = self.getUuid();
                 cmd.setHostUuid(arg);
                 cmd.storagePath = self.getUrl();
 
