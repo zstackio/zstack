@@ -2,6 +2,7 @@ package org.zstack.test.integration.timeout
 
 import org.zstack.core.timeout.ApiTimeout
 import org.zstack.core.timeout.ApiTimeoutManager
+import org.zstack.header.cluster.APIUpdateClusterOSMsg
 import org.zstack.header.image.APIAddImageMsg
 import org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeMsg
 import org.zstack.header.image.APICreateRootVolumeTemplateFromRootVolumeMsg
@@ -92,6 +93,9 @@ class TimeoutCase extends SubCase {
                     assert 3 * 60 * 60 * 1000L == tt.value.timeout
                     break
                 case APIRevertVolumeFromSnapshotMsg.class:
+                    assert 24 * 60 * 60 * 1000L == tt.value.timeout
+                    break
+                case APIUpdateClusterOSMsg.class:
                     assert 24 * 60 * 60 * 1000L == tt.value.timeout
                     break
                 default:

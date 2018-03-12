@@ -224,5 +224,9 @@ class KVMSimulator implements Simulator {
         spec.simulator(KVMConstant.KVM_VM_ONLINE_INCREASE_MEMORY) {
             return new KVMAgentCommands.IncreaseMemoryResponse()
         }
+
+        spec.simulator(KVMConstant.KVM_UPDATE_HOST_OS_PATH) {
+            return new KVMAgentCommands.UpdateHostOSRsp()
+        }
     }
 }
