@@ -2518,9 +2518,23 @@ public class KVMHost extends HostBase implements Host {
                     creator.create();
                 }
 
+                if (null == KVMSystemTags.CPU_MODEL_NAME.getTokenByResourceUuid(self.getUuid(), KVMSystemTags.CPU_MODEL_NAME_TOKEN)) {
+                    creator = KVMSystemTags.CPU_MODEL_NAME.newSystemTagCreator(self.getUuid());
+                    creator.setTagByTokens(map(e(KVMSystemTags.CPU_MODEL_NAME_TOKEN, "Intel(R) Xeon(R) CPU E5-2630 v4 @ 2.20GHz")));
+                    creator.inherent = true;
+                    creator.create();
+                }
+
                 if (!checkQemuLibvirtVersionOfHost()) {
                     complete.fail(operr("host [uuid:%s] cannot be added to cluster [uuid:%s] because qemu/libvirt version does not match",
                             self.getUuid(), self.getClusterUuid()));
+                    return;
+                }
+
+                if (KVMGlobalConfig.CHECK_HOST_CPU_MODEL_NAME.value(Boolean.class) && !checkCpuModelOfHost()) {
+                    complete.fail(operr("host [uuid:%s] cannot be added to cluster [uuid:%s] because cpu model name does not match",
+                            self.getUuid(), self.getClusterUuid()));
+                    return;
                 }
             }
 
@@ -2738,6 +2752,11 @@ public class KVMHost extends HostBase implements Host {
                                     creator.recreate = true;
                                     creator.create();
 
+                                    creator = KVMSystemTags.CPU_MODEL_NAME.newSystemTagCreator(self.getUuid());
+                                    creator.setTagByTokens(map(e(KVMSystemTags.CPU_MODEL_NAME_TOKEN, ret.getCpuModelName())));
+                                    creator.recreate = true;
+                                    creator.create();
+
                                     if (ret.getLibvirtVersion().compareTo(KVMConstant.MIN_LIBVIRT_VIRTIO_SCSI_VERSION) >= 0) {
                                         creator = KVMSystemTags.VIRTIO_SCSI.newSystemTagCreator(self.getUuid());
                                         creator.recreate = true;
@@ -2772,12 +2791,19 @@ public class KVMHost extends HostBase implements Host {
 
                             @Override
                             public void run(FlowTrigger trigger, Map data) {
-                                if (checkQemuLibvirtVersionOfHost()) {
-                                    trigger.next();
-                                } else {
+                                if (!checkQemuLibvirtVersionOfHost()) {
                                     trigger.fail(operr("host [uuid:%s] cannot be added to cluster [uuid:%s] because qemu/libvirt version does not match",
                                             self.getUuid(), self.getClusterUuid()));
+                                    return;
                                 }
+
+                                if (KVMGlobalConfig.CHECK_HOST_CPU_MODEL_NAME.value(Boolean.class) && !checkCpuModelOfHost()) {
+                                    trigger.fail(operr("host [uuid:%s] cannot be added to cluster [uuid:%s] because cpu model name does not match",
+                                            self.getUuid(), self.getClusterUuid()));
+                                    return;
+                                }
+
+                                trigger.next();
                             }
                         });
                     }
@@ -2809,6 +2835,35 @@ public class KVMHost extends HostBase implements Host {
                 }
             }).start();
         }
+    }
+
+    private boolean checkCpuModelOfHost() {
+        List<String> hostUuidsInCluster = Q.New(HostVO.class)
+                .select(HostVO_.uuid)
+                .eq(HostVO_.clusterUuid, self.getClusterUuid())
+                .notEq(HostVO_.uuid, self.getUuid())
+                .listValues();
+        if (hostUuidsInCluster.isEmpty()) {
+            return true;
+        }
+
+        Map<String, List<String>> cpuModelNames = KVMSystemTags.CPU_MODEL_NAME.getTags(hostUuidsInCluster);
+        if (cpuModelNames != null && cpuModelNames.size() != 0) {
+            String clusterCpuModelName = KVMSystemTags.CPU_MODEL_NAME.getTokenByTag(
+                    cpuModelNames.values().iterator().next().get(0),
+                    KVMSystemTags.CPU_MODEL_NAME_TOKEN
+            );
+
+            String hostCpuModelName = KVMSystemTags.CPU_MODEL_NAME.getTokenByResourceUuid(
+                    self.getUuid(), KVMSystemTags.CPU_MODEL_NAME_TOKEN
+            );
+
+            if (clusterCpuModelName != null && !clusterCpuModelName.equals(hostCpuModelName)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private boolean checkQemuLibvirtVersionOfHost() {

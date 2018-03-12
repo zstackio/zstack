@@ -246,6 +246,7 @@ public class KVMAgentCommands {
         private String qemuImgVersion;
         private String libvirtVersion;
         private String hvmCpuFlag;
+        private String cpuModelName;
         private List<String> ipAddresses;
 
         public String getHvmCpuFlag() {
@@ -278,6 +279,14 @@ public class KVMAgentCommands {
 
         public void setIpAddresses(List<String> ipAddresses) {
             this.ipAddresses = ipAddresses;
+        }
+
+        public String getCpuModelName() {
+            return cpuModelName;
+        }
+
+        public void setCpuModelName(String cpuModelName) {
+            this.cpuModelName = cpuModelName;
         }
     }
 
