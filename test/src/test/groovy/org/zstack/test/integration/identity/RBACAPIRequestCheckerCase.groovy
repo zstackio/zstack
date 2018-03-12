@@ -8,9 +8,8 @@ import org.zstack.header.identity.rbac.PolicyMatcher
 import org.zstack.header.identity.rbac.RBACInfo
 import org.zstack.header.message.APIMessage
 import org.zstack.header.rest.RestRequest
-import org.zstack.identity.rbac.AdminOnlyStatements
+
 import org.zstack.identity.rbac.RBACAPIRequestChecker
-import org.zstack.identity.rbac.RBACManager
 import org.zstack.sdk.SessionInventory
 import org.zstack.test.integration.ZStackTest
 import org.zstack.testlib.EnvSpec
@@ -18,7 +17,6 @@ import org.zstack.testlib.SubCase
 import org.zstack.utils.BeanUtils
 
 import java.lang.reflect.Modifier
-import java.util.regex.Pattern
 
 class RBACAPIRequestCheckerCase extends SubCase {
     EnvSpec env
@@ -35,14 +33,12 @@ class RBACAPIRequestCheckerCase extends SubCase {
 
     @Override
     void environment() {
-        /*
         env = env {
             account {
                 name = "test"
                 password = "password"
             }
         }
-        */
     }
 
     void doAdminCheck(Class apiclz, org.zstack.header.identity.SessionInventory session) {
@@ -106,10 +102,8 @@ class RBACAPIRequestCheckerCase extends SubCase {
     @Override
     void test() {
         RBACInfo.checkIfAPIsMissingRBACInfo()
-        /*
         env.create {
             testAPIPermissions()
         }
-        */
     }
 }

@@ -6,8 +6,6 @@ import org.zstack.header.identity.PolicyInventory;
 import org.zstack.header.identity.PolicyVO;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.message.APIMessage;
-import org.zstack.identity.SystemInternalPolicy;
-import org.zstack.utils.BeanUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;

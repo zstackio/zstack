@@ -8,7 +8,9 @@ public class PolicyMatcher {
     private AntPathMatcher matcher = new AntPathMatcher();
 
     public boolean match(String policy, String path) {
-        return matcher.match(policy.replaceAll("\\.", "/"), path.replaceAll("\\.", "/"));
+        policy = "/" + policy.replaceAll("\\.", "/");
+        path = "/" +  path.replaceAll("\\.", "/");
+        return matcher.match(policy, path);
     }
 
     public String returnPrecisePattern(String path, String p1, String p2) {

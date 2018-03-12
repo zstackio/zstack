@@ -37,6 +37,10 @@ class RBACInfo {
         }
     }
 
+    static boolean isAdminOnlyAPI(String apiName) {
+        return infos.any { info -> info.adminOnlyAPIs.any { matcher.match(it, apiName) } }
+    }
+
     static void rbac(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = RBACInfo.class) Closure c) {
         def info = new RBACInfo()
         c.delegate = info

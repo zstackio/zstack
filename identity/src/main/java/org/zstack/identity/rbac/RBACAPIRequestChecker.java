@@ -54,6 +54,10 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
         throw new OperationFailureException(operr("operation is denied by default"));
     }
 
+    private String jsonMessage() {
+        return JSONObjectUtil.toJsonString(map(e(message.getClass().getName(), message)));
+    }
+
     private boolean evalAllowStatements(Map<PolicyInventory, List<PolicyInventory.Statement>> policies) {
         for (Map.Entry<PolicyInventory, List<PolicyInventory.Statement>> e : policies.entrySet()) {
             PolicyInventory policy = e.getKey();
@@ -66,7 +70,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
                     if (evalAllowStatement(as)) {
                         if (logger.isTraceEnabled()) {
                             logger.trace(String.format("[RBAC] policy[name:%s, uuid:%s]'s statement[%s] allows the API:\n%s", policy.getName(),
-                                    policy.getUuid(), as, JSONObjectUtil.toJsonString(map(e(message.getClass().getName(), message)) )));
+                                    policy.getUuid(), as, jsonMessage()));
                         }
                         return true;
                     }
@@ -78,10 +82,8 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
     }
 
     private boolean evalAllowStatement(String as) {
-        String[] ss = as.split(":",2);
-        String apiName = ss[0];
-
-        return policyMatcher.match(apiName, message.getClass().getName());
+        String ap = PolicyUtils.apiNamePatternFromAction(as);
+        return policyMatcher.match(ap, message.getClass().getName());
     }
 
     private boolean isPrincipalMatched(List<String> principals) {
@@ -139,7 +141,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
                     // no API fields specified, the API is denied by this statement
                     if (logger.isTraceEnabled()) {
                         logger.trace(String.format("[RBAC] policy[name:%s, uuid:%s]'s statement[%s] denies the API:\n%s", p.getName(),
-                                p.getUuid(), statement, JSONObjectUtil.toJsonString(message)));
+                                p.getUuid(), statement, jsonMessage()));
                     }
 
                     throw new OperationFailureException(operr("the operation is denied by the policy[uuid:%s]", p.getUuid()));
@@ -153,7 +155,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
                         if (field != null && field.get(message) != null) {
                             if (logger.isTraceEnabled()) {
                                 logger.trace(String.format("[RBAC] policy[name:%s, uuid:%s]'s statement[%s] denies the API:\n%s", p.getName(),
-                                        p.getUuid(), statement, JSONObjectUtil.toJsonString(message)));
+                                        p.getUuid(), statement, jsonMessage()));
                             }
                             throw new OperationFailureException(operr("the operation is denied by the policy[uuid:%s], field[%s] is not permitted to set", p.getUuid(), fname));
                         }
