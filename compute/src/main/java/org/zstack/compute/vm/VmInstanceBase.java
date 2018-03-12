@@ -2265,7 +2265,13 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
-        reply.setInventories(getImageCandidatesForVm(ImageMediaType.ISO));
+        List<ImageInventory> result = getImageCandidatesForVm(ImageMediaType.ISO);
+        List<String> vmIsoList = IsoOperator.getIsoUuidByVmUuid(msg.getVmInstanceUuid());
+        result = result.stream()
+                .filter(iso -> !vmIsoList.contains(iso.getUuid()))
+                .collect(Collectors.toList());
+
+        reply.setInventories(result);
         bus.reply(msg, reply);
     }
 

@@ -47,6 +47,12 @@ class GetCandidateIsoForAttachingVmCase extends SubCase {
                     mediaType = ImageConstant.ImageMediaType.ISO.toString()
                     url  = "http://zstack.org/download/test.iso"
                 }
+
+                image {
+                    name = "iso_1"
+                    mediaType = ImageConstant.ImageMediaType.ISO.toString()
+                    url  = "http://zstack.org/download/test.iso"
+                }
             }
 
             zone {
@@ -113,15 +119,22 @@ class GetCandidateIsoForAttachingVmCase extends SubCase {
         BackupStorageInventory bs = env.inventoryByName("sftp")
         ZoneInventory zone = env.inventoryByName("zone")
 
-        ImageInventory iso = getCandidateIsoForAttachingVm {
+        List<ImageInventory> isoList = getCandidateIsoForAttachingVm {
             vmInstanceUuid = vm.uuid
-        }[0]
-        assert null != iso
+        }
+        assert 2 == isoList.size()
 
+        ImageInventory iso = isoList.get(0)
         attachIsoToVmInstance {
             vmInstanceUuid = vm.uuid
             isoUuid = iso.uuid
         }
+
+        isoList = getCandidateIsoForAttachingVm {
+            vmInstanceUuid = vm.uuid
+        }
+        assert 1 == isoList.size()
+        assert iso.uuid != isoList.get(0).uuid
 
         detachBackupStorageFromZone {
             zoneUuid = zone.uuid
