@@ -88,7 +88,7 @@ public class RESTFacadeImpl implements RESTFacade {
         if ("AUTO".equals(hostname)) {
             hname = Platform.getManagementServerIp();
         } else {
-            hname = hostname;
+            hname = hostname.trim();
         }
 
         String url;
