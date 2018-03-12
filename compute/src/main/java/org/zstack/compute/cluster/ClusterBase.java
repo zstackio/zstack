@@ -1,31 +1,48 @@
 package org.zstack.compute.cluster;
 
+import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.core.NopeCompletion;
-import org.zstack.header.core.workflow.*;
-import org.zstack.header.errorcode.SysErrors;
+import org.zstack.core.progress.ProgressReportService;
+import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTask;
+import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
-import org.zstack.core.workflow.*;
+import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.cluster.*;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.NopeCompletion;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.host.HostConstant;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
+import org.zstack.header.host.UpdateHostOSMsg;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static org.zstack.header.Constants.THREAD_CONTEXT_API;
+import static org.zstack.header.Constants.THREAD_CONTEXT_TASK_NAME;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class ClusterBase extends AbstractCluster {
@@ -71,10 +88,32 @@ public class ClusterBase extends AbstractCluster {
 			handle((APIDeleteClusterMsg) msg);
 		} else if (msg instanceof APIUpdateClusterMsg) {
 			handle((APIUpdateClusterMsg) msg);
+		} else if (msg instanceof APIUpdateClusterOSMsg) {
+			handle((APIUpdateClusterOSMsg) msg);
 		} else {
 			bus.dealWithUnknownMessage(msg);
 		}
 	}
+
+    private void handle(APIUpdateClusterOSMsg msg) {
+        APIUpdateClusterOSEvent evt = new APIUpdateClusterOSEvent(msg.getId());
+
+        UpdateClusterOSMsg umsg = new UpdateClusterOSMsg();
+        umsg.setUuid(msg.getUuid());
+        bus.makeTargetServiceIdByResourceUuid(umsg, ClusterConstant.SERVICE_ID, msg.getUuid());
+        bus.send(umsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    UpdateClusterOSReply rly = reply.castReply();
+                    evt.setResults(rly.getResults());
+                } else {
+                    evt.setError(reply.getError());
+                }
+                bus.publish(evt);
+            }
+        });
+    }
 
 	private void handle(APIUpdateClusterMsg msg) {
 		boolean update = false;
@@ -219,12 +258,84 @@ public class ClusterBase extends AbstractCluster {
 			handle((ChangeClusterStateMsg) msg);
         } else if (msg instanceof ClusterDeletionMsg) {
             handle((ClusterDeletionMsg) msg);
+		} else if (msg instanceof UpdateClusterOSMsg) {
+			handle((UpdateClusterOSMsg) msg);
 		} else {
 			bus.dealWithUnknownMessage(msg);
 		}
 	}
 
-    private void handle(ClusterDeletionMsg msg) {
+    private void handle(UpdateClusterOSMsg msg) {
+        UpdateClusterOSReply reply = new UpdateClusterOSReply();
+        reply.setResults(new ConcurrentHashMap<>());
+
+        ErrorCode error = extpEmitter.preUpdateOS(self);
+        if (error != null) {
+            reply.setError(error);
+            bus.reply(msg, reply);
+            return;
+        }
+
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return "update-cluster-os";
+            }
+
+            @Override
+            public int getSyncLevel() {
+                return ClusterGlobalConfig.CLUSTER_UPDATE_OS_PARALLELISM_DEGREE.value(Integer.class);
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                String apiId = ThreadContext.get(THREAD_CONTEXT_API);
+                String taskName = ThreadContext.get(THREAD_CONTEXT_TASK_NAME);
+                extpEmitter.beforeUpdateOS(self);
+
+                // update each hosts os in the cluster
+                List<String> hostUuids = Q.New(HostVO.class)
+                        .select(HostVO_.uuid)
+                        .eq(HostVO_.clusterUuid, msg.getUuid())
+                        .listValues();
+                new While<>(hostUuids).all((hostUuid, completion) -> {
+                    UpdateHostOSMsg umsg = new UpdateHostOSMsg();
+                    umsg.setUuid(hostUuid);
+                    umsg.setClusterUuid(msg.getUuid());
+                    bus.makeTargetServiceIdByResourceUuid(umsg, HostConstant.SERVICE_ID, hostUuid);
+                    bus.send(umsg, new CloudBusCallBack(completion) {
+                        @Override
+                        public void run(MessageReply rly) {
+                            if (rly.isSuccess()) {
+                                reply.getResults().put(hostUuid, "success");
+                            } else {
+                                reply.getResults().put(hostUuid, rly.getError().getDetails());
+                            }
+                            // progress info
+                            ThreadContext.put(THREAD_CONTEXT_API, apiId);
+                            ThreadContext.put(THREAD_CONTEXT_TASK_NAME, taskName);
+                            ProgressReportService.reportProgress(String.valueOf(100 * reply.getResults().size() / hostUuids.size()));
+                            completion.done();
+                        }
+                    });
+                }).run(new NoErrorCompletion() {
+                    @Override
+                    public void done() {
+                        extpEmitter.afterUpdateOS(self);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
+            }
+        });
+    }
+
+	private void handle(ClusterDeletionMsg msg) {
         ClusterInventory inv = ClusterInventory.valueOf(self);
         extpEmitter.beforeDelete(inv);
         deleteHook();

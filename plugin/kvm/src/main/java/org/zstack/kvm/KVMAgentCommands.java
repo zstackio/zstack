@@ -1,6 +1,7 @@
 package org.zstack.kvm;
 
 import org.zstack.core.validation.ConditionalValidation;
+import org.zstack.header.cluster.APIUpdateClusterOSMsg;
 import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotMsg;
@@ -1657,6 +1658,14 @@ public class KVMAgentCommands {
 
     public static class DetachIsoRsp extends AgentResponse {
 
+    }
+
+    @ApiTimeout(apiClasses = APIUpdateClusterOSMsg.class)
+    public static class UpdateHostOSCmd extends AgentCommand {
+        public String hostUuid;
+    }
+
+    public static class UpdateHostOSRsp extends AgentResponse {
     }
 
     public static class ReportVmStateCmd {

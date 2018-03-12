@@ -18,6 +18,7 @@ import org.zstack.core.ansible.AnsibleConstant;
 import org.zstack.core.ansible.AnsibleGlobalProperty;
 import org.zstack.core.ansible.AnsibleRunner;
 import org.zstack.core.ansible.SshFileMd5Checker;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -42,6 +43,7 @@ import org.zstack.header.host.MigrateVmOnHypervisorMsg.StorageMigrationPolicy;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
@@ -70,10 +72,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.i18n;
-import static org.zstack.core.Platform.operr;
-import static org.zstack.header.vm.VmInstanceConstant.MAXIMUM_MOUNT_ISO_NUMBER;
+import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -123,6 +122,7 @@ public class KVMHost extends HostBase implements Host {
     private String onlineIncreaseCpuPath;
     private String onlineIncreaseMemPath;
     private String deleteConsoleFirewall;
+    private String updateHostOSPath;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
 
@@ -231,6 +231,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_DELETE_CONSOLE_FIREWALL_PATH);
         deleteConsoleFirewall = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_UPDATE_HOST_OS_PATH);
+        updateHostOSPath = ub.build().toString();
     }
 
     class Http<T> {
@@ -2864,6 +2868,165 @@ public class KVMHost extends HostBase implements Host {
         }
 
         return true;
+    }
+
+    @Override
+    protected void updateOsHook(Completion completion) {
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("update-operating-system-for-host-%s", self.getUuid()));
+        chain.then(new ShareFlow() {
+            // is the host in maintenance already?
+            HostState oldState = self.getState();
+            boolean maintenance = oldState == HostState.Maintenance;
+
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "double-check-host-state-status";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        if (self.getState() == HostState.PreMaintenance) {
+                            trigger.fail(Platform.operr("host is in the premaintenance state, cannot update os"));
+                        } else if (self.getStatus() != HostStatus.Connected) {
+                            trigger.fail(Platform.operr("host is not in the connected status, cannot update os"));
+                        } else {
+                            trigger.next();
+                        }
+                    }
+                });
+
+                flow(new Flow() {
+                    String __name__ = "make-host-in-maintenance";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        if (maintenance) {
+                            trigger.next();
+                            return;
+                        }
+
+                        // enter maintenance, but donot stop/migrate vm on the host
+                        ChangeHostStateMsg cmsg = new ChangeHostStateMsg();
+                        cmsg.setUuid(self.getUuid());
+                        cmsg.setStateEvent(HostStateEvent.preMaintain.toString());
+                        bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, self.getUuid());
+                        bus.send(cmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (reply.isSuccess()) {
+                                    trigger.next();
+                                } else {
+                                    trigger.fail(reply.getError());
+                                }
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        if (maintenance) {
+                            trigger.rollback();
+                            return;
+                        }
+
+                        // back to old host state
+                        if (oldState == HostState.Disabled) {
+                            changeState(HostStateEvent.disable);
+                        } else {
+                            changeState(HostStateEvent.enable);
+                        }
+                        trigger.rollback();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "update-host-os";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        UpdateHostOSCmd cmd = new UpdateHostOSCmd();
+                        cmd.hostUuid = self.getUuid();
+
+                        new Http<>(updateHostOSPath, cmd, UpdateHostOSRsp.class)
+                                .call(new ReturnValueCompletion<UpdateHostOSRsp>(trigger) {
+                            @Override
+                            public void success(UpdateHostOSRsp ret) {
+                                if (ret.isSuccess()) {
+                                    trigger.next();
+                                } else {
+                                    trigger.fail(Platform.operr(ret.getError()));
+                                }
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "recover-host-state";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        if (maintenance) {
+                            trigger.next();
+                            return;
+                        }
+
+                        // back to old host state
+                        if (oldState == HostState.Disabled) {
+                            changeState(HostStateEvent.disable);
+                        } else {
+                            changeState(HostStateEvent.enable);
+                        }
+                        trigger.next();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "auto-reconnect-host";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        ReconnectHostMsg rmsg = new ReconnectHostMsg();
+                        rmsg.setHostUuid(self.getUuid());
+                        bus.makeTargetServiceIdByResourceUuid(rmsg, HostConstant.SERVICE_ID, self.getUuid());
+                        bus.send(rmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (reply.isSuccess()) {
+                                    logger.info("successfully reconnected host " + self.getUuid());
+                                } else {
+                                    logger.error("failed to reconnect host " + self.getUuid());
+                                }
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        logger.debug(String.format("successfully updated operating system for host[uuid:%s]", self.getUuid()));
+                        completion.success();
+                    }
+                });
+
+                error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        logger.warn(String.format("failed to updated operating system for host[uuid:%s] because %s",
+                                self.getUuid(), errCode.getDetails()));
+                        completion.fail(errCode);
+                    }
+                });
+            }
+        }).start();
     }
 
     private boolean checkQemuLibvirtVersionOfHost() {
