@@ -211,8 +211,6 @@ public class ZSClient {
 
             Request request = reqBuilder.build();
 
-            System.out.println("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx " + request.url().toString());
-
             try {
                 if (config.webHook != null) {
                     waittingApis.put(jobUuid, this);
@@ -405,16 +403,16 @@ public class ZSClient {
                 }
 
                 if (info.httpMethod.equals("GET")) {
-                    reqBuilder.url(builder.build().url().toString()).get();
+                    reqBuilder.url(builder.build()).get();
                 } else if (info.httpMethod.equals("DELETE")) {
-                    reqBuilder.url(builder.build().url().toString()).delete();
+                    reqBuilder.url(builder.build()).delete();
                 } else {
                     throw new RuntimeException("should not be here");
                 }
             } else {
                 Map m = new HashMap();
                 m.put(info.parameterName, params);
-                reqBuilder.url(builder.build().url().toString()).method(info.httpMethod, RequestBody.create(Constants.JSON, gson.toJson(m)));
+                reqBuilder.url(builder.build()).method(info.httpMethod, RequestBody.create(Constants.JSON, gson.toJson(m)));
             }
 
             if (info.needSession) {
