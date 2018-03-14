@@ -211,6 +211,8 @@ public class ZSClient {
 
             Request request = reqBuilder.build();
 
+            System.out.println("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx " + request.url().toString());
+
             try {
                 if (config.webHook != null) {
                     waittingApis.put(jobUuid, this);
