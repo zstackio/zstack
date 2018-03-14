@@ -781,20 +781,29 @@ public class LocalStorageBase extends PrimaryStorageBase {
             q.add(LocalStorageHostRefVO_.primaryStorageUuid, Op.EQ, msg.getPrimaryStorageUuid());
             q.add(LocalStorageHostRefVO_.hostUuid, Op.EQ, msg.getHostUuid());
             LocalStorageHostRefVO ref = q.find();
+
+            long total = 0;
+            long available = 0;
+            long availablePhy = 0;
+            long totalPhy = 0;
+
             if (ref == null) {
-                reply.setError(errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND,
+                logger.error(errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND,
                         String.format("local primary storage[uuid:%s] doesn't have the host[uuid:%s]",
-                                self.getUuid(), msg.getHostUuid())));
-                bus.reply(msg, reply);
-                return;
+                                self.getUuid(), msg.getHostUuid())).toString());
+            }else {
+                total = ref.getTotalCapacity();
+                available = ref.getAvailableCapacity();
+                availablePhy = ref.getAvailablePhysicalCapacity();
+                totalPhy = ref.getTotalPhysicalCapacity();
             }
 
             HostDiskCapacity c = new HostDiskCapacity();
             c.setHostUuid(msg.getHostUuid());
-            c.setTotalCapacity(ref.getTotalCapacity());
-            c.setAvailableCapacity(ref.getAvailableCapacity());
-            c.setAvailablePhysicalCapacity(ref.getAvailablePhysicalCapacity());
-            c.setTotalPhysicalCapacity(ref.getTotalPhysicalCapacity());
+            c.setTotalCapacity(total);
+            c.setAvailableCapacity(available);
+            c.setAvailablePhysicalCapacity(availablePhy);
+            c.setTotalPhysicalCapacity(totalPhy);
             reply.setInventories(list(c));
         } else {
             SimpleQuery<LocalStorageHostRefVO> q = dbf.createQuery(LocalStorageHostRefVO.class);
