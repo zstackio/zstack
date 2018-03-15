@@ -171,19 +171,22 @@ class ConcurrentlySnapshotCase extends SubCase {
         assert afterDestroyUuids.size() == 100
         final CountDownLatch latch = new CountDownLatch(100)
         for (String suuid : uuids) {
+            def targetUuid = suuid
             new Thread(new Runnable() {
                 @Override
                 void run() {
-                    deleteVolumeSnapshot {
-                        uuid = suuid
+                    try{
+                        deleteVolumeSnapshot {
+                            uuid = targetUuid
+                        }
+                    }finally {
+                        latch.countDown()
                     }
-
-                    latch.countDown()
                 }
-            }).run()
+            }).start()
         }
 
-        latch.await(1, TimeUnit.SECONDS)
+        latch.await(20, TimeUnit.SECONDS)
         afterDestroyUuids = Q.New(VolumeSnapshotVO.class).select(VolumeSnapshotVO_.uuid).eq(VolumeSnapshotVO_.volumeUuid, vm.getRootVolumeUuid()).listValues()
         assert afterDestroyUuids.size() == 0
 
@@ -220,19 +223,22 @@ class ConcurrentlySnapshotCase extends SubCase {
         assert afterExpungeUuids.size() == 0
         final CountDownLatch latch = new CountDownLatch(100)
         for (String suuid : uuids) {
+            def targetUuid = suuid
             new Thread(new Runnable() {
                 @Override
                 void run() {
-                    deleteVolumeSnapshot {
-                        uuid = suuid
+                    try{
+                        deleteVolumeSnapshot {
+                            uuid = targetUuid
+                        }
+                    }finally {
+                        latch.countDown()
                     }
-
-                    latch.countDown()
                 }
-            }).run()
+            }).start()
         }
 
-        latch.await(1, TimeUnit.SECONDS)
+        latch.await(20, TimeUnit.SECONDS)
         afterExpungeUuids = Q.New(VolumeSnapshotVO.class).select(VolumeSnapshotVO_.uuid).eq(VolumeSnapshotVO_.volumeUuid, vm.getRootVolumeUuid()).listValues()
         assert afterExpungeUuids.size() == 0
     }

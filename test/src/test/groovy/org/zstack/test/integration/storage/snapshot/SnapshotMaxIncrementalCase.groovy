@@ -157,22 +157,22 @@ class SnapshotMaxIncrementalCase extends SubCase {
 
         final CountDownLatch latch = new CountDownLatch(100)
         for (String suuid: uuids){
+            def targetUuid = suuid
             new Thread(new Runnable() {
                 @Override
                 void run() {
                     try {
                         deleteVolumeSnapshot {
-                            uuid = suuid
+                            uuid = targetUuid
                         }
                     }finally {
                         latch.countDown()
                     }
-
                 }
-            }).run()
+            }).start()
         }
 
-        latch.await(1, TimeUnit.SECONDS)
+        latch.await(20, TimeUnit.SECONDS)
 
         assert Q.New(VolumeSnapshotVO.class).count() == 0
         assert Q.New(VolumeSnapshotTreeVO.class).count() == 0
