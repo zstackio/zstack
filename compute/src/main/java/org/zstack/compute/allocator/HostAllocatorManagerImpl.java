@@ -9,6 +9,8 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.thread.SyncTask;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.allocator.*;
 import org.zstack.header.cluster.ReportHostCapacityMessage;
@@ -68,6 +70,8 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
     private HostCpuOverProvisioningManager cpuRatioMgr;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private ThreadFacade thdf;
 
     @Override
     @MessageSafe
@@ -357,17 +361,43 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
             strategy.allocate(spec, new ReturnValueCompletion<List<HostInventory>>(msg) {
                 @Override
                 public void success(List<HostInventory> hosts) {
-                    sortors.sort(spec, hosts, new ReturnValueCompletion<HostInventory>(msg) {
+                    // flow control for host reservation
+                    Integer n = HostAllocatorGlobalConfig.HOST_ALLOCATOR_CONCURRENT_LEVEL.value(Integer.class);
+                    final int syncLevel = (n == null || n < 0) ? 0 : n;
+
+                    thdf.syncSubmit(new SyncTask<Void>() {
                         @Override
-                        public void success(HostInventory returnValue) {
-                            reply.setHost(returnValue);
-                            bus.reply(msg, reply);
+                        public String getSyncSignature() {
+                            return "host-reserve-flow-control";
                         }
 
                         @Override
-                        public void fail(ErrorCode errorCode) {
-                            reply.setError(errorCode);
-                            bus.reply(msg, reply);
+                        public int getSyncLevel() {
+                            return syncLevel;
+                        }
+
+                        @Override
+                        public String getName() {
+                            return "reserve-host";
+                        }
+
+                        @Override
+                        public Void call() throws Exception {
+                            sortors.sort(spec, hosts, new ReturnValueCompletion<HostInventory>(msg) {
+                                @Override
+                                public void success(HostInventory returnValue) {
+                                    reply.setHost(returnValue);
+                                    bus.reply(msg, reply);
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    reply.setError(errorCode);
+                                    bus.reply(msg, reply);
+                                }
+                            });
+
+                            return null;
                         }
                     });
                 }
