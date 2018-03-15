@@ -26,6 +26,9 @@ public class APIUpdateInstanceOfferingMsg extends APIMessage implements Instance
     @APIParam(required = false, maxLength = 2048)
     private String description;
 
+    @APIParam(required = false)
+    private String allocatorStrategy;
+
     public String getUuid() {
         return uuid;
     }
@@ -53,6 +56,14 @@ public class APIUpdateInstanceOfferingMsg extends APIMessage implements Instance
     @Override
     public String getInstanceOfferingUuid() {
         return uuid;
+    }
+
+    public String getAllocatorStrategy() {
+        return allocatorStrategy;
+    }
+
+    public void setAllocatorStrategy(String allocatorStrategy) {
+        this.allocatorStrategy = allocatorStrategy;
     }
  
     public static APIUpdateInstanceOfferingMsg __example__() {
