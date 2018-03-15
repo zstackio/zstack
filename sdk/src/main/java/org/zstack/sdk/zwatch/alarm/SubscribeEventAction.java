@@ -31,7 +31,7 @@ public class SubscribeEventAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String eventName;
 
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List actions;
 
     @Param(required = false)

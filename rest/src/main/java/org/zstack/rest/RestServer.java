@@ -15,6 +15,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.web.util.UriUtils;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusEventListener;
@@ -115,7 +116,7 @@ public class RestServer implements Component, CloudBusEventListener {
             }
 
             try {
-                requestUrl = URLDecoder.decode(req.getRequestURI(), "UTF-8");
+                requestUrl = UriUtils.decode(req.getRequestURI(), "UTF-8");
             } catch (UnsupportedEncodingException e) {
                 throw new CloudRuntimeException(e);
             }
@@ -518,9 +519,9 @@ public class RestServer implements Component, CloudBusEventListener {
     private String getDecodedUrl(HttpServletRequest req) {
         try {
             if (req.getContextPath() == null) {
-                return URLDecoder.decode(req.getRequestURI(), "UTF-8");
+                return UriUtils.decode(req.getRequestURI(), "UTF-8");
             } else {
-                return URLDecoder.decode(StringUtils.removeStart(req.getRequestURI(), req.getContextPath()), "UTF-8");
+                return UriUtils.decode(StringUtils.removeStart(req.getRequestURI(), req.getContextPath()), "UTF-8");
             }
         } catch (UnsupportedEncodingException e) {
             throw new CloudRuntimeException(e);
@@ -536,10 +537,10 @@ public class RestServer implements Component, CloudBusEventListener {
         if (requestLogger.isTraceEnabled()) {
             StringBuilder sb = new StringBuilder(String.format("[ID: %s, Method: %s] Request from %s (to %s), ",
                     req.getSession().getId(), req.getMethod(),
-                    req.getRemoteHost(), URLDecoder.decode(req.getRequestURI(), "UTF-8")));
+                    req.getRemoteHost(), UriUtils.decode(req.getRequestURI(), "UTF-8")));
             sb.append(String.format(" Headers: %s,", JSONObjectUtil.toJsonString(entity.getHeaders())));
             if (req.getQueryString() != null && !req.getQueryString().isEmpty()) {
-                sb.append(String.format(" Query: %s,", URLDecoder.decode(req.getQueryString(), "UTF-8")));
+                sb.append(String.format(" Query: %s,", UriUtils.decode(req.getQueryString(), "UTF-8")));
             }
             sb.append(String.format(" Body: %s", entity.getBody().isEmpty() ? null : entity.getBody()));
 
@@ -841,7 +842,8 @@ public class RestServer implements Component, CloudBusEventListener {
             }
         }
 
-        Map<String, String> vars = matcher.extractUriTemplateVariables(api.path, getDecodedUrl(req));
+        String url = getDecodedUrl(req);
+        Map<String, String> vars = matcher.extractUriTemplateVariables(api.path, url);
         for (Map.Entry<String, String> e : vars.entrySet()) {
             // set fields parsed from the URL
             String key = e.getKey();

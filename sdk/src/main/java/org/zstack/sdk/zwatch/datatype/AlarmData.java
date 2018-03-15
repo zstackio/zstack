@@ -164,6 +164,14 @@ public class AlarmData  {
         return this.metricValue;
     }
 
+    public java.lang.String comparisonOperator;
+    public void setComparisonOperator(java.lang.String comparisonOperator) {
+        this.comparisonOperator = comparisonOperator;
+    }
+    public java.lang.String getComparisonOperator() {
+        return this.comparisonOperator;
+    }
+
     public long time;
     public void setTime(long time) {
         this.time = time;
