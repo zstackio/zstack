@@ -1,19 +1,31 @@
 package org.zstack.compute.allocator;
 
+import org.apache.commons.collections.ArrayStack;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.allocator.*;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.workflow.*;
+import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.host.HostInventory;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by mingjian.deng on 2017/11/6.
@@ -23,6 +35,8 @@ public class HostSortorChain implements HostSortorStrategy {
     private static final CLogger logger = Utils.getLogger(HostSortorChain.class);
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    protected ErrorFacade errf;
 
     private HostAllocatorSpec allocationSpec;
 
@@ -85,23 +99,97 @@ public class HostSortorChain implements HostSortorStrategy {
         sort(hosts);
     }
 
+    private void reserveHost(HostInventory host, Completion cmpl){
+        Map data = new HashMap();
+        data.put(HostAllocatorConstant.Param.HOST, host);
+        data.put(HostAllocatorConstant.Param.SPEC, allocationSpec);
+
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setData(data);
+        chain.setName("hostAllocation-reserve-flow");
+        chain.then(new ShareFlow() {
+            @Override
+            public void setup() {
+                flow(new Flow() {
+                    String __name__ = "hostAllocation-reserve-capacity";
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        HostInventory host = (HostInventory) data.get(HostAllocatorConstant.Param.HOST);
+                        try {
+                            reserveCapacity(host);
+                            data.put(HostAllocatorConstant.Param.CAP_SUCCESS, true);
+                            trigger.next();
+                        } catch (UnableToReserveHostCapacityException e) {
+                            logger.debug(String.format("[Host Allocation]: %s on host[uuid:%s]. try next one",
+                                    e.getMessage(), host.getUuid()), e);
+                            trigger.fail(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
+                                    String.format("[Host Allocation]: %s on host[uuid:%s]. try next one", e.getMessage(), host.getUuid(), e)));
+                        }
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        boolean success = (boolean)data.get(HostAllocatorConstant.Param.CAP_SUCCESS);
+                        if (success) {
+                            HostInventory host = (HostInventory) data.get(HostAllocatorConstant.Param.HOST);
+                            rollbackCapacity(host);
+                        }
+                        trigger.rollback();
+                    }
+                });
+
+                for (HostAllocatorReserveExtensionPoint exp: pluginRgty.getExtensionList(HostAllocatorReserveExtensionPoint.class)) {
+                    flow(exp.getExtension());
+                }
+
+                done(new FlowDoneHandler(cmpl) {
+                    @Override
+                    public void handle(Map data) {
+                        cmpl.success();
+                    }
+                });
+
+                error(new FlowErrorHandler(cmpl) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        cmpl.fail(errCode);
+                    }
+                });
+            }
+        }).start();
+    }
+
     private void done(List<HostInventory> hosts) {
         if (isDryRun) {
             dryRunCompletion.success(hosts);
         } else {
             try {
-                for (HostInventory h : hosts) {
-                    try {
-                        reserveCapacity(h);
-                        completion.success(h);
-                        return;
-                    } catch (UnableToReserveHostCapacityException e) {
-                        logger.debug(String.format("[Host Allocation]: %s on host[uuid:%s]. try next one",
-                                e.getMessage(), h.getUuid()), e);
+                List<HostInventory> selectedHosts = new ArrayList<>();
+                new While<>(hosts).each((h, wcmpl) -> {
+                    reserveHost(h, new Completion(wcmpl) {
+                        @Override
+                        public void success() {
+                            selectedHosts.add(h);
+                            /* alldone() will break the new While loop */
+                            wcmpl.allDone();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            wcmpl.done();
+                        }
+                    });
+                }).run(new NoErrorCompletion(completion) {
+                    @Override
+                    public void done() {
+                        if (!selectedHosts.isEmpty()) {
+                            completion.success(selectedHosts.get(0));
+                        } else {
+                            completion.fail(Platform.err(HostAllocatorError.NO_AVAILABLE_HOST,
+                                    "reservation on cpu/memory failed on all candidates host"));
+                        }
                     }
-                }
-                completion.fail(Platform.err(HostAllocatorError.NO_AVAILABLE_HOST,
-                        "reservation on cpu/memory failed on all candidates host"));
+                });
             } catch (Throwable t) {
                 completion.fail(Platform.inerr(t.getMessage()));
             }
@@ -111,6 +199,13 @@ public class HostSortorChain implements HostSortorStrategy {
     private void reserveCapacity(final HostInventory host) {
         new HostAllocatorChain().reserveCapacity(host.getUuid(), allocationSpec.getCpuCapacity(), allocationSpec.getMemoryCapacity());
         logger.debug(String.format("[Host Allocation]: successfully reserved cpu[%s], memory[%s bytes] on host[uuid:%s] for vm[uuid:%s]",
+                allocationSpec.getCpuCapacity(), allocationSpec.getMemoryCapacity(), host.getUuid(),
+                allocationSpec.getVmInstance().getUuid()));
+    }
+
+    private void rollbackCapacity(final HostInventory host) {
+        new HostAllocatorChain().reserveCapacity(host.getUuid(), 0L - allocationSpec.getCpuCapacity(),0L - allocationSpec.getMemoryCapacity());
+        logger.debug(String.format("[Host Allocation]: successfully rollback cpu[%s], memory[%s bytes] on host[uuid:%s] for vm[uuid:%s]",
                 allocationSpec.getCpuCapacity(), allocationSpec.getMemoryCapacity(), host.getUuid(),
                 allocationSpec.getVmInstance().getUuid()));
     }

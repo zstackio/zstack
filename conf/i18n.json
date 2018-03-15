@@ -1352,6 +1352,18 @@
     "fileName": "src/main/java/org/zstack/compute/affinityGroup/AffinityGroupBase.java"
   },
   {
+    "raw": "affinityGroup [uuid:%s] reserve host [uuid:%s] for vm [uuid: %s] failed",
+    "en_US": "affinityGroup [uuid:{0}] reserve host [uuid:{1}] for vm [uuid: {2}] failed",
+    "zh_CN": "亲和组[uuid:{0}]为虚拟机[uuid:{2}]预分配物理机资源[uuid:{1}]失败",
+    "arguments": [
+      "self.getUuid()",
+      "host.getUuid()",
+      "vmUuid"
+    ],
+    "line": 340,
+    "fileName": "src/zstack/./premium/mevoco/src/main/java/org/zstack/compute/affinityGroup/AffinityGroupBase.java"
+  },
+  {
     "raw": "Vm can change its affinityGroup only in state [%s,%s], but vm is in state [%s]",
     "en_US": "Vm can change its affinityGroup only in state [{0},{1}], but vm is in state [{2}]",
     "zh_CN": "只有状态为[{0},{1}]的虚拟机可以改变亲和组，但是现在虚拟机的状态为[{2}]",
@@ -1413,6 +1425,16 @@
     ],
     "line": 83,
     "fileName": "src/main/java/org/zstack/compute/affinityGroup/AffinityGroupManagerImpl.java"
+  },
+  {
+    "raw": "Can not operate on affinityGroup [uuid: %s] which is not enabled",
+    "en_US": "Can not operate on affinityGroup [uuid: {0}] which is not enabled",
+    "zh_CN": "不能对不是enabled状态的亲和组操作",
+    "arguments": [
+      "affinityGroupUuid"
+    ],
+    "line": 108,
+    "fileName": "src/zstack/./premium/mevoco/src/main/java/org/zstack/compute/affinityGroup/AffinityGroupInterceptor.java"
   },
   {
     "raw": "the backup storage[uuid:%s, type:%s] requires bound primary storage, however, the primary storage has not been added",
