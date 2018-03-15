@@ -12,6 +12,7 @@ import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
@@ -34,6 +35,7 @@ import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.message.OverlayMessage;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.*;
@@ -260,64 +262,219 @@ public class LocalStorageBase extends PrimaryStorageBase {
             return;
         }
 
-        MigrateVolumeOnLocalStorageMsg mmsg = new MigrateVolumeOnLocalStorageMsg();
-        mmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
-        mmsg.setDestHostUuid(msg.getDestHostUuid());
-        mmsg.setVolumeUuid(msg.getVolumeUuid());
-        bus.makeTargetServiceIdByResourceUuid(mmsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
+        class MigrateStruct {
+            private boolean isRootVolume = false;
+            private OverlayMessage message;
+            private String vmUuid;
+            private boolean isMigrated = false;
 
-        MigrateVolumeOverlayMsg omsg = new MigrateVolumeOverlayMsg();
-        omsg.setMessage(mmsg);
-        omsg.setVolumeUuid(msg.getVolumeUuid());
-        bus.makeTargetServiceIdByResourceUuid(omsg, VolumeConstant.SERVICE_ID, msg.getVolumeUuid());
-
-        MigrateRootVolumeVmOverlayMsg vmsg = new MigrateRootVolumeVmOverlayMsg();
-
-        Tuple t = Q.New(VmInstanceVO.class).select(VmInstanceVO_.uuid, VmInstanceVO_.state)
-                .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid())
-                .findTuple();
-        String vmUuid = t == null ? null : t.get(0, String.class);
-        String originStateEvent = t == null ? null : t.get(1, VmInstanceState.class).getDrivenEvent().toString();
-
-        if(vmUuid != null){
-            ChangeVmStateMsg cmsg = new ChangeVmStateMsg();
-            cmsg.setStateEvent(VmInstanceStateEvent.volumeMigrating.toString());
-            cmsg.setVmInstanceUuid(vmUuid);
-            bus.makeTargetServiceIdByResourceUuid(cmsg, VmInstanceConstant.SERVICE_ID, vmUuid);
-            MessageReply reply = bus.call(cmsg);
-            if(!reply.isSuccess()){
-                evt.setError(reply.getError());
-                bus.publish(evt);
-                return;
+            public String getVmOriginState() {
+                return vmOriginState;
             }
-            vmsg.setMessage(omsg);
-            vmsg.setVmInstanceUuid(vmUuid);
-            bus.makeTargetServiceIdByResourceUuid(vmsg, VmInstanceConstant.SERVICE_ID, vmUuid);
+
+            public void setVmOriginState(String vmOriginState) {
+                this.vmOriginState = vmOriginState;
+            }
+
+            private String vmOriginState;
+
+            public boolean isRootVolume() {
+                return isRootVolume;
+            }
+
+            public void setRootVolume(boolean rootVolume) {
+                isRootVolume = rootVolume;
+            }
+
+            public OverlayMessage getMessage() {
+                return message;
+            }
+
+            public void setMessage(OverlayMessage message) {
+                this.message = message;
+            }
+
+            public String getVmUuid() {
+                return vmUuid;
+            }
+
+            public void setVmUuid(String vmUuid) {
+                this.vmUuid = vmUuid;
+            }
+
+            public boolean isMigrated() {
+                return isMigrated;
+            }
+
+            public void setMigrated(boolean migrated) {
+                isMigrated = migrated;
+            }
         }
 
-        bus.send(vmUuid == null ? omsg : vmsg, new CloudBusCallBack(msg) {
+        MigrateStruct struct = new MigrateStruct();
+        VolumeStatus originStatus = Q.New(VolumeVO.class).select(VolumeVO_.status).eq(VolumeVO_.uuid, msg.getVolumeUuid()).findValue();
+        FlowChain chain = new SimpleFlowChain();
+        chain.setName(String.format("local-storage-%s-migrate-volume-%s-to-host-%s", msg.getPrimaryStorageUuid(), msg.getVolumeUuid(), msg.getDestHostUuid()));
+        chain.then(new NoRollbackFlow() {
             @Override
-            public void run(MessageReply reply) {
-                if(vmUuid != null){
-                    ChangeVmStateMsg cmsg = new ChangeVmStateMsg();
-                    cmsg.setStateEvent(reply.isSuccess() ? VmInstanceStateEvent.volumeMigrated.toString() : originStateEvent);
-                    cmsg.setVmInstanceUuid(vmUuid);
-                    bus.makeTargetServiceIdByResourceUuid(cmsg, VmInstanceConstant.SERVICE_ID, vmUuid);
-                    // if fail, host ping task will sync it state
-                    bus.call(cmsg);
-                }
+            public void run(FlowTrigger trigger, Map data) {
+                String __name__ = "change-volume-status-to-migrating";
 
-                if (!reply.isSuccess()) {
-                    evt.setError(reply.getError());
-                    bus.publish(evt);
+                ChangeVolumeStatusMsg changeVolumeStatusMsg = new ChangeVolumeStatusMsg();
+                changeVolumeStatusMsg.setStatus(VolumeStatus.Migrating);
+                changeVolumeStatusMsg.setVolumeUuid(msg.getVolumeUuid());
+                bus.makeTargetServiceIdByResourceUuid(changeVolumeStatusMsg, VolumeConstant.SERVICE_ID, msg.getVolumeUuid());
+                bus.send(changeVolumeStatusMsg, new CloudBusCallBack(changeVolumeStatusMsg) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            trigger.fail(reply.getError());
+                            return;
+                        }
+
+                        trigger.next();
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                String __name__ = "change-vm-state-to-volume-migrating";
+
+                Tuple t = Q.New(VmInstanceVO.class).select(VmInstanceVO_.uuid, VmInstanceVO_.state)
+                        .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid())
+                        .findTuple();
+                String vmUuid = t == null ? null : t.get(0, String.class);
+                String originStateEvent = t == null ? null : t.get(1, VmInstanceState.class).getDrivenEvent().toString();
+
+                if (vmUuid == null) {
+                    trigger.next();
                     return;
                 }
 
-                MigrateVolumeOnLocalStorageReply mr = reply.castReply();
-                evt.setInventory(mr.getInventory());
+                struct.setRootVolume(true);
+                struct.setVmUuid(vmUuid);
+                struct.setVmOriginState(originStateEvent);
+
+                ChangeVmStateMsg cmsg = new ChangeVmStateMsg();
+                cmsg.setStateEvent(VmInstanceStateEvent.volumeMigrating.toString());
+                cmsg.setVmInstanceUuid(struct.getVmUuid());
+                bus.makeTargetServiceIdByResourceUuid(cmsg, VmInstanceConstant.SERVICE_ID, struct.getVmUuid());
+                bus.send(cmsg, new CloudBusCallBack(cmsg) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if(!reply.isSuccess()){
+                            trigger.fail(reply.getError());
+                            return;
+                        }
+
+                        trigger.next();
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                String __name__ = "migrate-volume-on-local-storage";
+
+                MigrateVolumeOnLocalStorageMsg mmsg = new MigrateVolumeOnLocalStorageMsg();
+                mmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+                mmsg.setDestHostUuid(msg.getDestHostUuid());
+                mmsg.setVolumeUuid(msg.getVolumeUuid());
+                bus.makeTargetServiceIdByResourceUuid(mmsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
+
+                MigrateVolumeOverlayMsg omsg = new MigrateVolumeOverlayMsg();
+                omsg.setMessage(mmsg);
+                omsg.setVolumeUuid(msg.getVolumeUuid());
+                bus.makeTargetServiceIdByResourceUuid(omsg, VolumeConstant.SERVICE_ID, msg.getVolumeUuid());
+
+                struct.setMessage(omsg);
+
+                if (struct.isRootVolume) {
+                    MigrateRootVolumeVmOverlayMsg vmsg = new MigrateRootVolumeVmOverlayMsg();
+                    vmsg.setMessage(omsg);
+                    vmsg.setVmInstanceUuid(struct.getVmUuid());
+                    bus.makeTargetServiceIdByResourceUuid(vmsg, VmInstanceConstant.SERVICE_ID, struct.getVmUuid());
+
+                    struct.setMessage(vmsg);
+                    struct.setRootVolume(true);
+                }
+
+                bus.send(struct.getMessage(), new CloudBusCallBack(struct.getMessage()) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            trigger.fail(reply.getError());
+                            return;
+                        }
+
+                        MigrateVolumeOnLocalStorageReply mr = reply.castReply();
+                        evt.setInventory(mr.getInventory());
+                        struct.setMigrated(true);
+                        trigger.next();
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                String __name__ = "change-vm-state-to-volume-migrated";
+
+                if (!struct.isRootVolume) {
+                    trigger.next();
+                    return;
+                }
+
+                ChangeVmStateMsg cmsg = new ChangeVmStateMsg();
+                cmsg.setStateEvent(VmInstanceStateEvent.volumeMigrated.toString());
+                cmsg.setVmInstanceUuid(struct.getVmUuid());
+                bus.makeTargetServiceIdByResourceUuid(cmsg, VmInstanceConstant.SERVICE_ID, struct.getVmUuid());
+                // if fail, host ping task will sync it state
+                bus.send(cmsg, new CloudBusCallBack(cmsg) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            trigger.fail(reply.getError());
+                            return;
+                        }
+
+                        trigger.next();
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                String __name__ = "change-volume-status-to-origin";
+
+                ChangeVolumeStatusMsg changeVolumeStatusMsg = new ChangeVolumeStatusMsg();
+                changeVolumeStatusMsg.setStatus(originStatus);
+                changeVolumeStatusMsg.setVolumeUuid(msg.getVolumeUuid());
+                bus.makeTargetServiceIdByResourceUuid(changeVolumeStatusMsg, VolumeConstant.SERVICE_ID, msg.getVolumeUuid());
+                bus.send(changeVolumeStatusMsg, new CloudBusCallBack(changeVolumeStatusMsg) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            trigger.fail(reply.getError());
+                            return;
+                        }
+
+                        trigger.next();
+                    }
+                });
+            }
+        }).done(new FlowDoneHandler(msg) {
+            @Override
+            public void handle(Map data) {
                 bus.publish(evt);
             }
-        });
+        }).error(new FlowErrorHandler(msg) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                evt.setError(errCode);
+                bus.publish(evt);
+            }
+        }).start();
     }
 
     private void handle(final MigrateVolumeOnLocalStorageMsg msg) {
@@ -379,6 +536,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
             VolumeVO volume;
             MigrateBitsStruct struct = new MigrateBitsStruct();
             LocalStorageHypervisorBackend bkd;
+            VolumeStatus originVolumeStatus;
 
             {
                 SimpleQuery<LocalStorageResourceRefVO> q = dbf.createQuery(LocalStorageResourceRefVO.class);
@@ -442,6 +600,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                 LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getDestHostUuid());
                 bkd = f.getHypervisorBackend(self);
+
+                originVolumeStatus = volume.getStatus();
+                volume.setStatus(VolumeStatus.Migrating);
+                SQL.New(VolumeVO.class).set(VolumeVO_.status, VolumeStatus.Migrating).eq(VolumeVO_.uuid, volume.getUuid()).update();
             }
 
             @Override
@@ -568,6 +730,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
                                     }
                                 }
 
+                                sql(VolumeVO.class)
+                                        .eq(VolumeVO_.uuid, volumeRefVO.getResourceUuid())
+                                        .set(VolumeVO_.status, originVolumeStatus)
+                                        .update();
 
                                 LocalStorageResourceRefVO vo = Q.New(LocalStorageResourceRefVO.class)
                                         .eq(LocalStorageResourceRefVO_.resourceUuid, volumeRefVO.getResourceUuid())

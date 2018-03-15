@@ -11,6 +11,8 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.defer.Defer;
+import org.zstack.core.defer.Deferred;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -55,7 +57,6 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
@@ -132,9 +133,53 @@ public class VolumeBase implements Volume {
             handle((InstantiateVolumeMsg) msg);
         } else if (msg instanceof OverlayMessage) {
             handle((OverlayMessage) msg);
+        } else if (msg instanceof ChangeVolumeStatusMsg) {
+            handle((ChangeVolumeStatusMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(ChangeVolumeStatusMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadId;
+            }
+
+            @Override
+            @Deferred
+            public void run(SyncTaskChain chain) {
+                refreshVO();
+
+                Defer.defer(() -> {
+                    ChangeVolumeStatusReply reply = new ChangeVolumeStatusReply();
+                    bus.reply(msg, reply);
+                });
+
+                if (self == null) {
+                    // volume has been deleted by previous request
+                    // this happens when delete vm request queued before
+                    // migrating trigger not by api
+                    // in this case, ignore change state request
+                    logger.debug(String.format("volume[uuid:%s] has been deleted, ignore change volume state request",
+                            msg.getVolumeUuid()));
+                    chain.next();
+                    return;
+                }
+
+                VolumeStatus bs = self.getStatus();
+                SQL.New(VolumeVO.class).eq(VolumeVO_.uuid, msg.getVolumeUuid()).set(VolumeVO_.status, msg.getStatus()).update();
+                refreshVO();
+                logger.debug(String.format("volume[uuid:%s] status changed from %s to %s in db", self.getUuid(), bs, self.getStatus()));
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return "change-volume-status";
+            }
+        });
     }
 
     private void handle(InstantiateVolumeMsg msg) {
