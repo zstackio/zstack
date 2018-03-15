@@ -160,7 +160,8 @@ class BatchQuery {
                 return
             }
 
-            if (clz.isAnnotationPresent(SuppressCredentialCheck.class)) {
+            SuppressCredentialCheck at = clz.getAnnotation(SuppressCredentialCheck.class)
+            if (at != null && !at.supportBacthQuery()) {
                 return
             }
 
