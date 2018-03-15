@@ -64,8 +64,7 @@ class AddImageLongJobCase extends SubCase {
 
         expect(AssertionError.class) {
             submitLongJob {
-                sessionId = adminSession()
-                jobName = "APIAddImageMsg"
+                jobName = msg.getClass().getSimpleName()
                 jobData = gson.toJson(msg)
             }
         }
@@ -93,13 +92,12 @@ class AddImageLongJobCase extends SubCase {
         msg.setPlatform(ImagePlatform.Linux.toString())
 
         LongJobInventory jobInv = submitLongJob {
-            sessionId = adminSession()
-            jobName = "APIAddImageMsg"
+            jobName = msg.getClass().getSimpleName()
             jobData = gson.toJson(msg)
             description = myDescription
         } as LongJobInventory
 
-        assert jobInv.getJobName() == "APIAddImageMsg"
+        assert jobInv.getJobName() == msg.getClass().getSimpleName()
         assert jobInv.state == org.zstack.sdk.LongJobState.Running
 
         retryInSecs() {
@@ -112,7 +110,7 @@ class AddImageLongJobCase extends SubCase {
         assert 1 == flag
     }
 
-    void testAddImageAppointResourceUuid(){
+    void testAddImageAppointResourceUuid() {
         myDescription = "my-test3"
 
         String uuid = Platform.uuid
@@ -126,20 +124,19 @@ class AddImageLongJobCase extends SubCase {
         msg.setResourceUuid(uuid)
 
         LongJobInventory jobInv = submitLongJob {
-            sessionId = adminSession()
-            jobName = "APIAddImageMsg"
+            jobName = msg.getClass().getSimpleName()
             jobData = gson.toJson(msg)
             description = myDescription
         } as LongJobInventory
 
-        assert jobInv.getJobName() == "APIAddImageMsg"
+        assert jobInv.getJobName() == msg.getClass().getSimpleName()
         assert jobInv.state == org.zstack.sdk.LongJobState.Running
 
         retryInSecs() {
             LongJobVO job = dbFindByUuid(jobInv.getUuid(), LongJobVO.class)
-            assert job.state == LongJobState.Succeeded
+            assert job.state.toString() == LongJobState.Succeeded.toString()
         }
 
-        assert null != dbFindByUuid(uuid,ImageVO.class)
+        assert null != dbFindByUuid(uuid, ImageVO.class)
     }
 }

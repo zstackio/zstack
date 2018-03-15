@@ -398,7 +398,9 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((ReimageVmInstanceMsg) msg);
         } else if (msg instanceof GetVmStartingCandidateClustersHostsMsg) {
             handle((GetVmStartingCandidateClustersHostsMsg) msg);
-        } else {
+        } else if (msg instanceof MigrateVmInnerMsg) {
+            handle((MigrateVmInnerMsg) msg);
+        }else {
             VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
             if (ext != null) {
                 VmInstance v = ext.getVmInstance(self);
@@ -407,6 +409,41 @@ public class VmInstanceBase extends AbstractVmInstance {
                 bus.dealWithUnknownMessage(msg);
             }
         }
+    }
+
+    private void handle(MigrateVmInnerMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getName() {
+                return String.format("migrate-vm-%s", self.getUuid());
+            }
+
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                migrateVm(msg, new Completion(chain) {
+                    @Override
+                    public void success() {
+                        MigrateVmInnerReply evt = new MigrateVmInnerReply();
+                        evt.setInventory(VmInstanceInventory.valueOf(self));
+                        bus.reply(msg, evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        MigrateVmInnerReply evt = new MigrateVmInnerReply();
+                        evt.setError(errorCode);
+                        bus.reply(msg, evt);
+                        chain.next();
+                    }
+                });
+            }
+        });
     }
 
     private void handle(final APIGetVmStartingCandidateClustersHostsMsg msg) {
