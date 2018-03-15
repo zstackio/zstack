@@ -187,7 +187,7 @@ class BatchCreateVmOnLocalStorageCase extends SubCase{
                     } catch (Throwable t) {
                     }
                 }
-            }).run()
+            }).start()
         }
 
         latch.await(2, TimeUnit.MINUTES)
