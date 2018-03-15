@@ -35,6 +35,7 @@ class SetVmBootOrderCase extends SubCase {
             testSetVmBootFromHardDisk()
             testSetVmBootFromCdRom()
             testSetVmBootFromCdRomOnce()
+            testSetVmBootFromCdRomOnceTemporarily()
         }
     }
 
@@ -103,6 +104,45 @@ class SetVmBootOrderCase extends SubCase {
         }
         assert res.orders.size() == 1
         assert res.orders.get(0) == VmBootDevice.HardDisk.toString()
+        assert null == VmSystemTags.CDROM_BOOT_ONCE.getTokenByResourceUuid(vm.uuid, VmSystemTags.CDROM_BOOT_ONCE_TOKEN)
+    }
+
+    void testSetVmBootFromCdRomOnceTemporarily() {
+        VmInstanceInventory vm = env.inventoryByName("vm")
+
+        // set boot from cdrom once only
+        setVmBootOrder {
+            uuid = vm.uuid
+            bootOrder = asList(VmBootDevice.CdRom.toString(), VmBootDevice.HardDisk.toString())
+            systemTags = ["cdromBootOnce::true"]
+        }
+
+        // regret
+        setVmBootOrder {
+            uuid = vm.uuid
+            bootOrder = asList(VmBootDevice.CdRom.toString(), VmBootDevice.HardDisk.toString())
+        }
+
+        // before vm reboot
+        GetVmBootOrderResult res = getVmBootOrder {
+            uuid = vm.uuid
+        }
+        assert res.orders.size() == 2
+        assert res.orders.get(0) == VmBootDevice.CdRom.toString()
+        assert res.orders.get(1) == VmBootDevice.HardDisk.toString()
+        assert null == VmSystemTags.CDROM_BOOT_ONCE.getTokenByResourceUuid(vm.uuid, VmSystemTags.CDROM_BOOT_ONCE_TOKEN)
+
+        rebootVmInstance {
+            uuid = vm.uuid
+        }
+
+        // after vm reboot
+        res = getVmBootOrder {
+            uuid = vm.uuid
+        }
+        assert res.orders.size() == 2
+        assert res.orders.get(0) == VmBootDevice.CdRom.toString()
+        assert res.orders.get(1) == VmBootDevice.HardDisk.toString()
         assert null == VmSystemTags.CDROM_BOOT_ONCE.getTokenByResourceUuid(vm.uuid, VmSystemTags.CDROM_BOOT_ONCE_TOKEN)
     }
 }
