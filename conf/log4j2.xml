@@ -9,7 +9,7 @@
             <Policies>
                 <SizeBasedTriggeringPolicy size="450 MB"/>
             </Policies>
-            <DefaultRolloverStrategy max="20"/>
+            <DefaultRolloverStrategy max="50"/>
         </RollingFile>
 
 	    <RollingFile name="ApiRequestLogger" fileName="${sys:catalina.home}/logs/zstack-api.log"
@@ -20,7 +20,7 @@
             <Policies>
                 <SizeBasedTriggeringPolicy size="150 MB" />
             </Policies>
-            <DefaultRolloverStrategy max="20"/>
+            <DefaultRolloverStrategy max="50"/>
         </RollingFile>
 
         <RollingFile name="DiskCapacityLogger" fileName="${sys:catalina.home}/logs/zstack-disk-capacity.log"
@@ -31,7 +31,7 @@
             <Policies>
                 <SizeBasedTriggeringPolicy size="150 MB"/>
             </Policies>
-            <DefaultRolloverStrategy max="20"/>
+            <DefaultRolloverStrategy max="50"/>
         </RollingFile>
 
         <RollingFile name="DiskCapacityLoggerDetails"
@@ -43,7 +43,7 @@
             <Policies>
                 <SizeBasedTriggeringPolicy size="150 MB"/>
             </Policies>
-            <DefaultRolloverStrategy max="20"/>
+            <DefaultRolloverStrategy max="50"/>
         </RollingFile>
 
 
