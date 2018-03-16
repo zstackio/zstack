@@ -317,8 +317,8 @@ public class RESTFacadeImpl implements RESTFacade {
 
                 if (callback instanceof JsonAsyncRESTCallback) {
                     JsonAsyncRESTCallback jcallback = (JsonAsyncRESTCallback)callback;
-                    Object obj = JSONObjectUtil.toObject(responseEntity.getBody(), jcallback.getReturnClass());
                     try {
+                        Object obj = JSONObjectUtil.toObject(responseEntity.getBody(), jcallback.getReturnClass());
                         ErrorCode err = vf.validateErrorByErrorCode(obj);
                         if (err != null) {
                             logger.warn(String.format("error response that causes validation failure: %s", responseEntity.getBody()));
