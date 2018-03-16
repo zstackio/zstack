@@ -16,6 +16,7 @@ import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.PeriodicTask;
+import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.APIIsOpensourceVersionMsg;
 import org.zstack.header.APIIsOpensourceVersionReply;
@@ -64,6 +65,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.getUuid;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -1010,31 +1012,45 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         }
     }
 
-    public void adminAdoptAllOrphanedResource() {
-        new SQLBatch() {
+    @Transactional
+    private void doAdminAdoptResource() {
+        Query q = dbf.getEntityManager().createNativeQuery(
+                "select uuid, resourceType" +
+                        " from ResourceVO rvo" +
+                        " where rvo.uuid not in ( select resourceUuid from AccountResourceRefVO )" +
+                        " and rvo.resourceType in (:rTypes)");
+        q.setParameter("rTypes", childrenResourceTypeClassMap.keySet());
+        List<Object[]> objs = q.getResultList();
+
+        objs.forEach(it -> dbf.getEntityManager().persist(AccountResourceRefVO.newOwn(
+                AccountConstant.INITIAL_SYSTEM_ADMIN_UUID,
+                it[0].toString(),
+                childrenResourceTypeClassMap.get(it[1].toString()))));
+    }
+
+    public void adminAdoptAllOrphanedResource(){
+        thdf.syncSubmit(new SyncTask<Void>() {
             @Override
-            protected void scripts() {
-                Query q = dbf.getEntityManager().createNativeQuery(
-                        "select uuid, resourceName, resourceType" +
-                                " from ResourceVO rvo" +
-                                " where rvo.uuid not in ( select resourceUuid from AccountResourceRefVO )" +
-                                " and rvo.resourceType in (:rTypes)");
-                q.setParameter("rTypes", childrenResourceTypeClassMap.keySet());
-                List<Object[]> objs = q.getResultList();
-
-                List<ResourceVO> resourceVOs = objs.stream().map(ResourceVO::new).collect(Collectors.toList());
-
-                List<AccountResourceRefVO> accountResourceRefVOs = resourceVOs.stream()
-                        .map(i ->
-                                AccountResourceRefVO.newOwn(
-                                        AccountConstant.INITIAL_SYSTEM_ADMIN_UUID,
-                                        i.getUuid(),
-                                        childrenResourceTypeClassMap.get(i.getResourceType()))
-                        ).collect(Collectors.toList());
-
-                accountResourceRefVOs.forEach(this::persist);
+            public Void call() throws Exception {
+                doAdminAdoptResource();
+                return null;
             }
-        }.execute();
+
+            @Override
+            public String getName() {
+                return "admin-adopt-all-orphaned-resource";
+            }
+
+            @Override
+            public String getSyncSignature() {
+                return "admin-adopt-all-orphaned-resource";
+            }
+
+            @Override
+            public int getSyncLevel() {
+                return 1;
+            }
+        });
     }
 
     @Override
