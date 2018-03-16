@@ -1,6 +1,7 @@
 package org.zstack.testlib.identity
 
 import org.zstack.sdk.PolicyInventory
+import org.zstack.sdk.RoleInventory
 import org.zstack.sdk.UserInventory
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.HasSession
@@ -19,6 +20,7 @@ class UserSpec extends Spec implements HasSession {
     UserInventory inventory
 
     private List<String> policyNames = []
+    private List<String> roleNames = []
 
     UserSpec(EnvSpec envSpec) {
         super(envSpec)
@@ -30,6 +32,15 @@ class UserSpec extends Spec implements HasSession {
         }
 
         policyNames.add(pname)
+    }
+
+
+    void useRole(String rname) {
+        preCreate {
+            addDependency(rname, RoleSpec.class)
+        }
+
+        roleNames.add(rname)
     }
 
     @Override
@@ -51,9 +62,18 @@ class UserSpec extends Spec implements HasSession {
                     delegate.sessionId = sessionId
                 }
             }
+
+            roleNames.each { rname ->
+                RoleInventory inv = findSpec(rname, RoleSpec.class).inventory
+                attachRoleToUser {
+                    roleUuid = inv.uuid
+                    userUuid = inventory.uuid
+                    delegate.sessionId = sessionId
+                }
+            }
         }
 
-        return new SpecID(name:name, uuid:uuid)
+        return id(name, uuid)
     }
 
     @Override

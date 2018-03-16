@@ -83,7 +83,7 @@ class RBACPermissionCase extends SubCase {
             }
         }
 
-        //senv.delete()
+        e.delete()
     }
 
     @Override

@@ -52,7 +52,7 @@ class RoleSpec extends Spec implements HasSession {
             }
         }
 
-        return SpecID(name: name, uuid: uuid)
+        return id(name, uuid)
     }
 
     @Override

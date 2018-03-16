@@ -71,7 +71,7 @@ import static org.zstack.utils.CollectionDSL.list;
 
 public class AccountManagerImpl extends AbstractService implements AccountManager, PrepareDbInitialValueExtensionPoint,
         SoftDeleteEntityExtensionPoint, HardDeleteEntityExtensionPoint,
-        GlobalApiMessageInterceptor, ApiMessageInterceptor, ApiNotificationFactoryExtensionPoint {
+        ApiMessageInterceptor, ApiNotificationFactoryExtensionPoint {
     private static final CLogger logger = Utils.getLogger(AccountManagerImpl.class);
 
     @Autowired
@@ -1254,16 +1254,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         if (resourceTypes.contains(entityClass)) {
             postSoftDelete(entityIds, entityClass);
         }
-    }
-
-    @Override
-    public List<Class> getMessageClassToIntercept() {
-        return null;
-    }
-
-    @Override
-    public InterceptorPosition getPosition() {
-        return InterceptorPosition.FRONT;
     }
 
     private void logOutSession(String sessionUuid) {

@@ -84,7 +84,7 @@ public class AttachRoleToUserGroupAction extends AbstractAction {
     RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/identities/user-groups/{groupUuid}/roles/{uuid}";
+        info.path = "/identities/user-groups/{groupUuid}/roles/{roleUuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";

@@ -85,7 +85,7 @@ class AccountSpec extends Spec {
             }[0]
 
             roleNames.each { rname ->
-                RoleInventory inv = findSpec(rname, RoleSpec.class)
+                RoleInventory inv = findSpec(rname, RoleSpec.class).inventory
 
                 attachRoleToAccount {
                     roleUuid = inv.uuid

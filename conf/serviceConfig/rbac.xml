@@ -3,6 +3,14 @@
     <id>rbac</id>
 
     <message>
+        <name>org.zstack.header.identity.role.api.APICreateRoleMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.identity.role.api.APIDeleteRoleMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.header.identity.role.api.APIAttachPolicyToRoleMsg</name>
     </message>
     

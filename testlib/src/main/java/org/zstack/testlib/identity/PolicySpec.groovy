@@ -61,7 +61,7 @@ class PolicySpec extends Spec implements HasSession {
             }
         }
 
-        return new SpecID(name:name, uuid:inventory.uuid)
+        return id(name, inventory.uuid)
     }
 
     void statement(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = Statement.class) Closure c) {

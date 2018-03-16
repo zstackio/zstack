@@ -7,7 +7,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 
-@RestRequest(path = "/identities/user-groups/{groupUuid}/roles/{uuid}", method = HttpMethod.POST, responseClass = APIAttachRoleToUserGroupEvent.class)
+@RestRequest(path = "/identities/user-groups/{groupUuid}/roles/{roleUuid}", method = HttpMethod.POST, responseClass = APIAttachRoleToUserGroupEvent.class)
 public class APIAttachRoleToUserGroupMsg extends APIMessage {
     @APIParam(resourceType = RoleVO.class, checkAccount = true, operationTarget = true)
     private String roleUuid;

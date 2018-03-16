@@ -21,6 +21,7 @@
     <bean id="RBACManager" class="org.zstack.identity.rbac.RBACManagerImpl">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component"/>
+            <zstack:extension interface="org.zstack.header.Service"/>
         </zstack:plugin>
     </bean>
 
@@ -31,7 +32,6 @@
             <zstack:extension interface="org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint"/>
             <zstack:extension interface="org.zstack.core.db.SoftDeleteEntityExtensionPoint"/>
             <zstack:extension interface="org.zstack.core.db.HardDeleteEntityExtensionPoint"/>
-            <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor"/>
             <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor"/>
         </zstack:plugin>
 

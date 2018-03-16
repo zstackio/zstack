@@ -9,7 +9,7 @@ import org.zstack.header.rest.RestRequest;
 public class APICreateRoleMsg extends APICreateMessage {
     @APIParam(maxLength = 255)
     private String name;
-    @APIParam(maxLength = 2048)
+    @APIParam(maxLength = 2048, required = false)
     private String description;
 
     public String getName() {
