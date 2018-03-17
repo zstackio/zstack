@@ -2,7 +2,7 @@ package org.zstack.header.storage.primary;
 
 import org.zstack.header.cluster.ClusterEO;
 import org.zstack.header.cluster.ClusterVO;
-import org.zstack.header.hierarchy.EntityHierarchy;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.SoftDeletionCascade;
@@ -17,13 +17,10 @@ import java.sql.Timestamp;
         @SoftDeletionCascade(parent = PrimaryStorageVO.class, joinColumn = "primaryStorageUuid"),
         @SoftDeletionCascade(parent = ClusterVO.class, joinColumn = "clusterUuid")
 })
-@EntityHierarchy(
-        parent = Object.class,
-        myField = "",
-        targetField = "",
+@EntityGraph(
         friends = {
-                @EntityHierarchy.Friend(type = PrimaryStorageVO.class, myField = "primaryStorageUuid", targetField = "uuid"),
-                @EntityHierarchy.Friend(type = ClusterVO.class, myField = "clusterUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = PrimaryStorageVO.class, myField = "primaryStorageUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = ClusterVO.class, myField = "clusterUuid", targetField = "uuid"),
         }
 )
 public class PrimaryStorageClusterRefVO {

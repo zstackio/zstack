@@ -2,6 +2,7 @@ package org.zstack.header.image;
 
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EO;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.NoView;
 
 import javax.persistence.*;
@@ -12,6 +13,11 @@ import java.util.Set;
 @Table
 @EO(EOClazz = ImageEO.class)
 @BaseResource
+@EntityGraph(
+        parents = {
+                @EntityGraph.Neighbour(type = ImageBackupStorageRefVO.class, myField = "uuid", targetField = "imageUuid")
+        }
+)
 public class ImageVO extends ImageAO {
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "imageUuid", insertable = false, updatable = false)

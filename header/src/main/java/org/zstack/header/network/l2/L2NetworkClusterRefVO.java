@@ -2,14 +2,13 @@ package org.zstack.header.network.l2;
 
 import org.zstack.header.cluster.ClusterEO;
 import org.zstack.header.cluster.ClusterVO;
-import org.zstack.header.hierarchy.EntityHierarchy;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.search.SqlTrigger;
 import org.zstack.header.search.TriggerIndex;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.SoftDeletionCascade;
 import org.zstack.header.vo.SoftDeletionCascades;
-import org.zstack.header.zone.ZoneVO;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
@@ -22,13 +21,10 @@ import java.sql.Timestamp;
         @SoftDeletionCascade(parent = L2NetworkVO.class, joinColumn = "l2NetworkUuid"),
         @SoftDeletionCascade(parent = ClusterVO.class, joinColumn = "clusterUuid")
 })
-@EntityHierarchy(
-        parent = Object.class,
-        myField = "",
-        targetField = "",
+@EntityGraph(
         friends = {
-                @EntityHierarchy.Friend(type = L2NetworkVO.class, myField = "l2NetworkUuid", targetField = "uuid"),
-                @EntityHierarchy.Friend(type = ClusterVO.class, myField = "clusterUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = L2NetworkVO.class, myField = "l2NetworkUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = ClusterVO.class, myField = "clusterUuid", targetField = "uuid"),
         }
 )
 public class L2NetworkClusterRefVO {

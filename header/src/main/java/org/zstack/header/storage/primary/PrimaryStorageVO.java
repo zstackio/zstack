@@ -1,6 +1,6 @@
 package org.zstack.header.storage.primary;
 
-import org.zstack.header.hierarchy.EntityHierarchy;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EO;
 import org.zstack.header.vo.NoView;
@@ -14,12 +14,12 @@ import java.util.Set;
 @Table
 @EO(EOClazz = PrimaryStorageEO.class)
 @BaseResource
-@EntityHierarchy(
-        parent = ZoneVO.class,
-        myField = "zoneUuid",
-        targetField = "uuid",
+@EntityGraph(
+        parents = {
+                @EntityGraph.Neighbour(type = ZoneVO.class, myField = "zoneUuid", targetField = "uuid")
+        },
         friends = {
-                @EntityHierarchy.Friend(type = PrimaryStorageClusterRefVO.class, myField = "uuid", targetField = "primaryStorageUuid")
+                @EntityGraph.Neighbour(type = PrimaryStorageClusterRefVO.class, myField = "uuid", targetField = "primaryStorageUuid")
         }
 )
 public class PrimaryStorageVO extends PrimaryStorageAO {

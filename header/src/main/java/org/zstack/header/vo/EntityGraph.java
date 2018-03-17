@@ -1,4 +1,4 @@
-package org.zstack.header.hierarchy;
+package org.zstack.header.vo;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -7,20 +7,16 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.TYPE)
 @Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
-public @interface EntityHierarchy {
+public @interface EntityGraph {
     @Target({ElementType.TYPE})
     @Retention(RetentionPolicy.RUNTIME)
-    @interface Friend {
+    @interface Neighbour {
         Class type();
         String myField();
         String targetField();
+        int weight() default -1;
     }
 
-    Class parent();
-
-    String myField();
-
-    String targetField();
-
-    Friend[] friends() default {};
+    Neighbour[] parents() default {};
+    Neighbour[] friends() default {};
 }

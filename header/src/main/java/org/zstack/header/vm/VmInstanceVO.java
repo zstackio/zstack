@@ -1,7 +1,6 @@
 package org.zstack.header.vm;
 
-import org.zstack.header.hierarchy.EntityHierarchy;
-import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EO;
 import org.zstack.header.vo.NoView;
@@ -17,10 +16,10 @@ import java.util.Set;
 @Table
 @EO(EOClazz = VmInstanceEO.class)
 @BaseResource
-@EntityHierarchy(
-        parent = ZoneVO.class,
-        myField = "zoneUuid",
-        targetField = "uuid"
+@EntityGraph(
+        parents = {
+                @EntityGraph.Neighbour(type = ZoneVO.class, myField = "zoneUuid", targetField = "uuid")
+        }
 )
 public class VmInstanceVO extends VmInstanceAO {
     @OneToMany(fetch = FetchType.EAGER)

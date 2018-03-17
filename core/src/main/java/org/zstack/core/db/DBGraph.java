@@ -3,26 +3,30 @@ package org.zstack.core.db;
 import org.apache.commons.lang.StringUtils;
 import org.zstack.header.core.StaticInit;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.hierarchy.EntityHierarchy;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
 
-public class DBHierarchy {
-    private static CLogger logger = Utils.getLogger(DBHierarchy.class);
+public class DBGraph {
+    private static CLogger logger = Utils.getLogger(DBGraph.class);
 
     private static Map<Class, Map<Class, Key>> keys = new HashMap<>();
     private static Map<Class, Node> allNodes = new HashMap<>();
 
+    private static final int PARENT_WEIGHT = 1;
+    private static final int FRIEND_WEIGHT = 2;
+
     private static class Key {
         String src;
         String dst;
+        int weight;
 
         @Override
         public String toString() {
-            return String.format("<%s, %s>", src, dst);
+            return String.format("<%s, %s, %s>", src, dst, weight);
         }
     }
 
@@ -113,26 +117,42 @@ public class DBHierarchy {
             }
         }
 
+        class Path {
+            int length;
+            String path;
+        }
+
+        List<Path> allPaths = new ArrayList<>();
+
         paths.forEach(lst -> {
             KeyFinder keyFinder = new KeyFinder();
             List<String> pstr = new ArrayList<>();
+
+            Path p = new Path();
 
             lst.forEach(n -> {
                 Key key = keyFinder.pushNode(n);
                 if (key != null) {
                     pstr.add(key.toString());
+                    p.length += key.weight;
                 }
                 pstr.add(n.toString());
             });
 
-            logger.debug("yyyyyyyyyyyyyyyyyyyyyyyyyyy " + StringUtils.join(pstr, " "));
+            p.path = StringUtils.join(pstr, " ");
+
+            allPaths.add(p);
         });
+
+        allPaths.sort(Comparator.comparingInt(p -> p.length));
+
+        allPaths.forEach(p -> logger.debug(String.format("yyyyyyyyyyyyyyyyyy %s: %s", p.length, p.path)));
     }
 
     @StaticInit
     static void staticInit() {
         class NodeResolver {
-            EntityHierarchy entityHierarchy;
+            EntityGraph entityGraph;
             Node me;
 
             public NodeResolver(Class clz) {
@@ -143,11 +163,11 @@ public class DBHierarchy {
                     me.entityClass = clz;
                     allNodes.put(clz, me);
 
-                    entityHierarchy = (EntityHierarchy) clz.getAnnotation(EntityHierarchy.class);
+                    entityGraph = (EntityGraph) clz.getAnnotation(EntityGraph.class);
 
-                    if (entityHierarchy == null) {
-                        throw new CloudRuntimeException(String.format("missing @EntityHierarchy for class[%s] referred by other" +
-                                " entities having @EntityHierarchy", clz));
+                    if (entityGraph == null) {
+                        throw new CloudRuntimeException(String.format("missing @EntityGraph for class[%s] referred by other" +
+                                " entities having @EntityGraph", clz));
                     }
 
                     resolveNeighbours();
@@ -155,24 +175,24 @@ public class DBHierarchy {
             }
 
             private void resolveNeighbours() {
-                if (entityHierarchy.parent() != Object.class) {
-                    // non-root node
-                    me.neighbours.add(new NodeResolver(entityHierarchy.parent()).resolve());
-                    buildKey(me.entityClass, entityHierarchy.parent(), entityHierarchy.myField(), entityHierarchy.targetField());
+                for (EntityGraph.Neighbour at : entityGraph.parents()) {
+                    me.neighbours.add(new NodeResolver(at.type()).resolve());
+                    buildKey(at, at.weight() == -1 ? PARENT_WEIGHT : at.weight());
                 }
 
-                for (EntityHierarchy.Friend fat : entityHierarchy.friends()) {
+                for (EntityGraph.Neighbour fat : entityGraph.friends()) {
                     me.neighbours.add(new NodeResolver(fat.type()).resolve());
-                    buildKey(me.entityClass, fat.type(), fat.myField(), fat.targetField());
+                    buildKey(fat, fat.weight() == -1 ? FRIEND_WEIGHT : fat.weight());
                 }
             }
 
-            private void buildKey(Class src, Class dst, String srcf, String dstf) {
-                Map<Class, Key> second = keys.computeIfAbsent(src, x->new HashMap<>());
+            private void buildKey(EntityGraph.Neighbour at, int w) {
+                Map<Class, Key> second = keys.computeIfAbsent(me.entityClass, x->new HashMap<>());
                 Key key = new Key();
-                key.src = srcf;
-                key.dst = dstf;
-                second.put(dst, key);
+                key.src = at.myField();
+                key.dst = at.targetField();
+                key.weight = w;
+                second.put(at.type(), key);
             }
 
             Node resolve() {
@@ -180,8 +200,8 @@ public class DBHierarchy {
             }
         }
 
-        BeanUtils.reflections.getTypesAnnotatedWith(EntityHierarchy.class).stream()
-                .filter(c -> c.isAnnotationPresent(EntityHierarchy.class))
+        BeanUtils.reflections.getTypesAnnotatedWith(EntityGraph.class).stream()
+                .filter(c -> c.isAnnotationPresent(EntityGraph.class))
                 .forEach(clz -> new NodeResolver(clz).resolve());
     }
 }
