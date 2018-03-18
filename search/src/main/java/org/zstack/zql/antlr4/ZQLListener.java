@@ -70,6 +70,30 @@ public interface ZQLListener extends ParseTreeListener {
 	 */
 	void exitLogicalOperator(ZQLParser.LogicalOperatorContext ctx);
 	/**
+	 * Enter a parse tree produced by the {@code simpleValue}
+	 * labeled alternative in {@link ZQLParser#complexValue}.
+	 * @param ctx the parse tree
+	 */
+	void enterSimpleValue(ZQLParser.SimpleValueContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code simpleValue}
+	 * labeled alternative in {@link ZQLParser#complexValue}.
+	 * @param ctx the parse tree
+	 */
+	void exitSimpleValue(ZQLParser.SimpleValueContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code subQueryValue}
+	 * labeled alternative in {@link ZQLParser#complexValue}.
+	 * @param ctx the parse tree
+	 */
+	void enterSubQueryValue(ZQLParser.SubQueryValueContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code subQueryValue}
+	 * labeled alternative in {@link ZQLParser#complexValue}.
+	 * @param ctx the parse tree
+	 */
+	void exitSubQueryValue(ZQLParser.SubQueryValueContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link ZQLParser#expr}.
 	 * @param ctx the parse tree
 	 */
@@ -195,6 +219,26 @@ public interface ZQLListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitReturnWith(ZQLParser.ReturnWithContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link ZQLParser#subQueryTarget}.
+	 * @param ctx the parse tree
+	 */
+	void enterSubQueryTarget(ZQLParser.SubQueryTargetContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ZQLParser#subQueryTarget}.
+	 * @param ctx the parse tree
+	 */
+	void exitSubQueryTarget(ZQLParser.SubQueryTargetContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link ZQLParser#subQuery}.
+	 * @param ctx the parse tree
+	 */
+	void enterSubQuery(ZQLParser.SubQueryContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ZQLParser#subQuery}.
+	 * @param ctx the parse tree
+	 */
+	void exitSubQuery(ZQLParser.SubQueryContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link ZQLParser#query}.
 	 * @param ctx the parse tree

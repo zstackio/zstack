@@ -49,6 +49,20 @@ public interface ZQLVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitLogicalOperator(ZQLParser.LogicalOperatorContext ctx);
 	/**
+	 * Visit a parse tree produced by the {@code simpleValue}
+	 * labeled alternative in {@link ZQLParser#complexValue}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitSimpleValue(ZQLParser.SimpleValueContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code subQueryValue}
+	 * labeled alternative in {@link ZQLParser#complexValue}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitSubQueryValue(ZQLParser.SubQueryValueContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link ZQLParser#expr}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -123,6 +137,18 @@ public interface ZQLVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitReturnWith(ZQLParser.ReturnWithContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ZQLParser#subQueryTarget}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitSubQueryTarget(ZQLParser.SubQueryTargetContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ZQLParser#subQuery}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitSubQuery(ZQLParser.SubQueryContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link ZQLParser#query}.
 	 * @param ctx the parse tree

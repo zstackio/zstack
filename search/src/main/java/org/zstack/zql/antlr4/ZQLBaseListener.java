@@ -90,6 +90,30 @@ public class ZQLBaseListener implements ZQLListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterSimpleValue(ZQLParser.SimpleValueContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitSimpleValue(ZQLParser.SimpleValueContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterSubQueryValue(ZQLParser.SubQueryValueContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitSubQueryValue(ZQLParser.SubQueryValueContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterExpr(ZQLParser.ExprContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -229,6 +253,30 @@ public class ZQLBaseListener implements ZQLListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitReturnWith(ZQLParser.ReturnWithContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterSubQueryTarget(ZQLParser.SubQueryTargetContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitSubQueryTarget(ZQLParser.SubQueryTargetContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterSubQuery(ZQLParser.SubQueryContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitSubQuery(ZQLParser.SubQueryContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

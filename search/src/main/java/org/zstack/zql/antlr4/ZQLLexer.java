@@ -42,8 +42,8 @@ public class ZQLLexer extends Lexer {
 
 	private static final String[] _LITERAL_NAMES = {
 		null, "'.'", "'='", "'!='", "'>'", "'>='", "'<'", "'<='", "'is null'", 
-		"'not null'", "'in'", "'not in'", "'like'", "'not like'", "'('", "')'", 
-		"','", "'offset'", "'limit'", "'query'", "'order by'", null, "'restrict by'", 
+		"'not null'", "'in'", "'not in'", "'like'", "'not like'", "'('", "','", 
+		"')'", "'offset'", "'limit'", "'query'", "'order by'", null, "'restrict by'", 
 		"'return with'", "'where'", "'and'", "'or'", "'asc'", "'desc'"
 	};
 	private static final String[] _SYMBOLIC_NAMES = {
@@ -155,7 +155,7 @@ public class ZQLLexer extends Lexer {
 		"\3\2\2\2uv\7n\2\2vw\7k\2\2wx\7m\2\2xy\7g\2\2y\32\3\2\2\2z{\7p\2\2{|\7"+
 		"q\2\2|}\7v\2\2}~\7\"\2\2~\177\7n\2\2\177\u0080\7k\2\2\u0080\u0081\7m\2"+
 		"\2\u0081\u0082\7g\2\2\u0082\34\3\2\2\2\u0083\u0084\7*\2\2\u0084\36\3\2"+
-		"\2\2\u0085\u0086\7+\2\2\u0086 \3\2\2\2\u0087\u0088\7.\2\2\u0088\"\3\2"+
+		"\2\2\u0085\u0086\7.\2\2\u0086 \3\2\2\2\u0087\u0088\7+\2\2\u0088\"\3\2"+
 		"\2\2\u0089\u008a\7q\2\2\u008a\u008b\7h\2\2\u008b\u008c\7h\2\2\u008c\u008d"+
 		"\7u\2\2\u008d\u008e\7g\2\2\u008e\u008f\7v\2\2\u008f$\3\2\2\2\u0090\u0091"+
 		"\7n\2\2\u0091\u0092\7k\2\2\u0092\u0093\7o\2\2\u0093\u0094\7k\2\2\u0094"+

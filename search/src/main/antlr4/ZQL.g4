@@ -36,6 +36,7 @@ value
     : STRING
     | INT
     | FLOAT
+    | '(' value (',' value)* ')'
     ;
 
 logicalOperator
@@ -43,10 +44,14 @@ logicalOperator
     | OR
     ;
 
-expr
-    : field operator value?
+complexValue
+    : value #simpleValue
+    | '(' subQuery ')' #subQueryValue
     ;
 
+expr
+    : field operator complexValue?
+    ;
 
 condition
     : '(' condition ')' #parenthesisCondition
@@ -85,6 +90,14 @@ returnWithExpr
 
 returnWith
     : RETURN_WITH '(' returnWithExpr (',' returnWithExpr)* ')'
+    ;
+
+subQueryTarget
+    : entity ('.' ID)+
+    ;
+
+subQuery
+    : QUERY subQueryTarget (WHERE condition+)?
     ;
 
 query
