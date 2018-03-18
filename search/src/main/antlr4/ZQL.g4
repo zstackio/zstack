@@ -5,7 +5,7 @@ package org.zstack.zql.antlr4;
 }
 
 zql
-    : query
+    : query EOF
     ;
 
 entity
@@ -39,28 +39,81 @@ value
     ;
 
 logicalOperator
-    : 'and'
-    | 'or'
+    : AND
+    | OR
     ;
+
+expr
+    : field operator value?
+    ;
+
 
 condition
-    : field operator value
-    ;
-
-conditions
-    : condition (logicalOperator condition)*
-    | '('+ condition (logicalOperator condition)* ')'+
-    | conditions ('(' logicalOperator conditions ')')+
+    : '(' condition ')' #parenthesisCondition
+    | left=condition (op=logicalOperator right=condition)+ #nestCondition
+    | expr #simpleCondition
     ;
 
 queryTarget
     : entity ('.' field)?
     ;
 
-query
-    : 'query' queryTarget ('where' conditions)+
+orderBy
+    : ORDER_BY ID ORDER_BY_VALUE
     ;
 
+limit
+    : LIMIT INT
+    ;
+
+offset
+    : OFFSET INT
+    ;
+
+
+restrictByExpr
+    : entity '.' ID operator value?
+    ;
+
+restrictBy
+    : RESTRICT_BY '(' restrictByExpr (',' restrictByExpr)* ')'
+    ;
+
+returnWithExpr
+    : ID ('.' ID)*
+    ;
+
+returnWith
+    : RETURN_WITH '(' returnWithExpr (',' returnWithExpr)* ')'
+    ;
+
+query
+    : QUERY queryTarget (WHERE condition+)? restrictBy? returnWith? orderBy? limit? offset?
+    ;
+
+OFFSET: 'offset';
+
+LIMIT: 'limit';
+
+QUERY: 'query';
+
+ORDER_BY: 'order by';
+
+ORDER_BY_VALUE: ASC | DESC;
+
+RESTRICT_BY: 'restrict by';
+
+RETURN_WITH: 'return with';
+
+WHERE: 'where';
+
+AND: 'and';
+
+OR: 'or';
+
+ASC: 'asc';
+
+DESC: 'desc';
 
 INT : '-'? NUMBER;
 

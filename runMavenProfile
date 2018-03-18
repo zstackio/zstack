@@ -133,6 +133,9 @@ triggerexpression() {
 zql() {
    cd search
    mvn -P zql generate-sources
+   if [ $? -ne 0 ]; then
+	exit 1
+   fi
    mkdir -p src/main/java/org/zstack/zql/antlr4/
    yes | cp target/generated-sources/antlr4/* src/main/java/org/zstack/zql/antlr4/
    rm -f target/generated-sources/antlr4/*

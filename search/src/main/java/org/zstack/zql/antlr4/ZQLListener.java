@@ -70,25 +70,51 @@ public interface ZQLListener extends ParseTreeListener {
 	 */
 	void exitLogicalOperator(ZQLParser.LogicalOperatorContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link ZQLParser#condition}.
+	 * Enter a parse tree produced by {@link ZQLParser#expr}.
 	 * @param ctx the parse tree
 	 */
-	void enterCondition(ZQLParser.ConditionContext ctx);
+	void enterExpr(ZQLParser.ExprContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link ZQLParser#condition}.
+	 * Exit a parse tree produced by {@link ZQLParser#expr}.
 	 * @param ctx the parse tree
 	 */
-	void exitCondition(ZQLParser.ConditionContext ctx);
+	void exitExpr(ZQLParser.ExprContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link ZQLParser#conditions}.
+	 * Enter a parse tree produced by the {@code nestCondition}
+	 * labeled alternative in {@link ZQLParser#condition}.
 	 * @param ctx the parse tree
 	 */
-	void enterConditions(ZQLParser.ConditionsContext ctx);
+	void enterNestCondition(ZQLParser.NestConditionContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link ZQLParser#conditions}.
+	 * Exit a parse tree produced by the {@code nestCondition}
+	 * labeled alternative in {@link ZQLParser#condition}.
 	 * @param ctx the parse tree
 	 */
-	void exitConditions(ZQLParser.ConditionsContext ctx);
+	void exitNestCondition(ZQLParser.NestConditionContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code simpleCondition}
+	 * labeled alternative in {@link ZQLParser#condition}.
+	 * @param ctx the parse tree
+	 */
+	void enterSimpleCondition(ZQLParser.SimpleConditionContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code simpleCondition}
+	 * labeled alternative in {@link ZQLParser#condition}.
+	 * @param ctx the parse tree
+	 */
+	void exitSimpleCondition(ZQLParser.SimpleConditionContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code parenthesisCondition}
+	 * labeled alternative in {@link ZQLParser#condition}.
+	 * @param ctx the parse tree
+	 */
+	void enterParenthesisCondition(ZQLParser.ParenthesisConditionContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code parenthesisCondition}
+	 * labeled alternative in {@link ZQLParser#condition}.
+	 * @param ctx the parse tree
+	 */
+	void exitParenthesisCondition(ZQLParser.ParenthesisConditionContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link ZQLParser#queryTarget}.
 	 * @param ctx the parse tree
@@ -99,6 +125,76 @@ public interface ZQLListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitQueryTarget(ZQLParser.QueryTargetContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link ZQLParser#orderBy}.
+	 * @param ctx the parse tree
+	 */
+	void enterOrderBy(ZQLParser.OrderByContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ZQLParser#orderBy}.
+	 * @param ctx the parse tree
+	 */
+	void exitOrderBy(ZQLParser.OrderByContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link ZQLParser#limit}.
+	 * @param ctx the parse tree
+	 */
+	void enterLimit(ZQLParser.LimitContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ZQLParser#limit}.
+	 * @param ctx the parse tree
+	 */
+	void exitLimit(ZQLParser.LimitContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link ZQLParser#offset}.
+	 * @param ctx the parse tree
+	 */
+	void enterOffset(ZQLParser.OffsetContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ZQLParser#offset}.
+	 * @param ctx the parse tree
+	 */
+	void exitOffset(ZQLParser.OffsetContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link ZQLParser#restrictByExpr}.
+	 * @param ctx the parse tree
+	 */
+	void enterRestrictByExpr(ZQLParser.RestrictByExprContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ZQLParser#restrictByExpr}.
+	 * @param ctx the parse tree
+	 */
+	void exitRestrictByExpr(ZQLParser.RestrictByExprContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link ZQLParser#restrictBy}.
+	 * @param ctx the parse tree
+	 */
+	void enterRestrictBy(ZQLParser.RestrictByContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ZQLParser#restrictBy}.
+	 * @param ctx the parse tree
+	 */
+	void exitRestrictBy(ZQLParser.RestrictByContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link ZQLParser#returnWithExpr}.
+	 * @param ctx the parse tree
+	 */
+	void enterReturnWithExpr(ZQLParser.ReturnWithExprContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ZQLParser#returnWithExpr}.
+	 * @param ctx the parse tree
+	 */
+	void exitReturnWithExpr(ZQLParser.ReturnWithExprContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link ZQLParser#returnWith}.
+	 * @param ctx the parse tree
+	 */
+	void enterReturnWith(ZQLParser.ReturnWithContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ZQLParser#returnWith}.
+	 * @param ctx the parse tree
+	 */
+	void exitReturnWith(ZQLParser.ReturnWithContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link ZQLParser#query}.
 	 * @param ctx the parse tree

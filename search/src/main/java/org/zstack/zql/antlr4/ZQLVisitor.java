@@ -49,23 +49,80 @@ public interface ZQLVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitLogicalOperator(ZQLParser.LogicalOperatorContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link ZQLParser#condition}.
+	 * Visit a parse tree produced by {@link ZQLParser#expr}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitCondition(ZQLParser.ConditionContext ctx);
+	T visitExpr(ZQLParser.ExprContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link ZQLParser#conditions}.
+	 * Visit a parse tree produced by the {@code nestCondition}
+	 * labeled alternative in {@link ZQLParser#condition}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitConditions(ZQLParser.ConditionsContext ctx);
+	T visitNestCondition(ZQLParser.NestConditionContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code simpleCondition}
+	 * labeled alternative in {@link ZQLParser#condition}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitSimpleCondition(ZQLParser.SimpleConditionContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code parenthesisCondition}
+	 * labeled alternative in {@link ZQLParser#condition}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitParenthesisCondition(ZQLParser.ParenthesisConditionContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link ZQLParser#queryTarget}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	T visitQueryTarget(ZQLParser.QueryTargetContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ZQLParser#orderBy}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitOrderBy(ZQLParser.OrderByContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ZQLParser#limit}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitLimit(ZQLParser.LimitContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ZQLParser#offset}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitOffset(ZQLParser.OffsetContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ZQLParser#restrictByExpr}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitRestrictByExpr(ZQLParser.RestrictByExprContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ZQLParser#restrictBy}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitRestrictBy(ZQLParser.RestrictByContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ZQLParser#returnWithExpr}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitReturnWithExpr(ZQLParser.ReturnWithExprContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ZQLParser#returnWith}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitReturnWith(ZQLParser.ReturnWithContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link ZQLParser#query}.
 	 * @param ctx the parse tree
