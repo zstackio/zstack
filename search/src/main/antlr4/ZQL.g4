@@ -100,9 +100,24 @@ subQuery
     : QUERY subQueryTarget (WHERE condition+)?
     ;
 
-query
-    : QUERY queryTarget (WHERE condition+)? restrictBy? returnWith? orderBy? limit? offset?
+
+filterByExprBlock
+    : '{' (~'}' | filterByExprBlock)* '}'
     ;
+
+filterByExpr
+    : ID filterByExprBlock
+    ;
+
+filterBy
+    : FILTER_BY filterByExpr (',' filterByExpr)*
+    ;
+
+query
+    : QUERY queryTarget (WHERE condition+)? restrictBy? returnWith? orderBy? limit? offset? filterBy?
+    ;
+
+FILTER_BY: 'filter by';
 
 OFFSET: 'offset';
 

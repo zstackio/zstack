@@ -118,6 +118,7 @@ public class TestString {
         public List<Condition> conditions;
         public RestrictBy restrictBy;
         public ReturnWith returnWith;
+        public FilterBy filterBy;
         public OrderBy orderBy;
         public Limit limit;
         public Offset offset;
@@ -131,6 +132,15 @@ public class TestString {
     static class SubQuery extends ASTNode {
         public SubQueryTarget target;
         public List<Condition> conditions;
+    }
+
+    static class FilterByExpr extends ASTNode {
+        public String filterName;
+        public String content;
+    }
+
+    static class FilterBy extends ASTNode {
+        public List<FilterByExpr> exprs;
     }
 
     public class CaseChangingCharStream implements CharStream {
@@ -401,12 +411,34 @@ public class TestString {
         }
     }
 
+    class FilterByExprVisitor extends ZQLBaseVisitor<FilterByExpr> {
+        @Override
+        public FilterByExpr visitFilterByExpr(ZQLParser.FilterByExprContext ctx) {
+            FilterByExpr expr = new FilterByExpr();
+            expr.filterName = ctx.ID().getText();
+            expr.content = ctx.filterByExprBlock().getText();
+            return expr;
+        }
+    }
+
+    class FilterByVisitor extends ZQLBaseVisitor<FilterBy> {
+        @Override
+        public FilterBy visitFilterBy(ZQLParser.FilterByContext ctx) {
+            FilterBy by = new FilterBy();
+            by.exprs = ctx.filterByExpr().stream().map(f->f.accept(new FilterByExprVisitor())).collect(Collectors.toList());
+            return by;
+        }
+    }
+
     class QueryVisitor extends ZQLBaseVisitor<Query> {
         @Override
         public Query visitQuery(ZQLParser.QueryContext ctx) {
             Query q = new Query();
             q.target = ctx.queryTarget().accept(new QueryTargetVisitor());
             q.conditions = ctx.condition().stream().map(c->c.accept(new ConditionVisitor())).collect(Collectors.toList());
+            if (ctx.filterBy() != null) {
+                q.filterBy = ctx.filterBy().accept(new FilterByVisitor());
+            }
             if (ctx.returnWith() != null) {
                 q.returnWith = ctx.returnWith().accept(new ReturnWithVisitor());
             }
@@ -434,7 +466,8 @@ public class TestString {
                 "(query volume.uuid where uuid not in (\"a5576d5e57a7443894eeb078702023fd\", \"36239a01763d4b4f8ad7cfdd0dc26f5f\"))) " +
                 "restrict by (zone.uuid = \"8b78f4d7367c41dd86ebdd59052af8b9\", image.size > 100) " +
                 "return with (count, metric.CPUIdleUtilization) " +
-                "order by uuid desc limit 10 offset 10000 ";
+                "order by uuid desc limit 10 offset 10000 " +
+                "filter by zwatch{vm.CPUNum > 0 during 5m and vm.memory > 100 and {{}}}, example{func(_,100,\"text\")}";
         //String text = "query vm.vmNics.id where (uuid = 23 and name = \"hello\") or description not null and nic.id = 523.2";
         //String text = "query vm.vmNics.id where uuid = 23 and name = \"hello\" and description not null and nic.id = 523.2";
 

@@ -240,6 +240,36 @@ public interface ZQLListener extends ParseTreeListener {
 	 */
 	void exitSubQuery(ZQLParser.SubQueryContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link ZQLParser#filterByExprBlock}.
+	 * @param ctx the parse tree
+	 */
+	void enterFilterByExprBlock(ZQLParser.FilterByExprBlockContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ZQLParser#filterByExprBlock}.
+	 * @param ctx the parse tree
+	 */
+	void exitFilterByExprBlock(ZQLParser.FilterByExprBlockContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link ZQLParser#filterByExpr}.
+	 * @param ctx the parse tree
+	 */
+	void enterFilterByExpr(ZQLParser.FilterByExprContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ZQLParser#filterByExpr}.
+	 * @param ctx the parse tree
+	 */
+	void exitFilterByExpr(ZQLParser.FilterByExprContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link ZQLParser#filterBy}.
+	 * @param ctx the parse tree
+	 */
+	void enterFilterBy(ZQLParser.FilterByContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ZQLParser#filterBy}.
+	 * @param ctx the parse tree
+	 */
+	void exitFilterBy(ZQLParser.FilterByContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link ZQLParser#query}.
 	 * @param ctx the parse tree
 	 */

@@ -150,6 +150,24 @@ public interface ZQLVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitSubQuery(ZQLParser.SubQueryContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link ZQLParser#filterByExprBlock}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitFilterByExprBlock(ZQLParser.FilterByExprBlockContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ZQLParser#filterByExpr}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitFilterByExpr(ZQLParser.FilterByExprContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ZQLParser#filterBy}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitFilterBy(ZQLParser.FilterByContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link ZQLParser#query}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
