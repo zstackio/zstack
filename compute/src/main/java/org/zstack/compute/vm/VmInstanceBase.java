@@ -70,12 +70,10 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
-import javax.print.attribute.standard.MediaSize;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
-import static java.util.stream.Collectors.toMap;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.*;
@@ -2527,6 +2525,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             creator.recreate = true;
             creator.setTagByTokens(map(e(VmSystemTags.CDROM_BOOT_ONCE_TOKEN, String.valueOf(true))));
             creator.create();
+        } else {
+            VmSystemTags.CDROM_BOOT_ONCE.deleteInherentTag(self.getUuid());
         }
         evt.setInventory(getSelfInventory());
         bus.publish(evt);
