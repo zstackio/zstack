@@ -55,6 +55,8 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.LockModeType;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
+import javax.persistence.metamodel.SingularAttribute;
+
 import java.util.*;
 import java.util.concurrent.Callable;
 
@@ -788,10 +790,17 @@ public class LocalStorageBase extends PrimaryStorageBase {
             long totalPhy = 0;
 
             if (ref == null) {
-                logger.error(errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND,
-                        String.format("local primary storage[uuid:%s] doesn't have the host[uuid:%s]",
-                                self.getUuid(), msg.getHostUuid())).toString());
-            }else {
+                HostStatus status = Q.New(HostVO.class).select(HostVO_.status)
+                        .eq(HostVO_.uuid, msg.getHostUuid()).findValue();
+                if (status == HostStatus.Connected) {
+                    reply.setError(errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND,
+                            String.format(
+                                    "local primary storage[uuid:%s] doesn't have the host[uuid:%s]",
+                                    self.getUuid(), msg.getHostUuid())));
+                    bus.reply(msg, reply);
+                    return;
+                }
+            } else {
                 total = ref.getTotalCapacity();
                 available = ref.getAvailableCapacity();
                 availablePhy = ref.getAvailablePhysicalCapacity();
