@@ -21,6 +21,9 @@ public class KVMSystemTags {
     public static final String HVM_CPU_FLAG_TOKEN = "flag";
     public static PatternedSystemTag HVM_CPU_FLAG = new PatternedSystemTag(String.format("hvm::{%s}", HVM_CPU_FLAG_TOKEN), HostVO.class);
 
+    public static final String CPU_MODEL_NAME_TOKEN = "name";
+    public static PatternedSystemTag CPU_MODEL_NAME = new PatternedSystemTag(String.format("cpuModelName::{%s}", CPU_MODEL_NAME_TOKEN), HostVO.class);
+
     public static SystemTag VIRTIO_SCSI = new SystemTag("capability:virtio-scsi", HostVO.class);
 
     public static final String L2_BRIDGE_NAME_TOKEN = "name";

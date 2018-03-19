@@ -3,6 +3,7 @@ package org.zstack.test.integration.kvm.host
 import org.zstack.core.Platform
 import org.zstack.core.db.Q
 import org.zstack.header.host.HostVO
+import org.zstack.kvm.KVMGlobalConfig
 import org.zstack.kvm.KVMSystemTags
 import org.zstack.sdk.AddKVMHostAction
 import org.zstack.sdk.ClusterInventory
@@ -14,8 +15,9 @@ import org.zstack.testlib.SubCase
 import static org.zstack.utils.CollectionDSL.e
 import static org.zstack.utils.CollectionDSL.map
 
-class AddHostCheckQemuLibvirtCase extends SubCase {
+class AddHostCheckQemuLibvirtCPUModelCase extends SubCase {
     EnvSpec env
+    def cpuModelName = "Intel(R) Xeon(R) CPU E5-2630 v4 @ 2.20GHz"
 
     @Override
     void clean() {
@@ -45,7 +47,8 @@ class AddHostCheckQemuLibvirtCase extends SubCase {
                         password = "password"
                         systemTags = [
                                 KVMSystemTags.QEMU_IMG_VERSION.instantiateTag(map(e(KVMSystemTags.QEMU_IMG_VERSION_TOKEN, "2.6.0"))),
-                                KVMSystemTags.LIBVIRT_VERSION.instantiateTag(map(e(KVMSystemTags.LIBVIRT_VERSION_TOKEN, "1.3.3")))
+                                KVMSystemTags.LIBVIRT_VERSION.instantiateTag(map(e(KVMSystemTags.LIBVIRT_VERSION_TOKEN, "1.3.3"))),
+                                KVMSystemTags.CPU_MODEL_NAME.instantiateTag(map(e(KVMSystemTags.CPU_MODEL_NAME_TOKEN, cpuModelName)))
                         ]
                     }
 
@@ -56,7 +59,8 @@ class AddHostCheckQemuLibvirtCase extends SubCase {
                         password = "password"
                         systemTags = [
                                 KVMSystemTags.QEMU_IMG_VERSION.instantiateTag(map(e(KVMSystemTags.QEMU_IMG_VERSION_TOKEN, "2.6.0"))),
-                                KVMSystemTags.LIBVIRT_VERSION.instantiateTag(map(e(KVMSystemTags.LIBVIRT_VERSION_TOKEN, "1.3.3")))
+                                KVMSystemTags.LIBVIRT_VERSION.instantiateTag(map(e(KVMSystemTags.LIBVIRT_VERSION_TOKEN, "1.3.3"))),
+                                KVMSystemTags.CPU_MODEL_NAME.instantiateTag(map(e(KVMSystemTags.CPU_MODEL_NAME_TOKEN, cpuModelName)))
                         ]
                     }
                 }
@@ -69,6 +73,7 @@ class AddHostCheckQemuLibvirtCase extends SubCase {
         env.create {
             testAddHostWithDifferentQemuVerion()
             testAddHostWithSameQemuVerion()
+            testAddHostCpuModelName()
         }
     }
 
@@ -114,5 +119,70 @@ class AddHostCheckQemuLibvirtCase extends SubCase {
             sessionId = adminSession()
             uuid = host.uuid
         }
+    }
+
+    void testAddHostCpuModelName() {
+        ClusterInventory cluster = env.inventoryByName("cluster-1") as ClusterInventory
+
+        updateGlobalConfig {
+            category = KVMGlobalConfig.CATEGORY
+            name = "checkHostCpuModelName"
+            value = true
+        }
+
+        AddKVMHostAction action = new AddKVMHostAction()
+        action.resourceUuid = Platform.getUuid()
+        action.sessionId = adminSession()
+        action.clusterUuid = cluster.uuid
+        action.name = "kvm13"
+        action.managementIp = "127.0.0.14"
+        action.username = "root"
+        action.password = "password"
+        action.systemTags = [
+                KVMSystemTags.QEMU_IMG_VERSION.instantiateTag(map(e(KVMSystemTags.QEMU_IMG_VERSION_TOKEN, "2.9.0"))),
+                KVMSystemTags.LIBVIRT_VERSION.instantiateTag(map(e(KVMSystemTags.LIBVIRT_VERSION_TOKEN, "1.3.3"))),
+                KVMSystemTags.CPU_MODEL_NAME.instantiateTag(map(e(KVMSystemTags.CPU_MODEL_NAME_TOKEN, "Intel(R)")))
+        ]
+        def res = action.call()
+        assert res.error != null
+
+
+        action = new AddKVMHostAction()
+        action.resourceUuid = Platform.getUuid()
+        action.sessionId = adminSession()
+        action.clusterUuid = cluster.uuid
+        action.name = "kvm13"
+        action.managementIp = "127.0.0.14"
+        action.username = "root"
+        action.password = "password"
+        action.systemTags = [
+                KVMSystemTags.QEMU_IMG_VERSION.instantiateTag(map(e(KVMSystemTags.QEMU_IMG_VERSION_TOKEN, "2.6.0"))),
+                KVMSystemTags.LIBVIRT_VERSION.instantiateTag(map(e(KVMSystemTags.LIBVIRT_VERSION_TOKEN, "1.3.3"))),
+                KVMSystemTags.CPU_MODEL_NAME.instantiateTag(map(e(KVMSystemTags.CPU_MODEL_NAME_TOKEN, cpuModelName)))
+        ]
+        res = action.call()
+        assert res.error == null
+
+        updateGlobalConfig {
+            category = KVMGlobalConfig.CATEGORY
+            name = "checkHostCpuModelName"
+            value = false
+        }
+
+        action = new AddKVMHostAction()
+        action.resourceUuid = Platform.getUuid()
+        action.sessionId = adminSession()
+        action.clusterUuid = cluster.uuid
+        action.name = "kvm13"
+        action.managementIp = "127.0.0.15"
+        action.username = "root"
+        action.password = "password"
+        action.systemTags = [
+                KVMSystemTags.QEMU_IMG_VERSION.instantiateTag(map(e(KVMSystemTags.QEMU_IMG_VERSION_TOKEN, "2.6.0"))),
+                KVMSystemTags.LIBVIRT_VERSION.instantiateTag(map(e(KVMSystemTags.LIBVIRT_VERSION_TOKEN, "1.3.3"))),
+                KVMSystemTags.CPU_MODEL_NAME.instantiateTag(map(e(KVMSystemTags.CPU_MODEL_NAME_TOKEN, "test cpu name")))
+        ]
+        res = action.call()
+        assert res.error == null
     }
 }
