@@ -165,6 +165,7 @@ public class HostSortorChain implements HostSortorStrategy {
         } else {
             try {
                 List<HostInventory> selectedHosts = new ArrayList<>();
+                List<ErrorCode> errs = new ArrayList<>();
                 new While<>(hosts).each((h, wcmpl) -> {
                     reserveHost(h, new Completion(wcmpl) {
                         @Override
@@ -176,6 +177,7 @@ public class HostSortorChain implements HostSortorStrategy {
 
                         @Override
                         public void fail(ErrorCode errorCode) {
+                            errs.add(errorCode);
                             wcmpl.done();
                         }
                     });
@@ -185,8 +187,8 @@ public class HostSortorChain implements HostSortorStrategy {
                         if (!selectedHosts.isEmpty()) {
                             completion.success(selectedHosts.get(0));
                         } else {
-                            completion.fail(Platform.err(HostAllocatorError.NO_AVAILABLE_HOST,
-                                    "reservation on cpu/memory failed on all candidates host"));
+                            /* return the error of last host */
+                            completion.fail(errs.get(errs.size() - 1));
                         }
                     }
                 });
