@@ -25,6 +25,7 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.AsyncLatch;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -79,6 +80,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.core.progress.ProgressReportService.getTaskStage;
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.header.Constants.THREAD_CONTEXT_API;
 import static org.zstack.header.Constants.THREAD_CONTEXT_TASK_NAME;
@@ -1474,6 +1476,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             }
         }
 
+        final TaskProgressRange parentStage = getTaskStage();
 
         List<ImageBackupStorageRefVO> refs = new ArrayList<>();
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
@@ -1744,6 +1747,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 done(new FlowDoneHandler(msgData.getNeedReplyMessage()) {
                     @Override
                     public void handle(Map data) {
+                        reportProgress(parentStage.getEnd().toString());
                         InnerEvent innerEvent = new InnerEvent();
                         innerEvent.inv = ImageInventory.valueOf(image);
                         innerEvent.reply(evt);
