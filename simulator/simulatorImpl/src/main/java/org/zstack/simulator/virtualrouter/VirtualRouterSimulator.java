@@ -431,6 +431,24 @@ public class VirtualRouterSimulator {
         return null;
     }
 
+    @AsyncThread
+    private void doConfigureNicFirewallDefaultAction(HttpEntity<String> entity) {
+        ConfigureNicFirewallDefaultActionCmd cmd = JSONObjectUtil.toObject(entity.getBody(), ConfigureNicFirewallDefaultActionCmd.class);
+        ConfigureNicFirewallDefaultActionRsp rsp = new ConfigureNicFirewallDefaultActionRsp();
+
+        logger.debug(String.format("successfully configured nics: %s firewall default action", JSONObjectUtil.toJsonString(cmd.getNics())));
+        replyer.reply(entity, rsp);
+        return;
+    }
+
+    @RequestMapping(value = VirtualRouterConstant.VR_CONFIGURE_NIC_FIREWALL_DEFAULT_ACTION_PATH, method = RequestMethod.POST)
+    private @ResponseBody
+    String configureNicFirewallDefaultAction(HttpServletRequest req) {
+        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
+        doConfigureNicFirewallDefaultAction(entity);
+        return null;
+    }
+
     @RequestMapping(value = VirtualRouterConstant.VR_REMOVE_DHCP_PATH, method = RequestMethod.POST)
     private @ResponseBody
     String removeDchpEntry(HttpServletRequest req) {

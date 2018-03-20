@@ -17,6 +17,7 @@
             <list>
                 <value>org.zstack.network.service.virtualrouter.lifecycle.VirtualRouterAssembleDecoratorFlow</value>
                 <value>org.zstack.network.service.virtualrouter.vyos.VyosConnectFlow</value>
+                <value>org.zstack.network.service.virtualrouter.vyos.VyosChangePrivateL3FirewallDefaultActionFlow</value>
                 <value>org.zstack.network.service.virtualrouter.vip.VirtualRouterCreateVipForPublicIpFlow</value>
                 <value>org.zstack.network.service.virtualrouter.dns.VirtualRouterSyncDnsOnStartFlow</value>
                 <value>org.zstack.network.service.virtualrouter.dhcp.VirtualRouterSyncDHCPOnStartFlow</value>
@@ -33,6 +34,7 @@
             <list>
                 <value>org.zstack.network.service.virtualrouter.lifecycle.VirtualRouterAssembleDecoratorFlow</value>
                 <value>org.zstack.network.service.virtualrouter.vyos.VyosConnectFlow</value>
+                <value>org.zstack.network.service.virtualrouter.vyos.VyosChangePrivateL3FirewallDefaultActionFlow</value>
                 <value>org.zstack.network.service.virtualrouter.dns.VirtualRouterSyncDnsOnStartFlow</value>
                 <value>org.zstack.network.service.virtualrouter.dhcp.VirtualRouterSyncDHCPOnStartFlow</value>
                 <value>org.zstack.network.service.virtualrouter.nat.VirtualRouterSyncSNATOnStartFlow</value>
@@ -47,6 +49,7 @@
             <list>
                 <value>org.zstack.network.service.virtualrouter.lifecycle.VirtualRouterAssembleDecoratorFlow</value>
                 <value>org.zstack.network.service.virtualrouter.vyos.VyosConnectFlow</value>
+                <value>org.zstack.network.service.virtualrouter.vyos.VyosChangePrivateL3FirewallDefaultActionFlow</value>
                 <value>org.zstack.network.service.virtualrouter.dns.VirtualRouterSyncDnsOnStartFlow</value>
                 <value>org.zstack.network.service.virtualrouter.dhcp.VirtualRouterSyncDHCPOnStartFlow</value>
                 <value>org.zstack.network.service.virtualrouter.nat.VirtualRouterSyncSNATOnStartFlow</value>
@@ -72,6 +75,7 @@
             <list>
                 <value>org.zstack.network.service.virtualrouter.vyos.VyosDeployAgentFlow</value>
                 <value>org.zstack.network.service.virtualrouter.vyos.VyosConnectFlow</value>
+                <value>org.zstack.network.service.virtualrouter.vyos.VyosChangePrivateL3FirewallDefaultActionFlow</value>
                 <value>org.zstack.network.service.virtualrouter.dns.VirtualRouterSyncDnsOnStartFlow</value>
                 <value>org.zstack.network.service.virtualrouter.dhcp.VirtualRouterSyncDHCPOnStartFlow</value>
                 <value>org.zstack.network.service.virtualrouter.nat.VirtualRouterSyncSNATOnStartFlow</value>
@@ -159,4 +163,11 @@
             <zstack:extension interface="org.zstack.network.service.vip.VipFactory" />
         </zstack:plugin>
     </bean>
+
+    <bean id="VyosChangePrivateL3FirewallDefaultActionExtensionPoint" class="org.zstack.network.service.virtualrouter.vyos.VyosChangePrivateL3FirewallDefaultActionExtensionPoint">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
 </beans>
