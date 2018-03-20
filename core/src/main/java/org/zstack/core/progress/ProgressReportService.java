@@ -27,18 +27,18 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.math.BigInteger;
-import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.max;
+import static java.util.Collections.min;
 import static org.codehaus.groovy.runtime.InvokerHelper.asList;
 
 import static org.zstack.core.Platform.toI18nString;
 
 import javax.persistence.Query;
-import javax.persistence.TypedQuery;
 
 
 /**
@@ -422,5 +422,30 @@ public class ProgressReportService extends AbstractService implements Management
 
         logger.debug(String.format("report progress is : %s", fmt));
         taskProgress(TaskType.Progress, fmt);
+    }
+
+    public static TaskProgressRange markTaskStage(TaskProgressRange exactStage) {
+        return markTaskStage(null, exactStage);
+    }
+
+
+    public static TaskProgressRange markTaskStage(TaskProgressRange parentStage, TaskProgressRange subStage) {
+        TaskProgressRange exactStage = parentStage != null ? transformSubStage(parentStage, subStage) : subStage;
+        ThreadContext.put(Constants.THREAD_CONTEXT_TASK_STAGE, exactStage.toString());
+        return exactStage;
+    }
+
+    public static TaskProgressRange getTaskStage(){
+        String stage = ThreadContext.get(Constants.THREAD_CONTEXT_TASK_STAGE) != null ?
+                ThreadContext.get(Constants.THREAD_CONTEXT_TASK_STAGE) : "0-100";
+        return TaskProgressRange.valueOf(stage);
+    }
+
+
+    private static TaskProgressRange transformSubStage(TaskProgressRange parentStage, TaskProgressRange subStage){
+        float ratio = (float)(parentStage.getEnd() - parentStage.getStart())/100;
+        int exactStart = (int)(subStage.getStart() * ratio + parentStage.getStart());
+        int exactEnd = (int)(subStage.getEnd() * ratio + parentStage.getStart());
+        return new TaskProgressRange(exactStart, exactEnd);
     }
 }
