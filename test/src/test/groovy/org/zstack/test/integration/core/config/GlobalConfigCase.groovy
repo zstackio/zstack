@@ -1,9 +1,11 @@
 package org.zstack.test.integration.core.config
 
+import org.zstack.compute.host.HostGlobalConfig
 import org.zstack.core.config.GlobalConfigFacadeImpl
 import org.zstack.core.config.GlobalConfigVO
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.kvm.KVMGlobalConfig
+import org.zstack.sdk.GlobalConfigInventory
 import org.zstack.sdk.UpdateGlobalConfigAction
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
@@ -41,6 +43,7 @@ class GlobalConfigCase extends SubCase {
             testUpdateIntegerConfigWithFloatValue()
             testFloatPointNumberTolerance()
             testBooleanValidator()
+            testBorderValue()
         }
     }
 
@@ -89,6 +92,26 @@ class GlobalConfigCase extends SubCase {
         action.sessionId = adminSession()
         UpdateGlobalConfigAction.Result result = action.call()
         assert result.error != null
+    }
+
+    void testBorderValue() {
+        def action1 = new UpdateGlobalConfigAction() as UpdateGlobalConfigAction
+        action1.category = GlobalConfigForTest.CATEGORY
+        action1.name = GlobalConfigForTest.TEST_GLOBALCONFIG_BORDER.name
+        action1.value = 0
+        action1.sessionId = adminSession()
+        UpdateGlobalConfigAction.Result result1 = action1.call()
+
+        assert result1.error == null
+
+        def action2 = new UpdateGlobalConfigAction() as UpdateGlobalConfigAction
+        action2.category = GlobalConfigForTest.CATEGORY
+        action2.name = GlobalConfigForTest.TEST_GLOBALCONFIG_BORDER.name
+        action2.value = 100
+        action2.sessionId = adminSession()
+        UpdateGlobalConfigAction.Result result2 = action2.call()
+
+        assert result2.error == null
     }
 
 }

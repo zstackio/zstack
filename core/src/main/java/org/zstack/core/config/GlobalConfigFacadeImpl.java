@@ -489,7 +489,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                                 try {
                                     long num = Long.valueOf(value);
                                     if (num > at.numberLessThan()) {
-                                        throw new GlobalConfigException(String.format("%s must be less than %s, but got %s",
+                                        throw new GlobalConfigException(String.format("%s should not greater than %s, but got %s",
                                                 config.getCanonicalName(), at.numberLessThan(), num));
                                     }
                                 } catch (NumberFormatException e) {
@@ -506,7 +506,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                                 try {
                                     long num = Long.valueOf(value);
                                     if (num < at.numberGreaterThan()) {
-                                        throw new GlobalConfigException(String.format("%s must be greater than %s, but got %s",
+                                        throw new GlobalConfigException(String.format("%s should not less than %s, but got %s",
                                                 config.getCanonicalName(), at.numberGreaterThan(), num));
                                     }
                                 } catch (NumberFormatException e) {
