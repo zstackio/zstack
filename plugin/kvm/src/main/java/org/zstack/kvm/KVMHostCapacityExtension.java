@@ -51,7 +51,7 @@ public class KVMHostCapacityExtension implements KVMHostConnectExtensionPoint, H
                 }
 
                 if (rsp.getTotalMemory() < SizeUtils.sizeStringToBytes(KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.value())) {
-                    throw new UnableToReserveHostCapacityException(String.format("The host[uuid:%s]'s memory capacity[%s] is lower than the minimal required capacity[%s]",
+                    throw new OperationFailureException(operr("The host[uuid:%s]'s available memory capacity[%s] is lower than the reserved capacity[%s]",
                         host.getUuid(), rsp.getTotalMemory(), SizeUtils.sizeStringToBytes(KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.value())));
                 }
 
