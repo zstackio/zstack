@@ -1,8 +1,12 @@
 package org.zstack.core.timeout;
 
+import org.apache.logging.log4j.ThreadContext;
 import org.reflections.Reflections;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
+import org.zstack.header.Constants;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.longjob.LongJobFor;
 import org.zstack.utils.*;
 import org.zstack.utils.logging.CLogger;
 
@@ -17,6 +21,7 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager {
 
     private Map<Class, ApiTimeout> apiTimeouts = new HashMap<Class, ApiTimeout>();
     private Map<Class, Long> timeouts = new HashMap<Class, Long>();
+    private List<String> longJobClasses = new ArrayList<String>();
 
     class Value {
         private String valueString;
@@ -57,9 +62,17 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager {
             collectTimeout();
             collectTimeoutForDerivedApi();
             flatTimeout();
+            collectLongJobs();
         } catch (RuntimeException e) {
             new BootErrorLog().write(e.getMessage());
             throw e;
+        }
+    }
+
+    private void collectLongJobs() {
+        List<Class> subs = BeanUtils.scanClass("org.zstack", LongJobFor.class);
+        for (Class sub : subs) {
+            longJobClasses.add(sub.toString());
         }
     }
 
@@ -156,6 +169,11 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager {
 
     @Override
     public Long getTimeout(Class clz) {
+        String type = ThreadContext.get(Constants.THREAD_CONTEXT_TASK_NAME);
+        if (type != null && longJobClasses.contains(type)) {
+            return parseTimeout(CoreGlobalProperty.LONG_JOB_TIMEOUT);
+        }
+
         return timeouts.get(clz);
     }
 
