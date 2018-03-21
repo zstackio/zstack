@@ -16,7 +16,7 @@ public class SecurityGroupGlobalConfig {
     public static GlobalConfig FAILURE_HOST_EACH_TIME_TO_TAKE = new GlobalConfig(CATEGORY, "host.failureResolvePerTime");
     @GlobalConfigValidation(numberGreaterThan = -1)
     public static GlobalConfig DELAY_REFRESH_INTERVAL = new GlobalConfig(CATEGORY, "refresh.delayInterval");
-    @GlobalConfigValidation(validValues = {"accept", "deny"})
+    @GlobalConfigValidation(validValues = {"accept", "deny", "drop"})
     public static GlobalConfig INGRESS_RULE_DEFAULT_POLICY = new GlobalConfig(CATEGORY, "ingress.defaultPolicy");
     @GlobalConfigValidation(validValues = {"accept", "deny"})
     public static GlobalConfig EGRESS_RULE_DEFAULT_POLICY = new GlobalConfig(CATEGORY, "egress.defaultPolicy");
