@@ -2,6 +2,7 @@ package org.zstack.sdk.zwatch.alarm;
 
 import org.zstack.sdk.zwatch.ruleengine.ComparisonOperator;
 import org.zstack.sdk.zwatch.alarm.AlarmStatus;
+import org.zstack.sdk.zwatch.alarm.AlarmState;
 
 public class AlarmInventory  {
 
@@ -83,6 +84,14 @@ public class AlarmInventory  {
     }
     public AlarmStatus getStatus() {
         return this.status;
+    }
+
+    public AlarmState state;
+    public void setState(AlarmState state) {
+        this.state = state;
+    }
+    public AlarmState getState() {
+        return this.state;
     }
 
     public java.sql.Timestamp createDate;
