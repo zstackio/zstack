@@ -17,6 +17,8 @@ import org.zstack.core.db.SQLBatch;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.notification.N;
 import org.zstack.header.Component;
+import org.zstack.header.cluster.ClusterUpdateOSExtensionPoint;
+import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
@@ -30,7 +32,11 @@ import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.VolumeFormat;
+import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
 import org.zstack.kvm.KVMConstant;
@@ -46,19 +52,14 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
 import javax.persistence.TypedQuery;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Callable;
 
 import static org.zstack.core.Platform.operr;
-import static org.zstack.utils.CollectionDSL.e;
-import static org.zstack.utils.CollectionDSL.list;
-import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.CollectionDSL.*;
 
 public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, PrimaryStorageFactory, Component, CreateTemplateFromVolumeSnapshotExtensionPoint, RecalculatePrimaryStorageCapacityExtensionPoint,
-        PrimaryStorageDetachExtensionPoint, PrimaryStorageAttachExtensionPoint, HostDeleteExtensionPoint, PostMarkRootVolumeAsSnapshotExtension{
+        PrimaryStorageDetachExtensionPoint, PrimaryStorageAttachExtensionPoint, HostDeleteExtensionPoint, PostMarkRootVolumeAsSnapshotExtension, ClusterUpdateOSExtensionPoint {
     private static CLogger logger = Utils.getLogger(NfsPrimaryStorageFactory.class);
 
     @Autowired
@@ -668,5 +669,68 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
         msg.setPrimaryStorageUuid(psUuid);
         bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, psUuid);
         bus.send(msg);
+    }
+
+    @Override
+    public String preUpdateClusterOS(ClusterVO cls) {
+        // do not update hosts that also run nfs ps
+        List<String> matched = new ArrayList<>();
+
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                List<String> hostIps = q(HostVO.class)
+                        .select(HostVO_.managementIp)
+                        .eq(HostVO_.clusterUuid, cls.getUuid())
+                        .listValues();
+
+                for (String hostIp : hostIps) {
+                    String psUuid = q(PrimaryStorageVO.class)
+                            .select(PrimaryStorageVO_.uuid)
+                            .eq(PrimaryStorageVO_.type, NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE)
+                            .like(PrimaryStorageVO_.url, String.format("%s:/%%", hostIp))
+                            .limit(1)
+                            .findValue();
+                    if (psUuid == null || psUuid.equals("")) {
+                        continue;
+                    }
+
+                    // vm running on the nfs ps
+                    List<String> volumes = q(VolumeVO.class)
+                            .select(VolumeVO_.uuid)
+                            .eq(VolumeVO_.type, VolumeType.Root)
+                            .eq(VolumeVO_.primaryStorageUuid, psUuid)
+                            .listValues();
+                    if (volumes == null || volumes.isEmpty()) {
+                        continue;
+                    }
+
+                    boolean vmRunning = q(VmInstanceVO.class)
+                            .notEq(VmInstanceVO_.state, VmInstanceState.Stopped)
+                            .in(VmInstanceVO_.rootVolumeUuid, volumes)
+                            .isExists();
+                    if (vmRunning) {
+                        matched.add(hostIp);
+                    }
+                }
+            }
+        }.execute();
+
+        if (matched.isEmpty()) {
+            return null;
+        } else {
+            return String.format("nfs server running on hosts [%s], " +
+                    "stop releated vm instances before update host os.", String.join(",", matched));
+        }
+    }
+
+    @Override
+    public void beforeUpdateClusterOS(ClusterVO cls) {
+
+    }
+
+    @Override
+    public void afterUpdateClusterOS(ClusterVO cls) {
+
     }
 }

@@ -11,8 +11,6 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -103,6 +101,8 @@ public abstract class HostBase extends AbstractHost {
     protected abstract void changeStateHook(HostState current, HostStateEvent stateEvent, HostState next);
 
     protected abstract void connectHook(ConnectHostInfo info, Completion complete);
+
+    protected abstract void updateOsHook(Completion completion);
 
     protected HostBase(HostVO self) {
         this.self = self;
@@ -555,6 +555,8 @@ public abstract class HostBase extends AbstractHost {
             handle((ChangeHostConnectionStateMsg) msg);
         } else if (msg instanceof PingHostMsg) {
             handle((PingHostMsg) msg);
+        } else if (msg instanceof UpdateHostOSMsg) {
+            handle((UpdateHostOSMsg) msg);
         } else {
             HostBaseExtensionFactory ext = hostMgr.getHostBaseExtensionFactory(msg);
             if (ext != null) {
@@ -564,6 +566,45 @@ public abstract class HostBase extends AbstractHost {
                 bus.dealWithUnknownMessage(msg);
             }
         }
+    }
+
+    private void handle(UpdateHostOSMsg msg) {
+        UpdateHostOSReply reply = new UpdateHostOSReply();
+
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return "update-host-os-of-cluster-" + msg.getClusterUuid();
+            }
+
+            @Override
+            public int getSyncLevel() {
+                return HostGlobalConfig.HOST_UPDATE_OS_PARALLELISM_DEGREE.value(Integer.class);
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                updateOsHook(new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
+            }
+        });
     }
 
     private void handle(final PingHostMsg msg) {

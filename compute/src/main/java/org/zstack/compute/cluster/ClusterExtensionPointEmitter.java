@@ -1,16 +1,18 @@
 package org.zstack.compute.cluster;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.core.componentloader.PluginExtension;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.header.Component;
 import org.zstack.header.cluster.*;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.List;
+
+import static org.zstack.core.Platform.operr;
 
 class ClusterExtensionPointEmitter implements Component {
 	private static final CLogger logger = Utils.getLogger(ClusterExtensionPointEmitter.class);
@@ -20,8 +22,7 @@ class ClusterExtensionPointEmitter implements Component {
 
     private List<ClusterDeleteExtensionPoint> deleteExts;
     private List<ClusterChangeStateExtensionPoint> changeExts;
-
-
+    private List<ClusterUpdateOSExtensionPoint> updateOSExts;
 
 	void preDelete(ClusterInventory cinv) throws ClusterException {
 		for (ClusterDeleteExtensionPoint extp : deleteExts) {
@@ -70,7 +71,7 @@ class ClusterExtensionPointEmitter implements Component {
             }
         });
 	}
-	
+
 	void afterChange(ClusterVO vo, final ClusterStateEvent event, final ClusterState prevState) {
 		final ClusterInventory cinv = ClusterInventory.valueOf(vo);
         CollectionUtils.safeForEach(changeExts, new ForEachFunction<ClusterChangeStateExtensionPoint>() {
@@ -80,7 +81,7 @@ class ClusterExtensionPointEmitter implements Component {
             }
         });
 	}
-	
+
 	void beforeDelete(final ClusterInventory cinv) {
         CollectionUtils.safeForEach(deleteExts, new ForEachFunction<ClusterDeleteExtensionPoint>() {
             @Override
@@ -89,7 +90,7 @@ class ClusterExtensionPointEmitter implements Component {
             }
         });
 	}
-	
+
 	void afterDelete(final ClusterInventory cinv) {
         CollectionUtils.safeForEach(deleteExts, new ForEachFunction<ClusterDeleteExtensionPoint>() {
             @Override
@@ -99,9 +100,42 @@ class ClusterExtensionPointEmitter implements Component {
         });
 	}
 
+    ErrorCode preUpdateOS(final ClusterVO cls) {
+        if (updateOSExts == null || updateOSExts.isEmpty()) {
+            return null;
+        }
+
+        for (ClusterUpdateOSExtensionPoint ext : updateOSExts) {
+            String error = ext.preUpdateClusterOS(cls);
+            if (error != null) {
+                return operr(error);
+            }
+        }
+        return null;
+    }
+
+    void beforeUpdateOS(final ClusterVO cls) {
+        CollectionUtils.safeForEach(updateOSExts, new ForEachFunction<ClusterUpdateOSExtensionPoint>() {
+            @Override
+            public void run(ClusterUpdateOSExtensionPoint arg) {
+                arg.beforeUpdateClusterOS(cls);
+            }
+        });
+    }
+
+    void afterUpdateOS(final ClusterVO cls) {
+        CollectionUtils.safeForEach(updateOSExts, new ForEachFunction<ClusterUpdateOSExtensionPoint>() {
+            @Override
+            public void run(ClusterUpdateOSExtensionPoint arg) {
+                arg.afterUpdateClusterOS(cls);
+            }
+        });
+    }
+
     private void populateExtensions() {
         deleteExts = pluginRgty.getExtensionList(ClusterDeleteExtensionPoint.class);
         changeExts = pluginRgty.getExtensionList(ClusterChangeStateExtensionPoint.class);
+        updateOSExts = pluginRgty.getExtensionList(ClusterUpdateOSExtensionPoint.class);
     }
 
     @Override
