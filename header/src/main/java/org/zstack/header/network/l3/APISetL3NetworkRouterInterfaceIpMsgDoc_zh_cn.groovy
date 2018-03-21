@@ -7,7 +7,7 @@ doc {
 
     category "network.l3"
 
-    desc """在这里填写API描述"""
+    desc """设置三层网络上路由器接口地址，仅当会在普通三层网络上创建云路由器或在VPC网络上加载VPC路由器时有效"""
 
     rest {
         request {
@@ -29,7 +29,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "0.6"
+					since "2.2"
 					
 				}
 				column {
@@ -39,7 +39,7 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "0.6"
+					since "2.2"
 					
 				}
 				column {
@@ -49,7 +49,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "2.2"
 					
 				}
 				column {
@@ -59,7 +59,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "2.2"
 					
 				}
 			}
