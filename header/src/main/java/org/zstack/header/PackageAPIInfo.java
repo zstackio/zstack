@@ -9,4 +9,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface PackageAPIInfo {
     String APICategoryName() default "";
+    boolean communityAvailable() default true;
 }

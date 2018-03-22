@@ -1,13 +1,13 @@
 package org.zstack.sdk.zwatch.alarm;
 
-import org.zstack.sdk.zwatch.alarm.AlarmInventory;
+import org.zstack.sdk.zwatch.alarm.AlarmLabelInventory;
 
 public class AddLabelToAlarmResult {
-    public AlarmInventory inventory;
-    public void setInventory(AlarmInventory inventory) {
+    public AlarmLabelInventory inventory;
+    public void setInventory(AlarmLabelInventory inventory) {
         this.inventory = inventory;
     }
-    public AlarmInventory getInventory() {
+    public AlarmLabelInventory getInventory() {
         return this.inventory;
     }
 

@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class SubscribeEventAction extends AbstractAction {
+public class RemoveActionFromEventSubscriptionAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class SubscribeEventAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.zwatch.alarm.SubscribeEventResult value;
+        public org.zstack.sdk.zwatch.alarm.RemoveActionFromEventSubscriptionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,19 +26,10 @@ public class SubscribeEventAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String namespace;
+    public java.lang.String subscriptionUuid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String eventName;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List actions;
-
-    @Param(required = false)
-    public java.util.List labels;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
+    public java.lang.String actionUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -63,8 +54,8 @@ public class SubscribeEventAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.zwatch.alarm.SubscribeEventResult value = res.getResult(org.zstack.sdk.zwatch.alarm.SubscribeEventResult.class);
-        ret.value = value == null ? new org.zstack.sdk.zwatch.alarm.SubscribeEventResult() : value; 
+        org.zstack.sdk.zwatch.alarm.RemoveActionFromEventSubscriptionResult value = res.getResult(org.zstack.sdk.zwatch.alarm.RemoveActionFromEventSubscriptionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.zwatch.alarm.RemoveActionFromEventSubscriptionResult() : value; 
 
         return ret;
     }
@@ -93,11 +84,11 @@ public class SubscribeEventAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/zwatch/events/subscriptions";
+        info.httpMethod = "DELETE";
+        info.path = "/zwatch/events/subscriptions/{subscriptionUuid}/actions/{actionUuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 
