@@ -238,9 +238,9 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             String reason = System.getProperty(Platform.EXIT_REASON);
             if (reason != null) {
-                logger.debug("JVM shutdown hook is called, start stopping management node");
-            } else {
                 logger.debug(String.format("JVM shutdown hook is called[reason: %s], start stopping management node", reason));
+            } else {
+                logger.debug("JVM shutdown hook is called, start stopping management node");
             }
 
             stop();
