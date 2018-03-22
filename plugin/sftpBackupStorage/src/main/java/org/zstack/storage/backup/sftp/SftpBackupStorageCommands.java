@@ -138,6 +138,7 @@ public class SftpBackupStorageCommands {
         public String md5Sum;
         public long size;
         public long actualSize;
+        public String format;
 
         public long getActualSize() {
             return actualSize;
@@ -158,6 +159,14 @@ public class SftpBackupStorageCommands {
         }
         public void setSize(long size) {
             this.size = size;
+        }
+
+        public String getFormat() {
+            return format;
+        }
+
+        public void setFormat(String format) {
+            this.format = format;
         }
     }
 
