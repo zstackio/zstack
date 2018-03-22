@@ -63,6 +63,7 @@ public class VirtualRouterCommands {
 		private String physicalInterface;
 		private String l2type;
 		private Integer vni;
+		private String firewallDefaultAction;
 		
 		public String getIp() {
 			return ip;
@@ -126,6 +127,14 @@ public class VirtualRouterCommands {
 		public void setPhysicalInterface(String physicalInterface) {
 			this.physicalInterface = physicalInterface;
 		}
+
+		public String getFirewallDefaultAction() {
+			return firewallDefaultAction;
+		}
+
+		public void setFirewallDefaultAction(String firewallDefaultAction) {
+			this.firewallDefaultAction = firewallDefaultAction;
+		}
 	}
 	
 	public static class ConfigureNicCmd extends AgentCommand {
@@ -141,6 +150,21 @@ public class VirtualRouterCommands {
 	}
 	
 	public static class ConfigureNicRsp extends AgentResponse {
+	}
+
+	public static class ConfigureNicFirewallDefaultActionCmd extends AgentCommand {
+		private List<NicInfo> nics;
+
+		public List<NicInfo> getNics() {
+			return nics;
+		}
+
+		public void setNics(List<NicInfo> nics) {
+			this.nics = nics;
+		}
+	}
+
+	public static class ConfigureNicFirewallDefaultActionRsp extends AgentResponse {
 	}
 
 	public static class RemoveNicCmd extends AgentCommand {
