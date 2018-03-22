@@ -174,8 +174,8 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                 vo = dbf.updateAndRefresh(vo);
                 // launch the long job right now
                 ThreadContext.put(Constants.THREAD_CONTEXT_API, vo.getApiId());
-                ThreadContext.put(Constants.THREAD_CONTEXT_TASK_NAME, vo.getJobName());
                 LongJob job = longJobFactory.getLongJob(vo.getJobName());
+                ThreadContext.put(Constants.THREAD_CONTEXT_TASK_NAME, job.getClass().toString());
                 job.start(vo, new Completion(msg) {
                     LongJobVO vo = dbf.findByUuid(msg.getJobUuid(), LongJobVO.class);
 
