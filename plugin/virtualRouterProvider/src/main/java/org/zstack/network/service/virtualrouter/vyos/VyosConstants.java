@@ -12,6 +12,8 @@ public interface VyosConstants {
     String ANSIBLE_PLAYBOOK_NAME = "zvr.py";
     String ANSIBLE_MODULE_PATH = "ansible/zvr";
 
+    String PRIVATE_L3_FIREWALL_DEFAULT_ACTION = "reject";
+
     NetworkServiceProviderType PROVIDER_TYPE = new NetworkServiceProviderType(VyosConstants.VYOS_ROUTER_PROVIDER_TYPE);
 
     enum BootstrapInfoKey {
