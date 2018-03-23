@@ -7,6 +7,8 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.defer.Defer;
+import org.zstack.core.defer.Deferred;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -49,6 +51,7 @@ import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply.
 import org.zstack.storage.primary.local.MigrateBitsStruct.ResourceInfo;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.ShellUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -266,7 +269,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
             private boolean isRootVolume = false;
             private OverlayMessage message;
             private String vmUuid;
-            private boolean isMigrated = false;
+            private boolean volumeStatusChanged = false;
+            private boolean vmStateChanged = false;
 
             public String getVmOriginState() {
                 return vmOriginState;
@@ -302,12 +306,20 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 this.vmUuid = vmUuid;
             }
 
-            public boolean isMigrated() {
-                return isMigrated;
+            public boolean isVolumeStatusChanged() {
+                return volumeStatusChanged;
             }
 
-            public void setMigrated(boolean migrated) {
-                isMigrated = migrated;
+            public void setVolumeStatusChanged(boolean volumeStatusChanged) {
+                this.volumeStatusChanged = volumeStatusChanged;
+            }
+
+            public boolean isVmStateChanged() {
+                return vmStateChanged;
+            }
+
+            public void setVmStateChanged(boolean vmStateChanged) {
+                this.vmStateChanged = vmStateChanged;
             }
         }
 
@@ -315,7 +327,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
         VolumeStatus originStatus = Q.New(VolumeVO.class).select(VolumeVO_.status).eq(VolumeVO_.uuid, msg.getVolumeUuid()).findValue();
         FlowChain chain = new SimpleFlowChain();
         chain.setName(String.format("local-storage-%s-migrate-volume-%s-to-host-%s", msg.getPrimaryStorageUuid(), msg.getVolumeUuid(), msg.getDestHostUuid()));
-        chain.then(new NoRollbackFlow() {
+        chain.then(new Flow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 String __name__ = "change-volume-status-to-migrating";
@@ -332,11 +344,25 @@ public class LocalStorageBase extends PrimaryStorageBase {
                             return;
                         }
 
+                        struct.setVolumeStatusChanged(true);
                         trigger.next();
                     }
                 });
             }
-        }).then(new NoRollbackFlow() {
+
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+                if (struct.isVolumeStatusChanged()) {
+                    ChangeVolumeStatusMsg rollbackMsg  = new ChangeVolumeStatusMsg();
+                    rollbackMsg.setStatus(originStatus);
+                    rollbackMsg.setVolumeUuid(msg.getVolumeUuid());
+                    bus.makeTargetServiceIdByResourceUuid(rollbackMsg, VolumeConstant.SERVICE_ID, msg.getVolumeUuid());
+                    bus.send(rollbackMsg);
+                }
+
+                trigger.rollback();
+            }
+        }).then(new Flow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 String __name__ = "change-vm-state-to-volume-migrating";
@@ -368,9 +394,23 @@ public class LocalStorageBase extends PrimaryStorageBase {
                             return;
                         }
 
+                        struct.setVmStateChanged(true);
                         trigger.next();
                     }
                 });
+            }
+
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+                if (struct.isVmStateChanged()) {
+                    ChangeVmStateMsg rollbackMsg = new ChangeVmStateMsg();
+                    rollbackMsg.setStateEvent(struct.getVmOriginState());
+                    rollbackMsg.setVmInstanceUuid(struct.getVmUuid());
+                    bus.makeTargetServiceIdByResourceUuid(rollbackMsg, VmInstanceConstant.SERVICE_ID, struct.getVmUuid());
+                    bus.send(rollbackMsg);
+                }
+
+                trigger.rollback();
             }
         }).then(new NoRollbackFlow() {
             @Override
@@ -410,7 +450,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                         MigrateVolumeOnLocalStorageReply mr = reply.castReply();
                         evt.setInventory(mr.getInventory());
-                        struct.setMigrated(true);
                         trigger.next();
                     }
                 });
