@@ -534,7 +534,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
 
         public boolean logMessage(Message msg) {
             if (CloudBusGlobalProperty.READ_API_LOG_OFF &&
-                    (msg instanceof APIMessage || msg instanceof APIReply || msg instanceof APIEvent)) {
+                    (msg instanceof APISyncCallMessage || msg instanceof APIReply)) {
                 return false;
             }
 
