@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -23,6 +25,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
 import org.zstack.header.vm.*;
@@ -111,6 +114,8 @@ public class LoadBalancerBase {
             handle((DeleteLoadBalancerMsg) msg);
         } else if (msg instanceof DeleteLoadBalancerOnlyMsg) {
             handle((DeleteLoadBalancerOnlyMsg) msg);
+        } else if (msg instanceof LoadBalancerChangeCertificateMsg) {
+            handle((LoadBalancerChangeCertificateMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -530,6 +535,8 @@ public class LoadBalancerBase {
             handle((APIUpdateLoadBalancerMsg) msg);
         } else if (msg instanceof APIUpdateLoadBalancerListenerMsg) {
             handle((APIUpdateLoadBalancerListenerMsg) msg);
+        } else if (msg instanceof APIChangeLoadBalancerListenerCertificateMsg) {
+            handle((APIChangeLoadBalancerListenerCertificateMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -1156,8 +1163,16 @@ public class LoadBalancerBase {
         vo.setLoadBalancerPort(msg.getLoadBalancerPort());
         vo.setProtocol(msg.getProtocol());
         vo = dbf.persistAndRefresh(vo);
+        if (msg.getCertificateUuid() != null) {
+            LoadBalancerListenerCertificateRefVO ref = new LoadBalancerListenerCertificateRefVO();
+            ref.setListenerUuid(vo.getUuid());
+            ref.setCertificateUuid(msg.getCertificateUuid());
+            dbf.persist(ref);
+        }
+
         acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), LoadBalancerListenerVO.class);
         tagMgr.createNonInherentSystemTags(msg.getSystemTags(), vo.getUuid(), LoadBalancerListenerVO.class.getSimpleName());
+        vo = dbf.updateAndRefresh(vo);
         evt.setInventory(LoadBalancerListenerInventory.valueOf(vo));
         bus.publish(evt);
         completion.done();
@@ -1234,6 +1249,85 @@ public class LoadBalancerBase {
             @Override
             public String getName() {
                 return "update-lb-listener";
+            }
+        });
+    }
+
+    private void handle(APIChangeLoadBalancerListenerCertificateMsg msg) {
+        APIChangeLoadBalancerListenerCertificateEvent evt = new APIChangeLoadBalancerListenerCertificateEvent(msg.getId());
+
+        LoadBalancerListenerCertificateRefVO ref = Q.New(LoadBalancerListenerCertificateRefVO.class)
+                .eq(LoadBalancerListenerCertificateRefVO_.listenerUuid, msg.getListenerUuid()).limit(1).find();
+        LoadBalancerListenerCertificateRefVO original_ref = ref;
+        if (ref == null) {
+            ref = new LoadBalancerListenerCertificateRefVO();
+            ref.setListenerUuid(msg.getListenerUuid());
+            ref.setCertificateUuid(msg.getCertificateUuid());
+            dbf.persist(ref);
+        } else {
+            ref.setCertificateUuid(msg.getCertificateUuid());
+            dbf.update(ref);
+        }
+
+        LoadBalancerChangeCertificateMsg cmsg = new LoadBalancerChangeCertificateMsg();
+        cmsg.setListenerUuid(msg.getListenerUuid());
+        cmsg.setLoadBalancerUuid(msg.getLoadBalancerUuid());
+        cmsg.setCertificateUuid(msg.getCertificateUuid());
+        bus.makeLocalServiceId(cmsg, LoadBalancerConstants.SERVICE_ID);
+        bus.send(cmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()){
+                    LoadBalancerListenerInventory inv = LoadBalancerListenerInventory.valueOf(dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class));
+                    evt.setInventory(inv);
+                    bus.publish(evt);
+                } else {
+                    if (original_ref == null) {
+                        SQL.New(LoadBalancerListenerCertificateRefVO.class).
+                                eq(LoadBalancerListenerCertificateRefVO_.listenerUuid, msg.getListenerUuid()).delete();
+                    } else {
+                        dbf.update(original_ref);
+                    }
+                    evt.setError(reply.getError());
+                    bus.publish(evt);
+                }
+            }
+        });
+    }
+
+    private void handle(LoadBalancerChangeCertificateMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSyncId();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                LoadBalancerChangeCertificateReply reply = new LoadBalancerChangeCertificateReply();
+
+                LoadBalancerBackend bkd = getBackend();
+                LoadBalancerStruct s = makeStruct();
+                s.setInit(false);
+                bkd.refresh(s, new Completion(msg) {
+                    @Override
+                    public void success() {
+                        bus.reply(msg, reply);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                    }
+                });
+
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return "change-lb-listener-certificate";
             }
         });
     }

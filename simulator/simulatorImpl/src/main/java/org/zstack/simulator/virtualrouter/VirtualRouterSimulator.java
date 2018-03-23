@@ -21,6 +21,8 @@ import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBack
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.DeleteLbRsp;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.RefreshLbCmd;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.RefreshLbRsp;
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.CertificateCmd;
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.CertificateRsp;
 import org.zstack.simulator.AsyncRESTReplyer;
 import org.zstack.simulator.SimulatorGlobalProperty;
 import org.zstack.utils.Utils;
@@ -341,6 +343,35 @@ public class VirtualRouterSimulator {
         DeleteLbCmd cmd = JSONObjectUtil.toObject(entity.getBody(), DeleteLbCmd.class);
         DeleteLbRsp rsp = new DeleteLbRsp();
         config.deleteLbCmds.add(cmd);
+        replyer.reply(entity, rsp);
+        return null;
+    }
+
+    @RequestMapping(value = VirtualRouterLoadBalancerBackend.CREATE_CERTIFICATE_PATH, method = RequestMethod.POST)
+    private @ResponseBody
+    String createCertificate(HttpServletRequest req) {
+        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
+        CertificateCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CertificateCmd.class);
+        CertificateRsp rsp = new CertificateRsp();
+
+        if (!config.refreshLbSuccess) {
+            rsp.setError("on purpose");
+            rsp.setSuccess(false);
+        } else {
+            config.certificateCmd = cmd;
+        }
+
+        replyer.reply(entity, rsp);
+        return null;
+    }
+
+    @RequestMapping(value = VirtualRouterLoadBalancerBackend.DELETE_CERTIFICATE_PATH, method = RequestMethod.POST)
+    private @ResponseBody
+    String deleteCertificate(HttpServletRequest req) {
+        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
+        CertificateCmd cmd = JSONObjectUtil.toObject(entity.getBody(), CertificateCmd.class);
+        CertificateRsp rsp = new CertificateRsp();
+        config.certificateCmd = cmd;
         replyer.reply(entity, rsp);
         return null;
     }

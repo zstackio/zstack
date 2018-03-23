@@ -235,6 +235,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         int loadBalancerPort;
         String mode;
         List<String> parameters;
+        String  certificateUuid;
 
         public String getListenerUuid() {
             return listenerUuid;
@@ -299,6 +300,14 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         public void setMode(String mode) {
             this.mode = mode;
         }
+
+        public String getCertificateUuid() {
+            return certificateUuid;
+        }
+
+        public void setCertificateUuid(String certificateUuid) {
+            this.certificateUuid = certificateUuid;
+        }
     }
 
     public static class RefreshLbCmd extends AgentCommand {
@@ -314,6 +323,30 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     }
 
     public static class RefreshLbRsp extends AgentResponse {
+    }
+
+    public static class CertificateCmd extends AgentCommand {
+        String uuid;
+        String certificate;
+
+        public String getUuid() {
+            return uuid;
+        }
+
+        public void setUuid(String uuid) {
+            this.uuid = uuid;
+        }
+
+        public String getCertificate() {
+            return certificate;
+        }
+
+        public void setCertificate(String certificate) {
+            this.certificate = certificate;
+        }
+    }
+
+    public static class CertificateRsp extends AgentResponse {
     }
 
     public static class DeleteLbCmd extends AgentCommand {
@@ -333,6 +366,8 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
     public static final String REFRESH_LB_PATH = "/lb/refresh";
     public static final String DELETE_LB_PATH = "/lb/delete";
+    public static final String CREATE_CERTIFICATE_PATH = "/certificate/create";
+    public static final String DELETE_CERTIFICATE_PATH = "/certificate/delete";
 
     private List<LbTO> makeLbTOs(final LoadBalancerStruct struct) {
         SimpleQuery<VipVO> q = dbf.createQuery(VipVO.class);
@@ -350,6 +385,9 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 to.setListenerUuid(l.getUuid());
                 to.setMode(l.getProtocol());
                 to.setVip(vip);
+                if (l.getCertificateRefs() != null && !l.getCertificateRefs().isEmpty()) {
+                    to.setCertificateUuid(l.getCertificateRefs().get(0).getCertificateUuid());
+                }
                 to.setNicIps(CollectionUtils.transformToList(l.getVmNicRefs(), new Function<String, LoadBalancerListenerVmNicRefInventory>() {
                     @Override
                     public String call(LoadBalancerListenerVmNicRefInventory arg) {
@@ -375,32 +413,181 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         });
     }
 
-    private void refresh(VirtualRouterVmInventory vr, LoadBalancerStruct struct, final Completion completion) {
-        VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
-        msg.setVmInstanceUuid(vr.getUuid());
-        msg.setPath(REFRESH_LB_PATH);
+    private Set<String> getCertificates(List<LoadBalancerStruct> structs) {
+        List<LoadBalancerListenerInventory> listeners = new ArrayList<>();
+        for (LoadBalancerStruct struct : structs) {
+            listeners.addAll(struct.getListeners());
+        }
 
-        RefreshLbCmd cmd = new RefreshLbCmd();
-        cmd.lbs = makeLbTOs(struct);
-
-        msg.setCommand(cmd);
-        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
-        bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
-        bus.send(msg, new CloudBusCallBack(completion) {
+        return  CollectionUtils.transformToSet(listeners, new Function<String, LoadBalancerListenerInventory>() {
             @Override
-            public void run(MessageReply reply) {
-                if (reply.isSuccess()) {
-                    RefreshLbRsp rsp = ((VirtualRouterAsyncHttpCallReply) reply).toResponse(RefreshLbRsp.class);
-                    if (rsp.isSuccess()) {
-                        completion.success();
-                    } else {
-                        completion.fail(operr("operation error, because:%s", rsp.getError()));
-                    }
+            public String call(LoadBalancerListenerInventory arg) {
+                if (arg.getVmNicRefs() != null && !arg.getVmNicRefs().isEmpty()
+                        && arg.getCertificateRefs() != null && !arg.getCertificateRefs().isEmpty()) {
+                    return arg.getCertificateRefs().get(0).getCertificateUuid();
                 } else {
-                    completion.fail(reply.getError());
+                    return null;
                 }
             }
         });
+    }
+
+    private void refreshCertificate(VirtualRouterVmInventory vr, List<LoadBalancerStruct> struct, final Completion completion){
+        Set<String> certificateUuids = getCertificates(struct);
+
+        List<ErrorCode> errors = new ArrayList<>();
+        new While<>(certificateUuids).each((uuid, wcmpl) -> {
+            VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
+            msg.setVmInstanceUuid(vr.getUuid());
+            msg.setPath(CREATE_CERTIFICATE_PATH);
+
+            CertificateCmd cmd = new CertificateCmd();
+            CertificateVO vo = dbf.findByUuid(uuid, CertificateVO.class);
+            cmd.setUuid(uuid);
+            cmd.setCertificate(vo.getCertificate());
+
+            msg.setCommand(cmd);
+            msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
+            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
+            bus.send(msg, new CloudBusCallBack(wcmpl) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (reply.isSuccess()) {
+                        CertificateRsp rsp = ((VirtualRouterAsyncHttpCallReply) reply).toResponse(CertificateRsp.class);
+                        if (rsp.isSuccess()) {
+                            wcmpl.done();
+                        } else {
+                            errors.add(operr("operation error, because:%s", rsp.getError()));
+                            wcmpl.allDone();
+                        }
+                    } else {
+                        errors.add(reply.getError());
+                        wcmpl.allDone();
+                    }
+                }
+            });
+        }).run(new NoErrorCompletion(completion) {
+            @Override
+            public void done() {
+                if (errors.isEmpty()) {
+                    completion.success();
+                } else {
+                    completion.fail(errors.get(0));
+                }
+            }
+        });
+    }
+
+    private void rollbackCertificate(VirtualRouterVmInventory vr, List<LoadBalancerStruct> struct, final NoErrorCompletion completion){
+        Set<String> certificateUuids = getCertificates(struct);
+
+        new While<>(certificateUuids).each((uuid, wcmpl) -> {
+            VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
+            msg.setVmInstanceUuid(vr.getUuid());
+            msg.setPath(DELETE_CERTIFICATE_PATH);
+
+            CertificateCmd cmd = new CertificateCmd();
+            cmd.setUuid(uuid);
+
+            msg.setCommand(cmd);
+            msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
+            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
+            bus.send(msg, new CloudBusCallBack(wcmpl) {
+                @Override
+                public void run(MessageReply reply) {
+                    wcmpl.done();
+                }
+            });
+        }).run(new NoErrorCompletion(completion) {
+            @Override
+            public void done() {
+                completion.done();
+            }
+        });
+    }
+
+    private void refresh(VirtualRouterVmInventory vr, LoadBalancerStruct struct, final Completion completion) {
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName("refresh-lb-to-virtualRouter");
+        chain.then(new ShareFlow() {
+            @Override
+            public void setup() {
+                flow(new Flow() {
+                    String __name__ = "refresh-lb-ceriticae-to-virtualRouter";
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        refreshCertificate(vr, Collections.singletonList(struct), new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        rollbackCertificate(vr, Collections.singletonList(struct), new NoErrorCompletion(trigger) {
+                            @Override
+                            public void done() {
+                                trigger.rollback();
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "refresh-lb-listener-to-virtualRouter";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
+                        msg.setVmInstanceUuid(vr.getUuid());
+                        msg.setPath(REFRESH_LB_PATH);
+
+                        RefreshLbCmd cmd = new RefreshLbCmd();
+                        cmd.lbs = makeLbTOs(struct);
+
+                        msg.setCommand(cmd);
+                        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
+                        bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
+                        bus.send(msg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (reply.isSuccess()) {
+                                    RefreshLbRsp rsp = ((VirtualRouterAsyncHttpCallReply) reply).toResponse(RefreshLbRsp.class);
+                                    if (rsp.isSuccess()) {
+                                        trigger.next();
+                                    } else {
+                                        trigger.fail(operr("operation error, because:%s", rsp.getError()));
+                                    }
+                                } else {
+                                    trigger.fail(reply.getError());
+                                }
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        completion.success();
+                    }
+                });
+
+                error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        completion.fail(errCode);
+                    }
+                });
+            }
+        }).start();
     }
 
     private void acquireVip(final VirtualRouterVmInventory vr, final LoadBalancerStruct struct, final List<VmNicInventory> nics, final Completion completion) {
@@ -1121,38 +1308,94 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     }
 
     void syncOnStart(VirtualRouterVmInventory vr, List<LoadBalancerStruct> structs, final Completion completion) {
-        List<LbTO> tos = new ArrayList<LbTO>();
-        for (LoadBalancerStruct s : structs) {
-            tos.addAll(makeLbTOs(s));
-        }
-
-        RefreshLbCmd cmd = new RefreshLbCmd();
-        cmd.lbs = tos;
-
-        VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
-        msg.setCommand(cmd);
-        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
-        msg.setPath(REFRESH_LB_PATH);
-        msg.setVmInstanceUuid(vr.getUuid());
-        msg.setCheckStatus(false);
-        bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
-
-        bus.send(msg, new CloudBusCallBack(completion) {
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName("lb-sync-on-Start");
+        chain.then(new ShareFlow() {
             @Override
-            public void run(MessageReply reply) {
-                if (reply.isSuccess()) {
-                    VirtualRouterAsyncHttpCallReply kr = reply.castReply();
-                    RefreshLbRsp rsp = kr.toResponse(RefreshLbRsp.class);
-                    if (rsp.isSuccess()) {
-                        completion.success();
-                    } else {
-                        completion.fail(operr("operation error, because:%s", rsp.getError()));
+            public void setup() {
+                flow(new Flow() {
+                    String __name__ = "lb-sync-certificate-on-start";
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        refreshCertificate(vr, structs, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
                     }
-                } else {
-                    completion.fail(reply.getError());
-                }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        rollbackCertificate(vr, structs, new NoErrorCompletion(trigger) {
+                            @Override
+                            public void done() {
+                                trigger.rollback();
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "lb-sync-listener-on-start";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        List<LbTO> tos = new ArrayList<LbTO>();
+                        for (LoadBalancerStruct s : structs) {
+                            tos.addAll(makeLbTOs(s));
+                        }
+
+                        RefreshLbCmd cmd = new RefreshLbCmd();
+                        cmd.lbs = tos;
+
+                        VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
+                        msg.setCommand(cmd);
+                        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
+                        msg.setPath(REFRESH_LB_PATH);
+                        msg.setVmInstanceUuid(vr.getUuid());
+                        msg.setCheckStatus(false);
+                        bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
+
+                        bus.send(msg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (reply.isSuccess()) {
+                                    VirtualRouterAsyncHttpCallReply kr = reply.castReply();
+                                    RefreshLbRsp rsp = kr.toResponse(RefreshLbRsp.class);
+                                    if (rsp.isSuccess()) {
+                                        trigger.next();
+                                    } else {
+                                        trigger.fail(operr("operation error, because:%s", rsp.getError()));
+                                    }
+                                } else {
+                                    trigger.fail(reply.getError());
+                                }
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        completion.success();
+                    }
+                });
+
+                error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        completion.fail(errCode);
+                    }
+                });
             }
-        });
+        }).start();
     }
 
     @Override

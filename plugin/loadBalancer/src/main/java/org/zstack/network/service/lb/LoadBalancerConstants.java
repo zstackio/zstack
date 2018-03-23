@@ -29,6 +29,7 @@ public class LoadBalancerConstants {
 
     public static final String LB_PROTOCOL_TCP = "tcp";
     public static final String LB_PROTOCOL_HTTP = "http";
+    public static final String LB_PROTOCOL_HTTPS = "https";
 
     static {
         BALANCE_ALGORITHMS.add(BALANCE_ALGORITHM_ROUND_ROBIN);

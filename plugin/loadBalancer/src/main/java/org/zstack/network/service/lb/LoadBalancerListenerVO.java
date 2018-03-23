@@ -42,6 +42,11 @@ public class LoadBalancerListenerVO extends ResourceVO {
     @NoView
     private Set<LoadBalancerListenerVmNicRefVO> vmNicRefs = new HashSet<LoadBalancerListenerVmNicRefVO>();
 
+    @OneToMany(fetch=FetchType.EAGER)
+    @JoinColumn(name="listenerUuid", insertable=false, updatable=false)
+    @NoView
+    private Set<LoadBalancerListenerCertificateRefVO> certificateRefs;
+
     @Column
     private Timestamp createDate;
 
@@ -123,5 +128,13 @@ public class LoadBalancerListenerVO extends ResourceVO {
 
     public void setLoadBalancerUuid(String loadBalancerUuid) {
         this.loadBalancerUuid = loadBalancerUuid;
+    }
+
+    public Set<LoadBalancerListenerCertificateRefVO> getCertificateRefs() {
+        return certificateRefs;
+    }
+
+    public void setCertificateRefs(Set<LoadBalancerListenerCertificateRefVO> certificateRefs) {
+        this.certificateRefs = certificateRefs;
     }
 }
