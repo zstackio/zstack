@@ -117,7 +117,9 @@ public class TagManagerImpl extends AbstractService implements TagManager,
             Class type = entity.getJavaType();
             String name = type.getSimpleName();
             resourceTypeClassMap.put(name, type);
-            logger.debug(String.format("discovered tag resource type[%s], class[%s]", name, type));
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("discovered tag resource type[%s], class[%s]", name, type));
+            }
         }
 
         try {
