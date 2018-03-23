@@ -42,6 +42,10 @@
         <value>Ceph</value>
         <value>XSky</value>
     </util:list>
+	
+   <util:list id="SurfsMetric">
+        <value>Surfs</value>
+    </util:list>
 
     <util:list id="FusionstorMetric">
         <value>Fusionstor</value>
@@ -55,6 +59,7 @@
         <entry key="SftpBackupStorage" value-ref="SftpBackupStorageMetric"/>
         <entry key="Fusionstor" value-ref="FusionstorMetric"/>
         <entry key="Ceph" value-ref="CephMetric"/>
+	<entry key="Surfs" value-ref="SurfsMetric"/>
         <entry key="ImageStoreBackupStorage" value-ref="ImageStoreBackupStorageMetric"/>
         <entry key="SimulatorBackupStorage" value-ref="SimulatorBackupStorageMetric"/>
         <entry key="VCenter" value-ref="VCenterMetric"/>
