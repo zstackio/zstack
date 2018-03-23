@@ -388,9 +388,11 @@ public class CascadeFacadeImpl implements CascadeFacade, Component {
             ret.add(spath);
         }
 
-        logger.debug(String.format("Cascade operation[%s]'s traversing branches (branches will be merged as a tree to reduce duplicate paths):", issuer));
-        for (List<String> lst : ret) {
-            logger.debug(lst.toString());
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("Cascade operation[%s]'s traversing branches (branches will be merged as a tree to reduce duplicate paths):", issuer));
+            for (List<String> lst : ret) {
+                logger.trace(lst.toString());
+            }
         }
 
         return makeTree(paths);

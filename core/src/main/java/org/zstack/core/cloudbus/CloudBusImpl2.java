@@ -533,6 +533,11 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         }
 
         public boolean logMessage(Message msg) {
+            if (CloudBusGlobalProperty.READ_API_LOG_OFF &&
+                    (msg instanceof APIMessage || msg instanceof APIReply || msg instanceof APIEvent)) {
+                return false;
+            }
+
             if (CloudBusGlobalProperty.MESSAGE_LOG_FILTER_ALL) {
                 return !filterMsgNames.contains(msg.getClass().getName());
             } else {
@@ -898,7 +903,11 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
             String bindingKey = makeMessageQueueName(StringUtils.join(pairs, "."));
 
             bindingKeys.add(bindingKey);
-            logger.debug(String.format("message tracker binds to key[%s], tracking service[%s]", bindingKey, pairs[0]));
+
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("message tracker binds to key[%s], tracking service[%s]", bindingKey, pairs[0]));
+            }
+
             try {
                 Channel chan = channelPool.acquire();
                 try {
