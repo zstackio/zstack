@@ -21,5 +21,5 @@ public class HostAllocatorGlobalConfig {
     @GlobalConfigValidation
     public static GlobalConfig PAGINATION_LIMIT = new GlobalConfig(CATEGORY, "paginationLimit");
     @GlobalConfigValidation
-    public static GlobalConfig HOST_ALLOCATOR_CONCURRENT_LEVEL = new GlobalConfig(CATEGORY, "hostAllocator.concurrentLevel");
+    public static GlobalConfig HOST_ALLOCATOR_ALLOW_CONCURRENT = new GlobalConfig(CATEGORY, "hostAllocator.concurrent");
 }
