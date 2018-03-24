@@ -24,11 +24,11 @@ public class FireVolumeCanonicalEvent {
 
         String accountUuid = null;
 
-        boolean volumeAccountExists =  Q.New(AccountResourceRefVO.class).gt(AccountResourceRefVO_.resourceUuid, vol.getUuid()).isExists();
+        boolean volumeAccountExists =  Q.New(AccountResourceRefVO.class).eq(AccountResourceRefVO_.resourceUuid, vol.getUuid()).isExists();
         if (volumeAccountExists) {
             accountUuid = Q.New(AccountResourceRefVO.class)
                     .select(AccountResourceRefVO_.ownerAccountUuid)
-                    .gt(AccountResourceRefVO_.resourceUuid, vol.getUuid()).limit(1).findValue();
+                    .eq(AccountResourceRefVO_.resourceUuid, vol.getUuid()).limit(1).findValue();
         }
 
         VolumeCanonicalEvents.VolumeStatusChangedData d = new VolumeCanonicalEvents.VolumeStatusChangedData();
