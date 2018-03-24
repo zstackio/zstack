@@ -41,10 +41,10 @@
     </config>
 
     <config>
-        <name>hostAllocator.concurrentLevel</name>
-        <description>maximum concurrency number of host allocator</description>
+        <name>hostAllocator.concurrent</name>
+        <description>allow host allocator run concurrently</description>
         <category>hostAllocator</category>
-        <defaultValue>2</defaultValue>
-        <type>java.lang.Integer</type>
+        <defaultValue>false</defaultValue>
+        <type>java.lang.Boolean</type>
     </config>
 </globalConfig>
