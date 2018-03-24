@@ -19,6 +19,8 @@ public class CloudBusGlobalProperty {
     public static boolean MESSAGE_LOG_FILTER_ALL;
     @GlobalProperty(name="CloudBus.messageLog")
     public static String MESSAGE_LOG;
+    @GlobalProperty(name="CloudBus.readAPILogOff", defaultValue = "true")
+    public static boolean READ_API_LOG_OFF;
     @GlobalProperty(name="CloudBus.rabbitmqUsername")
     public static String RABBITMQ_USERNAME;
     @GlobalProperty(name="CloudBus.rabbitmqPassword")

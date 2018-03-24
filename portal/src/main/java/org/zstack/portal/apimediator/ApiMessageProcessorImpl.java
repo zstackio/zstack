@@ -151,7 +151,10 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
         List<GlobalApiMessageInterceptor> end = new ArrayList<GlobalApiMessageInterceptor>();
 
         for (GlobalApiMessageInterceptor gi : gis) {
-            logger.debug(String.format("install GlobalApiMessageInterceptor[%s] to message[%s]", gi.getClass().getName(), desc.getClazz().getName()));
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("install GlobalApiMessageInterceptor[%s] to message[%s]", gi.getClass().getName(), desc.getClazz().getName()));
+            }
+
             if (gi.getPosition() == InterceptorPosition.FRONT) {
                 front.add(gi);
             } else if (gi.getPosition() == InterceptorPosition.END){
@@ -162,7 +165,10 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
         }
 
         for (GlobalApiMessageInterceptor gi : globalInterceptorsForAllMsg) {
-            logger.debug(String.format("install GlobalApiMessageInterceptor[%s] to message[%s]", gi.getClass().getName(), desc.getClazz().getName()));
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("install GlobalApiMessageInterceptor[%s] to message[%s]", gi.getClass().getName(), desc.getClazz().getName()));
+            }
+
             if (gi.getPosition() == GlobalApiMessageInterceptor.InterceptorPosition.FRONT) {
                 front.add(gi);
             } else if (gi.getPosition() == InterceptorPosition.END){
