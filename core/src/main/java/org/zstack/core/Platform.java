@@ -165,7 +165,9 @@ public class Platform {
             try {
                 f.set(null, valueToSet);
                 globalProperties.put(name, valueToSet == null ? "null" : valueToSet.toString());
-                logger.debug(String.format("linked global property[%s.%s], value: %s", clz.getName(), f.getName(), valueToSet));
+                if (logger.isTraceEnabled()) {
+                    logger.trace(String.format("linked global property[%s.%s], value: %s", clz.getName(), f.getName(), valueToSet));
+                }
             } catch (IllegalAccessException e) {
                 throw new CloudRuntimeException(String.format("unable to link global property[%s.%s]", clz.getName(), f.getName()), e);
             }
