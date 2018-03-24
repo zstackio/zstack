@@ -293,8 +293,8 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         if (vo.getState() == LongJobState.Waiting) {
             // launch the waiting jobs
             ThreadContext.put(Constants.THREAD_CONTEXT_API, vo.getApiId());
-            ThreadContext.put(Constants.THREAD_CONTEXT_TASK_NAME, vo.getJobName());
             LongJob job = longJobFactory.getLongJob(vo.getJobName());
+            ThreadContext.put(Constants.THREAD_CONTEXT_TASK_NAME, job.getClass().toString());
             job.start(vo, new Completion(null) {
                 @Override
                 public void success() {
