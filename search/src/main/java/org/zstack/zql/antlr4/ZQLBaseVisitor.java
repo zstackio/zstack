@@ -145,7 +145,21 @@ public class ZQLBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements ZQ
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitReturnWithExpr(ZQLParser.ReturnWithExprContext ctx) { return visitChildren(ctx); }
+	@Override public T visitReturnWithExprBlock(ZQLParser.ReturnWithExprBlockContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
+	@Override public T visitReturnWithExprId(ZQLParser.ReturnWithExprIdContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
+	@Override public T visitReturnWithExprFunction(ZQLParser.ReturnWithExprFunctionContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *

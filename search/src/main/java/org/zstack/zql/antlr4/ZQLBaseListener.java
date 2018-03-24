@@ -234,13 +234,37 @@ public class ZQLBaseListener implements ZQLListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterReturnWithExpr(ZQLParser.ReturnWithExprContext ctx) { }
+	@Override public void enterReturnWithExprBlock(ZQLParser.ReturnWithExprBlockContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitReturnWithExpr(ZQLParser.ReturnWithExprContext ctx) { }
+	@Override public void exitReturnWithExprBlock(ZQLParser.ReturnWithExprBlockContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterReturnWithExprId(ZQLParser.ReturnWithExprIdContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitReturnWithExprId(ZQLParser.ReturnWithExprIdContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterReturnWithExprFunction(ZQLParser.ReturnWithExprFunctionContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitReturnWithExprFunction(ZQLParser.ReturnWithExprFunctionContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

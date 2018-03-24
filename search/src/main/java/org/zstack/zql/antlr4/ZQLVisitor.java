@@ -126,11 +126,25 @@ public interface ZQLVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitRestrictBy(ZQLParser.RestrictByContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link ZQLParser#returnWithExpr}.
+	 * Visit a parse tree produced by {@link ZQLParser#returnWithExprBlock}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitReturnWithExpr(ZQLParser.ReturnWithExprContext ctx);
+	T visitReturnWithExprBlock(ZQLParser.ReturnWithExprBlockContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code returnWithExprId}
+	 * labeled alternative in {@link ZQLParser#returnWithExpr}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitReturnWithExprId(ZQLParser.ReturnWithExprIdContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code returnWithExprFunction}
+	 * labeled alternative in {@link ZQLParser#returnWithExpr}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitReturnWithExprFunction(ZQLParser.ReturnWithExprFunctionContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link ZQLParser#returnWith}.
 	 * @param ctx the parse tree

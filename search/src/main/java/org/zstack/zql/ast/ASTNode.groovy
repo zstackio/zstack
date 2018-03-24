@@ -22,96 +22,104 @@ class ASTNode {
     interface Condition {
     }
 
+    interface ReturnWithExpr {
+
+    }
+
     static class QueryTarget extends ASTNode {
-        public String entity
-        public List<String> fields
+         String entity
+         List<String> fields
     }
 
     static class ComplexValue implements Value {
-        public SubQuery subQuery
+         SubQuery subQuery
     }
 
     static class PlainValue implements Value {
-        public String text
-        public transient Class type
-        public String ctype
+         String text
+         transient Class type
+         String ctype
     }
 
     static class ListValue implements Value {
-        public List<Value> values
+         List<Value> values
     }
 
     static class Expr extends ASTNode implements Condition {
-        public String operator
-        public List<String> left
-        public Value right
+         String operator
+         List<String> left
+         Value right
     }
 
     static class LogicalOperator extends ASTNode implements Condition {
-        public String operator
-        public Condition left
-        public Condition right
+         String operator
+         Condition left
+         Condition right
     }
 
     static class OrderBy extends ASTNode {
-        public String field
-        public String direction
+         String field
+         String direction
     }
 
     static class Limit extends ASTNode {
-        public int limit
+         int limit
     }
 
     static class Offset extends ASTNode {
-        public int offset
+         int offset
     }
 
     static class RestrictExpr extends ASTNode {
-        public String entity
-        public String field
-        public String operator
-        public Value value
+         String entity
+         String field
+         String operator
+         Value value
     }
 
     static class RestrictBy extends ASTNode {
-        public List<RestrictExpr> exprs
+        List<RestrictExpr> exprs
     }
 
-    static class ReturnWithExpr extends ASTNode {
-        public List<String> names
+    static class ReturnWithIDExpr extends ASTNode implements ReturnWithExpr {
+        List<String> names
+    }
+
+    static class ReturnWithBlockExpr extends ASTNode implements ReturnWithExpr {
+        String content
     }
 
     static class ReturnWith extends ASTNode {
-        public List<ReturnWithExpr> exprs
+         List<ReturnWithExpr> exprs
     }
 
     static class Query extends ASTNode {
-        public QueryTarget target
-        public List<Condition> conditions
-        public RestrictBy restrictBy
-        public ReturnWith returnWith
-        public FilterBy filterBy
-        public OrderBy orderBy
-        public Limit limit
-        public Offset offset
+         QueryTarget target
+         List<Condition> conditions
+         RestrictBy restrictBy
+         ReturnWith returnWith
+         FilterBy filterBy
+         OrderBy orderBy
+         Limit limit
+         Offset offset
     }
 
     static class SubQueryTarget extends ASTNode {
-        public String entity
-        public List<String> fields
+         String entity
+         List<String> fields
     }
 
     static class SubQuery extends ASTNode {
-        public SubQueryTarget target
-        public List<Condition> conditions
+         SubQueryTarget target
+         List<Condition> conditions
     }
 
     static class FilterByExpr extends ASTNode {
-        public String filterName
-        public String content
+         String filterName
+         String content
     }
 
     static class FilterBy extends ASTNode {
-        public List<FilterByExpr> exprs
+         List<FilterByExpr> exprs
     }
 }

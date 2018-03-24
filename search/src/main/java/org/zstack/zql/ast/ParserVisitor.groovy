@@ -10,7 +10,7 @@ class ParserVisitor {
         QueryTarget visitQueryTarget(ZQLParser.QueryTargetContext ctx) {
             return new QueryTarget(
                     entity: ctx.entity().ID().getText(),
-                    fields: ctx.field() == null ?: ctx.field().ID().collect { it.getText() }
+                    fields: ctx.field() == null ? null : ctx.field().ID().collect { it.getText() }
             )
         }
     }
@@ -61,7 +61,7 @@ class ParserVisitor {
             return new Expr(
                     left: ctx.field().ID().collect {it.getText()},
                     operator: ctx.operator().getText(),
-                    right: ctx.complexValue() == null ?: ctx.complexValue().accept(new ValueVisitor())
+                    right: ctx.complexValue() == null ? null : ctx.complexValue().accept(new ValueVisitor())
             )
         }
     }
@@ -72,7 +72,7 @@ class ParserVisitor {
             return new LogicalOperator(
                     left: ctx.left.accept(new ConditionVisitor()),
                     operator: ctx.op == null ?: ctx.op.getText(),
-                    right: ctx.right == null ?: ctx.right.accept(new ConditionVisitor())
+                    right: ctx.right == null ? null : ctx.right.accept(new ConditionVisitor())
             )
         }
 
@@ -117,7 +117,7 @@ class ParserVisitor {
                     entity: ctx.entity().getText(),
                     field: ctx.ID().getText(),
                     operator: ctx.operator().getText(),
-                    value: ctx.value() == null ?: ctx.value().accept(new ValueVisitor())
+                    value: ctx.value() == null ? null : ctx.value().accept(new ValueVisitor())
             )
         }
     }
@@ -129,10 +129,15 @@ class ParserVisitor {
         }
     }
 
-    static class ReturnWithExprVisitor extends ZQLBaseVisitor<ReturnWithExpr> {
+    static class ReturnWithExprVisitor extends ZQLBaseVisitor<ASTNode.ReturnWithExpr> {
         @Override
-        ReturnWithExpr visitReturnWithExpr(ZQLParser.ReturnWithExprContext ctx) {
-            return new ReturnWithExpr(names: ctx.ID().collect {it.getText()})
+        ReturnWithIDExpr visitReturnWithExprId(ZQLParser.ReturnWithExprIdContext ctx) {
+            return new ReturnWithIDExpr(names: ctx.ID().collect { it.getText() })
+        }
+
+        @Override
+        ReturnWithBlockExpr visitReturnWithExprFunction(ZQLParser.ReturnWithExprFunctionContext ctx) {
+            return new ReturnWithBlockExpr(content: ctx.returnWithExprBlock().getText())
         }
     }
 

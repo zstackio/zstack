@@ -386,10 +386,13 @@ public class TestString {
 
     class ReturnWithExprVisitor extends ZQLBaseVisitor<ReturnWithExpr> {
         @Override
-        public ReturnWithExpr visitReturnWithExpr(ZQLParser.ReturnWithExprContext ctx) {
-            ReturnWithExpr expr = new ReturnWithExpr();
-            expr.names = ctx.ID().stream().map(ParseTree::getText).collect(Collectors.toList());
-            return expr;
+        public ReturnWithExpr visitReturnWithExprBlock(ZQLParser.ReturnWithExprBlockContext ctx) {
+            return visitChildren(ctx);
+        }
+
+        @Override
+        public ReturnWithExpr visitReturnWithExprId(ZQLParser.ReturnWithExprIdContext ctx) {
+            return visitChildren(ctx);
         }
     }
 

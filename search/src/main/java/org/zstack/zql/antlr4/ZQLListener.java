@@ -200,15 +200,39 @@ public interface ZQLListener extends ParseTreeListener {
 	 */
 	void exitRestrictBy(ZQLParser.RestrictByContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link ZQLParser#returnWithExpr}.
+	 * Enter a parse tree produced by {@link ZQLParser#returnWithExprBlock}.
 	 * @param ctx the parse tree
 	 */
-	void enterReturnWithExpr(ZQLParser.ReturnWithExprContext ctx);
+	void enterReturnWithExprBlock(ZQLParser.ReturnWithExprBlockContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link ZQLParser#returnWithExpr}.
+	 * Exit a parse tree produced by {@link ZQLParser#returnWithExprBlock}.
 	 * @param ctx the parse tree
 	 */
-	void exitReturnWithExpr(ZQLParser.ReturnWithExprContext ctx);
+	void exitReturnWithExprBlock(ZQLParser.ReturnWithExprBlockContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code returnWithExprId}
+	 * labeled alternative in {@link ZQLParser#returnWithExpr}.
+	 * @param ctx the parse tree
+	 */
+	void enterReturnWithExprId(ZQLParser.ReturnWithExprIdContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code returnWithExprId}
+	 * labeled alternative in {@link ZQLParser#returnWithExpr}.
+	 * @param ctx the parse tree
+	 */
+	void exitReturnWithExprId(ZQLParser.ReturnWithExprIdContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code returnWithExprFunction}
+	 * labeled alternative in {@link ZQLParser#returnWithExpr}.
+	 * @param ctx the parse tree
+	 */
+	void enterReturnWithExprFunction(ZQLParser.ReturnWithExprFunctionContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code returnWithExprFunction}
+	 * labeled alternative in {@link ZQLParser#returnWithExpr}.
+	 * @param ctx the parse tree
+	 */
+	void exitReturnWithExprFunction(ZQLParser.ReturnWithExprFunctionContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link ZQLParser#returnWith}.
 	 * @param ctx the parse tree

@@ -84,8 +84,13 @@ restrictBy
     : RESTRICT_BY '(' restrictByExpr (',' restrictByExpr)* ')'
     ;
 
+returnWithExprBlock
+    : '{' (~'}' | returnWithExprBlock)* '}'
+    ;
+
 returnWithExpr
-    : ID ('.' ID)*
+    : ID ('.' ID)* #returnWithExprId
+    | ID returnWithExprBlock #returnWithExprFunction
     ;
 
 returnWith
