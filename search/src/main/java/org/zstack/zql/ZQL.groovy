@@ -5,11 +5,12 @@ import org.antlr.v4.runtime.misc.ParseCancellationException
 import org.zstack.zql.antlr4.ZQLLexer
 import org.zstack.zql.antlr4.ZQLParser
 import org.zstack.zql.ast.ASTNode
-import org.zstack.zql.ast.ASTVisitor
-import org.zstack.zql.ast.ParserVisitor
+
+import org.zstack.zql.ast.parser.visitors.QueryVisitor
+import org.zstack.zql.ast.visitors.result.QueryResult
 
 class ZQL {
-    private ASTVisitor.QueryResult astResult
+    private QueryResult astResult
 
     static class ThrowingErrorListener extends BaseErrorListener {
         String text
@@ -36,8 +37,8 @@ class ZQL {
         ZQLLexer l = new ZQLLexer(CharStreams.fromString(text))
         ZQLParser p = new ZQLParser(new CommonTokenStream(l))
         p.addErrorListener(new ThrowingErrorListener(text))
-        ASTNode.Query query = p.query().accept(new ParserVisitor.QueryVisitor())
-        def ret = query.accept(new ASTVisitor.QueryVisitor())
+        ASTNode.Query query = p.query().accept(new QueryVisitor())
+        def ret = query.accept(new QueryVisitor())
         return new ZQL(astResult: ret)
     }
 

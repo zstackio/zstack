@@ -1,5 +1,7 @@
 package org.zstack.zql.ast
 
+import org.zstack.zql.ast.visitors.ASTVisitor
+
 class ASTNode {
     private static final Map<Class, List<String>> childrenNames = [:]
 
