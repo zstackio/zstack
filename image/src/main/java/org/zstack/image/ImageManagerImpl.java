@@ -1017,6 +1017,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                         vo.setSize(re.getSize());
                                         vo.setActualSize(re.getActualSize());
                                         vo.setStatus(ref.getStatus());
+                                        if (re.getFormat() != null) {
+                                            vo.setFormat(re.getFormat());
+                                        }
                                         dbf.update(vo);
                                     }
 
