@@ -27,6 +27,8 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.List;
 
+import static org.zstack.core.progress.ProgressReportService.reportProgress;
+
 /**
  * Created by GuoYi on 11/14/17.
  */
@@ -181,6 +183,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
 
                     @Override
                     public void success() {
+                        reportProgress("100");
                         vo.setState(LongJobState.Succeeded);
                         vo.setJobResult("Succeeded");
                         dbf.update(vo);
@@ -298,6 +301,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             job.start(vo, new Completion(null) {
                 @Override
                 public void success() {
+                    reportProgress("100");
                     vo.setState(LongJobState.Succeeded);
                     dbf.update(vo);
                     logger.info(String.format("successfully run longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
