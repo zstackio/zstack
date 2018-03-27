@@ -4174,6 +4174,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         setFlowMarshaller(chain);
 
+        String lastHostUuid = self.getHostUuid();
         chain.setName(String.format("migrate-vm-%s", self.getUuid()));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
         chain.done(new FlowDoneHandler(completion) {
@@ -4184,7 +4185,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 self = changeVmStateInDb(VmInstanceStateEvent.running, ()-> {
                     self.setZoneUuid(host.getZoneUuid());
                     self.setClusterUuid(host.getClusterUuid());
-                    self.setLastHostUuid(self.getHostUuid());
+                    self.setLastHostUuid(lastHostUuid);
                     self.setHostUuid(host.getUuid());
                 });
                 VmInstanceInventory vm = VmInstanceInventory.valueOf(self);
