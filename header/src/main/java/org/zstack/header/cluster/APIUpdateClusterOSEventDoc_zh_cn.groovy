@@ -1,6 +1,7 @@
 package org.zstack.header.cluster
 
 import org.zstack.header.errorcode.ErrorCode
+import org.zstack.header.longjob.LongJobInventory
 
 doc {
 
@@ -14,10 +15,12 @@ doc {
 		since "2.3"
 		clz ErrorCode.class
 	}
-	field {
-		name "results"
-		desc "集群内物理机操作系统升级结果"
-		type "Map"
-		since "2.3"
+	ref {
+		name "inventory"
+		path "org.zstack.header.cluster.APIUpdateClusterOSEvent.inventory"
+		desc "任务信息"
+		type "LongJobInventory"
+		since "2.2"
+		clz LongJobInventory.class
 	}
 }

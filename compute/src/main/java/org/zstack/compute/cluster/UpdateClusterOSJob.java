@@ -6,9 +6,11 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.cluster.APIUpdateClusterOSMsg;
 import org.zstack.header.cluster.ClusterConstant;
 import org.zstack.header.cluster.UpdateClusterOSMsg;
+import org.zstack.header.cluster.UpdateClusterOSReply;
 import org.zstack.header.core.Completion;
 import org.zstack.header.longjob.LongJobFor;
 import org.zstack.header.longjob.LongJobVO;
@@ -24,6 +26,8 @@ import org.zstack.utils.gson.JSONObjectUtil;
 public class UpdateClusterOSJob implements LongJob {
     @Autowired
     protected CloudBus bus;
+    @Autowired
+    protected DatabaseFacade dbf;
 
     @Override
     public void start(LongJobVO job, Completion completion) {
@@ -32,7 +36,10 @@ public class UpdateClusterOSJob implements LongJob {
         bus.send(msg, new CloudBusCallBack(null) {
             @Override
             public void run(MessageReply reply) {
+                UpdateClusterOSReply rly = reply.castReply();
                 if (reply.isSuccess()) {
+                    job.setJobResult(JSONObjectUtil.toJsonString(rly.getResults()));
+                    dbf.update(job);
                     completion.success();
                 } else {
                     completion.fail(reply.getError());
