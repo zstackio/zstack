@@ -7,6 +7,12 @@ class ConditionVisitor implements ASTVisitor<String, ASTNode> {
     String visit(ASTNode node) {
         assert node instanceof ASTNode.Condition
 
-        return null
+        if (node instanceof ASTNode.Expr) {
+            return node.accept(new ExprVisitor())
+        } else if (node instanceof ASTNode.LogicalOperator) {
+            return node.accept(new LogicalOperatorVisitor())
+        } else {
+            assert false : "should not be here"
+        }
     }
 }
