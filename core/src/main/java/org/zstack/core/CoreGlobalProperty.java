@@ -50,6 +50,4 @@ public class CoreGlobalProperty {
     public static String LOG_DIR;
     @GlobalProperty(name="chrony.serverIp.")
     public static List<String> CHRONY_SERVERS;
-    @GlobalProperty(name="longJobTimeout", defaultValue = "72h")
-    public static String LONG_JOB_TIMEOUT;
 }
