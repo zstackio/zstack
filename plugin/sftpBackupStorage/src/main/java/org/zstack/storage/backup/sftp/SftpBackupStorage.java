@@ -129,7 +129,6 @@ public class SftpBackupStorage extends BackupStorageBase {
                         res.format = ret.format;
                         completion.success(res);
                     } else {
-                        updateCapacity(ret.getTotalCapacity(), ret.getAvailableCapacity());
                         completion.fail(operr("fail to download image, because %s", ret.getError()));
                     }
                 }
