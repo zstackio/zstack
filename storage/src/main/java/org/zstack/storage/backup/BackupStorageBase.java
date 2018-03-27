@@ -310,6 +310,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
                     @Override
                     public void fail(ErrorCode errorCode) {
                         if (!msg.isNewAdd()) {
+                            tracker.track(self.getUuid());
                             changeStatus(BackupStorageStatus.Disconnected);
                         }
 
