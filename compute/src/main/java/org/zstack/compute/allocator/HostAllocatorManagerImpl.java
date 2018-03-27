@@ -306,7 +306,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
 
     private void handle(final AllocateHostMsg msg) {
         if (HostAllocatorGlobalConfig.HOST_ALLOCATOR_ALLOW_CONCURRENT.value(Boolean.class)) {
-            doHandleAllocateHost(msg, new NopeCompletion(null));
+            doHandleAllocateHost(msg, new NopeCompletion());
             return;
         }
 
