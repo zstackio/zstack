@@ -29,10 +29,15 @@ import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.host.UpdateHostOSMsg;
+import org.zstack.header.longjob.LongJobConstants;
+import org.zstack.header.longjob.SubmitLongJobMsg;
+import org.zstack.header.longjob.SubmitLongJobReply;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.identity.AccountManager;
+import org.zstack.tag.TagManager;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -60,6 +65,10 @@ public class ClusterBase extends AbstractCluster {
     protected CascadeFacade casf;
     @Autowired
     protected ErrorFacade errf;
+    @Autowired
+    private TagManager tagMgr;
+    @Autowired
+    private AccountManager acntMgr;
 
 	protected ClusterVO self;
 	protected final int threadSyncLevel = 1;
@@ -98,18 +107,19 @@ public class ClusterBase extends AbstractCluster {
     private void handle(APIUpdateClusterOSMsg msg) {
         APIUpdateClusterOSEvent evt = new APIUpdateClusterOSEvent(msg.getId());
 
-        UpdateClusterOSMsg umsg = new UpdateClusterOSMsg();
-        umsg.setUuid(msg.getUuid());
-        bus.makeTargetServiceIdByResourceUuid(umsg, ClusterConstant.SERVICE_ID, msg.getUuid());
-        bus.send(umsg, new CloudBusCallBack(msg) {
+        SubmitLongJobMsg smsg = new SubmitLongJobMsg();
+        smsg.setJobName(APIUpdateClusterOSMsg.class.getSimpleName());
+        smsg.setJobData(String.format("{'uuid':'%s'}", msg.getUuid()));
+        smsg.setResourceUuid(msg.getResourceUuid());
+        smsg.setSystemTags(msg.getSystemTags());
+        smsg.setUserTags(msg.getUserTags());
+        smsg.setAccountUuid(msg.getSession().getAccountUuid());
+        bus.makeLocalServiceId(smsg, LongJobConstants.SERVICE_ID);
+        bus.send(smsg, new CloudBusCallBack(msg) {
             @Override
-            public void run(MessageReply reply) {
-                if (reply.isSuccess()) {
-                    UpdateClusterOSReply rly = reply.castReply();
-                    evt.setResults(rly.getResults());
-                } else {
-                    evt.setError(reply.getError());
-                }
+            public void run(MessageReply rly) {
+                SubmitLongJobReply reply = rly.castReply();
+                evt.setInventory(reply.getInventory());
                 bus.publish(evt);
             }
         });
