@@ -34,6 +34,24 @@ class ZQLMetadata {
         boolean hasInventoryField(String fname) {
             return selfInventoryFieldNames.contains(fname)
         }
+
+        void errorIfNoField(String fname) {
+            if (!hasInventoryField(fname)) {
+                throw new CloudRuntimeException("inventory[${selfInventoryClass}] has no field[${fname}]")
+            }
+        }
+
+        boolean isUs(String inventoryName) {
+            return selfInventoryClass.simpleName.equalsIgnoreCase(inventoryName)
+        }
+
+        String fullInventoryName() {
+            return selfInventoryClass.name
+        }
+
+        String simpleInventoryName() {
+            return selfInventoryClass.simpleName
+        }
     }
 
     /**
@@ -45,6 +63,13 @@ class ZQLMetadata {
     trait ChainQueryStruct {
         void verify() {
         }
+    }
+
+    static InventoryMetadata findInventoryMetadata(String queryName) {
+        queryName = "${queryName}inventory"
+        def entry = inventoryMetadata.find { it.value.isUs(queryName) }
+        assert entry != null : "cannot find inventory with name[${queryName}]"
+        return entry.value
     }
 
     static InventoryMetadata getInventoryMetadataByName(String name) {
@@ -100,7 +125,7 @@ class ZQLMetadata {
         }
     }
 
-    static List<ChainQueryStruct> createMetadataPair(String inventoryName, List<String> nestConditionNames) {
+    static List<ChainQueryStruct> createChainQuery(String inventoryName, List<String> nestConditionNames) {
         return new ChainQueryStructGetter(inventoryName: inventoryName, nestConditionNames: nestConditionNames).get()
     }
 

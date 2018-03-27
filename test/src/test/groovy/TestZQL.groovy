@@ -1,7 +1,7 @@
 import org.junit.Test
 import org.zstack.core.Platform
 import org.zstack.header.vm.VmInstanceInventory
-import org.zstack.utils.gson.JSONObjectUtil
+import org.zstack.zql.ZQL
 import org.zstack.zql.ast.ZQLMetadata
 import org.zstack.zql.ast.sql.SQLConditionBuilder
 
@@ -17,18 +17,21 @@ class TestZQL {
 
     @Test
     void test() {
-        //ZQL zql = ZQL.fromString(text)
-        //println(zql.toString())
-
         Platform.getUuid()
 
+        ZQL zql = ZQL.fromString("query vminstance where vmNics.l3Network.l2Network.cluster.zoneUuid='a5576d5e57a7443894eeb078702023fd' or name = 'hello'")
+        println(zql.toString())
+
+
+        /*
         def fs = "vmNics.l3Network.l2Network.cluster.zoneUuid".split("\\.") as List
-        def mpairs = ZQLMetadata.createMetadataPair(VmInstanceInventory.class.name, fs)
+        def mpairs = ZQLMetadata.createChainQuery(VmInstanceInventory.class.name, fs)
         mpairs.each {
             println(it.toString())
         }
 
-        println(new SQLConditionBuilder(VmInstanceInventory.class.name, fs).build(null, null))
-        println(new SQLConditionBuilder(VmInstanceInventory.class.name, ["uuid"]).build(null, null))
+        println(new SQLConditionBuilder(VmInstanceInventory.class.name, fs).build("!=", Platform.uuid))
+        println(new SQLConditionBuilder(VmInstanceInventory.class.name, ["uuid"]).build("in", "('${Platform.uuid}')"))
+        */
     }
 }

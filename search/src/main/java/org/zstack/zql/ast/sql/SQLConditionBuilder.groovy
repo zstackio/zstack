@@ -1,5 +1,6 @@
 package org.zstack.zql.ast.sql
 
+import groovy.text.SimpleTemplateEngine
 import org.zstack.zql.ast.ZQLMetadata
 
 class SQLConditionBuilder {
@@ -12,7 +13,7 @@ class SQLConditionBuilder {
     SQLConditionBuilder(String queryTargetInventoryName, List<String> conditionNames) {
         this.conditionNames = conditionNames
 
-        def chainQueries = ZQLMetadata.createMetadataPair(queryTargetInventoryName, conditionNames)
+        def chainQueries = ZQLMetadata.createChainQuery(queryTargetInventoryName, conditionNames)
         if (chainQueries.size() == 1) {
             ZQLMetadata.FieldChainQuery fc = chainQueries[0] as ZQLMetadata.FieldChainQuery
             template = "${fc.self.selfInventoryClass.simpleName}.${fc.fieldName} \${${OPERATOR_NAME}} \${${VALUE_NAME}}"
@@ -45,6 +46,7 @@ class SQLConditionBuilder {
     }
 
     String build(String operator, String value) {
-        return template
+        SimpleTemplateEngine engine = new SimpleTemplateEngine()
+        return engine.createTemplate(template).make([(OPERATOR_NAME): operator, (VALUE_NAME): value]).toString()
     }
 }

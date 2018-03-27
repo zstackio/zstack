@@ -5,6 +5,8 @@ import org.zstack.zql.ast.ASTNode
 class LogicalOperatorVisitor implements ASTVisitor<String, ASTNode.LogicalOperator> {
     @Override
     String visit(ASTNode.LogicalOperator node) {
-        return null
+        String left = (node.left as ASTNode).accept(new ConditionVisitor())
+        String right = (node.right as ASTNode).accept(new ConditionVisitor())
+        return "(${left} ${node.operator.toUpperCase()} ${right})"
     }
 }

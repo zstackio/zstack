@@ -33,17 +33,17 @@ class ASTNode {
          List<String> fields
     }
 
-    static class ComplexValue implements Value {
+    static class ComplexValue extends ASTNode implements Value {
          SubQuery subQuery
     }
 
-    static class PlainValue implements Value {
+    static class PlainValue extends ASTNode implements Value {
          String text
          transient Class type
          String ctype
     }
 
-    static class ListValue implements Value {
+    static class ListValue extends ASTNode implements Value {
          List<Value> values
     }
 
