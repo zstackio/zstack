@@ -1,12 +1,11 @@
 package org.zstack.core.timeout;
 
-import org.apache.logging.log4j.ThreadContext;
 import org.reflections.Reflections;
-import org.zstack.core.CoreGlobalProperty;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
-import org.zstack.header.Constants;
+import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.header.Component;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.longjob.LongJobFor;
 import org.zstack.utils.*;
 import org.zstack.utils.logging.CLogger;
 
@@ -16,12 +15,35 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by frank on 2/17/2016.
  */
-public class ApiTimeoutManagerImpl implements ApiTimeoutManager {
+public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component {
     private static final CLogger logger = Utils.getLogger(ApiTimeoutManagerImpl.class);
+
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     private Map<Class, ApiTimeout> apiTimeouts = new HashMap<Class, ApiTimeout>();
     private Map<Class, Long> timeouts = new HashMap<Class, Long>();
-    private List<String> longJobClasses = new ArrayList<String>();
+    private List<ApiTimeoutExtensionPoint> apiTimeoutExts;
+
+    @Override
+    public boolean start() {
+        try {
+            collectTimeout();
+            collectTimeoutForDerivedApi();
+            flatTimeout();
+            populateExtensions();
+        } catch (RuntimeException e) {
+            new BootErrorLog().write(e.getMessage());
+            throw e;
+        }
+
+        return true;
+    }
+
+    @Override
+    public boolean stop() {
+        return true;
+    }
 
     class Value {
         private String valueString;
@@ -57,23 +79,8 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager {
 
     private final String VALUE_TIMEOUT = "timeout";
 
-    void init() {
-        try {
-            collectTimeout();
-            collectTimeoutForDerivedApi();
-            flatTimeout();
-            collectLongJobs();
-        } catch (RuntimeException e) {
-            new BootErrorLog().write(e.getMessage());
-            throw e;
-        }
-    }
-
-    private void collectLongJobs() {
-        List<Class> subs = BeanUtils.scanClass("org.zstack", LongJobFor.class);
-        for (Class sub : subs) {
-            longJobClasses.add(sub.toString());
-        }
+    private void populateExtensions() {
+        apiTimeoutExts = pluginRgty.getExtensionList(ApiTimeoutExtensionPoint.class);
     }
 
     private void flatTimeout() {
@@ -169,9 +176,13 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager {
 
     @Override
     public Long getTimeout(Class clz) {
-        String type = ThreadContext.get(Constants.THREAD_CONTEXT_TASK_NAME);
-        if (type != null && longJobClasses.contains(type)) {
-            return parseTimeout(CoreGlobalProperty.LONG_JOB_TIMEOUT);
+        String timeout = null;
+        for (ApiTimeoutExtensionPoint ext : apiTimeoutExts) {
+            timeout = ext.getApiTimeout(clz);
+        }
+
+        if (timeout != null) {
+            return parseTimeout(timeout);
         }
 
         return timeouts.get(clz);

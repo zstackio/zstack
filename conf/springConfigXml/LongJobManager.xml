@@ -18,6 +18,7 @@
             <zstack:extension interface="org.zstack.header.Service" />
             <zstack:extension interface="org.zstack.longjob.LongJobManager" />
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeChangeListener" />
+            <zstack:extension interface="org.zstack.core.timeout.ApiTimeoutExtensionPoint"/>
         </zstack:plugin>
     </bean>
 
