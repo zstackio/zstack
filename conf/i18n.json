@@ -1364,6 +1364,17 @@
     "fileName": "src/main/java/org/zstack/compute/affinityGroup/AffinityGroupBase.java"
   },
   {
+    "raw": "vm [uuid:%s] doesn\u0027t satisfy the affinityGroup [uuid:%s]",
+    "en_US": "vm [uuid:{0}] doesn\u0027t satisfy the affinityGroup [uuid:{1}]",
+    "zh_CN": "虚拟机[uuid:{1}]不满足亲和组[uuid:{2}]的要求",
+    "arguments": [
+      "inv.getResourceUuid()",
+      "self.getUuid()"
+    ],
+    "line": 410,
+    "fileName": "src/zstack/./premium/mevoco/src/main/java/org/zstack/compute/affinityGroup/AffinityGroupBase.java"
+  },
+  {
     "raw": "Vm can change its affinityGroup only in state [%s,%s], but vm is in state [%s]",
     "en_US": "Vm can change its affinityGroup only in state [{0},{1}], but vm is in state [{2}]",
     "zh_CN": "只有状态为[{0},{1}]的虚拟机可以改变亲和组，但是现在虚拟机的状态为[{2}]",
