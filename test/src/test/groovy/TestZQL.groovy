@@ -1,5 +1,9 @@
 import org.junit.Test
-import org.zstack.zql.ZQL
+import org.zstack.core.Platform
+import org.zstack.header.vm.VmInstanceInventory
+import org.zstack.utils.gson.JSONObjectUtil
+import org.zstack.zql.ast.ZQLMetadata
+import org.zstack.zql.ast.sql.SQLConditionBuilder
 
 class TestZQL {
     String text = "query vm.vmNics.id where ((uuid = 23 and name = \"hello\") or " +
@@ -13,7 +17,18 @@ class TestZQL {
 
     @Test
     void test() {
-        ZQL zql = ZQL.fromString(text)
-        println(zql.toString())
+        //ZQL zql = ZQL.fromString(text)
+        //println(zql.toString())
+
+        Platform.getUuid()
+
+        def fs = "vmNics.l3Network.l2Network.cluster.zoneUuid".split("\\.") as List
+        def mpairs = ZQLMetadata.createMetadataPair(VmInstanceInventory.class.name, fs)
+        mpairs.each {
+            println(it.toString())
+        }
+
+        println(new SQLConditionBuilder(VmInstanceInventory.class.name, fs).build(null, null))
+        println(new SQLConditionBuilder(VmInstanceInventory.class.name, ["uuid"]).build(null, null))
     }
 }

@@ -1,17 +1,50 @@
 package org.zstack.zql.ast.sql
 
+import org.zstack.zql.ast.ZQLMetadata
+
 class SQLConditionBuilder {
     private List<String> conditionNames
     private String template
 
-    SQLConditionBuilder(List<String> conditionNames) {
+    private static final OPERATOR_NAME = "__operatorName__"
+    private static final VALUE_NAME = "__valueName__"
+
+    SQLConditionBuilder(String queryTargetInventoryName, List<String> conditionNames) {
         this.conditionNames = conditionNames
-        template = makeTemplate(conditionNames.iterator())
+
+        def chainQueries = ZQLMetadata.createMetadataPair(queryTargetInventoryName, conditionNames)
+        if (chainQueries.size() == 1) {
+            ZQLMetadata.FieldChainQuery fc = chainQueries[0] as ZQLMetadata.FieldChainQuery
+            template = "${fc.self.selfInventoryClass.simpleName}.${fc.fieldName} \${${OPERATOR_NAME}} \${${VALUE_NAME}}"
+        } else {
+            ZQLMetadata.ExpandChainQuery first = chainQueries[0] as ZQLMetadata.ExpandChainQuery
+            template = "${first.right.selfKeyName} IN ${makeTemplate(chainQueries[1..chainQueries.size()-1].iterator())}"
+        }
     }
 
-    private String makeTemplate(Iterator<String> it) {
+    private String makeTemplate(Iterator<ZQLMetadata.ChainQueryStruct> iterator) {
+        ZQLMetadata.ChainQueryStruct current = iterator.next()
+
+        String value = iterator.hasNext() ? makeTemplate(iterator) : null
+
+        if (value == null) {
+            assert current instanceof ZQLMetadata.FieldChainQuery : "the last pair is not a FieldChainQuery"
+
+            ZQLMetadata.ExpandQueryMetadata right = current.right
+            String entityName = right.targetInventoryClass.simpleName
+            return "(SELECT ${entityName}.${right.targetKeyName} FROM ${right.targetVOClass.simpleName}" +
+                    " ${entityName} WHERE ${entityName}.${current.fieldName} \${${OPERATOR_NAME}} \${${VALUE_NAME}})"
+        }
+
+        current = current as ZQLMetadata.ExpandChainQuery
+
+        ZQLMetadata.ExpandQueryMetadata right = current.right
+        String entityName = current.self.selfInventoryClass.simpleName
+        return "(SELECT ${entityName}.${current.selfKey} FROM ${right.selfVOClass.simpleName} ${entityName}" +
+                " WHERE ${entityName}.${right.selfKeyName} IN ${value})"
     }
 
     String build(String operator, String value) {
+        return template
     }
 }
