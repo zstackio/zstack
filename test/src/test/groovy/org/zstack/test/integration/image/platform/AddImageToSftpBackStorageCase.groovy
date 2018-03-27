@@ -116,8 +116,39 @@ class AddImageToSftpBackStorageCase extends SubCase {
             system = false
             backupStorageUuids = [bs.uuid]
         }
-
         assert img.format == ImageConstant.QCOW2_FORMAT_STRING
+
+        env.simulator(SftpBackupStorageConstant.DOWNLOAD_IMAGE_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            def rsp = new SftpBackupStorageCommands.DownloadResponse()
+            rsp.format = ""
+            return rsp
+        }
+
+        ImageInventory img_1 = addImage {
+            name = "vm-snapshot-1"
+            url = "http://192.168.1.1/vm-snapshot.qcow2"
+            format = ImageConstant.QCOW2_FORMAT_STRING
+            mediaType = "RootVolumeTemplate"
+            system = false
+            backupStorageUuids = [bs.uuid]
+        }
+        assert img_1.format == ImageConstant.QCOW2_FORMAT_STRING
+
+        env.simulator(SftpBackupStorageConstant.DOWNLOAD_IMAGE_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            def rsp = new SftpBackupStorageCommands.DownloadResponse()
+            rsp.format = null
+            return rsp
+        }
+
+        ImageInventory img_2 = addImage {
+            name = "vm-snapshot-2"
+            url = "http://192.168.1.1/vm-snapshot.qcow2"
+            format = ImageConstant.ISO_FORMAT_STRING
+            mediaType = "RootVolumeTemplate"
+            system = false
+            backupStorageUuids = [bs.uuid]
+        }
+        assert img_2.format == ImageConstant.ISO_FORMAT_STRING
     }
 
     @Override
