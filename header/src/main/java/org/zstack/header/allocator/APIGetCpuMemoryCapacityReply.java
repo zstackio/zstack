@@ -9,6 +9,15 @@ public class APIGetCpuMemoryCapacityReply extends APIReply {
     private long availableCpu;
     private long totalMemory;
     private long availableMemory;
+    private long managedCpuNum;
+
+    public long getManagedCpuNum() {
+        return managedCpuNum;
+    }
+
+    public void setManagedCpuNum(long managedCpuNum) {
+        this.managedCpuNum = managedCpuNum;
+    }
 
     public long getAvailableCpu() {
         return availableCpu;
@@ -48,6 +57,7 @@ public class APIGetCpuMemoryCapacityReply extends APIReply {
         reply.setAvailableMemory(4);
         reply.setTotalCpu(4);
         reply.setTotalMemory(8);
+        reply.setManagedCpuNum(4);
         return reply;
     }
 
