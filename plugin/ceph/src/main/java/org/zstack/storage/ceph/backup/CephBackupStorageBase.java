@@ -926,6 +926,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
             @Override
             public void success(DownloadRsp ret) {
+                updateCapacity(ret.getTotalCapacity(),ret.getAvailableCapacity());
                 if (cmd.getUrl().startsWith("upload://")) {
                     reply.setInstallPath(ret.getUploadPath());
                 } else {
