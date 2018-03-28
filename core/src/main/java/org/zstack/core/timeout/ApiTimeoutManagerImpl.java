@@ -176,13 +176,13 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component {
 
     @Override
     public Long getTimeout(Class clz) {
-        String timeout = null;
+        Long timeout = null;
         for (ApiTimeoutExtensionPoint ext : apiTimeoutExts) {
             timeout = ext.getApiTimeout(clz);
         }
 
         if (timeout != null) {
-            return parseTimeout(timeout);
+            return timeout;
         }
 
         return timeouts.get(clz);

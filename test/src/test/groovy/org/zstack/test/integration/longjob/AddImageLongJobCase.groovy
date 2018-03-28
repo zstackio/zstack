@@ -14,6 +14,7 @@ import org.zstack.header.longjob.LongJobVO_
 import org.zstack.header.longjob.LongJobState
 import org.zstack.header.storage.backup.DownloadImageMsg
 import org.zstack.header.storage.backup.DownloadImageReply
+import org.zstack.longjob.LongJobGlobalConfig
 import org.zstack.sdk.*
 import org.zstack.storage.backup.sftp.SftpBackupStorageCommands
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant
@@ -57,6 +58,7 @@ class AddImageLongJobCase extends SubCase {
             testAddImage()
             testAddImageAppointResourceUuid()
             testAddImageTimeout()
+            testUpdateLongJobApiTimeout()
         }
     }
 
@@ -205,6 +207,69 @@ class AddImageLongJobCase extends SubCase {
 
         assert null != dbFindByUuid(uuid, ImageVO.class)
         assert timeout == TimeUtils.parseTimeInMillis("72h")
+
+        env.cleanMessageHandlers()
+    }
+
+    void testUpdateLongJobApiTimeout() {
+        myDescription = "my-test4"
+
+        String uuid = Platform.uuid
+
+        def action = new UpdateGlobalConfigAction()
+        action.category = LongJobGlobalConfig.CATEGORY
+        action.name = LongJobGlobalConfig.LONG_JOB_DEFAULT_TIMEOUT.name
+        action.value = 10799
+        action.sessionId = adminSession()
+        UpdateGlobalConfigAction.Result ret = action.call()
+
+        assert ret.error != null
+
+        updateGlobalConfig {
+            category = LongJobGlobalConfig.CATEGORY
+            name = LongJobGlobalConfig.LONG_JOB_DEFAULT_TIMEOUT.name
+            value = 38000
+        }
+
+        APIAddImageMsg msg = new APIAddImageMsg()
+        msg.setName("TinyLinux")
+        msg.setBackupStorageUuids(Collections.singletonList(bs.uuid))
+        msg.setUrl("http://192.168.1.20/share/images/testestestestest.qcow2")
+        msg.setFormat(ImageConstant.RAW_FORMAT_STRING)
+        msg.setMediaType(ImageConstant.ImageMediaType.RootVolumeTemplate.toString())
+        msg.setPlatform(ImagePlatform.Linux.toString())
+        msg.setResourceUuid(uuid)
+
+        def timeout = 0
+        env.message(DownloadImageMsg.class) { DownloadImageMsg dmsg, CloudBus bus ->
+            timeout = dmsg.getTimeout()
+
+            def reply = new DownloadImageReply()
+            reply.setSize(SizeUnit.GIGABYTE.toByte(8))
+            reply.setActualSize(SizeUnit.GIGABYTE.toByte(8))
+            reply.setFormat("qcow2")
+            reply.setInstallPath("test/test")
+            reply.setMd5sum("testmd5")
+
+            bus.reply(dmsg, reply)
+        }
+
+        LongJobInventory jobInv = submitLongJob {
+            jobName = msg.getClass().getSimpleName()
+            jobData = gson.toJson(msg)
+            description = myDescription
+        } as LongJobInventory
+
+        assert jobInv.getJobName() == msg.getClass().getSimpleName()
+        assert jobInv.state == org.zstack.sdk.LongJobState.Running
+
+        retryInSecs() {
+            LongJobVO job = dbFindByUuid(jobInv.getUuid(), LongJobVO.class)
+            assert job.state.toString() == LongJobState.Succeeded.toString()
+        }
+
+        assert null != dbFindByUuid(uuid, ImageVO.class)
+        assert timeout == 38000000
 
         env.cleanMessageHandlers()
     }
