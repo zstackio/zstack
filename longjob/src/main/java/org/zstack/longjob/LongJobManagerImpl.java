@@ -5,6 +5,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
+import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigException;
+import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
+import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
@@ -14,6 +18,7 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.timeout.ApiTimeoutExtensionPoint;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Constants;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.identity.APIDeleteAccountEvent;
@@ -29,7 +34,9 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
+import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
 
 /**
@@ -236,6 +243,16 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
     public boolean start() {
         collectLongJobs();
 
+        LongJobGlobalConfig.LONG_JOB_DEFAULT_TIMEOUT.installValidateExtension(new GlobalConfigValidatorExtensionPoint() {
+            @Override
+            public void validateGlobalConfig(String category, String name, String oldValue, String newValue) throws GlobalConfigException {
+                Long v = Long.valueOf(newValue);
+                if (v < 10800) {
+                    throw new GlobalConfigException("long job timeout must be larger than 10800s");
+                }
+            }
+        });
+
         return true;
     }
 
@@ -347,10 +364,11 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
     }
 
     @Override
-    public String getApiTimeout(Class claz) {
+    public Long getApiTimeout(Class claz) {
         String type = ThreadContext.get(Constants.THREAD_CONTEXT_TASK_NAME);
         if (type != null && longJobClasses.contains(type)) {
-            return LongJobGlobalConfig.LONG_JOB_DEFAULT_TIMEOUT.value(String.class);
+            // default input unit is second should be changed to millis
+            return TimeUnit.SECONDS.toMillis(LongJobGlobalConfig.LONG_JOB_DEFAULT_TIMEOUT.value(Long.class));
         }
 
         return null;
