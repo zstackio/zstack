@@ -19,7 +19,7 @@ class SQLConditionBuilder {
             template = "${fc.self.selfInventoryClass.simpleName}.${fc.fieldName} \${${OPERATOR_NAME}} \${${VALUE_NAME}}"
         } else {
             ZQLMetadata.ExpandChainQuery first = chainQueries[0] as ZQLMetadata.ExpandChainQuery
-            template = "${first.right.selfKeyName} IN ${makeTemplate(chainQueries[1..chainQueries.size()-1].iterator())}"
+            template = "${first.self.simpleInventoryName()}.${first.right.selfKeyName} IN ${makeTemplate(chainQueries[1..chainQueries.size()-1].iterator())}"
         }
     }
 

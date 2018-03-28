@@ -1,6 +1,5 @@
 package org.zstack.core.db;
 
-import org.apache.commons.lang.StringUtils;
 import org.zstack.header.core.StaticInit;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.vo.EntityGraph;
@@ -39,6 +38,93 @@ public class DBGraph {
             return entityClass.getSimpleName();
         }
     }
+
+    public static class EntityVertex {
+        public Class entityClass;
+        public String srcKey;
+        public String dstKey;
+        public EntityVertex next;
+        public EntityVertex previous;
+
+        @Override
+        public String toString() {
+            return "EntityVertex{" +
+                    "entityClass=" + entityClass +
+                    ", srcKey='" + srcKey + '\'' +
+                    ", dstKey='" + dstKey + '\'' +
+                    ", next=" + next +
+                    ", previous=" + (previous == null ? null : previous.entityClass.getSimpleName()) +
+                    '}';
+        }
+    }
+
+    private static Key getKey(Node leftNode, Node rightNode) {
+        Map<Class, Key> kmap = keys.get(leftNode.entityClass);
+        if (kmap == null) {
+            throw new CloudRuntimeException(String.format("cannot find key node[%s] -> node[%s]", leftNode.entityClass, rightNode.entityClass));
+        }
+
+        Key key = kmap.get(rightNode.entityClass);
+        if (key == null) {
+            throw new CloudRuntimeException(String.format("cannot find key node[%s] -> node[%s]", leftNode.entityClass, rightNode.entityClass));
+        }
+
+        return key;
+    }
+
+    public static EntityVertex findVerticesWithSmallestWeight(Class src, Class dst) {
+        List<List<Node>> all = findPath(src, dst);
+        if (all.isEmpty()) {
+            return null;
+        }
+
+        class Judge {
+            EntityVertex vertex;
+            int weight;
+        }
+
+        List<Judge> judges = new ArrayList<>();
+        all.forEach(lst -> {
+            EntityVertex vertex = new EntityVertex();
+            Judge j = new Judge();
+            j.vertex = vertex;
+            judges.add(j);
+
+            Node left = lst.get(0);
+            Iterator<Node> it = lst.subList(1, lst.size()).iterator();
+            vertex.entityClass = left.entityClass;
+
+            EntityVertex current = vertex;
+            while (it.hasNext()) {
+                Node right = it.next();
+                Key key = getKey(left, right);
+                j.weight += key.weight;
+                current.srcKey = key.src;
+                current.dstKey = key.dst;
+                current.next = new EntityVertex();
+                current.next.entityClass = right.entityClass;
+                current.next.previous = current;
+                current = current.next;
+                left = right;
+            }
+        });
+
+        Judge smallest = null;
+        for (Judge judge : judges) {
+            if (smallest == null) {
+                smallest = judge;
+                continue;
+            }
+
+            if (smallest.weight > judge.weight) {
+                smallest = judge;
+            }
+        }
+
+        assert smallest != null;
+        return smallest.vertex;
+    }
+
 
     private static List<List<Node>> findPath(Class src, Class dst) {
 
@@ -85,68 +171,6 @@ public class DBGraph {
         }
 
         return new PathFinder().find();
-    }
-
-    public static void printPath(Class src, Class dst) {
-        List<List<Node>> paths = findPath(src, dst);
-
-        class KeyFinder {
-            Node leftNode;
-            Node rightNode;
-
-            Key pushNode(Node node) {
-                if (rightNode == null) {
-                    rightNode = node;
-                    return null;
-                }
-
-                leftNode = rightNode;
-                rightNode = node;
-
-                Map<Class, Key> kmap = keys.get(leftNode.entityClass);
-                if (kmap == null) {
-                    throw new CloudRuntimeException(String.format("cannot for node[%s] -> node[%s]", leftNode.entityClass, rightNode.entityClass));
-                }
-
-                Key key = kmap.get(rightNode.entityClass);
-                if (key == null) {
-                    throw new CloudRuntimeException(String.format("cannot for node[%s] -> node[%s]", leftNode.entityClass, rightNode.entityClass));
-                }
-
-                return key;
-            }
-        }
-
-        class Path {
-            int length;
-            String path;
-        }
-
-        List<Path> allPaths = new ArrayList<>();
-
-        paths.forEach(lst -> {
-            KeyFinder keyFinder = new KeyFinder();
-            List<String> pstr = new ArrayList<>();
-
-            Path p = new Path();
-
-            lst.forEach(n -> {
-                Key key = keyFinder.pushNode(n);
-                if (key != null) {
-                    pstr.add(key.toString());
-                    p.length += key.weight;
-                }
-                pstr.add(n.toString());
-            });
-
-            p.path = StringUtils.join(pstr, " ");
-
-            allPaths.add(p);
-        });
-
-        allPaths.sort(Comparator.comparingInt(p -> p.length));
-
-        allPaths.forEach(p -> logger.debug(String.format("yyyyyyyyyyyyyyyyyy %s: %s", p.length, p.path)));
     }
 
     @StaticInit

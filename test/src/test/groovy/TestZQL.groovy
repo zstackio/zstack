@@ -1,6 +1,11 @@
 import org.junit.Test
 import org.zstack.core.Platform
+import org.zstack.core.db.DBGraph
+import org.zstack.header.cluster.ClusterVO
 import org.zstack.header.vm.VmInstanceInventory
+import org.zstack.header.vm.VmInstanceVO
+import org.zstack.header.vm.VmNicVO
+import org.zstack.header.zone.ZoneVO
 import org.zstack.zql.ZQL
 import org.zstack.zql.ast.ZQLMetadata
 import org.zstack.zql.ast.sql.SQLConditionBuilder
@@ -19,8 +24,14 @@ class TestZQL {
     void test() {
         Platform.getUuid()
 
-        ZQL zql = ZQL.fromString("query vminstance where vmNics.l3Network.l2Network.cluster.zoneUuid='a5576d5e57a7443894eeb078702023fd' or name = 'hello'")
+        def vertex = DBGraph.findVerticesWithSmallestWeight(VmInstanceVO.class, ClusterVO.class)
+        println(vertex.toString())
+
+        ZQL zql = ZQL.fromString("query vminstance where vmNics.l3Network.l2Network.cluster.zoneUuid='a5576d5e57a7443894eeb078702023fd'" +
+                " or (name = 'hello' and uuid in (query vmnic.vmInstanceUuid where ip = '192.168.0.10') or name != 'abc')" +
+                " restrict by (zone.uuid = '8b78f4d7367c41dd86ebdd59052af8b9', cluster.name != 'cluster')")
         println(zql.toString())
+
 
 
         /*

@@ -5,6 +5,6 @@ import org.zstack.zql.ast.ASTNode
 class ComplexValueVisitor implements ASTVisitor<String, ASTNode.ComplexValue> {
     @Override
     String visit(ASTNode.ComplexValue node) {
-        return null
+        return node.subQuery.accept(new SubQueryVisitor())
     }
 }

@@ -3,10 +3,9 @@ package org.zstack.zql.ast.visitors
 import org.zstack.zql.ZQLContext
 import org.zstack.zql.ast.ASTNode
 import org.zstack.zql.ast.ZQLMetadata
-import org.zstack.zql.ast.visitors.result.QueryResult
 
-class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
-    private String makeConditions(ASTNode.Query node) {
+class SubQueryVisitor implements ASTVisitor<String, ASTNode.SubQuery> {
+    private String makeConditions(ASTNode.SubQuery node) {
         if (node.conditions?.isEmpty()) {
             return ""
         }
@@ -15,7 +14,8 @@ class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
         return conds.join(" ")
     }
 
-    private String makeSQL(ASTNode.Query node) {
+    @Override
+    String visit(ASTNode.SubQuery node) {
         ZQLMetadata.InventoryMetadata inventory = ZQLMetadata.findInventoryMetadata(node.target.entity)
         ZQLContext.pushQueryTargetInventoryName(inventory.fullInventoryName())
 
@@ -31,30 +31,12 @@ class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
         List<String> clauses = []
         clauses.add("SELECT ${queryTarget} FROM ${entityVOName} ${entityAlias}")
         String condition = makeConditions(node)
-        String restrictBy = node.restrictBy?.accept(new RestrictByVisitor())
-        if (condition != "" || restrictBy != null) {
-            clauses.add("WHERE")
-        }
-
-        List<String> conditionClauses = []
         if (condition != "") {
-            conditionClauses.add(condition)
-        }
-        if (restrictBy != null) {
-            conditionClauses.add(restrictBy)
-        }
-
-        if (!conditionClauses.isEmpty()) {
-            clauses.add(conditionClauses.join(" AND "))
+            clauses.add("WHERE")
+            clauses.add(condition)
         }
 
         ZQLContext.popQueryTargetInventoryName()
-        return clauses.join(" ")
-    }
-
-    QueryResult visit(ASTNode.Query node) {
-        def ret = new QueryResult()
-        ret.sql = makeSQL(node)
-        return ret
+        return "(${clauses.join(" ")})"
     }
 }
