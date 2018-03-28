@@ -120,15 +120,13 @@ public class SftpBackupStorage extends BackupStorageBase {
 
                 @Override
                 public void success(DownloadResponse ret) {
+                    updateCapacity(ret.getTotalCapacity(), ret.getAvailableCapacity());
                     if (ret.isSuccess()) {
                         DownloadResult res = new DownloadResult();
                         res.md5sum = ret.getMd5Sum();
                         res.size = ret.getSize();
                         res.actualSize = ret.getActualSize();
                         res.format = ret.format;
-
-                        updateCapacity(ret.getTotalCapacity(), ret.getAvailableCapacity());
-
                         completion.success(res);
                     } else {
                         completion.fail(operr("fail to download image, because %s", ret.getError()));
