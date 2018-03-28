@@ -9,10 +9,12 @@ import org.zstack.header.storage.backup.BackupStorageStatus
 import org.zstack.header.storage.primary.ImageCacheVO
 import org.zstack.header.storage.primary.ImageCacheVO_
 import org.zstack.header.storage.primary.PrimaryStorageVO_
+import org.zstack.header.vm.VmBootDevice
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.KVMHost
 import org.zstack.sdk.AttachIsoToVmInstanceAction
+import org.zstack.sdk.GetVmBootOrderResult
 import org.zstack.storage.backup.BackupStorageBase
 import org.zstack.storage.ceph.backup.CephBackupStorageBase
 import org.zstack.storage.ceph.backup.CephBackupStorageMonBase
@@ -88,11 +90,27 @@ class AttachIsoCase extends SubCase {
             return rsp
         }
 
+        GetVmBootOrderResult res = getVmBootOrder {
+            uuid = vmUuid
+        }
+
+        assert res.orders.size() == 1
+        assert res.orders[0] == VmBootDevice.HardDisk.toString()
+
         attachIsoToVmInstance {
             isoUuid = imageUuid
             vmInstanceUuid = vmUuid
             sessionId = currentEnvSpec.session.uuid
         }
+
+        res = getVmBootOrder {
+            uuid = vmUuid
+        }
+
+        assert res.orders.size() == 2
+        assert res.orders[0] == VmBootDevice.HardDisk.toString()
+        assert res.orders[1] == VmBootDevice.CdRom.toString()
+
         detachIsoFromVmInstance {
             vmInstanceUuid = vmUuid
             sessionId = currentEnvSpec.session.uuid
