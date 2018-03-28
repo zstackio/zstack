@@ -29,7 +29,7 @@ class TestZQL {
 
         ZQL zql = ZQL.fromString("query vminstance where vmNics.l3Network.l2Network.cluster.zoneUuid='a5576d5e57a7443894eeb078702023fd'" +
                 " or (name = 'hello' and uuid in (query vmnic.vmInstanceUuid where ip = '192.168.0.10') or name != 'abc')" +
-                " restrict by (zone.uuid = '8b78f4d7367c41dd86ebdd59052af8b9', cluster.name != 'cluster')")
+                " restrict by (zone.uuid = '8b78f4d7367c41dd86ebdd59052af8b9', cluster.name != 'cluster') order by uuid asc limit 10 offset 1000")
         println(zql.toString())
 
         /*

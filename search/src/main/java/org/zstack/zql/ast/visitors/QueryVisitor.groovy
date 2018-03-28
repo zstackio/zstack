@@ -48,6 +48,18 @@ class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
             clauses.add(conditionClauses.join(" AND "))
         }
 
+        if (node.orderBy != null) {
+            clauses.add(node.orderBy.accept(new OrderByVisitor()) as String)
+        }
+
+        if (node.limit != null) {
+            clauses.add(node.limit.accept(new LimitVisitor()) as String)
+        }
+
+        if (node.offset != null) {
+            clauses.add(node.offset.accept(new OffsetVisitor()) as String)
+        }
+
         ZQLContext.popQueryTargetInventoryName()
         return clauses.join(" ")
     }
