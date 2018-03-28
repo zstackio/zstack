@@ -775,12 +775,9 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
     }
 
     private void buildEntityInfo() {
-        String[] pkgs = StringUtils.split(DbGlobalProperty.ENTITY_PACKAGES, ",");
-        List<Class> clzs = BeanUtils.scanClass(Arrays.asList(pkgs), Entity.class);
-        for (Class clz : clzs) {
-            logger.debug(String.format("build entity info for %s", clz.getName()));
+        BeanUtils.reflections.getTypesAnnotatedWith(Entity.class).forEach(clz-> {
             entityInfoMap.put(clz, new EntityInfo(clz));
-        }
+        });
     }
 
     private void populateExtensions() {

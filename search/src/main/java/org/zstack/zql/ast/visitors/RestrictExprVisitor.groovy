@@ -1,7 +1,12 @@
 package org.zstack.zql.ast.visitors
 
 import groovy.text.SimpleTemplateEngine
+import org.springframework.beans.factory.annotation.Autowire
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Configurable
 import org.zstack.core.db.DBGraph
+import org.zstack.core.db.DatabaseFacade
+import org.zstack.core.db.EntityMetadata
 import org.zstack.zql.ZQLContext
 import org.zstack.zql.ast.ASTNode
 import org.zstack.zql.ast.ZQLError
@@ -26,6 +31,8 @@ class RestrictExprVisitor implements ASTVisitor<String, ASTNode.RestrictExpr> {
         }
 
         String template = makeQueryTemplate(vertex, node.field)
+        String primaryKey = EntityMetadata.getPrimaryKeyField(src.inventoryAnnotation.mappingVOClass()).name
+        template = "(${src.simpleInventoryName()}.${primaryKey} IN ${template})"
         SimpleTemplateEngine engine = new SimpleTemplateEngine()
         return engine.createTemplate(template)
                 .make([(OPERATOR_NAME): node.operator,(VALUE_NAME): (node.value as ASTNode).accept(new ValueVisitor())]).toString()
@@ -42,6 +49,7 @@ class RestrictExprVisitor implements ASTVisitor<String, ASTNode.RestrictExpr> {
         String value = makeQueryTemplate(vertex.next, field)
         String entity = "${vertex.entityClass.simpleName}_"
         String vo = vertex.entityClass.simpleName
-        return "(SELECT ${entity}.${vertex.srcKey} FROM ${vo} ${entity} WHERE ${entity}.${vertex.srcKey} = ${value})"
+        String primaryKey = EntityMetadata.getPrimaryKeyField(vertex.entityClass).name
+        return "(SELECT ${entity}.${primaryKey} FROM ${vo} ${entity} WHERE ${entity}.${vertex.srcKey} = ${value})"
     }
 }

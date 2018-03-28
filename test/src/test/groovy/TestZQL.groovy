@@ -6,6 +6,7 @@ import org.zstack.header.vm.VmInstanceInventory
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmNicVO
 import org.zstack.header.zone.ZoneVO
+import org.zstack.testlib.SubCase
 import org.zstack.zql.ZQL
 import org.zstack.zql.ast.ZQLMetadata
 import org.zstack.zql.ast.sql.SQLConditionBuilder
@@ -23,7 +24,6 @@ class TestZQL {
     @Test
     void test() {
         Platform.getUuid()
-
         def vertex = DBGraph.findVerticesWithSmallestWeight(VmInstanceVO.class, ClusterVO.class)
         println(vertex.toString())
 
@@ -31,8 +31,6 @@ class TestZQL {
                 " or (name = 'hello' and uuid in (query vmnic.vmInstanceUuid where ip = '192.168.0.10') or name != 'abc')" +
                 " restrict by (zone.uuid = '8b78f4d7367c41dd86ebdd59052af8b9', cluster.name != 'cluster')")
         println(zql.toString())
-
-
 
         /*
         def fs = "vmNics.l3Network.l2Network.cluster.zoneUuid".split("\\.") as List
