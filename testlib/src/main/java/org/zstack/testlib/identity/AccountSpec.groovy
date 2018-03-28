@@ -1,7 +1,6 @@
 package org.zstack.testlib.identity
 
 import org.zstack.sdk.AccountInventory
-import org.zstack.sdk.RoleInventory
 import org.zstack.sdk.SessionInventory
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.Spec
@@ -85,7 +84,7 @@ class AccountSpec extends Spec {
             }[0]
 
             roleNames.each { rname ->
-                RoleInventory inv = findSpec(rname, RoleSpec.class).inventory
+                def inv = findSpec(rname, RoleSpec.class).inventory
 
                 attachRoleToAccount {
                     roleUuid = inv.uuid

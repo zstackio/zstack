@@ -1,12 +1,6 @@
 package org.zstack.testlib.identity
 
-import org.zstack.sdk.RoleInventory
-import org.zstack.testlib.EnvSpec
-import org.zstack.testlib.HasSession
-import org.zstack.testlib.Spec
-import org.zstack.testlib.SpecID
-import org.zstack.testlib.SpecMethod
-import org.zstack.testlib.SpecParam
+import org.zstack.testlib.*
 
 class RoleSpec extends Spec implements HasSession {
     @SpecParam(required = true)
@@ -18,7 +12,7 @@ class RoleSpec extends Spec implements HasSession {
         super(envSpec)
     }
 
-    RoleInventory inventory
+    def inventory
 
     private List<String> policyNames = []
 

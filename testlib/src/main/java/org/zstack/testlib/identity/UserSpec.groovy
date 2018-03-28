@@ -1,13 +1,8 @@
 package org.zstack.testlib.identity
 
 import org.zstack.sdk.PolicyInventory
-import org.zstack.sdk.RoleInventory
 import org.zstack.sdk.UserInventory
-import org.zstack.testlib.EnvSpec
-import org.zstack.testlib.HasSession
-import org.zstack.testlib.Spec
-import org.zstack.testlib.SpecID
-import org.zstack.testlib.SpecParam
+import org.zstack.testlib.*
 
 class UserSpec extends Spec implements HasSession {
     @SpecParam(required = true)
@@ -64,7 +59,7 @@ class UserSpec extends Spec implements HasSession {
             }
 
             roleNames.each { rname ->
-                RoleInventory inv = findSpec(rname, RoleSpec.class).inventory
+                def inv = findSpec(rname, RoleSpec.class).inventory
                 attachRoleToUser {
                     roleUuid = inv.uuid
                     userUuid = inventory.uuid
