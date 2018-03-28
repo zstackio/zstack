@@ -4,9 +4,12 @@ import groovy.text.SimpleTemplateEngine
 import org.springframework.beans.factory.annotation.Autowire
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Configurable
+import org.zstack.core.Platform
+import org.zstack.core.componentloader.PluginRegistry
 import org.zstack.core.db.DBGraph
-import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.EntityMetadata
+import org.zstack.header.zql.RestrictByExprExtensionPoint
+import org.zstack.header.zql.ZQLExtensionContext
 import org.zstack.zql.ZQLContext
 import org.zstack.zql.ast.ASTNode
 import org.zstack.zql.ast.ZQLError
@@ -16,8 +19,23 @@ class RestrictExprVisitor implements ASTVisitor<String, ASTNode.RestrictExpr> {
     private static final OPERATOR_NAME = "__operatorName__"
     private static final VALUE_NAME = "__valueName__"
 
+    private PluginRegistry pluginRgty = Platform.getComponentLoader().getComponent(PluginRegistry.class)
+
     @Override
     String visit(ASTNode.RestrictExpr node) {
+        RestrictByExprExtensionPoint.RestrictByExpr expr = new RestrictByExprExtensionPoint.RestrictByExpr(
+                entity: node.entity,
+                field: node.field
+        )
+
+        ZQLExtensionContext context = ZQLContext.createZQLExtensionContext()
+        for (RestrictByExprExtensionPoint extp : pluginRgty.getExtensionList(RestrictByExprExtensionPoint.class)) {
+            String ret = extp.restrictByExpr(context, expr)
+            if (ret != null) {
+                return ret
+            }
+        }
+
         String srcTargetName = ZQLContext.peekQueryTargetInventoryName()
         ZQLMetadata.InventoryMetadata src = ZQLMetadata.getInventoryMetadataByName(srcTargetName)
         ZQLMetadata.InventoryMetadata dst = ZQLMetadata.findInventoryMetadata(node.entity)

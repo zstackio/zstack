@@ -2,11 +2,14 @@ package org.zstack.zql
 
 import org.antlr.v4.runtime.*
 import org.antlr.v4.runtime.misc.ParseCancellationException
+import org.zstack.core.db.SQLBatch
 import org.zstack.zql.antlr4.ZQLLexer
 import org.zstack.zql.antlr4.ZQLParser
 import org.zstack.zql.ast.ASTNode
 import org.zstack.zql.ast.parser.visitors.QueryVisitor
 import org.zstack.zql.ast.visitors.result.QueryResult
+
+import javax.persistence.Query
 
 class ZQL {
     private QueryResult astResult
@@ -39,6 +42,34 @@ class ZQL {
         ASTNode.Query query = p.query().accept(new QueryVisitor())
         def ret = query.accept(new org.zstack.zql.ast.visitors.QueryVisitor())
         return new ZQL(astResult: ret)
+    }
+
+    private List entityVOtoInventories(List vos) {
+        String collectionMethodName = astResult.inventoryMetadata.inventoryAnnotation.collectionValueOfMethod()
+        if (collectionMethodName == "") {
+            collectionMethodName = "valueOf"
+        }
+
+        return astResult.inventoryMetadata.selfInventoryClass.invokeMethod(collectionMethodName, vos)
+    }
+
+    ZQLQueryResult execute() {
+        Long count = null
+        List vos = null
+
+        new SQLBatch(){
+            @Override
+            protected void scripts() {
+                Query q = databaseFacade.getEntityManager().createQuery(astResult.sql)
+                vos = q.getResultList()
+            }
+        }.execute()
+
+        ZQLQueryResult ret = new ZQLQueryResult(
+                inventories: entityVOtoInventories(vos)
+        )
+
+        return ret
     }
 
     @Override

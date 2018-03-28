@@ -6,6 +6,8 @@ import org.zstack.zql.ast.ZQLMetadata
 import org.zstack.zql.ast.visitors.result.QueryResult
 
 class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
+    def ret = new QueryResult()
+
     private String makeConditions(ASTNode.Query node) {
         if (node.conditions?.isEmpty()) {
             return ""
@@ -17,6 +19,7 @@ class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
 
     private String makeSQL(ASTNode.Query node) {
         ZQLMetadata.InventoryMetadata inventory = ZQLMetadata.findInventoryMetadata(node.target.entity)
+        ret.inventoryMetadata = inventory
         ZQLContext.pushQueryTargetInventoryName(inventory.fullInventoryName())
 
         String fieldName = node.target.fields == null || node.target.fields.isEmpty() ? "" : node.target.fields[0]
@@ -65,7 +68,6 @@ class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
     }
 
     QueryResult visit(ASTNode.Query node) {
-        def ret = new QueryResult()
         ret.sql = makeSQL(node)
         return ret
     }
