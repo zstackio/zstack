@@ -42,6 +42,7 @@ class WhileCase extends SubCase{
         testRunStepWhenItemsEmpty()
         testRunStepCompletionDone()
         testRunStepComletionAllDone()
+        testConcurrentAdd()
     }
 
     static void testRunAllWhenItemsEmpty(){
@@ -148,5 +149,55 @@ class WhileCase extends SubCase{
         future.await(TIME_OUT)
         assert future.success
         assert count.get() == 1
+    }
+
+    static void testConcurrentAdd() {
+        List<Object> target = new ArrayList<>()
+        List<Object> source = new ArrayList<>()
+        for (int i = 0; i < 100; i++) {
+            source.add(i + "")
+        }
+
+        Thread thread1 = new Thread() {
+            @Override
+            void run() {
+                new While<>(source).all({ item, completion ->
+                    synchronized (target) {
+                        target.add(item)
+                    }
+                }).run(new NoErrorCompletion() {
+                    @Override
+                    void done() {
+                        logger.debug("thread1 over...")
+                    }
+                })
+            }
+        }
+
+        Thread thread2 = new Thread() {
+            @Override
+            void run() {
+                new While<>(source).all({ item, completion ->
+                    synchronized (target) {
+                        target.add(item)
+                    }
+                }).run(new NoErrorCompletion() {
+                    @Override
+                    void done() {
+                        logger.debug("thread2 over...")
+                    }
+                })
+            }
+        }
+
+        thread1.start()
+        thread2.start()
+        thread1.join()
+        thread2.join()
+
+        assert target.size() == 2 * source.size()
+        target.each {
+            assert it != null
+        }
     }
 }
