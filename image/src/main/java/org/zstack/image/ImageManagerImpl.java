@@ -1,5 +1,6 @@
 package org.zstack.image;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -968,7 +969,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     trackUpload(ctx.name, ctx.imageUuid, ctx.bsUuid, ctx.hostname);
                 }
             }
-
+            
             @Override
             protected Collection<DownloadImageMsg> collect() {
                 return dmsgs;
@@ -1017,7 +1018,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                         vo.setSize(re.getSize());
                                         vo.setActualSize(re.getActualSize());
                                         vo.setStatus(ref.getStatus());
-                                        if (re.getFormat() != null) {
+                                        if (StringUtils.isNotEmpty(re.getFormat())) {
                                             vo.setFormat(re.getFormat());
                                         }
                                         dbf.update(vo);
