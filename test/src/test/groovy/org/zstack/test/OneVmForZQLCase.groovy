@@ -152,7 +152,7 @@ test a VM's start/stop/reboot/destroy/recover operations
     void test() {
         env.create {
             ZoneInventory zone = env.inventoryByName("zone")
-            def ret = ZQL.fromString("query vminstance where vmNics.l3Network.l2Network.zoneUuid = '${zone.uuid}' restrict by (zone.name = 'zone')").execute()
+            def ret = ZQL.fromString("query vminstance where vmNics.l3Network.l2Network.zoneUuid = '${zone.uuid}' restrict by (zone.name != 'zone')").execute()
             logger.debug("xxxxxxxxxxxxxxxx ${JSONObjectUtil.toJsonString(ret)}")
         }
     }
