@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteAliyunDiskFromRemoteAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteAliyunDiskFromRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteAliyunDiskFromRemoteResult value;
+        public org.zstack.sdk.DeleteAliyunDiskFromRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DeleteAliyunDiskFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        DeleteAliyunDiskFromRemoteResult value = res.getResult(DeleteAliyunDiskFromRemoteResult.class);
-        ret.value = value == null ? new DeleteAliyunDiskFromRemoteResult() : value; 
+        org.zstack.sdk.DeleteAliyunDiskFromRemoteResult value = res.getResult(org.zstack.sdk.DeleteAliyunDiskFromRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteAliyunDiskFromRemoteResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DeleteAliyunDiskFromRemoteAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/hybrid/aliyun/disk/{uuid}/remote";

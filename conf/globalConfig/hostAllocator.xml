@@ -39,4 +39,12 @@
         <defaultValue>500</defaultValue>
         <type>java.lang.Integer</type>
     </config>
+
+    <config>
+        <name>hostAllocator.concurrent</name>
+        <description>allow host allocator run concurrently</description>
+        <category>hostAllocator</category>
+        <defaultValue>false</defaultValue>
+        <type>java.lang.Boolean</type>
+    </config>
 </globalConfig>

@@ -266,7 +266,7 @@ class AttachAndDeleteEipCase extends SubCase{
             }
         }
 
-        retryInSecs(2, 1){
+        retryInSecs(3, 1){
             assert Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm.uuid)
                     .eq(VmInstanceVO_.state, VmInstanceState.Pausing).exists
         }
@@ -312,7 +312,7 @@ class AttachAndDeleteEipCase extends SubCase{
             }
         }
 
-        retryInSecs(2, 1){
+        retryInSecs(5, 1){
             assert Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm.uuid)
                     .eq(VmInstanceVO_.state, VmInstanceState.VolumeMigrating).exists
         }

@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class LdapServerInventory  {
 
     public java.lang.String uuid;

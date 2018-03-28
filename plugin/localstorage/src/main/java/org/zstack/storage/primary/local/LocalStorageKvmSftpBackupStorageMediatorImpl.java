@@ -108,7 +108,7 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
             APICreateRootVolumeTemplateFromVolumeSnapshotMsg.class,
             APICreateRootVolumeTemplateFromRootVolumeMsg.class
     })
-    public static class SftpUploadBitsCmd extends LocalStorageKvmBackend.AgentCommand {
+    public static class SftpUploadBitsCmd extends LocalStorageKvmBackend.AgentCommand implements HasThreadContext{
         private String primaryStorageInstallPath;
         private String backupStorageInstallPath;
         private String hostname;

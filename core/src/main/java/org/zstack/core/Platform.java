@@ -80,6 +80,8 @@ public class Platform {
 
     public static Map<String, String> childResourceToBaseResourceMap = new HashMap<>();
 
+    static Map<Class, DynamicObjectMetadata> dynamicObjectMetadata = new HashMap<>();
+
     public static Locale getLocale() {
         return locale;
     }
@@ -164,7 +166,9 @@ public class Platform {
             try {
                 f.set(null, valueToSet);
                 globalProperties.put(name, valueToSet == null ? "null" : valueToSet.toString());
-                logger.debug(String.format("linked global property[%s.%s], value: %s", clz.getName(), f.getName(), valueToSet));
+                if (logger.isTraceEnabled()) {
+                    logger.trace(String.format("linked global property[%s.%s], value: %s", clz.getName(), f.getName(), valueToSet));
+                }
             } catch (IllegalAccessException e) {
                 throw new CloudRuntimeException(String.format("unable to link global property[%s.%s]", clz.getName(), f.getName()), e);
             }
@@ -358,6 +362,7 @@ public class Platform {
             FileInputStream in = new FileInputStream(globalPropertiesFile);
             System.getProperties().load(in);
 
+            collectDynamicObjectMetadata();
             linkGlobalProperty();
             prepareDefaultDbProperties();
             callStaticInitMethods();
@@ -373,6 +378,27 @@ public class Platform {
             }
 
         }
+    }
+
+    private static void collectDynamicObjectMetadata() {
+        reflections.getSubTypesOf(DynamicObject.class).forEach(clz -> {
+            DynamicObjectMetadata metadata = new DynamicObjectMetadata();
+            FieldUtils.getAllFields(clz).forEach(f -> {
+                f.setAccessible(true);
+                metadata.fields.put(f.getName(), f);
+            });
+
+            Class p = clz;
+            while (p != Object.class) {
+                for (Method m : p.getDeclaredMethods()) {
+                    m.setAccessible(true);
+                    metadata.methods.put(m.getName(), m);
+                }
+                p = p.getSuperclass();
+            }
+
+            dynamicObjectMetadata.put(clz, metadata);
+        });
     }
 
     public static String getBaseResourceType(String childResourceType) {
@@ -630,6 +656,14 @@ public class Platform {
         return toI18nString(code, l, args.toArray(new Object[args.size()]));
     }
 
+    private static String stringFormat(String fmt, Object...args) {
+        if (args == null || args.length == 0) {
+            return fmt;
+        } else {
+            return String.format(fmt, args);
+        }
+    }
+
     public static String toI18nString(String code, Locale l, Object...args) {
         l = l == null ? locale : l;
 
@@ -643,18 +677,14 @@ public class Platform {
 
             // if the result is an empty string which means the string is not translated in the locale,
             // return the original string so users won't get a confusing, empty string
-            return ret.isEmpty() ? String.format(code, args) : ret;
+            return ret.isEmpty() ? stringFormat(code, args) : ret;
         } catch (NoSuchMessageException e) {
-            return String.format(code, args);
+            return stringFormat(code, args);
         }
     }
 
     public static String i18n(String str, Object...args) {
-        if (args == null || args.length == 0) {
-            return str;
-        } else {
-            return String.format(str, args);
-        }
+        return toI18nString(str, args);
     }
 
     public static String i18n(String str, Map<String, String> args) {
@@ -767,5 +797,13 @@ public class Platform {
     // }
     public static <T> T New(Supplier supplier) {
         return (T) functionForMockTestObject.apply(supplier);
+    }
+
+    public static final String EXIT_REASON = "zstack.quit.reason";
+
+    public static void exit(String reason) {
+        new BootErrorLog().write(reason);
+        System.setProperty(EXIT_REASON, reason);
+        System.exit(1);
     }
 }

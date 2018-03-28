@@ -31,14 +31,12 @@ import org.zstack.header.zone.ZoneState;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
 import org.zstack.utils.network.NetworkUtils;
+import static org.zstack.core.Platform.*;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
-import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -76,6 +74,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APIAttachL3NetworkToVmMsg) msg);
         } else if (msg instanceof APIAttachIsoToVmInstanceMsg) {
             validate((APIAttachIsoToVmInstanceMsg) msg);
+        } else if (msg instanceof APIDetachIsoFromVmInstanceMsg) {
+            validate((APIDetachIsoFromVmInstanceMsg) msg);
         } else if (msg instanceof APISetVmBootOrderMsg) {
             validate((APISetVmBootOrderMsg) msg);
         } else if (msg instanceof APIDeleteVmStaticIpMsg) {
@@ -256,9 +256,28 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIAttachIsoToVmInstanceMsg msg) {
-        String isoUuid = new IsoOperator().getIsoUuidByVmUuid(msg.getVmInstanceUuid());
-        if (isoUuid != null) {
-            throw new ApiMessageInterceptionException(operr("VM[uuid:%s] already has an ISO[uuid:%s] attached", msg.getVmInstanceUuid(), isoUuid));
+        List<String> isoUuids = IsoOperator.getIsoUuidByVmUuid(msg.getVmInstanceUuid());
+        if (isoUuids.contains(msg.getIsoUuid())) {
+            throw new ApiMessageInterceptionException(operr("VM[uuid:%s] already has an ISO[uuid:%s] attached", msg.getVmInstanceUuid(), msg.getIsoUuid()));
+        }
+    }
+
+    private void fillIsoUuid(APIDetachIsoFromVmInstanceMsg msg) {
+        List<String> isoUuids = IsoOperator.getIsoUuidByVmUuid(msg.getVmInstanceUuid());
+        if(isoUuids.size() == 1) {
+            msg.setIsoUuid(isoUuids.get(0));
+        }
+    }
+
+    private void validate(APIDetachIsoFromVmInstanceMsg msg) {
+        List<String> isoUuids = IsoOperator.getIsoUuidByVmUuid(msg.getVmInstanceUuid());
+
+        if (isoUuids.size() > 1 && msg.getIsoUuid() == null) {
+            throw new ApiMessageInterceptionException(operr("VM[uuid:%s] has multiple ISOs attached, specify the isoUuid when detaching", msg.getVmInstanceUuid()));
+        }
+
+        if (msg.getIsoUuid() == null) {
+            fillIsoUuid(msg);
         }
     }
 
@@ -344,6 +363,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
 
         msg.setVmInstanceUuid(vmUuid);
+
+        msg.l3Uuid = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).select(VmNicVO_.l3NetworkUuid).findValue();
     }
 
     private static <T> List<T> getDuplicateElements(List<T> list) {

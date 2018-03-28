@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class CreatePciDeviceOfferingAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class CreatePciDeviceOfferingAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreatePciDeviceOfferingResult value;
+        public org.zstack.sdk.CreatePciDeviceOfferingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -71,8 +72,8 @@ public class CreatePciDeviceOfferingAction extends AbstractAction {
             return ret;
         }
         
-        CreatePciDeviceOfferingResult value = res.getResult(CreatePciDeviceOfferingResult.class);
-        ret.value = value == null ? new CreatePciDeviceOfferingResult() : value; 
+        org.zstack.sdk.CreatePciDeviceOfferingResult value = res.getResult(org.zstack.sdk.CreatePciDeviceOfferingResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreatePciDeviceOfferingResult() : value; 
 
         return ret;
     }
@@ -91,15 +92,15 @@ public class CreatePciDeviceOfferingAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/pci-device/pci-device-offerings";

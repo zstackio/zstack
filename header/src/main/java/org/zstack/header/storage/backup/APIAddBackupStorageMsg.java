@@ -5,8 +5,9 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
+import org.zstack.header.other.APIAuditor;
 
-public abstract class APIAddBackupStorageMsg extends APICreateMessage {
+public abstract class APIAddBackupStorageMsg extends APICreateMessage implements APIAuditor {
     /**
      * @desc see :ref:`BackupStorageInventory`
      * <p>
@@ -92,5 +93,13 @@ public abstract class APIAddBackupStorageMsg extends APICreateMessage {
         };
     }
 
+    public Result audit(APIMessage msg, APIEvent rsp) {
+	    String resUuid = "";
+	    if (rsp.isSuccess()) {
+            APIAddBackupStorageEvent evt = (APIAddBackupStorageEvent) rsp;
+            resUuid = evt.getInventory().getUuid();
+        }
 
+        return new Result(resUuid, BackupStorageVO.class);
+    }
 }

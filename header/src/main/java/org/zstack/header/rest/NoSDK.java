@@ -11,4 +11,6 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface NoSDK {
+    String sdkClassName() default "";
+    String[] actionsMapping() default {};
 }

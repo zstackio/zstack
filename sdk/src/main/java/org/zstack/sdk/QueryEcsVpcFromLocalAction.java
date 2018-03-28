@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryEcsVpcFromLocalAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryEcsVpcFromLocalAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryEcsVpcFromLocalResult value;
+        public org.zstack.sdk.QueryEcsVpcFromLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryEcsVpcFromLocalAction extends QueryAction {
             return ret;
         }
         
-        QueryEcsVpcFromLocalResult value = res.getResult(QueryEcsVpcFromLocalResult.class);
-        ret.value = value == null ? new QueryEcsVpcFromLocalResult() : value; 
+        org.zstack.sdk.QueryEcsVpcFromLocalResult value = res.getResult(org.zstack.sdk.QueryEcsVpcFromLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryEcsVpcFromLocalResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QueryEcsVpcFromLocalAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/hybrid/aliyun/vpc";

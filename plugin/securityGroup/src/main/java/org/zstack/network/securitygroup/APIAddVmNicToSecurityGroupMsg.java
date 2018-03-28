@@ -6,6 +6,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.rest.RestResponse;
+import org.zstack.header.vm.VmNicVO;
 
 import java.util.List;
 
@@ -70,7 +71,7 @@ public class APIAddVmNicToSecurityGroupMsg extends APIMessage {
     /**
      * @desc a list of vm nic uuid. See :ref:`VmNicInventory`
      */
-    @APIParam(nonempty = true, checkAccount = true)
+    @APIParam(resourceType = VmNicVO.class, nonempty = true, checkAccount = true)
     private List<String> vmNicUuids;
     
     public String getSecurityGroupUuid() {

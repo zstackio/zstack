@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class RebootEcsInstanceAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class RebootEcsInstanceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public RebootEcsInstanceResult value;
+        public org.zstack.sdk.RebootEcsInstanceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +51,8 @@ public class RebootEcsInstanceAction extends AbstractAction {
             return ret;
         }
         
-        RebootEcsInstanceResult value = res.getResult(RebootEcsInstanceResult.class);
-        ret.value = value == null ? new RebootEcsInstanceResult() : value; 
+        org.zstack.sdk.RebootEcsInstanceResult value = res.getResult(org.zstack.sdk.RebootEcsInstanceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.RebootEcsInstanceResult() : value; 
 
         return ret;
     }
@@ -70,15 +71,15 @@ public class RebootEcsInstanceAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/hybrid/aliyun/ecs/{uuid}/actions";

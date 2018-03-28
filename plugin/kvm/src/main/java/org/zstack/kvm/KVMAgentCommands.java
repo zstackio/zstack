@@ -1,6 +1,7 @@
 package org.zstack.kvm;
 
 import org.zstack.core.validation.ConditionalValidation;
+import org.zstack.header.cluster.APIUpdateClusterOSMsg;
 import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotMsg;
@@ -246,6 +247,7 @@ public class KVMAgentCommands {
         private String qemuImgVersion;
         private String libvirtVersion;
         private String hvmCpuFlag;
+        private String cpuModelName;
         private List<String> ipAddresses;
 
         public String getHvmCpuFlag() {
@@ -278,6 +280,14 @@ public class KVMAgentCommands {
 
         public void setIpAddresses(List<String> ipAddresses) {
             this.ipAddresses = ipAddresses;
+        }
+
+        public String getCpuModelName() {
+            return cpuModelName;
+        }
+
+        public void setCpuModelName(String cpuModelName) {
+            this.cpuModelName = cpuModelName;
         }
     }
 
@@ -672,6 +682,7 @@ public class KVMAgentCommands {
     public static class IsoTO {
         private String path;
         private String imageUuid;
+        private int deviceId;
 
         public IsoTO() {
         }
@@ -679,6 +690,7 @@ public class KVMAgentCommands {
         public IsoTO(IsoTO other) {
             this.path = other.path;
             this.imageUuid = other.imageUuid;
+            this.deviceId = other.deviceId;
         }
 
 
@@ -696,6 +708,14 @@ public class KVMAgentCommands {
 
         public void setPath(String path) {
             this.path = path;
+        }
+
+        public int getDeviceId() {
+            return deviceId;
+        }
+
+        public void setDeviceId(int deviceId) {
+            this.deviceId = deviceId;
         }
     }
 
@@ -725,7 +745,7 @@ public class KVMAgentCommands {
         private String consolePassword;
         private List<String> bootDev;
         private VolumeTO rootVolume;
-        private IsoTO bootIso;
+        private List<IsoTO> bootIso = new ArrayList<>();
         private List<VolumeTO> dataVolumes;
         private List<NicTO> nics;
         private long timeout;
@@ -888,11 +908,11 @@ public class KVMAgentCommands {
             this.instanceOfferingOnlineChange = instanceOfferingOnlineChange;
         }
 
-        public IsoTO getBootIso() {
+        public List<IsoTO> getBootIso() {
             return bootIso;
         }
 
-        public void setBootIso(IsoTO bootIso) {
+        public void setBootIso(List<IsoTO> bootIso) {
             this.bootIso = bootIso;
         }
 
@@ -1341,6 +1361,7 @@ public class KVMAgentCommands {
         private String storageMigrationPolicy;
         private String srcHostIp;
         private boolean useNuma;
+        private boolean migrateFromDestination;
 
         public boolean isUseNuma() {
             return useNuma;
@@ -1380,6 +1401,14 @@ public class KVMAgentCommands {
 
         public void setDestHostIp(String destHostIp) {
             this.destHostIp = destHostIp;
+        }
+
+        public boolean isMigrateFromDestination() {
+            return migrateFromDestination;
+        }
+
+        public void setMigrateFromDestination(boolean migrateFromDestination) {
+            this.migrateFromDestination = migrateFromDestination;
         }
     }
 
@@ -1624,10 +1653,19 @@ public class KVMAgentCommands {
     public static class DetachIsoCmd extends AgentCommand {
         public String vmUuid;
         public String isoUuid;
+        public int deviceId;
     }
 
     public static class DetachIsoRsp extends AgentResponse {
 
+    }
+
+    @ApiTimeout(apiClasses = APIUpdateClusterOSMsg.class)
+    public static class UpdateHostOSCmd extends AgentCommand {
+        public String hostUuid;
+    }
+
+    public static class UpdateHostOSRsp extends AgentResponse {
     }
 
     public static class ReportVmStateCmd {

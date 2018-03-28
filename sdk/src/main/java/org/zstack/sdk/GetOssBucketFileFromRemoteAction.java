@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class GetOssBucketFileFromRemoteAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class GetOssBucketFileFromRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetOssBucketFileFromRemoteResult value;
+        public org.zstack.sdk.GetOssBucketFileFromRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -44,8 +45,8 @@ public class GetOssBucketFileFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        GetOssBucketFileFromRemoteResult value = res.getResult(GetOssBucketFileFromRemoteResult.class);
-        ret.value = value == null ? new GetOssBucketFileFromRemoteResult() : value; 
+        org.zstack.sdk.GetOssBucketFileFromRemoteResult value = res.getResult(org.zstack.sdk.GetOssBucketFileFromRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetOssBucketFileFromRemoteResult() : value; 
 
         return ret;
     }
@@ -64,15 +65,15 @@ public class GetOssBucketFileFromRemoteAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/hybrid/oss/file/remote";

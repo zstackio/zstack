@@ -18,6 +18,7 @@
             <zstack:extension interface="org.zstack.header.host.HostDeleteExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageDetachExtensionPoint" />
             <zstack:extension interface="org.zstack.storage.snapshot.PostMarkRootVolumeAsSnapshotExtension"/>
+            <zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageAttachExtensionPoint"/>
         </zstack:plugin>
     </bean>
 

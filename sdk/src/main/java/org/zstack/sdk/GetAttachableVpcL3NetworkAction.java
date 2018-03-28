@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class GetAttachableVpcL3NetworkAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class GetAttachableVpcL3NetworkAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetAttachableVpcL3NetworkResult value;
+        public org.zstack.sdk.GetAttachableVpcL3NetworkResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -44,8 +45,8 @@ public class GetAttachableVpcL3NetworkAction extends AbstractAction {
             return ret;
         }
         
-        GetAttachableVpcL3NetworkResult value = res.getResult(GetAttachableVpcL3NetworkResult.class);
-        ret.value = value == null ? new GetAttachableVpcL3NetworkResult() : value; 
+        org.zstack.sdk.GetAttachableVpcL3NetworkResult value = res.getResult(org.zstack.sdk.GetAttachableVpcL3NetworkResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetAttachableVpcL3NetworkResult() : value; 
 
         return ret;
     }
@@ -64,15 +65,15 @@ public class GetAttachableVpcL3NetworkAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/vpc/virtual-routers/{uuid}/attachable-vpc-l3s";

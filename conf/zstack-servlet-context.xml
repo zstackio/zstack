@@ -12,10 +12,20 @@
          http://www.springframework.org/schema/tx 
          http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
          http://www.springframework.org/schema/mvc
-         http://www.springframework.org/schema/mvc/spring-mvc-3.0.xsd"
+         http://www.springframework.org/schema/mvc/spring-mvc-3.2.xsd"
 	default-init-method="init" default-destroy-method="destory" default-lazy-init="true">
 	
 	<context:component-scan base-package="org.zstack" />
 	<!--aop:aspectj-autoproxy proxy-target-class="true" /-->
-	<mvc:annotation-driven />
+	<mvc:annotation-driven >
+		<mvc:message-converters>
+			<bean class="org.springframework.http.converter.StringHttpMessageConverter">
+				<property name="supportedMediaTypes">
+					<list>
+						<value>text/plain;charset=UTF-8</value>
+					</list>
+				</property>
+			</bean>
+		</mvc:message-converters>
+	</mvc:annotation-driven>
 </beans>

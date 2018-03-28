@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class BaremetalChassisInventory  {
 
     public java.lang.String uuid;
@@ -48,14 +50,6 @@ public class BaremetalChassisInventory  {
     }
     public java.lang.String getIpmiUsername() {
         return this.ipmiUsername;
-    }
-
-    public java.lang.String ipmiPassword;
-    public void setIpmiPassword(java.lang.String ipmiPassword) {
-        this.ipmiPassword = ipmiPassword;
-    }
-    public java.lang.String getIpmiPassword() {
-        return this.ipmiPassword;
     }
 
     public java.lang.String status;

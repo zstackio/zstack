@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class SessionInventory  {
 
     public java.lang.String uuid;

@@ -76,6 +76,8 @@ public class VipCascadeExtension extends AbstractAsyncCascadeExtension {
                     if (!r.isSuccess()) {
                         logger.warn(String.format("failed to delete vip[uuid:%s, ip: %s, name:%s], %s",
                                 vip.getUuid(), vip.getIp(), vip.getName(), r.getError()));
+                        completion.fail(r.getError());
+                        return;
                     }
                 }
 

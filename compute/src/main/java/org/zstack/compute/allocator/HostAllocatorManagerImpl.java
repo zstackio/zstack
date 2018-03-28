@@ -9,9 +9,14 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.allocator.*;
 import org.zstack.header.cluster.ReportHostCapacityMessage;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
@@ -68,6 +73,8 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
     private HostCpuOverProvisioningManager cpuRatioMgr;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private ThreadFacade thdf;
 
     @Override
     @MessageSafe
@@ -298,6 +305,40 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
     }
 
     private void handle(final AllocateHostMsg msg) {
+        if (HostAllocatorGlobalConfig.HOST_ALLOCATOR_ALLOW_CONCURRENT.value(Boolean.class)) {
+            doHandleAllocateHost(msg, new NopeCompletion());
+            return;
+        }
+
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return "host-allocator";
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                doHandleAllocateHost(msg, new Completion(chain) {
+                    @Override
+                    public void success() {
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "allocate-host-for-vm-" + msg.getVmInstance().getUuid();
+            }
+        });
+    }
+
+    private void doHandleAllocateHost(final AllocateHostMsg msg, Completion completion) {
         HostAllocatorSpec spec = HostAllocatorSpec.fromAllocationMsg(msg);
         spec.setBackupStoragePrimaryStorageMetrics(backupStoragePrimaryStorageMetrics);
 
@@ -329,19 +370,23 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                     if (hosts.isEmpty()){
                         reply.setHosts(new ArrayList<>());
                         bus.reply(msg, reply);
+                        completion.success();
                         return;
                     }
+
                     sortors.dryRunSort(spec, hosts, new ReturnValueCompletion<List<HostInventory>>(msg) {
                         @Override
                         public void success(List<HostInventory> returnValue) {
                             reply.setHosts(returnValue);
                             bus.reply(msg, reply);
+                            completion.success();
                         }
 
                         @Override
                         public void fail(ErrorCode errorCode) {
                             reply.setError(errorCode);
                             bus.reply(msg, reply);
+                            completion.fail(errorCode);
                         }
                     });
                 }
@@ -350,6 +395,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                 public void fail(ErrorCode errorCode) {
                     reply.setError(errorCode);
                     bus.reply(msg, reply);
+                    completion.fail(errorCode);
                 }
             });
         } else {
@@ -362,12 +408,14 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                         public void success(HostInventory returnValue) {
                             reply.setHost(returnValue);
                             bus.reply(msg, reply);
+                            completion.success();
                         }
 
                         @Override
                         public void fail(ErrorCode errorCode) {
                             reply.setError(errorCode);
                             bus.reply(msg, reply);
+                            completion.fail(errorCode);
                         }
                     });
                 }
@@ -376,6 +424,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                 public void fail(ErrorCode errorCode) {
                     reply.setError(errorCode);
                     bus.reply(msg, reply);
+                    completion.fail(errorCode);
                 }
             });
         }

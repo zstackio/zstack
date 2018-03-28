@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class VolumeSnapshotInventory  {
 
     public java.lang.String uuid;
@@ -138,11 +140,11 @@ public class VolumeSnapshotInventory  {
         return this.lastOpDate;
     }
 
-    public java.util.List<VolumeSnapshotBackupStorageRefInventory> backupStorageRefs;
-    public void setBackupStorageRefs(java.util.List<VolumeSnapshotBackupStorageRefInventory> backupStorageRefs) {
+    public java.util.List backupStorageRefs;
+    public void setBackupStorageRefs(java.util.List backupStorageRefs) {
         this.backupStorageRefs = backupStorageRefs;
     }
-    public java.util.List<VolumeSnapshotBackupStorageRefInventory> getBackupStorageRefs() {
+    public java.util.List getBackupStorageRefs() {
         return this.backupStorageRefs;
     }
 

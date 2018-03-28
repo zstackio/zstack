@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class GetBackupStorageCapacityAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class GetBackupStorageCapacityAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetBackupStorageCapacityResult value;
+        public org.zstack.sdk.GetBackupStorageCapacityResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +51,8 @@ public class GetBackupStorageCapacityAction extends AbstractAction {
             return ret;
         }
         
-        GetBackupStorageCapacityResult value = res.getResult(GetBackupStorageCapacityResult.class);
-        ret.value = value == null ? new GetBackupStorageCapacityResult() : value; 
+        org.zstack.sdk.GetBackupStorageCapacityResult value = res.getResult(org.zstack.sdk.GetBackupStorageCapacityResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetBackupStorageCapacityResult() : value; 
 
         return ret;
     }
@@ -70,15 +71,15 @@ public class GetBackupStorageCapacityAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/backup-storage/capacities";

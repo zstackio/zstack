@@ -244,8 +244,8 @@ class CreateVmAssignNfsPsCase extends SubCase{
         checkVmDataDiskPs(vm, nfs.uuid)
 
         // assign root volume local ps
-        try{
-            vm = createVmInstance {
+        expect (AssertionError.class) {
+            createVmInstance {
                 name = "vm1"
                 instanceOfferingUuid = instanceOffering.uuid
                 imageUuid = image.uuid
@@ -253,9 +253,6 @@ class CreateVmAssignNfsPsCase extends SubCase{
                 primaryStorageUuidForRootVolume = local.uuid
                 dataDiskOfferingUuids = [diskOffering.uuid]
             }
-            assert false
-        }catch (Throwable t){
-            assert true
         }
 
         // assign root volume nfs ps
@@ -283,7 +280,7 @@ class CreateVmAssignNfsPsCase extends SubCase{
         assert a2.call().error != null
 
         // assign data volume nfs ps
-        try{
+        expect (AssertionError.class) {
             vm = createVmInstance {
                 name = "vm3"
                 instanceOfferingUuid = instanceOffering.uuid
@@ -292,11 +289,7 @@ class CreateVmAssignNfsPsCase extends SubCase{
                 dataDiskOfferingUuids = [diskOffering.uuid]
                 systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): nfs.uuid])]
             }
-            assert false
-        }catch (Throwable t){
-            assert true
         }
-
         // assign root volume local ps, data volume local ps,
         CreateVmInstanceAction a3 = new CreateVmInstanceAction(
                 name: "vm3",

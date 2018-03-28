@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class SetImageQgaAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class SetImageQgaAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SetImageQgaResult value;
+        public org.zstack.sdk.SetImageQgaResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class SetImageQgaAction extends AbstractAction {
             return ret;
         }
         
-        SetImageQgaResult value = res.getResult(SetImageQgaResult.class);
-        ret.value = value == null ? new SetImageQgaResult() : value; 
+        org.zstack.sdk.SetImageQgaResult value = res.getResult(org.zstack.sdk.SetImageQgaResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SetImageQgaResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class SetImageQgaAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/images/{uuid}/actions";

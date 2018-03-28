@@ -14,9 +14,9 @@ import org.zstack.header.rest.RestRequest;
         method = HttpMethod.POST
 )
 public class APIAttachPolicyToUserMsg extends APIMessage implements AccountMessage {
-    @APIParam(checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = UserVO.class, checkAccount = true, operationTarget = true)
     private String userUuid;
-    @APIParam(checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = PolicyVO.class, checkAccount = true, operationTarget = true)
     private String policyUuid;
 
     @Override

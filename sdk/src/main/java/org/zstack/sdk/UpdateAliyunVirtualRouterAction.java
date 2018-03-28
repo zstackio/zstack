@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class UpdateAliyunVirtualRouterAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class UpdateAliyunVirtualRouterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateAliyunVirtualRouterResult value;
+        public org.zstack.sdk.UpdateAliyunVirtualRouterResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +57,8 @@ public class UpdateAliyunVirtualRouterAction extends AbstractAction {
             return ret;
         }
         
-        UpdateAliyunVirtualRouterResult value = res.getResult(UpdateAliyunVirtualRouterResult.class);
-        ret.value = value == null ? new UpdateAliyunVirtualRouterResult() : value; 
+        org.zstack.sdk.UpdateAliyunVirtualRouterResult value = res.getResult(org.zstack.sdk.UpdateAliyunVirtualRouterResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateAliyunVirtualRouterResult() : value; 
 
         return ret;
     }
@@ -76,15 +77,15 @@ public class UpdateAliyunVirtualRouterAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/hybrid/aliyun/vrouter/{uuid}/actions";

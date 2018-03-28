@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryVniRangeAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryVniRangeAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryVniRangeResult value;
+        public org.zstack.sdk.QueryVniRangeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryVniRangeAction extends QueryAction {
             return ret;
         }
         
-        QueryVniRangeResult value = res.getResult(QueryVniRangeResult.class);
-        ret.value = value == null ? new QueryVniRangeResult() : value; 
+        org.zstack.sdk.QueryVniRangeResult value = res.getResult(org.zstack.sdk.QueryVniRangeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryVniRangeResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QueryVniRangeAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/l2-networks/vxlan-pool/vni-range";

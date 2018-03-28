@@ -22,6 +22,9 @@ import org.zstack.header.image.ImageState;
 import org.zstack.header.image.ImageStatus;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
+import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_;
+import org.zstack.header.vm.VmInstance;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
@@ -31,6 +34,7 @@ import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 
 import javax.persistence.Tuple;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -166,6 +170,37 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
         new SQLBatch(){
             @Override
             protected void scripts() {
+                VolumeVO vol = q(VolumeVO.class).eq(VolumeVO_.uuid, msg.getVolumeUuid()).find();
+                List<String> volumeClusterUuids = q(PrimaryStorageClusterRefVO.class)
+                        .select(PrimaryStorageClusterRefVO_.clusterUuid)
+                        .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, vol.getPrimaryStorageUuid())
+                        .listValues();
+
+                List<String> vmInstanceClusterUuids = q(VmInstanceVO.class)
+                        .select(VmInstanceVO_.clusterUuid)
+                        .eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid())
+                        .listValues();
+
+                if (vmInstanceClusterUuids.isEmpty()) {
+                    String vmRootVolumeUuid = q(VmInstanceVO.class).select(VmInstanceVO_.rootVolumeUuid)
+                            .eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).findValue();
+
+                    String vmPrimaryStorageUuid = q(VolumeVO.class).select(VolumeVO_.primaryStorageUuid)
+                            .eq(VmInstanceVO_.uuid, vmRootVolumeUuid).findValue();
+
+                    vmInstanceClusterUuids = q(PrimaryStorageClusterRefVO.class)
+                            .select(PrimaryStorageClusterRefVO_.clusterUuid)
+                            .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, vmPrimaryStorageUuid)
+                            .listValues();
+                }
+
+                vmInstanceClusterUuids.retainAll(volumeClusterUuids);
+
+                // if there is no cluster contains both vm root volume and data volume, the data volume won't be attachable
+                if (vmInstanceClusterUuids.isEmpty() && !volumeClusterUuids.isEmpty()) {
+                    throw new ApiMessageInterceptionException(operr("Can't attach volume to VM, no qualified cluster"));
+                }
+
                 long count = sql("select count(vm.uuid)" +
                         " from VmInstanceVO vm, ImageVO image" +
                         " where vm.uuid = :vmUuid" +
@@ -179,7 +214,7 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
                    throw new ApiMessageInterceptionException(operr("the vm[uuid:%s] doesn't support to online attach volume[%s] on the basis of that the image platform type of the vm is other ", msg.getVmInstanceUuid(), msg.getVolumeUuid()));
                 }
 
-                VolumeVO vol = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, msg.getVolumeUuid()).find();
+
                 if (vol.getType() == VolumeType.Root) {
                     throw new ApiMessageInterceptionException(operr("the volume[uuid:%s, name:%s] is Root Volume, can't attach it",
                             vol.getUuid(), vol.getName()));

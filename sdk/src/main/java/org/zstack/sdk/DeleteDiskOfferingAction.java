@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteDiskOfferingAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteDiskOfferingAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteDiskOfferingResult value;
+        public org.zstack.sdk.DeleteDiskOfferingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DeleteDiskOfferingAction extends AbstractAction {
             return ret;
         }
         
-        DeleteDiskOfferingResult value = res.getResult(DeleteDiskOfferingResult.class);
-        ret.value = value == null ? new DeleteDiskOfferingResult() : value; 
+        org.zstack.sdk.DeleteDiskOfferingResult value = res.getResult(org.zstack.sdk.DeleteDiskOfferingResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteDiskOfferingResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DeleteDiskOfferingAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/disk-offerings/{uuid}";

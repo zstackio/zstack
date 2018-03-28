@@ -167,25 +167,22 @@ class ConcurrentlySnapshotCase extends SubCase {
             uuid = vm.uuid
         }
 
-        List<String> afterDestroyUuids = Q.New(VolumeSnapshotVO.class).select(VolumeSnapshotVO_.uuid).eq(VolumeSnapshotVO_.volumeUuid, vm.getRootVolumeUuid()).listValues()
-        assert afterDestroyUuids.size() == 100
-        final CountDownLatch latch = new CountDownLatch(100)
+        assert Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.volumeUuid, vm.getRootVolumeUuid()).count() == (long) 100
+        def threads = []
         for (String suuid : uuids) {
-            new Thread(new Runnable() {
-                @Override
-                void run() {
-                    deleteVolumeSnapshot {
-                        uuid = suuid
-                    }
-
-                    latch.countDown()
+            def targetUuid = suuid
+            def thread = Thread.start {
+                deleteVolumeSnapshot {
+                    uuid = targetUuid
                 }
-            }).run()
+            }
+
+            threads.add(thread)
         }
 
-        latch.await(1, TimeUnit.SECONDS)
-        afterDestroyUuids = Q.New(VolumeSnapshotVO.class).select(VolumeSnapshotVO_.uuid).eq(VolumeSnapshotVO_.volumeUuid, vm.getRootVolumeUuid()).listValues()
-        assert afterDestroyUuids.size() == 0
+        threads.each { it.join() }
+
+        assert Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.volumeUuid, vm.getRootVolumeUuid()).count() == (long) 0
 
         recoverVmInstance {
             uuid = vm.uuid
@@ -216,25 +213,21 @@ class ConcurrentlySnapshotCase extends SubCase {
             uuid = vm.uuid
         }
 
-        List<String> afterExpungeUuids = Q.New(VolumeSnapshotVO.class).select(VolumeSnapshotVO_.uuid).eq(VolumeSnapshotVO_.volumeUuid, vm.getRootVolumeUuid()).listValues()
-        assert afterExpungeUuids.size() == 0
-        final CountDownLatch latch = new CountDownLatch(100)
+        assert Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.volumeUuid, vm.getRootVolumeUuid()).count() == (long) 0
+        def threads = []
         for (String suuid : uuids) {
-            new Thread(new Runnable() {
-                @Override
-                void run() {
-                    deleteVolumeSnapshot {
-                        uuid = suuid
-                    }
-
-                    latch.countDown()
+            def targetUuid = suuid
+            def thread = Thread.start {
+                deleteVolumeSnapshot {
+                    uuid = targetUuid
                 }
-            }).run()
+            }
+            threads.add(thread)
         }
 
-        latch.await(1, TimeUnit.SECONDS)
-        afterExpungeUuids = Q.New(VolumeSnapshotVO.class).select(VolumeSnapshotVO_.uuid).eq(VolumeSnapshotVO_.volumeUuid, vm.getRootVolumeUuid()).listValues()
-        assert afterExpungeUuids.size() == 0
+        threads.each { it.join() }
+
+        assert Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.volumeUuid, vm.getRootVolumeUuid()).count() == (long) 0
     }
 
     void testDeleteSnapshotsAfterDestroyVmDirectly() {

@@ -11,6 +11,8 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.defer.Defer;
+import org.zstack.core.defer.Deferred;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -55,7 +57,6 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
@@ -132,9 +133,53 @@ public class VolumeBase implements Volume {
             handle((InstantiateVolumeMsg) msg);
         } else if (msg instanceof OverlayMessage) {
             handle((OverlayMessage) msg);
+        } else if (msg instanceof ChangeVolumeStatusMsg) {
+            handle((ChangeVolumeStatusMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(ChangeVolumeStatusMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadId;
+            }
+
+            @Override
+            @Deferred
+            public void run(SyncTaskChain chain) {
+                refreshVO();
+
+                Defer.defer(() -> {
+                    ChangeVolumeStatusReply reply = new ChangeVolumeStatusReply();
+                    bus.reply(msg, reply);
+                });
+
+                if (self == null) {
+                    // volume has been deleted by previous request
+                    // this happens when delete vm request queued before
+                    // migrating trigger not by api
+                    // in this case, ignore change state request
+                    logger.debug(String.format("volume[uuid:%s] has been deleted, ignore change volume state request",
+                            msg.getVolumeUuid()));
+                    chain.next();
+                    return;
+                }
+
+                VolumeStatus bs = self.getStatus();
+                SQL.New(VolumeVO.class).eq(VolumeVO_.uuid, msg.getVolumeUuid()).set(VolumeVO_.status, msg.getStatus()).update();
+                refreshVO();
+                logger.debug(String.format("volume[uuid:%s] status changed from %s to %s in db", self.getUuid(), bs, self.getStatus()));
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return "change-volume-status";
+            }
+        });
     }
 
     private void handle(InstantiateVolumeMsg msg) {
@@ -686,15 +731,6 @@ public class VolumeBase implements Volume {
                                         if (!reply.isSuccess()) {
                                             logger.warn(String.format("failed to delete volume[uuid:%s, name:%s], %s",
                                                     self.getUuid(), self.getName(), reply.getError()));
-
-                                            if(reply.getError().getCode().equals(PrimaryStorageErrors.ALLOCATE_ERROR.toString())){
-                                                PrimaryStorageVO psv = Q.New(PrimaryStorageVO.class).eq(PrimaryStorageVO_.uuid, self.getPrimaryStorageUuid()).find();
-                                                DeleteVolumeGC gc = new DeleteVolumeGC();
-                                                gc.NAME = String.format("gc-volume-%s-on-primary-storage-%s", self.getUuid(), psv.getUuid());
-                                                gc.primaryStorageUuid = psv.getUuid();
-                                                gc.volumeInventory = VolumeInventory.valueOf(self);
-                                                gc.submit();
-                                            }
                                         }
 
                                         trigger.next();
@@ -744,7 +780,9 @@ public class VolumeBase implements Volume {
                             self = dbf.updateAndRefresh(self);
                             new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(oldStatus, getSelfInventory());
                         } else if (deletionPolicy == VolumeDeletionPolicy.DBOnly) {
-                            new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(oldStatus, getSelfInventory());
+                            VolumeInventory inventory = getSelfInventory();
+                            inventory.setStatus(VolumeStatus.Deleted.toString());
+                            new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(oldStatus, inventory);
                             dbf.remove(self);
                         } else {
                             throw new CloudRuntimeException(String.format("Invalid deletionPolicy:%s", deletionPolicy));
@@ -1057,109 +1095,64 @@ public class VolumeBase implements Volume {
         bus.publish(evt);
     }
 
+    @Transactional
     private List<VmInstanceVO> getCandidateVmForAttaching(String accountUuid) {
+        List<String> vmUuids = acntMgr.getResourceUuidsCanAccessByAccount(accountUuid, VmInstanceVO.class);
+        if (vmUuids != null && vmUuids.isEmpty()) {
+            return new ArrayList<>();
+        }
 
-        return new SQLBatchWithReturn<List<VmInstanceVO>>(){
-            @Override
-            protected List<VmInstanceVO> scripts() {
+        SQL sql = null;
+        if (self.getStatus() == VolumeStatus.Ready) {
+            List<String> hvTypes = VolumeFormat.valueOf(self.getFormat()).getHypervisorTypesSupportingThisVolumeFormatInString();
+            sql = SQL.New("select vm" +
+                    " from VmInstanceVO vm, PrimaryStorageClusterRefVO ref, VolumeVO vol" +
+                    " where vol.uuid = :volUuid" +
+                    " and ref.primaryStorageUuid = vol.primaryStorageUuid" +
+                    (vmUuids == null ? "" : " and vm.uuid in (:vmUuids)") +
+                    " and vm.clusterUuid = ref.clusterUuid" +
+                    " and vm.type = :vmType" +
+                    " and vm.state in (:vmStates)" +
+                    " and vm.hypervisorType in (:hvTypes)" +
+                    " group by vm.uuid")
+                    .param("volUuid", self.getUuid())
+                    .param("vmType", VmInstanceConstant.USER_VM_TYPE)
+                    .param("hvTypes", hvTypes);
+        } else if (self.getStatus() == VolumeStatus.NotInstantiated) {
+            sql = SQL.New("select vm" +
+                    " from VmInstanceVO vm, PrimaryStorageClusterRefVO ref, PrimaryStorageEO ps, PrimaryStorageCapacityVO capacity" +
+                    " where "+ (vmUuids == null ? "" : " vm.uuid in (:vmUuids) and") +
+                    " vm.state in (:vmStates)" +
+                    " and vm.type = :vmType" +
+                    " and vm.clusterUuid = ref.clusterUuid" +
+                    " and capacity.uuid = ps.uuid" +
+                    " and capacity.availableCapacity > :volumeSize" +
+                    " and ref.primaryStorageUuid = ps.uuid" +
+                    " and ps.state in (:psState)" +
+                    " group by vm.uuid")
+                    .param("volumeSize", self.getSize())
+                    .param("vmType", VmInstanceConstant.USER_VM_TYPE)
+                    .param("psState", PrimaryStorageState.Enabled);
+        } else {
+            DebugUtils.Assert(false, String.format("should not reach here, volume[uuid:%s]", self.getUuid()));
+        }
 
-                List<String> vmUuids = acntMgr.getResourceUuidsCanAccessByAccount(accountUuid, VmInstanceVO.class);
+        if (vmUuids != null) {
+            sql.param("vmUuids", vmUuids);
+        }
+        List<VmInstanceVO> ret = sql.param("vmStates", Arrays.asList(VmInstanceState.Running, VmInstanceState.Stopped)).list();
 
-                if (vmUuids != null && vmUuids.isEmpty()) {
-                    return new ArrayList<>();
-                }
+        //the vm doesn't suport to online attach volume when vm platform type is other
+        ret.removeIf(it -> it.getPlatform().equals(ImagePlatform.Other.toString()) && it.getState() != VmInstanceState.Stopped);
+        if (ret.isEmpty()) {
+            return ret;
+        }
 
-                SQL sql = null;
-                if (vmUuids == null) {
-                    // check all vms
-                    if (self.getStatus() == VolumeStatus.Ready) {
-                        List<String> hvTypes = VolumeFormat.valueOf(self.getFormat()).getHypervisorTypesSupportingThisVolumeFormatInString();
-                        sql = SQL.New("select vm " +
-                                "from VmInstanceVO vm, PrimaryStorageClusterRefVO ref, VolumeVO vol " +
-                                "where vm.state in (:vmStates) " +
-                                "and vol.uuid = :volUuid " +
-                                "and vm.hypervisorType in (:hvTypes) " +
-                                "and vm.clusterUuid = ref.clusterUuid " +
-                                "and ref.primaryStorageUuid = vol.primaryStorageUuid " +
-                                "group by vm.uuid")
-                                .param("volUuid", self.getUuid())
-                                .param("hvTypes", hvTypes);
-                    } else if (self.getStatus() == VolumeStatus.NotInstantiated) {
-                        //not support vmtx volume temporarily, so filter ESX vm when volume is NotInstantiated.
-                        sql = SQL.New("select vm " +
-                                "from VmInstanceVO vm,PrimaryStorageClusterRefVO ref,PrimaryStorageEO ps " +
-                                "where vm.state in (:vmStates) " +
-                                "and vm.hypervisorType <> :hvType  " +
-                                "and vm.clusterUuid = ref.clusterUuid " +
-                                "and ref.primaryStorageUuid = ps.uuid " +
-                                "and ps.state in (:psState) " +
-                                "group by vm.uuid")
-                                //TODO:  this is a dirty fix, delete it when VMWare support DataVolume
-                                .param("hvType", "ESX")
-                                .param("psState",PrimaryStorageState.Enabled);
-                    } else {
-                        DebugUtils.Assert(false, String.format("should not reach here, volume[uuid:%s]", self.getUuid()));
-                    }
-
-                } else {
-                    //check vms that belong to the account
-                    if (self.getStatus() == VolumeStatus.Ready) {
-                        List<String> hvTypes = VolumeFormat.valueOf(self.getFormat()).getHypervisorTypesSupportingThisVolumeFormatInString();
-                        sql = SQL.New("select vm "+
-                                "from VmInstanceVO vm, PrimaryStorageClusterRefVO ref, VolumeVO vol " +
-                                "where vm.uuid in (:vmUuids) " +
-                                "and vm.state in (:vmStates) " +
-                                "and vol.uuid = :volUuid " +
-                                "and vm.hypervisorType in (:hvTypes) " +
-                                "and vm.clusterUuid = ref.clusterUuid " +
-                                "and ref.primaryStorageUuid = vol.primaryStorageUuid " +
-                                "group by vm.uuid")
-                                .param("volUuid", self.getUuid())
-                                .param("hvTypes", hvTypes);
-                    } else if (self.getStatus() == VolumeStatus.NotInstantiated) {
-                        sql = SQL.New("select vm " +
-                                "from VmInstanceVO vm,PrimaryStorageClusterRefVO ref,PrimaryStorageEO ps " +
-                                "where vm.uuid in (:vmUuids) " +
-                                "and vm.state in (:vmStates) " +
-                                "and vm.clusterUuid = ref.clusterUuid " +
-                                "and ref.primaryStorageUuid = ps.uuid " +
-                                "and ps.state in (:psState) " +
-                                "group by vm.uuid")
-                                .param("psState",PrimaryStorageState.Enabled);
-                    } else {
-                        DebugUtils.Assert(false, String.format("should not reach here, volume[uuid:%s]", self.getUuid()));
-                    }
-
-                    sql.param("vmUuids", vmUuids);
-                }
-                List<VmInstanceVO> ret = sql.param("vmStates", Arrays.asList(VmInstanceState.Running, VmInstanceState.Stopped)).list();
-                if (ret.isEmpty()) {
-                    return ret;
-                }
-
-                //the vm doesn't suport to online attach volume when vm platform type is other
-                List<String> exclude = sql("select vm.uuid" +
-                        " from VmInstanceVO vm" +
-                        " where vm.uuid in :vmUuids" +
-                        " and vm.platform = :platformType" +
-                        " and vm.state != :vmState")
-                        .param("vmUuids",ret.stream().map(VmInstanceVO::getUuid).collect(Collectors.toList()))
-                        .param("vmState", VmInstanceState.Stopped)
-                        .param("platformType", ImagePlatform.Other.toString())
-                        .list();
-
-                ret = ret.stream().filter(vm -> !exclude.contains(vm.getUuid())).collect(Collectors.toList());
-                if (ret.isEmpty()) {
-                    return ret;
-                }
-
-                VolumeInventory vol = getSelfInventory();
-                for (VolumeGetAttachableVmExtensionPoint ext : pluginRgty.getExtensionList(VolumeGetAttachableVmExtensionPoint.class)) {
-                    ret = ext.returnAttachableVms(vol, ret);
-                }
-                return ret;
-            }
-        }.execute();
+        VolumeInventory vol = getSelfInventory();
+        for (VolumeGetAttachableVmExtensionPoint ext : pluginRgty.getExtensionList(VolumeGetAttachableVmExtensionPoint.class)) {
+            ret = ext.returnAttachableVms(vol, ret);
+        }
+        return ret;
     }
 
     private boolean volumeIsAttached(final String volumeUuid) {

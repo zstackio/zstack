@@ -137,6 +137,7 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.network.service.vip.VipBackend" />
             <zstack:extension interface="org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint" order="999"/>
+            <zstack:extension interface="org.zstack.header.network.service.VirtualRouterBeforeDetachNicExtensionPoint" order="-1"/>
         </zstack:plugin>
     </bean>
 
@@ -150,6 +151,7 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.network.service.NetworkServiceSnatBackend" />
             <zstack:extension interface="org.zstack.header.network.service.VirtualRouterBeforeDetachNicExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint" />
         </zstack:plugin>
     </bean>
 
@@ -171,6 +173,7 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.network.service.eip.EipBackend" />
             <zstack:extension interface="org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.network.service.VirtualRouterBeforeDetachNicExtensionPoint" />
         </zstack:plugin>
     </bean>
 
@@ -185,6 +188,7 @@
             <zstack:extension interface="org.zstack.header.Component" />
             <zstack:extension interface="org.zstack.network.service.portforwarding.PortForwardingBackend"/>
             <zstack:extension interface="org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.network.service.VirtualRouterBeforeDetachNicExtensionPoint"/>
         </zstack:plugin>
 
         <property name="applyPortForwardingRuleElements">

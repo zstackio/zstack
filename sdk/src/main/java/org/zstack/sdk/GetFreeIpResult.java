@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class GetFreeIpResult {
-    public java.util.List<FreeIpInventory> inventories;
-    public void setInventories(java.util.List<FreeIpInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<FreeIpInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

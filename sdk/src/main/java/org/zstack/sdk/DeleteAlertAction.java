@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteAlertAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteAlertAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteAlertResult value;
+        public org.zstack.sdk.DeleteAlertResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DeleteAlertAction extends AbstractAction {
             return ret;
         }
         
-        DeleteAlertResult value = res.getResult(DeleteAlertResult.class);
-        ret.value = value == null ? new DeleteAlertResult() : value; 
+        org.zstack.sdk.DeleteAlertResult value = res.getResult(org.zstack.sdk.DeleteAlertResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteAlertResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DeleteAlertAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/monitoring/alerts";

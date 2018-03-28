@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class VolumeFormatReplyStruct  {
 
     public java.lang.String format;
@@ -18,11 +20,11 @@ public class VolumeFormatReplyStruct  {
         return this.masterHypervisorType;
     }
 
-    public java.util.List<String> supportingHypervisorTypes;
-    public void setSupportingHypervisorTypes(java.util.List<String> supportingHypervisorTypes) {
+    public java.util.List supportingHypervisorTypes;
+    public void setSupportingHypervisorTypes(java.util.List supportingHypervisorTypes) {
         this.supportingHypervisorTypes = supportingHypervisorTypes;
     }
-    public java.util.List<String> getSupportingHypervisorTypes() {
+    public java.util.List getSupportingHypervisorTypes() {
         return this.supportingHypervisorTypes;
     }
 

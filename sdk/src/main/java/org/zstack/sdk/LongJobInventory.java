@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.LongJobState;
+
 public class LongJobInventory  {
 
     public java.lang.String uuid;

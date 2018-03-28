@@ -24,18 +24,11 @@ public class EipPortForwardingAttachableMarshaler implements ReplyMessagePreSend
     @Override
     public List<Class> getReplyMessageClassForPreSendingExtensionPoint() {
         List<Class> clz = new ArrayList<Class>();
-        clz.add(APIGetEipAttachableVmNicsReply.class);
-        clz.add(APIGetPortForwardingAttachableVmNicsReply.class);
         return clz;
     }
 
     @Override
     public void marshalReplyMessageBeforeSending(Message replyOrEvent, NeedReplyMessage msg) {
-        if (replyOrEvent instanceof APIGetEipAttachableVmNicsReply) {
-            marshal((APIGetEipAttachableVmNicsReply) replyOrEvent);
-        } else if (replyOrEvent instanceof APIGetPortForwardingAttachableVmNicsReply) {
-            marshal((APIGetPortForwardingAttachableVmNicsReply) replyOrEvent);
-        }
     }
 
     @Transactional(readOnly = true)

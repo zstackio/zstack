@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.HybridEipAddressInventory;
+
 public class UpdateHybridEipResult {
     public HybridEipAddressInventory inventory;
     public void setInventory(HybridEipAddressInventory inventory) {

@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class AttachDataVolumeToVmAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class AttachDataVolumeToVmAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AttachDataVolumeToVmResult value;
+        public org.zstack.sdk.AttachDataVolumeToVmResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class AttachDataVolumeToVmAction extends AbstractAction {
             return ret;
         }
         
-        AttachDataVolumeToVmResult value = res.getResult(AttachDataVolumeToVmResult.class);
-        ret.value = value == null ? new AttachDataVolumeToVmResult() : value; 
+        org.zstack.sdk.AttachDataVolumeToVmResult value = res.getResult(org.zstack.sdk.AttachDataVolumeToVmResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AttachDataVolumeToVmResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class AttachDataVolumeToVmAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/volumes/{volumeUuid}/vm-instances/{vmInstanceUuid}";

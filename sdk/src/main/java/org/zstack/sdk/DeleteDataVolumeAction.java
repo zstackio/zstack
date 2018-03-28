@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteDataVolumeAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteDataVolumeAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteDataVolumeResult value;
+        public org.zstack.sdk.DeleteDataVolumeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DeleteDataVolumeAction extends AbstractAction {
             return ret;
         }
         
-        DeleteDataVolumeResult value = res.getResult(DeleteDataVolumeResult.class);
-        ret.value = value == null ? new DeleteDataVolumeResult() : value; 
+        org.zstack.sdk.DeleteDataVolumeResult value = res.getResult(org.zstack.sdk.DeleteDataVolumeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteDataVolumeResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DeleteDataVolumeAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/volumes/{uuid}";

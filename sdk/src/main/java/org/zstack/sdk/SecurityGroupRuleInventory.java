@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class SecurityGroupRuleInventory  {
 
     public java.lang.String uuid;

@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class GetBackupStorageTypesAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class GetBackupStorageTypesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetBackupStorageTypesResult value;
+        public org.zstack.sdk.GetBackupStorageTypesResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -41,8 +42,8 @@ public class GetBackupStorageTypesAction extends AbstractAction {
             return ret;
         }
         
-        GetBackupStorageTypesResult value = res.getResult(GetBackupStorageTypesResult.class);
-        ret.value = value == null ? new GetBackupStorageTypesResult() : value; 
+        org.zstack.sdk.GetBackupStorageTypesResult value = res.getResult(org.zstack.sdk.GetBackupStorageTypesResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetBackupStorageTypesResult() : value; 
 
         return ret;
     }
@@ -61,15 +62,15 @@ public class GetBackupStorageTypesAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/backup-storage/types";

@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class QueryInstanceOfferingResult {
-    public java.util.List<InstanceOfferingInventory> inventories;
-    public void setInventories(java.util.List<InstanceOfferingInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<InstanceOfferingInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

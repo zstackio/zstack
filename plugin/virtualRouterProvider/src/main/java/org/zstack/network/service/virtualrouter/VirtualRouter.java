@@ -9,9 +9,11 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.defer.Deferred;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.SyncThreadSignature;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
@@ -395,6 +397,7 @@ public class VirtualRouter extends ApplianceVmBase {
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
+                fireDisconnectedCanonicalEvent(errCode);
                 completion.fail(errCode);
             }
         }).start();
@@ -527,40 +530,59 @@ public class VirtualRouter extends ApplianceVmBase {
 
     @Override
     protected void afterAttachNic(VmNicInventory nicInventory, Completion completion) {
-        VmNicVO vo = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, nicInventory.getUuid()).find();
-        L3NetworkVO l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, vo.getL3NetworkUuid()).find();
+        thdf.chainSubmit(new ChainTask(completion) {
 
-        if (l3NetworkVO.getCategory().equals(L3NetworkCategory.Private)) {
-            vo.setMetaData(GUEST_NIC_MASK.toString());
-
-            UsedIpVO usedIpVO = Q.New(UsedIpVO.class).eq(UsedIpVO_.uuid, nicInventory.getUsedIpUuid()).find();
-            usedIpVO.setMetaData(GUEST_NIC_MASK.toString());
-            dbf.updateAndRefresh(usedIpVO);
-        } else {
-            vo.setMetaData(ADDITIONAL_PUBLIC_NIC_MASK.toString());
-        }
-        vo = dbf.updateAndRefresh(vo);
-        logger.debug(String.format("updated metadata of vmnic[uuid: %s]", vo.getUuid()));
-
-        Map data = new HashMap();
-        data.put(Param.VR_NIC, VmNicInventory.valueOf(vo));
-
-        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
-        chain.setName(String.format("apply-services-after-attach-nic-%s-from-virtualrouter-%s", nicInventory.getUuid(), nicInventory.getVmInstanceUuid()));
-        chain.setData(data);
-        chain.insert(new virtualRouterAfterAttachNicFlow());
-        chain.then(new virtualRouterApplyServicesAfterAttachNicFlow());
-        chain.done(new FlowDoneHandler(completion) {
             @Override
-            public void handle(Map data) {
-                completion.success();
+            public String getSyncSignature() {
+                return syncThreadName;
             }
-        }).error(new FlowErrorHandler(completion) {
+
             @Override
-            public void handle(ErrorCode errCode, Map data) {
-                completion.fail(errCode);
+            @Deferred
+            public void run(final SyncTaskChain schain) {
+                VmNicVO vo = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, nicInventory.getUuid()).find();
+                L3NetworkVO l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, vo.getL3NetworkUuid()).find();
+
+                if (l3NetworkVO.getCategory().equals(L3NetworkCategory.Private)) {
+                    vo.setMetaData(GUEST_NIC_MASK.toString());
+
+                    UsedIpVO usedIpVO = Q.New(UsedIpVO.class).eq(UsedIpVO_.uuid, nicInventory.getUsedIpUuid()).find();
+                    usedIpVO.setMetaData(GUEST_NIC_MASK.toString());
+                    dbf.updateAndRefresh(usedIpVO);
+                } else {
+                    vo.setMetaData(ADDITIONAL_PUBLIC_NIC_MASK.toString());
+                }
+                vo = dbf.updateAndRefresh(vo);
+                logger.debug(String.format("updated metadata of vmnic[uuid: %s]", vo.getUuid()));
+
+                Map data = new HashMap();
+                data.put(Param.VR_NIC, VmNicInventory.valueOf(vo));
+
+                FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+                chain.setName(String.format("apply-services-after-attach-nic-%s-from-virtualrouter-%s", nicInventory.getUuid(), nicInventory.getVmInstanceUuid()));
+                chain.setData(data);
+                chain.insert(new virtualRouterAfterAttachNicFlow());
+                chain.then(new virtualRouterApplyServicesAfterAttachNicFlow());
+                chain.done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        completion.success();
+                        schain.next();
+                    }
+                }).error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        completion.fail(errCode);
+                        schain.next();
+                    }
+                }).start();
             }
-        }).start();
+
+            @Override
+            public String getName() {
+                return String.format("after-attach-nic-%s-on-vm-%s", nicInventory.getUuid(), nicInventory.getVmInstanceUuid());
+            }
+        });
     }
 
     private class virtualRouterbeforeDetachNic extends NoRollbackFlow {
@@ -684,8 +706,8 @@ public class VirtualRouter extends ApplianceVmBase {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("release-services-before-detach-nic-%s-from-virtualrouter-%s", nicInventory.getUuid(), nicInventory.getVmInstanceUuid()));
         chain.setData(data);
-        chain.insert(new virtualRouterbeforeDetachNic());
-        chain.then(new virtualRouterReleaseServicesbeforeDetachNicFlow());
+        chain.insert(new virtualRouterReleaseServicesbeforeDetachNicFlow());
+        chain.then(new virtualRouterbeforeDetachNic());
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {

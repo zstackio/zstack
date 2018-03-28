@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.CephBackupStorageInventory;
+
 public class UpdateCephBackupStorageMonResult {
     public CephBackupStorageInventory inventory;
     public void setInventory(CephBackupStorageInventory inventory) {

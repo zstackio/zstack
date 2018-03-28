@@ -21,11 +21,9 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint;
+import org.zstack.header.network.service.VirtualRouterBeforeDetachNicExtensionPoint;
 import org.zstack.header.vm.*;
-import org.zstack.network.service.vip.VipBackend;
-import org.zstack.network.service.vip.VipInventory;
-import org.zstack.network.service.vip.VipVO;
-import org.zstack.network.service.vip.VipVO_;
+import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.*;
 import org.zstack.utils.Utils;
@@ -42,7 +40,7 @@ import java.util.stream.Collectors;
 import static org.zstack.utils.CollectionDSL.list;
 
 public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implements
-        VipBackend, VirtualRouterAfterAttachNicExtensionPoint {
+        VipBackend, VirtualRouterAfterAttachNicExtensionPoint, VirtualRouterBeforeDetachNicExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VirtualRouterVipBackend.class);
 
     @Autowired
@@ -304,6 +302,16 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
 
     @Override
     public void afterAttachNic(VmNicInventory nic, Completion completion) {
+        if (!VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST.contains(nic.getMetaData())) {
+            completion.success();
+            return;
+        }
+
+        if (VirtualRouterSystemTags.DEDICATED_ROLE_VR.hasTag(nic.getVmInstanceUuid())) {
+            completion.success();
+            return;
+        }
+
         List<VipTO> vips = findVipsOnVirtualRouter(nic);
 
         if (vips == null || vips.isEmpty()) {
@@ -343,7 +351,7 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
         });
     }
 
-    private static List<VipTO> findVipsOnVirtualRouter(VmNicInventory nic) {
+    private List<VipTO> findVipsOnVirtualRouter(VmNicInventory nic) {
         List<VipVO> vips = SQL.New("select vip from VipVO vip, VipPeerL3NetworkRefVO ref " +
                 "where ref.vipUuid = vip.uuid " +
                 "and ref.l3NetworkUuid = :l3Uuid")
@@ -358,7 +366,20 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
                 Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, nic.getVmInstanceUuid()).find());
 
         List<VipTO> vipTOS = new ArrayList<>();
+        List<VirtualRouterVipVO> refs = new ArrayList<>();
         for (VipVO vip : vips) {
+            if (vipTOS.stream().anyMatch(v -> v.getIp().equals(vip.getIp()))) {
+                logger.warn(String.format(
+                        "found duplicate vip ip[uuid; %s, uuids: %s] for vr[uuid: %s]",
+                        vip.getIp(),
+                        vips.stream().
+                                filter(v -> v.getIp().equals(vip.getIp()))
+                                .map(v -> v.getUuid())
+                                .collect(Collectors.toSet()),
+                        nic.getVmInstanceUuid()));
+                continue;
+            }
+
             VipTO to = new VipTO();
             to.setIp(vip.getIp());
             to.setGateway(vip.getGateway());
@@ -367,6 +388,18 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
                     .filter(n -> n.getL3NetworkUuid().equals(vip.getL3NetworkUuid()))
                     .findFirst().get().getMac());
             vipTOS.add(to);
+
+            if (!Q.New(VirtualRouterVipVO.class)
+                    .eq(VirtualRouterVipVO_.uuid, vip.getUuid())
+                    .isExists()) {
+                VirtualRouterVipVO vo = new VirtualRouterVipVO();
+                vo.setUuid(vip.getUuid());
+                vo.setVirtualRouterVmUuid(nic.getVmInstanceUuid());
+                refs.add(vo);
+            }
+        }
+        if (!refs.isEmpty()) {
+            dbf.persistCollection(refs);
         }
 
         return vipTOS;
@@ -375,5 +408,15 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
     @Override
     public String getServiceProviderTypeForVip() {
         return VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE;
+    }
+
+    @Override
+    public void beforeDetachNic(VmNicInventory nic, Completion completion) {
+        completion.success();
+    }
+
+    @Override
+    public void beforeDetachNicRollback(VmNicInventory nic, NoErrorCompletion completion) {
+        completion.done();
     }
 }

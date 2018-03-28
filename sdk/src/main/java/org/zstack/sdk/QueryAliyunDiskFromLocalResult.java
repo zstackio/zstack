@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class QueryAliyunDiskFromLocalResult {
-    public java.util.List<AliyunDiskInventory> inventories;
-    public void setInventories(java.util.List<AliyunDiskInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<AliyunDiskInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

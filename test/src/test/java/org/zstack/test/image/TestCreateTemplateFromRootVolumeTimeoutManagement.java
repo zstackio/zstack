@@ -77,7 +77,7 @@ public class TestCreateTemplateFromRootVolumeTimeoutManagement {
         final Map<String, Long> commands = new HashMap<String, Long>();
         bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
             @Override
-            public void intercept(Message msg) {
+            public void beforeDeliveryMessage(Message msg) {
                 msgs.put(msg.getClass().getName(), msg);
             }
         });

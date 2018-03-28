@@ -1,8 +1,10 @@
 package org.zstack.ldap;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 
 @RestRequest(
@@ -11,7 +13,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIAddLdapServerEvent.class,
         parameterName = "params"
 )
-public class APIAddLdapServerMsg extends APIMessage {
+public class APIAddLdapServerMsg extends APIMessage implements APIAuditor {
     @APIParam(maxLength = 255)
     private String name;
 
@@ -102,4 +104,8 @@ public class APIAddLdapServerMsg extends APIMessage {
         return msg;
     }
 
+    @Override
+    public Result audit(APIMessage msg, APIEvent rsp) {
+        return new Result(rsp.isSuccess() ? ((APIAddLdapServerEvent)rsp).getInventory().getUuid() : "", LdapServerVO.class);
+    }
 }

@@ -27,9 +27,9 @@
 
     <bean id="AccountManager" class="org.zstack.identity.AccountManagerImpl">
         <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.Component"/>
+            <zstack:extension interface="org.zstack.header.Component" order="9001"/>
             <zstack:extension interface="org.zstack.header.Service"/>
-            <zstack:extension interface="org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint" order="9999"/>
             <zstack:extension interface="org.zstack.core.db.SoftDeleteEntityExtensionPoint"/>
             <zstack:extension interface="org.zstack.core.db.HardDeleteEntityExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor"/>

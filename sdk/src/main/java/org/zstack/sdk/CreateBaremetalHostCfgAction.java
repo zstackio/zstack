@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class CreateBaremetalHostCfgAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class CreateBaremetalHostCfgAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateBaremetalHostCfgResult value;
+        public org.zstack.sdk.CreateBaremetalHostCfgResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -68,8 +69,8 @@ public class CreateBaremetalHostCfgAction extends AbstractAction {
             return ret;
         }
         
-        CreateBaremetalHostCfgResult value = res.getResult(CreateBaremetalHostCfgResult.class);
-        ret.value = value == null ? new CreateBaremetalHostCfgResult() : value; 
+        org.zstack.sdk.CreateBaremetalHostCfgResult value = res.getResult(org.zstack.sdk.CreateBaremetalHostCfgResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateBaremetalHostCfgResult() : value; 
 
         return ret;
     }
@@ -88,15 +89,15 @@ public class CreateBaremetalHostCfgAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/baremetal/hostcfg";

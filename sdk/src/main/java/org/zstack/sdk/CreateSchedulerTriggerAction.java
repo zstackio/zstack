@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class CreateSchedulerTriggerAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class CreateSchedulerTriggerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateSchedulerTriggerResult value;
+        public org.zstack.sdk.CreateSchedulerTriggerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class CreateSchedulerTriggerAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,2147483647L}, noTrim = false)
     public java.lang.Integer schedulerInterval;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,2147483647L}, noTrim = false)
-    public java.lang.Integer repeatCount;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,2147483647L}, noTrim = false)
+    public java.lang.Integer repeatCount = 0;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.Long startTime;
@@ -71,8 +72,8 @@ public class CreateSchedulerTriggerAction extends AbstractAction {
             return ret;
         }
         
-        CreateSchedulerTriggerResult value = res.getResult(CreateSchedulerTriggerResult.class);
-        ret.value = value == null ? new CreateSchedulerTriggerResult() : value; 
+        org.zstack.sdk.CreateSchedulerTriggerResult value = res.getResult(org.zstack.sdk.CreateSchedulerTriggerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateSchedulerTriggerResult() : value; 
 
         return ret;
     }
@@ -91,15 +92,15 @@ public class CreateSchedulerTriggerAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/scheduler/triggers";

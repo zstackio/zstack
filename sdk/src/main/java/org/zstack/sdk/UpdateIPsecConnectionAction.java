@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class UpdateIPsecConnectionAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class UpdateIPsecConnectionAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateIPsecConnectionResult value;
+        public org.zstack.sdk.UpdateIPsecConnectionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +57,8 @@ public class UpdateIPsecConnectionAction extends AbstractAction {
             return ret;
         }
         
-        UpdateIPsecConnectionResult value = res.getResult(UpdateIPsecConnectionResult.class);
-        ret.value = value == null ? new UpdateIPsecConnectionResult() : value; 
+        org.zstack.sdk.UpdateIPsecConnectionResult value = res.getResult(org.zstack.sdk.UpdateIPsecConnectionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateIPsecConnectionResult() : value; 
 
         return ret;
     }
@@ -76,15 +77,15 @@ public class UpdateIPsecConnectionAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/ipsec/{uuid}";

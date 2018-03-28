@@ -17,6 +17,7 @@ public class VolumeCanonicalEvents {
         private String newStatus;
         private VolumeInventory inventory;
         private Date date = new Date();
+        private String accountUuid;
 
         public String getVolumeUuid() {
             return volumeUuid;
@@ -56,6 +57,14 @@ public class VolumeCanonicalEvents {
 
         public void setDate(Date date) {
             this.date = date;
+        }
+
+        public String getAccountUuid() {
+            return accountUuid;
+        }
+
+        public void setAccountUuid(String accountUuid) {
+            this.accountUuid = accountUuid;
         }
     }
 }

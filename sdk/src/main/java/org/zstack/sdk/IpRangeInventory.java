@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class IpRangeInventory  {
 
     public java.lang.String uuid;

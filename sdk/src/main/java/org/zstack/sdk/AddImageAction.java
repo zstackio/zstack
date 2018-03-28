@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class AddImageAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class AddImageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AddImageResult value;
+        public org.zstack.sdk.AddImageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -80,8 +81,8 @@ public class AddImageAction extends AbstractAction {
             return ret;
         }
         
-        AddImageResult value = res.getResult(AddImageResult.class);
-        ret.value = value == null ? new AddImageResult() : value; 
+        org.zstack.sdk.AddImageResult value = res.getResult(org.zstack.sdk.AddImageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddImageResult() : value; 
 
         return ret;
     }
@@ -100,15 +101,15 @@ public class AddImageAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/images";

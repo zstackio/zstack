@@ -1,7 +1,5 @@
 package org.zstack.identity;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,13 +14,13 @@ import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.PeriodicTask;
+import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.APIIsOpensourceVersionMsg;
 import org.zstack.header.APIIsOpensourceVersionReply;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
-import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -33,12 +31,13 @@ import org.zstack.header.identity.IdentityCanonicalEvents.UserDeletedData;
 import org.zstack.header.identity.PolicyInventory.Statement;
 import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
-import org.zstack.header.message.*;
+import org.zstack.header.message.APIEvent;
+import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.APIParam;
+import org.zstack.header.message.Message;
 import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.notification.ApiNotificationFactory;
 import org.zstack.header.notification.ApiNotificationFactoryExtensionPoint;
-import org.zstack.header.search.APIGetMessage;
-import org.zstack.header.search.APISearchMessage;
 import org.zstack.header.vo.APIGetResourceNamesMsg;
 import org.zstack.header.vo.APIGetResourceNamesReply;
 import org.zstack.header.vo.ResourceInventory;
@@ -48,12 +47,11 @@ import org.zstack.utils.*;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.utils.path.PathUtil;
+import static org.zstack.core.Platform.*;
 
 import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.io.File;
 import java.lang.reflect.Field;
 import java.sql.Timestamp;
 import java.util.*;
@@ -64,9 +62,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.err;
-import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
 public class AccountManagerImpl extends AbstractService implements AccountManager, PrepareDbInitialValueExtensionPoint,
@@ -190,11 +185,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     }
 
     private void handleLocalMessage(Message msg) {
-        if (msg instanceof GenerateMessageIdentityCategoryMsg) {
-            handle((GenerateMessageIdentityCategoryMsg) msg);
-        } else {
-            bus.dealWithUnknownMessage(msg);
-        }
+        bus.dealWithUnknownMessage(msg);
     }
 
     @Override
@@ -249,71 +240,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     @Override
     public boolean isAdmin(SessionInventory session) {
         return AccountConstant.INITIAL_SYSTEM_ADMIN_UUID.equals(session.getAccountUuid());
-    }
-
-    private void handle(GenerateMessageIdentityCategoryMsg msg) {
-        List<String> adminMsgs = new ArrayList<>();
-        List<String> userMsgs = new ArrayList<>();
-
-        List<Class> apiMsgClasses = BeanUtils.scanClassByType("org.zstack", APIMessage.class);
-        for (Class clz : apiMsgClasses) {
-            if (APISearchMessage.class.isAssignableFrom(clz) || APIGetMessage.class.isAssignableFrom(clz)
-                    || APIListMessage.class.isAssignableFrom(clz)) {
-                continue;
-            }
-
-            String name = clz.getSimpleName().replaceAll("API", "").replaceAll("Msg", "");
-
-            if (clz.isAnnotationPresent(Action.class)) {
-                userMsgs.add(name);
-            } else {
-                adminMsgs.add(name);
-            }
-        }
-
-        List<String> quotas = new ArrayList<>();
-        for (List<Quota> quotaList : messageQuotaMap.values()) {
-            for (Quota q : quotaList) {
-                for (QuotaPair p : q.getQuotaPairs()) {
-                    quotas.add(String.format("%s        %s", p.getName(), p.getValue()));
-                }
-            }
-        }
-
-        List<String> as = new ArrayList<>();
-        for (Map.Entry<Class, MessageAction> e : actions.entrySet()) {
-            Class api = e.getKey();
-            MessageAction a = e.getValue();
-            if (a.adminOnly || a.accountOnly) {
-                continue;
-            }
-
-            String name = api.getSimpleName().replaceAll("API", "").replaceAll("Msg", "");
-            StringBuilder sb = new StringBuilder();
-            sb.append(String.format("%s: ", name));
-            sb.append(StringUtils.join(a.actions, ", "));
-            sb.append("\n");
-            as.add(sb.toString());
-        }
-
-        try {
-            String folder = PathUtil.join(System.getProperty("user.home"), "zstack-identity");
-            FileUtils.deleteDirectory(new File(folder));
-
-            new File(folder).mkdirs();
-
-            String userMsgsPath = PathUtil.join(folder, "non-admin-api.txt");
-            FileUtils.writeStringToFile(new File(userMsgsPath), StringUtils.join(userMsgs, "\n"));
-            String adminMsgsPath = PathUtil.join(folder, "admin-api.txt");
-            FileUtils.writeStringToFile(new File(adminMsgsPath), StringUtils.join(adminMsgs, "\n"));
-            String quotaPath = PathUtil.join(folder, "quota.txt");
-            FileUtils.writeStringToFile(new File(quotaPath), StringUtils.join(quotas, "\n"));
-            String apiIdentityPath = PathUtil.join(folder, "api-identity.txt");
-            FileUtils.writeStringToFile(new File(apiIdentityPath), StringUtils.join(as, "\n"));
-            bus.reply(msg, new GenerateMessageIdentityCategoryReply());
-        } catch (Exception e) {
-            throw new CloudRuntimeException(e);
-        }
     }
 
     private void passThrough(AccountMessage msg) {
@@ -1012,31 +938,56 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         }
     }
 
-    public void adminAdoptAllOrphanedResource() {
-        new SQLBatch() {
+    @Transactional
+    private void doAdminAdoptResource() {
+        Query q = dbf.getEntityManager().createNativeQuery(
+                "select uuid, resourceType" +
+                        " from ResourceVO rvo" +
+                        " where rvo.uuid not in ( select resourceUuid from AccountResourceRefVO )" +
+                        " and rvo.resourceType in (:rTypes)");
+        q.setParameter("rTypes", childrenResourceTypeClassMap.keySet());
+        List<Object[]> objs = q.getResultList();
+
+        objs.forEach(it -> dbf.getEntityManager().persist(AccountResourceRefVO.newOwn(
+                AccountConstant.INITIAL_SYSTEM_ADMIN_UUID,
+                it[0].toString(),
+                childrenResourceTypeClassMap.get(it[1].toString()))));
+    }
+
+    public void adminAdoptAllOrphanedResource(){
+        thdf.syncSubmit(new SyncTask<Void>() {
             @Override
-            protected void scripts() {
-                Query q = dbf.getEntityManager().createNativeQuery(
-                        "select uuid, resourceName, resourceType" +
-                                " from ResourceVO rvo" +
-                                " where rvo.uuid not in ( select resourceUuid from AccountResourceRefVO )" +
-                                " and rvo.resourceType in (:rTypes)");
-                q.setParameter("rTypes", childrenResourceTypeClassMap.keySet());
-                List<Object[]> objs = q.getResultList();
-
-                List<ResourceVO> resourceVOs = objs.stream().map(ResourceVO::new).collect(Collectors.toList());
-
-                List<AccountResourceRefVO> accountResourceRefVOs = resourceVOs.stream()
-                        .map(i ->
-                                AccountResourceRefVO.newOwn(
-                                        AccountConstant.INITIAL_SYSTEM_ADMIN_UUID,
-                                        i.getUuid(),
-                                        childrenResourceTypeClassMap.get(i.getResourceType()))
-                        ).collect(Collectors.toList());
-
-                accountResourceRefVOs.forEach(this::persist);
+            public Void call() throws Exception {
+                doAdminAdoptResource();
+                return null;
             }
-        }.execute();
+
+            @Override
+            public String getName() {
+                return "admin-adopt-all-orphaned-resource";
+            }
+
+            @Override
+            public String getSyncSignature() {
+                return "admin-adopt-all-orphaned-resource";
+            }
+
+            @Override
+            public int getSyncLevel() {
+                return 1;
+            }
+        });
+    }
+
+    @Override
+    public Class getBaseResourceType(Class clz) {
+        for (Class c : resourceTypes) {
+            if (c.isAssignableFrom(clz)) {
+                return c;
+            }
+        }
+
+        return null;
     }
 
     private void startExpiredSessionCollector() {
@@ -1176,7 +1127,13 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
     @Override
     public boolean isResourceHavingAccountReference(Class entityClass) {
-        return resourceTypes.contains(entityClass);
+        for (Class clz : resourceTypes) {
+            if (clz.isAssignableFrom(entityClass)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
 

@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class ReconnectConsoleProxyAgentAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class ReconnectConsoleProxyAgentAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ReconnectConsoleProxyAgentResult value;
+        public org.zstack.sdk.ReconnectConsoleProxyAgentResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +51,8 @@ public class ReconnectConsoleProxyAgentAction extends AbstractAction {
             return ret;
         }
         
-        ReconnectConsoleProxyAgentResult value = res.getResult(ReconnectConsoleProxyAgentResult.class);
-        ret.value = value == null ? new ReconnectConsoleProxyAgentResult() : value; 
+        org.zstack.sdk.ReconnectConsoleProxyAgentResult value = res.getResult(org.zstack.sdk.ReconnectConsoleProxyAgentResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ReconnectConsoleProxyAgentResult() : value; 
 
         return ret;
     }
@@ -70,15 +71,15 @@ public class ReconnectConsoleProxyAgentAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/consoles/agents";

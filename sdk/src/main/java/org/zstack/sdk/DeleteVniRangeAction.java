@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteVniRangeAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteVniRangeAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteVniRangeResult value;
+        public org.zstack.sdk.DeleteVniRangeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DeleteVniRangeAction extends AbstractAction {
             return ret;
         }
         
-        DeleteVniRangeResult value = res.getResult(DeleteVniRangeResult.class);
-        ret.value = value == null ? new DeleteVniRangeResult() : value; 
+        org.zstack.sdk.DeleteVniRangeResult value = res.getResult(org.zstack.sdk.DeleteVniRangeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteVniRangeResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DeleteVniRangeAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/l2-networks/vxlan-pool/vni-ranges/{uuid}";

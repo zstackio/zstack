@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class QueryBaremetalPxeServerResult {
-    public java.util.List<BaremetalPxeServerInventory> inventories;
-    public void setInventories(java.util.List<BaremetalPxeServerInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<BaremetalPxeServerInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

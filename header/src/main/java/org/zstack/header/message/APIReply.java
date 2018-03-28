@@ -1,6 +1,6 @@
 package org.zstack.header.message;
 
-public class APIReply extends MessageReply {
+public class APIReply extends MessageReply implements APIResponse {
 
  
     public static APIReply __example__() {

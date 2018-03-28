@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteAliyunKeySecretAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteAliyunKeySecretAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteAliyunKeySecretResult value;
+        public org.zstack.sdk.DeleteAliyunKeySecretResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DeleteAliyunKeySecretAction extends AbstractAction {
             return ret;
         }
         
-        DeleteAliyunKeySecretResult value = res.getResult(DeleteAliyunKeySecretResult.class);
-        ret.value = value == null ? new DeleteAliyunKeySecretResult() : value; 
+        org.zstack.sdk.DeleteAliyunKeySecretResult value = res.getResult(org.zstack.sdk.DeleteAliyunKeySecretResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteAliyunKeySecretResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DeleteAliyunKeySecretAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/hybrid/aliyun/key/{uuid}";

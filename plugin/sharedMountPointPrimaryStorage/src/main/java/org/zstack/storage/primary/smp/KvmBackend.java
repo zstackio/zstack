@@ -12,8 +12,10 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.HasThreadContext;
 import org.zstack.header.cluster.ClusterConnectionStatus;
 import org.zstack.header.core.*;
+import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -55,9 +57,7 @@ import java.io.File;
 import java.util.*;
 
 import static org.zstack.core.Platform.operr;
-import static org.zstack.core.progress.ProgressReportService.reportProgress;
-import static org.zstack.header.storage.backup.BackupStorageConstant.*;
-import static org.zstack.utils.ProgressUtils.getEndFromStage;
+import static org.zstack.core.progress.ProgressReportService.*;
 
 /**
  * Created by xing5 on 2016/3/26.
@@ -75,6 +75,9 @@ public class KvmBackend extends HypervisorBackend {
     protected PluginRegistry pluginRgty;
     @Autowired
     protected SMPPrimaryStorageFactory primaryStorageFactory;
+
+    public KvmBackend() {
+    }
 
     public static class AgentCmd {
         public String mountPoint;
@@ -120,12 +123,12 @@ public class KvmBackend extends HypervisorBackend {
             APICreateRootVolumeTemplateFromRootVolumeMsg.class,
             APICreateDataVolumeTemplateFromVolumeMsg.class
     })
-    public static class CreateTemplateFromVolumeCmd extends AgentCmd {
+    public static class CreateTemplateFromVolumeCmd extends AgentCmd implements HasThreadContext{
         public String installPath;
         public String volumePath;
     }
 
-    public static class SftpUploadBitsCmd extends AgentCmd {
+    public static class SftpUploadBitsCmd extends AgentCmd implements HasThreadContext{
         public String primaryStorageInstallPath;
         public String backupStorageInstallPath;
         public String hostname;
@@ -1143,6 +1146,11 @@ public class KvmBackend extends HypervisorBackend {
         final VolumeInventory volume = msg.getVolumeInventory();
         final ImageInventory image = msg.getImageInventory();
 
+        final TaskProgressRange parentStage = getTaskStage();
+        final TaskProgressRange CREATE_TEMPORARY_TEMPLATE_STAGE = new TaskProgressRange(0, 30);
+        final TaskProgressRange UPLOAD_STAGE = new TaskProgressRange(30, 90);
+        final TaskProgressRange DELETE_TEMPORARY_TEMPLATE_STAGE = new TaskProgressRange(90, 100);
+
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("create-template-%s-from-volume-%s", image.getUuid(), volume.getUuid()));
         chain.then(new ShareFlow() {
@@ -1158,13 +1166,15 @@ public class KvmBackend extends HypervisorBackend {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
+                        TaskProgressRange stage = markTaskStage(parentStage, CREATE_TEMPORARY_TEMPLATE_STAGE);
+
                         CreateTemplateFromVolumeCmd cmd = new CreateTemplateFromVolumeCmd();
                         cmd.volumePath = volume.getInstallPath();
                         cmd.installPath = temporaryTemplatePath;
                         new Do().go(CREATE_TEMPLATE_FROM_VOLUME_PATH, cmd, new ReturnValueCompletion<AgentRsp>(trigger) {
                             @Override
                             public void success(AgentRsp returnValue) {
-                                reportProgress(getEndFromStage(CREATE_ROOT_VOLUME_TEMPLATE_CREATE_TEMPORARY_TEMPLATE_STAGE));
+                                reportProgress(stage.getEnd().toString());
                                 success = true;
                                 trigger.next();
                             }
@@ -1202,6 +1212,8 @@ public class KvmBackend extends HypervisorBackend {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
+                        TaskProgressRange stage = markTaskStage(parentStage, UPLOAD_STAGE);
+
                         BackupStorageAskInstallPathMsg bmsg = new BackupStorageAskInstallPathMsg();
                         bmsg.setBackupStorageUuid(msg.getBackupStorageUuid());
                         bmsg.setImageMediaType(image.getMediaType());
@@ -1214,12 +1226,11 @@ public class KvmBackend extends HypervisorBackend {
                         }
 
                         backupStorageInstallPath = ((BackupStorageAskInstallPathReply) br).getInstallPath();
-
                         BackupStorageKvmUploader uploader = getBackupStorageKvmUploader(msg.getBackupStorageUuid());
                         uploader.uploadBits(msg.getImageInventory().getUuid(), backupStorageInstallPath, temporaryTemplatePath, new ReturnValueCompletion<String>(trigger) {
                             @Override
                             public void success(String bsPath) {
-                                reportProgress(getEndFromStage(CREATE_ROOT_VOLUME_TEMPLATE_UPLOAD_STAGE));
+                                reportProgress(stage.getEnd().toString());
                                 backupStorageInstallPath = bsPath;
                                 trigger.next();
                             }
@@ -1237,10 +1248,11 @@ public class KvmBackend extends HypervisorBackend {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
+                        TaskProgressRange stage = markTaskStage(parentStage, DELETE_TEMPORARY_TEMPLATE_STAGE);
                         deleteBits(temporaryTemplatePath, new Completion(trigger) {
                             @Override
                             public void success() {
-                                reportProgress(getEndFromStage(CREATE_ROOT_VOLUME_TEMPLATE_SUBSEQUENT_EVENT_STAGE));
+                                reportProgress(stage.getEnd().toString());
                             }
 
                             @Override

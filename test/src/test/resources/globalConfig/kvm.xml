@@ -89,4 +89,12 @@
         <type>java.lang.String</type>
         <defaultValue>none</defaultValue>
     </config>
+
+    <config>
+        <category>kvm</category>
+        <name>checkHostCpuModelName</name>
+        <description>whether check host cpu model name when migrate vm</description>
+        <type>java.lang.Boolean</type>
+        <defaultValue>false</defaultValue>
+    </config>
 </globalConfig>

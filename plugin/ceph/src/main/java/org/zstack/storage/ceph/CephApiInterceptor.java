@@ -75,6 +75,7 @@ public class CephApiInterceptor implements ApiMessageInterceptor {
         String duplicatePoolUuid = Q.New(CephPrimaryStoragePoolVO.class)
                 .eq(CephPrimaryStoragePoolVO_.primaryStorageUuid, msg.getPrimaryStorageUuid())
                 .eq(CephPrimaryStoragePoolVO_.poolName, msg.getPoolName())
+                .eq(CephPrimaryStoragePoolVO_.type, CephPrimaryStoragePoolType.Data.toString())
                 .select(CephPrimaryStoragePoolVO_.uuid).findValue();
         if (duplicatePoolUuid != null && msg.isCreate()) {
             throw new ApiMessageInterceptionException(argerr(

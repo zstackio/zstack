@@ -122,7 +122,7 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                 });
 
                 try {
-                    ShellUtils.run("rm -rf /var/lib/zstack/consoleProxy/*");
+                    ShellUtils.run("rm -rf /var/lib/zstack/consoleProxy/ && mkdir -p /var/lib/zstack/consoleProxy/");
 
                     setupPublicKey();
                     File privKeyFile = PathUtil.findFileOnClassPath("ansible/rsaKeys/id_rsa");

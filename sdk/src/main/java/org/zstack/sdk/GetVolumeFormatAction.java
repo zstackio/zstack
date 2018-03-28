@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class GetVolumeFormatAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class GetVolumeFormatAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetVolumeFormatResult value;
+        public org.zstack.sdk.GetVolumeFormatResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -41,8 +42,8 @@ public class GetVolumeFormatAction extends AbstractAction {
             return ret;
         }
         
-        GetVolumeFormatResult value = res.getResult(GetVolumeFormatResult.class);
-        ret.value = value == null ? new GetVolumeFormatResult() : value; 
+        org.zstack.sdk.GetVolumeFormatResult value = res.getResult(org.zstack.sdk.GetVolumeFormatResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetVolumeFormatResult() : value; 
 
         return ret;
     }
@@ -61,15 +62,15 @@ public class GetVolumeFormatAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/volumes/formats";

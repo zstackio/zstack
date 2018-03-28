@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class UpdateAliyunDiskAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class UpdateAliyunDiskAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateAliyunDiskResult value;
+        public org.zstack.sdk.UpdateAliyunDiskResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -65,8 +66,8 @@ public class UpdateAliyunDiskAction extends AbstractAction {
             return ret;
         }
         
-        UpdateAliyunDiskResult value = res.getResult(UpdateAliyunDiskResult.class);
-        ret.value = value == null ? new UpdateAliyunDiskResult() : value; 
+        org.zstack.sdk.UpdateAliyunDiskResult value = res.getResult(org.zstack.sdk.UpdateAliyunDiskResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateAliyunDiskResult() : value; 
 
         return ret;
     }
@@ -85,15 +86,15 @@ public class UpdateAliyunDiskAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/hybrid/aliyun/disk/{uuid}/actions";

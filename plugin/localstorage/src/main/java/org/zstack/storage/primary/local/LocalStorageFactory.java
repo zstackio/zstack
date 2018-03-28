@@ -1,5 +1,6 @@
 package org.zstack.storage.primary.local;
 
+import com.google.common.collect.Lists;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.VmAllocatePrimaryStorageFlow;
@@ -50,7 +51,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
-import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionDSL.*;
 
 /**
  * Created by frank on 6/30/2015.
@@ -531,28 +532,49 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         q.groupBy(LocalStorageResourceRefVO_.hostUuid);
         long count = q.count();
 
-        if (count < 2) {
+
+        if (count == 0) {
             return;
         }
 
-        q = dbf.createQuery(LocalStorageResourceRefVO.class);
-        q.select(LocalStorageResourceRefVO_.hostUuid);
-        q.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, vm.getRootVolumeUuid());
-        String rootHost = q.findValue();
+        // if count is 1, multi primary storage is indicated
+        if (count == 1) {
+            if (!Q.New(LocalStorageResourceRefVO.class).eq(LocalStorageResourceRefVO_.resourceUuid, volume.getUuid()).isExists()) {
+                return;
+            }
 
-        q = dbf.createQuery(LocalStorageResourceRefVO.class);
-        q.select(LocalStorageResourceRefVO_.hostUuid);
-        q.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, volume.getUuid());
-        String dataHost = q.findValue();
+            String vmClusterUuid = vm.getClusterUuid();
+            String volumeHostUuid = Q.New(LocalStorageResourceRefVO.class)
+                    .select(LocalStorageResourceRefVO_.hostUuid)
+                    .eq(LocalStorageResourceRefVO_.resourceUuid, volume.getUuid()).findValue();
 
-        if (!rootHost.equals(dataHost)) {
-            throw new OperationFailureException(operr("cannot attach the data volume[uuid:%s] to the vm[uuid:%s]." +
-                            " Both vm's root volume and the data volume are" +
-                            " on local primary storage, but they are on different hosts." +
-                            " The root volume[uuid:%s] is on the host[uuid:%s] but the data volume[uuid: %s]" +
-                            " is on the host[uuid: %s]",
-                            volume.getUuid(), vm.getUuid(), vm.getRootVolumeUuid(),
-                            rootHost, volume.getUuid(), dataHost));
+            if (!Q.New(HostVO.class)
+                    .eq(HostVO_.uuid, volumeHostUuid)
+                    .eq(HostVO_.clusterUuid, vmClusterUuid).isExists()) {
+                throw new OperationFailureException(operr("Can't attach volume to VM, no qualified cluster"));
+            }
+        }
+
+        if (count == 2) {
+            q = dbf.createQuery(LocalStorageResourceRefVO.class);
+            q.select(LocalStorageResourceRefVO_.hostUuid);
+            q.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, vm.getRootVolumeUuid());
+            String rootHost = q.findValue();
+
+            q = dbf.createQuery(LocalStorageResourceRefVO.class);
+            q.select(LocalStorageResourceRefVO_.hostUuid);
+            q.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, volume.getUuid());
+            String dataHost = q.findValue();
+
+            if (!rootHost.equals(dataHost)) {
+                throw new OperationFailureException(operr("cannot attach the data volume[uuid:%s] to the vm[uuid:%s]." +
+                                " Both vm's root volume and the data volume are" +
+                                " on local primary storage, but they are on different hosts." +
+                                " The root volume[uuid:%s] is on the host[uuid:%s] but the data volume[uuid: %s]" +
+                                " is on the host[uuid: %s]",
+                        volume.getUuid(), vm.getUuid(), vm.getRootVolumeUuid(),
+                        rootHost, volume.getUuid(), dataHost));
+            }
         }
     }
 
@@ -622,18 +644,21 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 
     @Override
     @Transactional(readOnly = true)
-    public HostMaintenancePolicy getHostMaintenancePolicy(HostInventory host) {
-        String sql = "select count(ps)" +
-                " from PrimaryStorageVO ps, PrimaryStorageClusterRefVO ref" +
+    public Map<String, HostMaintenancePolicy> getHostMaintenanceVmOperationPolicy(HostInventory host) {
+        Map<String, HostMaintenancePolicy> result = new HashMap<>();
+        String sql = "select vm.uuid" +
+                " from PrimaryStorageVO ps, PrimaryStorageClusterRefVO ref, VmInstanceVO vm, VolumeVO vol" +
                 " where ps.uuid = ref.primaryStorageUuid" +
                 " and ps.type = :type" +
-                " and ref.clusterUuid = :cuuid";
-        TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+                " and ref.clusterUuid = :cuuid" +
+                " and vol.primaryStorageUuid = ps.uuid" +
+                " and vm.rootVolumeUuid = vol.uuid";
+        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("type", LocalStorageConstants.LOCAL_STORAGE_TYPE);
         q.setParameter("cuuid", host.getClusterUuid());
-        q.setMaxResults(1);
-        Long count = q.getSingleResult();
-        return count > 0 ? HostMaintenancePolicy.StopVm : null;
+        List<String> vmUuids = q.getResultList();
+        vmUuids.forEach(it -> result.put(it, HostMaintenancePolicy.StopVm));
+        return result;
     }
 
     @Override
@@ -679,9 +704,25 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             return candidates;
         }
 
+        List<VmInstanceVO> candidatesCopy = Lists.newArrayList(candidates);
+        for (VmInstanceVO vo : candidates) {
+            PrimaryStorageVO psVo = dbf.findByUuid(vo.getRootVolume().getPrimaryStorageUuid(), PrimaryStorageVO.class);
+            if (LocalStorageConstants.LOCAL_STORAGE_TYPE.equals(psVo.getType())) {
+                String volumeUuid = vo.getRootVolumeUuid();
+                VolumeVO rootVolumeVO = dbf.findByUuid(volumeUuid, VolumeVO.class);
+                boolean avaliableHost = Q.New(LocalStorageHostRefVO.class)
+                        .gte(LocalStorageHostRefVO_.availableCapacity, vol.getSize())
+                        .eq(LocalStorageHostRefVO_.primaryStorageUuid, rootVolumeVO.getPrimaryStorageUuid())
+                        .isExists();
+                if (!avaliableHost) {
+                    candidatesCopy.remove(vo);
+                }
+            }
+        }
+
         String hostUuid = ret.get(0);
 
-        List<String> vmRootVolumeUuids = CollectionUtils.transformToList(candidates, new Function<String, VmInstanceVO>() {
+        List<String> vmRootVolumeUuids = CollectionUtils.transformToList(candidatesCopy, new Function<String, VmInstanceVO>() {
             @Override
             public String call(VmInstanceVO arg) {
                 return arg.getRootVolumeUuid();
@@ -700,7 +741,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         q.setParameter("rtype", VolumeVO.class.getSimpleName());
         final List<String> toExclude = q.getResultList();
 
-        candidates = CollectionUtils.transformToList(candidates, new Function<VmInstanceVO, VmInstanceVO>() {
+        candidatesCopy = CollectionUtils.transformToList(candidatesCopy, new Function<VmInstanceVO, VmInstanceVO>() {
             @Override
             public VmInstanceVO call(VmInstanceVO arg) {
                 return toExclude.contains(arg.getRootVolumeUuid()) ? null : arg;
@@ -708,14 +749,14 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         });
 
         // exclude: vm hostUuid not equals target volume hostUuid
-        candidates = CollectionUtils.transformToList(candidates, new Function<VmInstanceVO, VmInstanceVO>() {
+        candidatesCopy = CollectionUtils.transformToList(candidatesCopy, new Function<VmInstanceVO, VmInstanceVO>() {
             @Override
             public VmInstanceVO call(VmInstanceVO arg) {
                 return arg.getHostUuid() != null && !hostUuid.equals(arg.getHostUuid()) ? null : arg;
             }
         });
 
-        return candidates;
+        return candidatesCopy;
     }
 
     @Override
@@ -964,7 +1005,9 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 
     @Override
     public void afterAttachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
-        recalculatePrimaryStorageCapacity(clusterUuid);
+        if (inventory.getType().equals(LocalStorageConstants.LOCAL_STORAGE_TYPE)) {
+            recalculatePrimaryStorageCapacity(clusterUuid);
+        }
     }
 
     @Override

@@ -48,7 +48,8 @@ public class PrimaryStorageAvoidAllocatorFlow extends NoRollbackFlow {
 
         if (candidates.isEmpty()) {
             throw new OperationFailureException(operr("after removing primary storage%s to avoid," +
-                            " there is no candidate primary storage anymore", spec.getAvoidPrimaryStorageUuids()));
+                    " there is no candidate primary storage anymore. " +
+                    "please check primary storage status and state in the cluster.", spec.getAvoidPrimaryStorageUuids()));
         }
 
         data.put(AllocatorParams.CANDIDATES, candidates);
