@@ -368,6 +368,7 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
 
             @Override
             public void success(DownloadRsp ret) {
+                updateCapacity(ret.getTotalCapacity(),ret.getAvailableCapacity());
                 reply.setInstallPath(cmd.installPath);
                 reply.setSize(ret.size);
 
