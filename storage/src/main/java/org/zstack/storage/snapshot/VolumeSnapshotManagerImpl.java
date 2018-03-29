@@ -195,7 +195,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 chain.getUuid(), vo.getVolumeUuid(), vo.getUuid()));
 
         vo.setTreeUuid(chain.getUuid());
-        vo.setDistance(1);
+        vo.setDistance(fullsnapshot ? 0 : 1);
         vo.setParentUuid(null);
         vo.setLatest(true);
         vo.setFullSnapshot(fullsnapshot);
@@ -218,8 +218,9 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         List<VolumeSnapshotTreeVO> rets = cq.getResultList();
         DebugUtils.Assert(rets.size() < 2, "can not have more than one VolumeSnapshotTreeVO with current=1");
         VolumeSnapshotTreeVO chain = rets.isEmpty() ? null : rets.get(0);
+        final Integer maxIncrementalSnapshotNum = getMaxIncrementalSnapshotNum(vo.getVolumeUuid());
         if (chain == null) {
-            return newChain(vo, false);
+            return newChain(vo, maxIncrementalSnapshotNum == 0);
         } else {
             sql = "select s" +
                     " from VolumeSnapshotVO s" +
@@ -231,7 +232,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             q.setParameter("chainUuid", chain.getUuid());
             VolumeSnapshotVO latest = q.getSingleResult();
 
-            if (getMaxIncrementalSnapshotNum(vo.getVolumeUuid()) <= latest.getDistance()) {
+            if (latest.getDistance() >= maxIncrementalSnapshotNum) {
                 chain.setCurrent(false);
                 dbf.getEntityManager().merge(chain);
                 return newChain(vo, true);
