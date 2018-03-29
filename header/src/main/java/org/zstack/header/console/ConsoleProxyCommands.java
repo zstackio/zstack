@@ -174,6 +174,7 @@ public interface ConsoleProxyCommands {
         private String targetHostname;
         private int targetPort;
         private String proxyHostname;
+        private String sslCertFile;
         private int proxyPort;
         private String vmUuid;
         private String scheme;
@@ -193,6 +194,14 @@ public interface ConsoleProxyCommands {
 
         public void setProxyHostname(String proxyHostname) {
             this.proxyHostname = proxyHostname;
+        }
+
+        public String getSslCertFile() {
+            return sslCertFile;
+        }
+
+        public void setSslCertFile(String sslCertFile) {
+            this.sslCertFile = sslCertFile;
         }
 
         public String getTargetHostname() {
