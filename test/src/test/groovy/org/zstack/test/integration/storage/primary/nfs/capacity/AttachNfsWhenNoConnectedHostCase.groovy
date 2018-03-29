@@ -2,10 +2,7 @@ package org.zstack.test.integration.storage.primary.nfs.capacity
 
 import org.springframework.http.HttpEntity
 import org.zstack.header.image.ImageConstant
-import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.kvm.KVMConstant
-import org.zstack.network.securitygroup.SecurityGroupConstant
-import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.sdk.*
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
