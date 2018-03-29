@@ -244,11 +244,38 @@ public class KVMAgentCommands {
     }
 
     public static class HostFactResponse extends AgentResponse {
+        private String osDistribution;
+        private String osVersion;
+        private String osRelease;
         private String qemuImgVersion;
         private String libvirtVersion;
         private String hvmCpuFlag;
         private String cpuModelName;
         private List<String> ipAddresses;
+
+        public String getOsDistribution() {
+            return osDistribution;
+        }
+
+        public void setOsDistribution(String osDistribution) {
+            this.osDistribution = osDistribution;
+        }
+
+        public String getOsVersion() {
+            return osVersion;
+        }
+
+        public void setOsVersion(String osVersion) {
+            this.osVersion = osVersion;
+        }
+
+        public String getOsRelease() {
+            return osRelease;
+        }
+
+        public void setOsRelease(String osRelease) {
+            this.osRelease = osRelease;
+        }
 
         public String getHvmCpuFlag() {
             return hvmCpuFlag;

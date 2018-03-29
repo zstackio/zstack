@@ -14,7 +14,6 @@ import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
-import org.zstack.core.ansible.AnsibleConstant;
 import org.zstack.core.ansible.AnsibleGlobalProperty;
 import org.zstack.core.ansible.AnsibleRunner;
 import org.zstack.core.ansible.SshFileMd5Checker;
@@ -60,7 +59,6 @@ import org.zstack.kvm.KVMConstant.KvmVmState;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.ssh.Ssh;
@@ -2688,42 +2686,6 @@ public class KVMHost extends HostBase implements Host {
                         }
                     });
 
-                    if (info.isNewAdded()) {
-                        flow(new NoRollbackFlow() {
-                            String __name__ = "ansbile-get-kvm-host-facts";
-
-                            @Override
-                            public void run(FlowTrigger trigger, Map data) {
-                                String privKeyFile = PathUtil.findFileOnClassPath(AnsibleConstant.RSA_PRIVATE_KEY).getAbsolutePath();
-                                ShellResult ret = ShellUtils.runAndReturn(String.format("ansible -i %s --private-key %s -m setup -a filter=ansible_distribution* %s -e 'ansible_ssh_port=%d ansible_ssh_user=%s'",
-                                        AnsibleConstant.INVENTORY_FILE, privKeyFile, self.getManagementIp(), getSelf().getPort(), getSelf().getUsername()), AnsibleConstant.ROOT_DIR);
-                                if (!ret.isReturnCode(0)) {
-                                    trigger.fail(operr("unable to get kvm host[uuid:%s, ip:%s] facts by ansible\n%s", self.getUuid(), self.getManagementIp(), ret.getExecutionLog()));
-                                    return;
-                                }
-
-                                String[] pairs = ret.getStdout().split(">>");
-                                if (pairs.length != 2) {
-                                    trigger.fail(operr("unrecognized ansible facts mediaType, %s", ret.getStdout()));
-                                    return;
-                                }
-
-                                LinkedHashMap output = JSONObjectUtil.toObject(pairs[1], LinkedHashMap.class);
-                                LinkedHashMap facts = (LinkedHashMap) output.get("ansible_facts");
-                                if (facts == null) {
-                                    trigger.fail(operr("unrecognized ansible facts mediaType, cannot find field 'ansible_facts', %s", ret.getStdout()));
-                                    return;
-                                }
-
-                                String distro = (String) facts.get("ansible_distribution");
-                                String release = (String) facts.get("ansible_distribution_release");
-                                String version = (String) facts.get("ansible_distribution_version");
-                                createHostVersionSystemTags(distro, release, version);
-                                trigger.next();
-                            }
-                        });
-                    }
-
                     flow(new NoRollbackFlow() {
                         String __name__ = "collect-kvm-host-facts";
 
@@ -2743,6 +2705,9 @@ public class KVMHost extends HostBase implements Host {
                                         trigger.fail(operr("cannot find either 'vmx' or 'svm' in /proc/cpuinfo, please make sure you have enabled virtualization in your BIOS setting"));
                                         return;
                                     }
+
+                                    // create system tags of os::version etc
+                                    createHostVersionSystemTags(ret.getOsDistribution(), ret.getOsRelease(), ret.getOsVersion());
 
                                     SystemTagCreator creator = KVMSystemTags.QEMU_IMG_VERSION.newSystemTagCreator(self.getUuid());
                                     creator.setTagByTokens(map(e(KVMSystemTags.QEMU_IMG_VERSION_TOKEN, ret.getQemuImgVersion())));
@@ -2967,40 +2932,6 @@ public class KVMHost extends HostBase implements Host {
                                 trigger.fail(errorCode);
                             }
                         });
-                    }
-                });
-
-                flow(new NoRollbackFlow() {
-                    String __name__ = "ansbile-update-kvm-host-facts";
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        String privKeyFile = PathUtil.findFileOnClassPath(AnsibleConstant.RSA_PRIVATE_KEY).getAbsolutePath();
-                        ShellResult ret = ShellUtils.runAndReturn(String.format("ansible -i %s --private-key %s -m setup -a filter=ansible_distribution* %s -e 'ansible_ssh_port=%d ansible_ssh_user=%s'",
-                                AnsibleConstant.INVENTORY_FILE, privKeyFile, self.getManagementIp(), getSelf().getPort(), getSelf().getUsername()), AnsibleConstant.ROOT_DIR);
-                        if (!ret.isReturnCode(0)) {
-                            trigger.fail(operr("unable to get kvm host[uuid:%s, ip:%s] facts by ansible\n%s", self.getUuid(), self.getManagementIp(), ret.getExecutionLog()));
-                            return;
-                        }
-
-                        String[] pairs = ret.getStdout().split(">>");
-                        if (pairs.length != 2) {
-                            trigger.fail(operr("unrecognized ansible facts mediaType, %s", ret.getStdout()));
-                            return;
-                        }
-
-                        LinkedHashMap output = JSONObjectUtil.toObject(pairs[1], LinkedHashMap.class);
-                        LinkedHashMap facts = (LinkedHashMap) output.get("ansible_facts");
-                        if (facts == null) {
-                            trigger.fail(operr("unrecognized ansible facts mediaType, cannot find field 'ansible_facts', %s", ret.getStdout()));
-                            return;
-                        }
-
-                        String distro = (String) facts.get("ansible_distribution");
-                        String release = (String) facts.get("ansible_distribution_release");
-                        String version = (String) facts.get("ansible_distribution_version");
-                        createHostVersionSystemTags(distro, release, version);
-                        trigger.next();
                     }
                 });
 
