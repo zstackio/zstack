@@ -7,17 +7,13 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotVO
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO_
 import org.zstack.header.volume.VolumeVO
 import org.zstack.header.volume.VolumeVO_
+import org.zstack.kvm.KVMConstant
 import org.zstack.sdk.VmInstanceInventory
-import org.zstack.sdk.VolumeInventory
 import org.zstack.sdk.VolumeSnapshotInventory
 import org.zstack.test.integration.storage.Env
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
-import org.zstack.kvm.KVMConstant
-import org.zstack.simulator.kvm.VolumeSnapshotKvmSimulator
-import org.zstack.core.db.DatabaseFacade
-
 /**
  * Created by ads6 on 2018/1/2.
  */
@@ -121,7 +117,7 @@ class CreateSnapshotOnDataVolumeCase extends SubCase{
         assert snapshotVO.isFullSnapshot() == false
         assert snapshotVO.isLatest() == false
         assert snapshotVO.getParentUuid() == null
-        assert snapshotVO.getDistance() == SnapshotTestConstant.ROOT_SNAPSHOT_DISNTANCE
+        assert snapshotVO.getDistance() == 1
         assert snapshotVO.getPrimaryStorageUuid() == volumeVO.getPrimaryStorageUuid()
         assert snapshotVO.getPrimaryStorageInstallPath() != null
 
