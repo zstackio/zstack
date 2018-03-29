@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.CoreGlobalProperty;
-import org.zstack.core.GlobalProperty;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.console.*;
 import org.zstack.header.console.ConsoleProxyCommands.DeleteProxyCmd;
@@ -21,9 +20,9 @@ import org.zstack.utils.URLBuilder;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.operr;
-
 import java.net.URI;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created with IntelliJ IDEA.
@@ -67,6 +66,7 @@ public class ConsoleProxyBase implements ConsoleProxy {
         cmd.setTargetPort(targetPort);
         cmd.setProxyHostname("0.0.0.0");
         cmd.setProxyPort(CoreGlobalProperty.CONSOLE_PROXY_PORT);
+        cmd.setSslCertFile(CoreGlobalProperty.CONSOLE_PROXY_CERT_FILE);
         cmd.setScheme(self.getScheme());
         cmd.setToken(self.getToken());
         cmd.setIdleTimeout(timeout);
