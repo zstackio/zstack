@@ -474,11 +474,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 bus.send(cmsg, new CloudBusCallBack(cmsg) {
                     @Override
                     public void run(MessageReply reply) {
-                        if (!reply.isSuccess()) {
-                            trigger.fail(reply.getError());
-                            return;
-                        }
-
+                        // due to the vm sync will set it back, next
                         trigger.next();
                     }
                 });
