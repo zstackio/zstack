@@ -187,7 +187,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             vo.setName(msg.getJobName());
         }
         vo.setDescription(msg.getDescription());
-        vo.setApiId(msg.getId());
+        vo.setApiId(ThreadContext.getImmutableContext().get(Constants.THREAD_CONTEXT_API));
         vo.setJobName(msg.getJobName());
         vo.setJobData(msg.getJobData());
         vo.setState(LongJobState.Waiting);
