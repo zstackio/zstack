@@ -367,6 +367,8 @@ class EnvSpec implements Node {
                 return
             }
 
+            it.beforeOperations.each { cl -> cl() }
+
             def uuid = Platform.getUuid()
             specsByUuid[uuid] = it
 
@@ -400,6 +402,8 @@ class EnvSpec implements Node {
 
                 throw new Exception("failed to create a spec[name: $name, spec type: ${it.class.simpleName}], ${t.message}", t)
             }
+
+            it.afterOperations.each { cl -> cl() }
         }
 
         allNodes.each {

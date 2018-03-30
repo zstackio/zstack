@@ -31,9 +31,6 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
 
         postCreate {
             envSpec.revokeMessage(PingPrimaryStorageMsg.class, null)
-            PrimaryStorageCapacityRecalculator recalculator = new PrimaryStorageCapacityRecalculator()
-            recalculator.psUuids = [inventory.uuid]
-            recalculator.recalculate()
         }
     }
 
