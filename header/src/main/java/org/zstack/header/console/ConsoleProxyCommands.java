@@ -179,6 +179,7 @@ public interface ConsoleProxyCommands {
         private String vmUuid;
         private String scheme;
         private int idleTimeout;
+        private int vncTokenTimeout;
 
         public String getToken() {
             return token;
@@ -251,10 +252,19 @@ public interface ConsoleProxyCommands {
         public void setIdleTimeout(int idleTimeout) {
             this.idleTimeout = idleTimeout;
         }
+
+        public int getVncTokenTimeout() {
+            return vncTokenTimeout;
+        }
+
+        public void setVncTokenTimeout(int vncTokenTimeout) {
+            this.vncTokenTimeout = vncTokenTimeout;
+        }
     }
 
     public static class EstablishProxyRsp extends AgentResponse {
         private int proxyPort;
+        private String token;
 
         public int getProxyPort() {
             return proxyPort;
@@ -262,6 +272,14 @@ public interface ConsoleProxyCommands {
 
         public void setProxyPort(int proxyPort) {
             this.proxyPort = proxyPort;
+        }
+
+        public String getToken() {
+            return token;
+        }
+
+        public void setToken(String token) {
+            this.token = token;
         }
     }
 
