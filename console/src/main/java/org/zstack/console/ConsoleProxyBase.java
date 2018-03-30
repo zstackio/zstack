@@ -58,7 +58,8 @@ public class ConsoleProxyBase implements ConsoleProxy {
         final String targetHostname = uri.getHost();
         final int targetPort = uri.getPort();
 
-        int timeout = ConsoleGlobalConfig.PROXY_IDLE_TIMEOUT.value(Integer.class);
+        int idleTimeout = ConsoleGlobalConfig.PROXY_IDLE_TIMEOUT.value(Integer.class);
+        int tokenTimeout = ConsoleGlobalConfig.VNC_TOKEN_TIMEOUT.value(Integer.class);
 
         ConsoleProxyCommands.EstablishProxyCmd cmd = new ConsoleProxyCommands.EstablishProxyCmd();
         cmd.setVmUuid(self.getVmInstanceUuid());
@@ -69,7 +70,8 @@ public class ConsoleProxyBase implements ConsoleProxy {
         cmd.setSslCertFile(CoreGlobalProperty.CONSOLE_PROXY_CERT_FILE);
         cmd.setScheme(self.getScheme());
         cmd.setToken(self.getToken());
-        cmd.setIdleTimeout(timeout);
+        cmd.setIdleTimeout(idleTimeout);
+        cmd.setVncTokenTimeout(tokenTimeout);
 
         String agentUrl = URLBuilder.buildHttpUrl(self.getAgentIp(), agentPort, ConsoleConstants.CONSOLE_PROXY_ESTABLISH_PROXY_PATH);
         restf.asyncJsonPost(agentUrl, cmd, new JsonAsyncRESTCallback<ConsoleProxyCommands.EstablishProxyRsp>(completion) {
@@ -84,6 +86,7 @@ public class ConsoleProxyBase implements ConsoleProxy {
                     self.setTargetHostname(targetHostname);
                     self.setTargetPort(targetPort);
                     self.setProxyPort(ret.getProxyPort());
+                    self.setToken(ret.getToken());
                     completion.success(self);
                 } else {
                     completion.fail(operr("operation error, because:%s", ret.getError()));
