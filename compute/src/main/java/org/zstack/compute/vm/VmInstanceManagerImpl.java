@@ -862,6 +862,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
         cmsg.setResourceUuid(msg.getResourceUuid());
         cmsg.setDefaultL3NetworkUuid(msg.getDefaultL3NetworkUuid());
         cmsg.setStrategy(msg.getStrategy());
+        cmsg.setServiceId(msg.getServiceId());
+        cmsg.setHeaders(msg.getHeaders());
         return cmsg;
     }
 
