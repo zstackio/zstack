@@ -793,21 +793,17 @@ public class RestServer implements Component, CloudBusEventListener {
         if (parameter == null) {
             msg = (APIMessage) api.apiClass.newInstance();
         } else {
-            // check boolean type parameters
             for (Field f : api.apiClass.getDeclaredFields()) {
-                if (f.getType().isAssignableFrom(boolean.class)) {
-                    Object booleanObject = ((Map) parameter).get(f.getName());
-                    if (booleanObject == null) {
-                        continue;
-                    }
-                    String booleanValue = booleanObject.toString();
-                    if (!(booleanValue.equalsIgnoreCase("true") ||
-                            booleanValue.equalsIgnoreCase("false"))) {
-                        throw new RestException(HttpStatus.BAD_REQUEST.value(),
-                                String.format("Invalid value for boolean field [%s]," +
-                                                " [%s] is not a valid boolean string[true, false].",
-                                        f.getName(), booleanValue));
-                    }
+                String fieldName = f.getName();
+                Object object = ((Map) parameter).get(fieldName);
+                if (object == null) {
+                    continue;
+                }
+                String objectString = object.toString();
+
+                String result = TypeVerifier.verify(f, objectString);
+                if (result != null) {
+                    throw new RestException(HttpStatus.BAD_REQUEST.value(), result);
                 }
             }
 
