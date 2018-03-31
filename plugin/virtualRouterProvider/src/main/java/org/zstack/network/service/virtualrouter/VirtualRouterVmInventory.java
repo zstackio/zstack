@@ -124,6 +124,21 @@ public class VirtualRouterVmInventory extends ApplianceVmInventory {
         return guestNics;
     }
 
+    public List<VmNicInventory> getAdditionalPublicNics() {
+        if (getVmNics() == null) {
+            return null;
+        }
+        List<VmNicInventory> nics = new ArrayList<>();
+
+        for (VmNicInventory n : getVmNics()) {
+            if (VirtualRouterNicMetaData.isAddinitionalPublicNic(n)) {
+                nics.add(n);
+            }
+        }
+
+        return nics;
+    }
+
     public VmNicInventory getGuestNicByL3NetworkUuid(String l3uuid) {
         for (VmNicInventory nic : getVmNics()) {
             if (l3uuid.equals(nic.getL3NetworkUuid())) {
