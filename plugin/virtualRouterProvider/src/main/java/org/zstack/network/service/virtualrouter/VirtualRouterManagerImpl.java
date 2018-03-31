@@ -98,7 +98,7 @@ import static org.zstack.utils.VipUseForList.SNAT_NETWORK_SERVICE_TYPE;
 
 public class VirtualRouterManagerImpl extends AbstractService implements VirtualRouterManager,
         PrepareDbInitialValueExtensionPoint, L2NetworkCreateExtensionPoint,
-        GlobalApiMessageInterceptor, AddExpandedQueryExtensionPoint, GetCandidateVmNicsForLoadBalancerExtensionPoint, FilterVmNicsForEipInVirtualRouterExtensionPoint {
+        GlobalApiMessageInterceptor, AddExpandedQueryExtensionPoint, GetCandidateVmNicsForLoadBalancerExtensionPoint, FilterVmNicsForEipInVirtualRouterExtensionPoint, ApvmCascadeFilterExtensionPoint {
 	private final static CLogger logger = Utils.getLogger(VirtualRouterManagerImpl.class);
 	
 	private final static List<String> supportedL2NetworkTypes = new ArrayList<String>();
@@ -1416,5 +1416,42 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                         .collect(Collectors.toList());
             }
         }.execute();
+    }
+
+    private List<ApplianceVmVO> applianceVmsToBeDeleted(List<ApplianceVmVO> applianceVmVOS, List<String> deletedUuids) {
+        List<ApplianceVmVO> vos = new ArrayList<>();
+        for (ApplianceVmVO vo : applianceVmVOS) {
+            VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(dbf.findByUuid(vo.getUuid(), VirtualRouterVmVO.class));
+
+            List<String> l3Uuids = new ArrayList<>();
+            l3Uuids.addAll(vrInv.getGuestL3Networks());
+            l3Uuids.add(vrInv.getPublicNetworkUuid());
+            l3Uuids.add(vrInv.getManagementNetworkUuid());
+            for(String uuid: l3Uuids) {
+                if (deletedUuids.contains(uuid)) {
+                    vos.add(vo);
+                    break;
+                }
+            }
+        }
+        return vos;
+    }
+
+    @Override
+    public List<ApplianceVmVO> filterApplianceVmCascade(List<ApplianceVmVO> applianceVmVOS, String parentIssuer, List<String> parentIssuerUuids) {
+
+        if (parentIssuer.equals(L3NetworkVO.class.getSimpleName())) {
+            return applianceVmsToBeDeleted(applianceVmVOS, parentIssuerUuids);
+        } else if (parentIssuer.equals(IpRangeVO.class.getSimpleName())) {
+            final List<String> iprL3Uuids = CollectionUtils.transformToList((List<String>) parentIssuerUuids, new Function<String, String>() {
+                @Override
+                public String call(String arg) {
+                    return Q.New(IpRangeVO.class).eq(IpRangeVO_.uuid, arg).select(IpRangeVO_.l3NetworkUuid).findValue();
+                }
+            });
+            return applianceVmsToBeDeleted(applianceVmVOS, iprL3Uuids);
+        } else {
+            return applianceVmVOS;
+        }
     }
 }
