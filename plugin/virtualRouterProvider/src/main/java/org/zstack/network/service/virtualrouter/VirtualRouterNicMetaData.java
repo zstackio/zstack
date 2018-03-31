@@ -88,6 +88,16 @@ public class VirtualRouterNicMetaData {
         return (mask & PUBLIC_NIC_MASK) != 0;
     }
 
+    public static boolean isAddinitionalPublicNic(VmNicInventory nic) {
+        String meta = nic.getMetaData();
+        if (meta == null) {
+            return false;
+        }
+
+        int mask = Integer.valueOf(meta);
+        return (mask & ADDITIONAL_PUBLIC_NIC_MASK) != 0;
+    }
+
     public static boolean isManagementNic(VmNicInventory nic) {
         String meta = nic.getMetaData();
         if (meta == null) {
