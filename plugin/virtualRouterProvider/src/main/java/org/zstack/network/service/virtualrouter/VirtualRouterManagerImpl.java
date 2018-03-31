@@ -7,6 +7,7 @@ import org.zstack.appliancevm.*;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
@@ -25,11 +26,14 @@ import org.zstack.header.configuration.APIUpdateInstanceOfferingEvent;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.configuration.InstanceOfferingState;
 import org.zstack.header.configuration.InstanceOfferingVO;
+import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.WhileCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HypervisorType;
@@ -1418,6 +1422,63 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         }.execute();
     }
 
+    private void applianceVmsCascadeDeleteAdditionPubclicNic(List<VmNicInventory> toDeleteNics) {
+        ErrorCodeList errList = new ErrorCodeList();
+        FutureCompletion completion = new FutureCompletion(null);
+        new While<>(toDeleteNics).each((VmNicInventory nic, WhileCompletion completion1) -> {
+            if (!dbf.isExist(nic.getUuid(), VmNicVO.class)) {
+                logger.debug(String.format("nic[uuid:%s] not exists, skip", nic.getUuid()));
+                completion1.done();
+                return;
+            }
+            DetachNicFromVmMsg msg = new DetachNicFromVmMsg();
+            msg.setVmNicUuid(nic.getUuid());
+            msg.setVmInstanceUuid(nic.getVmInstanceUuid());
+            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, nic.getVmInstanceUuid());
+            bus.send(msg, new CloudBusCallBack(null) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        if (!dbf.isExist(nic.getUuid(), VmNicVO.class)) {
+                            logger.info(String.format("nic[uuid:%s] not exists, mark it as success", nic.getUuid()));
+                            completion1.done();
+                        } else {
+                            errList.getCauses().add(reply.getError());
+                            logger.error(String.format("detach nic[uuid: %s] for " +
+                                    "delete l3[uuid: %s] failed", nic.getUuid(), nic.getL3NetworkUuid()));
+                            completion1.allDone();
+                        }
+                    } else {
+                        logger.debug(String.format("detach nic[uuid: %s] for " +
+                                "delete l3[uuid: %s] success", nic.getUuid(), nic.getL3NetworkUuid()));
+                        completion1.done();
+                    }
+                }
+            });
+        }).run(new NoErrorCompletion() {
+            @Override
+            public void done() {
+                if (!errList.getCauses().isEmpty()) {
+                    completion.fail(errList.getCauses().get(0));
+                } else {
+                    logger.info(String.format("detach nics[%s] for delete l3[uuid:%s] success",
+                            toDeleteNics.stream()
+                                    .map(n -> n.getUuid())
+                                    .collect(Collectors.toList()),
+                            toDeleteNics.stream().map(n-> n.getL3NetworkUuid()).collect(Collectors.toSet())));
+                    completion.success();
+                }
+            }
+        });
+
+        completion.await(TimeUnit.MINUTES.toMillis(30));
+        if (!completion.isSuccess()) {
+            throw new OperationFailureException(operr("can not detach nic [uuid:%s]", toDeleteNics.stream()
+                    .map(n -> n.getUuid())
+                    .collect(Collectors.toList())).causedBy(completion.getErrorCode()));
+        }
+    }
+
     private List<ApplianceVmVO> applianceVmsToBeDeleted(List<ApplianceVmVO> applianceVmVOS, List<String> deletedUuids) {
         List<ApplianceVmVO> vos = new ArrayList<>();
         for (ApplianceVmVO vo : applianceVmVOS) {
@@ -1434,14 +1495,35 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 }
             }
         }
+
         return vos;
+    }
+
+    List<VmNicInventory> applianceVmsAdditionalPublicNic(List<ApplianceVmVO> applianceVmVOS, List<String> parentIssuerUuids) {
+        List<VmNicInventory> toDeleteNics = new ArrayList<>();
+        for (ApplianceVmVO vo : applianceVmVOS) {
+            VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(dbf.findByUuid(vo.getUuid(), VirtualRouterVmVO.class));
+            for (VmNicInventory nic : vrInv.getAdditionalPublicNics()) {
+                if (parentIssuerUuids.contains(nic.getL3NetworkUuid())) {
+                    toDeleteNics.add(nic);
+                }
+            }
+        }
+
+        return toDeleteNics;
     }
 
     @Override
     public List<ApplianceVmVO> filterApplianceVmCascade(List<ApplianceVmVO> applianceVmVOS, String parentIssuer, List<String> parentIssuerUuids) {
 
         if (parentIssuer.equals(L3NetworkVO.class.getSimpleName())) {
-            return applianceVmsToBeDeleted(applianceVmVOS, parentIssuerUuids);
+            List<ApplianceVmVO> vos = applianceVmsToBeDeleted(applianceVmVOS, parentIssuerUuids);
+
+            applianceVmVOS.removeAll(vos);
+            List<VmNicInventory> toDeleteNics = applianceVmsAdditionalPublicNic(applianceVmVOS, parentIssuerUuids);
+            applianceVmsCascadeDeleteAdditionPubclicNic(toDeleteNics);
+
+            return vos;
         } else if (parentIssuer.equals(IpRangeVO.class.getSimpleName())) {
             final List<String> iprL3Uuids = CollectionUtils.transformToList((List<String>) parentIssuerUuids, new Function<String, String>() {
                 @Override
@@ -1449,7 +1531,13 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                     return Q.New(IpRangeVO.class).eq(IpRangeVO_.uuid, arg).select(IpRangeVO_.l3NetworkUuid).findValue();
                 }
             });
-            return applianceVmsToBeDeleted(applianceVmVOS, iprL3Uuids);
+            List<ApplianceVmVO> vos = applianceVmsToBeDeleted(applianceVmVOS, iprL3Uuids);
+
+            applianceVmVOS.removeAll(vos);
+            List<VmNicInventory> toDeleteNics = applianceVmsAdditionalPublicNic(applianceVmVOS, iprL3Uuids);
+            applianceVmsCascadeDeleteAdditionPubclicNic(toDeleteNics);
+
+            return vos;
         } else {
             return applianceVmVOS;
         }

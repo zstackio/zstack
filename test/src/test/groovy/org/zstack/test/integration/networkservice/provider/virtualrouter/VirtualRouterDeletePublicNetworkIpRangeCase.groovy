@@ -56,13 +56,33 @@ class VirtualRouterDeletePublicNetworkIpRangeCase extends SubCase {
             delegate.netmask = "255.255.255.0"
         }
 
+        L3NetworkInventory l3_2 = createL3Network {
+            delegate.category = "Public"
+            delegate.l2NetworkUuid = l2.uuid
+            delegate.name = "pubL3-3"
+        }
+
+        addIpRange {
+            delegate.name = "TestIpRange-2"
+            delegate.l3NetworkUuid = l3_2.uuid
+            delegate.startIp = "11.168.210.10"
+            delegate.endIp = "11.168.210.253"
+            delegate.gateway = "11.168.210.1"
+            delegate.netmask = "255.255.255.0"
+        }
+
         VirtualRouterVmVO vr = Q.New(VirtualRouterVmVO.class).find()
         assert vr != null
         assert vr.getPublicNetworkUuid() == pub.uuid
         assert vr.getManagementNetworkUuid() == pub.uuid
 
-        VmInstanceInventory inv = attachL3NetworkToVm {
+        attachL3NetworkToVm {
             delegate.l3NetworkUuid = l3_1.getUuid()
+            delegate.vmInstanceUuid = vr.uuid
+        }
+
+        attachL3NetworkToVm {
+            delegate.l3NetworkUuid = l3_2.getUuid()
             delegate.vmInstanceUuid = vr.uuid
         }
 
@@ -74,6 +94,10 @@ class VirtualRouterDeletePublicNetworkIpRangeCase extends SubCase {
         assert vr != null
         assert vr.getPublicNetworkUuid() == pub.uuid
         assert vr.getManagementNetworkUuid() == pub.uuid
+        assert vr.getVmNics().size() == 3
+        for (VmNicVO nic : vr.getVmNics()) {
+            assert nic.l3NetworkUuid != l3_1.uuid && nic.l3NetworkUuid != null
+        }
     }
 
     @Override
