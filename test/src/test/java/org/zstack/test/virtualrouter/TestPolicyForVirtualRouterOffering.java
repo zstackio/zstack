@@ -9,7 +9,7 @@ import org.zstack.header.configuration.APICreateInstanceOfferingEvent;
 import org.zstack.header.configuration.APIDeleteInstanceOfferingMsg;
 import org.zstack.header.configuration.ConfigurationConstant;
 import org.zstack.header.configuration.InstanceOfferingInventory;
-import org.zstack.header.identity.AccountConstant.StatementEffect;
+import org.zstack.header.identity.StatementEffect;
 import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.identity.PolicyInventory.Statement;
 import org.zstack.header.identity.SessionInventory;

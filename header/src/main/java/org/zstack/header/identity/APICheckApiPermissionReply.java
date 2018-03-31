@@ -24,7 +24,7 @@ public class APICheckApiPermissionReply extends APIReply {
     public static APICheckApiPermissionReply __example__() {
         APICheckApiPermissionReply reply = new APICheckApiPermissionReply();
         Map<String, String> inventory = new HashMap<>();
-        inventory.put("APICheckApiPermissionMsg", AccountConstant.StatementEffect.Allow.toString());
+        inventory.put("APICheckApiPermissionMsg", StatementEffect.Allow.toString());
         reply.setInventory(inventory);
         return reply;
     }

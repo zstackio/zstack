@@ -1,10 +1,7 @@
 package org.zstack.identity.rbac;
 
 import org.zstack.core.db.SQLBatchWithReturn;
-import org.zstack.header.identity.AccountConstant;
-import org.zstack.header.identity.PolicyInventory;
-import org.zstack.header.identity.PolicyVO;
-import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.identity.*;
 import org.zstack.header.message.APIMessage;
 
 import java.util.ArrayList;
@@ -68,7 +65,7 @@ public interface RBACManager {
     static Map<PolicyInventory, List<PolicyInventory.Statement>> collectDenyStatements(List<PolicyInventory> polices) {
         Map<PolicyInventory, List<PolicyInventory.Statement>> ret = new HashMap<>();
         polices.forEach(p -> {
-            List<PolicyInventory.Statement> ss = p.getStatements().stream().filter(s->s.getEffect() == AccountConstant.StatementEffect.Deny).collect(Collectors.toList());
+            List<PolicyInventory.Statement> ss = p.getStatements().stream().filter(s->s.getEffect() == StatementEffect.Deny).collect(Collectors.toList());
             if (!ss.isEmpty()) {
                 ret.put(p, ss);
             }
@@ -80,7 +77,7 @@ public interface RBACManager {
     static Map<PolicyInventory, List<PolicyInventory.Statement>> collectAllowedStatements(List<PolicyInventory> polices) {
         Map<PolicyInventory, List<PolicyInventory.Statement>> ret = new HashMap<>();
         polices.forEach(p -> {
-            List<PolicyInventory.Statement> ss = p.getStatements().stream().filter(s->s.getEffect() == AccountConstant.StatementEffect.Allow).collect(Collectors.toList());
+            List<PolicyInventory.Statement> ss = p.getStatements().stream().filter(s->s.getEffect() == StatementEffect.Allow).collect(Collectors.toList());
             if (!ss.isEmpty()) {
                 ret.put(p, ss);
             }

@@ -1,6 +1,6 @@
 package org.zstack.test.integration.identity
 
-import org.zstack.header.identity.AccountConstant
+import org.zstack.header.identity.StatementEffect
 import org.zstack.test.integration.ZStackTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -30,7 +30,7 @@ class RBACPermissionCase extends SubCase {
                     policy {
                         name = "admin-policy"
                         statement {
-                            effect = AccountConstant.StatementEffect.Allow
+                            effect = StatementEffect.Allow
                             action(".*")
                         }
                     }
@@ -55,7 +55,7 @@ class RBACPermissionCase extends SubCase {
                         name = "normal-policy"
 
                         statement {
-                            effect = AccountConstant.StatementEffect.Allow
+                            effect = StatementEffect.Allow
                             action(".*")
                         }
                     }

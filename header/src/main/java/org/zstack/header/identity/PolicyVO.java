@@ -28,9 +28,21 @@ public class PolicyVO extends ResourceVO {
     @Column
     private Timestamp lastOpDate;
 
+    @Column
+    @Enumerated(EnumType.STRING)
+    private PolicyType type;
+
     @PreUpdate
     private void preUpdate() {
         lastOpDate = null;
+    }
+
+    public PolicyType getType() {
+        return type;
+    }
+
+    public void setType(PolicyType type) {
+        this.type = type;
     }
 
     public String getData() {

@@ -7,6 +7,12 @@ import static org.zstack.header.identity.rbac.RBACInfo.rbac
 @StaticInit
 static void init() {
     rbac {
-        normalAPIs("org.zstack.header.image.**")
+        def s = normalAPIs("org.zstack.header.image.**")
+
+        normalRole {
+            uuid = "0ce6f173cdab42968ec7bf98bb34a41e"
+            name = "image role"
+            statements = s
+        }
     }
 }

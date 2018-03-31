@@ -6,23 +6,24 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.identity.InternalPolicy;
-import org.zstack.header.identity.PolicyInventory;
+import org.zstack.header.identity.*;
+import org.zstack.header.identity.rbac.RBACInfo;
+import org.zstack.header.identity.rbac.RoleInfo;
 import org.zstack.header.identity.role.*;
 import org.zstack.header.identity.role.api.*;
+import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.List;
-import java.util.regex.Pattern;
-
-public class RBACManagerImpl extends AbstractService implements RBACManager, Component {
+public class RBACManagerImpl extends AbstractService implements RBACManager, Component, PrepareDbInitialValueExtensionPoint {
     private static final CLogger logger = Utils.getLogger(RBACManagerImpl.class);
 
     @Autowired
@@ -174,5 +175,46 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
     @Override
     public String getId() {
         return bus.makeLocalServiceId(SERVICE_ID);
+    }
+
+    @Override
+    public void prepareDbInitialValue() {
+        new SQLBatch() {
+            private PolicyVO createPolicy(RoleInfo role) {
+                PolicyVO vo = new PolicyVO();
+                vo.setUuid(Platform.getUuid());
+                vo.setName(String.format("system-policy-role-%s", role.getName()));
+                vo.setType(PolicyType.System);
+                vo.setAccountUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
+                vo.setData(JSONObjectUtil.toJsonString(role.toStatement()));
+                persist(vo);
+                return vo;
+            }
+
+            @Override
+            protected void scripts() {
+                RBACInfo.getRoleInfos().forEach(role -> {
+                    if (q(SystemRoleVO.class).eq(SystemRoleVO_.uuid, role.getUuid()).isExists()) {
+                        SystemRoleVO rvo = new SystemRoleVO();
+                        rvo.setUuid(role.getUuid());
+                        rvo.setName(String.format("system: %s", role.getName()));
+                        rvo.setSystemRoleType(role.getAdminOnly() ? SystemRoleType.Admin : SystemRoleType.Normal);
+                        rvo.setType(RoleType.System);
+                        persist(rvo);
+                    }
+
+                    RolePolicyRefVO ref = q(RolePolicyRefVO.class).eq(RolePolicyRefVO_.roleUuid, role.getUuid()).find();
+                    if (ref == null) {
+                        PolicyVO pvo = createPolicy(role);
+                        ref = new RolePolicyRefVO();
+                        ref.setRoleUuid(role.getUuid());
+                        ref.setPolicyUuid(pvo.getUuid());
+                        persist(ref);
+                    } else if (!q(PolicyVO.class).eq(PolicyVO_.uuid, ref.getPolicyUuid()).isExists()) {
+                        createPolicy(role);
+                    }
+                });
+            }
+        }.execute();
     }
 }

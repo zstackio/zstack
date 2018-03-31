@@ -7,7 +7,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.identity.AccountConstant.StatementEffect;
+import org.zstack.header.identity.StatementEffect;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.PolicyInventory.Statement;
 import org.zstack.header.network.l3.L3NetworkInventory;

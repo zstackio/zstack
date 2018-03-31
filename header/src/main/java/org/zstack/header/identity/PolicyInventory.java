@@ -1,7 +1,6 @@
 package org.zstack.header.identity;
 
 import org.zstack.header.configuration.PythonClassInventory;
-import org.zstack.header.identity.AccountConstant.StatementEffect;
 import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.query.ExpandedQueryAlias;

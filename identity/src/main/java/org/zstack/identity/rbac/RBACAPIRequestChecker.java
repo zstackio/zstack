@@ -21,15 +21,19 @@ import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
 public class RBACAPIRequestChecker implements APIRequestChecker {
-    private static final CLogger logger = Utils.getLogger(RBACAPIRequestChecker.class);
+    protected static final CLogger logger = Utils.getLogger(RBACAPIRequestChecker.class);
 
-    private APIMessage message;
-    private PolicyMatcher policyMatcher = new PolicyMatcher();
+    protected APIMessage message;
+    protected PolicyMatcher policyMatcher = new PolicyMatcher();
 
     @Override
     public void check(APIMessage msg) {
         message = msg;
         check();
+    }
+
+    protected List<PolicyInventory> getPoliciesForAPI() {
+        return RBACManager.getPoliciesByAPI(message);
     }
 
     /**
@@ -38,8 +42,8 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
      * 4. if any user defined policy allows the API, allow
      * 5. then deny by default
      */
-    private void check() {
-        List<PolicyInventory> polices = RBACManager.getPoliciesByAPI(message);
+    protected void check() {
+        List<PolicyInventory> polices = getPoliciesForAPI();
         Map<PolicyInventory, List<PolicyInventory.Statement>> denyStatements = RBACManager.collectDenyStatements(polices);
         Map<PolicyInventory, List<PolicyInventory.Statement>> allowStatements = RBACManager.collectAllowedStatements(polices);
 
@@ -58,7 +62,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
         return JSONObjectUtil.toJsonString(map(e(message.getClass().getName(), message)));
     }
 
-    private boolean evalAllowStatements(Map<PolicyInventory, List<PolicyInventory.Statement>> policies) {
+    protected boolean evalAllowStatements(Map<PolicyInventory, List<PolicyInventory.Statement>> policies) {
         for (Map.Entry<PolicyInventory, List<PolicyInventory.Statement>> e : policies.entrySet()) {
             PolicyInventory policy = e.getKey();
             for (PolicyInventory.Statement statement : e.getValue()) {
@@ -81,12 +85,12 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
         return false;
     }
 
-    private boolean evalAllowStatement(String as) {
+    protected boolean evalAllowStatement(String as) {
         String ap = PolicyUtils.apiNamePatternFromAction(as);
         return policyMatcher.match(ap, message.getClass().getName());
     }
 
-    private boolean isPrincipalMatched(List<String> principals) {
+    protected boolean isPrincipalMatched(List<String> principals) {
         // if not principals specified, means the statement applies for all accounts/users
         // if principals specified, check if they matches current account/user
         if (principals != null && !principals.isEmpty()) {
@@ -114,7 +118,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
         }
     }
 
-    private void evalDenyStatements(Map<PolicyInventory, List<PolicyInventory.Statement>> denyPolices) {
+    protected void evalDenyStatements(Map<PolicyInventory, List<PolicyInventory.Statement>> denyPolices) {
         // action string format is:
         // api-full-name:optional-api-field-list-split-by-comma
         denyPolices.forEach((p, sts)-> sts.forEach(st-> {
@@ -167,11 +171,11 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
         }));
     }
 
-    private boolean checkUserPrincipal(String uuidRegex) {
+    protected boolean checkUserPrincipal(String uuidRegex) {
         return policyMatcher.match(uuidRegex, message.getSession().getUserUuid());
     }
 
-    private boolean checkAccountPrincipal(String uuidRegex) {
+    protected boolean checkAccountPrincipal(String uuidRegex) {
         return policyMatcher.match(uuidRegex, message.getSession().getAccountUuid());
     }
 }

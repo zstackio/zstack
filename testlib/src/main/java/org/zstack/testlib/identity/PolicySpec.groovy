@@ -1,6 +1,6 @@
 package org.zstack.testlib.identity
 
-import org.zstack.header.identity.AccountConstant
+import org.zstack.header.identity.StatementEffect
 import org.zstack.sdk.PolicyInventory
 import org.zstack.sdk.PolicyStatement
 import org.zstack.testlib.EnvSpec
@@ -19,7 +19,7 @@ class PolicySpec extends Spec implements HasSession {
 
     static class Statement {
         String name
-        AccountConstant.StatementEffect effect
+        StatementEffect effect
         List<String> principals = []
         List<String> actions = []
         List<String> resources = []

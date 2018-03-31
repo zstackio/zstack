@@ -9,6 +9,8 @@ class RBACInfo {
     private static final CLogger logger = Utils.getLogger(RBACInfo.class)
 
     static List<RBACInfo> infos = []
+    static List<RoleInfo> roleInfos = []
+
     private static PolicyMatcher matcher = new PolicyMatcher()
 
     private String prefix
@@ -123,12 +125,31 @@ class RBACInfo {
         prefix = value
     }
 
-    void adminOnlyAPIs(String...apis) {
+    List<String> adminOnlyAPIs(String...apis) {
         _adminOnlyAPIs.addAll(apis as Set)
+        return apis as List
     }
 
-    void normalAPIs(String...apis) {
+    List<String> normalAPIs(String...apis) {
         _normalAPIs.addAll(apis as Set)
+        return apis as List
+    }
+
+
+    void adminRole(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = RoleInfo.class) Closure c) {
+        RoleInfo info = new RoleInfo(adminOnly: true)
+        c.delegate = info
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c()
+        roleInfos.add(info)
+    }
+
+    void normalRole(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = RoleInfo.class) Closure c) {
+        RoleInfo info = new RoleInfo(adminOnly: false)
+        c.delegate = info
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c()
+        roleInfos.add(info)
     }
 
     String getPrefix() {

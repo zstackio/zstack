@@ -34,12 +34,6 @@ public interface AccountConstant {
         ALLOW,
     }
 
-    @SDK(sdkClassName = "PolicyStatementEffect")
-    enum StatementEffect {
-        Allow,
-        Deny,
-    }
-
     enum Principal {
         Account,
         User,

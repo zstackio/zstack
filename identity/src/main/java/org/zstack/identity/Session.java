@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.Platform;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SQLBatchWithReturn;
@@ -17,6 +18,7 @@ import javax.persistence.Query;
 import java.sql.Timestamp;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class Session {
@@ -26,6 +28,36 @@ public class Session {
 
     @Autowired
     private PluginRegistry pluginRgty;
+
+    public SessionInventory login(String accountUuid, String userUuid) {
+        return new SQLBatchWithReturn<SessionInventory>() {
+            @Transactional(readOnly = true)
+            private Timestamp getCurrentSqlDate() {
+                Query query = databaseFacade.getEntityManager().createNativeQuery("select current_timestamp()");
+                return (Timestamp) query.getSingleResult();
+            }
+
+            @Override
+            protected SessionInventory scripts() {
+                if (q(SessionVO.class).eq(SessionVO_.accountUuid, accountUuid)
+                        .eq(SessionVO_.userUuid, userUuid).count() > IdentityGlobalConfig.MAX_CONCURRENT_SESSION.value(Integer.class)) {
+                    throw new OperationFailureException(operr("Login sessions hit limit of max allowed concurrent login sessions"));
+                }
+
+                SessionVO vo = new SessionVO();
+                vo.setUuid(Platform.getUuid());
+                vo.setAccountUuid(accountUuid);
+                vo.setUuid(userUuid);
+                long expiredTime = getCurrentSqlDate().getTime() + TimeUnit.SECONDS.toMillis(IdentityGlobalConfig.SESSION_TIMEOUT.value(Long.class));
+                vo.setExpiredDate(new Timestamp(expiredTime));
+                persist(vo);
+                SessionInventory inv = SessionInventory.valueOf(vo);
+                sessions.put(inv.getUuid(), inv);
+
+                return inv;
+            }
+        }.execute();
+    }
 
     public void logout(String uuid) {
         new SQLBatch() {
