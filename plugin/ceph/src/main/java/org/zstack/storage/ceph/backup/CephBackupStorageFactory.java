@@ -99,7 +99,7 @@ public class CephBackupStorageFactory implements BackupStorageFactory, CephCapac
 
     @Override
     @Transactional
-    public void update(String fsid, long total, long avail) {
+    public void update(String fsid, long total, long avail, List<CephPoolCapacity> poolCapacities) {
         String sql = "select c from CephBackupStorageVO c where c.fsid = :fsid";
         TypedQuery<CephBackupStorageVO> q = dbf.getEntityManager().createQuery(sql, CephBackupStorageVO.class);
         q.setParameter("fsid", fsid);
@@ -108,6 +108,18 @@ public class CephBackupStorageFactory implements BackupStorageFactory, CephCapac
             CephBackupStorageVO vo = q.getSingleResult();
             vo.setTotalCapacity(total);
             vo.setAvailableCapacity(avail);
+
+            if (poolCapacities != null && poolCapacities.stream().anyMatch((e) -> e.getName().equals(vo.getPoolName()))) {
+                CephPoolCapacity poolCapacity = poolCapacities.stream()
+                        .filter(e -> e.getName().equals(vo.getPoolName()))
+                        .findAny().get();
+
+                vo.setPoolAvailableCapacity(poolCapacity.getAvailableCapacity());
+                vo.setPoolReplicatedSize(poolCapacity.getReplicatedSize());
+                vo.setPoolUsedCapacity(poolCapacity.getUsedCapacity());
+            }
+
+
             dbf.getEntityManager().merge(vo);
         } catch (EmptyResultDataAccessException e) {
             return;

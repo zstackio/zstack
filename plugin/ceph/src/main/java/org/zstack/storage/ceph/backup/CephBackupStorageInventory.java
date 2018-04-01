@@ -25,12 +25,18 @@ public class CephBackupStorageInventory extends BackupStorageInventory {
     private List<CephBackupStorageMonInventory> mons = new ArrayList<CephBackupStorageMonInventory>();
     private String fsid;
     private String poolName;
+    private Long poolAvailableCapacity;
+    private Long poolUsedCapacity;
+    private Integer poolReplicatedSize;
 
     public CephBackupStorageInventory(CephBackupStorageVO vo) {
         super(vo);
         mons = CephBackupStorageMonInventory.valueOf(vo.getMons());
         fsid = vo.getFsid();
         poolName = vo.getPoolName();
+        poolAvailableCapacity = vo.getPoolAvailableCapacity();
+        poolUsedCapacity = vo.getPoolUsedCapacity();
+        poolReplicatedSize = vo.getPoolReplicatedSize();
     }
 
     public CephBackupStorageInventory() {
@@ -71,5 +77,29 @@ public class CephBackupStorageInventory extends BackupStorageInventory {
 
     public void setMons(List<CephBackupStorageMonInventory> mons) {
         this.mons = mons;
+    }
+
+    public Long getPoolAvailableCapacity() {
+        return poolAvailableCapacity;
+    }
+
+    public void setPoolAvailableCapacity(Long poolAvailableCapacity) {
+        this.poolAvailableCapacity = poolAvailableCapacity;
+    }
+
+    public Long getPoolUsedCapacity() {
+        return poolUsedCapacity;
+    }
+
+    public void setPoolUsedCapacity(Long poolUsedCapacity) {
+        this.poolUsedCapacity = poolUsedCapacity;
+    }
+
+    public Integer getPoolReplicatedSize() {
+        return poolReplicatedSize;
+    }
+
+    public void setPoolReplicatedSize(Integer poolReplicatedSize) {
+        this.poolReplicatedSize = poolReplicatedSize;
     }
 }
