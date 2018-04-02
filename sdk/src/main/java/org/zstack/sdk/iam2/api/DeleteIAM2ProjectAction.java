@@ -1,10 +1,10 @@
-package org.zstack.sdk.zwatch.alarm;
+package org.zstack.sdk.iam2.api;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class RemoveLabelFromEventSubscriptionAction extends AbstractAction {
+public class DeleteIAM2ProjectAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class RemoveLabelFromEventSubscriptionAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.zwatch.alarm.RemoveLabelFromEventSubscriptionResult value;
+        public org.zstack.sdk.iam2.api.DeleteIAM2ProjectResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -51,8 +51,8 @@ public class RemoveLabelFromEventSubscriptionAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.zwatch.alarm.RemoveLabelFromEventSubscriptionResult value = res.getResult(org.zstack.sdk.zwatch.alarm.RemoveLabelFromEventSubscriptionResult.class);
-        ret.value = value == null ? new org.zstack.sdk.zwatch.alarm.RemoveLabelFromEventSubscriptionResult() : value; 
+        org.zstack.sdk.iam2.api.DeleteIAM2ProjectResult value = res.getResult(org.zstack.sdk.iam2.api.DeleteIAM2ProjectResult.class);
+        ret.value = value == null ? new org.zstack.sdk.iam2.api.DeleteIAM2ProjectResult() : value; 
 
         return ret;
     }
@@ -82,7 +82,7 @@ public class RemoveLabelFromEventSubscriptionAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
-        info.path = "/zwatch/events/subscriptions/labels/{uuid}";
+        info.path = "/iam2/projects";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";

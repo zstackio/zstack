@@ -1,10 +1,10 @@
-package org.zstack.sdk.zwatch.alarm;
+package org.zstack.sdk.iam2.api;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class RemoveLabelFromEventSubscriptionAction extends AbstractAction {
+public class ChangeIAM2OrganizationParentAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class RemoveLabelFromEventSubscriptionAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.zwatch.alarm.RemoveLabelFromEventSubscriptionResult value;
+        public org.zstack.sdk.iam2.api.ChangeIAM2OrganizationParentResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,7 +26,10 @@ public class RemoveLabelFromEventSubscriptionAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    public java.lang.String parentUuid;
+
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List childrenUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -51,8 +54,8 @@ public class RemoveLabelFromEventSubscriptionAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.zwatch.alarm.RemoveLabelFromEventSubscriptionResult value = res.getResult(org.zstack.sdk.zwatch.alarm.RemoveLabelFromEventSubscriptionResult.class);
-        ret.value = value == null ? new org.zstack.sdk.zwatch.alarm.RemoveLabelFromEventSubscriptionResult() : value; 
+        org.zstack.sdk.iam2.api.ChangeIAM2OrganizationParentResult value = res.getResult(org.zstack.sdk.iam2.api.ChangeIAM2OrganizationParentResult.class);
+        ret.value = value == null ? new org.zstack.sdk.iam2.api.ChangeIAM2OrganizationParentResult() : value; 
 
         return ret;
     }
@@ -81,11 +84,11 @@ public class RemoveLabelFromEventSubscriptionAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/zwatch/events/subscriptions/labels/{uuid}";
+        info.httpMethod = "PUT";
+        info.path = "/iam2/organization/{parentUuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "changeIAM2OrganizationParent";
         return info;
     }
 

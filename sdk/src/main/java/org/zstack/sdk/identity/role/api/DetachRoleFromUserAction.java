@@ -1,10 +1,10 @@
-package org.zstack.sdk.zwatch.alarm;
+package org.zstack.sdk.identity.role.api;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class RemoveLabelFromEventSubscriptionAction extends AbstractAction {
+public class DetachRoleFromUserAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class RemoveLabelFromEventSubscriptionAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.zwatch.alarm.RemoveLabelFromEventSubscriptionResult value;
+        public org.zstack.sdk.identity.role.api.DetachRoleFromUserResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,7 +26,10 @@ public class RemoveLabelFromEventSubscriptionAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    public java.lang.String roleUuid;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String userUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -51,8 +54,8 @@ public class RemoveLabelFromEventSubscriptionAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.zwatch.alarm.RemoveLabelFromEventSubscriptionResult value = res.getResult(org.zstack.sdk.zwatch.alarm.RemoveLabelFromEventSubscriptionResult.class);
-        ret.value = value == null ? new org.zstack.sdk.zwatch.alarm.RemoveLabelFromEventSubscriptionResult() : value; 
+        org.zstack.sdk.identity.role.api.DetachRoleFromUserResult value = res.getResult(org.zstack.sdk.identity.role.api.DetachRoleFromUserResult.class);
+        ret.value = value == null ? new org.zstack.sdk.identity.role.api.DetachRoleFromUserResult() : value; 
 
         return ret;
     }
@@ -82,7 +85,7 @@ public class RemoveLabelFromEventSubscriptionAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
-        info.path = "/zwatch/events/subscriptions/labels/{uuid}";
+        info.path = "/identities/users/{userUuid}/roles/{roleUuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";
