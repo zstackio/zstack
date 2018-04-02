@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddIAM2VirtualIDToProjectAction extends AbstractAction {
+public class RemoveIAM2VirtualIDsFromProjectAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddIAM2VirtualIDToProjectAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.iam2.api.AddIAM2VirtualIDToProjectResult value;
+        public org.zstack.sdk.iam2.api.RemoveIAM2VirtualIDsFromProjectResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -28,8 +28,8 @@ public class AddIAM2VirtualIDToProjectAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String projectUuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String virtualIDUuid;
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List virtualIDUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -54,8 +54,8 @@ public class AddIAM2VirtualIDToProjectAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.iam2.api.AddIAM2VirtualIDToProjectResult value = res.getResult(org.zstack.sdk.iam2.api.AddIAM2VirtualIDToProjectResult.class);
-        ret.value = value == null ? new org.zstack.sdk.iam2.api.AddIAM2VirtualIDToProjectResult() : value; 
+        org.zstack.sdk.iam2.api.RemoveIAM2VirtualIDsFromProjectResult value = res.getResult(org.zstack.sdk.iam2.api.RemoveIAM2VirtualIDsFromProjectResult.class);
+        ret.value = value == null ? new org.zstack.sdk.iam2.api.RemoveIAM2VirtualIDsFromProjectResult() : value; 
 
         return ret;
     }
@@ -84,8 +84,8 @@ public class AddIAM2VirtualIDToProjectAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/iam2/projects/{projectUuid}/virtual-ids/{virtualIDUuid}";
+        info.httpMethod = "DELETE";
+        info.path = "/iam2/projects/{projectUuid}/virtual-ids";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

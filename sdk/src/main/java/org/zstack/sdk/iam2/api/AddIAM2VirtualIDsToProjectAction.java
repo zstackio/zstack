@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class RemoveIAM2VirtualIDFromProjectAction extends AbstractAction {
+public class AddIAM2VirtualIDsToProjectAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class RemoveIAM2VirtualIDFromProjectAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.iam2.api.RemoveIAM2VirtualIDFromProjectResult value;
+        public org.zstack.sdk.iam2.api.AddIAM2VirtualIDsToProjectResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -29,7 +29,7 @@ public class RemoveIAM2VirtualIDFromProjectAction extends AbstractAction {
     public java.lang.String projectUuid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String virtualIDUuid;
+    public java.util.List virtualIDUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -54,8 +54,8 @@ public class RemoveIAM2VirtualIDFromProjectAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.iam2.api.RemoveIAM2VirtualIDFromProjectResult value = res.getResult(org.zstack.sdk.iam2.api.RemoveIAM2VirtualIDFromProjectResult.class);
-        ret.value = value == null ? new org.zstack.sdk.iam2.api.RemoveIAM2VirtualIDFromProjectResult() : value; 
+        org.zstack.sdk.iam2.api.AddIAM2VirtualIDsToProjectResult value = res.getResult(org.zstack.sdk.iam2.api.AddIAM2VirtualIDsToProjectResult.class);
+        ret.value = value == null ? new org.zstack.sdk.iam2.api.AddIAM2VirtualIDsToProjectResult() : value; 
 
         return ret;
     }
@@ -84,8 +84,8 @@ public class RemoveIAM2VirtualIDFromProjectAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/iam2/projects/{projectUuid}/virtual-ids/{virtualIDUuid}";
+        info.httpMethod = "POST";
+        info.path = "/iam2/projects/{projectUuid}/virtual-ids";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
