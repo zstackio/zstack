@@ -1,6 +1,7 @@
 package org.zstack.testlib
 
 import org.zstack.sdk.HostInventory
+import org.zstack.storage.primary.PrimaryStorageCapacityRecalculator
 
 /**
  * Created by xing5 on 2017/2/12.
@@ -13,6 +14,18 @@ class KVMHostSpec extends HostSpec {
 
     KVMHostSpec(EnvSpec envSpec) {
         super(envSpec)
+
+        afterCreate {
+            envSpec.zones.primaryStorage.each { ps ->
+                ps.each {
+                    if (it instanceof NfsPrimaryStorageSpec && it.inventory != null) {
+                        PrimaryStorageCapacityRecalculator recalculator = new PrimaryStorageCapacityRecalculator()
+                        recalculator.psUuids = [it.inventory.uuid]
+                        recalculator.recalculate()
+                    }
+                }
+            }
+        }
     }
 
     SpecID create(String uuid, String sessionId) {

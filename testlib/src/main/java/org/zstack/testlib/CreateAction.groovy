@@ -14,6 +14,16 @@ trait CreateAction {
 
     List<Closure> preOperations = []
     List<Closure> postOperations = []
+    List<Closure> beforeOperations = []
+    List<Closure> afterOperations = []
+
+    void beforeCreate(Closure cl) {
+        beforeOperations.add(cl)
+    }
+
+    void afterCreate(Closure cl) {
+        afterOperations.add(cl)
+    }
 
     void preCreate(Closure cl) {
         preOperations.add(cl)
