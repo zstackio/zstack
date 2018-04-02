@@ -2490,11 +2490,14 @@ public class VmInstanceBase extends AbstractVmInstance {
     private void handle(APIGetVmBootOrderMsg msg) {
         APIGetVmBootOrderReply reply = new APIGetVmBootOrderReply();
         String order = VmSystemTags.BOOT_ORDER.getTokenByResourceUuid(self.getUuid(), VmSystemTags.BOOT_ORDER_TOKEN);
-        if (order == null) {
+        if (order != null) {
+            reply.setOrder(list(order.split(",")));
+        } else if (order == null && !VmSystemTags.ISO.hasTag(self.getUuid())) {
             reply.setOrder(list(VmBootDevice.HardDisk.toString()));
         } else {
-            reply.setOrder(list(order.split(",")));
+            reply.setOrder(list(VmBootDevice.HardDisk.toString(), VmBootDevice.CdRom.toString()));
         }
+
         bus.reply(msg, reply);
     }
 
