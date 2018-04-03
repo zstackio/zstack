@@ -269,12 +269,7 @@
                 </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
-                    <artifactId>plugin-premium</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>org.zstack</groupId>
-                    <artifactId>plugin-premium</artifactId>
+                    <artifactId>premium-host-allocator</artifactId>
                     <version>${project.version}</version>
                 </dependency>
                 <dependency>
