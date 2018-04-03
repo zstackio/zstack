@@ -7,7 +7,7 @@ import org.zstack.core.db.Q;
 
 public aspect OwnedByAccountAspect {
     Object around(org.zstack.header.identity.OwnedByAccount oa) : this(oa) && execution(String org.zstack.header.identity.OwnedByAccount+.getAccountUuid()) {
-        Object accountUuid = oa.getAccountUuid();
+        Object accountUuid = proceed(oa);
 
         if (accountUuid == null) {
             accountUuid = Q.New(AccountResourceRefVO.class).select(AccountResourceRefVO_.accountUuid)

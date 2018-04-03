@@ -14,6 +14,7 @@
 
     <bean id="AuthorizationManager" class="org.zstack.identity.AuthorizationManager">
         <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component"/>
             <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor"/>
         </zstack:plugin>
     </bean>
@@ -22,7 +23,7 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component"/>
             <zstack:extension interface="org.zstack.header.Service"/>
-            <zstack:extension interface="org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint" order="9999"/>
+            <zstack:extension interface="org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint" order="9998"/>
         </zstack:plugin>
     </bean>
 
@@ -67,6 +68,12 @@
     <bean id="AccountSubQueryExtension" class="org.zstack.identity.AccountSubQueryExtension">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.query.MysqlQuerySubQueryExtension"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="DefaultAuthorizationBackend" class="org.zstack.identity.DefaultAuthorizationBackend">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.identity.extension.AuthorizationBackend"/>
         </zstack:plugin>
     </bean>
 

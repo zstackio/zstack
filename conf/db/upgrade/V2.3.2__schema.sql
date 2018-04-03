@@ -33,6 +33,7 @@ CREATE TABLE `RoleUserRefVO` (
 CREATE TABLE `RoleVO` (
     `uuid` VARCHAR(32) NOT NULL,
     `name` VARCHAR(255) NOT NULL,
+    `type` VARCHAR(32) NOT NULL,
     `description` VARCHAR(2048) DEFAULT NULL,
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
@@ -160,5 +161,13 @@ CREATE TABLE `IAM2VirtualIDVO` (
     `state` VARCHAR(64) NOT NULL,
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE PolicyVO ADD COLUMN `type` varchar(32) NOT NULL DEFAULT 'System';
+
+CREATE TABLE `SystemRoleVO` (
+    `uuid` VARCHAR(32) NOT NULL,
+    `systemRoleType` VARCHAR(64) NOT NULL,
     PRIMARY KEY (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
