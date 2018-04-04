@@ -26,7 +26,7 @@ public class RemoveAttributesFromIAM2ProjectAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String projectUuid;
+    public java.lang.String uuid;
 
     @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List attributeUuids;
@@ -85,7 +85,7 @@ public class RemoveAttributesFromIAM2ProjectAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
-        info.path = "/iam2/projects/{projectUuid}/attributes";
+        info.path = "/iam2/projects/{uuid}/attributes";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";

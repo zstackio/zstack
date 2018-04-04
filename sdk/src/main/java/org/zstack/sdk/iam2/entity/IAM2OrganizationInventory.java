@@ -69,4 +69,12 @@ public class IAM2OrganizationInventory  {
         return this.parentUuid;
     }
 
+    public java.util.List attributes;
+    public void setAttributes(java.util.List attributes) {
+        this.attributes = attributes;
+    }
+    public java.util.List getAttributes() {
+        return this.attributes;
+    }
+
 }
