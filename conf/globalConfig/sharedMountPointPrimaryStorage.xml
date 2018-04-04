@@ -7,12 +7,4 @@
         <category>sharedMountPointPrimaryStorage</category>
         <type>java.lang.Integer</type>
     </config>
-
-    <config>
-        <name>snapshot.shrink</name>
-        <description>shrink snapshot after taken</description>
-        <defaultValue>false</defaultValue>
-        <category>sharedMountPointPrimaryStorage</category>
-        <type>java.lang.Boolean</type>
-    </config>
 </globalConfig>
