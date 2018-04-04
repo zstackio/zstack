@@ -88,7 +88,7 @@ public class RemoveIAM2VirtualIDsFromProjectAction extends AbstractAction {
         info.path = "/iam2/projects/{projectUuid}/virtual-ids";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

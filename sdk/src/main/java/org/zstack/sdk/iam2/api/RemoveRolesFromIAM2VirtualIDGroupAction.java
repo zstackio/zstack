@@ -25,7 +25,7 @@ public class RemoveRolesFromIAM2VirtualIDGroupAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List roleUuids;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
@@ -88,7 +88,7 @@ public class RemoveRolesFromIAM2VirtualIDGroupAction extends AbstractAction {
         info.path = "/iam2/projects/groups/{groupUuid}/roles";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

@@ -88,7 +88,7 @@ public class ChangeIAM2VirtualIDGroupStateAction extends AbstractAction {
         info.path = "/iam2/projects/groups/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "changeIAM2VirtualIDGroupState";
         return info;
     }
 

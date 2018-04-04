@@ -52,6 +52,7 @@ CREATE TABLE `IAM2OrganizationAttributeVO` (
     `uuid` VARCHAR(32) NOT NULL,
     `name` VARCHAR(2048) NOT NULL,
     `value` VARCHAR(2048) DEFAULT NULL,
+    `type` VARCHAR(32) NOT NULL,
     `organizationUuid` VARCHAR(32) NOT NULL,
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
@@ -74,6 +75,7 @@ CREATE TABLE `IAM2ProjectAttributeVO` (
     `uuid` VARCHAR(32) NOT NULL,
     `name` VARCHAR(2048) NOT NULL,
     `value` VARCHAR(2048) DEFAULT NULL,
+    `type` VARCHAR(32) NOT NULL,
     `projectUuid` VARCHAR(32) NOT NULL,
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
@@ -103,6 +105,7 @@ CREATE TABLE `IAM2VirtualIDAttributeVO` (
     `uuid` VARCHAR(32) NOT NULL,
     `name` VARCHAR(2048) NOT NULL,
     `value` VARCHAR(2048) DEFAULT NULL,
+    `type` VARCHAR(32) NOT NULL,
     `virtualIDUuid` VARCHAR(32) NOT NULL,
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
@@ -113,6 +116,7 @@ CREATE TABLE `IAM2VirtualIDGroupAttributeVO` (
     `uuid` VARCHAR(32) NOT NULL,
     `name` VARCHAR(2048) NOT NULL,
     `value` VARCHAR(2048) DEFAULT NULL,
+    `type` VARCHAR(32) NOT NULL,
     `groupUuid` VARCHAR(32) NOT NULL,
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
@@ -139,6 +143,7 @@ CREATE TABLE `IAM2VirtualIDGroupVO` (
     `uuid` VARCHAR(32) NOT NULL,
     `name` VARCHAR(255) NOT NULL,
     `description` VARCHAR(2048) DEFAULT NULL,
+    `projectUuid` VARCHAR(32) NOT NULL,
     `state` VARCHAR(64) NOT NULL,
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
@@ -170,4 +175,20 @@ CREATE TABLE `SystemRoleVO` (
     `uuid` VARCHAR(32) NOT NULL,
     `systemRoleType` VARCHAR(64) NOT NULL,
     PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `IAM2ProjectAccountRefVO` (
+    `accountUuid` VARCHAR(32) NOT NULL,
+    `projectUuid` VARCHAR(32) NOT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`accountUuid`,`projectUuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `IAM2VirtualIDOrganizationRefVO` (
+    `virtualIDUuid` VARCHAR(32) NOT NULL,
+    `organizationUuid` VARCHAR(32) NOT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`virtualIDUuid`,`organizationUuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

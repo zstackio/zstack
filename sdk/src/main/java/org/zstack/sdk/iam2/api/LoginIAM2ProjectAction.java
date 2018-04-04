@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class ChangeIAM2OrganizationStateAction extends AbstractAction {
+public class LoginIAM2ProjectAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class ChangeIAM2OrganizationStateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.iam2.api.ChangeIAM2OrganizationStateResult value;
+        public org.zstack.sdk.iam2.api.LoginIAM2ProjectResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,25 +26,19 @@ public class ChangeIAM2OrganizationStateAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    public java.lang.String projectName;
 
-    @Param(required = true, validValues = {"enable","disable"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public org.zstack.sdk.iam2.entity.StateEvent stateEvent;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String virtualIDName;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String virtualIDPassword;
 
     @Param(required = false)
     public java.util.List systemTags;
 
     @Param(required = false)
     public java.util.List userTags;
-
-    @Param(required = true)
-    public String sessionId;
-
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -54,8 +48,8 @@ public class ChangeIAM2OrganizationStateAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.iam2.api.ChangeIAM2OrganizationStateResult value = res.getResult(org.zstack.sdk.iam2.api.ChangeIAM2OrganizationStateResult.class);
-        ret.value = value == null ? new org.zstack.sdk.iam2.api.ChangeIAM2OrganizationStateResult() : value; 
+        org.zstack.sdk.iam2.api.LoginIAM2ProjectResult value = res.getResult(org.zstack.sdk.iam2.api.LoginIAM2ProjectResult.class);
+        ret.value = value == null ? new org.zstack.sdk.iam2.api.LoginIAM2ProjectResult() : value; 
 
         return ret;
     }
@@ -85,10 +79,10 @@ public class ChangeIAM2OrganizationStateAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/iam2/organizations/{uuid}/actions";
-        info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "changeIAM2OrganizationState";
+        info.path = "/iam2/login";
+        info.needSession = false;
+        info.needPoll = false;
+        info.parameterName = "loginIAM2Project";
         return info;
     }
 

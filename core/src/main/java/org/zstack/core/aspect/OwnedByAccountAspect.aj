@@ -4,9 +4,15 @@ import org.zstack.header.identity.AccountResourceRefVO;
 import org.zstack.header.identity.AccountResourceRefVO_;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.core.db.Q;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
+import org.zstack.header.identity.OwnedByAccount;
+import javax.persistence.EntityManager;
 
 public aspect OwnedByAccountAspect {
-    Object around(org.zstack.header.identity.OwnedByAccount oa) : this(oa) && execution(String org.zstack.header.identity.OwnedByAccount+.getAccountUuid()) {
+    private static final CLogger logger = Utils.getLogger(OwnedByAccountAspect.class);
+
+    Object around(OwnedByAccount oa) : this(oa) && execution(String OwnedByAccount+.getAccountUuid()) {
         Object accountUuid = proceed(oa);
 
         if (accountUuid == null) {
@@ -16,5 +22,17 @@ public aspect OwnedByAccountAspect {
         }
 
         return accountUuid;
+    }
+
+    after(EntityManager mgr, Object entity) : call(void EntityManager+.persist(Object))
+            && target(mgr)
+            && args(entity) {
+        if (!(entity instanceof OwnedByAccount)) {
+            return;
+        }
+
+        OwnedByAccount oa = (OwnedByAccount) entity;
+        AccountResourceRefVO ref = AccountResourceRefVO.newOwn(oa.getAccountUuid(), ((ResourceVO)entity).getUuid(), entity.getClass());
+        mgr.persist(ref);
     }
 }

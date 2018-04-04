@@ -652,7 +652,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             configureGlobalConfig();
             setupCanonicalEvents();
             updateResourceVONameOnEntityUpdate();
-            installOwnedByAccountHook();
 
             for (ReportApiAccountControlExtensionPoint ext : pluginRgty.getExtensionList(ReportApiAccountControlExtensionPoint.class)) {
                 List<Class> apis = ext.reportApiAccountControl();
@@ -666,24 +665,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         return true;
     }
 
-    private void installOwnedByAccountHook() {
-        dbf.installEntityLifeCycleCallback(null, EntityEvent.POST_PERSIST, (evt, o) -> {
-            if (!(o instanceof OwnedByAccount)) {
-                return;
-            }
-
-            if (!(o instanceof ResourceVO)) {
-                throw new CloudRuntimeException(String.format("%s implements OwnedByAccount interface by not inherited ResourceVO", o.getClass()));
-            }
-
-            OwnedByAccount oa = (OwnedByAccount) o;
-            if (oa.getAccountUuid() != null) {
-                throw new CloudRuntimeException(String.format("%s implements OwnedByAccount interface by return null account uuid when being persisted", o.getClass()));
-            }
-
-            createAccountResourceRef(oa.getAccountUuid(), ((ResourceVO)o).getUuid(), o.getClass());
-        });
-    }
 
     private void updateResourceVONameOnEntityUpdate() {
         dbf.installEntityLifeCycleCallback(null, EntityEvent.PRE_UPDATE, (evt, o) -> {

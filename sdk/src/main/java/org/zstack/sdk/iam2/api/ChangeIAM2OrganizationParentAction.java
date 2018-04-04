@@ -85,7 +85,7 @@ public class ChangeIAM2OrganizationParentAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/iam2/organization/{parentUuid}/actions";
+        info.path = "/iam2/organizations/{parentUuid}/actions";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "changeIAM2OrganizationParent";
