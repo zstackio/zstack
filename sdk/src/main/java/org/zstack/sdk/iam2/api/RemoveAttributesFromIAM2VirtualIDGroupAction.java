@@ -26,7 +26,7 @@ public class RemoveAttributesFromIAM2VirtualIDGroupAction extends AbstractAction
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String groupUuid;
+    public java.lang.String uuid;
 
     @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List attributeUuids;
@@ -85,7 +85,7 @@ public class RemoveAttributesFromIAM2VirtualIDGroupAction extends AbstractAction
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
-        info.path = "/iam2/projects/groups/{groupUuid}/attributes";
+        info.path = "/iam2/projects/groups/{uuid}/attributes";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";

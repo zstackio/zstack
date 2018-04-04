@@ -12,6 +12,14 @@ public class IAM2VirtualIDGroupInventory  {
         return this.uuid;
     }
 
+    public java.lang.String projectUuid;
+    public void setProjectUuid(java.lang.String projectUuid) {
+        this.projectUuid = projectUuid;
+    }
+    public java.lang.String getProjectUuid() {
+        return this.projectUuid;
+    }
+
     public java.lang.String name;
     public void setName(java.lang.String name) {
         this.name = name;
