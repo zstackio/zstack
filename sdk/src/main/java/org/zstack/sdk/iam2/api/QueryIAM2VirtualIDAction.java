@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class RemoveAttributesFromIAM2VirtualIDAction extends AbstractAction {
+public class QueryIAM2VirtualIDAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class RemoveAttributesFromIAM2VirtualIDAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.iam2.api.RemoveAttributesFromIAM2VirtualIDResult value;
+        public org.zstack.sdk.iam2.api.QueryIAM2VirtualIDResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,26 +25,6 @@ public class RemoveAttributesFromIAM2VirtualIDAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List attributeUuids;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = true)
-    public String sessionId;
-
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -54,8 +34,8 @@ public class RemoveAttributesFromIAM2VirtualIDAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.iam2.api.RemoveAttributesFromIAM2VirtualIDResult value = res.getResult(org.zstack.sdk.iam2.api.RemoveAttributesFromIAM2VirtualIDResult.class);
-        ret.value = value == null ? new org.zstack.sdk.iam2.api.RemoveAttributesFromIAM2VirtualIDResult() : value; 
+        org.zstack.sdk.iam2.api.QueryIAM2VirtualIDResult value = res.getResult(org.zstack.sdk.iam2.api.QueryIAM2VirtualIDResult.class);
+        ret.value = value == null ? new org.zstack.sdk.iam2.api.QueryIAM2VirtualIDResult() : value; 
 
         return ret;
     }
@@ -84,10 +64,10 @@ public class RemoveAttributesFromIAM2VirtualIDAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/iam2/virtual-ids/{uuid}/attributes";
+        info.httpMethod = "GET";
+        info.path = "/iam2/virtual-ids";
         info.needSession = true;
-        info.needPoll = true;
+        info.needPoll = false;
         info.parameterName = "";
         return info;
     }

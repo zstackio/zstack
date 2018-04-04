@@ -37,6 +37,12 @@ public class CreateIAM2VirtualIDAction extends AbstractAction {
     @Param(required = false)
     public java.util.List attributes;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String projectUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String organizationUuid;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 

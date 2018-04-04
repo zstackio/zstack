@@ -125,6 +125,7 @@ public class SourceClassMap {
 			put("org.zstack.header.zone.ZoneInventory", "org.zstack.sdk.ZoneInventory");
 			put("org.zstack.hybrid.account.HybridAccountInventory", "org.zstack.sdk.HybridAccountInventory");
 			put("org.zstack.hybrid.core.HybridType", "org.zstack.sdk.HybridType");
+			put("org.zstack.iam2.api.Attribute", "org.zstack.sdk.iam2.api.Attribute");
 			put("org.zstack.iam2.entity.AttributeType", "org.zstack.sdk.iam2.entity.AttributeType");
 			put("org.zstack.iam2.entity.IAM2AttributeInventory", "org.zstack.sdk.iam2.entity.IAM2AttributeInventory");
 			put("org.zstack.iam2.entity.IAM2OrganizationInventory", "org.zstack.sdk.iam2.entity.IAM2OrganizationInventory");
@@ -438,6 +439,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VtepInventory", "org.zstack.network.l2.vxlan.vtep.VtepInventory");
 			put("org.zstack.sdk.WebhookInventory", "org.zstack.header.core.webhooks.WebhookInventory");
 			put("org.zstack.sdk.ZoneInventory", "org.zstack.header.zone.ZoneInventory");
+			put("org.zstack.sdk.iam2.api.Attribute", "org.zstack.iam2.api.Attribute");
 			put("org.zstack.sdk.iam2.entity.AttributeType", "org.zstack.iam2.entity.AttributeType");
 			put("org.zstack.sdk.iam2.entity.IAM2AttributeInventory", "org.zstack.iam2.entity.IAM2AttributeInventory");
 			put("org.zstack.sdk.iam2.entity.IAM2OrganizationInventory", "org.zstack.iam2.entity.IAM2OrganizationInventory");
