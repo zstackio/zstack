@@ -110,6 +110,13 @@ abstract class Test implements ApiHelper, Retry {
         return spec
     }
 
+    protected void withSession(SessionInventory s, Closure c)  {
+        SessionInventory backup = currentEnvSpec.session
+        currentEnvSpec.session = s
+        c()
+        currentEnvSpec.session = backup
+    }
+
     protected void onCleanExecute(Closure c) {
         methodsOnClean.add(c)
     }

@@ -98,6 +98,7 @@ public class AuthorizationManager implements GlobalApiMessageInterceptor, Compon
     @Override
     public boolean start() {
         authorizationBackends = pluginRegistry.getExtensionList(AuthorizationBackend.class);
+        authorizationBackends.remove(defaultAuthorizationBackend);
         return true;
     }
 

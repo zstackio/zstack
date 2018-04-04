@@ -1,13 +1,9 @@
 package org.zstack.testlib.identity
 
-import org.zstack.header.identity.StatementEffect
 import org.zstack.sdk.PolicyInventory
 import org.zstack.sdk.PolicyStatement
-import org.zstack.testlib.EnvSpec
-import org.zstack.testlib.HasSession
-import org.zstack.testlib.Spec
-import org.zstack.testlib.SpecID
-import org.zstack.testlib.SpecParam
+import org.zstack.sdk.PolicyStatementEffect
+import org.zstack.testlib.*
 
 class PolicySpec extends Spec implements HasSession {
     @SpecParam(required = true)
@@ -18,8 +14,6 @@ class PolicySpec extends Spec implements HasSession {
     private List<PolicyStatement> statements = []
 
     static class Statement {
-        String name
-        StatementEffect effect
         List<String> principals = []
         List<String> actions = []
         List<String> resources = []
@@ -50,27 +44,49 @@ class PolicySpec extends Spec implements HasSession {
             delegate.name = name
             delegate.description = description
             delegate.sessionId = sessionId
-            delegate.statements = statements.collect {
-                return new org.zstack.header.identity.PolicyInventory.Statement(
-                        name:it.name,
-                        effect: it.effect,
-                        principals: it.principals,
-                        actions: it.actions,
-                        resources: it.resources
-                )
+            delegate.statements = statements
+        }
+
+        if (parent instanceof RoleSpec) {
+            postCreate {
+                attachPolicyToRole {
+                    roleUuid = (parent as RoleSpec).inventory.uuid
+                    policyUuid = inventory.uuid
+                }
             }
         }
 
         return id(name, inventory.uuid)
     }
 
-    void statement(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = Statement.class) Closure c) {
+    void allow(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value=Statement.class) Closure c) {
         Statement s = new Statement()
         c.delegate = s
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()
 
-        statements.add(s)
+        statements.add(new PolicyStatement(
+                name: "allow-statement",
+                effect: PolicyStatementEffect.Allow,
+                actions: s.actions,
+                principals: s.principals,
+                resources: s.resources
+        ))
+    }
+
+    void deny(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value=Statement.class) Closure c) {
+        Statement s = new Statement()
+        c.delegate = s
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c()
+
+        statements.add(new PolicyStatement(
+                name: "deny-statement",
+                effect: PolicyStatementEffect.Deny,
+                actions: s.actions,
+                principals: s.principals,
+                resources: s.resources
+        ))
     }
 
     @Override
