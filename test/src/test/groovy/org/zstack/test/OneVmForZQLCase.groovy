@@ -1,20 +1,12 @@
 package org.zstack.test
 
-import org.springframework.http.HttpEntity
 import org.zstack.header.network.service.NetworkServiceType
-import org.zstack.header.vm.VmCreationStrategy
-import org.zstack.header.vm.VmInstanceState
-import org.zstack.header.vm.VmInstanceVO
-import org.zstack.kvm.KVMAgentCommands
-import org.zstack.kvm.KVMConstant
 import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
-import org.zstack.sdk.*
-import org.zstack.test.integration.kvm.Env
+import org.zstack.sdk.ZoneInventory
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
-import org.zstack.testlib.VmSpec
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.zql.ZQL
@@ -36,7 +28,7 @@ test a VM's start/stop/reboot/destroy/recover operations
 
     @Override
     void environment() {
-        env = env {
+        env = makeEnv {
             instanceOffering {
                 name = "instanceOffering"
                 memory = SizeUnit.GIGABYTE.toByte(8)

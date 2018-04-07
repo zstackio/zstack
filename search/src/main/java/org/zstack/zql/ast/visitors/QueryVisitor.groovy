@@ -1,12 +1,18 @@
 package org.zstack.zql.ast.visitors
 
+import org.zstack.core.db.SQLBatchWithReturn
 import org.zstack.zql.ZQLContext
 import org.zstack.zql.ast.ASTNode
 import org.zstack.zql.ast.ZQLMetadata
 import org.zstack.zql.ast.visitors.result.QueryResult
 
+import javax.persistence.EntityManager
+import javax.persistence.Query
+
 class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
     def ret = new QueryResult()
+
+
 
     private String makeConditions(ASTNode.Query node) {
         if (node.conditions?.isEmpty()) {
@@ -17,7 +23,17 @@ class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
         return conds.join(" ")
     }
 
-    private String makeSQL(ASTNode.Query node) {
+    private class SQLText {
+        String sql
+        // JPQL doesn't not support limit and offset clause
+        String jpql
+        Integer limit
+        Integer offset
+    }
+
+    private SQLText makeSQL(ASTNode.Query node) {
+        SQLText st = new SQLText()
+
         ZQLMetadata.InventoryMetadata inventory = ZQLMetadata.findInventoryMetadata(node.target.entity)
         ret.inventoryMetadata = inventory
         ZQLContext.pushQueryTargetInventoryName(inventory.fullInventoryName())
@@ -31,12 +47,14 @@ class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
         String queryTarget = fieldName == "" ? entityAlias : "${inventory.simpleInventoryName()}.${fieldName}"
         String entityVOName = inventory.inventoryAnnotation.mappingVOClass().simpleName
 
-        List<String> clauses = []
-        clauses.add("SELECT ${queryTarget} FROM ${entityVOName} ${entityAlias}")
+        List<String> sqlClauses = []
+        List<String> jpqlClauses = []
+
+        sqlClauses.add("SELECT ${queryTarget} FROM ${entityVOName} ${entityAlias}")
         String condition = makeConditions(node)
         String restrictBy = node.restrictBy?.accept(new RestrictByVisitor())
         if (condition != "" || restrictBy != null) {
-            clauses.add("WHERE")
+            sqlClauses.add("WHERE")
         }
 
         List<String> conditionClauses = []
@@ -48,27 +66,52 @@ class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
         }
 
         if (!conditionClauses.isEmpty()) {
-            clauses.add(conditionClauses.join(" AND "))
+            sqlClauses.add(conditionClauses.join(" AND "))
         }
 
         if (node.orderBy != null) {
-            clauses.add(node.orderBy.accept(new OrderByVisitor()) as String)
+            sqlClauses.add(node.orderBy.accept(new OrderByVisitor()) as String)
         }
 
+        jpqlClauses.addAll(sqlClauses)
+
         if (node.limit != null) {
-            clauses.add(node.limit.accept(new LimitVisitor()) as String)
+            def v = new LimitVisitor()
+            sqlClauses.add(node.limit.accept(v) as String)
+            assert v.limit
+            st.limit = v.limit
         }
 
         if (node.offset != null) {
-            clauses.add(node.offset.accept(new OffsetVisitor()) as String)
+            def v = new OffsetVisitor()
+            sqlClauses.add(node.offset.accept(v) as String)
+            assert v.offset
+            st.offset = v.offset
         }
 
         ZQLContext.popQueryTargetInventoryName()
-        return clauses.join(" ")
+
+
+        st.sql = sqlClauses.join(" ")
+        st.jpql = jpqlClauses.join(" ")
+        return st
     }
 
     QueryResult visit(ASTNode.Query node) {
-        ret.sql = makeSQL(node)
+        SQLText st = makeSQL(node)
+        ret.sql = st.sql
+        ret.createJPAQuery = { EntityManager emgr ->
+            Query q = emgr.createQuery(st.jpql)
+            if (st.limit) {
+                q.setMaxResults(st.limit)
+            }
+            if (st.offset) {
+                q.setFirstResult(st.offset)
+            }
+
+            return q
+        }
+
         return ret
     }
 }

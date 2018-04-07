@@ -2,7 +2,10 @@ package org.zstack.zql
 
 import org.antlr.v4.runtime.*
 import org.antlr.v4.runtime.misc.ParseCancellationException
+import org.apache.commons.lang.StringUtils
 import org.zstack.core.db.SQLBatch
+import org.zstack.utils.Utils
+import org.zstack.utils.logging.CLogger
 import org.zstack.zql.antlr4.ZQLLexer
 import org.zstack.zql.antlr4.ZQLParser
 import org.zstack.zql.ast.ASTNode
@@ -12,7 +15,10 @@ import org.zstack.zql.ast.visitors.result.QueryResult
 import javax.persistence.Query
 
 class ZQL {
+    private static final CLogger logger = Utils.getLogger(ZQL.class)
+
     private QueryResult astResult
+    private String text
 
     static class ThrowingErrorListener extends BaseErrorListener {
         String text
@@ -35,13 +41,17 @@ class ZQL {
         }
     }
 
+    static String queryTargetNameFromInventoryClass(Class invClass) {
+        String name = invClass.simpleName.toLowerCase()
+        return StringUtils.removeEnd(name, "inventory")
+    }
+
     static ZQL fromString(String text) {
-        ZQLLexer l = new ZQLLexer(CharStreams.fromString(text))
-        ZQLParser p = new ZQLParser(new CommonTokenStream(l))
-        p.addErrorListener(new ThrowingErrorListener(text))
-        ASTNode.Query query = p.query().accept(new QueryVisitor())
-        def ret = query.accept(new org.zstack.zql.ast.visitors.QueryVisitor())
-        return new ZQL(astResult: ret)
+        if (logger.isTraceEnabled()) {
+            logger.trace("created ZQL from text: ${text}")
+        }
+
+        return new ZQL(text: text)
     }
 
     private List entityVOtoInventories(List vos) {
@@ -57,10 +67,17 @@ class ZQL {
         Long count = null
         List vos = null
 
+        ZQLLexer l = new ZQLLexer(CharStreams.fromString(text))
+        ZQLParser p = new ZQLParser(new CommonTokenStream(l))
+        p.addErrorListener(new ThrowingErrorListener(text))
+        ASTNode.Query query = p.query().accept(new QueryVisitor())
+        astResult = query.accept(new org.zstack.zql.ast.visitors.QueryVisitor()) as QueryResult
+
         new SQLBatch(){
             @Override
             protected void scripts() {
-                Query q = databaseFacade.getEntityManager().createQuery(astResult.sql)
+                //Query q = databaseFacade.getEntityManager().createQuery(astResult.sql)
+                Query q = astResult.createJPAQuery(databaseFacade.getEntityManager()) as Query
                 vos = q.getResultList()
             }
         }.execute()
