@@ -10,7 +10,7 @@ import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.identity.StatementEffect;
 import org.zstack.header.identity.IdentityErrors;
-import org.zstack.header.identity.PolicyInventory.Statement;
+import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.identity.UserInventory;
 import org.zstack.header.image.ImageInventory;
@@ -60,7 +60,7 @@ public class TestPolicyForVm1 {
         IdentityCreator identityCreator = new IdentityCreator(api);
         identityCreator.useAccount("test");
         UserInventory user = identityCreator.createUser("user", "password");
-        Statement s = new Statement();
+        PolicyStatement s = new PolicyStatement();
         s.setName("allow");
         s.setEffect(StatementEffect.Allow);
         s.addAction(String.format("%s:%s", VmInstanceConstant.ACTION_CATEGORY, APICreateVmInstanceMsg.class.getSimpleName()));

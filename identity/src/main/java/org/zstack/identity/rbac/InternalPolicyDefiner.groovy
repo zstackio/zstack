@@ -1,13 +1,14 @@
 package org.zstack.identity.rbac
 
 import org.zstack.header.identity.PolicyInventory
+import org.zstack.header.identity.PolicyStatement
 import org.zstack.header.rest.NoSDK
 
 class InternalPolicyDefiner {
     private List<PolicyInventory> polices = []
 
     @NoSDK
-    static class Statement extends PolicyInventory.Statement {
+    static class Statement extends PolicyStatement {
         void principal(String p) {
             if (principals == null) {
                 principals = []

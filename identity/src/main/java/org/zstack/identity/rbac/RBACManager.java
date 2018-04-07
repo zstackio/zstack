@@ -14,8 +14,8 @@ public interface RBACManager {
     String SERVICE_ID = "rbac";
 
     List<PolicyInventory> internalPolices = new ArrayList<>();
-    Map<PolicyInventory, List<PolicyInventory.Statement>> internalDenyStatements = new HashMap<>();
-    Map<PolicyInventory, List<PolicyInventory.Statement>> internalAllowStatements = new HashMap<>();
+    Map<PolicyInventory, List<PolicyStatement>> internalDenyStatements = new HashMap<>();
+    Map<PolicyInventory, List<PolicyStatement>> internalAllowStatements = new HashMap<>();
 
     static List<PolicyInventory> getPoliciesByAPI(APIMessage message) {
         return new SQLBatchWithReturn<List<PolicyInventory>>() {
@@ -62,10 +62,10 @@ public interface RBACManager {
         }.execute();
     }
 
-    static Map<PolicyInventory, List<PolicyInventory.Statement>> collectDenyStatements(List<PolicyInventory> polices) {
-        Map<PolicyInventory, List<PolicyInventory.Statement>> ret = new HashMap<>();
+    static Map<PolicyInventory, List<PolicyStatement>> collectDenyStatements(List<PolicyInventory> polices) {
+        Map<PolicyInventory, List<PolicyStatement>> ret = new HashMap<>();
         polices.forEach(p -> {
-            List<PolicyInventory.Statement> ss = p.getStatements().stream().filter(s->s.getEffect() == StatementEffect.Deny).collect(Collectors.toList());
+            List<PolicyStatement> ss = p.getStatements().stream().filter(s->s.getEffect() == StatementEffect.Deny).collect(Collectors.toList());
             if (!ss.isEmpty()) {
                 ret.put(p, ss);
             }
@@ -74,10 +74,10 @@ public interface RBACManager {
         return ret;
     }
 
-    static Map<PolicyInventory, List<PolicyInventory.Statement>> collectAllowedStatements(List<PolicyInventory> polices) {
-        Map<PolicyInventory, List<PolicyInventory.Statement>> ret = new HashMap<>();
+    static Map<PolicyInventory, List<PolicyStatement>> collectAllowedStatements(List<PolicyInventory> polices) {
+        Map<PolicyInventory, List<PolicyStatement>> ret = new HashMap<>();
         polices.forEach(p -> {
-            List<PolicyInventory.Statement> ss = p.getStatements().stream().filter(s->s.getEffect() == StatementEffect.Allow).collect(Collectors.toList());
+            List<PolicyStatement> ss = p.getStatements().stream().filter(s->s.getEffect() == StatementEffect.Allow).collect(Collectors.toList());
             if (!ss.isEmpty()) {
                 ret.put(p, ss);
             }

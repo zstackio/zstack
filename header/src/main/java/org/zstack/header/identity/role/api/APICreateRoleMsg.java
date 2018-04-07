@@ -1,9 +1,12 @@
 package org.zstack.header.identity.role.api;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.identity.PolicyInventory;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
+
+import java.util.List;
 
 @RestRequest(path = "/identities/roles", method = HttpMethod.POST, responseClass = APICreateRoleEvent.class)
 public class APICreateRoleMsg extends APICreateMessage {

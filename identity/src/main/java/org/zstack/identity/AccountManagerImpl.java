@@ -28,7 +28,7 @@ import org.zstack.header.identity.*;
 import org.zstack.header.identity.StatementEffect;
 import org.zstack.header.identity.IdentityCanonicalEvents.AccountDeletedData;
 import org.zstack.header.identity.IdentityCanonicalEvents.UserDeletedData;
-import org.zstack.header.identity.PolicyInventory.Statement;
+import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.APIEvent;
@@ -558,7 +558,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 p.setUuid(Platform.getUuid());
                 p.setAccountUuid(vo.getUuid());
                 p.setName("DEFAULT-READ");
-                Statement s = new Statement();
+                PolicyStatement s = new PolicyStatement();
                 s.setName(String.format("read-permission-for-account-%s", vo.getUuid()));
                 s.setEffect(StatementEffect.Allow);
                 s.addAction(".*:read");
@@ -571,7 +571,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 p.setUuid(Platform.getUuid());
                 p.setAccountUuid(vo.getUuid());
                 p.setName("USER-RESET-PASSWORD");
-                s = new Statement();
+                s = new PolicyStatement();
                 s.setName(String.format("user-reset-password-%s", vo.getUuid()));
                 s.setEffect(StatementEffect.Allow);
                 s.addAction(String.format("%s:%s", AccountConstant.ACTION_CATEGORY, APIUpdateUserMsg.class.getSimpleName()));
@@ -1470,7 +1470,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         class Decision {
             PolicyInventory policy;
             String action;
-            Statement statement;
+            PolicyStatement statement;
             String actionRule;
             StatementEffect effect;
         }
@@ -1478,7 +1478,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         private Decision decide(List<PolicyInventory> userPolicies) {
             for (String a : action.actions) {
                 for (PolicyInventory p : userPolicies) {
-                    for (Statement s : p.getStatements()) {
+                    for (PolicyStatement s : p.getStatements()) {
                         for (String ac : s.getActions()) {
                             Pattern pattern = Pattern.compile(ac);
                             Matcher m = pattern.matcher(a);
@@ -1784,7 +1784,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     }
 
     private void validate(APICreatePolicyMsg msg) {
-        for (Statement s : msg.getStatements()) {
+        for (PolicyStatement s : msg.getStatements()) {
             if (s.getEffect() == null) {
                 throw new ApiMessageInterceptionException(argerr("a statement must have effect field. Invalid statement[%s]", JSONObjectUtil.toJsonString(s)));
             }

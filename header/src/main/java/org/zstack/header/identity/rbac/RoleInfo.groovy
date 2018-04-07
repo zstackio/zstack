@@ -1,6 +1,6 @@
 package org.zstack.header.identity.rbac
 
-import org.zstack.header.identity.PolicyInventory
+import org.zstack.header.identity.PolicyStatement
 import org.zstack.header.identity.StatementEffect
 
 class RoleInfo {
@@ -14,16 +14,16 @@ class RoleInfo {
         allowedActions.add(v)
     }
 
-    PolicyInventory.Statement toStatement() {
+    PolicyStatement toStatement() {
         RoleInfo self = this
-        return new PolicyInventory.Statement(
+        return new PolicyStatement(
                 name: self.name,
                 effect: self.effect,
                 actions: self.allowedActions
         )
     }
 
-    List<PolicyInventory.Statement> toStatements() {
+    List<PolicyStatement> toStatements() {
         return [toStatement()]
     }
 }

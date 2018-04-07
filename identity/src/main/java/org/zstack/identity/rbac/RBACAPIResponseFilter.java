@@ -1,6 +1,7 @@
 package org.zstack.identity.rbac;
 
 import org.zstack.header.identity.PolicyInventory;
+import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIReply;
@@ -46,7 +47,7 @@ public class RBACAPIResponseFilter implements APIResponseFilter {
             return;
         }
 
-        Map<PolicyInventory, List<PolicyInventory.Statement>> denyPolices = RBACManager.collectDenyStatements(RBACManager.getPoliciesByAPI(request));
+        Map<PolicyInventory, List<PolicyStatement>> denyPolices = RBACManager.collectDenyStatements(RBACManager.getPoliciesByAPI(request));
         denyPolices.forEach((p, sts)-> sts.forEach(s -> s.getResources().forEach(statement -> {
             schema.forEach((path, type)-> {
                 String[] ss = statement.split(":", 2);

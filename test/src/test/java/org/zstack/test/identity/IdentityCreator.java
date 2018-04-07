@@ -7,7 +7,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.identity.*;
-import org.zstack.header.identity.PolicyInventory.Statement;
+import org.zstack.header.identity.PolicyStatement;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.utils.DebugUtils;
@@ -42,14 +42,14 @@ public class IdentityCreator {
         this.api = api;
     }
 
-    public PolicyInventory createPolicy(String name, List<Statement> s) throws ApiSenderException {
+    public PolicyInventory createPolicy(String name, List<PolicyStatement> s) throws ApiSenderException {
         DebugUtils.Assert(account != null, "please call createAccount() before createPolicy()");
         PolicyInventory p = api.createPolicy(name, s, accountSession);
         policies.put(p.getName(), p);
         return p;
     }
 
-    public PolicyInventory createPolicy(String name, Statement s) throws ApiSenderException {
+    public PolicyInventory createPolicy(String name, PolicyStatement s) throws ApiSenderException {
         return createPolicy(name, list(s));
     }
 

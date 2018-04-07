@@ -4,6 +4,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.PolicyInventory;
+import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.rbac.PolicyMatcher;
 import org.zstack.header.message.APIMessage;
 import org.zstack.identity.APIRequestChecker;
@@ -44,8 +45,8 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
      */
     protected void check() {
         List<PolicyInventory> polices = getPoliciesForAPI();
-        Map<PolicyInventory, List<PolicyInventory.Statement>> denyStatements = RBACManager.collectDenyStatements(polices);
-        Map<PolicyInventory, List<PolicyInventory.Statement>> allowStatements = RBACManager.collectAllowedStatements(polices);
+        Map<PolicyInventory, List<PolicyStatement>> denyStatements = RBACManager.collectDenyStatements(polices);
+        Map<PolicyInventory, List<PolicyStatement>> allowStatements = RBACManager.collectAllowedStatements(polices);
 
         evalDenyStatements(denyStatements);
 
@@ -62,10 +63,10 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
         return JSONObjectUtil.toJsonString(map(e(message.getClass().getName(), message)));
     }
 
-    protected boolean evalAllowStatements(Map<PolicyInventory, List<PolicyInventory.Statement>> policies) {
-        for (Map.Entry<PolicyInventory, List<PolicyInventory.Statement>> e : policies.entrySet()) {
+    protected boolean evalAllowStatements(Map<PolicyInventory, List<PolicyStatement>> policies) {
+        for (Map.Entry<PolicyInventory, List<PolicyStatement>> e : policies.entrySet()) {
             PolicyInventory policy = e.getKey();
-            for (PolicyInventory.Statement statement : e.getValue()) {
+            for (PolicyStatement statement : e.getValue()) {
                 if (!isPrincipalMatched(statement.getPrincipals())) {
                     continue;
                 }
@@ -118,7 +119,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
         }
     }
 
-    protected void evalDenyStatements(Map<PolicyInventory, List<PolicyInventory.Statement>> denyPolices) {
+    protected void evalDenyStatements(Map<PolicyInventory, List<PolicyStatement>> denyPolices) {
         // action string format is:
         // api-full-name:optional-api-field-list-split-by-comma
         denyPolices.forEach((p, sts)-> sts.forEach(st-> {

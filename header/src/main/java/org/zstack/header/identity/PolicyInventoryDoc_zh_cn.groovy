@@ -1,7 +1,5 @@
 package org.zstack.header.identity
 
-import org.zstack.header.identity.PolicyInventory.Statement
-
 doc {
 
     title "策略清单"
@@ -12,7 +10,7 @@ doc {
         desc "声明清单列表"
         type "List"
         since "0.6"
-        clz Statement.class
+        clz PolicyStatement.class
     }
     field {
         name "name"
