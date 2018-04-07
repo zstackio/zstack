@@ -4,11 +4,11 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
 
 @RestResponse
-public class APIAttachRoleToUserGroupEvent extends APIEvent {
-    public APIAttachRoleToUserGroupEvent() {
+public class APIAddPolicyStatementsToRoleEvent extends APIEvent {
+    public APIAddPolicyStatementsToRoleEvent() {
     }
 
-    public APIAttachRoleToUserGroupEvent(String apiId) {
+    public APIAddPolicyStatementsToRoleEvent(String apiId) {
         super(apiId);
     }
 }

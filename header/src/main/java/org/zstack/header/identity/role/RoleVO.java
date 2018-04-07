@@ -5,6 +5,9 @@ import org.zstack.header.vo.ResourceVO;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table
@@ -21,10 +24,21 @@ public class RoleVO extends ResourceVO {
     @Column
     @Enumerated(EnumType.STRING)
     private RoleType type;
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinColumn(name = "roleUuid", insertable = false, updatable = false)
+    private Set<RolePolicyStatementVO> statements = new HashSet<>();
 
     @PreUpdate
     private void preUpdate() {
         lastOpDate = null;
+    }
+
+    public Set<RolePolicyStatementVO> getStatements() {
+        return statements;
+    }
+
+    public void setStatements(Set<RolePolicyStatementVO> statements) {
+        this.statements = statements;
     }
 
     public RoleType getType() {

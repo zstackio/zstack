@@ -8,7 +8,7 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 
 @RestRequest(path = "/identities/policies/{policyUuid}/roles/{roleUuid}", method = HttpMethod.POST, responseClass = APIAttachPolicyToRoleEvent.class)
-public class APIAttachPolicyToRoleMsg extends APIMessage {
+public class APIAttachPolicyToRoleMsg extends APIMessage implements RoleMessage {
     @APIParam(resourceType = RoleVO.class, checkAccount = true, operationTarget = true)
     private String roleUuid;
     @APIParam(resourceType = PolicyVO.class, checkAccount = true, operationTarget = true)

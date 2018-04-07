@@ -19,26 +19,18 @@
     </message>
     
     <message>
-        <name>org.zstack.header.identity.role.api.APIAttachRoleToUserMsg</name>
-    </message>
-    
-    <message>
-        <name>org.zstack.header.identity.role.api.APIAttachRoleToUserGroupMsg</name>
-    </message>
-    
-    <message>
         <name>org.zstack.header.identity.role.api.APIDetachPolicyFromRoleMsg</name>
     </message>
     
     <message>
         <name>org.zstack.header.identity.role.api.APIDetachRoleFromAccountMsg</name>
     </message>
-    
+
     <message>
-        <name>org.zstack.header.identity.role.api.APIDetachRoleFromUserMsg</name>
+        <name>org.zstack.header.identity.role.api.APIAddPolicyStatementsToRoleMsg</name>
     </message>
-    
+
     <message>
-        <name>org.zstack.header.identity.role.api.APIDetachRoleFromUserGroupMsg</name>
+        <name>org.zstack.header.identity.role.api.APIRemovePolicyStatementsFromRoleMsg</name>
     </message>
 </service>

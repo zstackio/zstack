@@ -8,7 +8,7 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 
 @RestRequest(path = "/identities/policies/{policyUuid}/roles/{roleUuid}", method = HttpMethod.DELETE, responseClass = APIDetachPolicyFromRoleEvent.class)
-public class APIDetachPolicyFromRoleMsg extends APIMessage {
+public class APIDetachPolicyFromRoleMsg extends APIMessage implements RoleMessage {
     @APIParam
     private String roleUuid;
     @APIParam

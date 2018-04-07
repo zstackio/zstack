@@ -2,6 +2,8 @@ package org.zstack.header.identity.role.api;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.PolicyInventory;
+import org.zstack.header.identity.PolicyStatement;
+import org.zstack.header.identity.PolicyVO;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
@@ -14,6 +16,25 @@ public class APICreateRoleMsg extends APICreateMessage {
     private String name;
     @APIParam(maxLength = 2048, required = false)
     private String description;
+    private List<PolicyStatement> statements;
+    @APIParam(resourceType = PolicyVO.class, required = false)
+    private List<String> policyUuids;
+
+    public List<String> getPolicyUuids() {
+        return policyUuids;
+    }
+
+    public void setPolicyUuids(List<String> policyUuids) {
+        this.policyUuids = policyUuids;
+    }
+
+    public List<PolicyStatement> getStatements() {
+        return statements;
+    }
+
+    public void setStatements(List<PolicyStatement> statements) {
+        this.statements = statements;
+    }
 
     public String getName() {
         return name;

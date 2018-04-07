@@ -125,6 +125,12 @@ class RBACInfo {
         prefix = value
     }
 
+    List<String> adminOnlyAPIs(Class...apis) {
+        List<String> lst = (apis as Set).collect { it.name }
+        _adminOnlyAPIs.addAll(lst)
+        return lst
+    }
+
     List<String> adminOnlyAPIs(String...apis) {
         _adminOnlyAPIs.addAll(apis as Set)
         return apis as List
@@ -135,12 +141,19 @@ class RBACInfo {
         return apis as List
     }
 
+    List<String> normalAPIs(Class...apis) {
+        List<String> lst = (apis as Set).collect { it.name }
+        _normalAPIs.addAll(lst)
+        return lst
+    }
 
     void adminRole(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = RoleInfo.class) Closure c) {
         RoleInfo info = new RoleInfo(adminOnly: true)
         c.delegate = info
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()
+
+        assert info.uuid != null : "uuid field must be set"
         roleInfos.add(info)
     }
 
@@ -149,6 +162,8 @@ class RBACInfo {
         c.delegate = info
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()
+
+        assert info.uuid != null : "uuid field must be set"
         roleInfos.add(info)
     }
 

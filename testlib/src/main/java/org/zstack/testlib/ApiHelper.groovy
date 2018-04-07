@@ -19446,6 +19446,33 @@ trait ApiHelper {
     }
 
 
+    def addPolicyStatementsToRole(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.identity.role.api.AddPolicyStatementsToRoleAction.class) Closure c) {
+        def a = new org.zstack.sdk.identity.role.api.AddPolicyStatementsToRoleAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def attachPolicyToRole(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.identity.role.api.AttachPolicyToRoleAction.class) Closure c) {
         def a = new org.zstack.sdk.identity.role.api.AttachPolicyToRoleAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -19475,60 +19502,6 @@ trait ApiHelper {
 
     def attachRoleToAccount(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.identity.role.api.AttachRoleToAccountAction.class) Closure c) {
         def a = new org.zstack.sdk.identity.role.api.AttachRoleToAccountAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
-    def attachRoleToUser(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.identity.role.api.AttachRoleToUserAction.class) Closure c) {
-        def a = new org.zstack.sdk.identity.role.api.AttachRoleToUserAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
-    def attachRoleToUserGroup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.identity.role.api.AttachRoleToUserGroupAction.class) Closure c) {
-        def a = new org.zstack.sdk.identity.role.api.AttachRoleToUserGroupAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -19662,35 +19635,8 @@ trait ApiHelper {
     }
 
 
-    def detachRoleFromUser(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.identity.role.api.DetachRoleFromUserAction.class) Closure c) {
-        def a = new org.zstack.sdk.identity.role.api.DetachRoleFromUserAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
-    def detachRoleFromUserGroup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.identity.role.api.DetachRoleFromUserGroupAction.class) Closure c) {
-        def a = new org.zstack.sdk.identity.role.api.DetachRoleFromUserGroupAction()
+    def removePolicyStatementsFromRole(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.identity.role.api.RemovePolicyStatementsFromRoleAction.class) Closure c) {
+        def a = new org.zstack.sdk.identity.role.api.RemovePolicyStatementsFromRoleAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a

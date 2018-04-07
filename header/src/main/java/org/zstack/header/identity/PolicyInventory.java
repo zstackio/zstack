@@ -60,7 +60,7 @@ public class PolicyInventory {
 
     public void addStatement(PolicyStatement s) {
         if (statements == null) {
-            statements = new ArrayList<PolicyStatement>();
+            statements = new ArrayList<>();
         }
 
         statements.add(s);
@@ -68,7 +68,7 @@ public class PolicyInventory {
 
     public void addStatement(List<PolicyStatement> s) {
         if (statements == null) {
-            statements = new ArrayList<PolicyStatement>();
+            statements = new ArrayList<>();
         }
 
         statements.addAll(s);

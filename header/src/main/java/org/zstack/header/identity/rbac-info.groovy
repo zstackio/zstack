@@ -22,7 +22,13 @@ static void init() {
                 APIDetachRoleFromAccountMsg.class.name
         )
 
-        normalAPIs("org.zstack.header.identity.**")
+        def s = normalAPIs("org.zstack.header.identity.**")
+
+        normalRole {
+            uuid = "acf2695d8c7c4c5587f5b136098fe45e"
+            name = "identity role"
+            allowedActions = s
+        }
     }
 }
 

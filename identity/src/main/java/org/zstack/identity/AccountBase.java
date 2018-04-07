@@ -708,6 +708,7 @@ public class AccountBase extends AbstractAccount {
         pvo.setAccountUuid(vo.getUuid());
         pvo.setName(msg.getName());
         pvo.setData(JSONObjectUtil.toJsonString(msg.getStatements()));
+        pvo.setType(PolicyType.Customized);
 
         PolicyVO finalPvo = pvo;
         pvo = new SQLBatchWithReturn<PolicyVO>() {

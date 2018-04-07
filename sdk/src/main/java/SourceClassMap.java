@@ -77,7 +77,7 @@ public class SourceClassMap {
 			put("org.zstack.header.identity.AccountInventory", "org.zstack.sdk.AccountInventory");
 			put("org.zstack.header.identity.AccountResourceRefInventory", "org.zstack.sdk.AccountResourceRefInventory");
 			put("org.zstack.header.identity.PolicyInventory", "org.zstack.sdk.PolicyInventory");
-			put("org.zstack.header.identity.PolicyInventory$Statement", "org.zstack.sdk.PolicyStatement");
+			put("org.zstack.header.identity.PolicyStatement", "org.zstack.sdk.PolicyStatement");
 			put("org.zstack.header.identity.Quota$QuotaUsage", "org.zstack.sdk.QuotaUsage");
 			put("org.zstack.header.identity.QuotaInventory", "org.zstack.sdk.QuotaInventory");
 			put("org.zstack.header.identity.SessionInventory", "org.zstack.sdk.SessionInventory");
@@ -86,6 +86,7 @@ public class SourceClassMap {
 			put("org.zstack.header.identity.UserGroupInventory", "org.zstack.sdk.UserGroupInventory");
 			put("org.zstack.header.identity.UserInventory", "org.zstack.sdk.UserInventory");
 			put("org.zstack.header.identity.role.RoleInventory", "org.zstack.sdk.identity.role.RoleInventory");
+			put("org.zstack.header.identity.role.RolePolicyStatementInventory", "org.zstack.sdk.identity.role.RolePolicyStatementInventory");
 			put("org.zstack.header.identityzone.IdentityZoneInventory", "org.zstack.sdk.IdentityZoneInventory");
 			put("org.zstack.header.identityzone.IdentityZoneProperty", "org.zstack.sdk.IdentityZoneProperty");
 			put("org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotEvent$Failure", "org.zstack.sdk.CreateRootVolumeTemplateFromVolumeSnapshotFailure");
@@ -364,7 +365,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.PciDeviceStatus", "org.zstack.pciDevice.PciDeviceStatus");
 			put("org.zstack.sdk.PciDeviceType", "org.zstack.pciDevice.PciDeviceType");
 			put("org.zstack.sdk.PolicyInventory", "org.zstack.header.identity.PolicyInventory");
-			put("org.zstack.sdk.PolicyStatement", "org.zstack.header.identity.PolicyInventory$Statement");
+			put("org.zstack.sdk.PolicyStatement", "org.zstack.header.identity.PolicyStatement");
 			put("org.zstack.sdk.PolicyStatementEffect", "org.zstack.header.identity.StatementEffect");
 			put("org.zstack.sdk.PortForwardingRuleInventory", "org.zstack.network.service.portforwarding.PortForwardingRuleInventory");
 			put("org.zstack.sdk.PriceInventory", "org.zstack.billing.PriceInventory");
@@ -453,6 +454,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.iam2.entity.State", "org.zstack.iam2.entity.State");
 			put("org.zstack.sdk.iam2.entity.StateEvent", "org.zstack.iam2.entity.StateEvent");
 			put("org.zstack.sdk.identity.role.RoleInventory", "org.zstack.header.identity.role.RoleInventory");
+			put("org.zstack.sdk.identity.role.RolePolicyStatementInventory", "org.zstack.header.identity.role.RolePolicyStatementInventory");
 			put("org.zstack.sdk.sns.SNSApplicationEndpointInventory", "org.zstack.sns.SNSApplicationEndpointInventory");
 			put("org.zstack.sdk.sns.SNSApplicationPlatformInventory", "org.zstack.sns.SNSApplicationPlatformInventory");
 			put("org.zstack.sdk.sns.SNSSubscriberInventory", "org.zstack.sns.SNSSubscriberInventory");

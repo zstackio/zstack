@@ -40,6 +40,15 @@ CREATE TABLE `RoleVO` (
     PRIMARY KEY (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `RolePolicyStatementVO` (
+    `uuid` VARCHAR(32) NOT NULL,
+    `roleUuid` VARCHAR(32) NOT NULL,
+    `statement` VARCHAR(65535) NOT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE `IAM2GroupVirtualIDRefVO` (
     `virtualIDUuid` VARCHAR(32) NOT NULL,
     `groupUuid` VARCHAR(32) NOT NULL,

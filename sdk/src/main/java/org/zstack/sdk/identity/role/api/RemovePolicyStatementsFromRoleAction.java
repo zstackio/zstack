@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateRoleAction extends AbstractAction {
+public class RemovePolicyStatementsFromRoleAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateRoleAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.identity.role.api.CreateRoleResult value;
+        public org.zstack.sdk.identity.role.api.RemovePolicyStatementsFromRoleResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,20 +25,11 @@ public class CreateRoleAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
+    @Param(required = false)
+    public java.lang.String uuid;
 
     @Param(required = false)
-    public java.util.List statements;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List policyUuids;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
+    public java.util.List policyStatementUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -63,8 +54,8 @@ public class CreateRoleAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.identity.role.api.CreateRoleResult value = res.getResult(org.zstack.sdk.identity.role.api.CreateRoleResult.class);
-        ret.value = value == null ? new org.zstack.sdk.identity.role.api.CreateRoleResult() : value; 
+        org.zstack.sdk.identity.role.api.RemovePolicyStatementsFromRoleResult value = res.getResult(org.zstack.sdk.identity.role.api.RemovePolicyStatementsFromRoleResult.class);
+        ret.value = value == null ? new org.zstack.sdk.identity.role.api.RemovePolicyStatementsFromRoleResult() : value; 
 
         return ret;
     }
@@ -93,8 +84,8 @@ public class CreateRoleAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/identities/roles";
+        info.httpMethod = "DELETE";
+        info.path = "/identities/roles/{uuid}/policy-statements";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";
