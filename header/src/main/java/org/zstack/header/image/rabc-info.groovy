@@ -12,7 +12,7 @@ static void init() {
         normalRole {
             uuid = "0ce6f173cdab42968ec7bf98bb34a41e"
             name = "image role"
-            statements = s
+            allowedActions = s
         }
     }
 }

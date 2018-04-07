@@ -186,7 +186,7 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
                 vo.setName(String.format("system-policy-role-%s", role.getName()));
                 vo.setType(PolicyType.System);
                 vo.setAccountUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
-                vo.setData(JSONObjectUtil.toJsonString(role.toStatement()));
+                vo.setData(JSONObjectUtil.toJsonString(role.toStatements()));
                 persist(vo);
                 return vo;
             }
@@ -194,7 +194,7 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
             @Override
             protected void scripts() {
                 RBACInfo.getRoleInfos().forEach(role -> {
-                    if (q(SystemRoleVO.class).eq(SystemRoleVO_.uuid, role.getUuid()).isExists()) {
+                    if (!q(SystemRoleVO.class).eq(SystemRoleVO_.uuid, role.getUuid()).isExists()) {
                         SystemRoleVO rvo = new SystemRoleVO();
                         rvo.setUuid(role.getUuid());
                         rvo.setName(String.format("system: %s", role.getName()));

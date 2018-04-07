@@ -6,12 +6,12 @@ import org.zstack.header.identity.StatementEffect
 class RoleInfo {
     String uuid
     String name
-    List<String> statements = []
+    List<String> allowedActions = []
     StatementEffect effect = StatementEffect.Allow
     boolean adminOnly
 
-    void statement(String v) {
-        statements.add(v)
+    void allowAction(String v) {
+        allowedActions.add(v)
     }
 
     PolicyInventory.Statement toStatement() {
@@ -19,7 +19,11 @@ class RoleInfo {
         return new PolicyInventory.Statement(
                 name: self.name,
                 effect: self.effect,
-                actions: self.statements
+                actions: self.allowedActions
         )
+    }
+
+    List<PolicyInventory.Statement> toStatements() {
+        return [toStatement()]
     }
 }

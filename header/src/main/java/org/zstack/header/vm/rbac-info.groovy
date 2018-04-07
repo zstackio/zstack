@@ -12,7 +12,7 @@ static void init() {
         normalRole {
             uuid = "5f93cf6444ec44cc83209744c8c3d7cc"
             name = "vm role"
-            statements = s
+            allowedActions = s
         }
     }
 }

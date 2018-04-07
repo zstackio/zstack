@@ -47,7 +47,7 @@ public class Session {
                 SessionVO vo = new SessionVO();
                 vo.setUuid(Platform.getUuid());
                 vo.setAccountUuid(accountUuid);
-                vo.setUuid(userUuid);
+                vo.setUserUuid(userUuid);
                 long expiredTime = getCurrentSqlDate().getTime() + TimeUnit.SECONDS.toMillis(IdentityGlobalConfig.SESSION_TIMEOUT.value(Long.class));
                 vo.setExpiredDate(new Timestamp(expiredTime));
                 persist(vo);
