@@ -122,7 +122,7 @@ class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
             ret.returnWith = node.returnWith.accept(new ReturnWithVisitor()) as List<ReturnWithResult>
         }
 
-        if (countQuery || ret.returnWith?.find { it.name == "amount" } != null) {
+        if (countQuery || ret.returnWith?.find { it.name == "total" } != null) {
             ret.createCountQuery = { EntityManager emgr ->
                 SQLText cst = makeSQL(node, true)
                 return emgr.createQuery(cst.jpql)

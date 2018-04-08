@@ -30,7 +30,7 @@ public class PolicyVO extends ResourceVO {
 
     @Column
     @Enumerated(EnumType.STRING)
-    private PolicyType type;
+    private PolicyType type = PolicyType.Customized;
 
     @PreUpdate
     private void preUpdate() {

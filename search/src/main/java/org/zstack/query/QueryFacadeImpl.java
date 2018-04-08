@@ -59,19 +59,15 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
     @Override
     public <T> List<T> query(APIQueryMessage msg, Class<T> inventoryClass) {
         validateConditions(msg.getConditions());
-
-        QueryBuilderFactory factory = getFactory(queryBuilderType);
-        QueryBuilder builder = factory.createQueryBuilder();
-        return builder.query(msg, inventoryClass);
+        ZQLQueryResult result = queryUseZQL(msg, inventoryClass);
+        return result.getInventories();
     }
 
     @Override
     public long count(APIQueryMessage msg, Class inventoryClass) {
         validateConditions(msg.getConditions());
-
-        QueryBuilderFactory factory = getFactory(queryBuilderType);
-        QueryBuilder builder = factory.createQueryBuilder();
-        return builder.count(msg, inventoryClass);
+        ZQLQueryResult result = queryUseZQL(msg, inventoryClass);
+        return result.getTotal();
     }
 
     private void populateExtensions() {
@@ -227,7 +223,13 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
         try {
             APIQueryReply reply = (APIQueryReply) replyClass.getConstructor().newInstance();
             Method replySetter = getReplySetter(at);
-            queryUseZQL(msg, reply, replySetter, inventoryClass);
+            ZQLQueryResult result = queryUseZQL(msg, inventoryClass);
+            if (result.getTotal() != null) {
+                reply.setTotal(reply.getTotal());
+            }
+            if (result.getInventories() != null) {
+                replySetter.invoke(reply, result.getInventories());
+            }
             bus.reply(msg, reply);
         } catch (OperationFailureException of) {
             throw of;
@@ -291,9 +293,9 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
         }
     }
 
-    private void queryUseZQL(APIQueryMessage msg, APIQueryReply reply, Method replySetter, Class inventoryClass) throws InvocationTargetException, IllegalAccessException {
+    public ZQLQueryResult queryUseZQL(APIQueryMessage msg, Class inventoryClass) {
         List<String> sb = new ArrayList<>();
-        sb.add("query");
+        sb.add(msg.isCount() ? "count" : "query");
         sb.add(msg.getFields() == null || msg.getFields().isEmpty() ? ZQL.queryTargetNameFromInventoryClass(inventoryClass) : ZQL.queryTargetNameFromInventoryClass(inventoryClass) + "." + msg.getFields().get(0));
 
         List<QueryCondition> tagConditions = new ArrayList<>();
@@ -320,8 +322,8 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             sb.add(String.format("restrict by (%s)", StringUtils.join(byConds, ",")));
         }
 
-        if (msg.isCount()) {
-            sb.add("return with (count)");
+        if (!msg.isCount() && msg.isReplyWithCount()) {
+            sb.add("return with (total)");
         }
 
         if (msg.getSortBy() != null) {
@@ -338,7 +340,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
 
         ZQL zql = ZQL.fromString(StringUtils.join(sb, " "));
         ZQLQueryResult result = zql.execute();
-        replySetter.invoke(reply, result.getInventories());
+        return result;
     }
 
     private void handle(APIGenerateInventoryQueryDetailsMsg msg) {

@@ -3,7 +3,6 @@ package org.zstack.zql
 import org.antlr.v4.runtime.*
 import org.antlr.v4.runtime.misc.ParseCancellationException
 import org.apache.commons.lang.StringUtils
-import org.zstack.core.db.Q
 import org.zstack.core.db.SQLBatch
 import org.zstack.utils.Utils
 import org.zstack.utils.logging.CLogger
@@ -104,7 +103,7 @@ class ZQL {
 
         ZQLQueryResult ret = new ZQLQueryResult(
                 inventories: vos != null ? entityVOtoInventories(vos) : null,
-                count: count
+                total: count
         )
 
         return ret
