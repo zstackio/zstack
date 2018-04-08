@@ -155,17 +155,17 @@ class AddImageLongJobProgressCase extends SubCase {
             assert err == null: "$err"
         }
 
+        retryInSecs {
+            LongJobVO job = dbFindByUuid(jobInv.getUuid(), LongJobVO.class)
+            assert job.state == LongJobState.Succeeded
+        }
+
         List<TaskProgressInventory> invs = getTaskProgress {
             apiId = id
             all = true
         }
 
-        assert invs.size() == num
-
-        retryInSecs {
-            LongJobVO job = dbFindByUuid(jobInv.getUuid(), LongJobVO.class)
-            assert job.state == LongJobState.Succeeded
-        }
+        assert invs.size() == num + 1
 
         deleteLongJob {
             uuid = jobInv.uuid
