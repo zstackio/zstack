@@ -10,15 +10,29 @@ import org.antlr.v4.runtime.tree.ParseTreeListener;
  */
 public interface ZQLListener extends ParseTreeListener {
 	/**
-	 * Enter a parse tree produced by {@link ZQLParser#zql}.
+	 * Enter a parse tree produced by the {@code queryGrammar}
+	 * labeled alternative in {@link ZQLParser#zql}.
 	 * @param ctx the parse tree
 	 */
-	void enterZql(ZQLParser.ZqlContext ctx);
+	void enterQueryGrammar(ZQLParser.QueryGrammarContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link ZQLParser#zql}.
+	 * Exit a parse tree produced by the {@code queryGrammar}
+	 * labeled alternative in {@link ZQLParser#zql}.
 	 * @param ctx the parse tree
 	 */
-	void exitZql(ZQLParser.ZqlContext ctx);
+	void exitQueryGrammar(ZQLParser.QueryGrammarContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code countGrammar}
+	 * labeled alternative in {@link ZQLParser#zql}.
+	 * @param ctx the parse tree
+	 */
+	void enterCountGrammar(ZQLParser.CountGrammarContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code countGrammar}
+	 * labeled alternative in {@link ZQLParser#zql}.
+	 * @param ctx the parse tree
+	 */
+	void exitCountGrammar(ZQLParser.CountGrammarContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link ZQLParser#entity}.
 	 * @param ctx the parse tree
@@ -303,4 +317,14 @@ public interface ZQLListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitQuery(ZQLParser.QueryContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link ZQLParser#count}.
+	 * @param ctx the parse tree
+	 */
+	void enterCount(ZQLParser.CountContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ZQLParser#count}.
+	 * @param ctx the parse tree
+	 */
+	void exitCount(ZQLParser.CountContext ctx);
 }

@@ -1,10 +1,10 @@
 package org.zstack.zql.ast.visitors
 
-import org.zstack.core.db.SQLBatchWithReturn
 import org.zstack.zql.ZQLContext
 import org.zstack.zql.ast.ASTNode
 import org.zstack.zql.ast.ZQLMetadata
 import org.zstack.zql.ast.visitors.result.QueryResult
+import org.zstack.zql.ast.visitors.result.ReturnWithResult
 
 import javax.persistence.EntityManager
 import javax.persistence.Query
@@ -12,7 +12,7 @@ import javax.persistence.Query
 class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
     def ret = new QueryResult()
 
-
+    private boolean countQuery
 
     private String makeConditions(ASTNode.Query node) {
         if (node.conditions?.isEmpty()) {
@@ -31,7 +31,7 @@ class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
         Integer offset
     }
 
-    private SQLText makeSQL(ASTNode.Query node) {
+    private SQLText makeSQL(ASTNode.Query node, boolean countClause) {
         SQLText st = new SQLText()
 
         ZQLMetadata.InventoryMetadata inventory = ZQLMetadata.findInventoryMetadata(node.target.entity)
@@ -50,9 +50,15 @@ class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
         List<String> sqlClauses = []
         List<String> jpqlClauses = []
 
-        sqlClauses.add("SELECT ${queryTarget} FROM ${entityVOName} ${entityAlias}")
+        if (countClause) {
+            sqlClauses.add("SELECT count(*) FROM ${entityVOName} ${entityAlias}")
+        } else {
+            sqlClauses.add("SELECT ${queryTarget} FROM ${entityVOName} ${entityAlias}")
+        }
+
         String condition = makeConditions(node)
         String restrictBy = node.restrictBy?.accept(new RestrictByVisitor())
+
         if (condition != "" || restrictBy != null) {
             sqlClauses.add("WHERE")
         }
@@ -61,6 +67,7 @@ class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
         if (condition != "") {
             conditionClauses.add(condition)
         }
+
         if (restrictBy != null) {
             conditionClauses.add(restrictBy)
         }
@@ -91,14 +98,13 @@ class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
 
         ZQLContext.popQueryTargetInventoryName()
 
-
         st.sql = sqlClauses.join(" ")
         st.jpql = jpqlClauses.join(" ")
         return st
     }
 
     QueryResult visit(ASTNode.Query node) {
-        SQLText st = makeSQL(node)
+        SQLText st = makeSQL(node, false)
         ret.sql = st.sql
         ret.createJPAQuery = { EntityManager emgr ->
             Query q = emgr.createQuery(st.jpql)
@@ -110,6 +116,17 @@ class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
             }
 
             return q
+        }
+
+        if (node.returnWith != null) {
+            ret.returnWith = node.returnWith.accept(new ReturnWithVisitor()) as List<ReturnWithResult>
+        }
+
+        if (countQuery || ret.returnWith?.find { it.name == "amount" } != null) {
+            ret.createCountQuery = { EntityManager emgr ->
+                SQLText cst = makeSQL(node, true)
+                return emgr.createQuery(cst.jpql)
+            }
         }
 
         return ret

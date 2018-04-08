@@ -25,7 +25,6 @@ class ASTNode {
     }
 
     interface ReturnWithExpr {
-
     }
 
     static class QueryTarget extends ASTNode {
@@ -88,6 +87,7 @@ class ASTNode {
     }
 
     static class ReturnWithBlockExpr extends ASTNode implements ReturnWithExpr {
+        String name
         String content
     }
 

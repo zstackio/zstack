@@ -1,0 +1,17 @@
+package org.zstack.zql.ast.visitors
+
+import org.zstack.zql.ast.ASTNode
+import org.zstack.zql.ast.visitors.result.ReturnWithResult
+
+class ReturnWithExprVisitor implements ASTVisitor<ReturnWithResult, ASTNode> {
+    @Override
+    ReturnWithResult visit(ASTNode node) {
+        if (node instanceof ASTNode.ReturnWithIDExpr) {
+            return new ReturnWithResult(name: node.names.join("."))
+        } else if (node instanceof ASTNode.ReturnWithBlockExpr) {
+            return new ReturnWithResult(name: node.name, expr: node.content)
+        } else {
+            assert false: "should not be here ${node}"
+        }
+    }
+}

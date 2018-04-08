@@ -5,7 +5,8 @@ package org.zstack.zql.antlr4;
 }
 
 zql
-    : query EOF
+    : query EOF #queryGrammar
+    | count EOF #countGrammar
     ;
 
 entity
@@ -122,6 +123,11 @@ query
     : QUERY queryTarget (WHERE condition+)? restrictBy? returnWith? orderBy? limit? offset? filterBy?
     ;
 
+count
+    : COUNT queryTarget (WHERE condition+)? restrictBy? orderBy? limit? offset?
+    ;
+
+
 FILTER_BY: 'filter by';
 
 OFFSET: 'offset';
@@ -129,6 +135,8 @@ OFFSET: 'offset';
 LIMIT: 'limit';
 
 QUERY: 'query';
+
+COUNT: 'count';
 
 ORDER_BY: 'order by';
 

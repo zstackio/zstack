@@ -5,7 +5,8 @@ import org.zstack.zql.ast.ZQLMetadata
 class QueryResult {
     String sql
     Closure createJPAQuery
+    Closure createCountQuery
     ZQLMetadata.InventoryMetadata inventoryMetadata
-    ReturnWithResult returnWith
+    List<ReturnWithResult> returnWith
     List<FilterByResult> filterBy
 }

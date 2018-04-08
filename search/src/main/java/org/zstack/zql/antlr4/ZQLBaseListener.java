@@ -18,13 +18,25 @@ public class ZQLBaseListener implements ZQLListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterZql(ZQLParser.ZqlContext ctx) { }
+	@Override public void enterQueryGrammar(ZQLParser.QueryGrammarContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitZql(ZQLParser.ZqlContext ctx) { }
+	@Override public void exitQueryGrammar(ZQLParser.QueryGrammarContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterCountGrammar(ZQLParser.CountGrammarContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitCountGrammar(ZQLParser.CountGrammarContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -349,6 +361,18 @@ public class ZQLBaseListener implements ZQLListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitQuery(ZQLParser.QueryContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterCount(ZQLParser.CountContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitCount(ZQLParser.CountContext ctx) { }
 
 	/**
 	 * {@inheritDoc}

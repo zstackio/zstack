@@ -12,6 +12,6 @@ class ReturnWithExprVisitor extends ZQLBaseVisitor<ASTNode.ReturnWithExpr> {
 
     @Override
     ASTNode.ReturnWithBlockExpr visitReturnWithExprFunction(ZQLParser.ReturnWithExprFunctionContext ctx) {
-        return new ASTNode.ReturnWithBlockExpr(content: ctx.returnWithExprBlock().getText())
+        return new ASTNode.ReturnWithBlockExpr(name: ctx.ID().getText(), content: ctx.returnWithExprBlock().getText())
     }
 }

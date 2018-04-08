@@ -3,12 +3,14 @@ package org.zstack.zql
 import org.antlr.v4.runtime.*
 import org.antlr.v4.runtime.misc.ParseCancellationException
 import org.apache.commons.lang.StringUtils
+import org.zstack.core.db.Q
 import org.zstack.core.db.SQLBatch
 import org.zstack.utils.Utils
 import org.zstack.utils.logging.CLogger
 import org.zstack.zql.antlr4.ZQLLexer
 import org.zstack.zql.antlr4.ZQLParser
 import org.zstack.zql.ast.ASTNode
+import org.zstack.zql.ast.parser.visitors.CountVisitor
 import org.zstack.zql.ast.parser.visitors.QueryVisitor
 import org.zstack.zql.ast.visitors.result.QueryResult
 
@@ -66,24 +68,43 @@ class ZQL {
     ZQLQueryResult execute() {
         Long count = null
         List vos = null
-
         ZQLLexer l = new ZQLLexer(CharStreams.fromString(text))
         ZQLParser p = new ZQLParser(new CommonTokenStream(l))
         p.addErrorListener(new ThrowingErrorListener(text))
-        ASTNode.Query query = p.query().accept(new QueryVisitor())
-        astResult = query.accept(new org.zstack.zql.ast.visitors.QueryVisitor()) as QueryResult
 
-        new SQLBatch(){
-            @Override
-            protected void scripts() {
-                //Query q = databaseFacade.getEntityManager().createQuery(astResult.sql)
-                Query q = astResult.createJPAQuery(databaseFacade.getEntityManager()) as Query
-                vos = q.getResultList()
-            }
-        }.execute()
+        ZQLParser.ZqlContext ctx = p.zql()
+        if (ctx instanceof ZQLParser.CountGrammarContext) {
+            ASTNode.Query query = ctx.count().accept(new CountVisitor())
+            astResult = query.accept(new org.zstack.zql.ast.visitors.QueryVisitor(countQuery: true)) as QueryResult
+            new SQLBatch() {
+                @Override
+                protected void scripts() {
+                    Query q = astResult.createCountQuery(databaseFacade.getEntityManager()) as Query
+                    count = q.getSingleResult() as Long
+                }
+            }.execute()
+        } else if (ctx instanceof ZQLParser.QueryGrammarContext) {
+            ASTNode.Query query = ctx.query().accept(new QueryVisitor())
+            astResult = query.accept(new org.zstack.zql.ast.visitors.QueryVisitor()) as QueryResult
+            new SQLBatch() {
+                @Override
+                protected void scripts() {
+                    Query q = astResult.createJPAQuery(databaseFacade.getEntityManager()) as Query
+                    vos = q.getResultList()
+
+                    if (astResult.createCountQuery != null) {
+                        q = astResult.createCountQuery(databaseFacade.getEntityManager()) as Query
+                        count = q.getSingleResult() as Long
+                    }
+                }
+            }.execute()
+        } else {
+            assert false : "should not be here ${ctx}"
+        }
 
         ZQLQueryResult ret = new ZQLQueryResult(
-                inventories: entityVOtoInventories(vos)
+                inventories: vos != null ? entityVOtoInventories(vos) : null,
+                count: count
         )
 
         return ret
