@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class LoginIAM2ProjectAction extends AbstractAction {
+public class LoginIAM2VirtualIDAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class LoginIAM2ProjectAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.iam2.api.LoginIAM2ProjectResult value;
+        public org.zstack.sdk.iam2.api.LoginIAM2VirtualIDResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,16 +26,16 @@ public class LoginIAM2ProjectAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String projectName;
+    public java.lang.String name;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String password;
 
     @Param(required = false)
     public java.util.List systemTags;
 
     @Param(required = false)
     public java.util.List userTags;
-
-    @Param(required = true)
-    public String sessionId;
 
 
     private Result makeResult(ApiResult res) {
@@ -45,8 +45,8 @@ public class LoginIAM2ProjectAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.iam2.api.LoginIAM2ProjectResult value = res.getResult(org.zstack.sdk.iam2.api.LoginIAM2ProjectResult.class);
-        ret.value = value == null ? new org.zstack.sdk.iam2.api.LoginIAM2ProjectResult() : value; 
+        org.zstack.sdk.iam2.api.LoginIAM2VirtualIDResult value = res.getResult(org.zstack.sdk.iam2.api.LoginIAM2VirtualIDResult.class);
+        ret.value = value == null ? new org.zstack.sdk.iam2.api.LoginIAM2VirtualIDResult() : value; 
 
         return ret;
     }
@@ -76,10 +76,10 @@ public class LoginIAM2ProjectAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/iam2/projects/login";
-        info.needSession = true;
+        info.path = "/iam2/virtual-ids/login";
+        info.needSession = false;
         info.needPoll = false;
-        info.parameterName = "loginIAM2Project";
+        info.parameterName = "loginIAM2VirtualID";
         return info;
     }
 

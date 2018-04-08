@@ -1,8 +1,5 @@
 package org.zstack.identity;
 
-import org.springframework.beans.factory.annotation.Autowire;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -20,16 +17,12 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-@Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class Session {
     private static final CLogger logger = Utils.getLogger(Session.class);
 
     private static Map<String, SessionInventory> sessions = new ConcurrentHashMap<>();
 
-    @Autowired
-    private PluginRegistry pluginRgty;
-
-    public SessionInventory login(String accountUuid, String userUuid) {
+    public static SessionInventory login(String accountUuid, String userUuid) {
         return new SQLBatchWithReturn<SessionInventory>() {
             @Transactional(readOnly = true)
             private Timestamp getCurrentSqlDate() {
@@ -59,7 +52,7 @@ public class Session {
         }.execute();
     }
 
-    public void logout(String uuid) {
+    public static void logout(String uuid) {
         new SQLBatch() {
             @Override
             protected void scripts() {
@@ -74,14 +67,16 @@ public class Session {
                 }
 
                 SessionInventory finalS = s;
-                pluginRgty.getExtensionList(SessionLogoutExtensionPoint.class).forEach(ext -> ext.sessionLogout(finalS));
+                Platform.getComponentLoader().getComponent(PluginRegistry.class)
+                        .getExtensionList(SessionLogoutExtensionPoint.class)
+                        .forEach(ext -> ext.sessionLogout(finalS));
 
                 sql(SessionVO.class).eq(SessionVO_.uuid, uuid).hardDelete();
             }
         }.execute();
     }
 
-    public void errorOnTimeout(String uuid) {
+    public static void errorOnTimeout(String uuid) {
         new SQLBatch() {
             @Transactional(readOnly = true)
             private Timestamp getCurrentSqlDate() {
@@ -111,7 +106,7 @@ public class Session {
         }.execute();
     }
 
-    public SessionInventory getSession(String uuid) {
+    public static SessionInventory getSession(String uuid) {
         return new SQLBatchWithReturn<SessionInventory>() {
             @Override
             protected SessionInventory scripts() {

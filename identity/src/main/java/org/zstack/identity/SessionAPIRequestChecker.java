@@ -18,8 +18,7 @@ public class SessionAPIRequestChecker implements APIRequestChecker {
                     "session uuid is null"));
         }
 
-        Session session = new Session();
-        session.errorOnTimeout(msg.getSession().getUuid());
-        msg.setSession(session.getSession(msg.getSession().getUuid()));
+        Session.errorOnTimeout(msg.getSession().getUuid());
+        msg.setSession(Session.getSession(msg.getSession().getUuid()));
     }
 }
