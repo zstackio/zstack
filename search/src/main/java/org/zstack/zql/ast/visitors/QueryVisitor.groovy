@@ -1,7 +1,8 @@
 package org.zstack.zql.ast.visitors
 
+import org.zstack.header.zql.ASTVisitor
 import org.zstack.zql.ZQLContext
-import org.zstack.zql.ast.ASTNode
+import org.zstack.header.zql.ASTNode
 import org.zstack.zql.ast.ZQLMetadata
 import org.zstack.zql.ast.visitors.result.QueryResult
 import org.zstack.zql.ast.visitors.result.ReturnWithResult
@@ -37,6 +38,7 @@ class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
         ZQLMetadata.InventoryMetadata inventory = ZQLMetadata.findInventoryMetadata(node.target.entity)
         ret.inventoryMetadata = inventory
         ZQLContext.pushQueryTargetInventoryName(inventory.fullInventoryName())
+        ZQLContext.setQueryTargetInventoryName(inventory.fullInventoryName())
 
         String fieldName = node.target.fields == null || node.target.fields.isEmpty() ? "" : node.target.fields[0]
         if (fieldName != "") {

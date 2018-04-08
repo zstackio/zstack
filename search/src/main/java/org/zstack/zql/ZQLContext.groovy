@@ -21,6 +21,13 @@ class ZQLContext {
         return map == null ? null : map[k]
     }
 
+    private static void remove(String k) {
+        def map = local.get()
+        if (map != null) {
+            map.remove(k)
+        }
+    }
+
     private static Object computeIfAbsent(String k, Object obj) {
         Object ob = get(k)
         if (ob == null) {
@@ -49,6 +56,10 @@ class ZQLContext {
 
     static SessionInventory getAPISession() {
         return get(API_SESSION) as SessionInventory
+    }
+
+    static void cleanAPISession() {
+        remove(API_SESSION)
     }
 
     static void pushQueryTargetInventoryName(String targetInventoryName) {

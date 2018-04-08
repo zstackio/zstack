@@ -3,12 +3,15 @@ package org.zstack.zql
 import org.antlr.v4.runtime.*
 import org.antlr.v4.runtime.misc.ParseCancellationException
 import org.apache.commons.lang.StringUtils
+import org.zstack.core.Platform
+import org.zstack.core.componentloader.PluginRegistry
 import org.zstack.core.db.SQLBatch
+import org.zstack.header.zql.MarshalZQLASTTreeExtensionPoint
 import org.zstack.utils.Utils
 import org.zstack.utils.logging.CLogger
 import org.zstack.zql.antlr4.ZQLLexer
 import org.zstack.zql.antlr4.ZQLParser
-import org.zstack.zql.ast.ASTNode
+import org.zstack.header.zql.ASTNode
 import org.zstack.zql.ast.parser.visitors.CountVisitor
 import org.zstack.zql.ast.parser.visitors.QueryVisitor
 import org.zstack.zql.ast.visitors.result.QueryResult
@@ -75,6 +78,13 @@ class ZQL {
         }
     }
 
+    private static void callExtensions(ASTNode.Query node) {
+        Platform.getComponentLoader().getComponent(PluginRegistry.class)
+                .getExtensionList(MarshalZQLASTTreeExtensionPoint.class).each {
+            it.marshalZQLASTTree(node)
+        }
+    }
+
     ZQLQueryResult execute() {
         Long count = null
         List vos = null
@@ -85,7 +95,13 @@ class ZQL {
         ZQLParser.ZqlContext ctx = p.zql()
         if (ctx instanceof ZQLParser.CountGrammarContext) {
             ASTNode.Query query = ctx.count().accept(new CountVisitor())
+            callExtensions(query)
             astResult = query.accept(new org.zstack.zql.ast.visitors.QueryVisitor(countQuery: true)) as QueryResult
+
+            if (logger.isTraceEnabled()) {
+                logger.trace("ZQL query: ${astResult.sql}")
+            }
+
             new SQLBatch() {
                 @Override
                 protected void scripts() {
@@ -95,7 +111,13 @@ class ZQL {
             }.execute()
         } else if (ctx instanceof ZQLParser.QueryGrammarContext) {
             ASTNode.Query query = ctx.query().accept(new QueryVisitor())
+            callExtensions(query)
             astResult = query.accept(new org.zstack.zql.ast.visitors.QueryVisitor()) as QueryResult
+
+            if (logger.isTraceEnabled()) {
+                logger.trace("ZQL query: ${astResult.sql}")
+            }
+
             new SQLBatch() {
                 @Override
                 protected void scripts() {

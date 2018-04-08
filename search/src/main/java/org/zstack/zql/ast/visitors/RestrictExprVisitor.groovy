@@ -1,17 +1,15 @@
 package org.zstack.zql.ast.visitors
 
 import groovy.text.SimpleTemplateEngine
-import org.springframework.beans.factory.annotation.Autowire
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Configurable
 import org.zstack.core.Platform
 import org.zstack.core.componentloader.PluginRegistry
 import org.zstack.core.db.DBGraph
 import org.zstack.core.db.EntityMetadata
+import org.zstack.header.zql.ASTVisitor
 import org.zstack.header.zql.RestrictByExprExtensionPoint
 import org.zstack.header.zql.ZQLExtensionContext
 import org.zstack.zql.ZQLContext
-import org.zstack.zql.ast.ASTNode
+import org.zstack.header.zql.ASTNode
 import org.zstack.zql.ast.ZQLError
 import org.zstack.zql.ast.ZQLMetadata
 
@@ -29,11 +27,15 @@ class RestrictExprVisitor implements ASTVisitor<String, ASTNode.RestrictExpr> {
         )
 
         ZQLExtensionContext context = ZQLContext.createZQLExtensionContext()
-        for (RestrictByExprExtensionPoint extp : pluginRgty.getExtensionList(RestrictByExprExtensionPoint.class)) {
-            String ret = extp.restrictByExpr(context, expr)
-            if (ret != null) {
-                return ret
+        try {
+            for (RestrictByExprExtensionPoint extp : pluginRgty.getExtensionList(RestrictByExprExtensionPoint.class)) {
+                String ret = extp.restrictByExpr(context, expr)
+                if (ret != null) {
+                    return ret
+                }
             }
+        } catch (RestrictByExprExtensionPoint.SkipThisRestrictExprException ignored) {
+            return null
         }
 
         String srcTargetName = ZQLContext.peekQueryTargetInventoryName()

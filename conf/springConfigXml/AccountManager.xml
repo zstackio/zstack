@@ -19,6 +19,13 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="IdentityZQLExtension" class="org.zstack.identity.IdentityZQLExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.zql.MarshalZQLASTTreeExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.zql.RestrictByExprExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
+
     <bean id="RBACManager" class="org.zstack.identity.rbac.RBACManagerImpl">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component"/>

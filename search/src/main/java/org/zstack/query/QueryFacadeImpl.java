@@ -25,6 +25,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.zql.ZQL;
+import org.zstack.zql.ZQLContext;
 import org.zstack.zql.ZQLQueryResult;
 
 import static org.zstack.core.Platform.argerr;
@@ -338,8 +339,10 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             sb.add(String.format("offset %s", msg.getStart()));
         }
 
+        ZQLContext.putAPISession(msg.getSession());
         ZQL zql = ZQL.fromString(StringUtils.join(sb, " "));
         ZQLQueryResult result = zql.execute();
+        ZQLContext.cleanAPISession();
         return result;
     }
 

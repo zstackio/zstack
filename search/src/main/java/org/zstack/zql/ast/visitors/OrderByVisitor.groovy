@@ -1,8 +1,9 @@
 package org.zstack.zql.ast.visitors
 
 import org.zstack.core.Platform
+import org.zstack.header.zql.ASTVisitor
 import org.zstack.zql.ZQLContext
-import org.zstack.zql.ast.ASTNode
+import org.zstack.header.zql.ASTNode
 import org.zstack.zql.ast.ZQLError
 import org.zstack.zql.ast.ZQLMetadata
 

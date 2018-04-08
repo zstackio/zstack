@@ -1,6 +1,7 @@
 package org.zstack.zql.ast.visitors
 
-import org.zstack.zql.ast.ASTNode
+import org.zstack.header.zql.ASTNode
+import org.zstack.header.zql.ASTVisitor
 
 class OffsetVisitor implements ASTVisitor<String, ASTNode.Offset> {
     Integer offset

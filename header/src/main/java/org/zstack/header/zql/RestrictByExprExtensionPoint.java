@@ -6,5 +6,8 @@ public interface RestrictByExprExtensionPoint {
         public String field;
     }
 
+    class SkipThisRestrictExprException extends RuntimeException {
+    }
+
     String restrictByExpr(ZQLExtensionContext context, RestrictByExpr expr);
 }

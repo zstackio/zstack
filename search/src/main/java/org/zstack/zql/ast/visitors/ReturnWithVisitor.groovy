@@ -1,6 +1,7 @@
 package org.zstack.zql.ast.visitors
 
-import org.zstack.zql.ast.ASTNode
+import org.zstack.header.zql.ASTNode
+import org.zstack.header.zql.ASTVisitor
 import org.zstack.zql.ast.visitors.result.ReturnWithResult
 
 class ReturnWithVisitor implements ASTVisitor<List<ReturnWithResult>, ASTNode.ReturnWith> {

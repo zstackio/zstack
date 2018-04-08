@@ -3,7 +3,7 @@ package org.zstack.zql.ast.parser.visitors
 import org.zstack.utils.DebugUtils
 import org.zstack.zql.antlr4.ZQLBaseVisitor
 import org.zstack.zql.antlr4.ZQLParser
-import org.zstack.zql.ast.ASTNode
+import org.zstack.header.zql.ASTNode
 
 class ValueVisitor extends ZQLBaseVisitor<ASTNode.Value> {
     ASTNode.ComplexValue visitSubQueryValue(ZQLParser.SubQueryValueContext ctx) {
