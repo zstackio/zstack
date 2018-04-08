@@ -4,6 +4,7 @@ import org.zstack.zql.ast.ZQLMetadata
 
 class QueryResult {
     String sql
+    String targetFieldName
     Closure createJPAQuery
     Closure createCountQuery
     ZQLMetadata.InventoryMetadata inventoryMetadata

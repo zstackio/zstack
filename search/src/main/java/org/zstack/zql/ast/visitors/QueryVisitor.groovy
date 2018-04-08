@@ -41,6 +41,7 @@ class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
         String fieldName = node.target.fields == null || node.target.fields.isEmpty() ? "" : node.target.fields[0]
         if (fieldName != "") {
             inventory.errorIfNoField(fieldName)
+            ret.targetFieldName = fieldName
         }
 
         String entityAlias = inventory.simpleInventoryName()

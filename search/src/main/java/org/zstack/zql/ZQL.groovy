@@ -56,12 +56,23 @@ class ZQL {
     }
 
     private List entityVOtoInventories(List vos) {
-        String collectionMethodName = astResult.inventoryMetadata.inventoryAnnotation.collectionValueOfMethod()
-        if (collectionMethodName == "") {
-            collectionMethodName = "valueOf"
-        }
+        if (astResult.targetFieldName != null) {
+            List ret = []
+            vos.each {
+                def inv = astResult.inventoryMetadata.selfInventoryClass.getConstructor().newInstance()
+                inv[astResult.targetFieldName] = it
+                ret.add(inv)
+            }
 
-        return astResult.inventoryMetadata.selfInventoryClass.invokeMethod(collectionMethodName, vos)
+            return ret
+        } else {
+            String collectionMethodName = astResult.inventoryMetadata.inventoryAnnotation.collectionValueOfMethod()
+            if (collectionMethodName == "") {
+                collectionMethodName = "valueOf"
+            }
+
+            return astResult.inventoryMetadata.selfInventoryClass.invokeMethod(collectionMethodName, vos)
+        }
     }
 
     ZQLQueryResult execute() {
