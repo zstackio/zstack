@@ -6,6 +6,7 @@ import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.PolicyInventory;
 import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.rbac.PolicyMatcher;
+import org.zstack.header.identity.rbac.SuppressRBACCheck;
 import org.zstack.header.message.APIMessage;
 import org.zstack.identity.APIRequestChecker;
 import org.zstack.identity.rbac.datatype.Entity;
@@ -29,6 +30,10 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
 
     @Override
     public void check(APIMessage msg) {
+        if (msg.getClass().isAnnotationPresent(SuppressRBACCheck.class)) {
+            return;
+        }
+
         message = msg;
         check();
     }
