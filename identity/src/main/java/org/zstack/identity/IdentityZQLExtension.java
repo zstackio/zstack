@@ -11,11 +11,9 @@ import org.zstack.header.zql.ZQLExtensionContext;
 import org.zstack.zql.ZQLContext;
 import org.zstack.zql.ast.ZQLMetadata;
 
-import java.util.ArrayList;
-
 public class IdentityZQLExtension implements MarshalZQLASTTreeExtensionPoint, RestrictByExprExtensionPoint {
-    private static final String ENTITY_NAME = "account";
-    private static final String ENTITY_FIELD = "uuid";
+    private static final String ENTITY_NAME = "__ACCOUNT_FILTER__";
+    private static final String ENTITY_FIELD = "__ACCOUNT_FILTER_FIELD__";
 
     @Autowired
     private AccountManager acntMgr;
@@ -27,30 +25,16 @@ public class IdentityZQLExtension implements MarshalZQLASTTreeExtensionPoint, Re
             return;
         }
 
-        if (node.getRestrictBy() == null)  {
-            node.setRestrictBy(new ASTNode.RestrictBy());
-        }
-
-        if (node.getRestrictBy().getExprs() == null) {
-            node.getRestrictBy().setExprs(new ArrayList<>());
-        }
-
         ASTNode.RestrictExpr expr = new ASTNode.RestrictExpr();
         expr.setEntity(ENTITY_NAME);
         expr.setField(ENTITY_FIELD);
-        expr.setOperator("=");
-        ASTNode.PlainValue v = new ASTNode.PlainValue();
-        v.setText(session.getAccountUuid());
-        v.setType(String.class);
-        v.setCtype(String.class.getName());
-        expr.setValue(v);
 
-        node.getRestrictBy().getExprs().add(expr);
+        node.addRestrictExpr(expr);
     }
 
     @Override
-    public String restrictByExpr(ZQLExtensionContext context, RestrictByExpr expr) {
-        if (!ENTITY_NAME.equals(expr.entity) || !ENTITY_FIELD.equals(expr.field)) {
+    public String restrictByExpr(ZQLExtensionContext context, ASTNode.RestrictExpr expr) {
+        if (!ENTITY_NAME.equals(expr.getEntity()) || !ENTITY_FIELD.equals(expr.getField())) {
             // not for us
             return null;
         }
@@ -69,9 +53,9 @@ public class IdentityZQLExtension implements MarshalZQLASTTreeExtensionPoint, Re
         String primaryKey = EntityMetadata.getPrimaryKeyField(src.getInventoryAnnotation().mappingVOClass()).getName();
 
         return String.format("(%s.%s IN (SELECT accountresourcerefvo.resourceUuid FROM AccountResourceRefVO accountresourcerefvo WHERE" +
-                "  (accountresourcerefvo.ownerAccountUuid = '%s' AND accountresourcerefvo.resourceType = '%s') OR (accountresourcerefvo.resourceUuid" +
-                " IN (SELECT sharedresourcevo.resourceUuid FROM SharedResourceVO sharedresourcevo WHERE" +
-                " (sharedresourcevo.receiverAccountUuid = '%s' OR sharedresourcevo.toPublic = 1) AND sharedresourcevo.resourceType = '%s'))))",
+                        "  (accountresourcerefvo.ownerAccountUuid = '%s' AND accountresourcerefvo.resourceType = '%s') OR (accountresourcerefvo.resourceUuid" +
+                        " IN (SELECT sharedresourcevo.resourceUuid FROM SharedResourceVO sharedresourcevo WHERE" +
+                        " (sharedresourcevo.receiverAccountUuid = '%s' OR sharedresourcevo.toPublic = 1) AND sharedresourcevo.resourceType = '%s'))))",
                 src.simpleInventoryName(), primaryKey, accountUuid, resourceType, accountUuid, resourceType);
     }
 }

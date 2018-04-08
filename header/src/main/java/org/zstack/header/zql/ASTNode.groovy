@@ -35,9 +35,9 @@ class ASTNode {
     }
 
     static class PlainValue extends ASTNode implements Value {
-         String text
-         transient Class type
-         String ctype
+        String text
+        transient Class type
+        String ctype
     }
 
     static class ListValue extends ASTNode implements Value {
@@ -94,14 +94,26 @@ class ASTNode {
     }
 
     static class Query extends ASTNode {
-         QueryTarget target
-         List<Condition> conditions
-         RestrictBy restrictBy
-         ReturnWith returnWith
-         FilterBy filterBy
-         OrderBy orderBy
-         Limit limit
-         Offset offset
+        QueryTarget target
+        List<Condition> conditions
+        RestrictBy restrictBy
+        ReturnWith returnWith
+        FilterBy filterBy
+        OrderBy orderBy
+        Limit limit
+        Offset offset
+
+        void addRestrictExpr(RestrictExpr expr) {
+            if (restrictBy == null)  {
+                restrictBy = new RestrictBy()
+            }
+
+            if (restrictBy.exprs == null) {
+                restrictBy.exprs = []
+            }
+
+            restrictBy.exprs.add(expr)
+        }
     }
 
     static class SubQueryTarget extends ASTNode {

@@ -50,6 +50,10 @@ class ZQLContext {
         put(QUERY_TARGET_INVENTORY_NAME, name)
     }
 
+    static void cleanQueryTargetInventoryName() {
+        remove(QUERY_TARGET_INVENTORY_NAME)
+    }
+
     static void putAPISession(SessionInventory session) {
         put(API_SESSION, session)
     }

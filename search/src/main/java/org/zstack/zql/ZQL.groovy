@@ -12,6 +12,7 @@ import org.zstack.utils.logging.CLogger
 import org.zstack.zql.antlr4.ZQLLexer
 import org.zstack.zql.antlr4.ZQLParser
 import org.zstack.header.zql.ASTNode
+import org.zstack.zql.ast.ZQLMetadata
 import org.zstack.zql.ast.parser.visitors.CountVisitor
 import org.zstack.zql.ast.parser.visitors.QueryVisitor
 import org.zstack.zql.ast.visitors.result.QueryResult
@@ -85,6 +86,15 @@ class ZQL {
         }
     }
 
+    private static Closure prepareZQLContext(ASTNode.Query node) {
+        ZQLMetadata.InventoryMetadata inventory = ZQLMetadata.findInventoryMetadata(node.target.entity)
+        ZQLContext.setQueryTargetInventoryName(inventory.fullInventoryName())
+
+        return {
+            ZQLContext.cleanQueryTargetInventoryName()
+        }
+    }
+
     ZQLQueryResult execute() {
         Long count = null
         List vos = null
@@ -95,6 +105,9 @@ class ZQL {
         ZQLParser.ZqlContext ctx = p.zql()
         if (ctx instanceof ZQLParser.CountGrammarContext) {
             ASTNode.Query query = ctx.count().accept(new CountVisitor())
+
+            def clean = prepareZQLContext(query)
+
             callExtensions(query)
             astResult = query.accept(new org.zstack.zql.ast.visitors.QueryVisitor(countQuery: true)) as QueryResult
 
@@ -109,8 +122,13 @@ class ZQL {
                     count = q.getSingleResult() as Long
                 }
             }.execute()
+
+            clean()
         } else if (ctx instanceof ZQLParser.QueryGrammarContext) {
             ASTNode.Query query = ctx.query().accept(new QueryVisitor())
+
+            def clean = prepareZQLContext(query)
+
             callExtensions(query)
             astResult = query.accept(new org.zstack.zql.ast.visitors.QueryVisitor()) as QueryResult
 
@@ -130,6 +148,8 @@ class ZQL {
                     }
                 }
             }.execute()
+
+            clean()
         } else {
             assert false : "should not be here ${ctx}"
         }

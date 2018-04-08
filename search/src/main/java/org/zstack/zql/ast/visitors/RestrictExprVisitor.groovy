@@ -21,15 +21,10 @@ class RestrictExprVisitor implements ASTVisitor<String, ASTNode.RestrictExpr> {
 
     @Override
     String visit(ASTNode.RestrictExpr node) {
-        RestrictByExprExtensionPoint.RestrictByExpr expr = new RestrictByExprExtensionPoint.RestrictByExpr(
-                entity: node.entity,
-                field: node.field
-        )
-
         ZQLExtensionContext context = ZQLContext.createZQLExtensionContext()
         try {
             for (RestrictByExprExtensionPoint extp : pluginRgty.getExtensionList(RestrictByExprExtensionPoint.class)) {
-                String ret = extp.restrictByExpr(context, expr)
+                String ret = extp.restrictByExpr(context, node)
                 if (ret != null) {
                     return ret
                 }
