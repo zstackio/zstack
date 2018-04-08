@@ -22,6 +22,7 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
 
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -160,7 +161,6 @@ public class DnsExtension extends AbstractNetworkServiceExtension implements Com
         L3NetworkInventory l3 = L3NetworkInventory.valueOf(dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class));
         NetworkServiceProviderType ptype = getNetworkServiceProviderType(NetworkServiceType.DNS, l3);
         if (ptype == null) {
-            // backends don't need to be informed
             bus.reply(msg, reply);
             return;
         }
@@ -185,7 +185,6 @@ public class DnsExtension extends AbstractNetworkServiceExtension implements Com
         L3NetworkInventory l3 = L3NetworkInventory.valueOf(dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class));
         NetworkServiceProviderType ptype = getNetworkServiceProviderType(NetworkServiceType.DNS, l3);
         if (ptype == null) {
-            // backends don't need to be informed
             bus.reply(msg, reply);
             return;
         }

@@ -18,6 +18,7 @@ import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.*;
+import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
@@ -39,10 +40,7 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Tuple;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
@@ -310,6 +308,10 @@ public class L3BasicNetwork implements L3Network {
             handle((APISetL3NetworkRouterInterfaceIpMsg) msg);
         } else if (msg instanceof APIGetL3NetworkRouterInterfaceIpMsg) {
             handle((APIGetL3NetworkRouterInterfaceIpMsg) msg);
+        } else if (msg instanceof APIAddHostRouteToL3NetworkMsg) {
+            handle((APIAddHostRouteToL3NetworkMsg) msg);
+        } else if (msg instanceof APIRemoveHostRouteFromL3NetworkMsg) {
+            handle((APIRemoveHostRouteFromL3NetworkMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -839,6 +841,154 @@ public class L3BasicNetwork implements L3Network {
             public void handle(ErrorCode errCode, Map data) {
                 evt.setError(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, errCode));
                 bus.publish(evt);
+            }
+        }).start();
+    }
+
+    private void handle(APIAddHostRouteToL3NetworkMsg msg) {
+        final APIAddHostRouteToL3NetworkEvent evt = new APIAddHostRouteToL3NetworkEvent(msg.getId());
+
+        Map data = new HashMap();
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setData(data);
+        chain.setName(String.format("add-hostroute-prefix-%s-to-l3-%s", msg.getPrefix(), msg.getL3NetworkUuid()));
+        chain.then(new ShareFlow() {
+            @Override
+            public void setup() {
+                flow(new Flow() {
+                    String __name__ = "write-hostroute-to-db";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        L3NetworkHostRouteVO vo = new L3NetworkHostRouteVO();
+                        vo.setL3NetworkUuid(msg.getL3NetworkUuid());
+                        vo.setPrefix(msg.getPrefix());
+                        vo.setNexthop(msg.getNexthop());
+                        vo = dbf.persist(vo);
+                        data.put(L3NetworkConstant.Param.L3_HOSTROUTE_VO, vo);
+                        data.put(L3NetworkConstant.Param.L3_HOSTROUTE_SUCCESS, true);
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        boolean flag = (boolean) data.get(L3NetworkConstant.Param.L3_HOSTROUTE_SUCCESS);
+                        if (flag) {
+                            L3NetworkHostRouteVO vo = (L3NetworkHostRouteVO) data.get(L3NetworkConstant.Param.L3_HOSTROUTE_VO);
+                            dbf.remove(vo);
+                        }
+                        trigger.rollback();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "apply-to-backend";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        AddHostRouteMsg amsg = new AddHostRouteMsg();
+                        amsg.setL3NetworkUuid(self.getUuid());
+                        amsg.setPrefix(msg.getPrefix());
+                        amsg.setNexthop(msg.getNexthop());
+                        bus.makeLocalServiceId(amsg, NetworkServiceConstants.HOSTROUTE_SERVICE_ID);
+                        bus.send(amsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (reply.isSuccess()) {
+                                    trigger.next();
+                                } else {
+                                    trigger.fail(reply.getError());
+                                }
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        self = dbf.reload(self);
+                        evt.setInventory(L3NetworkInventory.valueOf(self));
+                        logger.debug(String.format("successfully added hostRoute prefix [%s] nexthop [%s] to L3Network[uuid:%s, name:%s]",
+                                msg.getPrefix(), msg.getNexthop(), self.getUuid(), self.getName()));
+                        bus.publish(evt);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        evt.setError(errCode);
+                        bus.publish(evt);
+                    }
+                });
+            }
+        }).start();
+    }
+
+    private void handle(APIRemoveHostRouteFromL3NetworkMsg msg) {
+        final APIRemoveHostRouteFromL3NetworkEvent evt = new APIRemoveHostRouteFromL3NetworkEvent(msg.getId());
+
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("remove-hostroute-prefix-%s-from-l3-%s", msg.getPrefix(), msg.getL3NetworkUuid()));
+        chain.then(new ShareFlow() {
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "remove-hostroute-from-db";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        SimpleQuery<L3NetworkHostRouteVO> q = dbf.createQuery(L3NetworkHostRouteVO.class);
+                        q.add(L3NetworkHostRouteVO_.prefix, Op.EQ, msg.getPrefix());
+                        q.add(L3NetworkHostRouteVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
+                        L3NetworkHostRouteVO hostRouteVO = q.find();
+                        if (hostRouteVO != null) {
+                            dbf.remove(hostRouteVO);
+                        }
+                        trigger.next();
+                    }
+                });
+
+                if (!self.getNetworkServices().isEmpty()) {
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "remove-hostroute-from-backend";
+
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            RemoveHostRouteMsg rmsg = new RemoveHostRouteMsg();
+                            rmsg.setL3NetworkUuid(self.getUuid());
+                            rmsg.setPrefix(msg.getPrefix());
+                            bus.makeLocalServiceId(rmsg, NetworkServiceConstants.HOSTROUTE_SERVICE_ID);
+                            bus.send(rmsg, new CloudBusCallBack(trigger) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    if (!reply.isSuccess()) {
+                                        trigger.fail(reply.getError());
+                                    } else {
+                                        trigger.next();
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        evt.setInventory(L3NetworkInventory.valueOf(dbf.reload(self)));
+                        bus.publish(evt);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        evt.setError(errCode);
+                        bus.publish(evt);
+                    }
+                });
             }
         }).start();
     }

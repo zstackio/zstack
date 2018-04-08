@@ -5,6 +5,7 @@ import java.sql.Timestamp
 import java.sql.Timestamp
 import org.zstack.header.network.l3.IpRangeInventory
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory
+import org.zstack.header.network.l3.L3NetworkHostRouteInventory
 
 doc {
 
@@ -103,5 +104,13 @@ doc {
 		type "List"
 		since "0.6"
 		clz NetworkServiceL3NetworkRefInventory.class
+	}
+	ref {
+		name "hostRoute"
+		path "org.zstack.header.network.l3.L3NetworkInventory.hostRoute"
+		desc "null"
+		type "List"
+		since "2.3"
+		clz L3NetworkHostRouteInventory.class
 	}
 }

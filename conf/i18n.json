@@ -3778,6 +3778,16 @@
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
+    "raw": "session [uuid:%s] expired, can not renew",
+    "en_US": "session [uuid:{0}] expired, can not renew",
+    "zh_CN": "当前会话 [uuid:{0}] 已经超时，不能更新",
+    "arguments": [
+      "msg.getSessionUuid()"
+    ],
+    "line": 529,
+    "fileName": "src/zstack/./identity/src/main/java/org/zstack/identity/AccountManagerImpl.java"
+  },
+  {
     "raw": "account[%s] not found",
     "en_US": "account[{0}] not found",
     "zh_CN": "没有找到账户[{0}]",
@@ -6007,6 +6017,78 @@
     ],
     "line": 109,
     "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/KVMRealizeL2VxlanNetworkPoolBackend.java"
+  },
+  {
+    "raw": "L3Network [uuid: %s] provide type null",
+    "en_US": "L3Network [uuid: {0}] provide type null",
+    "zh_CN": "三层网络{0}后端为空",
+    "arguments": [
+      "msg.getL3NetworkUuid()"
+    ],
+    "line": 88,
+    "fileName": "src/hostroute/zstack/./network/src/main/java/org/zstack/network/service/HostRouteExtension.java"
+  },
+  {
+    "raw": "L3Network [uuid: %s] can not add host Route",
+    "en_US": "L3Network [uuid: {0}] can not add host Route",
+    "zh_CN": "三层网络{0}不能添加主机路由",
+    "arguments": [
+      "msg.getL3NetworkUuid()"
+    ],
+    "line": 113,
+    "fileName": "src/hostroute/zstack/./network/src/main/java/org/zstack/network/service/HostRouteExtension.java"
+  },
+  {
+    "raw": "invalid IP[%s]",
+    "en_US": "invalid IP[{0}]",
+    "zh_CN": "\u9519\u8bef\u7684IP\u503c[{0}]",
+    "arguments": [
+      "msg.getIp()"
+    ],
+    "line": 149,
+    "fileName": "src/hostroute/zstack/./network/src/main/java/org/zstack/network/l3/L3NetworkApiInterceptor.java"
+  },
+   {
+    "raw": "prefix [%s] is not a IPv4 network cidr",
+    "en_US": "prefix [{0}] is not a IPv4 network cidr",
+    "zh_CN": "网络段{0}不是合法的网络段",
+    "arguments": [
+      "msg.getL3NetworkUuid()"
+    ],
+    "line": 380,
+    "fileName": "src/hostroute/zstack/./network/src/main/java/org/zstack/network/l3/L3NetworkApiInterceptor.java"
+  },
+  {
+    "raw": "nexthop[%s] is not a IPv4 address",
+    "en_US": "nexthop[{0}] is not a IPv4 address",
+    "zh_CN": "下一跳{0}不是有效的IP地址",
+    "arguments": [
+      "msg.getNexthop()"
+    ],
+    "line": 367,
+    "fileName": "src/hostroute/zstack/./network/src/main/java/org/zstack/network/l3/L3NetworkApiInterceptor.java"
+  },
+  {
+    "raw": "there has been a hostroute for prefix[%s] on L3 network[uuid:%s]",
+    "en_US": "there has been a hostroute for prefix[{0}] on L3 network[uuid:{1}]",
+    "zh_CN": "三层网络{1}已配置主机路由{0}",
+    "arguments": [
+      "msg.getPrefix()",
+      "msg.getL3NetworkUuid()"
+    ],
+    "line": 374,
+    "fileName": "src/hostroute/zstack/./network/src/main/java/org/zstack/network/l3/L3NetworkApiInterceptor.java"
+  },
+  {
+    "raw": "there is no hostroute for prefix[%s] on L3 network[uuid:%s]",
+    "en_US": "there is no hostroute for prefix[{0}] on L3 network[uuid:{1}]",
+    "zh_CN": "三层网络{1}没有主机路由{0}",
+    "arguments": [
+      "msg.getPrefix()",
+      "msg.getL3NetworkUuid()"
+    ],
+    "line": 387,
+    "fileName": "src/hostroute/zstack/./network/src/main/java/org/zstack/network/l3/L3NetworkApiInterceptor.java"
   },
   {
     "raw": "you must update system and category both",

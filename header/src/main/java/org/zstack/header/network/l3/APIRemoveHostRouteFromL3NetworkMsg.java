@@ -1,0 +1,69 @@
+package org.zstack.header.network.l3;
+
+import org.springframework.http.HttpMethod;
+import org.zstack.header.identity.Action;
+import org.zstack.header.message.APIEvent;
+import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.APIParam;
+import org.zstack.header.notification.ApiNotification;
+import org.zstack.header.rest.RestRequest;
+
+/**
+ */
+@Action(category = L3NetworkConstant.ACTION_CATEGORY)
+@RestRequest(
+        path = "/l3-networks/{l3NetworkUuid}/hostroute",
+        method = HttpMethod.DELETE,
+        responseClass = APIRemoveHostRouteFromL3NetworkEvent.class
+)
+public class APIRemoveHostRouteFromL3NetworkMsg extends APIMessage implements L3NetworkMessage {
+    /**
+     * @desc l3Network uuid
+     */
+    @APIParam(resourceType = L3NetworkVO.class, checkAccount = true, operationTarget = true)
+    private String l3NetworkUuid;
+    /**
+     * @desc ip prefix
+     */
+    @APIParam
+    private String prefix;
+
+    @Override
+    public String getL3NetworkUuid() {
+        return l3NetworkUuid;
+    }
+
+    public void setL3NetworkUuid(String l3NetworkUuid) {
+        this.l3NetworkUuid = l3NetworkUuid;
+    }
+
+    public String getPrefix() {
+        return prefix;
+    }
+
+    public void setPrefix(String prefix) {
+        this.prefix = prefix;
+    }
+
+    public static APIRemoveHostRouteFromL3NetworkMsg __example__() {
+        APIRemoveHostRouteFromL3NetworkMsg msg = new APIRemoveHostRouteFromL3NetworkMsg();
+
+        msg.setL3NetworkUuid(uuid());
+        msg.setPrefix("169.254.169.254/32");
+
+        return msg;
+    }
+
+
+    public ApiNotification __notification__() {
+        APIMessage that = this;
+
+        return new ApiNotification() {
+            @Override
+            public void after(APIEvent evt) {
+                ntfy("Removed a hostroute prefix [%s]", prefix).resource(l3NetworkUuid, L3NetworkVO.class.getSimpleName())
+                        .messageAndEvent(that, evt).done();
+            }
+        };
+    }
+}

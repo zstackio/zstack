@@ -97,6 +97,7 @@ public class SourceClassMap {
 			put("org.zstack.header.network.l2.L2VlanNetworkInventory", "org.zstack.sdk.L2VlanNetworkInventory");
 			put("org.zstack.header.network.l3.FreeIpInventory", "org.zstack.sdk.FreeIpInventory");
 			put("org.zstack.header.network.l3.IpRangeInventory", "org.zstack.sdk.IpRangeInventory");
+			put("org.zstack.header.network.l3.L3NetworkHostRouteInventory", "org.zstack.sdk.L3NetworkHostRouteInventory");
 			put("org.zstack.header.network.l3.L3NetworkInventory", "org.zstack.sdk.L3NetworkInventory");
 			put("org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory", "org.zstack.sdk.NetworkServiceL3NetworkRefInventory");
 			put("org.zstack.header.network.service.NetworkServiceProviderInventory", "org.zstack.sdk.NetworkServiceProviderInventory");
@@ -322,6 +323,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.L2VlanNetworkInventory", "org.zstack.header.network.l2.L2VlanNetworkInventory");
 			put("org.zstack.sdk.L2VxlanNetworkInventory", "org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory");
 			put("org.zstack.sdk.L2VxlanNetworkPoolInventory", "org.zstack.network.l2.vxlan.vxlanNetworkPool.L2VxlanNetworkPoolInventory");
+			put("org.zstack.sdk.L3NetworkHostRouteInventory", "org.zstack.header.network.l3.L3NetworkHostRouteInventory");
 			put("org.zstack.sdk.L3NetworkInventory", "org.zstack.header.network.l3.L3NetworkInventory");
 			put("org.zstack.sdk.LdapAccountRefInventory", "org.zstack.ldap.LdapAccountRefInventory");
 			put("org.zstack.sdk.LdapServerInventory", "org.zstack.ldap.LdapServerInventory");
