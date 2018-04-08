@@ -11,6 +11,11 @@ base=`dirname $0`
 flyway="$base/tools/flyway-3.2.1/flyway"
 flyway_sql="$base/tools/flyway-3.2.1/sql/"
 
+# give grant option to the new management ip after `zstack-ctl change_ip`
+mysql --user=$user --password=$password --port=$port << EOF
+grant all privileges on *.* to root@"$host" identified by "$password" with grant option;
+EOF
+
 mysql --user=$user --password=$password --host=$host --port=$port << EOF
 grant usage on *.* to 'root'@'localhost';
 grant usage on *.* to 'root'@'%';
