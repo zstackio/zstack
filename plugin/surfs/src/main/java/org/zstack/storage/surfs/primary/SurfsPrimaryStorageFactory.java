@@ -381,7 +381,14 @@ public class SurfsPrimaryStorageFactory implements PrimaryStorageFactory, SurfsC
         }
 
         cmd.setDataVolumes(dtos);
-        cmd.setBootIso(convertIsoToSurfsIfNeeded(cmd.getBootIso()));
+/*        cmd.setBootIso(convertIsoToSurfsIfNeeded(cmd.getBootIso())); */
+	List<IsoTO> isoTOList = CollectionUtils.transformToList(cmd.getBootIso(), new Function<IsoTO, IsoTO>() {
+            @Override
+            public IsoTO call(IsoTO arg) {
+                return convertIsoToSurfsIfNeeded(arg);
+            }
+        });
+        cmd.setBootIso(isoTOList);
     }
 
     @Override
