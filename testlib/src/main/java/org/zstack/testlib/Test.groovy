@@ -134,7 +134,6 @@ abstract class Test implements ApiHelper, Retry {
         c.delegate = spec
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()
-        spec.create {}
         return spec
     }
 

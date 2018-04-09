@@ -77,7 +77,7 @@ class EnvSpec implements Node {
     protected ConcurrentHashMap<Class, List<Tuple>> messageHandlers = [:]
     private ConcurrentHashMap<Class, List<Tuple>> defaultMessageHandlers = [:]
     private static RestTemplate restTemplate
-    private static Set<Class> simulatorClasses = Platform.reflections.getSubTypesOf(Simulator.class)
+    protected static Set<Class> simulatorClasses = Platform.reflections.getSubTypesOf(Simulator.class)
 
     private Set<Closure> cleanupClosures = []
 
@@ -484,6 +484,26 @@ class EnvSpec implements Node {
         return spec
     }
 
+    protected void installSimulatorHandlers() {
+        simulatorClasses.each { clz ->
+            def con = clz.getConstructors()[0]
+
+            Simulator sim
+            if (con.getParameterCount() == 0) {
+                sim = con.newInstance() as Simulator
+            } else {
+                Object[] params = new Objects[con.getParameterCount()]
+                for (int i=0; i<con.getParameterCount(); i++) {
+                    params[i] = null
+                }
+
+                sim = con.newInstance(params) as Simulator
+            }
+
+            sim.registerSimulators(this)
+        }
+    }
+
     EnvSpec create(Closure cl = null) {
         assert Test.currentEnvSpec == null: "There is another EnvSpec created but not deleted. There can be only one EnvSpec" +
                 " in used, you must delete the previous one"
@@ -494,11 +514,14 @@ class EnvSpec implements Node {
         adminLogin()
         resetAllGlobalConfig()
 
+        installSimulatorHandlers()
+
+        /*
         simulatorClasses.each {
             Simulator sim = it.newInstance() as Simulator
             sim.registerSimulators(this)
         }
-
+        */
 
         deploy()
 

@@ -13,9 +13,9 @@ class RBACInfo {
 
     private static PolicyMatcher matcher = new PolicyMatcher()
 
-    private String prefix
     private Set<String> adminOnlyAPIs = []
     private Set<String> normalAPIs = []
+    Class targetResource
 
     private Set<String> _adminOnlyAPIs = []
     private Set<String> _normalAPIs = []
@@ -121,10 +121,6 @@ class RBACInfo {
         return this
     }
 
-    void prefix(String value) {
-        prefix = value
-    }
-
     List<String> adminOnlyAPIs(Class...apis) {
         List<String> lst = (apis as Set).collect { it.name }
         _adminOnlyAPIs.addAll(lst)
@@ -165,10 +161,6 @@ class RBACInfo {
 
         assert info.uuid != null : "uuid field must be set"
         roleInfos.add(info)
-    }
-
-    String getPrefix() {
-        return prefix
     }
 
     Set<String> getAdminOnlyAPIs() {

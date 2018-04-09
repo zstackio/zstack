@@ -9,6 +9,8 @@ static void init() {
     rbac {
         def s = normalAPIs("org.zstack.header.vm.**")
 
+        targetResource = VmInstanceVO.class
+
         normalRole {
             uuid = "5f93cf6444ec44cc83209744c8c3d7cc"
             name = "vm role"

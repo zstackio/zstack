@@ -25,12 +25,12 @@ abstract class Spec implements Node, CreateAction, Tag, ApiHelper, DeleteAction 
         dependencies.add(dep as Node)
     }
 
-    void simulator(String path, Closure cl) {
-        envSpec.simulator(path, cl)
-    }
-
     void message(Class<? extends Message> msgClz, Closure cl) {
         envSpec.message(msgClz, cl)
+    }
+
+    void simulator(String path, Closure cl) {
+        envSpec.simulator(path, cl)
     }
 
     final static void checkHttpCallType(HttpEntity<String> e, boolean isSync) {
