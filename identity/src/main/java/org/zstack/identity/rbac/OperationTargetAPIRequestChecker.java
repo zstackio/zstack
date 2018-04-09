@@ -109,7 +109,7 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
                 return uuids;
             }
 
-            private void checkIfTheAccountCanAccessTheResource(APIMessage.FieldParam param) throws IllegalAccessException {
+            private void checkIfTheAccountOwnTheResource(APIMessage.FieldParam param) throws IllegalAccessException {
                 List<String> uuids = getResourceUuids(param);
 
                 Class resourceType = param.param.resourceType();
@@ -128,7 +128,7 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
                 });
             }
 
-            private void checkIfTheAccountOwnTheResource(APIMessage.FieldParam param) throws IllegalAccessException {
+            private void checkIfTheAccountCanAccessTheResource(APIMessage.FieldParam param) throws IllegalAccessException {
                 List<String> uuids = getResourceUuids(param);
                 Class resourceType = param.param.resourceType();
 
