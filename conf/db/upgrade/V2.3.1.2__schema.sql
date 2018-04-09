@@ -15,6 +15,7 @@ CREATE TABLE `zstack`.`SharedBlockVO` (
     `status` varchar(64) NOT NULL,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp,
+    CONSTRAINT `fkSharedBlockVOSharedBlockGroupVO` FOREIGN KEY (`sharedBlockGroupUuid`) REFERENCES `zstack`.`SharedBlockGroupVO` (`uuid`) ON DELETE CASCADE,
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
