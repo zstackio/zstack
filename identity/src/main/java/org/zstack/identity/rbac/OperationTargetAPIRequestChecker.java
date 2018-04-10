@@ -100,9 +100,15 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
             private List<String> getResourceUuids(APIMessage.FieldParam param) throws IllegalAccessException {
                 List<String> uuids = new ArrayList<>();
                 if (String.class.isAssignableFrom(param.field.getType())) {
-                    uuids.add((String) param.field.get(message));
+                    String uuid = (String) param.field.get(message);
+                    if (uuid != null) {
+                        uuids.add(uuid);
+                    }
                 } else if (Collection.class.isAssignableFrom(param.field.getType())) {
-                    uuids.addAll((Collection<? extends String>) param.field.get(message));
+                    Collection u = (Collection<? extends String>) param.field.get(message);
+                    if (u != null) {
+                        uuids.addAll(u);
+                    }
                 } else {
                     throw new CloudRuntimeException(String.format("not supported field type[%s] for %s#%s", param.field.getType(), message.getClass(), param.field.getName()));
                 }
@@ -134,7 +140,7 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
 
                 List<String> auuids = sql("select ref.resourceUuid from AccountResourceRefVO ref where ((ref.ownerAccountUuid = :accountUuid and ref.resourceType = :rtype)" +
                         " or ref.resourceUuid in (select sh.resourceUuid from SharedResourceVO sh where (sh.receiverAccountUuid = :accountUuid or sh.toPublic = 1) and sh.resourceType = :rtype))" +
-                        " and ref.resourceUuid in (:uuids) group by ref.resourceUuid", String.class)
+                        " and ref.resourceUuid in (:uuids)", String.class)
                         .param("accountUuid", message.getSession().getAccountUuid())
                         .param("rtype", acntMgr.getBaseResourceType(resourceType).getSimpleName())
                         .param("uuids", uuids)
