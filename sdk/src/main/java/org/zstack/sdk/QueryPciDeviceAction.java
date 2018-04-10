@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryPciDeviceAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryPciDeviceAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryPciDeviceResult value;
+        public org.zstack.sdk.QueryPciDeviceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryPciDeviceAction extends QueryAction {
             return ret;
         }
         
-        QueryPciDeviceResult value = res.getResult(QueryPciDeviceResult.class);
-        ret.value = value == null ? new QueryPciDeviceResult() : value; 
+        org.zstack.sdk.QueryPciDeviceResult value = res.getResult(org.zstack.sdk.QueryPciDeviceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryPciDeviceResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QueryPciDeviceAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/pci-device/pci-devices";

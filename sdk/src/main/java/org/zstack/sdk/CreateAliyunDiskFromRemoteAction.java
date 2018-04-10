@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class CreateAliyunDiskFromRemoteAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class CreateAliyunDiskFromRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateAliyunDiskFromRemoteResult value;
+        public org.zstack.sdk.CreateAliyunDiskFromRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -68,8 +69,8 @@ public class CreateAliyunDiskFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        CreateAliyunDiskFromRemoteResult value = res.getResult(CreateAliyunDiskFromRemoteResult.class);
-        ret.value = value == null ? new CreateAliyunDiskFromRemoteResult() : value; 
+        org.zstack.sdk.CreateAliyunDiskFromRemoteResult value = res.getResult(org.zstack.sdk.CreateAliyunDiskFromRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateAliyunDiskFromRemoteResult() : value; 
 
         return ret;
     }
@@ -88,15 +89,15 @@ public class CreateAliyunDiskFromRemoteAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/hybrid/aliyun/disk";

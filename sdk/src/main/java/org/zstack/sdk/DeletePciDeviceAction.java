@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeletePciDeviceAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeletePciDeviceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeletePciDeviceResult value;
+        public org.zstack.sdk.DeletePciDeviceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DeletePciDeviceAction extends AbstractAction {
             return ret;
         }
         
-        DeletePciDeviceResult value = res.getResult(DeletePciDeviceResult.class);
-        ret.value = value == null ? new DeletePciDeviceResult() : value; 
+        org.zstack.sdk.DeletePciDeviceResult value = res.getResult(org.zstack.sdk.DeletePciDeviceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeletePciDeviceResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DeletePciDeviceAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/pci-device/pci-devices/{uuid}";

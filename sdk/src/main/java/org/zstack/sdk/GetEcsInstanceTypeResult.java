@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class GetEcsInstanceTypeResult {
-    public java.util.List<EcsInstanceType> types;
-    public void setTypes(java.util.List<EcsInstanceType> types) {
+    public java.util.List types;
+    public void setTypes(java.util.List types) {
         this.types = types;
     }
-    public java.util.List<EcsInstanceType> getTypes() {
+    public java.util.List getTypes() {
         return this.types;
     }
 

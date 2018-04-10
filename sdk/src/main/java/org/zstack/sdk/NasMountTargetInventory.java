@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class NasMountTargetInventory  {
 
     public java.lang.String uuid;

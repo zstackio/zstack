@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DestroyVmInstanceAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DestroyVmInstanceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DestroyVmInstanceResult value;
+        public org.zstack.sdk.DestroyVmInstanceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DestroyVmInstanceAction extends AbstractAction {
             return ret;
         }
         
-        DestroyVmInstanceResult value = res.getResult(DestroyVmInstanceResult.class);
-        ret.value = value == null ? new DestroyVmInstanceResult() : value; 
+        org.zstack.sdk.DestroyVmInstanceResult value = res.getResult(org.zstack.sdk.DestroyVmInstanceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DestroyVmInstanceResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DestroyVmInstanceAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/vm-instances/{uuid}";

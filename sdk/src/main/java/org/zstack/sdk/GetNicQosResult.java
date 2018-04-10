@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class GetNicQosResult {
     public long outboundBandwidth;
     public void setOutboundBandwidth(long outboundBandwidth) {

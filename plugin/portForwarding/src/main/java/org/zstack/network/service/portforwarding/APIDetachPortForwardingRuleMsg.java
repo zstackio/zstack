@@ -7,8 +7,11 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
+import org.zstack.header.other.APIAuditor;
+import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmNicVO;
 
 import javax.persistence.Tuple;
 
@@ -53,12 +56,16 @@ import javax.persistence.Tuple;
         method = HttpMethod.DELETE,
         responseClass = APIDetachPortForwardingRuleEvent.class
 )
-public class APIDetachPortForwardingRuleMsg extends APIMessage {
+public class APIDetachPortForwardingRuleMsg extends APIMessage implements APIAuditor {
     /**
      * @desc rule uuid
      */
     @APIParam(resourceType = PortForwardingRuleVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
+
+    // for audit purpose only
+    @APINoSee
+    public String vmNicUuid;
 
     public String getUuid() {
         return uuid;
@@ -111,4 +118,8 @@ public class APIDetachPortForwardingRuleMsg extends APIMessage {
         };
     }
 
+    @Override
+    public Result audit(APIMessage msg, APIEvent rsp) {
+        return new Result(((APIDetachPortForwardingRuleMsg)msg).vmNicUuid, VmNicVO.class);
+    }
 }

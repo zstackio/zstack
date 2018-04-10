@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryAliyunNasAccessGroupAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryAliyunNasAccessGroupAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryAliyunNasAccessGroupResult value;
+        public org.zstack.sdk.QueryAliyunNasAccessGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryAliyunNasAccessGroupAction extends QueryAction {
             return ret;
         }
         
-        QueryAliyunNasAccessGroupResult value = res.getResult(QueryAliyunNasAccessGroupResult.class);
-        ret.value = value == null ? new QueryAliyunNasAccessGroupResult() : value; 
+        org.zstack.sdk.QueryAliyunNasAccessGroupResult value = res.getResult(org.zstack.sdk.QueryAliyunNasAccessGroupResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryAliyunNasAccessGroupResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QueryAliyunNasAccessGroupAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/nas/aliyun/access";

@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryNasFileSystemAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryNasFileSystemAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryNasFileSystemResult value;
+        public org.zstack.sdk.QueryNasFileSystemResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryNasFileSystemAction extends QueryAction {
             return ret;
         }
         
-        QueryNasFileSystemResult value = res.getResult(QueryNasFileSystemResult.class);
-        ret.value = value == null ? new QueryNasFileSystemResult() : value; 
+        org.zstack.sdk.QueryNasFileSystemResult value = res.getResult(org.zstack.sdk.QueryNasFileSystemResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryNasFileSystemResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QueryNasFileSystemAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/primary-storage/nas";

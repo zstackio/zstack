@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class KvmRunShellAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class KvmRunShellAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public KvmRunShellResult value;
+        public org.zstack.sdk.KvmRunShellResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class KvmRunShellAction extends AbstractAction {
             return ret;
         }
         
-        KvmRunShellResult value = res.getResult(KvmRunShellResult.class);
-        ret.value = value == null ? new KvmRunShellResult() : value; 
+        org.zstack.sdk.KvmRunShellResult value = res.getResult(org.zstack.sdk.KvmRunShellResult.class);
+        ret.value = value == null ? new org.zstack.sdk.KvmRunShellResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class KvmRunShellAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/hosts/kvm/actions";

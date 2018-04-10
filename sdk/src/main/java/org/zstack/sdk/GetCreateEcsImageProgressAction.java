@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class GetCreateEcsImageProgressAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class GetCreateEcsImageProgressAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetCreateEcsImageProgressResult value;
+        public org.zstack.sdk.GetCreateEcsImageProgressResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +48,8 @@ public class GetCreateEcsImageProgressAction extends AbstractAction {
             return ret;
         }
         
-        GetCreateEcsImageProgressResult value = res.getResult(GetCreateEcsImageProgressResult.class);
-        ret.value = value == null ? new GetCreateEcsImageProgressResult() : value; 
+        org.zstack.sdk.GetCreateEcsImageProgressResult value = res.getResult(org.zstack.sdk.GetCreateEcsImageProgressResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetCreateEcsImageProgressResult() : value; 
 
         return ret;
     }
@@ -67,15 +68,15 @@ public class GetCreateEcsImageProgressAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/hybrid/aliyun/image/{dataCenterUuid}/{imageUuid}/progress";

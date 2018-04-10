@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class AliyunNasAccessRuleInventory  {
 
     public java.lang.String uuid;

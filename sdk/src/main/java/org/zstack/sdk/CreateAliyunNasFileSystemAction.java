@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class CreateAliyunNasFileSystemAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class CreateAliyunNasFileSystemAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateNasFileSystemResult value;
+        public org.zstack.sdk.CreateNasFileSystemResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -65,8 +66,8 @@ public class CreateAliyunNasFileSystemAction extends AbstractAction {
             return ret;
         }
         
-        CreateNasFileSystemResult value = res.getResult(CreateNasFileSystemResult.class);
-        ret.value = value == null ? new CreateNasFileSystemResult() : value; 
+        org.zstack.sdk.CreateNasFileSystemResult value = res.getResult(org.zstack.sdk.CreateNasFileSystemResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateNasFileSystemResult() : value; 
 
         return ret;
     }
@@ -85,15 +86,15 @@ public class CreateAliyunNasFileSystemAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/nas/aliyun";

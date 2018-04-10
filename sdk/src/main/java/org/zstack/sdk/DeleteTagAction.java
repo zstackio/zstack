@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteTagAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteTagAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteTagResult value;
+        public org.zstack.sdk.DeleteTagResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DeleteTagAction extends AbstractAction {
             return ret;
         }
         
-        DeleteTagResult value = res.getResult(DeleteTagResult.class);
-        ret.value = value == null ? new DeleteTagResult() : value; 
+        org.zstack.sdk.DeleteTagResult value = res.getResult(org.zstack.sdk.DeleteTagResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteTagResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DeleteTagAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/tags/{uuid}";

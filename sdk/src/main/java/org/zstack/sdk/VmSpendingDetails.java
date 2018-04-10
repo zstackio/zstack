@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class VmSpendingDetails  {
 
     public long startTime;

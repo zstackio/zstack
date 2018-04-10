@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class GetIdentityZoneFromRemoteAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class GetIdentityZoneFromRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetIdentityZoneFromRemoteResult value;
+        public org.zstack.sdk.GetIdentityZoneFromRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +51,8 @@ public class GetIdentityZoneFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        GetIdentityZoneFromRemoteResult value = res.getResult(GetIdentityZoneFromRemoteResult.class);
-        ret.value = value == null ? new GetIdentityZoneFromRemoteResult() : value; 
+        org.zstack.sdk.GetIdentityZoneFromRemoteResult value = res.getResult(org.zstack.sdk.GetIdentityZoneFromRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetIdentityZoneFromRemoteResult() : value; 
 
         return ret;
     }
@@ -70,15 +71,15 @@ public class GetIdentityZoneFromRemoteAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/hybrid/identity-zone/remote";

@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DetachDataVolumeFromVmAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DetachDataVolumeFromVmAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DetachDataVolumeFromVmResult value;
+        public org.zstack.sdk.DetachDataVolumeFromVmResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DetachDataVolumeFromVmAction extends AbstractAction {
             return ret;
         }
         
-        DetachDataVolumeFromVmResult value = res.getResult(DetachDataVolumeFromVmResult.class);
-        ret.value = value == null ? new DetachDataVolumeFromVmResult() : value; 
+        org.zstack.sdk.DetachDataVolumeFromVmResult value = res.getResult(org.zstack.sdk.DetachDataVolumeFromVmResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DetachDataVolumeFromVmResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DetachDataVolumeFromVmAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/volumes/{uuid}/vm-instances";

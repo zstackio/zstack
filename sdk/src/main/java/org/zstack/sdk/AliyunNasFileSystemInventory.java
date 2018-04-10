@@ -1,6 +1,8 @@
 package org.zstack.sdk;
 
-public class AliyunNasFileSystemInventory extends NasFileSystemInventory {
+
+
+public class AliyunNasFileSystemInventory extends org.zstack.sdk.NasFileSystemInventory {
 
     public java.lang.String dataCenterUuid;
     public void setDataCenterUuid(java.lang.String dataCenterUuid) {

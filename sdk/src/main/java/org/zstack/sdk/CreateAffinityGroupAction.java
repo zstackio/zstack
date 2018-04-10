@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class CreateAffinityGroupAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class CreateAffinityGroupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateAffinityGroupResult value;
+        public org.zstack.sdk.CreateAffinityGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -30,7 +31,7 @@ public class CreateAffinityGroupAction extends AbstractAction {
     @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = true, validValues = {"antiSoft"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"antiSoft","antiHard"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String policy;
 
     @Param(required = false, validValues = {"host"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
@@ -62,8 +63,8 @@ public class CreateAffinityGroupAction extends AbstractAction {
             return ret;
         }
         
-        CreateAffinityGroupResult value = res.getResult(CreateAffinityGroupResult.class);
-        ret.value = value == null ? new CreateAffinityGroupResult() : value; 
+        org.zstack.sdk.CreateAffinityGroupResult value = res.getResult(org.zstack.sdk.CreateAffinityGroupResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateAffinityGroupResult() : value; 
 
         return ret;
     }
@@ -82,15 +83,15 @@ public class CreateAffinityGroupAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/affinity-groups";

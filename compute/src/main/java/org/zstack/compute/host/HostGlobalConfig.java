@@ -24,8 +24,10 @@ public class HostGlobalConfig {
     public static GlobalConfig MAXIMUM_PING_FAILURE = new GlobalConfig(CATEGORY, "ping.maxFailure");
     @GlobalConfigValidation
     public static GlobalConfig IGNORE_ERROR_ON_MAINTENANCE_MODE = new GlobalConfig(CATEGORY, "maintenanceMode.ignoreError");
-    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = Integer.MAX_VALUE)
+    @GlobalConfigValidation(numberGreaterThan = 1, numberLessThan = 1000)
     public static GlobalConfig HOST_CPU_OVER_PROVISIONING_RATIO = new GlobalConfig(CATEGORY, "cpu.overProvisioning.ratio");
     @GlobalConfigValidation
     public static GlobalConfig RECONNECT_ALL_ON_BOOT = new GlobalConfig(CATEGORY, "reconnectAllOnBoot");
+    @GlobalConfigValidation
+    public static GlobalConfig HOST_UPDATE_OS_PARALLELISM_DEGREE = new GlobalConfig(CATEGORY, "update.os.parallelismDegree");
 }

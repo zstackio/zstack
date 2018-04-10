@@ -81,27 +81,6 @@ public class VmDeleteVolumeFlow extends NoRollbackFlow {
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger1, Map data1) {
-                casf.asyncCascade(CascadeConstant.DELETION_FORCE_DELETE_CODE, issuer, ctx, new Completion(trigger1) {
-                    @Override
-                    public void success() {
-                        pluginRgty.getExtensionList(VolumeAfterExpungeExtensionPoint.class).forEach(ext -> {
-                                    for(VolumeInventory volinv: spec.getVmInventory().getAllVolumes()) {
-                                        ext.volumeAfterExpunge(volinv);
-                                    }
-                                }
-                        );
-                        trigger1.next();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        trigger1.fail(errorCode);
-                    }
-                });
-            }
-        }).then(new NoRollbackFlow() {
-            @Override
-            public void run(FlowTrigger trigger1, Map data1) {
                 casf.asyncCascade(CascadeConstant.DELETION_DELETE_CODE, issuer, ctx, new Completion(trigger1) {
                     @Override
                     public void success() {

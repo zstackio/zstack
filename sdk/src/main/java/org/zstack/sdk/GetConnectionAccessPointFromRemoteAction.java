@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class GetConnectionAccessPointFromRemoteAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class GetConnectionAccessPointFromRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetConnectionAccessPointFromRemoteResult value;
+        public org.zstack.sdk.GetConnectionAccessPointFromRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -44,8 +45,8 @@ public class GetConnectionAccessPointFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        GetConnectionAccessPointFromRemoteResult value = res.getResult(GetConnectionAccessPointFromRemoteResult.class);
-        ret.value = value == null ? new GetConnectionAccessPointFromRemoteResult() : value; 
+        org.zstack.sdk.GetConnectionAccessPointFromRemoteResult value = res.getResult(org.zstack.sdk.GetConnectionAccessPointFromRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetConnectionAccessPointFromRemoteResult() : value; 
 
         return ret;
     }
@@ -64,15 +65,15 @@ public class GetConnectionAccessPointFromRemoteAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/hybrid/aliyun/access-point{dataCenterUuid}/remote";

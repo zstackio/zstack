@@ -31,6 +31,7 @@ import org.zstack.utils.function.Function;
 import static org.zstack.core.Platform.operr;
 
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Created by frank on 10/17/2015.
@@ -47,8 +48,12 @@ public class VmDownloadIsoFlow extends NoRollbackFlow {
     @Override
     public void run(final FlowTrigger trigger, Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+        final ImageInventory iso = (ImageInventory) data.get(VmInstanceConstant.Params.AttachingIsoInventory.toString());
+        final VmInstanceSpec.IsoSpec isoSpec = spec.getDestIsoList().stream()
+                .filter(s -> s.getImageUuid().equals(iso.getUuid()))
+                .findAny()
+                .get();
 
-        final ImageInventory iso = ImageInventory.valueOf(dbf.findByUuid(spec.getDestIso().getImageUuid(), ImageVO.class));
         SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
         q.select(VolumeVO_.primaryStorageUuid);
         q.add(VolumeVO_.uuid, Op.EQ, spec.getVmInventory().getRootVolumeUuid());
@@ -93,8 +98,8 @@ public class VmDownloadIsoFlow extends NoRollbackFlow {
                 }
 
                 DownloadIsoToPrimaryStorageReply r = reply.castReply();
-                spec.getDestIso().setInstallPath(r.getInstallPath());
-                spec.getDestIso().setPrimaryStorageUuid(psUuid);
+                isoSpec.setInstallPath(r.getInstallPath());
+                isoSpec.setPrimaryStorageUuid(psUuid);
                 trigger.next();
             }
         });

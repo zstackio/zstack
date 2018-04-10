@@ -15,4 +15,7 @@ public class ConsoleGlobalConfig {
 
     @GlobalConfigValidation(numberGreaterThan = 0)
     public static GlobalConfig PING_INTERVAL = new GlobalConfig(CATEGORY, "agent.ping.interval");
+
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    public static GlobalConfig VNC_TOKEN_TIMEOUT = new GlobalConfig(CATEGORY, "vnc.token.timeout");
 }

@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryVtepAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryVtepAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryVtepResult value;
+        public org.zstack.sdk.QueryVtepResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryVtepAction extends QueryAction {
             return ret;
         }
         
-        QueryVtepResult value = res.getResult(QueryVtepResult.class);
-        ret.value = value == null ? new QueryVtepResult() : value; 
+        org.zstack.sdk.QueryVtepResult value = res.getResult(org.zstack.sdk.QueryVtepResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryVtepResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QueryVtepAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/l2-networks/vteps";

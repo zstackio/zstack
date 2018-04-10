@@ -11,10 +11,11 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.defer.Defer;
+import org.zstack.core.defer.Deferred;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -136,9 +137,53 @@ public class VolumeBase implements Volume {
             handle((InstantiateVolumeMsg) msg);
         } else if (msg instanceof OverlayMessage) {
             handle((OverlayMessage) msg);
+        } else if (msg instanceof ChangeVolumeStatusMsg) {
+            handle((ChangeVolumeStatusMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(ChangeVolumeStatusMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadId;
+            }
+
+            @Override
+            @Deferred
+            public void run(SyncTaskChain chain) {
+                refreshVO();
+
+                Defer.defer(() -> {
+                    ChangeVolumeStatusReply reply = new ChangeVolumeStatusReply();
+                    bus.reply(msg, reply);
+                });
+
+                if (self == null) {
+                    // volume has been deleted by previous request
+                    // this happens when delete vm request queued before
+                    // migrating trigger not by api
+                    // in this case, ignore change state request
+                    logger.debug(String.format("volume[uuid:%s] has been deleted, ignore change volume state request",
+                            msg.getVolumeUuid()));
+                    chain.next();
+                    return;
+                }
+
+                VolumeStatus bs = self.getStatus();
+                SQL.New(VolumeVO.class).eq(VolumeVO_.uuid, msg.getVolumeUuid()).set(VolumeVO_.status, msg.getStatus()).update();
+                refreshVO();
+                logger.debug(String.format("volume[uuid:%s] status changed from %s to %s in db", self.getUuid(), bs, self.getStatus()));
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return "change-volume-status";
+            }
+        });
     }
 
     private void handle(InstantiateVolumeMsg msg) {
@@ -690,15 +735,6 @@ public class VolumeBase implements Volume {
                                         if (!reply.isSuccess()) {
                                             logger.warn(String.format("failed to delete volume[uuid:%s, name:%s], %s",
                                                     self.getUuid(), self.getName(), reply.getError()));
-
-                                            if(reply.getError().getCode().equals(PrimaryStorageErrors.ALLOCATE_ERROR.toString())){
-                                                PrimaryStorageVO psv = Q.New(PrimaryStorageVO.class).eq(PrimaryStorageVO_.uuid, self.getPrimaryStorageUuid()).find();
-                                                DeleteVolumeGC gc = new DeleteVolumeGC();
-                                                gc.NAME = String.format("gc-volume-%s-on-primary-storage-%s", self.getUuid(), psv.getUuid());
-                                                gc.primaryStorageUuid = psv.getUuid();
-                                                gc.volumeInventory = VolumeInventory.valueOf(self);
-                                                gc.submit();
-                                            }
                                         }
 
                                         trigger.next();
@@ -1112,19 +1148,18 @@ public class VolumeBase implements Volume {
                     .param("vmType", VmInstanceConstant.USER_VM_TYPE)
                     .param("hvTypes", hvTypes);
         } else if (self.getStatus() == VolumeStatus.NotInstantiated) {
-            //not support vmtx volume temporarily, so filter ESX vm when volume is NotInstantiated.
             sql = SQL.New("select vm" +
-                    " from VmInstanceVO vm, PrimaryStorageClusterRefVO ref, PrimaryStorageEO ps" +
+                    " from VmInstanceVO vm, PrimaryStorageClusterRefVO ref, PrimaryStorageEO ps, PrimaryStorageCapacityVO capacity" +
                     " where "+ (vmUuids == null ? "" : " vm.uuid in (:vmUuids) and") +
                     " vm.state in (:vmStates)" +
                     " and vm.type = :vmType" +
-                    " and vm.hypervisorType <> :hvType" +
                     " and vm.clusterUuid = ref.clusterUuid" +
+                    " and capacity.uuid = ps.uuid" +
+                    " and capacity.availableCapacity > :volumeSize" +
                     " and ref.primaryStorageUuid = ps.uuid" +
                     " and ps.state in (:psState)" +
                     " group by vm.uuid")
-                    //TODO:  this is a dirty fix, delete it when VMWare support DataVolume
-                    .param("hvType", "ESX")
+                    .param("volumeSize", self.getSize())
                     .param("vmType", VmInstanceConstant.USER_VM_TYPE)
                     .param("psState", PrimaryStorageState.Enabled);
         } else {

@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class AliyunNasAccessGroupInventory  {
 
     public java.lang.String uuid;
@@ -34,11 +36,11 @@ public class AliyunNasAccessGroupInventory  {
         return this.dataCenterUuid;
     }
 
-    public java.util.List<AliyunNasAccessRuleInventory> rules;
-    public void setRules(java.util.List<AliyunNasAccessRuleInventory> rules) {
+    public java.util.List rules;
+    public void setRules(java.util.List rules) {
         this.rules = rules;
     }
-    public java.util.List<AliyunNasAccessRuleInventory> getRules() {
+    public java.util.List getRules() {
         return this.rules;
     }
 

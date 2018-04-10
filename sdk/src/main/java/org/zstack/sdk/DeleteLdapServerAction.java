@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteLdapServerAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteLdapServerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteLdapServerResult value;
+        public org.zstack.sdk.DeleteLdapServerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DeleteLdapServerAction extends AbstractAction {
             return ret;
         }
         
-        DeleteLdapServerResult value = res.getResult(DeleteLdapServerResult.class);
-        ret.value = value == null ? new DeleteLdapServerResult() : value; 
+        org.zstack.sdk.DeleteLdapServerResult value = res.getResult(org.zstack.sdk.DeleteLdapServerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteLdapServerResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DeleteLdapServerAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/ldap/servers/{uuid}";

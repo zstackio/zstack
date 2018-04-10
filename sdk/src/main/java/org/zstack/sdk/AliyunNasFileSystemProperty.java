@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class AliyunNasFileSystemProperty  {
 
     public java.lang.String fileSystemId;

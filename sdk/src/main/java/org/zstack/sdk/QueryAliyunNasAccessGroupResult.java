@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class QueryAliyunNasAccessGroupResult {
-    public java.util.List<AliyunNasAccessGroupInventory> inventories;
-    public void setInventories(java.util.List<AliyunNasAccessGroupInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<AliyunNasAccessGroupInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

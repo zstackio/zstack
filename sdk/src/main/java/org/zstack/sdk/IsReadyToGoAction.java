@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class IsReadyToGoAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class IsReadyToGoAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public IsReadyToGoResult value;
+        public org.zstack.sdk.IsReadyToGoResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -41,8 +42,8 @@ public class IsReadyToGoAction extends AbstractAction {
             return ret;
         }
         
-        IsReadyToGoResult value = res.getResult(IsReadyToGoResult.class);
-        ret.value = value == null ? new IsReadyToGoResult() : value; 
+        org.zstack.sdk.IsReadyToGoResult value = res.getResult(org.zstack.sdk.IsReadyToGoResult.class);
+        ret.value = value == null ? new org.zstack.sdk.IsReadyToGoResult() : value; 
 
         return ret;
     }
@@ -61,15 +62,15 @@ public class IsReadyToGoAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/management-nodes/ready";

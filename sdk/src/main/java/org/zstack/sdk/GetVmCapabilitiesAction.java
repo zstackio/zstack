@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class GetVmCapabilitiesAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class GetVmCapabilitiesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetVmCapabilitiesResult value;
+        public org.zstack.sdk.GetVmCapabilitiesResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -44,8 +45,8 @@ public class GetVmCapabilitiesAction extends AbstractAction {
             return ret;
         }
         
-        GetVmCapabilitiesResult value = res.getResult(GetVmCapabilitiesResult.class);
-        ret.value = value == null ? new GetVmCapabilitiesResult() : value; 
+        org.zstack.sdk.GetVmCapabilitiesResult value = res.getResult(org.zstack.sdk.GetVmCapabilitiesResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetVmCapabilitiesResult() : value; 
 
         return ret;
     }
@@ -64,15 +65,15 @@ public class GetVmCapabilitiesAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/vm-instances/{uuid}/capabilities";

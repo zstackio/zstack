@@ -132,8 +132,8 @@ public class TestAttachIsoOnKvm {
         api.startVmInstance(vm.getUuid());
         StartVmCmd scmd = config.startVmCmd;
         Assert.assertNotNull(scmd.getBootIso());
-        Assert.assertEquals(cvo.getInstallUrl(), scmd.getBootIso().getPath());
-        Assert.assertEquals(iso.getUuid(), scmd.getBootIso().getImageUuid());
+        Assert.assertEquals(cvo.getInstallUrl(), scmd.getBootIso().get(0).getPath());
+        Assert.assertEquals(iso.getUuid(), scmd.getBootIso().get(0).getImageUuid());
 
         api.stopVmInstance(vm.getUuid());
         config.detachIsoCmds.clear();

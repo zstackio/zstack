@@ -1,6 +1,8 @@
 package org.zstack.sdk;
 
-public class AliyunEbsPrimaryStorageInventory extends PrimaryStorageInventory {
+
+
+public class AliyunEbsPrimaryStorageInventory extends org.zstack.sdk.PrimaryStorageInventory {
 
     public java.lang.String appName;
     public void setAppName(java.lang.String appName) {

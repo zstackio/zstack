@@ -66,7 +66,7 @@ public class TestConsoleProxy6 {
     public void test() throws ApiSenderException, InterruptedException {
         bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
             @Override
-            public void intercept(Message msg) {
+            public void beforeDeliveryMessage(Message msg) {
                 success = true;
                 throw new CloudRuntimeException("ok, don't delivery, because we don't really have an agent to redeloy");
             }

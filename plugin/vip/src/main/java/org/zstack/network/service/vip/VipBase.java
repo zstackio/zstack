@@ -244,7 +244,7 @@ public class VipBase {
 
         refresh();
 
-        /* s == null is called from VipDeleteMsg, all service has beed released */
+        /* s == null is called from VipDeleteMsg, all service has been released */
         if ((s != null) && (!releaseCheckModifyVipAttributeStruct(s))){
             /* no need to remove vip from backend */
             completion.success();

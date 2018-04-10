@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteNasFileSystemAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteNasFileSystemAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteNasFileSystemResult value;
+        public org.zstack.sdk.DeleteNasFileSystemResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DeleteNasFileSystemAction extends AbstractAction {
             return ret;
         }
         
-        DeleteNasFileSystemResult value = res.getResult(DeleteNasFileSystemResult.class);
-        ret.value = value == null ? new DeleteNasFileSystemResult() : value; 
+        org.zstack.sdk.DeleteNasFileSystemResult value = res.getResult(org.zstack.sdk.DeleteNasFileSystemResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteNasFileSystemResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DeleteNasFileSystemAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/primary-storage/nas/{uuid}";

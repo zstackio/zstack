@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class GetAliyunNasMountTargetRemoteAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class GetAliyunNasMountTargetRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetAliyunNasMountTargetRemoteResult value;
+        public org.zstack.sdk.GetAliyunNasMountTargetRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +48,8 @@ public class GetAliyunNasMountTargetRemoteAction extends AbstractAction {
             return ret;
         }
         
-        GetAliyunNasMountTargetRemoteResult value = res.getResult(GetAliyunNasMountTargetRemoteResult.class);
-        ret.value = value == null ? new GetAliyunNasMountTargetRemoteResult() : value; 
+        org.zstack.sdk.GetAliyunNasMountTargetRemoteResult value = res.getResult(org.zstack.sdk.GetAliyunNasMountTargetRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetAliyunNasMountTargetRemoteResult() : value; 
 
         return ret;
     }
@@ -67,15 +68,15 @@ public class GetAliyunNasMountTargetRemoteAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/nas/aliyun/mount/remote";

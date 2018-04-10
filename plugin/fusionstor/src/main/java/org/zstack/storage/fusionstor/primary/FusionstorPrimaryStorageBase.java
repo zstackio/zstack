@@ -12,9 +12,11 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.HasThreadContext;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.core.*;
+import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -63,10 +65,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.core.progress.ProgressReportService.getTaskStage;
+import static org.zstack.core.progress.ProgressReportService.markTaskStage;
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
-import static org.zstack.header.storage.backup.BackupStorageConstant.*;
 import static org.zstack.utils.CollectionDSL.list;
-import static org.zstack.utils.ProgressUtils.getEndFromStage;
 
 /**
  * Created by frank on 7/28/2015.
@@ -351,7 +353,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
             APICreateRootVolumeTemplateFromRootVolumeMsg.class,
             APICreateDataVolumeTemplateFromVolumeMsg.class
     })
-    public static class SftpUpLoadCmd extends AgentCommand {
+    public static class SftpUpLoadCmd extends AgentCommand implements HasThreadContext{
         String primaryStorageInstallPath;
         String backupStorageInstallPath;
         String hostname;
@@ -523,7 +525,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
             APICreateDataVolumeFromVolumeSnapshotMsg.class,
             APICreateRootVolumeTemplateFromVolumeSnapshotMsg.class
     })
-    public static class CpCmd extends AgentCommand {
+    public static class CpCmd extends AgentCommand implements HasThreadContext{
         String resourceUuid;
         String srcPath;
         String dstPath;
@@ -767,6 +769,9 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
             checkParam();
 
             final UploadParam uparam = (UploadParam) param;
+            final TaskProgressRange parentStage = getTaskStage();
+            final TaskProgressRange PREPARATION_STAGE = new TaskProgressRange(0, 10);
+            final TaskProgressRange UPLOAD_STAGE = new TaskProgressRange(10, 100);
 
             FlowChain chain = FlowChainBuilder.newShareFlowChain();
             chain.setName(String.format("upload-image-fusionstor-%s-to-sftp-%s", self.getUuid(), backupStorage.getUuid()));
@@ -807,6 +812,8 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
+                            TaskProgressRange stage = markTaskStage(parentStage, PREPARATION_STAGE);
+
                             BackupStorageAskInstallPathMsg msg = new BackupStorageAskInstallPathMsg();
                             msg.setBackupStorageUuid(backupStorage.getUuid());
                             msg.setImageUuid(uparam.image.getUuid());
@@ -819,7 +826,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                                         trigger.fail(reply.getError());
                                     } else {
                                         backupStorageInstallPath = ((BackupStorageAskInstallPathReply) reply).getInstallPath();
-                                        reportProgress(getEndFromStage(CREATE_ROOT_VOLUME_TEMPLATE_PREPARATION_STAGE));
+                                        reportProgress(stage.getEnd().toString());
                                         trigger.next();
                                     }
                                 }
@@ -832,6 +839,8 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
+                            TaskProgressRange stage = markTaskStage(parentStage, UPLOAD_STAGE);
+
                             SftpUpLoadCmd cmd = new SftpUpLoadCmd();
                             cmd.setBackupStorageInstallPath(backupStorageInstallPath);
                             cmd.setHostname(hostname);
@@ -843,7 +852,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                             httpCall(SFTP_UPLOAD_PATH, cmd, SftpUploadRsp.class, new ReturnValueCompletion<SftpUploadRsp>(trigger) {
                                 @Override
                                 public void success(SftpUploadRsp returnValue) {
-                                    reportProgress(getEndFromStage(CREATE_ROOT_VOLUME_TEMPLATE_UPLOAD_STAGE));
+                                    reportProgress(stage.getEnd().toString());
                                     trigger.next();
                                 }
 
@@ -925,6 +934,9 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
             checkParam();
 
             final UploadParam uparam = (UploadParam) param;
+            final TaskProgressRange parentStage = getTaskStage();
+            final TaskProgressRange PREPARATION_STAGE = new TaskProgressRange(0, 10);
+            final TaskProgressRange UPLOAD_STAGE = new TaskProgressRange(10, 100);
 
             FlowChain chain = FlowChainBuilder.newShareFlowChain();
             chain.setName(String.format("upload-image-fusionstor-%s-to-fusionstor-%s", self.getUuid(), backupStorage.getUuid()));
@@ -938,6 +950,8 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
+                            TaskProgressRange stage = markTaskStage(parentStage, PREPARATION_STAGE);
+
                             BackupStorageAskInstallPathMsg msg = new BackupStorageAskInstallPathMsg();
                             msg.setBackupStorageUuid(backupStorage.getUuid());
                             msg.setImageUuid(uparam.image.getUuid());
@@ -950,7 +964,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                                         trigger.fail(reply.getError());
                                     } else {
                                         backupStorageInstallPath = ((BackupStorageAskInstallPathReply) reply).getInstallPath();
-                                        reportProgress(getEndFromStage(CREATE_ROOT_VOLUME_TEMPLATE_PREPARATION_STAGE));
+                                        reportProgress(stage.getEnd().toString());
                                         trigger.next();
                                     }
                                 }
@@ -963,13 +977,15 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
+                            TaskProgressRange stage = markTaskStage(parentStage, UPLOAD_STAGE);
+
                             CpCmd cmd = new CpCmd();
                             cmd.srcPath = uparam.primaryStorageInstallPath;
                             cmd.dstPath = backupStorageInstallPath;
                             httpCall(CP_PATH, cmd, CpRsp.class, new ReturnValueCompletion<CpRsp>(trigger) {
                                 @Override
                                 public void success(CpRsp returnValue) {
-                                    reportProgress(getEndFromStage(CREATE_ROOT_VOLUME_TEMPLATE_UPLOAD_STAGE));
+                                    reportProgress(stage.getEnd().toString());
                                     trigger.next();
                                 }
 
@@ -2090,6 +2106,10 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
     @Override
     protected void handle(APIReconnectPrimaryStorageMsg msg) {
         final APIReconnectPrimaryStorageEvent evt = new APIReconnectPrimaryStorageEvent(msg.getId());
+
+        // fire disconnected canonical event only if the current status is connected
+        boolean fireEvent = self.getStatus() == PrimaryStorageStatus.Connected;
+
         self.setStatus(PrimaryStorageStatus.Connecting);
         dbf.update(self);
         connect(false, new Completion(msg) {
@@ -2107,6 +2127,11 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                 self = dbf.reload(self);
                 self.setStatus(PrimaryStorageStatus.Disconnected);
                 self = dbf.updateAndRefresh(self);
+
+                if (fireEvent) {
+                    fireDisconnectedCanonicalEvent(errorCode);
+                }
+
                 evt.setError(errorCode);
                 bus.publish(evt);
             }

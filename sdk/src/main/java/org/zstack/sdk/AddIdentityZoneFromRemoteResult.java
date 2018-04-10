@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.IdentityZoneInventory;
+
 public class AddIdentityZoneFromRemoteResult {
     public IdentityZoneInventory inventory;
     public void setInventory(IdentityZoneInventory inventory) {

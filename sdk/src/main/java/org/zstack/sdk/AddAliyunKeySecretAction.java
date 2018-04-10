@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class AddAliyunKeySecretAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class AddAliyunKeySecretAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AddAliyunKeySecretResult value;
+        public org.zstack.sdk.AddAliyunKeySecretResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -39,6 +40,9 @@ public class AddAliyunKeySecretAction extends AbstractAction {
     @Param(required = false, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Boolean sync = true;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 
@@ -65,8 +69,8 @@ public class AddAliyunKeySecretAction extends AbstractAction {
             return ret;
         }
         
-        AddAliyunKeySecretResult value = res.getResult(AddAliyunKeySecretResult.class);
-        ret.value = value == null ? new AddAliyunKeySecretResult() : value; 
+        org.zstack.sdk.AddAliyunKeySecretResult value = res.getResult(org.zstack.sdk.AddAliyunKeySecretResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddAliyunKeySecretResult() : value; 
 
         return ret;
     }
@@ -85,15 +89,15 @@ public class AddAliyunKeySecretAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/hybrid/aliyun/key";

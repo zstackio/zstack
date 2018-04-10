@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryVirtualRouterVRouterRouteTableRefAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryVirtualRouterVRouterRouteTableRefAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryVirtualRouterVRouterRouteTableRefResult value;
+        public org.zstack.sdk.QueryVirtualRouterVRouterRouteTableRefResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryVirtualRouterVRouterRouteTableRefAction extends QueryAction {
             return ret;
         }
         
-        QueryVirtualRouterVRouterRouteTableRefResult value = res.getResult(QueryVirtualRouterVRouterRouteTableRefResult.class);
-        ret.value = value == null ? new QueryVirtualRouterVRouterRouteTableRefResult() : value; 
+        org.zstack.sdk.QueryVirtualRouterVRouterRouteTableRefResult value = res.getResult(org.zstack.sdk.QueryVirtualRouterVRouterRouteTableRefResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryVirtualRouterVRouterRouteTableRefResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QueryVirtualRouterVRouterRouteTableRefAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/vrouter-route-tables/virtual-router-refs";

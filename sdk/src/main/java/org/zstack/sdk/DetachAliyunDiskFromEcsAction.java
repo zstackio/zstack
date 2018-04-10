@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DetachAliyunDiskFromEcsAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DetachAliyunDiskFromEcsAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DetachAliyunDiskFromEcsResult value;
+        public org.zstack.sdk.DetachAliyunDiskFromEcsResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DetachAliyunDiskFromEcsAction extends AbstractAction {
             return ret;
         }
         
-        DetachAliyunDiskFromEcsResult value = res.getResult(DetachAliyunDiskFromEcsResult.class);
-        ret.value = value == null ? new DetachAliyunDiskFromEcsResult() : value; 
+        org.zstack.sdk.DetachAliyunDiskFromEcsResult value = res.getResult(org.zstack.sdk.DetachAliyunDiskFromEcsResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DetachAliyunDiskFromEcsResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DetachAliyunDiskFromEcsAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/hybrid/aliyun/disk/{uuid}/detach";

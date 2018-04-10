@@ -493,6 +493,8 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(final FlowTrigger trigger, Map data) {
+                ErrorCodeList errList = new ErrorCodeList();
+
                 new While<>(hosts).all((h, completion1) -> {
                     CheckL2NetworkOnHostMsg cmsg = new CheckL2NetworkOnHostMsg();
                     cmsg.setHostUuid(h.getUuid());
@@ -502,7 +504,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
                         @Override
                         public void run(MessageReply reply) {
                             if (!reply.isSuccess()) {
-                                trigger.fail(reply.getError());
+                                errList.getCauses().add(reply.getError());
                             }
                             completion1.done();
                         }
@@ -510,7 +512,11 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
                 }).run(new NoErrorCompletion() {
                     @Override
                     public void done() {
-                        trigger.next();
+                        if (errList.getCauses().isEmpty()) {
+                            trigger.next();
+                        } else {
+                            trigger.fail(errList.getCauses().get(0));
+                        }
                     }
                 });
             }

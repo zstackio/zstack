@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryFusionstorBackupStorageAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryFusionstorBackupStorageAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryBackupStorageResult value;
+        public org.zstack.sdk.QueryBackupStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryFusionstorBackupStorageAction extends QueryAction {
             return ret;
         }
         
-        QueryBackupStorageResult value = res.getResult(QueryBackupStorageResult.class);
-        ret.value = value == null ? new QueryBackupStorageResult() : value; 
+        org.zstack.sdk.QueryBackupStorageResult value = res.getResult(org.zstack.sdk.QueryBackupStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryBackupStorageResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QueryFusionstorBackupStorageAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/backup-storage/fusionstor";

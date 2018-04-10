@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class UpdateVirtualRouterOfferingAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class UpdateVirtualRouterOfferingAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateInstanceOfferingResult value;
+        public org.zstack.sdk.UpdateInstanceOfferingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -39,6 +40,9 @@ public class UpdateVirtualRouterOfferingAction extends AbstractAction {
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String allocatorStrategy;
+
     @Param(required = false)
     public java.util.List systemTags;
 
@@ -62,8 +66,8 @@ public class UpdateVirtualRouterOfferingAction extends AbstractAction {
             return ret;
         }
         
-        UpdateInstanceOfferingResult value = res.getResult(UpdateInstanceOfferingResult.class);
-        ret.value = value == null ? new UpdateInstanceOfferingResult() : value; 
+        org.zstack.sdk.UpdateInstanceOfferingResult value = res.getResult(org.zstack.sdk.UpdateInstanceOfferingResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateInstanceOfferingResult() : value; 
 
         return ret;
     }
@@ -82,15 +86,15 @@ public class UpdateVirtualRouterOfferingAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/instance-offerings/virtual-routers/{uuid}/actions";

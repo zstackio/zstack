@@ -2,27 +2,21 @@ package org.zstack.test.integration.storage.snapshot
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
-import org.zstack.header.storage.snapshot.VolumeSnapshotTree
 import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO
 import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO_
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO
-import org.zstack.header.storage.snapshot.VolumeSnapshotVO_
-import org.zstack.header.volume.VolumeVO
-import org.zstack.header.volume.VolumeVO_
+import org.zstack.kvm.KVMConstant
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VolumeSnapshotInventory
+import org.zstack.storage.primary.local.LocalStorageKvmBackend
 import org.zstack.storage.snapshot.VolumeSnapshotGlobalConfig
 import org.zstack.test.integration.ldap.Env
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
-import org.zstack.storage.primary.local.LocalStorageKvmBackend
-import org.zstack.kvm.KVMConstant
-import org.zstack.simulator.kvm.VolumeSnapshotKvmSimulator
-import org.zstack.core.db.DatabaseFacade
+
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-
 /**
  * Created by ads6 on 2018/1/10.
  */
@@ -35,7 +29,7 @@ class SnapshotMaxIncrementalCase extends SubCase {
     VolumeSnapshotInventory root1
     VolumeSnapshotInventory root1Leaf
 
-
+    final int MaxIncrementalSnapshot = 2
 
     @Override
     void clean() {
@@ -56,7 +50,7 @@ class SnapshotMaxIncrementalCase extends SubCase {
     void test() {
         env.create {
             vm = env.inventoryByName("vm") as VmInstanceInventory
-            VolumeSnapshotGlobalConfig.MAX_INCREMENTAL_SNAPSHOT_NUM.updateValue(2)
+            VolumeSnapshotGlobalConfig.MAX_INCREMENTAL_SNAPSHOT_NUM.updateValue(MaxIncrementalSnapshot)
             testCreateSnapshotMaxIncremental()
             testDeleteLatestSnapshot()
             testDeleteRootSnapshot()
@@ -84,7 +78,7 @@ class SnapshotMaxIncrementalCase extends SubCase {
         assert root1Leaf.getParentUuid() == root1.getUuid()
         VolumeSnapshotVO root1LeafVO = dbFindByUuid(root1Leaf.getUuid(), VolumeSnapshotVO.class)
         assert !root1LeafVO.isFullSnapshot()
-        assert root1LeafVO.getDistance() == 2
+        assert root1LeafVO.getDistance() == SnapshotTestConstant.ROOT_SNAPSHOT_DISNTANCE + 1
         assert root1LeafVO.isLatest()
         assert Q.New(VolumeSnapshotTreeVO.class).count() == 2
     }
@@ -153,26 +147,27 @@ class SnapshotMaxIncrementalCase extends SubCase {
         }
 
         assert Q.New(VolumeSnapshotVO.class).count() == 100
-        assert Q.New(VolumeSnapshotTreeVO.class).count() == 50
+        int expectedTreeCount = ((100 + 1) + MaxIncrementalSnapshot) / (MaxIncrementalSnapshot + 1)
+        assert Q.New(VolumeSnapshotTreeVO.class).count() == expectedTreeCount
 
         final CountDownLatch latch = new CountDownLatch(100)
         for (String suuid: uuids){
+            def targetUuid = suuid
             new Thread(new Runnable() {
                 @Override
                 void run() {
                     try {
                         deleteVolumeSnapshot {
-                            uuid = suuid
+                            uuid = targetUuid
                         }
                     }finally {
                         latch.countDown()
                     }
-
                 }
-            }).run()
+            }).start()
         }
 
-        latch.await(1, TimeUnit.SECONDS)
+        latch.await(20, TimeUnit.SECONDS)
 
         assert Q.New(VolumeSnapshotVO.class).count() == 0
         assert Q.New(VolumeSnapshotTreeVO.class).count() == 0

@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class RefreshLoadBalancerAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class RefreshLoadBalancerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public RefreshLoadBalancerResult value;
+        public org.zstack.sdk.RefreshLoadBalancerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +51,8 @@ public class RefreshLoadBalancerAction extends AbstractAction {
             return ret;
         }
         
-        RefreshLoadBalancerResult value = res.getResult(RefreshLoadBalancerResult.class);
-        ret.value = value == null ? new RefreshLoadBalancerResult() : value; 
+        org.zstack.sdk.RefreshLoadBalancerResult value = res.getResult(org.zstack.sdk.RefreshLoadBalancerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.RefreshLoadBalancerResult() : value; 
 
         return ret;
     }
@@ -70,15 +71,15 @@ public class RefreshLoadBalancerAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/load-balancers/{uuid}/actions";

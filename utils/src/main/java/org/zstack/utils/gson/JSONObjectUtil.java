@@ -16,7 +16,7 @@ public class JSONObjectUtil {
     private static final Gson prettyGson;
     
     static {
-        gson = new GsonBuilder().create();
+        gson = new GsonBuilder().disableHtmlEscaping().create();
         prettyGson = new GsonBuilder().setPrettyPrinting().create();
     }
     

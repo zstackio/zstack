@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.VolumeSnapshotInventory;
+
 public class UpdateVolumeSnapshotResult {
     public VolumeSnapshotInventory inventory;
     public void setInventory(VolumeSnapshotInventory inventory) {

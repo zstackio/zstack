@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.PciDeviceOfferingType;
+
 public class PciDeviceOfferingInventory  {
 
     public java.lang.String uuid;
@@ -82,19 +84,19 @@ public class PciDeviceOfferingInventory  {
         return this.lastOpDate;
     }
 
-    public java.util.List<PciDeviceOfferingInstanceOfferingRefInventory> attachedInstanceOfferings;
-    public void setAttachedInstanceOfferings(java.util.List<PciDeviceOfferingInstanceOfferingRefInventory> attachedInstanceOfferings) {
+    public java.util.List attachedInstanceOfferings;
+    public void setAttachedInstanceOfferings(java.util.List attachedInstanceOfferings) {
         this.attachedInstanceOfferings = attachedInstanceOfferings;
     }
-    public java.util.List<PciDeviceOfferingInstanceOfferingRefInventory> getAttachedInstanceOfferings() {
+    public java.util.List getAttachedInstanceOfferings() {
         return this.attachedInstanceOfferings;
     }
 
-    public java.util.List<PciDevicePciDeviceOfferingRefInventory> matchedPciDevices;
-    public void setMatchedPciDevices(java.util.List<PciDevicePciDeviceOfferingRefInventory> matchedPciDevices) {
+    public java.util.List matchedPciDevices;
+    public void setMatchedPciDevices(java.util.List matchedPciDevices) {
         this.matchedPciDevices = matchedPciDevices;
     }
-    public java.util.List<PciDevicePciDeviceOfferingRefInventory> getMatchedPciDevices() {
+    public java.util.List getMatchedPciDevices() {
         return this.matchedPciDevices;
     }
 

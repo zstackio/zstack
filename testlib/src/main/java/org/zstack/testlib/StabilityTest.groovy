@@ -69,11 +69,18 @@ abstract class StabilityTest extends Test implements Case{
     private void runTestWithTimes(String targetCaseList, int times = 1){
         assert times >= 1
 
-        List<Case> caseList = buildTargetCaseList(targetCaseList)
+        targetCaseList.split(",").each { cname ->
+            cname = cname.trim()
 
-        for(Case subCase : caseList){
             int index = 0
             while (index < times){
+                // create a new case for every run, otherwise
+                // the stateful cases will fail
+                Case subCase = buildCase(cname)
+                if (subCase.class.isAnnotationPresent(SkipTestSuite.class)) {
+                    break
+                }
+
                 index ++
 
                 logger.info("stability test, a sub case [${subCase.class}] start running, current execution times is ${index}")
@@ -87,10 +94,18 @@ abstract class StabilityTest extends Test implements Case{
                 long spendTime = (new Date().getTime() - startTime) / 1000
                 logger.info("stability test, a sub case [${subCase.class}] test pass, current execution times is ${index}, spend time is ${spendTime} secs")
 
-
                 assert index > 0 && index <= times
             }
         }
+    }
+
+    protected static Case buildCase(String caseName) {
+        Case subCase = Class.forName(caseName).newInstance() as Case
+        subCase.metaClass.collectErrorLog = {
+            return
+        }
+
+        return subCase
     }
 
     private List<Case> buildTargetCaseList(String targetCaseList){
@@ -107,11 +122,7 @@ abstract class StabilityTest extends Test implements Case{
         try {
             String[] caseClassNameList = targetCaseList.split(",")
             for(String caseClassName : caseClassNameList){
-                Case subCase = Class.forName(caseClassName).newInstance() as Case
-                subCase.metaClass.collectErrorLog = {
-                    return
-                }
-                result.add(subCase)
+                result.add(buildCase(caseClassName))
             }
         }catch (Exception e){
             logger.error("build target subCase error occurred", e)

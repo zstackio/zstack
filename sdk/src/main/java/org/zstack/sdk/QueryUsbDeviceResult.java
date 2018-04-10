@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class QueryUsbDeviceResult {
-    public java.util.List<UsbDeviceInventory> inventories;
-    public void setInventories(java.util.List<UsbDeviceInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<UsbDeviceInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteAllEcsInstancesFromDataCenterAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteAllEcsInstancesFromDataCenterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteAllEcsInstancesFromDataCenterResult value;
+        public org.zstack.sdk.DeleteAllEcsInstancesFromDataCenterResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DeleteAllEcsInstancesFromDataCenterAction extends AbstractAction {
             return ret;
         }
         
-        DeleteAllEcsInstancesFromDataCenterResult value = res.getResult(DeleteAllEcsInstancesFromDataCenterResult.class);
-        ret.value = value == null ? new DeleteAllEcsInstancesFromDataCenterResult() : value; 
+        org.zstack.sdk.DeleteAllEcsInstancesFromDataCenterResult value = res.getResult(org.zstack.sdk.DeleteAllEcsInstancesFromDataCenterResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteAllEcsInstancesFromDataCenterResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DeleteAllEcsInstancesFromDataCenterAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/hybrid/aliyun/dc-ecs/{uuid}";

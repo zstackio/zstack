@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class ReconnectBackupStorageAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class ReconnectBackupStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ReconnectBackupStorageResult value;
+        public org.zstack.sdk.ReconnectBackupStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +51,8 @@ public class ReconnectBackupStorageAction extends AbstractAction {
             return ret;
         }
         
-        ReconnectBackupStorageResult value = res.getResult(ReconnectBackupStorageResult.class);
-        ret.value = value == null ? new ReconnectBackupStorageResult() : value; 
+        org.zstack.sdk.ReconnectBackupStorageResult value = res.getResult(org.zstack.sdk.ReconnectBackupStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ReconnectBackupStorageResult() : value; 
 
         return ret;
     }
@@ -70,15 +71,15 @@ public class ReconnectBackupStorageAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/backup-storage/{uuid}/actions";

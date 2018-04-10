@@ -39,4 +39,11 @@
         <type>java.lang.Boolean</type>
         <category>Test</category>
     </config>
+    <config>
+        <name>TestBorder</name>
+        <description>Test Description</description>
+        <defaultValue>10</defaultValue>
+        <type>java.lang.Integer</type>
+        <category>Test</category>
+    </config>
 </globalConfig>

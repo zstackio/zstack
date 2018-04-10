@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class PciDevicePciDeviceOfferingRefInventory  {
 
     public java.lang.String pciDeviceUuid;

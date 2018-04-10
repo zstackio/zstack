@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryUsbDeviceAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryUsbDeviceAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryUsbDeviceResult value;
+        public org.zstack.sdk.QueryUsbDeviceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryUsbDeviceAction extends QueryAction {
             return ret;
         }
         
-        QueryUsbDeviceResult value = res.getResult(QueryUsbDeviceResult.class);
-        ret.value = value == null ? new QueryUsbDeviceResult() : value; 
+        org.zstack.sdk.QueryUsbDeviceResult value = res.getResult(org.zstack.sdk.QueryUsbDeviceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryUsbDeviceResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QueryUsbDeviceAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/usb-device/usb-devices";

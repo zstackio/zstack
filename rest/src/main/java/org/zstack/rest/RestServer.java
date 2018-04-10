@@ -15,6 +15,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.web.util.UriUtils;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusEventListener;
@@ -115,7 +116,7 @@ public class RestServer implements Component, CloudBusEventListener {
             }
 
             try {
-                requestUrl = URLDecoder.decode(req.getRequestURI(), "UTF-8");
+                requestUrl = UriUtils.decode(req.getRequestURI(), "UTF-8");
             } catch (UnsupportedEncodingException e) {
                 throw new CloudRuntimeException(e);
             }
@@ -162,7 +163,11 @@ public class RestServer implements Component, CloudBusEventListener {
 
             for (SdkFile f : allFiles) {
                 //logger.debug(String.format("\n%s", f.getContent()));
-                String fpath = PathUtil.join(path, f.getFileName());
+                String fpath = PathUtil.join(path, f.getSubPath() == null ? "" : f.getSubPath(), f.getFileName());
+                File dir = new File(fpath).getParentFile();
+                if (!dir.exists()) {
+                    dir.mkdirs();
+                }
                 FileUtils.writeStringToFile(new File(fpath), f.getContent());
             }
         } catch (Exception e) {
@@ -514,9 +519,9 @@ public class RestServer implements Component, CloudBusEventListener {
     private String getDecodedUrl(HttpServletRequest req) {
         try {
             if (req.getContextPath() == null) {
-                return URLDecoder.decode(req.getRequestURI(), "UTF-8");
+                return UriUtils.decode(req.getRequestURI(), "UTF-8");
             } else {
-                return URLDecoder.decode(StringUtils.removeStart(req.getRequestURI(), req.getContextPath()), "UTF-8");
+                return UriUtils.decode(StringUtils.removeStart(req.getRequestURI(), req.getContextPath()), "UTF-8");
             }
         } catch (UnsupportedEncodingException e) {
             throw new CloudRuntimeException(e);
@@ -532,10 +537,10 @@ public class RestServer implements Component, CloudBusEventListener {
         if (requestLogger.isTraceEnabled()) {
             StringBuilder sb = new StringBuilder(String.format("[ID: %s, Method: %s] Request from %s (to %s), ",
                     req.getSession().getId(), req.getMethod(),
-                    req.getRemoteHost(), URLDecoder.decode(req.getRequestURI(), "UTF-8")));
+                    req.getRemoteHost(), UriUtils.decode(req.getRequestURI(), "UTF-8")));
             sb.append(String.format(" Headers: %s,", JSONObjectUtil.toJsonString(entity.getHeaders())));
             if (req.getQueryString() != null && !req.getQueryString().isEmpty()) {
-                sb.append(String.format(" Query: %s,", URLDecoder.decode(req.getQueryString(), "UTF-8")));
+                sb.append(String.format(" Query: %s,", UriUtils.decode(req.getQueryString(), "UTF-8")));
             }
             sb.append(String.format(" Body: %s", entity.getBody().isEmpty() ? null : entity.getBody()));
 
@@ -678,6 +683,55 @@ public class RestServer implements Component, CloudBusEventListener {
         handleApi(api, m, parameterName, entity, req, rsp);
     }
 
+    private void normalizeCollectionParameters(Map<String, String[]> queryParameters) {
+        class OrderValue {
+            int index;
+            String value;
+
+            public OrderValue(int index, String value) {
+                this.index = index;
+                this.value = value;
+            }
+        }
+        Map<String, List<OrderValue>> lstParameters = new HashMap<>();
+
+        Iterator<Map.Entry<String, String[]>> it = queryParameters.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<String, String[]> ie = it.next();
+            String k = ie.getKey();
+            String[] vals = ie.getValue();
+
+            if (!k.contains(".")) {
+                // not a list parameter
+                continue;
+            }
+
+            String[] pairs = k.split("\\.");
+            String fname = pairs[0];
+            String key = pairs[1];
+            try {
+                int index = Integer.parseInt(key);
+                List<OrderValue> values = lstParameters.computeIfAbsent(fname, x->new ArrayList<>());
+                values.add(new OrderValue(index, vals[0]));
+                it.remove();
+            } catch (NumberFormatException e) {
+                // not a number
+            }
+        }
+
+        lstParameters.forEach((k, v) -> {
+            String[] vals = new String[v.size()];
+
+            v.sort(Comparator.comparingInt(o -> o.index));
+
+            for (int i=0; i<v.size(); i++) {
+                vals[i] = v.get(i).value;
+            }
+
+            queryParameters.put(k, vals);
+        });
+    }
+
     private void handleApi(Api api, Map body, String parameterName, HttpEntity<String> entity, HttpServletRequest req, HttpServletResponse rsp) throws RestException, IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException, IOException {
         if (body == null) {
             // for some POST request, the body may be null, for example, attach primary storage to a cluster
@@ -709,7 +763,9 @@ public class RestServer implements Component, CloudBusEventListener {
             // GET uses query string to pass parameters
             Map<String, Object> m = new HashMap<>();
 
-            Map<String, String[]> queryParameters = req.getParameterMap();
+            Map<String, String[]> queryParameters = new HashMap<>(req.getParameterMap());
+            normalizeCollectionParameters(queryParameters);
+
             for (Map.Entry<String,  String[]> e : queryParameters.entrySet()) {
                 String k = e.getKey();
                 String[] vals = e.getValue();
@@ -737,21 +793,17 @@ public class RestServer implements Component, CloudBusEventListener {
         if (parameter == null) {
             msg = (APIMessage) api.apiClass.newInstance();
         } else {
-            // check boolean type parameters
             for (Field f : api.apiClass.getDeclaredFields()) {
-                if (f.getType().isAssignableFrom(boolean.class)) {
-                    Object booleanObject = ((Map) parameter).get(f.getName());
-                    if (booleanObject == null) {
-                        continue;
-                    }
-                    String booleanValue = booleanObject.toString();
-                    if (!(booleanValue.equalsIgnoreCase("true") ||
-                            booleanValue.equalsIgnoreCase("false"))) {
-                        throw new RestException(HttpStatus.BAD_REQUEST.value(),
-                                String.format("Invalid value for boolean field [%s]," +
-                                                " [%s] is not a valid boolean string[true, false].",
-                                        f.getName(), booleanValue));
-                    }
+                String fieldName = f.getName();
+                Object object = ((Map) parameter).get(fieldName);
+                if (object == null) {
+                    continue;
+                }
+                String objectString = object.toString();
+
+                String result = TypeVerifier.verify(f, objectString);
+                if (result != null) {
+                    throw new RestException(HttpStatus.BAD_REQUEST.value(), result);
                 }
             }
 
@@ -786,7 +838,8 @@ public class RestServer implements Component, CloudBusEventListener {
             }
         }
 
-        Map<String, String> vars = matcher.extractUriTemplateVariables(api.path, getDecodedUrl(req));
+        String url = getDecodedUrl(req);
+        Map<String, String> vars = matcher.extractUriTemplateVariables(api.path, url);
         for (Map.Entry<String, String> e : vars.entrySet()) {
             // set fields parsed from the URL
             String key = e.getKey();

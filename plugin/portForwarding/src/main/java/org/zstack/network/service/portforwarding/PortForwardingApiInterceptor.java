@@ -82,6 +82,8 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
         if (vmNicUuid == null) {
             throw new ApiMessageInterceptionException(operr("port forwarding rule rule[uuid:%s] has not been attached to any vm nic, can't detach", msg.getUuid()));
         }
+
+        msg.vmNicUuid = vmNicUuid;
     }
 
     private void validate(final APIAttachPortForwardingRuleMsg msg) {

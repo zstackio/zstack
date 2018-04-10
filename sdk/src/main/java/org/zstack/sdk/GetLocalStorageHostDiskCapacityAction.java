@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class GetLocalStorageHostDiskCapacityAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class GetLocalStorageHostDiskCapacityAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetLocalStorageHostDiskCapacityResult value;
+        public org.zstack.sdk.GetLocalStorageHostDiskCapacityResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -47,8 +48,8 @@ public class GetLocalStorageHostDiskCapacityAction extends AbstractAction {
             return ret;
         }
         
-        GetLocalStorageHostDiskCapacityResult value = res.getResult(GetLocalStorageHostDiskCapacityResult.class);
-        ret.value = value == null ? new GetLocalStorageHostDiskCapacityResult() : value; 
+        org.zstack.sdk.GetLocalStorageHostDiskCapacityResult value = res.getResult(org.zstack.sdk.GetLocalStorageHostDiskCapacityResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetLocalStorageHostDiskCapacityResult() : value; 
 
         return ret;
     }
@@ -67,15 +68,15 @@ public class GetLocalStorageHostDiskCapacityAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/primary-storage/local-storage/{primaryStorageUuid}/capacities";

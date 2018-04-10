@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteBaremetalChassisAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteBaremetalChassisAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteBaremetalChassisResult value;
+        public org.zstack.sdk.DeleteBaremetalChassisResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DeleteBaremetalChassisAction extends AbstractAction {
             return ret;
         }
         
-        DeleteBaremetalChassisResult value = res.getResult(DeleteBaremetalChassisResult.class);
-        ret.value = value == null ? new DeleteBaremetalChassisResult() : value; 
+        org.zstack.sdk.DeleteBaremetalChassisResult value = res.getResult(org.zstack.sdk.DeleteBaremetalChassisResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteBaremetalChassisResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DeleteBaremetalChassisAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/baremetal/chassis/{uuid}";

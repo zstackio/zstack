@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class AttachHybridEipToEcsAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class AttachHybridEipToEcsAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AttachHybridEipToEcsResult value;
+        public org.zstack.sdk.AttachHybridEipToEcsResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +57,8 @@ public class AttachHybridEipToEcsAction extends AbstractAction {
             return ret;
         }
         
-        AttachHybridEipToEcsResult value = res.getResult(AttachHybridEipToEcsResult.class);
-        ret.value = value == null ? new AttachHybridEipToEcsResult() : value; 
+        org.zstack.sdk.AttachHybridEipToEcsResult value = res.getResult(org.zstack.sdk.AttachHybridEipToEcsResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AttachHybridEipToEcsResult() : value; 
 
         return ret;
     }
@@ -76,15 +77,15 @@ public class AttachHybridEipToEcsAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/hybrid/eip/{eipUuid}/attach";

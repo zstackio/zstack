@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class QueryAlertResult {
-    public java.util.List<AlertInventory> inventories;
-    public void setInventories(java.util.List<AlertInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<AlertInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

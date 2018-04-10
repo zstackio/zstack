@@ -499,6 +499,10 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                     msg.setConnectionStateEvent(HostStatusEvent.disconnected.toString());
                     bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, d.getHostUuid());
                     bus.send(msg);
+
+                    new HostBase.HostDisconnectedCanonicalEvent(d.getHostUuid(),
+                            operr("primary storage[uuid:%s] becomes disconnected, the host has no connected primary storage attached",
+                                    d.getPrimaryStorageUuid())).fire();
                 }
             }
         });

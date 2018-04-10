@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteVmInstanceHaLevelAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteVmInstanceHaLevelAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteVmInstanceHaLevelResult value;
+        public org.zstack.sdk.DeleteVmInstanceHaLevelResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +51,8 @@ public class DeleteVmInstanceHaLevelAction extends AbstractAction {
             return ret;
         }
         
-        DeleteVmInstanceHaLevelResult value = res.getResult(DeleteVmInstanceHaLevelResult.class);
-        ret.value = value == null ? new DeleteVmInstanceHaLevelResult() : value; 
+        org.zstack.sdk.DeleteVmInstanceHaLevelResult value = res.getResult(org.zstack.sdk.DeleteVmInstanceHaLevelResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteVmInstanceHaLevelResult() : value; 
 
         return ret;
     }
@@ -70,15 +71,15 @@ public class DeleteVmInstanceHaLevelAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/vm-instances/{uuid}/ha-levels";

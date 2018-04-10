@@ -6,10 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
-import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.cloudbus.CloudBusListCallBack;
-import org.zstack.core.cloudbus.EventFacade;
+import org.zstack.core.cloudbus.*;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -87,6 +84,9 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     @Autowired
     protected PrimaryStoragePingTracker tracker;
 
+    public PrimaryStorageBase() {
+    }
+
     public static class PhysicalCapacityUsage {
         public long totalPhysicalSize;
         public long availablePhysicalSize;
@@ -152,6 +152,13 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     protected String getSyncId() {
         return String.format("primaryStorage-%s", self.getUuid());
+    }
+
+    protected void fireDisconnectedCanonicalEvent(ErrorCode reason) {
+        PrimaryStorageCanonicalEvent.DisconnectedData data = new PrimaryStorageCanonicalEvent.DisconnectedData();
+        data.setPrimaryStorageUuid(self.getUuid());
+        data.setReason(reason);
+        evtf.fire(PrimaryStorageCanonicalEvent.PRIMARY_STORAGE_DISCONNECTED, data);
     }
 
     @Override
@@ -238,13 +245,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         if (msg instanceof InstantiateVolumeOnPrimaryStorageMsg) {
             new PrimaryStorageValidater().disable().maintenance()
                     .validate();
-        } else if (msg instanceof DeleteVolumeOnPrimaryStorageMsg) {
-            new PrimaryStorageValidater().maintenance()
-                    .validate();
         } else if (msg instanceof CreateTemplateFromVolumeOnPrimaryStorageMsg) {
-            new PrimaryStorageValidater().disable().maintenance()
-                    .validate();
-        } else if (msg instanceof PrimaryStorageDeletionMsg) {
             new PrimaryStorageValidater().disable().maintenance()
                     .validate();
         } else if (msg instanceof DownloadDataVolumeToPrimaryStorageMsg) {
@@ -260,9 +261,6 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             new PrimaryStorageValidater().disable().maintenance()
                     .validate();
         } else if (msg instanceof MergeVolumeSnapshotOnPrimaryStorageMsg) {
-            new PrimaryStorageValidater().maintenance()
-                    .validate();
-        } else if (msg instanceof DeleteSnapshotOnPrimaryStorageMsg) {
             new PrimaryStorageValidater().maintenance()
                     .validate();
         } else if (msg instanceof RevertVolumeFromSnapshotOnPrimaryStorageMsg) {
@@ -421,7 +419,10 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                changeStatus(PrimaryStorageStatus.Disconnected);
+                if (changeStatus(PrimaryStorageStatus.Disconnected)) {
+                    fireDisconnectedCanonicalEvent(errorCode);
+                }
+
                 reply.setConnected(false);
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
@@ -469,8 +470,12 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                         tracker.track(self.getUuid());
 
                         self = dbf.reload(self);
-                        changeStatus(PrimaryStorageStatus.Disconnected);
+                        if (changeStatus(PrimaryStorageStatus.Disconnected)) {
+                            fireDisconnectedCanonicalEvent(errorCode);
+                        }
+
                         logger.debug(String.format("failed to connect primary storage[uuid:%s], %s", self.getUuid(), errorCode));
+
                         completion.fail(errorCode);
                         chain.next();
                     }
@@ -786,9 +791,9 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         });
     }
 
-    protected void changeStatus(PrimaryStorageStatus status) {
+    protected boolean changeStatus(PrimaryStorageStatus status) {
         if (status == self.getStatus()) {
-            return;
+            return false;
         }
 
         PrimaryStorageStatus oldStatus = self.getStatus();
@@ -804,6 +809,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
         logger.debug(String.format("the primary storage[uuid:%s, name:%s] changed status from %s to %s",
                 self.getUuid(), self.getName(), oldStatus, status));
+
+        return true;
     }
 
     protected void handle(APIReconnectPrimaryStorageMsg msg) {

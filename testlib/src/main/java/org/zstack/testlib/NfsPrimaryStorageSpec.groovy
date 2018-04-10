@@ -6,6 +6,7 @@ import org.zstack.header.message.MessageReply
 import org.zstack.header.storage.primary.PingPrimaryStorageMsg
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.sdk.PrimaryStorageInventory
+import org.zstack.storage.primary.PrimaryStorageCapacityRecalculator
 import org.zstack.storage.primary.local.LocalStorageKvmBackend
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackend
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands

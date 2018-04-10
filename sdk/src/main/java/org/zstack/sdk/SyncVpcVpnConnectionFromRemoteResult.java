@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class SyncVpcVpnConnectionFromRemoteResult {
-    public java.util.List<VpcVpnConnectionInventory> inventories;
-    public void setInventories(java.util.List<VpcVpnConnectionInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<VpcVpnConnectionInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

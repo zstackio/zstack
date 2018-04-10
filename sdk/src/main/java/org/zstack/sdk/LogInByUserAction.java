@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class LogInByUserAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class LogInByUserAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public LogInResult value;
+        public org.zstack.sdk.LogInResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +51,8 @@ public class LogInByUserAction extends AbstractAction {
             return ret;
         }
         
-        LogInResult value = res.getResult(LogInResult.class);
-        ret.value = value == null ? new LogInResult() : value; 
+        org.zstack.sdk.LogInResult value = res.getResult(org.zstack.sdk.LogInResult.class);
+        ret.value = value == null ? new org.zstack.sdk.LogInResult() : value; 
 
         return ret;
     }
@@ -70,15 +71,15 @@ public class LogInByUserAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/accounts/users/login";

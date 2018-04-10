@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.NasProtocolType;
+
 public class NasFileSystemInventory  {
 
     public java.lang.String uuid;

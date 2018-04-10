@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class GetVmUsbRedirectAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class GetVmUsbRedirectAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetVmUsbRedirectResult value;
+        public org.zstack.sdk.GetVmUsbRedirectResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -44,8 +45,8 @@ public class GetVmUsbRedirectAction extends AbstractAction {
             return ret;
         }
         
-        GetVmUsbRedirectResult value = res.getResult(GetVmUsbRedirectResult.class);
-        ret.value = value == null ? new GetVmUsbRedirectResult() : value; 
+        org.zstack.sdk.GetVmUsbRedirectResult value = res.getResult(org.zstack.sdk.GetVmUsbRedirectResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetVmUsbRedirectResult() : value; 
 
         return ret;
     }
@@ -64,15 +65,15 @@ public class GetVmUsbRedirectAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/vm-instances/{uuid}/usbredirect";

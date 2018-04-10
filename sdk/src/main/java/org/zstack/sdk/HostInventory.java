@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class HostInventory  {
 
     public java.lang.String zoneUuid;

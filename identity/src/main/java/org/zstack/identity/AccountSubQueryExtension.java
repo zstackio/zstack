@@ -34,17 +34,11 @@ public class AccountSubQueryExtension extends AbstractMysqlQuerySubQueryExtensio
 
         String priKey = QueryUtils.getPrimaryKeyNameFromEntityClass(entityClass);
 
-        return String.format("(%s.%s in (select accountresourcerefvo.resourceUuid from AccountResourceRefVO accountresourcerefvo where accountresourcerefvo.ownerAccountUuid = '%s')" +
-                " or %s.%s in (select sharedresourcevo.resourceUuid from SharedResourceVO sharedresourcevo where" +
-                " (sharedresourcevo.receiverAccountUuid = '%s' or sharedresourcevo.toPublic = 1)))",
-        inventoryClass.getSimpleName().toLowerCase(), priKey, msg.getSession().getAccountUuid(),
-        inventoryClass.getSimpleName().toLowerCase(), priKey, msg.getSession().getAccountUuid());
-
-        /*
-        return String.format("%s.%s in (select resourceUuid from (select accountresourcerefvo.resourceUuid from AccountResourceRefVO accountresourcerefvo where accountresourcerefvo.ownerAccountUuid = '%s'" +
-                        " and accountresourcerefvo.resourceType = '%s' union select sharedresourcevo.resourceUuid from SharedResourceVO sharedresourcevo where" +
-                        " (sharedresourcevo.receiverAccountUuid = '%s' or sharedresourcevo.toPublic = 1) and sharedresourcevo.resourceType = '%s') as accountsubtable)",
-                inventoryClass.getSimpleName().toLowerCase(), priKey, msg.getSession().getAccountUuid(), entityClass.getSimpleName(), msg.getSession().getAccountUuid(), entityClass.getSimpleName());
-                */
+        String resourceType = acntMgr.getBaseResourceType(entityClass).getSimpleName();
+        return String.format("(%s.%s in (select accountresourcerefvo.resourceUuid from AccountResourceRefVO accountresourcerefvo where accountresourcerefvo.ownerAccountUuid = '%s'" +
+                " and accountresourcerefvo.resourceType = '%s') or %s.%s in (select sharedresourcevo.resourceUuid from SharedResourceVO sharedresourcevo where" +
+                " (sharedresourcevo.receiverAccountUuid = '%s' or sharedresourcevo.toPublic = 1) and sharedresourcevo.resourceType = '%s'))",
+        inventoryClass.getSimpleName().toLowerCase(), priKey, msg.getSession().getAccountUuid(), resourceType,
+        inventoryClass.getSimpleName().toLowerCase(), priKey, msg.getSession().getAccountUuid(), resourceType);
     }
 }

@@ -6,6 +6,7 @@ import org.zstack.core.db.SQL
 import org.zstack.header.identity.SharedResourceVO
 import org.zstack.header.image.ImageConstant
 import org.zstack.header.image.ImagePlatform
+import org.zstack.header.storage.primary.PrimaryStorageCapacityVO
 import org.zstack.header.volume.VolumeStatus
 import org.zstack.sdk.AccountInventory
 import org.zstack.sdk.BackupStorageInventory
@@ -61,6 +62,7 @@ class GetAttachCadidatesCase extends SubCase {
             testGetReadyVolumeAttachableVmByNormalAccount()
             testGetCadidatesResultEquals()
             testGetCandidateVmType()
+            testGetCadidatesForNotInstantiatedVolumeOnLocalPs()
         }
     }
 
@@ -182,6 +184,14 @@ class GetAttachCadidatesCase extends SubCase {
         for (VmInstanceInventory inventory : result1.value.inventories){
             assert inventory.uuid!= vm1.uuid
         }
+
+        destroyVmInstance {
+            uuid = vm1.uuid
+        }
+
+        expungeVmInstance {
+            uuid = vm1.uuid
+        }
     }
 
     void testGetCandidateVmType(){
@@ -197,6 +207,27 @@ class GetAttachCadidatesCase extends SubCase {
         } as List<VmInstanceInventory>
 
         rets.forEach({it -> assert it.type != ApplianceVmConstant.APPLIANCE_VM_TYPE})
+    }
+
+    void testGetCadidatesForNotInstantiatedVolumeOnLocalPs() {
+        PrimaryStorageCapacityVO ps = dbf.findByUuid(ps.uuid,PrimaryStorageCapacityVO.class)
+        long psAvailableCapacity = ps.availableCapacity
+
+        DiskOfferingInventory diskOfferingInventory = createDiskOffering {
+            name = "test"
+            diskSize = psAvailableCapacity + 1
+        } as DiskOfferingInventory
+
+        VolumeInventory notInstantiateVolume = createDataVolume {
+            name = "test-dataVolume"
+            diskOfferingUuid = diskOfferingInventory.uuid
+        } as VolumeInventory
+
+        GetDataVolumeAttachableVmAction action = new GetDataVolumeAttachableVmAction()
+        action.volumeUuid = notInstantiateVolume.uuid
+        action.sessionId = adminSession()
+        GetDataVolumeAttachableVmAction.Result result = action.call()
+        assert 0 == result.value.inventories.size()
     }
 
     @Override

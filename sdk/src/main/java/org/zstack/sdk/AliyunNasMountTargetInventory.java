@@ -1,6 +1,8 @@
 package org.zstack.sdk;
 
-public class AliyunNasMountTargetInventory extends NasMountTargetInventory {
+
+
+public class AliyunNasMountTargetInventory extends org.zstack.sdk.NasMountTargetInventory {
 
     public java.lang.String accessGroupUuid;
     public void setAccessGroupUuid(java.lang.String accessGroupUuid) {

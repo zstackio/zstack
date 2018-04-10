@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class AliyunNasAccessGroupProperty  {
 
     public int ruleCount;

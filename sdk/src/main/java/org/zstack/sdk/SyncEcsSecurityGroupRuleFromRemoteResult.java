@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class SyncEcsSecurityGroupRuleFromRemoteResult {
-    public java.util.List<EcsSecurityGroupRuleInventory> inventories;
-    public void setInventories(java.util.List<EcsSecurityGroupRuleInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<EcsSecurityGroupRuleInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

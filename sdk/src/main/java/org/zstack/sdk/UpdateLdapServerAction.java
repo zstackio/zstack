@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class UpdateLdapServerAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class UpdateLdapServerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateLdapServerResult value;
+        public org.zstack.sdk.UpdateLdapServerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -71,8 +72,8 @@ public class UpdateLdapServerAction extends AbstractAction {
             return ret;
         }
         
-        UpdateLdapServerResult value = res.getResult(UpdateLdapServerResult.class);
-        ret.value = value == null ? new UpdateLdapServerResult() : value; 
+        org.zstack.sdk.UpdateLdapServerResult value = res.getResult(org.zstack.sdk.UpdateLdapServerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateLdapServerResult() : value; 
 
         return ret;
     }
@@ -91,15 +92,15 @@ public class UpdateLdapServerAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/ldap/servers/{ldapServerUuid}";

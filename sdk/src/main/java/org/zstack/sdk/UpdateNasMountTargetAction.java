@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class UpdateNasMountTargetAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class UpdateNasMountTargetAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateNasMountTargetResult value;
+        public org.zstack.sdk.UpdateNasMountTargetResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +57,8 @@ public class UpdateNasMountTargetAction extends AbstractAction {
             return ret;
         }
         
-        UpdateNasMountTargetResult value = res.getResult(UpdateNasMountTargetResult.class);
-        ret.value = value == null ? new UpdateNasMountTargetResult() : value; 
+        org.zstack.sdk.UpdateNasMountTargetResult value = res.getResult(org.zstack.sdk.UpdateNasMountTargetResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateNasMountTargetResult() : value; 
 
         return ret;
     }
@@ -76,15 +77,15 @@ public class UpdateNasMountTargetAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/primary-storage/nas/mount/{uuid}/actions";

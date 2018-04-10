@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.VpcVpnGatewayInventory;
+
 public class UpdateVpcVpnGatewayResult {
     public VpcVpnGatewayInventory inventory;
     public void setInventory(VpcVpnGatewayInventory inventory) {

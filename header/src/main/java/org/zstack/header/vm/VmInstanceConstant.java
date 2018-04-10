@@ -9,6 +9,7 @@ public interface VmInstanceConstant {
     @PythonClass
     String USER_VM_TYPE = "UserVm";
     Integer VM_MONITOR_NUMBER = 1;
+    int MAXIMUM_MOUNT_ISO_NUMBER = 3;
 
     enum Params {
         VmInstanceSpec,
@@ -17,6 +18,8 @@ public interface VmInstanceConstant {
         AttachNicInventory,
         AbnormalLifeCycleStruct,
         DeletionPolicy,
+        AttachingIsoInventory,
+        DetachingIsoUuid
     }
 
     enum VmOperation {

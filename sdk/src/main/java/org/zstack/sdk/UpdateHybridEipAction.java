@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class UpdateHybridEipAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class UpdateHybridEipAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateHybridEipResult value;
+        public org.zstack.sdk.UpdateHybridEipResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -59,8 +60,8 @@ public class UpdateHybridEipAction extends AbstractAction {
             return ret;
         }
         
-        UpdateHybridEipResult value = res.getResult(UpdateHybridEipResult.class);
-        ret.value = value == null ? new UpdateHybridEipResult() : value; 
+        org.zstack.sdk.UpdateHybridEipResult value = res.getResult(org.zstack.sdk.UpdateHybridEipResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateHybridEipResult() : value; 
 
         return ret;
     }
@@ -79,15 +80,15 @@ public class UpdateHybridEipAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/hybrid/eip/{uuid}/actions";

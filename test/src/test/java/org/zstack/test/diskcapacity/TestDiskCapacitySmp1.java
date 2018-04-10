@@ -109,7 +109,7 @@ public class TestDiskCapacitySmp1 {
 
             bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
                 @Override
-                public void intercept(Message msg) {
+                public void beforeDeliveryMessage(Message msg) {
                     InstantiateVolumeOnPrimaryStorageMsg imsg = (InstantiateVolumeOnPrimaryStorageMsg) msg;
                     VolumeInventory vol = imsg.getVolume();
                     if (VolumeType.Root.toString().equals(vol.getType())) {

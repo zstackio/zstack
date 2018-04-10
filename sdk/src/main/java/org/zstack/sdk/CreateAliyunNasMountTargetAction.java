@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class CreateAliyunNasMountTargetAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class CreateAliyunNasMountTargetAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateNasMountTargetResult value;
+        public org.zstack.sdk.CreateNasMountTargetResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -62,8 +63,8 @@ public class CreateAliyunNasMountTargetAction extends AbstractAction {
             return ret;
         }
         
-        CreateNasMountTargetResult value = res.getResult(CreateNasMountTargetResult.class);
-        ret.value = value == null ? new CreateNasMountTargetResult() : value; 
+        org.zstack.sdk.CreateNasMountTargetResult value = res.getResult(org.zstack.sdk.CreateNasMountTargetResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateNasMountTargetResult() : value; 
 
         return ret;
     }
@@ -82,15 +83,15 @@ public class CreateAliyunNasMountTargetAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/nas/aliyun/mount";

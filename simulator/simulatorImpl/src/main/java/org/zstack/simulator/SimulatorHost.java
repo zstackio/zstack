@@ -67,6 +67,11 @@ class SimulatorHost extends HostBase {
     }
 
     @Override
+    protected void updateOsHook(Completion completion) {
+        logger.debug("update operating system of host " + self.getUuid());
+    }
+
+    @Override
     public void maintenanceHook(Completion completion) {
         logger.debug(String.format("Host: %s entered maintenance mode", self.getName()));
         completion.success();

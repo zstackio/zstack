@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class UpdateNasFileSystemAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class UpdateNasFileSystemAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateNasFileSystemResult value;
+        public org.zstack.sdk.UpdateNasFileSystemResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +57,8 @@ public class UpdateNasFileSystemAction extends AbstractAction {
             return ret;
         }
         
-        UpdateNasFileSystemResult value = res.getResult(UpdateNasFileSystemResult.class);
-        ret.value = value == null ? new UpdateNasFileSystemResult() : value; 
+        org.zstack.sdk.UpdateNasFileSystemResult value = res.getResult(org.zstack.sdk.UpdateNasFileSystemResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateNasFileSystemResult() : value; 
 
         return ret;
     }
@@ -76,15 +77,15 @@ public class UpdateNasFileSystemAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/primary-storage/nas/{uuid}/actions";

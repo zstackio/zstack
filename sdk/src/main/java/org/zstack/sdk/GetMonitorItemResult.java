@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class GetMonitorItemResult {
-    public java.util.List<ItemInventory> inventories;
-    public void setInventories(java.util.List<ItemInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<ItemInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

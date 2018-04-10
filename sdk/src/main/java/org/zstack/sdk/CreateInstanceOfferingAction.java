@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class CreateInstanceOfferingAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class CreateInstanceOfferingAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateInstanceOfferingResult value;
+        public org.zstack.sdk.CreateInstanceOfferingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -71,8 +72,8 @@ public class CreateInstanceOfferingAction extends AbstractAction {
             return ret;
         }
         
-        CreateInstanceOfferingResult value = res.getResult(CreateInstanceOfferingResult.class);
-        ret.value = value == null ? new CreateInstanceOfferingResult() : value; 
+        org.zstack.sdk.CreateInstanceOfferingResult value = res.getResult(org.zstack.sdk.CreateInstanceOfferingResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateInstanceOfferingResult() : value; 
 
         return ret;
     }
@@ -91,15 +92,15 @@ public class CreateInstanceOfferingAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/instance-offerings";

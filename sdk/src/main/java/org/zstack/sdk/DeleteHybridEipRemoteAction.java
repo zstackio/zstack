@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteHybridEipRemoteAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteHybridEipRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteHybridEipRemoteResult value;
+        public org.zstack.sdk.DeleteHybridEipRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +57,8 @@ public class DeleteHybridEipRemoteAction extends AbstractAction {
             return ret;
         }
         
-        DeleteHybridEipRemoteResult value = res.getResult(DeleteHybridEipRemoteResult.class);
-        ret.value = value == null ? new DeleteHybridEipRemoteResult() : value; 
+        org.zstack.sdk.DeleteHybridEipRemoteResult value = res.getResult(org.zstack.sdk.DeleteHybridEipRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteHybridEipRemoteResult() : value; 
 
         return ret;
     }
@@ -76,15 +77,15 @@ public class DeleteHybridEipRemoteAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/hybrid/eip/{uuid}/remote";

@@ -270,7 +270,10 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                         continue;
                     }
 
-                    logger.debug(String.format("Add a new global config to database: %s", config.toString()));
+                    if (logger.isTraceEnabled()) {
+                        logger.trace(String.format("Add a new global config to database: %s", config.toString()));
+                    }
+
                     toSave.add(config.toVO());
                 }
 
@@ -489,7 +492,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                                 try {
                                     long num = Long.valueOf(value);
                                     if (num > at.numberLessThan()) {
-                                        throw new GlobalConfigException(String.format("%s must be less than %s, but got %s",
+                                        throw new GlobalConfigException(String.format("%s should not greater than %s, but got %s",
                                                 config.getCanonicalName(), at.numberLessThan(), num));
                                     }
                                 } catch (NumberFormatException e) {
@@ -506,7 +509,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                                 try {
                                     long num = Long.valueOf(value);
                                     if (num < at.numberGreaterThan()) {
-                                        throw new GlobalConfigException(String.format("%s must be greater than %s, but got %s",
+                                        throw new GlobalConfigException(String.format("%s should not less than %s, but got %s",
                                                 config.getCanonicalName(), at.numberGreaterThan(), num));
                                     }
                                 } catch (NumberFormatException e) {
@@ -554,8 +557,10 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
 
                 config.setConfigDef(field.getAnnotation(GlobalConfigDef.class));
                 config.setLinked(true);
-                logger.debug(String.format("linked GlobalConfig[category:%s, name:%s, value:%s] to %s.%s",
-                        config.getCategory(), config.getName(), config.getDefaultValue(), field.getDeclaringClass().getName(), field.getName()));
+                if (logger.isTraceEnabled()) {
+                    logger.trace(String.format("linked GlobalConfig[category:%s, name:%s, value:%s] to %s.%s",
+                            config.getCategory(), config.getName(), config.getDefaultValue(), field.getDeclaringClass().getName(), field.getName()));
+                }
             }
         }
 

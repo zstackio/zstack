@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class CreateAliyunNasAccessGroupAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class CreateAliyunNasAccessGroupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateAliyunNasAccessGroupResult value;
+        public org.zstack.sdk.CreateAliyunNasAccessGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -59,8 +60,8 @@ public class CreateAliyunNasAccessGroupAction extends AbstractAction {
             return ret;
         }
         
-        CreateAliyunNasAccessGroupResult value = res.getResult(CreateAliyunNasAccessGroupResult.class);
-        ret.value = value == null ? new CreateAliyunNasAccessGroupResult() : value; 
+        org.zstack.sdk.CreateAliyunNasAccessGroupResult value = res.getResult(org.zstack.sdk.CreateAliyunNasAccessGroupResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateAliyunNasAccessGroupResult() : value; 
 
         return ret;
     }
@@ -79,15 +80,15 @@ public class CreateAliyunNasAccessGroupAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/nas/aliyun/access";

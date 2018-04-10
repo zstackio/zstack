@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class QueryBaremetalHostCfgResult {
-    public java.util.List<BaremetalHostCfgInventory> inventories;
-    public void setInventories(java.util.List<BaremetalHostCfgInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<BaremetalHostCfgInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

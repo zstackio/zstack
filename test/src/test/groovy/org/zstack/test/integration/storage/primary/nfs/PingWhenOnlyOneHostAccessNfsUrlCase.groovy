@@ -233,7 +233,7 @@ class PingWhenOnlyOneHostAccessNfsUrlCase extends SubCase{
 
         bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
             @Override
-            void intercept(Message msg) {
+            void beforeDeliveryMessage(Message msg) {
                 logger.debug("intercept msg id:" + msg.id)
                 if (msg.id == currentPingMsgId) {
                     return

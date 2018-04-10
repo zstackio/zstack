@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class GetVmMonitorNumberResult {
     public java.lang.Integer monitorNumber;
     public void setMonitorNumber(java.lang.Integer monitorNumber) {

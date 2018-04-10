@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class GetL3NetworkRouterInterfaceIpAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class GetL3NetworkRouterInterfaceIpAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetL3NetworkRouterInterfaceIpResult value;
+        public org.zstack.sdk.GetL3NetworkRouterInterfaceIpResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -44,8 +45,8 @@ public class GetL3NetworkRouterInterfaceIpAction extends AbstractAction {
             return ret;
         }
         
-        GetL3NetworkRouterInterfaceIpResult value = res.getResult(GetL3NetworkRouterInterfaceIpResult.class);
-        ret.value = value == null ? new GetL3NetworkRouterInterfaceIpResult() : value; 
+        org.zstack.sdk.GetL3NetworkRouterInterfaceIpResult value = res.getResult(org.zstack.sdk.GetL3NetworkRouterInterfaceIpResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetL3NetworkRouterInterfaceIpResult() : value; 
 
         return ret;
     }
@@ -64,15 +65,15 @@ public class GetL3NetworkRouterInterfaceIpAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/l3-networks/{l3NetworkUuid}/router-interface-ip";

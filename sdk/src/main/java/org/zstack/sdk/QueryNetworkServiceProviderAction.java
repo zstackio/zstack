@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryNetworkServiceProviderAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryNetworkServiceProviderAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryNetworkServiceProviderResult value;
+        public org.zstack.sdk.QueryNetworkServiceProviderResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryNetworkServiceProviderAction extends QueryAction {
             return ret;
         }
         
-        QueryNetworkServiceProviderResult value = res.getResult(QueryNetworkServiceProviderResult.class);
-        ret.value = value == null ? new QueryNetworkServiceProviderResult() : value; 
+        org.zstack.sdk.QueryNetworkServiceProviderResult value = res.getResult(org.zstack.sdk.QueryNetworkServiceProviderResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryNetworkServiceProviderResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QueryNetworkServiceProviderAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/network-services/providers";

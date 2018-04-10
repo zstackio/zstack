@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class ConsoleInventory  {
 
     public java.lang.String scheme;

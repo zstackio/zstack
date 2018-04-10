@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class VipPortRangeInventory  {
 
     public java.lang.String uuid;
@@ -18,11 +20,11 @@ public class VipPortRangeInventory  {
         return this.protocol;
     }
 
-    public java.util.List<String> usedPorts;
-    public void setUsedPorts(java.util.List<String> usedPorts) {
+    public java.util.List usedPorts;
+    public void setUsedPorts(java.util.List usedPorts) {
         this.usedPorts = usedPorts;
     }
-    public java.util.List<String> getUsedPorts() {
+    public java.util.List getUsedPorts() {
         return this.usedPorts;
     }
 

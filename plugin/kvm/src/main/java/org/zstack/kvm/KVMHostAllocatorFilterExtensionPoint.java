@@ -28,15 +28,17 @@ public class KVMHostAllocatorFilterExtensionPoint implements HostAllocatorFilter
         String srcHostUuid = spec.getVmInstance().getHostUuid();
         String srcQemuVer = KVMSystemTags.QEMU_IMG_VERSION.getTokenByResourceUuid(srcHostUuid, KVMSystemTags.QEMU_IMG_VERSION_TOKEN);
         String srcLibvirtVer = KVMSystemTags.LIBVIRT_VERSION.getTokenByResourceUuid(srcHostUuid, KVMSystemTags.LIBVIRT_VERSION_TOKEN);
+        String srcCpuModelName = KVMSystemTags.CPU_MODEL_NAME.getTokenByResourceUuid(srcHostUuid, KVMSystemTags.CPU_MODEL_NAME_TOKEN);
 
         // nothing to check
-        if (srcQemuVer == null && srcLibvirtVer == null) {
+        if (srcQemuVer == null && srcLibvirtVer == null && srcCpuModelName == null) {
             return candidates;
         }
 
         for (HostVO host : candidates) {
             String dstQemuVer = KVMSystemTags.QEMU_IMG_VERSION.getTokenByResourceUuid(host.getUuid(), KVMSystemTags.QEMU_IMG_VERSION_TOKEN);
             String dstLibvirtVer = KVMSystemTags.LIBVIRT_VERSION.getTokenByResourceUuid(host.getUuid(), KVMSystemTags.LIBVIRT_VERSION_TOKEN);
+            String dstCpuModelName = KVMSystemTags.CPU_MODEL_NAME.getTokenByResourceUuid(host.getUuid(), KVMSystemTags.CPU_MODEL_NAME_TOKEN);
             if ((srcQemuVer == null || srcQemuVer.equals(dstQemuVer))
                     && (srcLibvirtVer == null || srcLibvirtVer.equals(dstLibvirtVer))) {
                 result.add(host);
@@ -44,7 +46,14 @@ public class KVMHostAllocatorFilterExtensionPoint implements HostAllocatorFilter
                 logger.debug(String.format("cannot migrate vm[uuid:%s] to host[uuid:%s] because qemu/libvirt version not match",
                         spec.getVmInstance().getUuid(), host.getUuid()));
             }
+
+            if (KVMGlobalConfig.CHECK_HOST_CPU_MODEL_NAME.value(Boolean.class) && srcCpuModelName != null && !srcCpuModelName.equals(dstCpuModelName)) {
+                result.remove(host);
+                logger.debug(String.format("cannot migrate vm[uuid:%s] to host[uuid:%s] because cpu model name not match",
+                        spec.getVmInstance().getUuid(), host.getUuid()));
+            }
         }
+
         return result;
     }
 }

@@ -862,6 +862,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
         cmsg.setResourceUuid(msg.getResourceUuid());
         cmsg.setDefaultL3NetworkUuid(msg.getDefaultL3NetworkUuid());
         cmsg.setStrategy(msg.getStrategy());
+        cmsg.setServiceId(msg.getServiceId());
+        cmsg.setHeaders(msg.getHeaders());
         return cmsg;
     }
 
@@ -944,7 +946,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
             bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
                 @Override
-                public void intercept(Message msg) {
+                public void beforeDeliveryMessage(Message msg) {
                     if (msg instanceof NeedQuotaCheckMessage) {
                         if (((NeedQuotaCheckMessage) msg).getAccountUuid() == null ||
                                 ((NeedQuotaCheckMessage) msg).getAccountUuid().equals("")) {
