@@ -548,6 +548,7 @@ public class KVMAgentCommands {
         public static final String ISCSI = "iscsi";
         public static final String CEPH = "ceph";
         public static final String FUSIONSTOR = "fusionstor";
+        public static final String SHAREDBLOCK = "sharedblock";
 
         private String installPath;
         private int deviceId;
