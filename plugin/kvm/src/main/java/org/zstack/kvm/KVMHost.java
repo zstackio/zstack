@@ -8,6 +8,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.compute.host.HostBase;
 import org.zstack.compute.host.HostSystemTags;
+import org.zstack.compute.host.MigrateNetworkExtensionPoint;
 import org.zstack.compute.vm.IsoOperator;
 import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.compute.vm.VmSystemTags;
@@ -60,6 +61,7 @@ import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.ssh.Ssh;
 import org.zstack.utils.ssh.SshResult;
@@ -257,9 +259,13 @@ public class KVMHost extends HostBase implements Host {
             this.responseClass = rspClz;
         }
 
-        void call(ReturnValueCompletion<T> completion)  {
+        void call(ReturnValueCompletion<T> completion) {
+            call(null, completion);
+        }
+
+        void call(String resourceUuid, ReturnValueCompletion<T> completion)  {
             Map<String, String> header = new HashMap<>();
-            header.put(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID, self.getUuid());
+            header.put(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID, resourceUuid == null ? self.getUuid() : resourceUuid);
             if (commandStr != null) {
                 restf.asyncJsonPost(path, commandStr, header, new JsonAsyncRESTCallback<T>(completion) {
                     @Override
@@ -1049,11 +1055,11 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void migrateVm(final Iterator<MigrateStruct> it, final Completion completion) {
-        final String hostIp;
+        final String dstHostMigrateIp, dstHostMnIp, dstHostUuid;
         final String vmUuid;
         final StorageMigrationPolicy storageMigrationPolicy;
         final boolean migrateFromDestination;
-        final String srcIp;
+        final String srcHostMigrateIp, srcHostMnIp, srcHostUuid;
         synchronized (it) {
             if (!it.hasNext()) {
                 completion.success();
@@ -1062,10 +1068,15 @@ public class KVMHost extends HostBase implements Host {
 
             MigrateStruct s = it.next();
             vmUuid = s.vmUuid;
-            hostIp = s.dstHostIp;
+            dstHostMigrateIp = s.dstHostMigrateIp;
+            dstHostMnIp = s.dstHostMnIp;
+            dstHostUuid = s.dstHostUuid;
+
             storageMigrationPolicy = s.storageMigrationPolicy;
             migrateFromDestination = s.migrateFromDestition;
-            srcIp = s.srcHostIp;
+            srcHostMigrateIp = s.srcHostMigrateIp;
+            srcHostMnIp = s.srcHostMnIp;
+            srcHostUuid = s.srcHostUuid;
         }
 
 
@@ -1085,25 +1096,32 @@ public class KVMHost extends HostBase implements Host {
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
                         MigrateVmCmd cmd = new MigrateVmCmd();
-                        cmd.setDestHostIp(hostIp);
-                        cmd.setSrcHostIp(srcIp);
+                        cmd.setDestHostIp(dstHostMigrateIp);
+                        cmd.setSrcHostIp(srcHostMigrateIp);
                         cmd.setMigrateFromDestination(migrateFromDestination);
                         cmd.setStorageMigrationPolicy(storageMigrationPolicy == null ? null : storageMigrationPolicy.toString());
                         cmd.setVmUuid(vmUuid);
                         cmd.setUseNuma(VmGlobalConfig.NUMA.value(Boolean.class));
-                        new Http<>(migrateVmPath, cmd, MigrateVmResponse.class).call(new ReturnValueCompletion<MigrateVmResponse>(trigger) {
+
+                        UriComponentsBuilder ub = UriComponentsBuilder.newInstance();
+                        ub.scheme(KVMGlobalProperty.AGENT_URL_SCHEME);
+                        ub.host(migrateFromDestination ? dstHostMnIp : srcHostMnIp);
+                        ub.port(KVMGlobalProperty.AGENT_PORT);
+                        ub.path(KVMConstant.KVM_MIGRATE_VM_PATH);
+                        String migrateUrl = ub.build().toString();
+                        new Http<>(migrateUrl, cmd, MigrateVmResponse.class).call(migrateFromDestination ? dstHostUuid : srcHostUuid, new ReturnValueCompletion<MigrateVmResponse>(trigger) {
                             @Override
                             public void success(MigrateVmResponse ret) {
                                 if (!ret.isSuccess()) {
                                     ErrorCode err = errf.instantiateErrorCode(HostErrors.FAILED_TO_MIGRATE_VM_ON_HYPERVISOR,
                                             String.format("failed to migrate vm[uuid:%s] from kvm host[uuid:%s, ip:%s] to dest host[ip:%s], %s",
-                                                    vmUuid, self.getUuid(), self.getManagementIp(), hostIp, ret.getError())
+                                                    vmUuid, self.getUuid(), self.getManagementIp(), dstHostMigrateIp, ret.getError())
                                     );
 
                                     trigger.fail(err);
                                 } else {
                                     String info = String.format("successfully migrated vm[uuid:%s] from kvm host[uuid:%s, ip:%s] to dest host[ip:%s]",
-                                            vmUuid, self.getUuid(), self.getManagementIp(), hostIp);
+                                            vmUuid, self.getUuid(), self.getManagementIp(), dstHostMigrateIp);
                                     logger.debug(info);
 
                                     trigger.next();
@@ -1126,16 +1144,16 @@ public class KVMHost extends HostBase implements Host {
                         HardenVmConsoleCmd cmd = new HardenVmConsoleCmd();
                         cmd.vmInternalId = vmInternalId;
                         cmd.vmUuid = vmUuid;
-                        cmd.hostManagementIp = hostIp;
+                        cmd.hostManagementIp = dstHostMnIp;
 
                         UriComponentsBuilder ub = UriComponentsBuilder.newInstance();
                         ub.scheme(KVMGlobalProperty.AGENT_URL_SCHEME);
-                        ub.host(hostIp);
+                        ub.host(dstHostMnIp);
                         ub.port(KVMGlobalProperty.AGENT_PORT);
                         ub.path(KVMConstant.KVM_HARDEN_CONSOLE_PATH);
                         String url = ub.build().toString();
 
-                        new Http<>(url, cmd, AgentResponse.class).call(new ReturnValueCompletion<AgentResponse>(trigger) {
+                        new Http<>(url, cmd, AgentResponse.class).call(dstHostUuid, new ReturnValueCompletion<AgentResponse>(trigger) {
                             @Override
                             public void success(AgentResponse ret) {
                                 if (!ret.isSuccess()) {
@@ -1165,7 +1183,7 @@ public class KVMHost extends HostBase implements Host {
                         DeleteVmConsoleFirewallCmd cmd = new DeleteVmConsoleFirewallCmd();
                         cmd.vmInternalId = vmInternalId;
                         cmd.vmUuid = vmUuid;
-                        cmd.hostManagementIp = self.getManagementIp();
+                        cmd.hostManagementIp = srcHostMnIp;
                         new Http<>(deleteConsoleFirewall, cmd, AgentResponse.class).call(new ReturnValueCompletion<AgentResponse>(trigger) {
                             @Override
                             public void success(AgentResponse ret) {
@@ -1192,7 +1210,7 @@ public class KVMHost extends HostBase implements Host {
                     @Override
                     public void handle(Map data) {
                         String info = String.format("successfully migrated vm[uuid:%s] from kvm host[uuid:%s, ip:%s] to dest host[ip:%s]",
-                                vmUuid, self.getUuid(), self.getManagementIp(), hostIp);
+                                vmUuid, self.getUuid(), self.getManagementIp(), dstHostMigrateIp);
                         logger.debug(info);
 
                         migrateVm(it, completion);
@@ -1240,24 +1258,48 @@ public class KVMHost extends HostBase implements Host {
 
     class MigrateStruct {
         String vmUuid;
-        String dstHostIp;
+        String dstHostMigrateIp;
+        String dstHostMnIp;
+        String dstHostUuid;
         StorageMigrationPolicy storageMigrationPolicy;
         boolean migrateFromDestition;
-        String srcHostIp;
+        String srcHostMigrateIp;
+        String srcHostMnIp;
+        String srcHostUuid;
+    }
+
+    private MigrateStruct buildMigrateStuct(final MigrateVmOnHypervisorMsg msg){
+        MigrateStruct s = new MigrateStruct();
+        s.vmUuid = msg.getVmInventory().getUuid();
+        s.srcHostUuid = msg.getSrcHostUuid();
+        s.dstHostUuid = msg.getDestHostInventory().getUuid();
+        s.storageMigrationPolicy = msg.getStorageMigrationPolicy();
+        s.migrateFromDestition = msg.isMigrateFromDestination();
+
+        MigrateNetworkExtensionPoint.MigrateInfo migrateIpInfo = null;
+        for (MigrateNetworkExtensionPoint ext: pluginRgty.getExtensionList(MigrateNetworkExtensionPoint.class)) {
+            MigrateNetworkExtensionPoint.MigrateInfo r = ext.getMigrationAddressForVM(s.srcHostUuid, s.dstHostUuid);
+            if (r == null) {
+                continue;
+            }
+
+            migrateIpInfo = r;
+        }
+
+        s.dstHostMnIp = msg.getDestHostInventory().getManagementIp();
+        s.dstHostMigrateIp = migrateIpInfo == null ? s.dstHostMnIp : migrateIpInfo.dstMigrationAddress;
+        s.srcHostMnIp = Q.New(HostVO.class).eq(HostVO_.uuid, msg.getSrcHostUuid()).select(HostVO_.managementIp).findValue();
+        s.srcHostMigrateIp = migrateIpInfo == null ? s.srcHostMnIp : migrateIpInfo.srcMigrationAddress;
+        return s;
     }
 
     private void migrateVm(final MigrateVmOnHypervisorMsg msg, final NoErrorCompletion completion) {
         checkStatus();
 
-        HostVO vo = dbf.findByUuid(msg.getSrcHostUuid(), HostVO.class);
         List<MigrateStruct> lst = new ArrayList<>();
-        MigrateStruct s = new MigrateStruct();
-        s.vmUuid = msg.getVmInventory().getUuid();
-        s.dstHostIp = msg.getDestHostInventory().getManagementIp();
-        s.storageMigrationPolicy = msg.getStorageMigrationPolicy();
-        s.migrateFromDestition = msg.isMigrateFromDestination();
-        s.srcHostIp = vo.getManagementIp();
+        MigrateStruct s = buildMigrateStuct(msg);
         lst.add(s);
+
         final MigrateVmOnHypervisorReply reply = new MigrateVmOnHypervisorReply();
         migrateVm(lst.iterator(), new Completion(msg, completion) {
             @Override
@@ -2996,6 +3038,28 @@ public class KVMHost extends HostBase implements Host {
                 });
             }
         }).start();
+    }
+
+    private boolean checkMigrateNetworkCidrOfHost(String cidr) {
+        if (NetworkUtils.isIpv4InCidr(self.getManagementIp(), cidr)) {
+            return true;
+        }
+
+        final String extraIps = HostSystemTags.EXTRA_IPS.getTokenByResourceUuid(
+                self.getUuid(), HostSystemTags.EXTRA_IPS_TOKEN);
+        if (extraIps == null) {
+            logger.error(String.format("Host[uuid:%s] has no IPs in migrate network", self.getUuid()));
+            return false;
+        }
+
+        final String[] ips = extraIps.split(",");
+        for (String ip: ips) {
+            if (NetworkUtils.isIpv4InCidr(ip, cidr)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private boolean checkQemuLibvirtVersionOfHost() {

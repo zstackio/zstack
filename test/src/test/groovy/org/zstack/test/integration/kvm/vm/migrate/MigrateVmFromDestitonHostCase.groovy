@@ -1,6 +1,7 @@
 package org.zstack.test.integration.kvm.vm.migrate
 
 import org.springframework.http.HttpEntity
+import org.zstack.header.Constants
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmNicVO
@@ -171,7 +172,9 @@ class MigrateVmFromDestitonHostCase extends SubCase {
         }
 
         KVMAgentCommands.MigrateVmCmd cmd = null
+        String huuid
         env.afterSimulator(KVMConstant.KVM_MIGRATE_VM_PATH) { rsp, HttpEntity<String> entity ->
+            huuid = entity.getHeaders().getFirst(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID)
             cmd = json(entity.getBody(), KVMAgentCommands.MigrateVmCmd.class)
             return rsp
         }
@@ -186,6 +189,7 @@ class MigrateVmFromDestitonHostCase extends SubCase {
         assert cmd.migrateFromDestination
         assert cmd.destHostIp == host.managementIp
         assert cmd.srcHostIp == host1.managementIp
+        assert huuid == host.uuid
 
         // confirm migration success
         VmInstanceVO vo1
