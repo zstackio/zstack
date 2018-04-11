@@ -18,12 +18,14 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 
+import java.util.concurrent.atomic.AtomicInteger
+
 /**
  * Created by miao on 17-6-7.
  */
 class DeleteNormalAccountCase extends SubCase {
     EnvSpec env
-    AccountInventory accountInventory
+    AccountInventory accountInventory, toConcurrentDeleteAccount
 
     def DOC = """
 1. create an environment with admin account and normal account and other resources
@@ -166,6 +168,11 @@ class DeleteNormalAccountCase extends SubCase {
                 password = "password"
             } as AccountInventory
 
+            toConcurrentDeleteAccount = createAccount {
+                name = "test1"
+                password = "password"
+            } as AccountInventory
+
             VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy.Delay.toString())
 
             testAdminAdoptOrphanedResourceAfterDeletedNormalAccount()
@@ -203,12 +210,22 @@ class DeleteNormalAccountCase extends SubCase {
         SQL.New(AccountResourceRefVO.class).hardDelete()
 
         // delete normal account to trigger adoption
-        deleteAccount {
-            uuid = accountInventory.getUuid()
+
+        AtomicInteger success = new AtomicInteger(0)
+        for (String toDeleteUuid : [accountInventory.uuid, toConcurrentDeleteAccount.uuid]) {
+            String tempUuid = toDeleteUuid
+            Thread.start {
+                deleteAccount {
+                    uuid = tempUuid
+                }
+                success.addAndGet(1)
+            }
         }
+
 
         // check admin adopt all
         retryInSecs {
+            assert success.get() == 2
             def size = Q.New(AccountResourceRefVO.class)
                     .in(AccountResourceRefVO_.resourceUuid, resourceUuids)
                     .eq(AccountResourceRefVO_.accountUuid, AccountConstant.INITIAL_SYSTEM_ADMIN_UUID)

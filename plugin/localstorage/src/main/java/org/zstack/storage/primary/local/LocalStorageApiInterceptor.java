@@ -26,6 +26,7 @@ import org.zstack.header.volume.VolumeStatus;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
+import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,6 +43,8 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
     private DatabaseFacade dbf;
     @Autowired
     private CloudBus bus;
+    @Autowired
+    protected PrimaryStoragePhysicalCapacityManager physicalCapacityMgr;
 
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
@@ -101,14 +104,20 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
                     throw new ApiMessageInterceptionException(argerr("the primary storage[uuid:%s] is disabled or maintenance cold migrate is not allowed", ref.getPrimaryStorageUuid()));
                 }
 
-                //3.confirm the dest host belong to the local storage where the volume locates
-                boolean hasRefs = Q.New(LocalStorageHostRefVO.class)
-                        .eq(LocalStorageHostRefVO_.hostUuid,msg.getDestHostUuid())
+                //3.confirm the dest host belong to the local storage where the volume locates and physical capacity is enough
+                LocalStorageHostRefVO refVO = Q.New(LocalStorageHostRefVO.class)
+                        .eq(LocalStorageHostRefVO_.hostUuid, msg.getDestHostUuid())
                         .eq(LocalStorageHostRefVO_.primaryStorageUuid,ref.getPrimaryStorageUuid())
-                        .isExists();
-                if (!hasRefs) {
+                        .find();
+                if (refVO == null) {
                     throw new ApiMessageInterceptionException(argerr("the dest host[uuid:%s] doesn't belong to the local primary storage[uuid:%s] where the" +
                             " volume[uuid:%s] locates", msg.getDestHostUuid(), ref.getPrimaryStorageUuid(), msg.getVolumeUuid()));
+                }
+
+                double physicalThreshold = physicalCapacityMgr.getRatio(msg.getPrimaryStorageUuid());
+                if (!((refVO.getTotalPhysicalCapacity() * (1.0 - physicalThreshold)) <= refVO.getAvailablePhysicalCapacity())) {
+                    throw new ApiMessageInterceptionException(argerr("the dest host[uuid:%s] doesn't have enough physical capacity due to the threshold of " +
+                            "primary storage[uuid:%s] is %f but available physical capacity is %d", msg.getDestHostUuid(), msg.getPrimaryStorageUuid(), physicalThreshold, refVO.getAvailablePhysicalCapacity()));
                 }
 
                 //4.confirm primary storage is available.

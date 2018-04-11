@@ -1,0 +1,298 @@
+package org.zstack.test.integration.longjob
+
+import com.google.gson.Gson
+import org.zstack.core.db.DatabaseFacade
+import org.zstack.header.cluster.APIUpdateClusterOSMsg
+import org.zstack.header.host.HostState
+import org.zstack.header.host.HostStatus
+import org.zstack.header.host.HostVO
+import org.zstack.header.longjob.LongJobState
+import org.zstack.header.longjob.LongJobVO
+import org.zstack.header.vm.VmInstanceState
+import org.zstack.header.vm.VmInstanceVO
+import org.zstack.sdk.*
+import org.zstack.test.integration.ZStackTest
+import org.zstack.testlib.EnvSpec
+import org.zstack.testlib.SubCase
+import org.zstack.utils.data.SizeUnit
+/**
+ * Created by GuoYi on 3/13/18
+ */
+class UpdateClusterOSJobCase extends SubCase {
+    Gson gson
+    EnvSpec env
+    DatabaseFacade dbf
+
+    @Override
+    void clean() {
+        env.delete()
+    }
+
+    @Override
+    void setup() {
+        useSpring(ZStackTest.springSpec)
+    }
+
+    @Override
+    void environment() {
+        env = env {
+            instanceOffering {
+                name = "instanceOffering"
+                memory = SizeUnit.GIGABYTE.toByte(8)
+                cpu = 4
+            }
+
+            sftpBackupStorage {
+                name = "sftp"
+                url = "/sftp"
+                username = "root"
+                password = "password"
+                hostname = "localhost"
+
+                image {
+                    name = "image1"
+                    url = "http://zstack.org/download/test.qcow2"
+                }
+            }
+            zone {
+                name = "zone"
+                description = "test"
+
+                cluster {
+                    name = "cluster1"
+                    hypervisorType = "KVM"
+
+                    kvm {
+                        name = "kvm1"
+                        managementIp = "127.0.0.1"
+                        username = "root"
+                        password = "password"
+                    }
+
+                    kvm {
+                        name = "kvm2"
+                        managementIp = "127.0.0.2"
+                        username = "root"
+                        password = "password"
+                    }
+
+                    attachPrimaryStorage("nfs")
+                    attachL2Network("l2")
+                }
+
+                cluster {
+                    name = "cluster2"
+                    hypervisorType = "KVM"
+
+                    kvm {
+                        name = "kvm3"
+                        managementIp = "127.0.0.3"
+                        username = "root"
+                        password = "password"
+                    }
+
+                    kvm {
+                        name = "kvm3"
+                        managementIp = "127.0.0.4"
+                        username = "root"
+                        password = "password"
+                    }
+
+                    attachPrimaryStorage("nfs")
+                    attachL2Network("l2")
+                }
+
+                cluster {
+                    name = "cluster3"
+                    hypervisorType = "Simulator"
+                }
+
+                nfsPrimaryStorage {
+                    name = "nfs"
+                    url = "127.0.0.3:/nfs_root"
+                }
+
+                l2NoVlanNetwork {
+                    name = "l2"
+                    physicalInterface = "eth0"
+
+                    l3Network {
+                        name = "l3"
+                        ip {
+                            startIp = "192.168.100.10"
+                            endIp = "192.168.100.100"
+                            netmask = "255.255.255.0"
+                            gateway = "192.168.100.1"
+                        }
+                    }
+                }
+
+                attachBackupStorage("sftp")
+            }
+
+            vm {
+                name = "vm1"
+                useInstanceOffering("instanceOffering")
+                useImage("image1")
+                useL3Networks("l3")
+                useHost("kvm1")
+            }
+
+            vm {
+                name = "vm2"
+                useInstanceOffering("instanceOffering")
+                useImage("image1")
+                useL3Networks("l3")
+                useHost("kvm3")
+            }
+        }
+    }
+
+    @Override
+    void test() {
+        env.create {
+            gson = new Gson()
+            dbf = bean(DatabaseFacade.class)
+
+            testUpdateClusterWithNfsRunningOnHost()
+            testUpdateHostNotKvm()
+            testUpdateClusterWithHostNotConnected()
+            testUpdateClusterWithHostPreMaintenance()
+            testUpdateClusterWithHostMaintenance()
+            testUpdateClusterUsingAPI()
+        }
+    }
+
+    void testUpdateClusterWithNfsRunningOnHost() {
+        ClusterInventory cls = env.inventoryByName("cluster2") as ClusterInventory
+
+        // try to update cluster os
+        LongJobInventory jobInv = updateClusterOS {
+            uuid = cls.uuid
+        }
+
+        assert jobInv.getJobName() == "APIUpdateClusterOSMsg"
+        retryInSecs() {
+            LongJobVO job = dbFindByUuid(jobInv.getUuid(), LongJobVO.class)
+            assert job.state == LongJobState.Failed
+        }
+    }
+
+    void testUpdateHostNotKvm() {
+        ClusterInventory cls = env.inventoryByName("cluster3") as ClusterInventory
+
+        UpdateClusterOSAction action = new UpdateClusterOSAction()
+        action.sessionId = adminSession()
+        action.uuid = cls.uuid
+        UpdateClusterOSAction.Result result = action.call()
+        assert result.error != null
+    }
+
+    void testUpdateClusterWithHostNotConnected() {
+        ClusterInventory cls = env.inventoryByName("cluster1") as ClusterInventory
+        HostInventory kvm1 = env.inventoryByName("kvm1") as HostInventory
+
+        // set kvm1 connecting
+        HostVO hvo = dbFindByUuid(kvm1.uuid, HostVO.class)
+        hvo.status = HostStatus.Connecting
+        dbf.update(hvo)
+
+        // try to update cluster os
+        UpdateClusterOSAction action = new UpdateClusterOSAction()
+        action.sessionId = adminSession()
+        action.uuid = cls.uuid
+        UpdateClusterOSAction.Result result = action.call()
+        assert result.error != null
+
+        // recovery
+        hvo = dbFindByUuid(kvm1.uuid, HostVO.class)
+        hvo.status = HostStatus.Connected
+        dbf.update(hvo)
+    }
+
+    void testUpdateClusterWithHostPreMaintenance() {
+        ClusterInventory cls = env.inventoryByName("cluster1") as ClusterInventory
+        HostInventory kvm1 = env.inventoryByName("kvm1") as HostInventory
+
+        // set kvm1 premaintenance
+        HostVO hvo = dbFindByUuid(kvm1.uuid, HostVO.class)
+        hvo.state = HostState.PreMaintenance
+        dbf.update(hvo)
+
+        // try to update cluster os
+        UpdateClusterOSAction action = new UpdateClusterOSAction()
+        action.sessionId = adminSession()
+        action.uuid = cls.uuid
+        UpdateClusterOSAction.Result result = action.call()
+        assert result.error != null: "API UpdateClusterOSAction fails with an error ${result.error}"
+
+        // recovery
+        hvo = dbf.reload(hvo)
+        hvo.state = HostState.Enabled
+        dbf.update(hvo)
+    }
+
+    void testUpdateClusterWithHostMaintenance() {
+        ClusterInventory cls = env.inventoryByName("cluster1") as ClusterInventory
+        HostInventory kvm1 = env.inventoryByName("kvm1") as HostInventory
+        HostInventory kvm2 = env.inventoryByName("kvm2") as HostInventory
+
+        // set kvm1 maintenance
+        HostVO hvo = dbFindByUuid(kvm1.uuid, HostVO.class)
+        hvo.state = HostState.Maintenance
+        dbf.update(hvo)
+
+        // try to update cluster os
+        APIUpdateClusterOSMsg msg = new APIUpdateClusterOSMsg()
+        msg.setUuid(cls.uuid)
+
+        LongJobInventory jobInv = submitLongJob {
+            jobName = "APIUpdateClusterOSMsg"
+            jobData = gson.toJson(msg)
+        } as LongJobInventory
+
+        assert jobInv.getJobName() == "APIUpdateClusterOSMsg"
+
+        retryInSecs() {
+            LongJobVO job = dbFindByUuid(jobInv.getUuid(), LongJobVO.class)
+            assert job.state == LongJobState.Succeeded
+        }
+
+        // kvm1 still in maintenance state
+        hvo = dbf.reload(hvo)
+        assert hvo.state == HostState.Maintenance
+
+        // kvm2 still in enabled state
+        HostVO hvo2 = dbFindByUuid(kvm2.uuid, HostVO.class)
+        assert hvo2.state == HostState.Enabled
+
+        // vm1 still running
+        VmInstanceInventory vmInv = env.inventoryByName("vm1") as VmInstanceInventory
+        VmInstanceVO vmVO = dbFindByUuid(vmInv.uuid, VmInstanceVO.class)
+        assert vmVO.hostUuid == hvo.uuid
+        assert vmVO.state == VmInstanceState.Running
+    }
+
+    void testUpdateClusterUsingAPI() {
+        ClusterInventory cls = env.inventoryByName("cluster1") as ClusterInventory
+        HostInventory kvm1 = env.inventoryByName("kvm1") as HostInventory
+        VmInstanceInventory vmInv = env.inventoryByName("vm1") as VmInstanceInventory
+
+        // try to update cluster os
+        LongJobInventory jobInv = updateClusterOS {
+            uuid = cls.uuid
+        }
+
+        assert jobInv.getJobName() == "APIUpdateClusterOSMsg"
+        retryInSecs() {
+            LongJobVO job = dbFindByUuid(jobInv.getUuid(), LongJobVO.class)
+            assert job.state == LongJobState.Succeeded
+        }
+
+        // vm1 still running
+        HostVO hvo = dbFindByUuid(kvm1.uuid, HostVO.class)
+        VmInstanceVO vmVO = dbFindByUuid(vmInv.uuid, VmInstanceVO.class)
+        assert vmVO.hostUuid == hvo.uuid
+        assert vmVO.state == VmInstanceState.Running
+    }
+}

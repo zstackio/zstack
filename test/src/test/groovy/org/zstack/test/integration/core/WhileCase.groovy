@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger
  */
 class WhileCase extends SubCase{
     private static final CLogger logger = Utils.getLogger(WhileCase.class)
-    static TIME_OUT = TimeUnit.SECONDS.toMillis(1)
+    static TIME_OUT = TimeUnit.SECONDS.toMillis(15)
 
     @Override
     void clean() {
@@ -42,6 +42,7 @@ class WhileCase extends SubCase{
         testRunStepWhenItemsEmpty()
         testRunStepCompletionDone()
         testRunStepComletionAllDone()
+        testConcurrentAdd()
     }
 
     static void testRunAllWhenItemsEmpty(){
@@ -110,7 +111,7 @@ class WhileCase extends SubCase{
         new While<>([1, 2, 3]).step({item, completion ->
             Thread.start {
                 logger.debug("step " + item)
-                TimeUnitUtil.sleepMilliseconds(TimeUnit.SECONDS.toMillis(item as long)/5 as long)
+                sleep(item * 200 as long)
                 itemDoneCount.addAndGet(1)
                 completion.done()
             }
@@ -148,5 +149,55 @@ class WhileCase extends SubCase{
         future.await(TIME_OUT)
         assert future.success
         assert count.get() == 1
+    }
+
+    static void testConcurrentAdd() {
+        List<Object> target = new ArrayList<>()
+        List<Object> source = new ArrayList<>()
+        for (int i = 0; i < 100; i++) {
+            source.add(i + "")
+        }
+
+        Thread thread1 = new Thread() {
+            @Override
+            void run() {
+                new While<>(source).all({ item, completion ->
+                    synchronized (target) {
+                        target.add(item)
+                    }
+                }).run(new NoErrorCompletion() {
+                    @Override
+                    void done() {
+                        logger.debug("thread1 over...")
+                    }
+                })
+            }
+        }
+
+        Thread thread2 = new Thread() {
+            @Override
+            void run() {
+                new While<>(source).all({ item, completion ->
+                    synchronized (target) {
+                        target.add(item)
+                    }
+                }).run(new NoErrorCompletion() {
+                    @Override
+                    void done() {
+                        logger.debug("thread2 over...")
+                    }
+                })
+            }
+        }
+
+        thread1.start()
+        thread2.start()
+        thread1.join()
+        thread2.join()
+
+        assert target.size() == 2 * source.size()
+        target.each {
+            assert it != null
+        }
     }
 }

@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class CreateDataVolumeTemplateFromVolumeAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class CreateDataVolumeTemplateFromVolumeAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateDataVolumeTemplateFromVolumeResult value;
+        public org.zstack.sdk.CreateDataVolumeTemplateFromVolumeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -62,8 +63,8 @@ public class CreateDataVolumeTemplateFromVolumeAction extends AbstractAction {
             return ret;
         }
         
-        CreateDataVolumeTemplateFromVolumeResult value = res.getResult(CreateDataVolumeTemplateFromVolumeResult.class);
-        ret.value = value == null ? new CreateDataVolumeTemplateFromVolumeResult() : value; 
+        org.zstack.sdk.CreateDataVolumeTemplateFromVolumeResult value = res.getResult(org.zstack.sdk.CreateDataVolumeTemplateFromVolumeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateDataVolumeTemplateFromVolumeResult() : value; 
 
         return ret;
     }
@@ -82,15 +83,15 @@ public class CreateDataVolumeTemplateFromVolumeAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/images/data-volume-templates/from/volumes/{volumeUuid}";

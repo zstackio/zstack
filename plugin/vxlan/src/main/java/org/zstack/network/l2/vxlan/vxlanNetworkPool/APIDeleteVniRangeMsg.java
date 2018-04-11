@@ -3,8 +3,12 @@ package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIDeleteMessage;
+import org.zstack.header.message.APIEvent;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l2.L2NetworkMessage;
+import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 
@@ -16,7 +20,7 @@ import org.zstack.header.rest.RestRequest;
         method = HttpMethod.DELETE,
         responseClass = APIDeleteVniRangeEvent.class
 )
-public class APIDeleteVniRangeMsg extends APIDeleteMessage implements L2NetworkMessage {
+public class APIDeleteVniRangeMsg extends APIDeleteMessage implements L2NetworkMessage, APIAuditor {
     @APIParam(resourceType = VniRangeVO.class, successIfResourceNotExisting = true,
             checkAccount = true, operationTarget = true)
     private String uuid;
@@ -54,5 +58,10 @@ public class APIDeleteVniRangeMsg extends APIDeleteMessage implements L2NetworkM
         msg.setUuid(uuid());
 
         return msg;
+    }
+
+    @Override
+    public Result audit(APIMessage msg, APIEvent rsp) {
+        return new Result(((APIDeleteVniRangeMsg)msg).l2NetworkUuid, L2NetworkVO.class);
     }
 }

@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class SyncImageFromImageStoreBackupStorageAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class SyncImageFromImageStoreBackupStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SyncImageFromImageStoreBackupStorageResult value;
+        public org.zstack.sdk.SyncImageFromImageStoreBackupStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -62,8 +63,8 @@ public class SyncImageFromImageStoreBackupStorageAction extends AbstractAction {
             return ret;
         }
         
-        SyncImageFromImageStoreBackupStorageResult value = res.getResult(SyncImageFromImageStoreBackupStorageResult.class);
-        ret.value = value == null ? new SyncImageFromImageStoreBackupStorageResult() : value; 
+        org.zstack.sdk.SyncImageFromImageStoreBackupStorageResult value = res.getResult(org.zstack.sdk.SyncImageFromImageStoreBackupStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SyncImageFromImageStoreBackupStorageResult() : value; 
 
         return ret;
     }
@@ -82,15 +83,15 @@ public class SyncImageFromImageStoreBackupStorageAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/images/{uuid}/actions";

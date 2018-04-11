@@ -1,8 +1,14 @@
 package org.zstack.test.integration.storage.volume
 
+import org.zstack.appliancevm.ApplianceVmConstant
 import org.zstack.core.db.DatabaseFacade
+import org.zstack.core.db.SQL
+import org.zstack.header.identity.SharedResourceVO
 import org.zstack.header.image.ImageConstant
 import org.zstack.header.image.ImagePlatform
+import org.zstack.header.storage.primary.PrimaryStorageCapacityVO
+import org.zstack.header.volume.VolumeStatus
+import org.zstack.sdk.AccountInventory
 import org.zstack.sdk.BackupStorageInventory
 import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.GetDataVolumeAttachableVmAction
@@ -11,21 +17,32 @@ import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.KVMHostInventory
 import org.zstack.sdk.L3NetworkInventory
+import org.zstack.sdk.PrimaryStorageInventory
+import org.zstack.sdk.SessionInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VolumeInventory
+import org.zstack.test.integration.kvm.Env
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
-import org.zstack.utils.data.SizeUnit
 
 
 /**
  * Created by camile on 17-8-17.
  */
 class GetAttachCadidatesCase extends SubCase {
-
     EnvSpec env
     DatabaseFacade dbf
+    VolumeInventory adminVolume, normalAccountNotInstantiatedVolume, normalAccountReadyVolume
+    DiskOfferingInventory disk
+    L3NetworkInventory l3
+    InstanceOfferingInventory instanceOffering
+    KVMHostInventory host
+    BackupStorageInventory bs
+    PrimaryStorageInventory ps
+    ImageInventory image
+    SessionInventory normalSession
+    VmInstanceInventory normalAccountVm
 
     @Override
     void setup() {
@@ -34,100 +51,96 @@ class GetAttachCadidatesCase extends SubCase {
 
     @Override
     void environment() {
-        env = env {
-            instanceOffering {
-                name = "instanceOffering"
-                memory = SizeUnit.GIGABYTE.toByte(8)
-                cpu = 4
-            }
-            diskOffering {
-                name = "diskOffering"
-                diskSize = SizeUnit.GIGABYTE.toByte(20)
-            }
-            zone {
-                name = "zone"
-                cluster {
-                    name = "test-cluster"
-                    hypervisorType = "KVM"
-                    kvm {
-                        name = "host"
-                        username = "root"
-                        password = "password"
-                        usedMem = 1000
-                        totalCpu = 10
-                    }
-
-                    attachPrimaryStorage("local")
-                    attachL2Network("l2")
-                }
-                l2NoVlanNetwork {
-                    name = "l2"
-                    physicalInterface = "eth0"
-
-                    l3Network {
-                        name = "l3"
-                        ip {
-                            startIp = "192.168.100.10"
-                            endIp = "192.168.100.100"
-                            netmask = "255.255.255.0"
-                            gateway = "192.168.100.1"
-                        }
-                    }
-                }
-
-                localPrimaryStorage {
-                    name = "local"
-                    url = "/local_ps"
-                }
-
-
-                attachBackupStorage("sftp")
-            }
-
-
-            sftpBackupStorage {
-                name = "sftp"
-                url = "/sftp"
-                username = "root"
-                password = "password"
-                hostname = "localhost"
-
-
-                image {
-                    name = "image"
-                    url = "http://zstack.org/download/image.qcow2"
-                }
-            }
-
-            vm {
-                name = "vm1"
-                useCluster("test-cluster")
-                useHost("host")
-                useL3Networks("l3")
-                useInstanceOffering("instanceOffering")
-                useRootDiskOffering("diskOffering")
-                useImage("image")
-
-            }
-
-        }
+        env = Env.oneVmBasicEnv()
     }
 
     @Override
     void test() {
         env.create {
+            prepareEnvironment()
+            testGetNotInstantiatedVolumeAttachableVmByNormalAccount()
+            testGetReadyVolumeAttachableVmByNormalAccount()
             testGetCadidatesResultEquals()
+            testGetCandidateVmType()
+            testGetCadidatesForNotInstantiatedVolumeOnLocalPs()
         }
     }
 
-    void testGetCadidatesResultEquals() {
-        DiskOfferingInventory disk = env.inventoryByName("diskOffering") as DiskOfferingInventory
-        L3NetworkInventory l3 = env.inventoryByName("l3") as L3NetworkInventory
-        InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
-        KVMHostInventory host =  env.inventoryByName("host") as KVMHostInventory
-        BackupStorageInventory bs =  env.inventoryByName("sftp") as BackupStorageInventory
+    void prepareEnvironment(){
+        disk = env.inventoryByName("diskOffering") as DiskOfferingInventory
+        l3 = env.inventoryByName("l3") as L3NetworkInventory
+        instanceOffering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
+        host = env.inventoryByName("kvm") as KVMHostInventory
+        bs = env.inventoryByName("sftp") as BackupStorageInventory
+        ps = env.inventoryByName("local") as PrimaryStorageInventory
+        image = env.inventoryByName("image1") as ImageInventory
+        dbf = bean(DatabaseFacade.class)
 
-        ImageInventory image = addImage {
+        adminVolume = createDataVolume {
+            name = "adminDisk"
+            diskOfferingUuid = disk.uuid
+        } as VolumeInventory
+
+        shareResource {
+            resourceUuids = [image.uuid, l3.uuid, instanceOffering.uuid, disk.uuid]
+            toPublic = true
+        }
+
+        def normalAccount = createAccount {
+            name = "test1"
+            password = "password"
+        } as AccountInventory
+
+        normalSession = logInByAccount {
+            accountName = normalAccount.name
+            password = "password"
+        } as SessionInventory
+
+        normalAccountVm = createVmInstance {
+            name = "vm-normal"
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3.uuid]
+            instanceOfferingUuid = instanceOffering.uuid
+            sessionId = normalSession.uuid
+        } as VmInstanceInventory
+
+        normalAccountNotInstantiatedVolume = createDataVolume {
+            name = "normalAccountNotInstantiatedVolume"
+            diskOfferingUuid = disk.uuid
+        } as VolumeInventory
+
+        normalAccountReadyVolume = createDataVolume {
+            name = "normalAccountReadyVolume"
+            diskOfferingUuid = disk.uuid
+            primaryStorageUuid = ps.uuid
+            systemTags = systemTags = ["localStorage::hostUuid::${host.uuid}".toString()]
+        } as VolumeInventory
+    }
+
+    void testGetNotInstantiatedVolumeAttachableVmByNormalAccount(){
+        List<VmInstanceInventory> notInstantiatedRets = getDataVolumeAttachableVm {
+            volumeUuid = normalAccountNotInstantiatedVolume.uuid
+            sessionId = normalSession.uuid
+        } as List<VmInstanceInventory>
+
+        assert notInstantiatedRets.size() == 1
+        assert notInstantiatedRets.get(0).uuid == normalAccountVm.uuid
+        assert normalAccountNotInstantiatedVolume.status == VolumeStatus.NotInstantiated.toString()
+    }
+
+    void testGetReadyVolumeAttachableVmByNormalAccount(){
+        List<VmInstanceInventory> readyRets = getDataVolumeAttachableVm {
+            volumeUuid = normalAccountReadyVolume.uuid
+            sessionId = normalSession.uuid
+        } as List<VmInstanceInventory>
+
+        assert readyRets.size() == 1
+        assert readyRets.get(0).uuid == normalAccountVm.uuid
+        assert normalAccountReadyVolume.status == VolumeStatus.Ready.toString()
+    }
+
+    void testGetCadidatesResultEquals() {
+        ImageInventory otherImage = addImage {
             name = "other"
             url = "http://zstack.org/download/test.iso"
             platform = ImagePlatform.Other.toString()
@@ -136,23 +149,14 @@ class GetAttachCadidatesCase extends SubCase {
         }
         VmInstanceInventory vm1 = createVmInstance {
             name = "vm23"
-            imageUuid = image.uuid
+            imageUuid = otherImage.uuid
             l3NetworkUuids = [l3.uuid]
             instanceOfferingUuid = instanceOffering.uuid
             hostUuid = host.uuid
         }
 
-
-
-        dbf = bean(DatabaseFacade.class)
-
-        VolumeInventory volume1 = createDataVolume {
-            name = "disk"
-            diskOfferingUuid = disk.uuid
-        }
-
         GetDataVolumeAttachableVmAction action1 = new GetDataVolumeAttachableVmAction()
-        action1.volumeUuid = volume1.uuid
+        action1.volumeUuid = adminVolume.uuid
         action1.sessionId = adminSession()
         GetDataVolumeAttachableVmAction.Result result1 = action1.call()
 
@@ -161,30 +165,74 @@ class GetAttachCadidatesCase extends SubCase {
         action2.sessionId = adminSession()
         GetVmAttachableDataVolumeAction.Result result2 = action2.call()
         assert  0 == result2.value.inventories.size()
+        assert  2 == result1.value.inventories.size() // 1 normal account, 1 admin
         for (VmInstanceInventory inventory : result1.value.inventories){
             assert inventory.uuid!= vm1.uuid
         }
 
         deleteImage {
-            uuid = image.uuid
+            uuid = otherImage.uuid
         }
 
         expungeImage {
-            imageUuid = image.uuid
+            imageUuid = otherImage.uuid
         }
         result1 = action1.call()
         result2 = action2.call()
         assert  0 == result2.value.inventories.size()
+        assert  2 == result1.value.inventories.size() // 1 normal account, 1 admin
         for (VmInstanceInventory inventory : result1.value.inventories){
             assert inventory.uuid!= vm1.uuid
         }
 
+        destroyVmInstance {
+            uuid = vm1.uuid
+        }
+
+        expungeVmInstance {
+            uuid = vm1.uuid
+        }
     }
 
+    void testGetCandidateVmType(){
+        List<VmInstanceInventory> rets = getDataVolumeAttachableVm {
+            volumeUuid = adminVolume.uuid
+        } as List<VmInstanceInventory>
 
+        rets.forEach({it -> assert it.type != ApplianceVmConstant.APPLIANCE_VM_TYPE})
+
+        rets = getDataVolumeAttachableVm {
+            volumeUuid = normalAccountReadyVolume.uuid
+            sessionId = normalSession.uuid
+        } as List<VmInstanceInventory>
+
+        rets.forEach({it -> assert it.type != ApplianceVmConstant.APPLIANCE_VM_TYPE})
+    }
+
+    void testGetCadidatesForNotInstantiatedVolumeOnLocalPs() {
+        PrimaryStorageCapacityVO ps = dbf.findByUuid(ps.uuid,PrimaryStorageCapacityVO.class)
+        long psAvailableCapacity = ps.availableCapacity
+
+        DiskOfferingInventory diskOfferingInventory = createDiskOffering {
+            name = "test"
+            diskSize = psAvailableCapacity + 1
+        } as DiskOfferingInventory
+
+        VolumeInventory notInstantiateVolume = createDataVolume {
+            name = "test-dataVolume"
+            diskOfferingUuid = diskOfferingInventory.uuid
+        } as VolumeInventory
+
+        GetDataVolumeAttachableVmAction action = new GetDataVolumeAttachableVmAction()
+        action.volumeUuid = notInstantiateVolume.uuid
+        action.sessionId = adminSession()
+        GetDataVolumeAttachableVmAction.Result result = action.call()
+        assert 0 == result.value.inventories.size()
+    }
 
     @Override
     void clean() {
+        SQL.New(SharedResourceVO.class).hardDelete()
         env.delete()
     }
 }

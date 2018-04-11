@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryZoneAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryZoneAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryZoneResult value;
+        public org.zstack.sdk.QueryZoneResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryZoneAction extends QueryAction {
             return ret;
         }
         
-        QueryZoneResult value = res.getResult(QueryZoneResult.class);
-        ret.value = value == null ? new QueryZoneResult() : value; 
+        org.zstack.sdk.QueryZoneResult value = res.getResult(org.zstack.sdk.QueryZoneResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryZoneResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QueryZoneAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/zones";

@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class SubmitLongJobAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class SubmitLongJobAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SubmitLongJobResult value;
+        public org.zstack.sdk.SubmitLongJobResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -65,8 +66,8 @@ public class SubmitLongJobAction extends AbstractAction {
             return ret;
         }
         
-        SubmitLongJobResult value = res.getResult(SubmitLongJobResult.class);
-        ret.value = value == null ? new SubmitLongJobResult() : value; 
+        org.zstack.sdk.SubmitLongJobResult value = res.getResult(org.zstack.sdk.SubmitLongJobResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SubmitLongJobResult() : value; 
 
         return ret;
     }
@@ -85,15 +86,15 @@ public class SubmitLongJobAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/longjobs";

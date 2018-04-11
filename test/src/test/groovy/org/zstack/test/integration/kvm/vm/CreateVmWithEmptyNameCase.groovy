@@ -58,7 +58,6 @@ class CreateVmWithEmptyNameCase extends SubCase {
 
         try {
             createVmInstanceAction.call()
-            assert false
         }catch (ApiException e){
             assert -1 < e.message.indexOf("missing mandatory field[name]")
         }

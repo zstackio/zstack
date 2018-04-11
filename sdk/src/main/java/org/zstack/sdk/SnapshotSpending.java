@@ -1,12 +1,14 @@
 package org.zstack.sdk;
 
-public class SnapshotSpending extends SpendingDetails {
 
-    public java.util.List<SnapShotSpendingInventory> sizeInventory;
-    public void setSizeInventory(java.util.List<SnapShotSpendingInventory> sizeInventory) {
+
+public class SnapshotSpending extends org.zstack.sdk.SpendingDetails {
+
+    public java.util.List sizeInventory;
+    public void setSizeInventory(java.util.List sizeInventory) {
         this.sizeInventory = sizeInventory;
     }
-    public java.util.List<SnapShotSpendingInventory> getSizeInventory() {
+    public java.util.List getSizeInventory() {
         return this.sizeInventory;
     }
 

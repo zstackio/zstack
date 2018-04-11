@@ -56,6 +56,9 @@ public class SftpBackupStorage extends BackupStorageBase {
 
     private String agentPackageName = SftpBackupStorageGlobalProperty.AGENT_PACKAGE_NAME;
 
+    public SftpBackupStorage() {
+    }
+
     public SftpBackupStorage(SftpBackupStorageVO vo) {
         super(vo);
     }
@@ -90,6 +93,7 @@ public class SftpBackupStorage extends BackupStorageBase {
         String md5sum;
         long size;
         long actualSize;
+        String format;
     }
 
     private void download(String url, String installPath, String uuid, final ReturnValueCompletion<DownloadResult> completion) {
@@ -116,14 +120,13 @@ public class SftpBackupStorage extends BackupStorageBase {
 
                 @Override
                 public void success(DownloadResponse ret) {
+                    updateCapacity(ret.getTotalCapacity(), ret.getAvailableCapacity());
                     if (ret.isSuccess()) {
                         DownloadResult res = new DownloadResult();
                         res.md5sum = ret.getMd5Sum();
                         res.size = ret.getSize();
                         res.actualSize = ret.getActualSize();
-
-                        updateCapacity(ret.getTotalCapacity(), ret.getAvailableCapacity());
-
+                        res.format = ret.format;
                         completion.success(res);
                     } else {
                         completion.fail(operr("fail to download image, because %s", ret.getError()));
@@ -197,6 +200,7 @@ public class SftpBackupStorage extends BackupStorageBase {
                 reply.setSize(res.size);
                 reply.setActualSize(res.actualSize);
                 reply.setMd5sum(res.md5sum);
+                reply.setFormat(res.format);
                 bus.reply(msg, reply);
             }
 

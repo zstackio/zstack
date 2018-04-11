@@ -7,6 +7,7 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
+import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.tag.TagResourceType;
@@ -23,7 +24,7 @@ import java.util.List;
         parameterName = "params",
         responseClass = APIAddImageEvent.class
 )
-public class APIAddImageMsg extends APICreateMessage {
+public class APIAddImageMsg extends APICreateMessage implements APIAuditor {
     @APIParam(maxLength = 255)
     private String name;
     @APIParam(required = false, maxLength = 2048)
@@ -151,5 +152,10 @@ public class APIAddImageMsg extends APICreateMessage {
                 }
             }
         };
+    }
+
+    @Override
+    public Result audit(APIMessage msg, APIEvent rsp) {
+        return new Result(rsp.isSuccess() ? ((APIAddImageEvent)rsp).getInventory().getUuid() : "", ImageVO.class);
     }
 }

@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class ChangeSecurityGroupStateAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class ChangeSecurityGroupStateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ChangeSecurityGroupStateResult value;
+        public org.zstack.sdk.ChangeSecurityGroupStateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class ChangeSecurityGroupStateAction extends AbstractAction {
             return ret;
         }
         
-        ChangeSecurityGroupStateResult value = res.getResult(ChangeSecurityGroupStateResult.class);
-        ret.value = value == null ? new ChangeSecurityGroupStateResult() : value; 
+        org.zstack.sdk.ChangeSecurityGroupStateResult value = res.getResult(org.zstack.sdk.ChangeSecurityGroupStateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ChangeSecurityGroupStateResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class ChangeSecurityGroupStateAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/security-groups/{uuid}/actions";

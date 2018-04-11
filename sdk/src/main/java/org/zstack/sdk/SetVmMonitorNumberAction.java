@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class SetVmMonitorNumberAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class SetVmMonitorNumberAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SetVmMonitorNumberResult value;
+        public org.zstack.sdk.SetVmMonitorNumberResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class SetVmMonitorNumberAction extends AbstractAction {
             return ret;
         }
         
-        SetVmMonitorNumberResult value = res.getResult(SetVmMonitorNumberResult.class);
-        ret.value = value == null ? new SetVmMonitorNumberResult() : value; 
+        org.zstack.sdk.SetVmMonitorNumberResult value = res.getResult(org.zstack.sdk.SetVmMonitorNumberResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SetVmMonitorNumberResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class SetVmMonitorNumberAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/vm-instances/{uuid}/actions";

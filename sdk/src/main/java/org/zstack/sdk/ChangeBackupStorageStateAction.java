@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class ChangeBackupStorageStateAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class ChangeBackupStorageStateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public ChangeBackupStorageStateResult value;
+        public org.zstack.sdk.ChangeBackupStorageStateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class ChangeBackupStorageStateAction extends AbstractAction {
             return ret;
         }
         
-        ChangeBackupStorageStateResult value = res.getResult(ChangeBackupStorageStateResult.class);
-        ret.value = value == null ? new ChangeBackupStorageStateResult() : value; 
+        org.zstack.sdk.ChangeBackupStorageStateResult value = res.getResult(org.zstack.sdk.ChangeBackupStorageStateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ChangeBackupStorageStateResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class ChangeBackupStorageStateAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/backup-storage/{uuid}/actions";

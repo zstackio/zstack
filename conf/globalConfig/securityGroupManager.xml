@@ -28,7 +28,7 @@
     <config>
         <name>ingress.defaultPolicy</name>
         <description>Default policy for ingress traffic when security group is empty</description>
-        <defaultValue>deny</defaultValue>
+        <defaultValue>drop</defaultValue>
         <category>securityGroup</category>
     </config>
 

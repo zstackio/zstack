@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.ErrorCode;
+
 public class ShellResult  {
 
     public int returnCode;

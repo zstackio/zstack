@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class SyncHybridEipFromRemoteAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class SyncHybridEipFromRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SyncHybridEipFromRemoteResult value;
+        public org.zstack.sdk.SyncHybridEipFromRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +57,8 @@ public class SyncHybridEipFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        SyncHybridEipFromRemoteResult value = res.getResult(SyncHybridEipFromRemoteResult.class);
-        ret.value = value == null ? new SyncHybridEipFromRemoteResult() : value; 
+        org.zstack.sdk.SyncHybridEipFromRemoteResult value = res.getResult(org.zstack.sdk.SyncHybridEipFromRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SyncHybridEipFromRemoteResult() : value; 
 
         return ret;
     }
@@ -76,15 +77,15 @@ public class SyncHybridEipFromRemoteAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/hybrid/eip/{dataCenterUuid}/sync";

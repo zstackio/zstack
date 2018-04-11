@@ -57,6 +57,12 @@ public class APIMigrateVmMsg extends APIMessage implements VmInstanceMessage {
     @APIParam(required = false, resourceType = HostVO.class)
     private String hostUuid;
 
+    /**
+     * @desc set true mean migration is called from destination host
+     */
+    @APIParam(required = false)
+    private Boolean migrateFromDestination;
+
     public void setVmInstanceUuid(String vmInstanceUuid) {
         this.vmInstanceUuid = vmInstanceUuid;
     }
@@ -77,6 +83,14 @@ public class APIMigrateVmMsg extends APIMessage implements VmInstanceMessage {
         this.hostUuid = hostUuid;
     }
 
+    public Boolean getMigrateFromDestination() {
+        return migrateFromDestination;
+    }
+
+    public void setMigrateFromDestination(Boolean migrateFromDestination) {
+        this.migrateFromDestination = migrateFromDestination;
+    }
+
     @Override
     public String getVmInstanceUuid() {
         return getVmUuid();
@@ -86,6 +100,7 @@ public class APIMigrateVmMsg extends APIMessage implements VmInstanceMessage {
         APIMigrateVmMsg msg = new APIMigrateVmMsg();
         msg.vmInstanceUuid = uuid();
         msg.hostUuid = uuid();
+        msg.setMigrateFromDestination(false);
         return msg;
     }
 

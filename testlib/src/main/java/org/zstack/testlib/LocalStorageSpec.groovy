@@ -102,8 +102,15 @@ class LocalStorageSpec extends PrimaryStorageSpec {
             return rsp
         }
 
-        simulator(LocalStorageKvmBackend.GET_PHYSICAL_CAPACITY_PATH) {
-            return new LocalStorageKvmBackend.AgentResponse()
+        simulator(LocalStorageKvmBackend.GET_PHYSICAL_CAPACITY_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.GetPhysicalCapacityCmd.class)
+            LocalStorageSpec lspec = spec.specByUuid(cmd.uuid)
+            assert lspec != null: "cannot find local storage[uuid:${cmd.uuid}]"
+
+            def rsp = new LocalStorageKvmBackend.AgentResponse()
+            rsp.totalCapacity = lspec.totalCapacity
+            rsp.availableCapacity = lspec.availableCapacity
+            return
         }
 
         simulator(LocalStorageKvmBackend.CREATE_EMPTY_VOLUME_PATH) {

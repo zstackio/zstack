@@ -58,6 +58,7 @@ import org.zstack.header.vm.VmInstanceSpec.IsoSpec;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.tag.SystemTagCreator;
+import org.zstack.tag.SystemTagUtils;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.ObjectUtils;
@@ -395,7 +396,9 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((ReimageVmInstanceMsg) msg);
         } else if (msg instanceof GetVmStartingCandidateClustersHostsMsg) {
             handle((GetVmStartingCandidateClustersHostsMsg) msg);
-        } else {
+        } else if (msg instanceof MigrateVmInnerMsg) {
+            handle((MigrateVmInnerMsg) msg);
+        }else {
             VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
             if (ext != null) {
                 VmInstance v = ext.getVmInstance(self);
@@ -404,6 +407,41 @@ public class VmInstanceBase extends AbstractVmInstance {
                 bus.dealWithUnknownMessage(msg);
             }
         }
+    }
+
+    private void handle(MigrateVmInnerMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getName() {
+                return String.format("migrate-vm-%s", self.getUuid());
+            }
+
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                migrateVm(msg, new Completion(chain) {
+                    @Override
+                    public void success() {
+                        MigrateVmInnerReply evt = new MigrateVmInnerReply();
+                        evt.setInventory(VmInstanceInventory.valueOf(self));
+                        bus.reply(msg, evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        MigrateVmInnerReply evt = new MigrateVmInnerReply();
+                        evt.setError(errorCode);
+                        bus.reply(msg, evt);
+                        chain.next();
+                    }
+                });
+            }
+        });
     }
 
     private void handle(final APIGetVmStartingCandidateClustersHostsMsg msg) {
@@ -561,6 +599,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 startVm(msg, new Completion(msg, chain) {
                     @Override
                     public void success() {
+                        reply.setInventory(getSelfInventory());
                         bus.reply(msg, reply);
                         chain.next();
                     }
@@ -977,17 +1016,14 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
-        final Runnable fireEvent = new Runnable() {
-            @Override
-            public void run() {
-                VmTracerCanonicalEvents.VmStateChangedOnHostData data = new VmTracerCanonicalEvents.VmStateChangedOnHostData();
-                data.setVmUuid(self.getUuid());
-                data.setFrom(originalState);
-                data.setTo(self.getState());
-                data.setOriginalHostUuid(originalHostUuid);
-                data.setCurrentHostUuid(self.getHostUuid());
-                evtf.fire(VmTracerCanonicalEvents.VM_STATE_CHANGED_PATH, data);
-            }
+        final Runnable fireEvent = () -> {
+            VmTracerCanonicalEvents.VmStateChangedOnHostData data = new VmTracerCanonicalEvents.VmStateChangedOnHostData();
+            data.setVmUuid(self.getUuid());
+            data.setFrom(originalState);
+            data.setTo(self.getState());
+            data.setOriginalHostUuid(originalHostUuid);
+            data.setCurrentHostUuid(self.getHostUuid());
+            evtf.fire(VmTracerCanonicalEvents.VM_STATE_CHANGED_PATH, data);
         };
 
         if (currentState == VmInstanceState.Unknown) {
@@ -2051,7 +2087,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             throw new CloudRuntimeException("selectBootOrder must be called after VmOperation is set");
         }
 
-        if (spec.getCurrentVmOperation() == VmOperation.NewCreate && spec.getDestIso() != null) {
+        if (spec.getCurrentVmOperation() == VmOperation.NewCreate && !spec.getDestIsoList().isEmpty()) {
             spec.setBootOrders(list(VmBootDevice.CdRom.toString()));
         } else {
             String order = VmSystemTags.BOOT_ORDER.getTokenByResourceUuid(self.getUuid(), VmSystemTags.BOOT_ORDER_TOKEN);
@@ -2059,6 +2095,11 @@ public class VmInstanceBase extends AbstractVmInstance {
                 spec.setBootOrders(list(VmBootDevice.HardDisk.toString()));
             } else {
                 spec.setBootOrders(list(order.split(",")));
+                // set vm to boot from cdrom once only
+                if (VmSystemTags.CDROM_BOOT_ONCE.hasTag(self.getUuid(), VmInstanceVO.class)) {
+                    VmSystemTags.BOOT_ORDER.deleteInherentTag(self.getUuid());
+                    VmSystemTags.CDROM_BOOT_ONCE.deleteInherentTag(self.getUuid());
+                }
             }
         }
     }
@@ -2259,7 +2300,13 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
-        reply.setInventories(getImageCandidatesForVm(ImageMediaType.ISO));
+        List<ImageInventory> result = getImageCandidatesForVm(ImageMediaType.ISO);
+        List<String> vmIsoList = IsoOperator.getIsoUuidByVmUuid(msg.getVmInstanceUuid());
+        result = result.stream()
+                .filter(iso -> !vmIsoList.contains(iso.getUuid()))
+                .collect(Collectors.toList());
+
+        reply.setInventories(result);
         bus.reply(msg, reply);
     }
 
@@ -2443,11 +2490,14 @@ public class VmInstanceBase extends AbstractVmInstance {
     private void handle(APIGetVmBootOrderMsg msg) {
         APIGetVmBootOrderReply reply = new APIGetVmBootOrderReply();
         String order = VmSystemTags.BOOT_ORDER.getTokenByResourceUuid(self.getUuid(), VmSystemTags.BOOT_ORDER_TOKEN);
-        if (order == null) {
+        if (order != null) {
+            reply.setOrder(list(order.split(",")));
+        } else if (order == null && !VmSystemTags.ISO.hasTag(self.getUuid())) {
             reply.setOrder(list(VmBootDevice.HardDisk.toString()));
         } else {
-            reply.setOrder(list(order.split(",")));
+            reply.setOrder(list(VmBootDevice.HardDisk.toString(), VmBootDevice.CdRom.toString()));
         }
+
         bus.reply(msg, reply);
     }
 
@@ -2461,6 +2511,25 @@ public class VmInstanceBase extends AbstractVmInstance {
             creator.create();
         } else {
             VmSystemTags.BOOT_ORDER.deleteInherentTag(self.getUuid());
+        }
+
+        boolean cdromBootOnce = false;
+        if (msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()) {
+            Optional<String> opt = msg.getSystemTags().stream().filter(s -> VmSystemTags.CDROM_BOOT_ONCE.isMatch(s)).findAny();
+            if (opt.isPresent()) {
+                cdromBootOnce = Boolean.parseBoolean(
+                        VmSystemTags.CDROM_BOOT_ONCE.getTokenByTag(opt.get(), VmSystemTags.CDROM_BOOT_ONCE_TOKEN)
+                );
+            }
+        }
+        if (cdromBootOnce) {
+            SystemTagCreator creator = VmSystemTags.CDROM_BOOT_ONCE.newSystemTagCreator(self.getUuid());
+            creator.inherent = true;
+            creator.recreate = true;
+            creator.setTagByTokens(map(e(VmSystemTags.CDROM_BOOT_ONCE_TOKEN, String.valueOf(true))));
+            creator.create();
+        } else {
+            VmSystemTags.CDROM_BOOT_ONCE.deleteInherentTag(self.getUuid());
         }
         evt.setInventory(getSelfInventory());
         bus.publish(evt);
@@ -2716,7 +2785,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     return;
                 }
 
-                detachIso(new Completion(msg, chain) {
+                detachIso(msg.getIsoUuid() ,new Completion(msg, chain) {
                     @Override
                     public void success() {
                         self = dbf.reload(self);
@@ -2741,40 +2810,46 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    private void detachIso(final Completion completion) {
-        if (self.getState() == VmInstanceState.Stopped) {
-            new IsoOperator().detachIsoFromVm(self.getUuid());
+    private void detachIso(final String isoUuid, final Completion completion) {
+        if (!IsoOperator.isIsoAttachedToVm(self.getUuid())) {
             completion.success();
             return;
         }
 
-        if (!new IsoOperator().isIsoAttachedToVm(self.getUuid())) {
+        if (!IsoOperator.getIsoUuidByVmUuid(self.getUuid()).contains(isoUuid)) {
+            completion.success();
+            return;
+        }
+
+        if (self.getState() == VmInstanceState.Stopped) {
+            IsoOperator.detachIsoFromVm(self.getUuid(), isoUuid);
             completion.success();
             return;
         }
 
         VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.DetachIso);
-        if (spec.getDestIso() == null) {
+        boolean isoNotExist = !spec.getDestIsoList().stream().anyMatch(isoSpec -> isoSpec.getImageUuid().equals(isoUuid));
+        if (isoNotExist) {
             // the image ISO has been deleted from backup storage
             // try to detach it from the VM anyway
-            String isoUuid = new IsoOperator().getIsoUuidByVmUuid(self.getUuid());
             IsoSpec isoSpec = new IsoSpec();
             isoSpec.setImageUuid(isoUuid);
-            spec.setDestIso(isoSpec);
+            spec.getDestIsoList().add(isoSpec);
             logger.debug(String.format("the iso[uuid:%s] has been deleted, try to detach it from the VM[uuid:%s] anyway",
                     isoUuid, self.getUuid()));
         }
 
         FlowChain chain = getDetachIsoWorkFlowChain(spec.getVmInventory());
-        chain.setName(String.format("detach-iso-%s-from-vm-%s", spec.getDestIso().getImageUuid(), self.getUuid()));
+        chain.setName(String.format("detach-iso-%s-from-vm-%s", isoUuid, self.getUuid()));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
+        chain.getData().put(VmInstanceConstant.Params.DetachingIsoUuid.toString(), isoUuid);
 
         setFlowMarshaller(chain);
 
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
-                new IsoOperator().detachIsoFromVm(self.getUuid());
+                IsoOperator.detachIsoFromVm(self.getUuid(), isoUuid);
                 completion.success();
             }
         }).error(new FlowErrorHandler(completion) {
@@ -2984,6 +3059,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private void attachIso(final String isoUuid, final Completion completion) {
         checkIfIsoAttachable(isoUuid);
+        IsoOperator.checkAttachIsoToVm(self.getUuid(), isoUuid);
 
         if (self.getState() == VmInstanceState.Stopped) {
             new IsoOperator().attachIsoToVm(self.getUuid(), isoUuid);
@@ -2991,20 +3067,33 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
+        final ImageInventory iso = ImageInventory.valueOf(dbf.findByUuid(isoUuid, ImageVO.class));
         VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.AttachIso);
+
         IsoSpec isoSpec = new IsoSpec();
         isoSpec.setImageUuid(isoUuid);
-        spec.setDestIso(isoSpec);
+        int isoDeviceId = IsoOperator.getNextVolumeDeviceId(self.getUuid());
+        isoSpec.setDeviceId(isoDeviceId);
+        spec.getDestIsoList().add(isoSpec);
 
         FlowChain chain = getAttachIsoWorkFlowChain(spec.getVmInventory());
         chain.setName(String.format("attach-iso-%s-to-vm-%s", isoUuid, self.getUuid()));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
+        chain.getData().put(Params.AttachingIsoInventory.toString(), iso);
 
         setFlowMarshaller(chain);
 
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
+                // ISO anomaly check, you can cancel this check if there is no dirty data for a long time
+                int currentIsoDeviceId = IsoOperator.getNextVolumeDeviceId(self.getUuid());
+                if(isoDeviceId != currentIsoDeviceId) {
+                    completion.fail(operr("Iso[uuid:%s] deviceId exception occurs when vm[uuid:%s] is attached to iso. Expected to be %s, actually %s",
+                            isoUuid, self.getUuid(), isoDeviceId, currentIsoDeviceId));
+                    return;
+                }
+
                 new IsoOperator().attachIsoToVm(self.getUuid(), isoUuid);
                 completion.success();
             }
@@ -3590,6 +3679,8 @@ public class VmInstanceBase extends AbstractVmInstance {
                     dbf.update(self);
                 }
 
+                updateVmIsoFirstOrder(msg.getSystemTags());
+
                 CollectionUtils.safeForEach(extensions, new ForEachFunction<Runnable>() {
                     @Override
                     public void run(Runnable arg) {
@@ -3626,6 +3717,54 @@ public class VmInstanceBase extends AbstractVmInstance {
                 return "update-vm-info";
             }
         });
+    }
+
+    // Specify an iso as the first one, restart vm effective
+    private void updateVmIsoFirstOrder(List<String> systemTags){
+        if(systemTags == null || systemTags.isEmpty()){
+            return;
+        }
+
+        String isoUuid = SystemTagUtils.findTagValue(systemTags, VmSystemTags.ISO, VmSystemTags.ISO_TOKEN);
+        if (isoUuid == null){
+            return;
+        }
+
+        String vmUuid = self.getUuid();
+        List<String> isoList = IsoOperator.getIsoUuidByVmUuid(vmUuid);
+        if (!isoList.contains(isoUuid)) {
+            throw new OperationFailureException(operr("ISO[uuid:%s] is not attached to VM[uuid:%s]", isoUuid , self.getUuid()));
+        }
+
+        if (IsoOperator.getIsoDeviceId(vmUuid, isoUuid) == 0) {
+            return;
+        }
+
+        Map<Integer, String> isoDeviceIdMap = new HashMap<>();
+        for (String iso : isoList) {
+            if (iso.equals(isoUuid)) {
+                isoDeviceIdMap.put(0, iso);
+                IsoOperator.detachIsoFromVm(vmUuid, iso);
+                continue;
+            }
+
+            int isoDeviceId = IsoOperator.getIsoDeviceId(vmUuid, iso) + 1;
+            int maxIsoDeviceId = VmInstanceConstant.MAXIMUM_MOUNT_ISO_NUMBER - 1;
+            isoDeviceId = isoDeviceId > maxIsoDeviceId ? maxIsoDeviceId : isoDeviceId;
+            isoDeviceIdMap.put(isoDeviceId, iso);
+
+            IsoOperator.detachIsoFromVm(vmUuid, iso);
+        }
+
+        for (int deviceId = 0; deviceId < VmInstanceConstant.MAXIMUM_MOUNT_ISO_NUMBER; deviceId ++ ) {
+            String iso = isoDeviceIdMap.get(deviceId);
+
+            if (iso == null) {
+                continue;
+            }
+
+            new IsoOperator().attachIsoToVm(vmUuid, iso);
+        }
     }
 
     @Transactional(readOnly = true)
@@ -4038,6 +4177,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         setFlowMarshaller(chain);
 
+        String lastHostUuid = self.getHostUuid();
         chain.setName(String.format("migrate-vm-%s", self.getUuid()));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
         chain.done(new FlowDoneHandler(completion) {
@@ -4048,7 +4188,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 self = changeVmStateInDb(VmInstanceStateEvent.running, ()-> {
                     self.setZoneUuid(host.getZoneUuid());
                     self.setClusterUuid(host.getClusterUuid());
-                    self.setLastHostUuid(self.getHostUuid());
+                    self.setLastHostUuid(lastHostUuid);
                     self.setHostUuid(host.getUuid());
                 });
                 VmInstanceInventory vm = VmInstanceInventory.valueOf(self);
@@ -4117,6 +4257,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             completion.fail(allowed);
             return;
         }
+        // ISO anomaly check, you can cancel this check if there is no dirty data for a long time
+        IsoOperator.checkIsoSystemTag(self.getUuid());
 
         if (self.getState() == VmInstanceState.Created) {
             StartVmFromNewCreatedStruct struct = new JsonLabel().get(
@@ -4298,7 +4440,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             new IsoOperator().attachIsoToVm(self.getUuid(), imvo.getUuid());
             IsoSpec isoSpec = new IsoSpec();
             isoSpec.setImageUuid(imvo.getUuid());
-            spec.setDestIso(isoSpec);
+            spec.getDestIsoList().add(isoSpec);
         }
 
         spec.getImageSpec().setInventory(ImageInventory.valueOf(imvo));
@@ -4595,18 +4737,18 @@ public class VmInstanceBase extends AbstractVmInstance {
         spec.setVmInventory(inv);
         buildHostname(spec);
 
-        String isoUuid = new IsoOperator().getIsoUuidByVmUuid(inv.getUuid());
-        if (isoUuid != null) {
+        List<String> isoUuids = IsoOperator.getIsoUuidByVmUuid(inv.getUuid());
+        isoUuids.forEach(isoUuid -> {
             if (dbf.isExist(isoUuid, ImageVO.class)) {
                 IsoSpec isoSpec = new IsoSpec();
                 isoSpec.setImageUuid(isoUuid);
-                spec.setDestIso(isoSpec);
+                spec.getDestIsoList().add(isoSpec);
             } else {
                 //TODO
                 logger.warn(String.format("iso[uuid:%s] is deleted, however, the VM[uuid:%s] still has it attached",
                         isoUuid, self.getUuid()));
             }
-        }
+        });
 
         spec.setCurrentVmOperation(operation);
         selectBootOrder(spec);
@@ -4623,6 +4765,9 @@ public class VmInstanceBase extends AbstractVmInstance {
             completion.fail(allowed);
             return;
         }
+
+        // ISO anomaly check, you can cancel this check if there is no dirty data for a long time
+        IsoOperator.checkIsoSystemTag(self.getUuid());
 
         VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
         ErrorCode preReboot = extEmitter.preRebootVm(inv);

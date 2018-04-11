@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryVirtualBorderRouterFromLocalAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryVirtualBorderRouterFromLocalAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryVirtualBorderRouterFromLocalResult value;
+        public org.zstack.sdk.QueryVirtualBorderRouterFromLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryVirtualBorderRouterFromLocalAction extends QueryAction {
             return ret;
         }
         
-        QueryVirtualBorderRouterFromLocalResult value = res.getResult(QueryVirtualBorderRouterFromLocalResult.class);
-        ret.value = value == null ? new QueryVirtualBorderRouterFromLocalResult() : value; 
+        org.zstack.sdk.QueryVirtualBorderRouterFromLocalResult value = res.getResult(org.zstack.sdk.QueryVirtualBorderRouterFromLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryVirtualBorderRouterFromLocalResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QueryVirtualBorderRouterFromLocalAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/hybrid/aliyun/border-router";

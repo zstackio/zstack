@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class GetEcsInstanceTypeAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class GetEcsInstanceTypeAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetEcsInstanceTypeResult value;
+        public org.zstack.sdk.GetEcsInstanceTypeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -44,8 +45,8 @@ public class GetEcsInstanceTypeAction extends AbstractAction {
             return ret;
         }
         
-        GetEcsInstanceTypeResult value = res.getResult(GetEcsInstanceTypeResult.class);
-        ret.value = value == null ? new GetEcsInstanceTypeResult() : value; 
+        org.zstack.sdk.GetEcsInstanceTypeResult value = res.getResult(org.zstack.sdk.GetEcsInstanceTypeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetEcsInstanceTypeResult() : value; 
 
         return ret;
     }
@@ -64,15 +65,15 @@ public class GetEcsInstanceTypeAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/hybrid/ecs/type";

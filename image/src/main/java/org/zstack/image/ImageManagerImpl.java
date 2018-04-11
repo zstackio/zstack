@@ -1,6 +1,8 @@
 package org.zstack.image;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.ThreadContext;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
@@ -24,6 +26,7 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.AsyncLatch;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -78,6 +81,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.core.progress.ProgressReportService.getTaskStage;
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.header.Constants.THREAD_CONTEXT_API;
 import static org.zstack.header.Constants.THREAD_CONTEXT_TASK_NAME;
@@ -128,8 +132,36 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         }
     }
 
+    private void handle(AddImageMsg msg) {
+        AddImageReply evt = new AddImageReply();
+        AddImageLongJobData data = new AddImageLongJobData(msg);
+        BeanUtils.copyProperties(msg, data);
+        handleAddImageMsg(data, evt);
+    }
+
+
+    private void handle(CreateRootVolumeTemplateFromRootVolumeMsg msg) {
+        CreateRootVolumeTemplateFromRootVolumeData data = new CreateRootVolumeTemplateFromRootVolumeData(msg);
+        BeanUtils.copyProperties(msg, data);
+        handleCreateRootVolumeTemplateFromRootVolumeMsg(data, new CreateRootVolumeTemplateFromRootVolumeReply());
+    }
+
     private void handleLocalMessage(Message msg) {
-        bus.dealWithUnknownMessage(msg);
+        if (msg instanceof AddImageMsg) {
+            handle((AddImageMsg) msg);
+        } else if (msg instanceof CreateRootVolumeTemplateFromRootVolumeMsg){
+            handle((CreateRootVolumeTemplateFromRootVolumeMsg) msg);
+        } else if (msg instanceof CreateDataVolumeTemplateFromVolumeMsg){
+            handle ((CreateDataVolumeTemplateFromVolumeMsg)msg);
+        } else {
+            bus.dealWithUnknownMessage(msg);
+        }
+    }
+
+    private void handle(CreateDataVolumeTemplateFromVolumeMsg msg) {
+        CreateDataVolumeTemplateFromVolumeLongJobData data = new CreateDataVolumeTemplateFromVolumeLongJobData(msg);
+        BeanUtils.copyProperties(msg, data);
+        handleCreateDataVolumeTemplateFromVolumeMsg(data, new CreateDataVolumeTemplateFromVolumeReply());
     }
 
     private void handleApiMessage(Message msg) {
@@ -153,290 +185,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
     }
 
     private void handle(final APICreateDataVolumeTemplateFromVolumeMsg msg) {
-        final APICreateDataVolumeTemplateFromVolumeEvent evt = new APICreateDataVolumeTemplateFromVolumeEvent(msg.getId());
-        List<ImageBackupStorageRefVO> refs = new ArrayList<>();
-        FlowChain chain = FlowChainBuilder.newShareFlowChain();
-        chain.setName(String.format("create-data-volume-template-from-volume-%s", msg.getVolumeUuid()));
-        chain.then(new ShareFlow() {
-            List<BackupStorageInventory> backupStorages = new ArrayList<>();
-            ImageVO image;
-            long actualSize;
-
-            @Override
-            public void setup() {
-                flow(new NoRollbackFlow() {
-                    String __name__ = "get-actual-size-of-data-volume";
-
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        SyncVolumeSizeMsg smsg = new SyncVolumeSizeMsg();
-                        smsg.setVolumeUuid(msg.getVolumeUuid());
-                        bus.makeTargetServiceIdByResourceUuid(smsg, VolumeConstant.SERVICE_ID, msg.getVolumeUuid());
-                        bus.send(smsg, new CloudBusCallBack(trigger) {
-                            @Override
-                            public void run(MessageReply reply) {
-                                if (!reply.isSuccess()) {
-                                    trigger.fail(reply.getError());
-                                    return;
-                                }
-
-                                SyncVolumeSizeReply sr = reply.castReply();
-                                actualSize = sr.getActualSize();
-                                trigger.next();
-                            }
-                        });
-                    }
-                });
-
-                flow(new Flow() {
-                    String __name__ = "create-image-in-database";
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
-                        q.select(VolumeVO_.format, VolumeVO_.size);
-                        q.add(VolumeVO_.uuid, Op.EQ, msg.getVolumeUuid());
-                        Tuple t = q.findTuple();
-
-                        String format = t.get(0, String.class);
-                        long size = t.get(1, Long.class);
-
-                        final ImageVO vo = new ImageVO();
-                        vo.setUuid(msg.getResourceUuid() == null ? Platform.getUuid() : msg.getResourceUuid());
-                        vo.setName(msg.getName());
-                        vo.setDescription(msg.getDescription());
-                        vo.setType(ImageConstant.ZSTACK_IMAGE_TYPE);
-                        vo.setMediaType(ImageMediaType.DataVolumeTemplate);
-                        vo.setSize(size);
-                        vo.setActualSize(actualSize);
-                        vo.setState(ImageState.Enabled);
-                        vo.setStatus(ImageStatus.Creating);
-                        vo.setSystem(false);
-                        vo.setFormat(format);
-                        vo.setUrl(String.format("volume://%s", msg.getVolumeUuid()));
-                        image = dbf.persistAndRefresh(vo);
-                        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), ImageVO.class);
-                        tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), ImageVO.class.getSimpleName());
-                        trigger.next();
-                    }
-
-                    @Override
-                    public void rollback(FlowRollback trigger, Map data) {
-                        if (image != null) {
-                            dbf.remove(image);
-                        }
-
-                        trigger.rollback();
-                    }
-                });
-
-                flow(new Flow() {
-                    String __name__ = "select-backup-storage";
-
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        final String zoneUuid = new Callable<String>() {
-                            @Override
-                            @Transactional(readOnly = true)
-                            public String call() {
-                                String sql = "select ps.zoneUuid" +
-                                        " from PrimaryStorageVO ps, VolumeVO vol" +
-                                        " where vol.primaryStorageUuid = ps.uuid" +
-                                        " and vol.uuid = :volUuid";
-                                TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-                                q.setParameter("volUuid", msg.getVolumeUuid());
-                                return q.getSingleResult();
-                            }
-                        }.call();
-
-                        if (msg.getBackupStorageUuids() == null) {
-                            AllocateBackupStorageMsg amsg = new AllocateBackupStorageMsg();
-                            amsg.setRequiredZoneUuid(zoneUuid);
-                            amsg.setSize(actualSize);
-                            bus.makeLocalServiceId(amsg, BackupStorageConstant.SERVICE_ID);
-                            bus.send(amsg, new CloudBusCallBack(trigger) {
-                                @Override
-                                public void run(MessageReply reply) {
-                                    if (reply.isSuccess()) {
-                                        backupStorages.add(((AllocateBackupStorageReply) reply).getInventory());
-                                        saveRefVOByBsInventorys(backupStorages, image.getUuid());
-
-                                        for (BackupStorageInventory bs: backupStorages) {
-                                            for (CreateImageExtensionPoint ext : pluginRgty.getExtensionList(CreateImageExtensionPoint.class)) {
-                                                VolumeVO volume = dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class);
-                                                ext.beforeCreateImage(ImageInventory.valueOf(image), bs.getUuid(), volume.getPrimaryStorageUuid());
-                                            }
-                                        }
-                                        trigger.next();
-                                    } else {
-                                        trigger.fail(errf.stringToOperationError("cannot find proper backup storage", reply.getError()));
-                                    }
-                                }
-                            });
-                        } else {
-                            List<AllocateBackupStorageMsg> amsgs = CollectionUtils.transformToList(msg.getBackupStorageUuids(), new Function<AllocateBackupStorageMsg, String>() {
-                                @Override
-                                public AllocateBackupStorageMsg call(String arg) {
-                                    AllocateBackupStorageMsg amsg = new AllocateBackupStorageMsg();
-                                    amsg.setRequiredZoneUuid(zoneUuid);
-                                    amsg.setSize(actualSize);
-                                    amsg.setBackupStorageUuid(arg);
-                                    bus.makeLocalServiceId(amsg, BackupStorageConstant.SERVICE_ID);
-                                    return amsg;
-                                }
-                            });
-
-                            bus.send(amsgs, new CloudBusListCallBack(trigger) {
-                                @Override
-                                public void run(List<MessageReply> replies) {
-                                    List<ErrorCode> errs = new ArrayList<>();
-                                    for (MessageReply r : replies) {
-                                        if (r.isSuccess()) {
-                                            backupStorages.add(((AllocateBackupStorageReply) r).getInventory());
-                                        } else {
-                                            errs.add(r.getError());
-                                        }
-                                    }
-
-                                    if (backupStorages.isEmpty()) {
-                                        trigger.fail(operr("failed to allocate all backup storage[uuid:%s], a list of error: %s",
-                                                msg.getBackupStorageUuids(), JSONObjectUtil.toJsonString(errs)));
-                                    } else {
-                                        saveRefVOByBsInventorys(backupStorages, image.getUuid());
-                                        for (BackupStorageInventory bs: backupStorages) {
-                                            for (CreateImageExtensionPoint ext : pluginRgty.getExtensionList(CreateImageExtensionPoint.class)) {
-                                                VolumeVO volume = dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class);
-
-                                                ext.beforeCreateImage(ImageInventory.valueOf(image), bs.getUuid(), volume.getPrimaryStorageUuid());
-                                            }
-                                        }
-                                        trigger.next();
-                                    }
-                                }
-                            });
-                        }
-                    }
-
-                    @Override
-                    public void rollback(FlowRollback trigger, Map data) {
-                        if (!backupStorages.isEmpty()) {
-                            List<ReturnBackupStorageMsg> rmsgs = CollectionUtils.transformToList(backupStorages, new Function<ReturnBackupStorageMsg, BackupStorageInventory>() {
-                                @Override
-                                public ReturnBackupStorageMsg call(BackupStorageInventory arg) {
-                                    ReturnBackupStorageMsg rmsg = new ReturnBackupStorageMsg();
-                                    rmsg.setBackupStorageUuid(arg.getUuid());
-                                    rmsg.setSize(actualSize);
-                                    bus.makeLocalServiceId(rmsg, BackupStorageConstant.SERVICE_ID);
-                                    return rmsg;
-                                }
-                            });
-
-                            bus.send(rmsgs, new CloudBusListCallBack(null) {
-                                @Override
-                                public void run(List<MessageReply> replies) {
-                                    for (MessageReply r : replies) {
-                                        BackupStorageInventory bs = backupStorages.get(replies.indexOf(r));
-                                        logger.warn(String.format("failed to return %s bytes to backup storage[uuid:%s]", acntMgr, bs.getUuid()));
-                                    }
-                                }
-                            });
-                        }
-
-                        trigger.rollback();
-                    }
-                });
-
-                flow(new NoRollbackFlow() {
-                    String __name__ = "create-data-volume-template-from-volume";
-
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        List<CreateDataVolumeTemplateFromDataVolumeMsg> cmsgs = CollectionUtils.transformToList(backupStorages, new Function<CreateDataVolumeTemplateFromDataVolumeMsg, BackupStorageInventory>() {
-                            @Override
-                            public CreateDataVolumeTemplateFromDataVolumeMsg call(BackupStorageInventory bs) {
-                                CreateDataVolumeTemplateFromDataVolumeMsg cmsg = new CreateDataVolumeTemplateFromDataVolumeMsg();
-                                cmsg.setVolumeUuid(msg.getVolumeUuid());
-                                cmsg.setBackupStorageUuid(bs.getUuid());
-                                cmsg.setImageUuid(image.getUuid());
-                                bus.makeTargetServiceIdByResourceUuid(cmsg, VolumeConstant.SERVICE_ID, msg.getVolumeUuid());
-                                return cmsg;
-                            }
-                        });
-
-                        bus.send(cmsgs, new CloudBusListCallBack(msg) {
-                            @Override
-                            public void run(List<MessageReply> replies) {
-                                int fail = 0;
-                                String mdsum = null;
-                                ErrorCode err = null;
-                                String format = null;
-                                for (MessageReply r : replies) {
-                                    BackupStorageInventory bs = backupStorages.get(replies.indexOf(r));
-                                    if (!r.isSuccess()) {
-                                        logger.warn(String.format("failed to create data volume template from volume[uuid:%s] on backup storage[uuid:%s], %s",
-                                                msg.getVolumeUuid(), bs.getUuid(), r.getError()));
-                                        fail++;
-                                        err = r.getError();
-                                        continue;
-                                    }
-
-                                    CreateDataVolumeTemplateFromDataVolumeReply reply = r.castReply();
-                                    ImageBackupStorageRefVO vo = Q.New(ImageBackupStorageRefVO.class)
-                                            .eq(ImageBackupStorageRefVO_.backupStorageUuid, bs.getUuid())
-                                            .eq(ImageBackupStorageRefVO_.imageUuid, image.getUuid())
-                                            .find();
-                                    vo.setStatus(ImageStatus.Ready);
-                                    vo.setInstallPath(reply.getInstallPath());
-                                    dbf.update(vo);
-
-                                    if (mdsum == null) {
-                                        mdsum = reply.getMd5sum();
-                                    }
-                                    if (reply.getFormat() != null) {
-                                        format = reply.getFormat();
-                                    }
-                                }
-
-                                int backupStorageNum = msg.getBackupStorageUuids() == null ? 1 : msg.getBackupStorageUuids().size();
-
-                                if (fail == backupStorageNum) {
-                                    ErrorCode errCode = operr("failed to create data volume template from volume[uuid:%s] on all backup storage%s. See cause for one of errors",
-                                            msg.getVolumeUuid(), msg.getBackupStorageUuids()).causedBy(err);
-
-                                    trigger.fail(errCode);
-                                } else {
-                                    image = dbf.reload(image);
-                                    if (format != null) {
-                                        image.setFormat(format);
-                                    }
-                                    image.setMd5Sum(mdsum);
-                                    image.setStatus(ImageStatus.Ready);
-                                    image = dbf.updateAndRefresh(image);
-
-                                    trigger.next();
-                                }
-                            }
-                        });
-                    }
-                });
-
-                done(new FlowDoneHandler(msg) {
-                    @Override
-                    public void handle(Map data) {
-                        evt.setInventory(ImageInventory.valueOf(image));
-                        bus.publish(evt);
-                    }
-                });
-
-                error(new FlowErrorHandler(msg) {
-                    @Override
-                    public void handle(ErrorCode errCode, Map data) {
-                        evt.setError(errCode);
-                        bus.publish(evt);
-                    }
-                });
-            }
-        }).start();
+        CreateDataVolumeTemplateFromVolumeLongJobData data = new CreateDataVolumeTemplateFromVolumeLongJobData(msg);
+        BeanUtils.copyProperties(msg, data);
+        handleCreateDataVolumeTemplateFromVolumeMsg(data, new APICreateDataVolumeTemplateFromVolumeEvent(msg.getId()));
     }
 
     private void handle(final APICreateRootVolumeTemplateFromVolumeSnapshotMsg msg) {
@@ -572,339 +323,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
 
     private void handle(final APICreateRootVolumeTemplateFromRootVolumeMsg msg) {
-        FlowChain chain = FlowChainBuilder.newShareFlowChain();
-        chain.setName(String.format("create-template-from-root-volume-%s", msg.getRootVolumeUuid()));
-        chain.then(new ShareFlow() {
-            ImageVO imageVO;
-            VolumeInventory rootVolume;
-            Long imageActualSize;
-            List<BackupStorageInventory> targetBackupStorages = new ArrayList<>();
-            String zoneUuid;
-
-            {
-                VolumeVO rootvo = dbf.findByUuid(msg.getRootVolumeUuid(), VolumeVO.class);
-                rootVolume = VolumeInventory.valueOf(rootvo);
-
-                SimpleQuery<PrimaryStorageVO> q = dbf.createQuery(PrimaryStorageVO.class);
-                q.select(PrimaryStorageVO_.zoneUuid);
-                q.add(PrimaryStorageVO_.uuid, Op.EQ, rootVolume.getPrimaryStorageUuid());
-                zoneUuid = q.findValue();
-            }
-
-
-            @Override
-            public void setup() {
-                flow(new NoRollbackFlow() {
-                    String __name__ = "get-volume-actual-size";
-
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        SyncVolumeSizeMsg msg = new SyncVolumeSizeMsg();
-                        msg.setVolumeUuid(rootVolume.getUuid());
-                        bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, rootVolume.getPrimaryStorageUuid());
-                        bus.send(msg, new CloudBusCallBack(trigger) {
-                            @Override
-                            public void run(MessageReply reply) {
-                                if (!reply.isSuccess()) {
-                                    trigger.fail(reply.getError());
-                                    return;
-                                }
-
-                                SyncVolumeSizeReply sr = reply.castReply();
-                                imageActualSize = sr.getActualSize();
-                                trigger.next();
-                            }
-                        });
-                    }
-                });
-
-                flow(new Flow() {
-                    String __name__ = "create-image-in-database";
-
-                    public void run(FlowTrigger trigger, Map data) {
-                        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
-                        q.add(VolumeVO_.uuid, Op.EQ, msg.getRootVolumeUuid());
-                        final VolumeVO volvo = q.find();
-
-                        String accountUuid = acntMgr.getOwnerAccountUuidOfResource(volvo.getUuid());
-
-                        final ImageVO imvo = new ImageVO();
-                        if (msg.getResourceUuid() != null) {
-                            imvo.setUuid(msg.getResourceUuid());
-                        } else {
-                            imvo.setUuid(Platform.getUuid());
-                        }
-                        imvo.setDescription(msg.getDescription());
-                        imvo.setMediaType(ImageMediaType.RootVolumeTemplate);
-                        imvo.setState(ImageState.Enabled);
-                        imvo.setGuestOsType(msg.getGuestOsType());
-                        imvo.setFormat(volvo.getFormat());
-                        imvo.setName(msg.getName());
-                        imvo.setSystem(msg.isSystem());
-                        imvo.setPlatform(ImagePlatform.valueOf(msg.getPlatform()));
-                        imvo.setStatus(ImageStatus.Downloading);
-                        imvo.setType(ImageConstant.ZSTACK_IMAGE_TYPE);
-                        imvo.setUrl(String.format("volume://%s", msg.getRootVolumeUuid()));
-                        imvo.setSize(volvo.getSize());
-                        imvo.setActualSize(imageActualSize);
-                        dbf.persist(imvo);
-                        acntMgr.createAccountResourceRef(accountUuid, imvo.getUuid(), ImageVO.class);
-                        tagMgr.createTagsFromAPICreateMessage(msg, imvo.getUuid(), ImageVO.class.getSimpleName());
-
-                        imageVO = imvo;
-                        trigger.next();
-                    }
-
-                    @Override
-                    public void rollback(FlowRollback trigger, Map data) {
-                        if (imageVO != null) {
-                            dbf.remove(imageVO);
-                        }
-
-                        trigger.rollback();
-                    }
-                });
-
-                flow(new Flow() {
-                    String __name__ = String.format("select-backup-storage");
-
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        List<ImageBackupStorageRefVO> refs = new ArrayList<>();
-                        if (msg.getBackupStorageUuids() == null) {
-                            AllocateBackupStorageMsg abmsg = new AllocateBackupStorageMsg();
-                            abmsg.setRequiredZoneUuid(zoneUuid);
-                            abmsg.setSize(imageActualSize);
-                            bus.makeLocalServiceId(abmsg, BackupStorageConstant.SERVICE_ID);
-
-                            bus.send(abmsg, new CloudBusCallBack(trigger) {
-                                @Override
-                                public void run(MessageReply reply) {
-                                    if (reply.isSuccess()) {
-                                        targetBackupStorages.add(((AllocateBackupStorageReply) reply).getInventory());
-                                        saveRefVOByBsInventorys(targetBackupStorages, imageVO.getUuid());
-                                        trigger.next();
-                                    } else {
-                                        trigger.fail(reply.getError());
-                                    }
-                                }
-                            });
-                        } else {
-                            List<AllocateBackupStorageMsg> amsgs = CollectionUtils.transformToList(msg.getBackupStorageUuids(), new Function<AllocateBackupStorageMsg, String>() {
-                                @Override
-                                public AllocateBackupStorageMsg call(String arg) {
-                                    AllocateBackupStorageMsg abmsg = new AllocateBackupStorageMsg();
-                                    abmsg.setSize(imageActualSize);
-                                    abmsg.setBackupStorageUuid(arg);
-                                    bus.makeLocalServiceId(abmsg, BackupStorageConstant.SERVICE_ID);
-                                    return abmsg;
-                                }
-                            });
-
-                            bus.send(amsgs, new CloudBusListCallBack(trigger) {
-                                @Override
-                                public void run(List<MessageReply> replies) {
-                                    List<ErrorCode> errs = new ArrayList<>();
-                                    for (MessageReply r : replies) {
-                                        if (r.isSuccess()) {
-                                            targetBackupStorages.add(((AllocateBackupStorageReply) r).getInventory());
-                                        } else {
-                                            errs.add(r.getError());
-                                        }
-                                    }
-
-                                    if (targetBackupStorages.isEmpty()) {
-                                        trigger.fail(operr("unable to allocate backup storage specified by uuids%s, list errors are: %s",
-                                                msg.getBackupStorageUuids(), JSONObjectUtil.toJsonString(errs)));
-                                    } else {
-                                        saveRefVOByBsInventorys(targetBackupStorages, imageVO.getUuid());
-                                        trigger.next();
-                                    }
-                                }
-                            });
-                        }
-                    }
-
-                    @Override
-                    public void rollback(final FlowRollback trigger, Map data) {
-                        if (targetBackupStorages.isEmpty()) {
-                            trigger.rollback();
-                            return;
-                        }
-
-                        List<ReturnBackupStorageMsg> rmsgs = CollectionUtils.transformToList(targetBackupStorages, new Function<ReturnBackupStorageMsg, BackupStorageInventory>() {
-                            @Override
-                            public ReturnBackupStorageMsg call(BackupStorageInventory arg) {
-                                ReturnBackupStorageMsg rmsg = new ReturnBackupStorageMsg();
-                                rmsg.setBackupStorageUuid(arg.getUuid());
-                                rmsg.setSize(imageActualSize);
-                                bus.makeLocalServiceId(rmsg, BackupStorageConstant.SERVICE_ID);
-                                return rmsg;
-                            }
-                        });
-
-                        bus.send(rmsgs, new CloudBusListCallBack(trigger) {
-                            @Override
-                            public void run(List<MessageReply> replies) {
-                                for (MessageReply r : replies) {
-                                    if (!r.isSuccess()) {
-                                        BackupStorageInventory bs = targetBackupStorages.get(replies.indexOf(r));
-                                        logger.warn(String.format("failed to return capacity[%s] to backup storage[uuid:%s], because %s",
-                                                imageActualSize, bs.getUuid(), r.getError()));
-                                    }
-                                }
-
-                                trigger.rollback();
-                            }
-                        });
-                    }
-                });
-
-                flow(new NoRollbackFlow() {
-                    String __name__ = String.format("start-creating-template");
-
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-                        List<CreateTemplateFromVmRootVolumeMsg> cmsgs = CollectionUtils.transformToList(targetBackupStorages, new Function<CreateTemplateFromVmRootVolumeMsg, BackupStorageInventory>() {
-                            @Override
-                            public CreateTemplateFromVmRootVolumeMsg call(BackupStorageInventory arg) {
-                                CreateTemplateFromVmRootVolumeMsg cmsg = new CreateTemplateFromVmRootVolumeMsg();
-                                cmsg.setRootVolumeInventory(rootVolume);
-                                cmsg.setBackupStorageUuid(arg.getUuid());
-                                cmsg.setImageInventory(ImageInventory.valueOf(imageVO));
-                                bus.makeTargetServiceIdByResourceUuid(cmsg, VmInstanceConstant.SERVICE_ID, rootVolume.getVmInstanceUuid());
-                                return cmsg;
-                            }
-                        });
-
-                        bus.send(cmsgs, new CloudBusListCallBack(trigger) {
-                            @Override
-                            public void run(List<MessageReply> replies) {
-                                boolean success = false;
-                                ErrorCode err = null;
-
-                                for (MessageReply r : replies) {
-                                    BackupStorageInventory bs = targetBackupStorages.get(replies.indexOf(r));
-                                    ImageBackupStorageRefVO ref = Q.New(ImageBackupStorageRefVO.class)
-                                            .eq(ImageBackupStorageRefVO_.backupStorageUuid, bs.getUuid())
-                                            .eq(ImageBackupStorageRefVO_.imageUuid, imageVO.getUuid())
-                                            .find();
-
-                                    if (dbf.reload(imageVO) == null) {
-                                        SQL.New("delete from ImageBackupStorageRefVO where imageUuid = :uuid")
-                                                .param("uuid", imageVO.getUuid())
-                                                .execute();
-                                        trigger.fail(operr("image [uuid:%s] has been deleted", imageVO.getUuid()));
-                                        return;
-                                    }
-
-
-                                    if (!r.isSuccess()) {
-                                        logger.warn(String.format("failed to create image from root volume[uuid:%s] on backup storage[uuid:%s], because %s",
-                                                msg.getRootVolumeUuid(), bs.getUuid(), r.getError()));
-                                        err = r.getError();
-                                        dbf.remove(ref);
-                                        continue;
-                                    }
-
-                                    CreateTemplateFromVmRootVolumeReply reply = (CreateTemplateFromVmRootVolumeReply) r;
-                                    ref.setStatus(ImageStatus.Ready);
-                                    ref.setInstallPath(reply.getInstallPath());
-                                    dbf.update(ref);
-
-                                    imageVO.setStatus(ImageStatus.Ready);
-                                    if (reply.getFormat() != null) {
-                                        imageVO.setFormat(reply.getFormat());
-                                    }
-                                    imageVO = dbf.updateAndRefresh(imageVO);
-                                    success = true;
-                                    logger.debug(String.format("successfully created image[uuid:%s] from root volume[uuid:%s] on backup storage[uuid:%s]",
-                                            imageVO.getUuid(), msg.getRootVolumeUuid(), bs.getUuid()));
-                                }
-
-                                if (success) {
-                                    trigger.next();
-                                } else {
-                                    trigger.fail(operr("failed to create image from root volume[uuid:%s] on all backup storage, see cause for one of errors",
-                                            msg.getRootVolumeUuid()).causedBy(err));
-                                }
-                            }
-                        });
-                    }
-                });
-
-                flow(new Flow() {
-                    String __name__ = "copy-system-tag-to-image";
-
-                    public void run(FlowTrigger trigger, Map data) {
-                        // find the rootimage and create some systemtag if it has
-                        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
-                        q.add(VolumeVO_.uuid, SimpleQuery.Op.EQ, msg.getRootVolumeUuid());
-                        q.select(VolumeVO_.vmInstanceUuid);
-                        String vmInstanceUuid = q.findValue();
-                        if (tagMgr.hasSystemTag(vmInstanceUuid, ImageSystemTags.IMAGE_INJECT_QEMUGA.getTagFormat())) {
-                            tagMgr.createNonInherentSystemTag(imageVO.getUuid(),
-                                    ImageSystemTags.IMAGE_INJECT_QEMUGA.getTagFormat(),
-                                    ImageVO.class.getSimpleName());
-                        }
-                        trigger.next();
-                    }
-
-                    @Override
-                    public void rollback(FlowRollback trigger, Map data) {
-                        trigger.rollback();
-                    }
-                });
-
-                flow(new NoRollbackFlow() {
-                    String __name__ = String.format("sync-image-size");
-
-                    @Override
-                    public void run(final FlowTrigger trigger, Map data) {
-
-                        new While<>(targetBackupStorages).all((arg, completion) -> {
-                            SyncImageSizeMsg smsg = new SyncImageSizeMsg();
-                            smsg.setBackupStorageUuid(arg.getUuid());
-                            smsg.setImageUuid(imageVO.getUuid());
-                            bus.makeTargetServiceIdByResourceUuid(smsg, ImageConstant.SERVICE_ID, imageVO.getUuid());
-                            bus.send(smsg, new CloudBusCallBack(completion) {
-                                @Override
-                                public void run(MessageReply reply) {
-                                    completion.done();
-                                }
-                            });
-                        }).run(new NoErrorCompletion(trigger) {
-                            @Override
-                            public void done() {
-                                trigger.next();
-                            }
-                        });
-                    }
-                });
-
-                done(new FlowDoneHandler(msg) {
-                    @Override
-                    public void handle(Map data) {
-                        APICreateRootVolumeTemplateFromRootVolumeEvent evt = new APICreateRootVolumeTemplateFromRootVolumeEvent(msg.getId());
-                        imageVO = dbf.reload(imageVO);
-                        ImageInventory iinv = ImageInventory.valueOf(imageVO);
-                        evt.setInventory(iinv);
-                        logger.warn(String.format("successfully create template[uuid:%s] from root volume[uuid:%s]", iinv.getUuid(), msg.getRootVolumeUuid()));
-                        bus.publish(evt);
-                    }
-                });
-
-                error(new FlowErrorHandler(msg) {
-                    @Override
-                    public void handle(ErrorCode errCode, Map data) {
-                        APICreateRootVolumeTemplateFromRootVolumeEvent evt = new APICreateRootVolumeTemplateFromRootVolumeEvent(msg.getId());
-                        evt.setError(errCode);
-                        logger.warn(String.format("failed to create template from root volume[uuid:%s], because %s", msg.getRootVolumeUuid(), errCode));
-                        bus.publish(evt);
-                    }
-                });
-            }
-        }).start();
+        CreateRootVolumeTemplateFromRootVolumeData data = new CreateRootVolumeTemplateFromRootVolumeData(msg);
+        BeanUtils.copyProperties(msg, data);
+        handleCreateRootVolumeTemplateFromRootVolumeMsg(data, new APICreateRootVolumeTemplateFromRootVolumeEvent(msg.getId()));
     }
 
     private void handle(APIGetImageMsg msg) {
@@ -936,220 +357,15 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         bus.reply(msg, reply);
     }
 
-    private static boolean isUpload(final APIAddImageMsg msg) {
-        return msg.getUrl().startsWith("upload://");
+    private static boolean isUpload(final String url) {
+        return url.startsWith("upload://");
     }
 
-    @Deferred
     private void handle(final APIAddImageMsg msg) {
-        String imageType = msg.getType();
-        imageType = imageType == null ? DefaultImageFactory.type.toString() : imageType;
-
-        final APIAddImageEvent evt = new APIAddImageEvent(msg.getId());
-        ImageVO vo = new ImageVO();
-        if (msg.getResourceUuid() != null) {
-            vo.setUuid(msg.getResourceUuid());
-        } else {
-            vo.setUuid(Platform.getUuid());
-        }
-        vo.setName(msg.getName());
-        vo.setDescription(msg.getDescription());
-        if (msg.getFormat().equals(ImageConstant.ISO_FORMAT_STRING)) {
-            vo.setMediaType(ImageMediaType.ISO);
-        } else {
-            vo.setMediaType(ImageMediaType.valueOf(msg.getMediaType()));
-        }
-        vo.setType(imageType);
-        vo.setSystem(msg.isSystem());
-        vo.setGuestOsType(msg.getGuestOsType());
-        vo.setFormat(msg.getFormat());
-        vo.setStatus(ImageStatus.Downloading);
-        vo.setState(ImageState.Enabled);
-        vo.setUrl(msg.getUrl());
-        vo.setDescription(msg.getDescription());
-        vo.setPlatform(ImagePlatform.valueOf(msg.getPlatform()));
-
-        ImageFactory factory = getImageFacotry(ImageType.valueOf(imageType));
-        final ImageVO ivo = new SQLBatchWithReturn<ImageVO>() {
-            @Override
-            protected ImageVO scripts() {
-                final ImageVO ivo = factory.createImage(vo, msg);
-                acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), ImageVO.class);
-                tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), ImageVO.class.getSimpleName());
-                return ivo;
-            }
-        }.execute();
-
-        List<ImageBackupStorageRefVO> refs = new ArrayList<>();
-        for (String uuid : msg.getBackupStorageUuids()) {
-            ImageBackupStorageRefVO ref = new ImageBackupStorageRefVO();
-            ref.setInstallPath("");
-            ref.setBackupStorageUuid(uuid);
-            ref.setStatus(ImageStatus.Downloading);
-            ref.setImageUuid(ivo.getUuid());
-            refs.add(ref);
-        }
-        dbf.persistCollection(refs);
-        Defer.guard(() -> dbf.remove(ivo));
-
-        final ImageInventory inv = ImageInventory.valueOf(ivo);
-        for (AddImageExtensionPoint ext : pluginRgty.getExtensionList(AddImageExtensionPoint.class)) {
-            ext.preAddImage(inv);
-        }
-
-        final List<DownloadImageMsg> dmsgs = CollectionUtils.transformToList(msg.getBackupStorageUuids(), new Function<DownloadImageMsg, String>() {
-            @Override
-            public DownloadImageMsg call(String arg) {
-                DownloadImageMsg dmsg = new DownloadImageMsg(inv);
-                dmsg.setBackupStorageUuid(arg);
-                dmsg.setFormat(msg.getFormat());
-                dmsg.setSystemTags(msg.getSystemTags());
-                bus.makeTargetServiceIdByResourceUuid(dmsg, BackupStorageConstant.SERVICE_ID, arg);
-                return dmsg;
-            }
-        });
-
-        CollectionUtils.safeForEach(pluginRgty.getExtensionList(AddImageExtensionPoint.class), ext -> ext.beforeAddImage(inv));
-
-        new LoopAsyncBatch<DownloadImageMsg>(msg) {
-            AtomicBoolean success = new AtomicBoolean(false);
-
-            class TrackContext {
-                String name;
-                String imageUuid;
-                String bsUuid;
-                String hostname;
-            }
-
-            List<TrackContext> ctxs = new ArrayList<>();
-
-            private void addTrackTask(String name, String imageUuid, String bsUuid, String installPath) throws URISyntaxException {
-                TrackContext ctx = new TrackContext();
-                ctx.name = name;
-                ctx.imageUuid = imageUuid;
-                ctx.bsUuid = bsUuid;
-                ctx.hostname = new URI(installPath).getHost();
-                ctxs.add(ctx);
-            }
-
-            private void runTrackTask() {
-                for (TrackContext ctx: ctxs) {
-                    trackUpload(ctx.name, ctx.imageUuid, ctx.bsUuid, ctx.hostname);
-                }
-            }
-
-            @Override
-            protected Collection<DownloadImageMsg> collect() {
-                return dmsgs;
-            }
-
-            @Override
-            protected AsyncBatchRunner forEach(DownloadImageMsg dmsg) {
-                return new AsyncBatchRunner() {
-                    @Override
-                    public void run(NoErrorCompletion completion) {
-                        ImageBackupStorageRefVO ref = Q.New(ImageBackupStorageRefVO.class)
-                                .eq(ImageBackupStorageRefVO_.imageUuid, ivo.getUuid())
-                                .eq(ImageBackupStorageRefVO_.backupStorageUuid, dmsg.getBackupStorageUuid())
-                                .find();
-                        bus.send(dmsg, new CloudBusCallBack(completion) {
-                            @Override
-                            public void run(MessageReply reply) {
-                                if (!reply.isSuccess()) {
-                                    errors.add(reply.getError());
-                                    dbf.remove(ref);
-                                } else {
-                                    DownloadImageReply re = reply.castReply();
-                                    if (isUpload(msg)) {
-                                        try {
-                                            addTrackTask(ivo.getName(), ivo.getUuid(), ref.getBackupStorageUuid(), re.getInstallPath());
-                                        } catch (URISyntaxException e) {
-                                            throw new OperationFailureException(errf.throwableToOperationError(e));
-                                        }
-                                    } else {
-                                        ref.setStatus(ImageStatus.Ready);
-                                    }
-                                    ref.setInstallPath(re.getInstallPath());
-
-                                    if (dbf.reload(ref) == null) {
-                                        logger.debug(String.format("image[uuid: %s] has been deleted", ref.getImageUuid()));
-                                        completion.done();
-                                        return;
-                                    }
-
-                                    dbf.update(ref);
-
-                                    if (success.compareAndSet(false, true)) {
-                                        // In case 'Platform' etc. is changed.
-                                        ImageVO vo = dbf.reload(ivo);
-                                        vo.setMd5Sum(re.getMd5sum());
-                                        vo.setSize(re.getSize());
-                                        vo.setActualSize(re.getActualSize());
-                                        vo.setStatus(ref.getStatus());
-                                        dbf.update(vo);
-                                    }
-
-                                    if (isUpload(msg)) {
-                                        logger.debug(String.format("created upload request, image[uuid:%s, name:%s] to backup storage[uuid:%s]",
-                                                inv.getUuid(), inv.getName(), dmsg.getBackupStorageUuid()));
-                                    } else {
-                                        logger.debug(String.format("successfully downloaded image[uuid:%s, name:%s] to backup storage[uuid:%s]",
-                                                inv.getUuid(), inv.getName(), dmsg.getBackupStorageUuid()));
-                                    }
-                                }
-
-                                completion.done();
-                            }
-                        });
-                    }
-                };
-            }
-
-            @Override
-            protected void done() {
-                // check if the database still has the record of the image
-                // if there is no record, that means user delete the image during the downloading,
-                // then we need to cleanup
-                ImageVO vo = dbf.reload(ivo);
-                if (vo == null) {
-                    evt.setError(operr("image [uuid:%s] has been deleted", ivo.getUuid()));
-                    SQL.New("delete from ImageBackupStorageRefVO where imageUuid = :uuid")
-                            .param("uuid", ivo.getUuid())
-                            .execute();
-                    bus.publish(evt);
-                    return;
-                }
-
-                if (success.get()) {
-                    final ImageInventory einv = ImageInventory.valueOf(vo);
-
-                    CollectionUtils.safeForEach(pluginRgty.getExtensionList(AddImageExtensionPoint.class), new ForEachFunction<AddImageExtensionPoint>() {
-                        @Override
-                        public void run(AddImageExtensionPoint ext) {
-                            ext.afterAddImage(einv);
-                        }
-                    });
-
-                    evt.setInventory(einv);
-                } else {
-                    final ErrorCode err = errf.instantiateErrorCode(SysErrors.CREATE_RESOURCE_ERROR, String.format("Failed to download image[name:%s] on all backup storage%s.",
-                            inv.getName(), msg.getBackupStorageUuids()), errors);
-
-                    CollectionUtils.safeForEach(pluginRgty.getExtensionList(AddImageExtensionPoint.class), new ForEachFunction<AddImageExtensionPoint>() {
-                        @Override
-                        public void run(AddImageExtensionPoint ext) {
-                            ext.failedToAddImage(inv, err);
-                        }
-                    });
-
-                    dbf.remove(ivo);
-                    evt.setError(err);
-                }
-
-                runTrackTask();
-                bus.publish(evt);
-            }
-        }.start();
+        APIAddImageEvent evt = new APIAddImageEvent(msg.getId());
+        AddImageLongJobData data = new AddImageLongJobData(msg);
+        BeanUtils.copyProperties(msg, data);
+        handleAddImageMsg(data, evt);
     }
 
     @Override
@@ -1630,5 +846,927 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 return String.format("tracking upload image [name: %s, uuid: %s]", name, imageUuid);
             }
         });
+    }
+
+    @Deferred
+    private void handleAddImageMsg(AddImageLongJobData msgData, Message evt) {
+        class InnerEvent extends Message {
+            ErrorCode error;
+            ImageInventory inv;
+
+            void reply(Message reply) {
+                if (evt instanceof APIAddImageEvent) {
+                    APIAddImageEvent event = (APIAddImageEvent) reply;
+                    if (null != error) {
+                        event.setError(error);
+                    }
+                    if (null != inv) {
+                        event.setInventory(inv);
+                    }
+                    bus.publish(event);
+                } else if (evt instanceof AddImageReply) {
+                    AddImageReply reply1 = (AddImageReply) reply;
+                    if (null != error ){
+                        reply1.setError(error);
+                    }
+                    if (null != inv) {
+                        reply1.setInventory(inv);
+                    }
+                    bus.reply(msgData.getNeedReplyMessage(), reply1);
+                }
+            }
+        }
+        String accountUuid = msgData.getSession().getAccountUuid();
+        String imageType = msgData.getType();
+        imageType = imageType == null ? DefaultImageFactory.type.toString() : imageType;
+
+        ImageVO vo = new ImageVO();
+        if (msgData.getResourceUuid() != null) {
+            vo.setUuid(msgData.getResourceUuid());
+        } else {
+            vo.setUuid(Platform.getUuid());
+        }
+        vo.setName(msgData.getName());
+        vo.setDescription(msgData.getDescription());
+        if (msgData.getFormat().equals(ImageConstant.ISO_FORMAT_STRING)) {
+            vo.setMediaType(ImageMediaType.ISO);
+        } else {
+            vo.setMediaType(ImageMediaType.valueOf(msgData.getMediaType()));
+        }
+        vo.setType(imageType);
+        vo.setSystem(msgData.isSystem());
+        vo.setGuestOsType(msgData.getGuestOsType());
+        vo.setFormat(msgData.getFormat());
+        vo.setStatus(ImageStatus.Downloading);
+        vo.setState(ImageState.Enabled);
+        vo.setUrl(msgData.getUrl());
+        vo.setDescription(msgData.getDescription());
+        vo.setPlatform(ImagePlatform.valueOf(msgData.getPlatform()));
+
+        ImageFactory factory = getImageFacotry(ImageType.valueOf(imageType));
+        final ImageVO ivo = new SQLBatchWithReturn<ImageVO>() {
+            @Override
+            protected ImageVO scripts() {
+                final ImageVO ivo = factory.createImage(vo);
+                acntMgr.createAccountResourceRef(accountUuid, vo.getUuid(), ImageVO.class);
+                tagMgr.createTags(msgData.getSystemTags(), msgData.getUserTags(), vo.getUuid(), ImageVO.class.getSimpleName());
+                return ivo;
+            }
+        }.execute();
+
+        List<ImageBackupStorageRefVO> refs = new ArrayList<>();
+        for (String uuid : msgData.getBackupStorageUuids()) {
+            ImageBackupStorageRefVO ref = new ImageBackupStorageRefVO();
+            ref.setInstallPath("");
+            ref.setBackupStorageUuid(uuid);
+            ref.setStatus(ImageStatus.Downloading);
+            ref.setImageUuid(ivo.getUuid());
+            refs.add(ref);
+        }
+        dbf.persistCollection(refs);
+        Defer.guard(() -> dbf.remove(ivo));
+
+        final ImageInventory inv = ImageInventory.valueOf(ivo);
+        for (AddImageExtensionPoint ext : pluginRgty.getExtensionList(AddImageExtensionPoint.class)) {
+            ext.preAddImage(inv);
+        }
+        final List<DownloadImageMsg> dmsgs = CollectionUtils.transformToList(msgData.getBackupStorageUuids(), new Function<DownloadImageMsg, String>() {
+            @Override
+            public DownloadImageMsg call(String arg) {
+                DownloadImageMsg dmsg = new DownloadImageMsg(inv);
+                dmsg.setBackupStorageUuid(arg);
+                dmsg.setFormat(msgData.getFormat());
+                dmsg.setSystemTags(msgData.getSystemTags());
+                bus.makeTargetServiceIdByResourceUuid(dmsg, BackupStorageConstant.SERVICE_ID, arg);
+                return dmsg;
+            }
+        });
+
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(AddImageExtensionPoint.class), ext -> ext.beforeAddImage(inv));
+        new LoopAsyncBatch<DownloadImageMsg>(msgData.getNeedReplyMessage()) {
+            AtomicBoolean success = new AtomicBoolean(false);
+
+            class TrackContext {
+                String name;
+                String imageUuid;
+                String bsUuid;
+                String hostname;
+            }
+
+            List<TrackContext> ctxs = new ArrayList<>();
+
+            private void addTrackTask(String name, String imageUuid, String bsUuid, String installPath) throws URISyntaxException {
+                TrackContext ctx = new TrackContext();
+                ctx.name = name;
+                ctx.imageUuid = imageUuid;
+                ctx.bsUuid = bsUuid;
+                ctx.hostname = new URI(installPath).getHost();
+                ctxs.add(ctx);
+            }
+
+            private void runTrackTask() {
+                for (TrackContext ctx : ctxs) {
+                    trackUpload(ctx.name, ctx.imageUuid, ctx.bsUuid, ctx.hostname);
+                }
+            }
+
+            @Override
+            protected Collection<DownloadImageMsg> collect() {
+                return dmsgs;
+            }
+
+            @Override
+            protected AsyncBatchRunner forEach(DownloadImageMsg dmsg) {
+                return new AsyncBatchRunner() {
+                    @Override
+                    public void run(NoErrorCompletion completion) {
+                        ImageBackupStorageRefVO ref = Q.New(ImageBackupStorageRefVO.class)
+                                .eq(ImageBackupStorageRefVO_.imageUuid, ivo.getUuid())
+                                .eq(ImageBackupStorageRefVO_.backupStorageUuid, dmsg.getBackupStorageUuid())
+                                .find();
+                        bus.send(dmsg, new CloudBusCallBack(completion) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    errors.add(reply.getError());
+                                    dbf.remove(ref);
+                                } else {
+                                    DownloadImageReply re = reply.castReply();
+                                    if (isUpload(msgData.getUrl())) {
+                                        try {
+                                            addTrackTask(ivo.getName(), ivo.getUuid(), ref.getBackupStorageUuid(), re.getInstallPath());
+                                        } catch (URISyntaxException e) {
+                                            throw new OperationFailureException(errf.throwableToOperationError(e));
+                                        }
+                                    } else {
+                                        ref.setStatus(ImageStatus.Ready);
+                                    }
+                                    ref.setInstallPath(re.getInstallPath());
+
+                                    if (dbf.reload(ref) == null) {
+                                        logger.debug(String.format("image[uuid: %s] has been deleted", ref.getImageUuid()));
+                                        completion.done();
+                                        return;
+                                    }
+
+                                    dbf.update(ref);
+
+                                    if (success.compareAndSet(false, true)) {
+                                        // In case 'Platform' etc. is changed.
+                                        ImageVO vo = dbf.reload(ivo);
+                                        vo.setMd5Sum(re.getMd5sum());
+                                        vo.setSize(re.getSize());
+                                        vo.setActualSize(re.getActualSize());
+                                        vo.setStatus(ref.getStatus());
+                                        if (StringUtils.isNotEmpty(re.getFormat())) {
+                                            vo.setFormat(re.getFormat());
+                                        }
+                                        dbf.update(vo);
+                                    }
+
+                                    if (isUpload(msgData.getUrl())) {
+                                        logger.debug(String.format("created upload request, image[uuid:%s, name:%s] to backup storage[uuid:%s]",
+                                                inv.getUuid(), inv.getName(), dmsg.getBackupStorageUuid()));
+                                    } else {
+                                        logger.debug(String.format("successfully downloaded image[uuid:%s, name:%s] to backup storage[uuid:%s]",
+                                                inv.getUuid(), inv.getName(), dmsg.getBackupStorageUuid()));
+                                    }
+                                }
+
+                                completion.done();
+                            }
+                        });
+                    }
+                };
+            }
+
+            @Override
+            protected void done() {
+                // check if the database still has the record of the image
+                // if there is no record, that means user delete the image during the downloading,
+                // then we need to cleanup
+                ImageVO vo = dbf.reload(ivo);
+                InnerEvent event = new InnerEvent();
+                if (vo == null) {
+                    event.error = (operr("image [uuid:%s] has been deleted", ivo.getUuid()));
+                    SQL.New("delete from ImageBackupStorageRefVO where imageUuid = :uuid")
+                            .param("uuid", ivo.getUuid())
+                            .execute();
+                    event.reply(evt);
+                    return;
+                }
+
+                if (success.get()) {
+                    final ImageInventory einv = ImageInventory.valueOf(vo);
+
+                    CollectionUtils.safeForEach(pluginRgty.getExtensionList(AddImageExtensionPoint.class), new ForEachFunction<AddImageExtensionPoint>() {
+                        @Override
+                        public void run(AddImageExtensionPoint ext) {
+                            ext.afterAddImage(einv);
+                        }
+                    });
+
+                    event.inv = einv;
+                } else {
+                    final ErrorCode err = errf.instantiateErrorCode(SysErrors.CREATE_RESOURCE_ERROR, String.format("Failed to download image[name:%s] on all backup storage%s.",
+                            inv.getName(), msgData.getBackupStorageUuids()), errors);
+
+                    CollectionUtils.safeForEach(pluginRgty.getExtensionList(AddImageExtensionPoint.class), new ForEachFunction<AddImageExtensionPoint>() {
+                        @Override
+                        public void run(AddImageExtensionPoint ext) {
+                            ext.failedToAddImage(inv, err);
+                        }
+                    });
+
+                    dbf.remove(ivo);
+                    event.error = err;
+                }
+
+                runTrackTask();
+                event.reply(evt);
+            }
+        }.start();
+    }
+
+    private void handleCreateRootVolumeTemplateFromRootVolumeMsg(CreateRootVolumeTemplateFromRootVolumeData msgData, Message evt){
+        class InnerEvent extends Message {
+            ErrorCode error;
+            ImageInventory inv;
+
+            void reply(Message reply) {
+                if (evt instanceof APICreateRootVolumeTemplateFromRootVolumeEvent) {
+                    APICreateRootVolumeTemplateFromRootVolumeEvent event = (APICreateRootVolumeTemplateFromRootVolumeEvent) reply;
+                    if (null != error) {
+                        event.setError(error);
+                    }
+                    if (null != inv) {
+                        event.setInventory(inv);
+                    }
+                    bus.publish(event);
+                } else if (evt instanceof CreateRootVolumeTemplateFromRootVolumeReply) {
+                    CreateRootVolumeTemplateFromRootVolumeReply reply1 = (CreateRootVolumeTemplateFromRootVolumeReply) reply;
+                    if (null != error ){
+                        reply1.setError(error);
+                    }
+                    if (null != inv) {
+                        reply1.setInventory(inv);
+                    }
+                    bus.reply(msgData.getNeedReplyMessage(), reply1);
+                }
+            }
+        }
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("create-template-from-root-volume-%s", msgData.getRootVolumeUuid()));
+        chain.then(new ShareFlow() {
+            ImageVO imageVO;
+            VolumeInventory rootVolume;
+            Long imageActualSize;
+            List<BackupStorageInventory> targetBackupStorages = new ArrayList<>();
+            String zoneUuid;
+
+            {
+                VolumeVO rootvo = dbf.findByUuid(msgData.getRootVolumeUuid(), VolumeVO.class);
+                rootVolume = VolumeInventory.valueOf(rootvo);
+
+                SimpleQuery<PrimaryStorageVO> q = dbf.createQuery(PrimaryStorageVO.class);
+                q.select(PrimaryStorageVO_.zoneUuid);
+                q.add(PrimaryStorageVO_.uuid, Op.EQ, rootVolume.getPrimaryStorageUuid());
+                zoneUuid = q.findValue();
+            }
+
+
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "get-volume-actual-size";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        SyncVolumeSizeMsg msg = new SyncVolumeSizeMsg();
+                        msg.setVolumeUuid(rootVolume.getUuid());
+                        bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, rootVolume.getPrimaryStorageUuid());
+                        bus.send(msg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                    return;
+                                }
+
+                                SyncVolumeSizeReply sr = reply.castReply();
+                                imageActualSize = sr.getActualSize();
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                flow(new Flow() {
+                    String __name__ = "create-image-in-database";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
+                        q.add(VolumeVO_.uuid, Op.EQ, msgData.getRootVolumeUuid());
+                        final VolumeVO volvo = q.find();
+
+                        String accountUuid = acntMgr.getOwnerAccountUuidOfResource(volvo.getUuid());
+
+                        final ImageVO imvo = new ImageVO();
+                        if (msgData.getResourceUuid() != null) {
+                            imvo.setUuid(msgData.getResourceUuid());
+                        } else {
+                            imvo.setUuid(Platform.getUuid());
+                        }
+                        imvo.setDescription(msgData.getDescription());
+                        imvo.setMediaType(ImageMediaType.RootVolumeTemplate);
+                        imvo.setState(ImageState.Enabled);
+                        imvo.setGuestOsType(msgData.getGuestOsType());
+                        imvo.setFormat(volvo.getFormat());
+                        imvo.setName(msgData.getName());
+                        imvo.setSystem(msgData.isSystem());
+                        imvo.setPlatform(ImagePlatform.valueOf(msgData.getPlatform()));
+                        imvo.setStatus(ImageStatus.Downloading);
+                        imvo.setType(ImageConstant.ZSTACK_IMAGE_TYPE);
+                        imvo.setUrl(String.format("volume://%s", msgData.getRootVolumeUuid()));
+                        imvo.setSize(volvo.getSize());
+                        imvo.setActualSize(imageActualSize);
+                        dbf.persist(imvo);
+                        acntMgr.createAccountResourceRef(accountUuid, imvo.getUuid(), ImageVO.class);
+                        tagMgr.createTags(msgData.getNeedReplyMessage().getSystemTags(),msgData.getNeedReplyMessage().getUserTags(), imvo.getUuid(), ImageVO.class.getSimpleName());
+
+                        imageVO = imvo;
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        if (imageVO != null) {
+                            dbf.remove(imageVO);
+                        }
+
+                        trigger.rollback();
+                    }
+                });
+
+                flow(new Flow() {
+                    String __name__ = String.format("select-backup-storage");
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        List<ImageBackupStorageRefVO> refs = new ArrayList<>();
+                        if (msgData.getBackupStorageUuids() == null) {
+                            AllocateBackupStorageMsg abmsg = new AllocateBackupStorageMsg();
+                            abmsg.setRequiredZoneUuid(zoneUuid);
+                            abmsg.setSize(imageActualSize);
+                            bus.makeLocalServiceId(abmsg, BackupStorageConstant.SERVICE_ID);
+
+                            bus.send(abmsg, new CloudBusCallBack(trigger) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    if (reply.isSuccess()) {
+                                        targetBackupStorages.add(((AllocateBackupStorageReply) reply).getInventory());
+                                        saveRefVOByBsInventorys(targetBackupStorages, imageVO.getUuid());
+                                        trigger.next();
+                                    } else {
+                                        trigger.fail(reply.getError());
+                                    }
+                                }
+                            });
+                        } else {
+                            List<AllocateBackupStorageMsg> amsgs = CollectionUtils.transformToList(msgData.getBackupStorageUuids(), new Function<AllocateBackupStorageMsg, String>() {
+                                @Override
+                                public AllocateBackupStorageMsg call(String arg) {
+                                    AllocateBackupStorageMsg abmsg = new AllocateBackupStorageMsg();
+                                    abmsg.setSize(imageActualSize);
+                                    abmsg.setBackupStorageUuid(arg);
+                                    bus.makeLocalServiceId(abmsg, BackupStorageConstant.SERVICE_ID);
+                                    return abmsg;
+                                }
+                            });
+
+                            bus.send(amsgs, new CloudBusListCallBack(trigger) {
+                                @Override
+                                public void run(List<MessageReply> replies) {
+                                    List<ErrorCode> errs = new ArrayList<>();
+                                    for (MessageReply r : replies) {
+                                        if (r.isSuccess()) {
+                                            targetBackupStorages.add(((AllocateBackupStorageReply) r).getInventory());
+                                        } else {
+                                            errs.add(r.getError());
+                                        }
+                                    }
+
+                                    if (targetBackupStorages.isEmpty()) {
+                                        trigger.fail(operr("unable to allocate backup storage specified by uuids%s, list errors are: %s",
+                                                msgData.getBackupStorageUuids(), JSONObjectUtil.toJsonString(errs)));
+                                    } else {
+                                        saveRefVOByBsInventorys(targetBackupStorages, imageVO.getUuid());
+                                        trigger.next();
+                                    }
+                                }
+                            });
+                        }
+                    }
+
+                    @Override
+                    public void rollback(final FlowRollback trigger, Map data) {
+                        if (targetBackupStorages.isEmpty()) {
+                            trigger.rollback();
+                            return;
+                        }
+
+                        List<ReturnBackupStorageMsg> rmsgs = CollectionUtils.transformToList(targetBackupStorages, new Function<ReturnBackupStorageMsg, BackupStorageInventory>() {
+                            @Override
+                            public ReturnBackupStorageMsg call(BackupStorageInventory arg) {
+                                ReturnBackupStorageMsg rmsg = new ReturnBackupStorageMsg();
+                                rmsg.setBackupStorageUuid(arg.getUuid());
+                                rmsg.setSize(imageActualSize);
+                                bus.makeLocalServiceId(rmsg, BackupStorageConstant.SERVICE_ID);
+                                return rmsg;
+                            }
+                        });
+
+                        bus.send(rmsgs, new CloudBusListCallBack(trigger) {
+                            @Override
+                            public void run(List<MessageReply> replies) {
+                                for (MessageReply r : replies) {
+                                    if (!r.isSuccess()) {
+                                        BackupStorageInventory bs = targetBackupStorages.get(replies.indexOf(r));
+                                        logger.warn(String.format("failed to return capacity[%s] to backup storage[uuid:%s], because %s",
+                                                imageActualSize, bs.getUuid(), r.getError()));
+                                    }
+                                }
+
+                                trigger.rollback();
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = String.format("start-creating-template");
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        List<CreateTemplateFromVmRootVolumeMsg> cmsgs = CollectionUtils.transformToList(targetBackupStorages, new Function<CreateTemplateFromVmRootVolumeMsg, BackupStorageInventory>() {
+                            @Override
+                            public CreateTemplateFromVmRootVolumeMsg call(BackupStorageInventory arg) {
+                                CreateTemplateFromVmRootVolumeMsg cmsg = new CreateTemplateFromVmRootVolumeMsg();
+                                cmsg.setRootVolumeInventory(rootVolume);
+                                cmsg.setBackupStorageUuid(arg.getUuid());
+                                cmsg.setImageInventory(ImageInventory.valueOf(imageVO));
+                                bus.makeTargetServiceIdByResourceUuid(cmsg, VmInstanceConstant.SERVICE_ID, rootVolume.getVmInstanceUuid());
+                                return cmsg;
+                            }
+                        });
+
+                        bus.send(cmsgs, new CloudBusListCallBack(trigger) {
+                            @Override
+                            public void run(List<MessageReply> replies) {
+                                boolean success = false;
+                                ErrorCode err = null;
+
+                                for (MessageReply r : replies) {
+                                    BackupStorageInventory bs = targetBackupStorages.get(replies.indexOf(r));
+                                    ImageBackupStorageRefVO ref = Q.New(ImageBackupStorageRefVO.class)
+                                            .eq(ImageBackupStorageRefVO_.backupStorageUuid, bs.getUuid())
+                                            .eq(ImageBackupStorageRefVO_.imageUuid, imageVO.getUuid())
+                                            .find();
+
+                                    if (dbf.reload(imageVO) == null) {
+                                        SQL.New("delete from ImageBackupStorageRefVO where imageUuid = :uuid")
+                                                .param("uuid", imageVO.getUuid())
+                                                .execute();
+                                        trigger.fail(operr("image [uuid:%s] has been deleted", imageVO.getUuid()));
+                                        return;
+                                    }
+
+
+                                    if (!r.isSuccess()) {
+                                        logger.warn(String.format("failed to create image from root volume[uuid:%s] on backup storage[uuid:%s], because %s",
+                                                msgData.getRootVolumeUuid(), bs.getUuid(), r.getError()));
+                                        err = r.getError();
+                                        dbf.remove(ref);
+                                        continue;
+                                    }
+
+                                    CreateTemplateFromVmRootVolumeReply reply = (CreateTemplateFromVmRootVolumeReply) r;
+                                    ref.setStatus(ImageStatus.Ready);
+                                    ref.setInstallPath(reply.getInstallPath());
+                                    dbf.update(ref);
+
+                                    imageVO.setStatus(ImageStatus.Ready);
+                                    if (reply.getFormat() != null) {
+                                        imageVO.setFormat(reply.getFormat());
+                                    }
+                                    imageVO = dbf.updateAndRefresh(imageVO);
+                                    success = true;
+                                    logger.debug(String.format("successfully created image[uuid:%s] from root volume[uuid:%s] on backup storage[uuid:%s]",
+                                            imageVO.getUuid(), msgData.getRootVolumeUuid(), bs.getUuid()));
+                                }
+
+                                if (success) {
+                                    trigger.next();
+                                } else {
+                                    trigger.fail(operr("failed to create image from root volume[uuid:%s] on all backup storage, see cause for one of errors",
+                                            msgData.getRootVolumeUuid()).causedBy(err));
+                                }
+                            }
+                        });
+                    }
+                });
+
+                flow(new Flow() {
+                    String __name__ = "copy-system-tag-to-image";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        // find the rootimage and create some systemtag if it has
+                        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
+                        q.add(VolumeVO_.uuid, SimpleQuery.Op.EQ, msgData.getRootVolumeUuid());
+                        q.select(VolumeVO_.vmInstanceUuid);
+                        String vmInstanceUuid = q.findValue();
+                        if (tagMgr.hasSystemTag(vmInstanceUuid, ImageSystemTags.IMAGE_INJECT_QEMUGA.getTagFormat())) {
+                            tagMgr.createNonInherentSystemTag(imageVO.getUuid(),
+                                    ImageSystemTags.IMAGE_INJECT_QEMUGA.getTagFormat(),
+                                    ImageVO.class.getSimpleName());
+                        }
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        trigger.rollback();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = String.format("sync-image-size");
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        new While<>(targetBackupStorages).all((arg, completion) -> {
+                            SyncImageSizeMsg smsg = new SyncImageSizeMsg();
+                            smsg.setBackupStorageUuid(arg.getUuid());
+                            smsg.setImageUuid(imageVO.getUuid());
+                            bus.makeTargetServiceIdByResourceUuid(smsg, ImageConstant.SERVICE_ID, imageVO.getUuid());
+                            bus.send(smsg, new CloudBusCallBack(completion) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    completion.done();
+                                }
+                            });
+                        }).run(new NoErrorCompletion(trigger) {
+                            @Override
+                            public void done() {
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(msgData.getNeedReplyMessage()) {
+                    @Override
+                    public void handle(Map data) {
+                        InnerEvent innerEvent = new InnerEvent();
+                        imageVO = dbf.reload(imageVO);
+                        ImageInventory iinv = ImageInventory.valueOf(imageVO);
+                        innerEvent.inv = iinv;
+                        logger.warn(String.format("successfully create template[uuid:%s] from root volume[uuid:%s]", iinv.getUuid(), msgData.getRootVolumeUuid()));
+                        innerEvent.reply(evt);
+                    }
+                });
+
+                error(new FlowErrorHandler(msgData.getNeedReplyMessage()) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        InnerEvent innerEvent = new InnerEvent();
+                        innerEvent.error = errCode;
+                        logger.warn(String.format("failed to create template from root volume[uuid:%s], because %s", msgData.getRootVolumeUuid(), errCode));
+                        innerEvent.reply(evt);
+                    }
+                });
+            }
+        }).start();
+
+    }
+
+    private void handleCreateDataVolumeTemplateFromVolumeMsg(CreateDataVolumeTemplateFromVolumeLongJobData msgData, Message evt){
+        class InnerEvent extends Message {
+            ErrorCode error;
+            ImageInventory inv;
+
+            void reply(Message reply) {
+                if (evt instanceof APICreateDataVolumeTemplateFromVolumeEvent) {
+                    APICreateDataVolumeTemplateFromVolumeEvent event = (APICreateDataVolumeTemplateFromVolumeEvent) reply;
+                    if (null != error) {
+                        event.setError(error);
+                    }
+                    if (null != inv) {
+                        event.setInventory(inv);
+                    }
+                    bus.publish(event);
+                } else if (evt instanceof CreateDataVolumeTemplateFromVolumeReply) {
+                    CreateDataVolumeTemplateFromVolumeReply reply1 = (CreateDataVolumeTemplateFromVolumeReply) reply;
+                    if (null != error ){
+                        reply1.setError(error);
+                    }
+                    if (null != inv) {
+                        reply1.setInventory(inv);
+                    }
+                    bus.reply(msgData.getNeedReplyMessage(), reply1);
+                }
+            }
+        }
+
+        final TaskProgressRange parentStage = getTaskStage();
+
+        List<ImageBackupStorageRefVO> refs = new ArrayList<>();
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("create-data-volume-template-from-volume-%s", msgData.getVolumeUuid()));
+        chain.then(new ShareFlow() {
+            List<BackupStorageInventory> backupStorages = new ArrayList<>();
+            ImageVO image;
+            long actualSize;
+
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "get-actual-size-of-data-volume";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        SyncVolumeSizeMsg smsg = new SyncVolumeSizeMsg();
+                        smsg.setVolumeUuid(msgData.getVolumeUuid());
+                        bus.makeTargetServiceIdByResourceUuid(smsg, VolumeConstant.SERVICE_ID, msgData.getVolumeUuid());
+                        bus.send(smsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                    return;
+                                }
+
+                                SyncVolumeSizeReply sr = reply.castReply();
+                                actualSize = sr.getActualSize();
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                flow(new Flow() {
+                    String __name__ = "create-image-in-database";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
+                        q.select(VolumeVO_.format, VolumeVO_.size);
+                        q.add(VolumeVO_.uuid, Op.EQ, msgData.getVolumeUuid());
+                        Tuple t = q.findTuple();
+
+                        String format = t.get(0, String.class);
+                        long size = t.get(1, Long.class);
+
+                        final ImageVO vo = new ImageVO();
+                        vo.setUuid(msgData.getResourceUuid() == null ? Platform.getUuid() : msgData.getResourceUuid());
+                        vo.setName(msgData.getName());
+                        vo.setDescription(msgData.getDescription());
+                        vo.setType(ImageConstant.ZSTACK_IMAGE_TYPE);
+                        vo.setMediaType(ImageMediaType.DataVolumeTemplate);
+                        vo.setSize(size);
+                        vo.setActualSize(actualSize);
+                        vo.setState(ImageState.Enabled);
+                        vo.setStatus(ImageStatus.Creating);
+                        vo.setSystem(false);
+                        vo.setFormat(format);
+                        vo.setUrl(String.format("volume://%s", msgData.getVolumeUuid()));
+                        image = dbf.persistAndRefresh(vo);
+                        acntMgr.createAccountResourceRef(msgData.getSession().getAccountUuid(), vo.getUuid(), ImageVO.class);
+                        tagMgr.createTags(msgData.getSystemTags(), msgData.getUserTags(), vo.getUuid(), ImageVO.class.getSimpleName());
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        if (image != null) {
+                            dbf.remove(image);
+                        }
+
+                        trigger.rollback();
+                    }
+                });
+
+                flow(new Flow() {
+                    String __name__ = "select-backup-storage";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        final String zoneUuid = new Callable<String>() {
+                            @Override
+                            @Transactional(readOnly = true)
+                            public String call() {
+                                String sql = "select ps.zoneUuid" +
+                                        " from PrimaryStorageVO ps, VolumeVO vol" +
+                                        " where vol.primaryStorageUuid = ps.uuid" +
+                                        " and vol.uuid = :volUuid";
+                                TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+                                q.setParameter("volUuid", msgData.getVolumeUuid());
+                                return q.getSingleResult();
+                            }
+                        }.call();
+
+                        if (msgData.getBackupStorageUuids() == null) {
+                            AllocateBackupStorageMsg amsg = new AllocateBackupStorageMsg();
+                            amsg.setRequiredZoneUuid(zoneUuid);
+                            amsg.setSize(actualSize);
+                            bus.makeLocalServiceId(amsg, BackupStorageConstant.SERVICE_ID);
+                            bus.send(amsg, new CloudBusCallBack(trigger) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    if (reply.isSuccess()) {
+                                        backupStorages.add(((AllocateBackupStorageReply) reply).getInventory());
+                                        saveRefVOByBsInventorys(backupStorages, image.getUuid());
+
+                                        for (BackupStorageInventory bs: backupStorages) {
+                                            for (CreateImageExtensionPoint ext : pluginRgty.getExtensionList(CreateImageExtensionPoint.class)) {
+                                                VolumeVO volume = dbf.findByUuid(msgData.getVolumeUuid(), VolumeVO.class);
+                                                ext.beforeCreateImage(ImageInventory.valueOf(image), bs.getUuid(), volume.getPrimaryStorageUuid());
+                                            }
+                                        }
+                                        trigger.next();
+                                    } else {
+                                        trigger.fail(errf.stringToOperationError("cannot find proper backup storage", reply.getError()));
+                                    }
+                                }
+                            });
+                        } else {
+                            List<AllocateBackupStorageMsg> amsgs = CollectionUtils.transformToList(msgData.getBackupStorageUuids(), new Function<AllocateBackupStorageMsg, String>() {
+                                @Override
+                                public AllocateBackupStorageMsg call(String arg) {
+                                    AllocateBackupStorageMsg amsg = new AllocateBackupStorageMsg();
+                                    amsg.setRequiredZoneUuid(zoneUuid);
+                                    amsg.setSize(actualSize);
+                                    amsg.setBackupStorageUuid(arg);
+                                    bus.makeLocalServiceId(amsg, BackupStorageConstant.SERVICE_ID);
+                                    return amsg;
+                                }
+                            });
+
+                            bus.send(amsgs, new CloudBusListCallBack(trigger) {
+                                @Override
+                                public void run(List<MessageReply> replies) {
+                                    List<ErrorCode> errs = new ArrayList<>();
+                                    for (MessageReply r : replies) {
+                                        if (r.isSuccess()) {
+                                            backupStorages.add(((AllocateBackupStorageReply) r).getInventory());
+                                        } else {
+                                            errs.add(r.getError());
+                                        }
+                                    }
+
+                                    if (backupStorages.isEmpty()) {
+                                        trigger.fail(operr("failed to allocate all backup storage[uuid:%s], a list of error: %s",
+                                                msgData.getBackupStorageUuids(), JSONObjectUtil.toJsonString(errs)));
+                                    } else {
+                                        saveRefVOByBsInventorys(backupStorages, image.getUuid());
+                                        for (BackupStorageInventory bs: backupStorages) {
+                                            for (CreateImageExtensionPoint ext : pluginRgty.getExtensionList(CreateImageExtensionPoint.class)) {
+                                                VolumeVO volume = dbf.findByUuid(msgData.getVolumeUuid(), VolumeVO.class);
+
+                                                ext.beforeCreateImage(ImageInventory.valueOf(image), bs.getUuid(), volume.getPrimaryStorageUuid());
+                                            }
+                                        }
+                                        trigger.next();
+                                    }
+                                }
+                            });
+                        }
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        if (!backupStorages.isEmpty()) {
+                            List<ReturnBackupStorageMsg> rmsgs = CollectionUtils.transformToList(backupStorages, new Function<ReturnBackupStorageMsg, BackupStorageInventory>() {
+                                @Override
+                                public ReturnBackupStorageMsg call(BackupStorageInventory arg) {
+                                    ReturnBackupStorageMsg rmsg = new ReturnBackupStorageMsg();
+                                    rmsg.setBackupStorageUuid(arg.getUuid());
+                                    rmsg.setSize(actualSize);
+                                    bus.makeLocalServiceId(rmsg, BackupStorageConstant.SERVICE_ID);
+                                    return rmsg;
+                                }
+                            });
+
+                            bus.send(rmsgs, new CloudBusListCallBack(null) {
+                                @Override
+                                public void run(List<MessageReply> replies) {
+                                    for (MessageReply r : replies) {
+                                        BackupStorageInventory bs = backupStorages.get(replies.indexOf(r));
+                                        logger.warn(String.format("failed to return %s bytes to backup storage[uuid:%s]", acntMgr, bs.getUuid()));
+                                    }
+                                }
+                            });
+                        }
+
+                        trigger.rollback();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "create-data-volume-template-from-volume";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        List<CreateDataVolumeTemplateFromDataVolumeMsg> cmsgs = CollectionUtils.transformToList(backupStorages, new Function<CreateDataVolumeTemplateFromDataVolumeMsg, BackupStorageInventory>() {
+                            @Override
+                            public CreateDataVolumeTemplateFromDataVolumeMsg call(BackupStorageInventory bs) {
+                                CreateDataVolumeTemplateFromDataVolumeMsg cmsg = new CreateDataVolumeTemplateFromDataVolumeMsg();
+                                cmsg.setVolumeUuid(msgData.getVolumeUuid());
+                                cmsg.setBackupStorageUuid(bs.getUuid());
+                                cmsg.setImageUuid(image.getUuid());
+                                bus.makeTargetServiceIdByResourceUuid(cmsg, VolumeConstant.SERVICE_ID, msgData.getVolumeUuid());
+                                return cmsg;
+                            }
+                        });
+
+                        bus.send(cmsgs, new CloudBusListCallBack(null) {
+                            @Override
+                            public void run(List<MessageReply> replies) {
+                                int fail = 0;
+                                String mdsum = null;
+                                ErrorCode err = null;
+                                String format = null;
+                                for (MessageReply r : replies) {
+                                    BackupStorageInventory bs = backupStorages.get(replies.indexOf(r));
+                                    if (!r.isSuccess()) {
+                                        logger.warn(String.format("failed to create data volume template from volume[uuid:%s] on backup storage[uuid:%s], %s",
+                                                msgData.getVolumeUuid(), bs.getUuid(), r.getError()));
+                                        fail++;
+                                        err = r.getError();
+                                        continue;
+                                    }
+
+                                    CreateDataVolumeTemplateFromDataVolumeReply reply = r.castReply();
+                                    ImageBackupStorageRefVO vo = Q.New(ImageBackupStorageRefVO.class)
+                                            .eq(ImageBackupStorageRefVO_.backupStorageUuid, bs.getUuid())
+                                            .eq(ImageBackupStorageRefVO_.imageUuid, image.getUuid())
+                                            .find();
+                                    vo.setStatus(ImageStatus.Ready);
+                                    vo.setInstallPath(reply.getInstallPath());
+                                    dbf.update(vo);
+
+                                    if (mdsum == null) {
+                                        mdsum = reply.getMd5sum();
+                                    }
+                                    if (reply.getFormat() != null) {
+                                        format = reply.getFormat();
+                                    }
+                                }
+
+                                int backupStorageNum = msgData.getBackupStorageUuids() == null ? 1 : msgData.getBackupStorageUuids().size();
+
+                                if (fail == backupStorageNum) {
+                                    ErrorCode errCode = operr("failed to create data volume template from volume[uuid:%s] on all backup storage%s. See cause for one of errors",
+                                            msgData.getVolumeUuid(), msgData.getBackupStorageUuids()).causedBy(err);
+
+                                    trigger.fail(errCode);
+                                } else {
+                                    image = dbf.reload(image);
+                                    if (format != null) {
+                                        image.setFormat(format);
+                                    }
+                                    image.setMd5Sum(mdsum);
+                                    image.setStatus(ImageStatus.Ready);
+                                    image = dbf.updateAndRefresh(image);
+
+                                    trigger.next();
+                                }
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(msgData.getNeedReplyMessage()) {
+                    @Override
+                    public void handle(Map data) {
+                        reportProgress(parentStage.getEnd().toString());
+                        InnerEvent innerEvent = new InnerEvent();
+                        innerEvent.inv = ImageInventory.valueOf(image);
+                        innerEvent.reply(evt);
+                    }
+                });
+
+                error(new FlowErrorHandler(msgData.getNeedReplyMessage()) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        InnerEvent innerEvent = new InnerEvent();
+                        innerEvent.error = errCode;
+                        innerEvent.reply(evt);
+                    }
+                });
+            }
+        }).start();
     }
 }

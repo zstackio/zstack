@@ -116,13 +116,11 @@ public class ApiValidator implements GlobalApiMessageInterceptor {
     }
 
     private void validate(APIAttachPortForwardingRuleMsg msg) {
-        isVmNicUsedByEip(msg.getVmNicUuid());
+//        Note(WeiW): Disable this since eip and portforwarding can be used at same time
+//        isVmNicUsedByEip(msg.getVmNicUuid());
     }
 
     private void validate(APICreatePortForwardingRuleMsg msg) {
-        if (msg.getVmNicUuid() != null) {
-            isVmNicUsedByEip(msg.getVmNicUuid());
-        }
         RangeSet.Range cur = new RangeSet.Range(msg.getVipPortStart(), msg.getVipPortEnd());
         checkVipPortConfliction(msg.getVipUuid(), msg.getProtocolType(), cur);
     }
@@ -170,7 +168,8 @@ public class ApiValidator implements GlobalApiMessageInterceptor {
     }
 
     private void validate(APIAttachEipMsg msg) {
-        isVmNicUsedByPortForwarding(msg.getVmNicUuid());
+//        Note(WeiW): Disable this since eip and portforwarding can be used at same time
+//        isVmNicUsedByPortForwarding(msg.getVmNicUuid());
     }
 
     private void validate(APICreateEipMsg msg) {
@@ -183,10 +182,6 @@ public class ApiValidator implements GlobalApiMessageInterceptor {
         }
         if(!vipUseForList.validateNewAdded(EipConstant.EIP_NETWORK_SERVICE_TYPE)){
             throw new ApiMessageInterceptionException(operr("the vip[uuid:%s] already has bound to other service[%s]", msg.getVipUuid(), vipUseForList.toString()));
-        }
-
-        if (msg.getVmNicUuid() != null) {
-            isVmNicUsedByPortForwarding(msg.getVmNicUuid());
         }
     }
 

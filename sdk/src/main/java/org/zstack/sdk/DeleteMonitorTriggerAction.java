@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteMonitorTriggerAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteMonitorTriggerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteMonitorTriggerResult value;
+        public org.zstack.sdk.DeleteMonitorTriggerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DeleteMonitorTriggerAction extends AbstractAction {
             return ret;
         }
         
-        DeleteMonitorTriggerResult value = res.getResult(DeleteMonitorTriggerResult.class);
-        ret.value = value == null ? new DeleteMonitorTriggerResult() : value; 
+        org.zstack.sdk.DeleteMonitorTriggerResult value = res.getResult(org.zstack.sdk.DeleteMonitorTriggerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteMonitorTriggerResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DeleteMonitorTriggerAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/monitoring/triggers/{uuid}";

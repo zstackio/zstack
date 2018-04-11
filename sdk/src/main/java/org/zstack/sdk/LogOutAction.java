@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class LogOutAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class LogOutAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public LogOutResult value;
+        public org.zstack.sdk.LogOutResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -41,8 +42,8 @@ public class LogOutAction extends AbstractAction {
             return ret;
         }
         
-        LogOutResult value = res.getResult(LogOutResult.class);
-        ret.value = value == null ? new LogOutResult() : value; 
+        org.zstack.sdk.LogOutResult value = res.getResult(org.zstack.sdk.LogOutResult.class);
+        ret.value = value == null ? new org.zstack.sdk.LogOutResult() : value; 
 
         return ret;
     }
@@ -61,15 +62,15 @@ public class LogOutAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/accounts/sessions/{sessionUuid}";

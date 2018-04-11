@@ -11,7 +11,7 @@ public class AddZsesPrimaryStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AddPrimaryStorageResult value;
+        public org.zstack.sdk.AddPrimaryStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -65,8 +65,8 @@ public class AddZsesPrimaryStorageAction extends AbstractAction {
             return ret;
         }
         
-        AddPrimaryStorageResult value = res.getResult(AddPrimaryStorageResult.class);
-        ret.value = value == null ? new AddPrimaryStorageResult() : value; 
+        org.zstack.sdk.AddPrimaryStorageResult value = res.getResult(org.zstack.sdk.AddPrimaryStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddPrimaryStorageResult() : value; 
 
         return ret;
     }
@@ -85,15 +85,15 @@ public class AddZsesPrimaryStorageAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/primary-storage/zses";

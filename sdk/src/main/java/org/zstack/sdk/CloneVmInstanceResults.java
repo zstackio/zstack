@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class CloneVmInstanceResults  {
 
     public int numberOfClonedVm;
@@ -10,11 +12,11 @@ public class CloneVmInstanceResults  {
         return this.numberOfClonedVm;
     }
 
-    public java.util.List<CloneVmInstanceInventory> inventories;
-    public void setInventories(java.util.List<CloneVmInstanceInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<CloneVmInstanceInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

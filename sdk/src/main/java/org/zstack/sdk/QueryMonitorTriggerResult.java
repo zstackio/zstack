@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class QueryMonitorTriggerResult {
-    public java.util.List<MonitorTriggerInventory> inventories;
-    public void setInventories(java.util.List<MonitorTriggerInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<MonitorTriggerInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

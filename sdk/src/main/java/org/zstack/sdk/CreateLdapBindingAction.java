@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class CreateLdapBindingAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class CreateLdapBindingAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateLdapBindingResult value;
+        public org.zstack.sdk.CreateLdapBindingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class CreateLdapBindingAction extends AbstractAction {
             return ret;
         }
         
-        CreateLdapBindingResult value = res.getResult(CreateLdapBindingResult.class);
-        ret.value = value == null ? new CreateLdapBindingResult() : value; 
+        org.zstack.sdk.CreateLdapBindingResult value = res.getResult(org.zstack.sdk.CreateLdapBindingResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateLdapBindingResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class CreateLdapBindingAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/ldap/bindings";

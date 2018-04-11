@@ -55,10 +55,13 @@ class FlatDnsOrderCase extends SubCase {
             dns = "1.1.1.2"
         }
 
-        addDnsToL3Network {
+        L3NetworkInventory l3 = addDnsToL3Network {
             l3NetworkUuid = l3.uuid
             dns = "1.1.1.3"
         }
+        assert l3.dns.get(0) == '1.1.1.1'
+        assert l3.dns.get(1) == '1.1.1.2'
+        assert l3.dns.get(2) == '1.1.1.3'
 
         FlatDhcpBackend.ApplyDhcpCmd cmd = null
         env.simulator(FlatDhcpBackend.APPLY_DHCP_PATH){HttpEntity<String> e,EnvSpec spec ->
@@ -78,10 +81,12 @@ class FlatDnsOrderCase extends SubCase {
         assert cmd.dhcp.get(0).dns.get(1) == "1.1.1.2"
         assert cmd.dhcp.get(0).dns.get(2) == "1.1.1.3"
 
-        removeDnsFromL3Network {
+        l3 = removeDnsFromL3Network {
             l3NetworkUuid = l3.uuid
             dns = "1.1.1.2"
         }
+        assert l3.dns.get(0) == '1.1.1.1'
+        assert l3.dns.get(1) == '1.1.1.3'
 
         cmd = null
         rebootVmInstance {
@@ -98,10 +103,15 @@ class FlatDnsOrderCase extends SubCase {
             l3NetworkUuid = l3.uuid
             dns = "1.1.1.4"
         }
-        addDnsToL3Network {
+        l3 = addDnsToL3Network {
             l3NetworkUuid = l3.uuid
             dns = "1.1.1.2"
         }
+        assert l3.dns.get(0) == '1.1.1.1'
+        assert l3.dns.get(1) == '1.1.1.3'
+        assert l3.dns.get(2) == '1.1.1.4'
+        assert l3.dns.get(3) == '1.1.1.2'
+
         cmd = null
         rebootVmInstance {
             uuid = vm.uuid

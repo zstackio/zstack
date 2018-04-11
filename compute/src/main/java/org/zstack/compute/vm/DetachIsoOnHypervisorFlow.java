@@ -26,11 +26,12 @@ public class DetachIsoOnHypervisorFlow extends NoRollbackFlow {
     @Override
     public void run(final FlowTrigger trigger, Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+        final String isoUuid = (String) data.get(VmInstanceConstant.Params.DetachingIsoUuid.toString());
 
         DetachIsoOnHypervisorMsg msg = new DetachIsoOnHypervisorMsg();
         msg.setHostUuid(spec.getDestHost().getUuid());
         msg.setVmInstanceUuid(spec.getVmInventory().getUuid());
-        msg.setIsoUuid(spec.getDestIso().getImageUuid());
+        msg.setIsoUuid(isoUuid);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
         bus.send(msg, new CloudBusCallBack(trigger) {
             @Override

@@ -199,14 +199,11 @@ class LdapBasicCase extends SubCase {
 
     void testCreateLdapBinding(){
         String notExistCn = "nobody"
-        try{
+        expect (AssertionError.class) {
             createLdapBinding {
                 accountUuid = Test.currentEnvSpec.session.accountUuid
                 ldapUid = notExistCn
             }
-            assert false
-        }catch (Throwable e){
-            assert true
         }
 
         List result = getCandidateLdapEntryForBinding {

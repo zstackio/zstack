@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class UpdateSchedulerTriggerAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class UpdateSchedulerTriggerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateSchedulerTriggerResult value;
+        public org.zstack.sdk.UpdateSchedulerTriggerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,6 +33,18 @@ public class UpdateSchedulerTriggerAction extends AbstractAction {
 
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,2147483647L}, noTrim = false)
+    public java.lang.Integer schedulerInterval;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,2147483647L}, noTrim = false)
+    public java.lang.Integer repeatCount = 0;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Long startTime;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String cron;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -56,8 +69,8 @@ public class UpdateSchedulerTriggerAction extends AbstractAction {
             return ret;
         }
         
-        UpdateSchedulerTriggerResult value = res.getResult(UpdateSchedulerTriggerResult.class);
-        ret.value = value == null ? new UpdateSchedulerTriggerResult() : value; 
+        org.zstack.sdk.UpdateSchedulerTriggerResult value = res.getResult(org.zstack.sdk.UpdateSchedulerTriggerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateSchedulerTriggerResult() : value; 
 
         return ret;
     }
@@ -76,15 +89,15 @@ public class UpdateSchedulerTriggerAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/scheduler/triggers/{uuid}/actions";

@@ -7,7 +7,7 @@ doc {
 
     category "network.l3"
 
-    desc """在这里填写API描述"""
+    desc """获取三层网络上路由器的接口地址"""
 
     rest {
         request {
@@ -29,7 +29,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "0.6"
+					since "2.2"
 					
 				}
 				column {
@@ -39,7 +39,7 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "0.6"
+					since "2.2"
 					
 				}
 				column {
@@ -49,7 +49,7 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "0.6"
+					since "2.2"
 					
 				}
 			}

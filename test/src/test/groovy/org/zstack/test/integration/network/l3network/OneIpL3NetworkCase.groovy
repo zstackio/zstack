@@ -85,6 +85,19 @@ class OneIpL3NetworkCase extends SubCase {
             netmask = "255.255.255.0"
             gateway = "192.168.100.1"
         }
+
+        /* add 1 IpRange which end ip is not in the cidr range */
+        expect(AssertionError.class){
+            addIpRange{
+                l3NetworkUuid = l3Spec.inventory.uuid
+                name = "test5"
+                startIp = "192.168.101.13"
+                endIp = "196.168.100.13"
+                netmask = "255.255.255.0"
+                gateway = "192.168.100.1"
+            }
+        }
+
         createVmInstance {
             name = "vm2"
             instanceOfferingUuid = ioSpec.inventory.uuid

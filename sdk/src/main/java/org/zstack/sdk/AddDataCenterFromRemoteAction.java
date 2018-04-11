@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class AddDataCenterFromRemoteAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class AddDataCenterFromRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AddDataCenterFromRemoteResult value;
+        public org.zstack.sdk.AddDataCenterFromRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -59,8 +60,8 @@ public class AddDataCenterFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        AddDataCenterFromRemoteResult value = res.getResult(AddDataCenterFromRemoteResult.class);
-        ret.value = value == null ? new AddDataCenterFromRemoteResult() : value; 
+        org.zstack.sdk.AddDataCenterFromRemoteResult value = res.getResult(org.zstack.sdk.AddDataCenterFromRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddDataCenterFromRemoteResult() : value; 
 
         return ret;
     }
@@ -79,15 +80,15 @@ public class AddDataCenterFromRemoteAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/hybrid/data-center";

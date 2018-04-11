@@ -195,6 +195,10 @@ class VirtualRouterOfferingSpec extends InstanceOfferingSpec {
             return new VirtualRouterCommands.ConfigureNicRsp()
         }
 
+        simulator(VirtualRouterConstant.VR_CONFIGURE_NIC_FIREWALL_DEFAULT_ACTION_PATH) {
+            return new VirtualRouterCommands.ConfigureNicFirewallDefaultActionRsp()
+        }
+
         simulator(VirtualRouterConstant.VR_REMOVE_NIC_PATH) {
             return new VirtualRouterCommands.RemoveNicRsp()
         }

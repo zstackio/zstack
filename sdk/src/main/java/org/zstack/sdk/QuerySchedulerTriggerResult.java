@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class QuerySchedulerTriggerResult {
-    public java.util.List<SchedulerTriggerInventory> inventories;
-    public void setInventories(java.util.List<SchedulerTriggerInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<SchedulerTriggerInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

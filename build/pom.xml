@@ -88,6 +88,16 @@
                 </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
+                    <artifactId>external-service</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>premium-external-service</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
                     <artifactId>compute</artifactId>
                     <version>${project.version}</version>
                 </dependency>
@@ -250,6 +260,21 @@
                 <dependency>
                     <groupId>org.zstack</groupId>
                     <artifactId>daho</artifactId>
+		    <version>${project.version}</version>
+		</dependency>
+		<dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>zwatch</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>sns</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>premium-host-allocator</artifactId>
                     <version>${project.version}</version>
                 </dependency>
                 <dependency>
@@ -322,6 +347,11 @@
         <dependency>
             <groupId>org.zstack</groupId>
             <artifactId>core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>external-service</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

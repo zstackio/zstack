@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeletePrimaryStorageAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeletePrimaryStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeletePrimaryStorageResult value;
+        public org.zstack.sdk.DeletePrimaryStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DeletePrimaryStorageAction extends AbstractAction {
             return ret;
         }
         
-        DeletePrimaryStorageResult value = res.getResult(DeletePrimaryStorageResult.class);
-        ret.value = value == null ? new DeletePrimaryStorageResult() : value; 
+        org.zstack.sdk.DeletePrimaryStorageResult value = res.getResult(org.zstack.sdk.DeletePrimaryStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeletePrimaryStorageResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DeletePrimaryStorageAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/primary-storage/{uuid}";

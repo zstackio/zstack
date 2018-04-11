@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.HybridType;
+
 public class HybridAccountInventory  {
 
     public java.lang.String name;

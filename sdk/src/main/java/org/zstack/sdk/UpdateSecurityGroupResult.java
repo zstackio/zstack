@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.SecurityGroupInventory;
+
 public class UpdateSecurityGroupResult {
     public SecurityGroupInventory inventory;
     public void setInventory(SecurityGroupInventory inventory) {

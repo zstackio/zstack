@@ -16,9 +16,11 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.HasThreadContext;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.core.*;
+import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -69,10 +71,10 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.i18n;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.core.progress.ProgressReportService.getTaskStage;
+import static org.zstack.core.progress.ProgressReportService.markTaskStage;
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
-import static org.zstack.header.storage.backup.BackupStorageConstant.*;
 import static org.zstack.utils.CollectionDSL.list;
-import static org.zstack.utils.ProgressUtils.*;
 
 /**
  * Created by frank on 7/28/2015.
@@ -92,6 +94,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     private AccountManager acntMgr;
     @Autowired
     private PluginRegistry pluginRgty;
+
+    public CephPrimaryStorageBase() {
+    }
 
     class ReconnectMonLock {
         AtomicBoolean hold = new AtomicBoolean(false);
@@ -406,7 +411,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             APICreateRootVolumeTemplateFromRootVolumeMsg.class,
             APICreateDataVolumeTemplateFromVolumeMsg.class
     })
-    public static class SftpUpLoadCmd extends AgentCommand {
+    public static class SftpUpLoadCmd extends AgentCommand implements HasThreadContext{
+        String sendCommandUrl;
         String primaryStorageInstallPath;
         String backupStorageInstallPath;
         String hostname;
@@ -460,6 +466,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         public void setSshKey(String sshKey) {
             this.sshKey = sshKey;
+        }
+
+        public void setSendCommandUrl(String sendCommandUrl) {
+            this.sendCommandUrl = sendCommandUrl;
+        }
+
+        public String getSendCommandUrl() {
+            return sendCommandUrl;
         }
     }
 
@@ -582,7 +596,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             APICreateDataVolumeFromVolumeSnapshotMsg.class,
             APICreateRootVolumeTemplateFromVolumeSnapshotMsg.class
     })
-    public static class CpCmd extends AgentCommand {
+    public static class CpCmd extends AgentCommand implements HasThreadContext{
+        String sendCommandUrl;
         String resourceUuid;
         String srcPath;
         String dstPath;
@@ -594,7 +609,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             APICreateDataVolumeFromVolumeSnapshotMsg.class,
             APICreateRootVolumeTemplateFromVolumeSnapshotMsg.class
     })
-    public static class UploadCmd extends AgentCommand {
+    public static class UploadCmd extends AgentCommand implements HasThreadContext{
+        public String sendCommandUrl;
         public String imageUuid;
         public String hostname;
         public String srcPath;
@@ -1088,6 +1104,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             checkParam();
 
             final UploadParam uparam = (UploadParam) param;
+            final TaskProgressRange parentStage = getTaskStage();
+            final TaskProgressRange PREPARATION_STAGE = new TaskProgressRange(0, 10);
+            final TaskProgressRange UPLOAD_STAGE = new TaskProgressRange(10, 100);
 
             FlowChain chain = FlowChainBuilder.newShareFlowChain();
             chain.setName(String.format("upload-image-ceph-%s-to-sftp-%s", self.getUuid(), backupStorage.getUuid()));
@@ -1128,6 +1147,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
+                            TaskProgressRange stage = markTaskStage(parentStage, PREPARATION_STAGE);
+
                             BackupStorageAskInstallPathMsg msg = new BackupStorageAskInstallPathMsg();
                             msg.setBackupStorageUuid(backupStorage.getUuid());
                             msg.setImageUuid(uparam.image.getUuid());
@@ -1140,7 +1161,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                         trigger.fail(reply.getError());
                                     } else {
                                         backupStorageInstallPath = ((BackupStorageAskInstallPathReply) reply).getInstallPath();
-                                        reportProgress(getEndFromStage(CREATE_ROOT_VOLUME_TEMPLATE_PREPARATION_STAGE));
+                                        reportProgress(stage.getEnd().toString());
                                         trigger.next();
                                     }
                                 }
@@ -1153,7 +1174,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
+                            TaskProgressRange stage = markTaskStage(parentStage, UPLOAD_STAGE);
+
                             SftpUpLoadCmd cmd = new SftpUpLoadCmd();
+                            cmd.setSendCommandUrl(restf.getSendCommandUrl());
                             cmd.setBackupStorageInstallPath(backupStorageInstallPath);
                             cmd.setHostname(hostname);
                             cmd.setUsername(username);
@@ -1164,7 +1188,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             httpCall(SFTP_UPLOAD_PATH, cmd, SftpUploadRsp.class, new ReturnValueCompletion<SftpUploadRsp>(trigger) {
                                 @Override
                                 public void success(SftpUploadRsp returnValue) {
-                                    reportProgress(getEndFromStage(CREATE_ROOT_VOLUME_TEMPLATE_UPLOAD_STAGE));
+                                    reportProgress(stage.getEnd().toString());
                                     trigger.next();
                                 }
 
@@ -1179,6 +1203,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     done(new FlowDoneHandler(completion) {
                         @Override
                         public void handle(Map data) {
+                            reportProgress(parentStage.getEnd().toString());
                             completion.success(backupStorageInstallPath);
                         }
                     });
@@ -1246,7 +1271,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             checkParam();
 
             final UploadParam uparam = (UploadParam) param;
-
+            final TaskProgressRange parentStage = getTaskStage();
             FlowChain chain = FlowChainBuilder.newShareFlowChain();
             chain.setName(String.format("upload-image-ceph-%s-to-ceph-%s", self.getUuid(), backupStorage.getUuid()));
             chain.then(new ShareFlow() {
@@ -1271,7 +1296,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                         trigger.fail(reply.getError());
                                     } else {
                                         backupStorageInstallPath = ((BackupStorageAskInstallPathReply) reply).getInstallPath();
-                                        reportProgress(getEndFromStage(CREATE_ROOT_VOLUME_TEMPLATE_PREPARATION_STAGE));
                                         trigger.next();
                                     }
                                 }
@@ -1285,12 +1309,12 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
                             CpCmd cmd = new CpCmd();
+                            cmd.sendCommandUrl = restf.getSendCommandUrl();
                             cmd.srcPath = uparam.primaryStorageInstallPath;
                             cmd.dstPath = backupStorageInstallPath;
                             httpCall(CP_PATH, cmd, CpRsp.class, new ReturnValueCompletion<CpRsp>(trigger) {
                                 @Override
                                 public void success(CpRsp returnValue) {
-                                    reportProgress(getEndFromStage(CREATE_ROOT_VOLUME_TEMPLATE_UPLOAD_STAGE));
                                     trigger.next();
                                 }
 
@@ -1305,6 +1329,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     done(new FlowDoneHandler(completion) {
                         @Override
                         public void handle(Map data) {
+                            reportProgress(parentStage.getEnd().toString());
                             completion.success(backupStorageInstallPath);
                         }
                     });
@@ -1896,6 +1921,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     @Override
     protected void handle(final CreateTemplateFromVolumeOnPrimaryStorageMsg msg) {
         final CreateTemplateFromVolumeOnPrimaryStorageReply reply = new CreateTemplateFromVolumeOnPrimaryStorageReply();
+        final TaskProgressRange parentStage = getTaskStage();
+        final TaskProgressRange CREATE_SNAPSHOT_STAGE = new TaskProgressRange(0, 10);
+        final TaskProgressRange CREATE_IMAGE_STAGE = new TaskProgressRange(10, 100);
 
         checkCephFsId(msg.getPrimaryStorageUuid(), msg.getBackupStorageUuid());
 
@@ -1918,6 +1946,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
                         String volumeAccountUuid = acntMgr.getOwnerAccountUuidOfResource(volumeUuid);
+                        TaskProgressRange stage = markTaskStage(parentStage, CREATE_SNAPSHOT_STAGE);
 
                         // 1. create snapshot
                         CreateVolumeSnapshotMsg cmsg = new CreateVolumeSnapshotMsg();
@@ -1937,7 +1966,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                                 CreateVolumeSnapshotReply createVolumeSnapshotReply = (CreateVolumeSnapshotReply)r;
                                 snapshot = createVolumeSnapshotReply.getInventory();
-                                reportProgress(getEndFromStage(CREATE_ROOT_VOLUME_TEMPLATE_PREPARATION_STAGE));
+                                reportProgress(stage.getEnd().toString());
                                 trigger.next();
                             }
                         });
@@ -1951,6 +1980,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
                         // 2.create image
+                        TaskProgressRange stage = markTaskStage(parentStage, CREATE_IMAGE_STAGE);
 
                         VolumeSnapshotVO vo = dbf.findByUuid(snapshot.getUuid(), VolumeSnapshotVO.class);
                         String treeUuid = vo.getTreeUuid();
@@ -1973,7 +2003,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 }
 
                                 imageReply = (CreateTemplateFromVolumeSnapshotReply)r;
-                                reportProgress(getEndFromStage(CREATE_ROOT_VOLUME_TEMPLATE_PREPARATION_STAGE));
+                                reportProgress(stage.getEnd().toString());
                                 trigger.next();
                             }
                         });
@@ -2662,6 +2692,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     @Override
     protected void handle(APIReconnectPrimaryStorageMsg msg) {
         final APIReconnectPrimaryStorageEvent evt = new APIReconnectPrimaryStorageEvent(msg.getId());
+
+        // fire disconnected canonical event only if the current status is connected
+        boolean fireEvent = self.getStatus() == PrimaryStorageStatus.Connected;
+
         self.setStatus(PrimaryStorageStatus.Connecting);
         dbf.update(self);
         connect(false, new Completion(msg) {
@@ -2679,6 +2713,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 self = dbf.reload(self);
                 self.setStatus(PrimaryStorageStatus.Disconnected);
                 self = dbf.updateAndRefresh(self);
+
+                if (fireEvent) {
+                    fireDisconnectedCanonicalEvent(errorCode);
+                }
+
                 evt.setError(errorCode);
                 bus.publish(evt);
             }
@@ -3135,6 +3174,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
 
         UploadCmd cmd = new UploadCmd();
+        cmd.sendCommandUrl = restf.getSendCommandUrl();
         cmd.fsId = getSelf().getFsid();
         cmd.srcPath = msg.getPrimaryStorageInstallPath();
         cmd.dstPath = msg.getBackupStorageInstallPath();

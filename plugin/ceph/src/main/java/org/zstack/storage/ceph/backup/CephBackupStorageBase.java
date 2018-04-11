@@ -55,6 +55,9 @@ import static org.zstack.utils.CollectionDSL.list;
 public class CephBackupStorageBase extends BackupStorageBase {
     private static final CLogger logger = Utils.getLogger(CephBackupStorageBase.class);
 
+    public CephBackupStorageBase() {
+    }
+
     class ReconnectMonLock {
         AtomicBoolean hold = new AtomicBoolean(false);
 
@@ -280,6 +283,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
         long size;
         Long actualSize;
         String uploadPath;
+        String format;
 
         public Long getActualSize() {
             return actualSize;
@@ -303,6 +307,14 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
         public void setUploadPath(String uploadPath) {
             this.uploadPath = uploadPath;
+        }
+
+        public String getFormat() {
+            return format;
+        }
+
+        public void setFormat(String format) {
+            this.format = format;
         }
     }
 
@@ -914,6 +926,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
             @Override
             public void success(DownloadRsp ret) {
+                updateCapacity(ret.getTotalCapacity(),ret.getAvailableCapacity());
                 if (cmd.getUrl().startsWith("upload://")) {
                     reply.setInstallPath(ret.getUploadPath());
                 } else {
@@ -926,6 +939,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                 long asize = ret.actualSize == null ? ret.size : ret.actualSize;
                 reply.setActualSize(asize);
                 reply.setMd5sum("not calculated");
+                reply.setFormat(ret.format);
                 bus.reply(msg, reply);
             }
         });

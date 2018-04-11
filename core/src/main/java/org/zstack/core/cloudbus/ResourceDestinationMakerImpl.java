@@ -14,6 +14,7 @@ import org.zstack.utils.hash.ConsistentHash;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created with IntelliJ IDEA.
@@ -23,6 +24,7 @@ import java.util.List;
  */
 public class ResourceDestinationMakerImpl implements ManagementNodeChangeListener, ResourceDestinationMaker {
     private ConsistentHash<String> nodeHash = new ConsistentHash<String>(new ApacheHash(), 500, new ArrayList<String>()) ;
+    private AtomicInteger nodeCount = new AtomicInteger(0);
 
     @Autowired
     private DatabaseFacade dbf;
@@ -30,16 +32,19 @@ public class ResourceDestinationMakerImpl implements ManagementNodeChangeListene
     @Override
     public void nodeJoin(String nodeId) {
         nodeHash.add(nodeId);
+        nodeCount.incrementAndGet();
     }
 
     @Override
     public void nodeLeft(String nodeId) {
         nodeHash.remove(nodeId);
+        nodeCount.decrementAndGet();
     }
 
     @Override
     public void iAmDead(String nodeId) {
         nodeHash.remove(nodeId);
+        nodeCount.decrementAndGet();
     }
 
     @Override
@@ -50,6 +55,8 @@ public class ResourceDestinationMakerImpl implements ManagementNodeChangeListene
         for (String id : nodeIds) {
             nodeHash.add(id);
         }
+
+        nodeCount.set(nodeIds.size());
     }
 
     @Override
@@ -71,6 +78,11 @@ public class ResourceDestinationMakerImpl implements ManagementNodeChangeListene
     @Override
     public Collection<String> getManagementNodesInHashRing() {
         return nodeHash.getNodes();
+    }
+
+    @Override
+    public int getManagementNodeCount() {
+        return nodeCount.intValue();
     }
 
     public boolean isNodeInCircle(String nodeId) {

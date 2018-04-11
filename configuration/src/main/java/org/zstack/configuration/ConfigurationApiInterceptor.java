@@ -45,6 +45,8 @@ public class ConfigurationApiInterceptor implements ApiMessageInterceptor {
             validate((APICreateDiskOfferingMsg) msg);
         } else if (msg instanceof APICreateInstanceOfferingMsg) {
             validate((APICreateInstanceOfferingMsg) msg);
+        } else if (msg instanceof APICreateInstanceOfferingMsg) {
+            validate((APIUpdateInstanceOfferingMsg) msg);
         } else if (msg instanceof APIDeleteDiskOfferingMsg) {
             validate((APIDeleteDiskOfferingMsg) msg);
         }
@@ -76,6 +78,12 @@ public class ConfigurationApiInterceptor implements ApiMessageInterceptor {
 
         if (msg.getMemorySize() < SizeUnit.MEGABYTE.toByte(16)) {
             throw new ApiMessageInterceptionException(argerr("memory size[%s bytes] is less than 16M, no modern operating system is likely able to boot with such small memory size", msg.getMemorySize()));
+        }
+    }
+
+    private void validate(APIUpdateInstanceOfferingMsg msg) {
+        if (msg.getAllocatorStrategy() != null && !HostAllocatorStrategyType.hasType(msg.getAllocatorStrategy())) {
+            throw new ApiMessageInterceptionException(argerr("unsupported host allocation strategy[%s]", msg.getAllocatorStrategy()));
         }
     }
 

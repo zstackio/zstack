@@ -170,7 +170,7 @@ class CreateVmAssignPsCase extends SubCase{
         checkVmDataDiskPs(vm, smp.uuid)
 
         // assign root volume local ps
-        try{
+        expect (AssertionError.class) {
             vm = createVmInstance {
                 name = "vm1"
                 instanceOfferingUuid = instanceOffering.uuid
@@ -179,9 +179,6 @@ class CreateVmAssignPsCase extends SubCase{
                 primaryStorageUuidForRootVolume = local.uuid
                 dataDiskOfferingUuids = [diskOffering.uuid]
             }
-            assert false
-        }catch (Throwable t){
-            assert true
         }
 
         // assign root volume smp ps
@@ -209,7 +206,7 @@ class CreateVmAssignPsCase extends SubCase{
         assert a2.call().error != null
 
         // assign data volume smp ps
-        try{
+        expect (AssertionError.class) {
             vm = createVmInstance {
                 name = "vm3"
                 instanceOfferingUuid = instanceOffering.uuid
@@ -218,9 +215,6 @@ class CreateVmAssignPsCase extends SubCase{
                 dataDiskOfferingUuids = [diskOffering.uuid]
                 systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): smp.uuid])]
             }
-            assert false
-        }catch (Throwable t){
-            assert true
         }
 
         // assign root volume local ps, data volume local ps,

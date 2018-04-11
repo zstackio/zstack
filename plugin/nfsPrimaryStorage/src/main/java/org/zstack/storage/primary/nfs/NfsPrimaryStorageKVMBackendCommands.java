@@ -119,7 +119,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
             APICreateRootVolumeTemplateFromRootVolumeMsg.class,
             APICreateDataVolumeTemplateFromVolumeMsg.class
     })
-    public static class CreateTemplateFromVolumeCmd extends NfsPrimaryStorageAgentCommand {
+    public static class CreateTemplateFromVolumeCmd extends NfsPrimaryStorageAgentCommand implements HasThreadContext{
         private String installPath;
         private String rootVolumePath;
 
@@ -405,7 +405,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
         }
     }
 
-    public static class UploadToSftpCmd extends NfsPrimaryStorageAgentCommand {
+    public static class UploadToSftpCmd extends NfsPrimaryStorageAgentCommand implements HasThreadContext{
         private String primaryStorageInstallPath;
         private String backupStorageInstallPath;
         private String backupStorageHostName;

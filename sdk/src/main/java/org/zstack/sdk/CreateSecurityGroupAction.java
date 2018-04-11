@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class CreateSecurityGroupAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class CreateSecurityGroupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateSecurityGroupResult value;
+        public org.zstack.sdk.CreateSecurityGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +57,8 @@ public class CreateSecurityGroupAction extends AbstractAction {
             return ret;
         }
         
-        CreateSecurityGroupResult value = res.getResult(CreateSecurityGroupResult.class);
-        ret.value = value == null ? new CreateSecurityGroupResult() : value; 
+        org.zstack.sdk.CreateSecurityGroupResult value = res.getResult(org.zstack.sdk.CreateSecurityGroupResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateSecurityGroupResult() : value; 
 
         return ret;
     }
@@ -76,15 +77,15 @@ public class CreateSecurityGroupAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/security-groups";

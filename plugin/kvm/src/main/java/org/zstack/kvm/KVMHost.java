@@ -8,15 +8,16 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.compute.host.HostBase;
 import org.zstack.compute.host.HostSystemTags;
+import org.zstack.compute.vm.IsoOperator;
 import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
-import org.zstack.core.ansible.AnsibleConstant;
 import org.zstack.core.ansible.AnsibleGlobalProperty;
 import org.zstack.core.ansible.AnsibleRunner;
 import org.zstack.core.ansible.SshFileMd5Checker;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -41,6 +42,7 @@ import org.zstack.header.host.MigrateVmOnHypervisorMsg.StorageMigrationPolicy;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
@@ -57,7 +59,6 @@ import org.zstack.kvm.KVMConstant.KvmVmState;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.ssh.Ssh;
@@ -69,7 +70,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -119,6 +120,7 @@ public class KVMHost extends HostBase implements Host {
     private String onlineIncreaseCpuPath;
     private String onlineIncreaseMemPath;
     private String deleteConsoleFirewall;
+    private String updateHostOSPath;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
 
@@ -227,6 +229,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_DELETE_CONSOLE_FIREWALL_PATH);
         deleteConsoleFirewall = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_UPDATE_HOST_OS_PATH);
+        updateHostOSPath = ub.build().toString();
     }
 
     class Http<T> {
@@ -609,6 +615,7 @@ public class KVMHost extends HostBase implements Host {
         DetachIsoCmd cmd = new DetachIsoCmd();
         cmd.isoUuid = msg.getIsoUuid();
         cmd.vmUuid = msg.getVmInstanceUuid();
+        cmd.deviceId = IsoOperator.getIsoDeviceId(msg.getVmInstanceUuid(), msg.getIsoUuid());
 
         KVMHostInventory inv = (KVMHostInventory) getSelfInventory();
         for (KVMPreDetachIsoExtensionPoint ext : pluginRgty.getExtensionList(KVMPreDetachIsoExtensionPoint.class)) {
@@ -670,6 +677,7 @@ public class KVMHost extends HostBase implements Host {
         IsoTO iso = new IsoTO();
         iso.setImageUuid(msg.getIsoSpec().getImageUuid());
         iso.setPath(msg.getIsoSpec().getInstallPath());
+        iso.setDeviceId(msg.getIsoSpec().getDeviceId());
 
         AttachIsoCmd cmd = new AttachIsoCmd();
         cmd.vmUuid = msg.getVmInstanceUuid();
@@ -1044,6 +1052,8 @@ public class KVMHost extends HostBase implements Host {
         final String hostIp;
         final String vmUuid;
         final StorageMigrationPolicy storageMigrationPolicy;
+        final boolean migrateFromDestination;
+        final String srcIp;
         synchronized (it) {
             if (!it.hasNext()) {
                 completion.success();
@@ -1054,6 +1064,8 @@ public class KVMHost extends HostBase implements Host {
             vmUuid = s.vmUuid;
             hostIp = s.dstHostIp;
             storageMigrationPolicy = s.storageMigrationPolicy;
+            migrateFromDestination = s.migrateFromDestition;
+            srcIp = s.srcHostIp;
         }
 
 
@@ -1074,7 +1086,8 @@ public class KVMHost extends HostBase implements Host {
                     public void run(final FlowTrigger trigger, Map data) {
                         MigrateVmCmd cmd = new MigrateVmCmd();
                         cmd.setDestHostIp(hostIp);
-                        cmd.setSrcHostIp(self.getManagementIp());
+                        cmd.setSrcHostIp(srcIp);
+                        cmd.setMigrateFromDestination(migrateFromDestination);
                         cmd.setStorageMigrationPolicy(storageMigrationPolicy == null ? null : storageMigrationPolicy.toString());
                         cmd.setVmUuid(vmUuid);
                         cmd.setUseNuma(VmGlobalConfig.NUMA.value(Boolean.class));
@@ -1229,16 +1242,21 @@ public class KVMHost extends HostBase implements Host {
         String vmUuid;
         String dstHostIp;
         StorageMigrationPolicy storageMigrationPolicy;
+        boolean migrateFromDestition;
+        String srcHostIp;
     }
 
     private void migrateVm(final MigrateVmOnHypervisorMsg msg, final NoErrorCompletion completion) {
         checkStatus();
 
+        HostVO vo = dbf.findByUuid(msg.getSrcHostUuid(), HostVO.class);
         List<MigrateStruct> lst = new ArrayList<>();
         MigrateStruct s = new MigrateStruct();
         s.vmUuid = msg.getVmInventory().getUuid();
         s.dstHostIp = msg.getDestHostInventory().getManagementIp();
         s.storageMigrationPolicy = msg.getStorageMigrationPolicy();
+        s.migrateFromDestition = msg.isMigrateFromDestination();
+        s.srcHostIp = vo.getManagementIp();
         lst.add(s);
         final MigrateVmOnHypervisorReply reply = new MigrateVmOnHypervisorReply();
         migrateVm(lst.iterator(), new Completion(msg, completion) {
@@ -1916,6 +1934,7 @@ public class KVMHost extends HostBase implements Host {
             v.setCacheMode(KVMGlobalConfig.LIBVIRT_CACHE_MODE.value());
             dataVolumes.add(v);
         }
+        dataVolumes.sort(Comparator.comparing(VolumeTO::getDeviceId));
         cmd.setDataVolumes(dataVolumes);
         cmd.setVmInternalId(spec.getVmInventory().getInternalId());
 
@@ -1929,11 +1948,12 @@ public class KVMHost extends HostBase implements Host {
         nics = nics.stream().sorted(Comparator.comparing(NicTO::getDeviceId)).collect(Collectors.toList());
         cmd.setNics(nics);
 
-        if (spec.getDestIso() != null) {
+        for (VmInstanceSpec.IsoSpec isoSpec : spec.getDestIsoList()) {
             IsoTO bootIso = new IsoTO();
-            bootIso.setPath(spec.getDestIso().getInstallPath());
-            bootIso.setImageUuid(spec.getDestIso().getImageUuid());
-            cmd.setBootIso(bootIso);
+            bootIso.setPath(isoSpec.getInstallPath());
+            bootIso.setImageUuid(isoSpec.getImageUuid());
+            bootIso.setDeviceId(IsoOperator.getIsoDeviceId(spec.getVmInventory().getUuid(), isoSpec.getImageUuid()));
+            cmd.getBootIso().add(bootIso);
         }
 
         cmd.setBootDev(toKvmBootDev(spec.getBootOrders()));
@@ -2252,9 +2272,13 @@ public class KVMHost extends HostBase implements Host {
                                 if (ret.isSuccess()) {
                                     if (!self.getUuid().equals(ret.getHostUuid())) {
                                         afterDone.add(() -> {
-                                            String info = String.format("detected abnormal status[host uuid change, expected: %s but: %s] of kvmagent," +
+                                            String info = i18n("detected abnormal status[host uuid change, expected: %s but: %s] of kvmagent," +
                                                     "it's mainly caused by kvmagent restarts behind zstack management server. Report this to ping task, it will issue a reconnect soon", self.getUuid(), ret.getHostUuid());
                                             logger.warn(info);
+
+                                            changeConnectionState(HostStatusEvent.disconnected);
+                                            new HostDisconnectedCanonicalEvent(self.getUuid(), argerr(info)).fire();
+
                                             ReconnectHostMsg rmsg = new ReconnectHostMsg();
                                             rmsg.setHostUuid(self.getUuid());
                                             bus.makeTargetServiceIdByResourceUuid(rmsg, HostConstant.SERVICE_ID, self.getUuid());
@@ -2462,16 +2486,19 @@ public class KVMHost extends HostBase implements Host {
     private void createHostVersionSystemTags(String distro, String release, String version) {
         SystemTagCreator creator = HostSystemTags.OS_DISTRIBUTION.newSystemTagCreator(self.getUuid());
         creator.inherent = true;
+        creator.recreate = true;
         creator.setTagByTokens(map(e(HostSystemTags.OS_DISTRIBUTION_TOKEN, distro)));
         creator.create();
 
         creator = HostSystemTags.OS_RELEASE.newSystemTagCreator(self.getUuid());
         creator.inherent = true;
+        creator.recreate = true;
         creator.setTagByTokens(map(e(HostSystemTags.OS_RELEASE_TOKEN, release)));
         creator.create();
 
         creator = HostSystemTags.OS_VERSION.newSystemTagCreator(self.getUuid());
         creator.inherent = true;
+        creator.recreate = true;
         creator.setTagByTokens(map(e(HostSystemTags.OS_VERSION_TOKEN, version)));
         creator.create();
     }
@@ -2496,9 +2523,23 @@ public class KVMHost extends HostBase implements Host {
                     creator.create();
                 }
 
+                if (null == KVMSystemTags.CPU_MODEL_NAME.getTokenByResourceUuid(self.getUuid(), KVMSystemTags.CPU_MODEL_NAME_TOKEN)) {
+                    creator = KVMSystemTags.CPU_MODEL_NAME.newSystemTagCreator(self.getUuid());
+                    creator.setTagByTokens(map(e(KVMSystemTags.CPU_MODEL_NAME_TOKEN, "Intel(R) Xeon(R) CPU E5-2630 v4 @ 2.20GHz")));
+                    creator.inherent = true;
+                    creator.create();
+                }
+
                 if (!checkQemuLibvirtVersionOfHost()) {
                     complete.fail(operr("host [uuid:%s] cannot be added to cluster [uuid:%s] because qemu/libvirt version does not match",
                             self.getUuid(), self.getClusterUuid()));
+                    return;
+                }
+
+                if (KVMGlobalConfig.CHECK_HOST_CPU_MODEL_NAME.value(Boolean.class) && !checkCpuModelOfHost()) {
+                    complete.fail(operr("host [uuid:%s] cannot be added to cluster [uuid:%s] because cpu model name does not match",
+                            self.getUuid(), self.getClusterUuid()));
+                    return;
                 }
             }
 
@@ -2645,42 +2686,6 @@ public class KVMHost extends HostBase implements Host {
                         }
                     });
 
-                    if (info.isNewAdded()) {
-                        flow(new NoRollbackFlow() {
-                            String __name__ = "ansbile-get-kvm-host-facts";
-
-                            @Override
-                            public void run(FlowTrigger trigger, Map data) {
-                                String privKeyFile = PathUtil.findFileOnClassPath(AnsibleConstant.RSA_PRIVATE_KEY).getAbsolutePath();
-                                ShellResult ret = ShellUtils.runAndReturn(String.format("ansible -i %s --private-key %s -m setup -a filter=ansible_distribution* %s -e 'ansible_ssh_port=%d ansible_ssh_user=%s'",
-                                        AnsibleConstant.INVENTORY_FILE, privKeyFile, self.getManagementIp(), getSelf().getPort(), getSelf().getUsername()), AnsibleConstant.ROOT_DIR);
-                                if (!ret.isReturnCode(0)) {
-                                    trigger.fail(operr("unable to get kvm host[uuid:%s, ip:%s] facts by ansible\n%s", self.getUuid(), self.getManagementIp(), ret.getExecutionLog()));
-                                    return;
-                                }
-
-                                String[] pairs = ret.getStdout().split(">>");
-                                if (pairs.length != 2) {
-                                    trigger.fail(operr("unrecognized ansible facts mediaType, %s", ret.getStdout()));
-                                    return;
-                                }
-
-                                LinkedHashMap output = JSONObjectUtil.toObject(pairs[1], LinkedHashMap.class);
-                                LinkedHashMap facts = (LinkedHashMap) output.get("ansible_facts");
-                                if (facts == null) {
-                                    trigger.fail(operr("unrecognized ansible facts mediaType, cannot find field 'ansible_facts', %s", ret.getStdout()));
-                                    return;
-                                }
-
-                                String distro = (String) facts.get("ansible_distribution");
-                                String release = (String) facts.get("ansible_distribution_release");
-                                String version = (String) facts.get("ansible_distribution_version");
-                                createHostVersionSystemTags(distro, release, version);
-                                trigger.next();
-                            }
-                        });
-                    }
-
                     flow(new NoRollbackFlow() {
                         String __name__ = "collect-kvm-host-facts";
 
@@ -2701,6 +2706,9 @@ public class KVMHost extends HostBase implements Host {
                                         return;
                                     }
 
+                                    // create system tags of os::version etc
+                                    createHostVersionSystemTags(ret.getOsDistribution(), ret.getOsRelease(), ret.getOsVersion());
+
                                     SystemTagCreator creator = KVMSystemTags.QEMU_IMG_VERSION.newSystemTagCreator(self.getUuid());
                                     creator.setTagByTokens(map(e(KVMSystemTags.QEMU_IMG_VERSION_TOKEN, ret.getQemuImgVersion())));
                                     creator.recreate = true;
@@ -2713,6 +2721,11 @@ public class KVMHost extends HostBase implements Host {
 
                                     creator = KVMSystemTags.HVM_CPU_FLAG.newSystemTagCreator(self.getUuid());
                                     creator.setTagByTokens(map(e(KVMSystemTags.HVM_CPU_FLAG_TOKEN, ret.getHvmCpuFlag())));
+                                    creator.recreate = true;
+                                    creator.create();
+
+                                    creator = KVMSystemTags.CPU_MODEL_NAME.newSystemTagCreator(self.getUuid());
+                                    creator.setTagByTokens(map(e(KVMSystemTags.CPU_MODEL_NAME_TOKEN, ret.getCpuModelName())));
                                     creator.recreate = true;
                                     creator.create();
 
@@ -2750,12 +2763,19 @@ public class KVMHost extends HostBase implements Host {
 
                             @Override
                             public void run(FlowTrigger trigger, Map data) {
-                                if (checkQemuLibvirtVersionOfHost()) {
-                                    trigger.next();
-                                } else {
+                                if (!checkQemuLibvirtVersionOfHost()) {
                                     trigger.fail(operr("host [uuid:%s] cannot be added to cluster [uuid:%s] because qemu/libvirt version does not match",
                                             self.getUuid(), self.getClusterUuid()));
+                                    return;
                                 }
+
+                                if (KVMGlobalConfig.CHECK_HOST_CPU_MODEL_NAME.value(Boolean.class) && !checkCpuModelOfHost()) {
+                                    trigger.fail(operr("host [uuid:%s] cannot be added to cluster [uuid:%s] because cpu model name does not match",
+                                            self.getUuid(), self.getClusterUuid()));
+                                    return;
+                                }
+
+                                trigger.next();
                             }
                         });
                     }
@@ -2787,6 +2807,194 @@ public class KVMHost extends HostBase implements Host {
                 }
             }).start();
         }
+    }
+
+    private boolean checkCpuModelOfHost() {
+        List<String> hostUuidsInCluster = Q.New(HostVO.class)
+                .select(HostVO_.uuid)
+                .eq(HostVO_.clusterUuid, self.getClusterUuid())
+                .notEq(HostVO_.uuid, self.getUuid())
+                .listValues();
+        if (hostUuidsInCluster.isEmpty()) {
+            return true;
+        }
+
+        Map<String, List<String>> cpuModelNames = KVMSystemTags.CPU_MODEL_NAME.getTags(hostUuidsInCluster);
+        if (cpuModelNames != null && cpuModelNames.size() != 0) {
+            String clusterCpuModelName = KVMSystemTags.CPU_MODEL_NAME.getTokenByTag(
+                    cpuModelNames.values().iterator().next().get(0),
+                    KVMSystemTags.CPU_MODEL_NAME_TOKEN
+            );
+
+            String hostCpuModelName = KVMSystemTags.CPU_MODEL_NAME.getTokenByResourceUuid(
+                    self.getUuid(), KVMSystemTags.CPU_MODEL_NAME_TOKEN
+            );
+
+            if (clusterCpuModelName != null && !clusterCpuModelName.equals(hostCpuModelName)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    @Override
+    protected void updateOsHook(Completion completion) {
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("update-operating-system-for-host-%s", self.getUuid()));
+        chain.then(new ShareFlow() {
+            // is the host in maintenance already?
+            HostState oldState = self.getState();
+            boolean maintenance = oldState == HostState.Maintenance;
+
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "double-check-host-state-status";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        if (self.getState() == HostState.PreMaintenance) {
+                            trigger.fail(Platform.operr("host is in the premaintenance state, cannot update os"));
+                        } else if (self.getStatus() != HostStatus.Connected) {
+                            trigger.fail(Platform.operr("host is not in the connected status, cannot update os"));
+                        } else {
+                            trigger.next();
+                        }
+                    }
+                });
+
+                flow(new Flow() {
+                    String __name__ = "make-host-in-maintenance";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        if (maintenance) {
+                            trigger.next();
+                            return;
+                        }
+
+                        // enter maintenance, but donot stop/migrate vm on the host
+                        ChangeHostStateMsg cmsg = new ChangeHostStateMsg();
+                        cmsg.setUuid(self.getUuid());
+                        cmsg.setStateEvent(HostStateEvent.preMaintain.toString());
+                        bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, self.getUuid());
+                        bus.send(cmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (reply.isSuccess()) {
+                                    trigger.next();
+                                } else {
+                                    trigger.fail(reply.getError());
+                                }
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        if (maintenance) {
+                            trigger.rollback();
+                            return;
+                        }
+
+                        // back to old host state
+                        if (oldState == HostState.Disabled) {
+                            changeState(HostStateEvent.disable);
+                        } else {
+                            changeState(HostStateEvent.enable);
+                        }
+                        trigger.rollback();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "update-host-os";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        UpdateHostOSCmd cmd = new UpdateHostOSCmd();
+                        cmd.hostUuid = self.getUuid();
+
+                        new Http<>(updateHostOSPath, cmd, UpdateHostOSRsp.class)
+                                .call(new ReturnValueCompletion<UpdateHostOSRsp>(trigger) {
+                            @Override
+                            public void success(UpdateHostOSRsp ret) {
+                                if (ret.isSuccess()) {
+                                    trigger.next();
+                                } else {
+                                    trigger.fail(Platform.operr(ret.getError()));
+                                }
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "recover-host-state";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        if (maintenance) {
+                            trigger.next();
+                            return;
+                        }
+
+                        // back to old host state
+                        if (oldState == HostState.Disabled) {
+                            changeState(HostStateEvent.disable);
+                        } else {
+                            changeState(HostStateEvent.enable);
+                        }
+                        trigger.next();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "auto-reconnect-host";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        ReconnectHostMsg rmsg = new ReconnectHostMsg();
+                        rmsg.setHostUuid(self.getUuid());
+                        bus.makeTargetServiceIdByResourceUuid(rmsg, HostConstant.SERVICE_ID, self.getUuid());
+                        bus.send(rmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (reply.isSuccess()) {
+                                    logger.info("successfully reconnected host " + self.getUuid());
+                                } else {
+                                    logger.error("failed to reconnect host " + self.getUuid());
+                                }
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        logger.debug(String.format("successfully updated operating system for host[uuid:%s]", self.getUuid()));
+                        completion.success();
+                    }
+                });
+
+                error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        logger.warn(String.format("failed to updated operating system for host[uuid:%s] because %s",
+                                self.getUuid(), errCode.getDetails()));
+                        completion.fail(errCode);
+                    }
+                });
+            }
+        }).start();
     }
 
     private boolean checkQemuLibvirtVersionOfHost() {

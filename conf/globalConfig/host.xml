@@ -63,4 +63,11 @@
         <defaultValue>true</defaultValue>
         <type>java.lang.Boolean</type>
     </config>
+    <config>
+        <category>host</category>
+        <name>update.os.parallelismDegree</name>
+        <description>The maximum count of host that can update operating system at the same time</description>
+        <defaultValue>2</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
 </globalConfig>

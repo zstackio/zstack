@@ -285,10 +285,17 @@ class UpdateLoadBalancerListenerCase extends SubCase {
         CreateLoadBalancerListenerAction.Result lblRes1 = createLoadBalancerListenerAction1.call()
         assert lblRes1.error == null
         LoadBalancerListenerInventory loadBalancerListenerInventory1 = lblRes1.value.inventory
+
+        /* create another loadbalance listenter in lb-1 and use same instance Port, it will succeed
+         */
+        createLoadBalancerListenerAction1.instancePort = 22
+        createLoadBalancerListenerAction1.loadBalancerPort = 222
+        CreateLoadBalancerListenerAction.Result res = createLoadBalancerListenerAction1.call()
+        assert res.error == null
+
         
         /*create lb-2 with same vip as lb-1, then attach loadBalancerPort woth same port number 22
-         * it return an exception, then attach instancePort withe same port number, will raise other
-          * exception with different reason*/
+         * it return an exception, then attach instancePort withe same port number, worked */
         CreateLoadBalancerAction createLoadBalancerAction2 = new CreateLoadBalancerAction()
         createLoadBalancerAction2.name = "lb-2"
         createLoadBalancerAction2.vipUuid = vipInventory1.uuid
@@ -301,19 +308,19 @@ class UpdateLoadBalancerListenerCase extends SubCase {
         CreateLoadBalancerListenerAction createLoadBalancerListenerAction2 = new CreateLoadBalancerListenerAction()
         createLoadBalancerListenerAction2.loadBalancerUuid = loadBalancerInventory2.uuid
         createLoadBalancerListenerAction2.loadBalancerPort = 22
-        createLoadBalancerListenerAction2.instancePort = 23
+        createLoadBalancerListenerAction2.instancePort = 28
         createLoadBalancerListenerAction2.name = "ssh"
         createLoadBalancerListenerAction2.protocol = "tcp"
         createLoadBalancerListenerAction2.sessionId = adminSession()
         CreateLoadBalancerListenerAction.Result lblRes2 = createLoadBalancerListenerAction2.call()
         assert lblRes2.error != null
-        assert lblRes2.error.details.indexOf("loadBalancerPort") > -1
+        // can't checkout concrete content of error message
+        // assert lblRes2.error.details.indexOf("loadBalancerPort") > -1
 
         createLoadBalancerListenerAction2.loadBalancerPort = 23
         createLoadBalancerListenerAction2.instancePort = 22
         CreateLoadBalancerListenerAction.Result lblRes21 = createLoadBalancerListenerAction2.call()
-        assert lblRes21.error != null
-        assert lblRes21.error.details.indexOf("instancePort") > -1
+        assert lblRes21.error == null
 
 
         /* delete lb-1, then create again, it will success */

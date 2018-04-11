@@ -15,9 +15,9 @@ import org.zstack.header.rest.RestRequest;
         parameterName = "params"
 )
 public class APIAddUserToGroupMsg extends APIMessage implements AccountMessage {
-    @APIParam(checkAccount = true)
+    @APIParam(resourceType = UserVO.class, checkAccount = true)
     private String userUuid;
-    @APIParam(checkAccount = true)
+    @APIParam(resourceType = UserGroupVO.class, checkAccount = true)
     private String groupUuid;
 
     @Override

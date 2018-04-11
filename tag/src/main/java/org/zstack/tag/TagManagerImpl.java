@@ -117,7 +117,9 @@ public class TagManagerImpl extends AbstractService implements TagManager,
             Class type = entity.getJavaType();
             String name = type.getSimpleName();
             resourceTypeClassMap.put(name, type);
-            logger.debug(String.format("discovered tag resource type[%s], class[%s]", name, type));
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("discovered tag resource type[%s], class[%s]", name, type));
+            }
         }
 
         try {
@@ -302,24 +304,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     @Override
     @Transactional
     public void createTagsFromAPICreateMessage(APICreateMessage msg, String resourceUuid, String resourceType) {
-        if (msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()) {
-            for (String sysTag : msg.getSystemTags()) {
-                if (TagConstant.isEphemeralTag(sysTag)) {
-                    continue;
-                }
-
-                // Not all systemTags are for the resources used by APICreateMessage
-                try {
-                    createNonInherentSystemTag(resourceUuid, sysTag, resourceType);
-                } catch (ApiMessageInterceptionException ignored) {
-                }
-            }
-        }
-        if (msg.getUserTags() != null && !msg.getUserTags().isEmpty()) {
-            for (String utag : msg.getUserTags()) {
-                createUserTag(resourceUuid, utag, resourceType);
-            }
-        }
+        createTags(msg.getSystemTags(),msg.getUserTags(),resourceUuid,resourceType);
     }
 
     @Override
@@ -644,6 +629,28 @@ public class TagManagerImpl extends AbstractService implements TagManager,
             createMessageValidators.put(resourceType, validators);
         }
         validators.add(validator);
+    }
+
+    @Override
+    public void createTags(List<String> systemTags, List<String> userTags, String resourceUuid, String resourceType) {
+        if (systemTags != null && !systemTags.isEmpty()) {
+            for (String sysTag : systemTags) {
+                if (TagConstant.isEphemeralTag(sysTag)) {
+                    continue;
+                }
+
+                // Not all systemTags are for the resources used by APICreateMessage
+                try {
+                    createNonInherentSystemTag(resourceUuid, sysTag, resourceType);
+                } catch (ApiMessageInterceptionException ignored) {
+                }
+            }
+        }
+        if (userTags != null && !userTags.isEmpty()) {
+            for (String utag : userTags) {
+                createUserTag(resourceUuid, utag, resourceType);
+            }
+        }
     }
 
     @Override

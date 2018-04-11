@@ -90,13 +90,15 @@ public class PluginDefinitionParser implements BeanDefinitionDecorator {
 				Map<String, List<PluginExtension>> extensions = new HashMap<String, List<PluginExtension>>(1);
 				extensions.put(ext.getBeanClassName(), exts);
 				prop = new PropertyValue(PluginRegistry.PLUGIN_REGISTRYIMPL_PLUGINS_FIELD_NAME, extensions);
-				logger.debug("No 'extensions' property found in PluginRegistry bean definition, create a new one");
+				if (logger.isTraceEnabled()) {
+					logger.trace("No 'extensions' property found in PluginRegistry bean definition, create a new one");
+				}
 				props.addPropertyValue(prop);
 			} else {
 				Map<String, List<PluginExtension>> extensions = (Map<String, List<PluginExtension>>) prop.getValue();
 				List<PluginExtension> oexts = extensions.get(ext.getBeanClassName());
 				if (oexts == null) {
-					oexts = new ArrayList<PluginExtension>(exts.size());
+					oexts = new ArrayList<>(exts.size());
 					extensions.put(ext.getBeanClassName(), oexts);
 				}
 
@@ -108,8 +110,10 @@ public class PluginDefinitionParser implements BeanDefinitionDecorator {
 
 				oexts.addAll(exts);
 			}
-			
-			logger.debug(String.format("Add extensions declared by bean[name=%s, class=%s] to 'extensions' property of PluginRegistry bean definition", ext.getBeanName(), ext.getBeanClassName()));
+
+			if (logger.isTraceEnabled()) {
+				logger.trace(String.format("Add extensions declared by bean[name=%s, class=%s] to 'extensions' property of PluginRegistry bean definition", ext.getBeanName(), ext.getBeanClassName()));
+			}
 		}
 
 		return holder;

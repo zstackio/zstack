@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class UpdateEipAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class UpdateEipAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateEipResult value;
+        public org.zstack.sdk.UpdateEipResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +57,8 @@ public class UpdateEipAction extends AbstractAction {
             return ret;
         }
         
-        UpdateEipResult value = res.getResult(UpdateEipResult.class);
-        ret.value = value == null ? new UpdateEipResult() : value; 
+        org.zstack.sdk.UpdateEipResult value = res.getResult(org.zstack.sdk.UpdateEipResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateEipResult() : value; 
 
         return ret;
     }
@@ -76,15 +77,15 @@ public class UpdateEipAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/eips/{uuid}/actions";

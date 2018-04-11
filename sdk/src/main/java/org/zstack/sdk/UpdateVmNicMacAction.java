@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class UpdateVmNicMacAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class UpdateVmNicMacAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateVmNicMacResult value;
+        public org.zstack.sdk.UpdateVmNicMacResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class UpdateVmNicMacAction extends AbstractAction {
             return ret;
         }
         
-        UpdateVmNicMacResult value = res.getResult(UpdateVmNicMacResult.class);
-        ret.value = value == null ? new UpdateVmNicMacResult() : value; 
+        org.zstack.sdk.UpdateVmNicMacResult value = res.getResult(org.zstack.sdk.UpdateVmNicMacResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateVmNicMacResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class UpdateVmNicMacAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/vm-instances/nics/{vmNicUuid}/actions";

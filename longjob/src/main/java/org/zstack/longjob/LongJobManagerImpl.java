@@ -4,15 +4,22 @@ import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
+import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigException;
+import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
+import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.timeout.ApiTimeoutExtensionPoint;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Constants;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.identity.APIDeleteAccountEvent;
@@ -20,17 +27,25 @@ import org.zstack.header.longjob.*;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
 import org.zstack.identity.AccountManager;
 import org.zstack.tag.TagManager;
+import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.progress.ProgressReportService.reportProgress;
 
 /**
  * Created by GuoYi on 11/14/17.
  */
-public class LongJobManagerImpl extends AbstractService implements LongJobManager, ManagementNodeReadyExtensionPoint, ManagementNodeChangeListener {
+public class LongJobManagerImpl extends AbstractService implements LongJobManager, ManagementNodeReadyExtensionPoint
+        , ManagementNodeChangeListener, ApiTimeoutExtensionPoint {
     private static final CLogger logger = Utils.getLogger(LongJobManagerImpl.class);
 
     @Autowired
@@ -50,6 +65,15 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
     @Autowired
     private LongJobFactory longJobFactory;
 
+    private List<String> longJobClasses = new ArrayList<String>();
+
+    private void collectLongJobs() {
+        List<Class> subs = BeanUtils.scanClass("org.zstack", LongJobFor.class);
+        for (Class sub : subs) {
+            longJobClasses.add(sub.toString());
+        }
+    }
+
     @Override
     public void handleMessage(Message msg) {
         if (msg instanceof APISubmitLongJobMsg) {
@@ -58,6 +82,8 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             handle((APICancelLongJobMsg) msg);
         } else if (msg instanceof APIDeleteLongJobMsg) {
             handle((APIDeleteLongJobMsg) msg);
+        } else if (msg instanceof SubmitLongJobMsg) {
+            handle((SubmitLongJobMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -134,6 +160,20 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
     }
 
     private void handle(APISubmitLongJobMsg msg) {
+        APISubmitLongJobEvent evt = new APISubmitLongJobEvent(msg.getId());
+        SubmitLongJobMsg smsg = SubmitLongJobMsg.valueOf(msg);
+        bus.makeLocalServiceId(smsg, LongJobConstants.SERVICE_ID);
+        bus.send(smsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply rly) {
+                SubmitLongJobReply reply = rly.castReply();
+                evt.setInventory(reply.getInventory());
+                bus.publish(evt);
+            }
+        });
+    }
+
+    private void handle(SubmitLongJobMsg msg) {
         // create LongJobVO
         LongJobVO vo = new LongJobVO();
         if (msg.getResourceUuid() != null) {
@@ -147,17 +187,17 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             vo.setName(msg.getJobName());
         }
         vo.setDescription(msg.getDescription());
-        vo.setApiId(msg.getId());
+        vo.setApiId(ThreadContext.getImmutableContext().get(Constants.THREAD_CONTEXT_API));
         vo.setJobName(msg.getJobName());
         vo.setJobData(msg.getJobData());
         vo.setState(LongJobState.Waiting);
         vo.setTargetResourceUuid(msg.getTargetResourceUuid());
         vo.setManagementNodeUuid(Platform.getManagementServerId());
         vo = dbf.persistAndRefresh(vo);
-        logger.info(String.format("new longjob [uuid:%s, name:%s] has been created", vo.getUuid(), vo.getName()));
-        tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), LongJobVO.class.getSimpleName());
-        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), LongJobVO.class);
         msg.setJobUuid(vo.getUuid());
+        tagMgr.createTags(msg.getSystemTags(), msg.getUserTags(), vo.getUuid(), LongJobVO.class.getSimpleName());
+        acntMgr.createAccountResourceRef(msg.getAccountUuid(), vo.getUuid(), LongJobVO.class);
+        logger.info(String.format("new longjob [uuid:%s, name:%s] has been created", vo.getUuid(), vo.getName()));
 
         // wait in line
         thdf.chainSubmit(new ChainTask(msg) {
@@ -168,37 +208,42 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
 
             @Override
             public void run(SyncTaskChain chain) {
-                APISubmitLongJobEvent evt = new APISubmitLongJobEvent(msg.getId());
+                SubmitLongJobReply reply = new SubmitLongJobReply();
                 LongJobVO vo = dbf.findByUuid(msg.getJobUuid(), LongJobVO.class);
-
+                vo.setState(LongJobState.Running);
+                vo = dbf.updateAndRefresh(vo);
                 // launch the long job right now
                 ThreadContext.put(Constants.THREAD_CONTEXT_API, vo.getApiId());
-                ThreadContext.put(Constants.THREAD_CONTEXT_TASK_NAME, vo.getJobName());
                 LongJob job = longJobFactory.getLongJob(vo.getJobName());
+                ThreadContext.put(Constants.THREAD_CONTEXT_TASK_NAME, job.getClass().toString());
                 job.start(vo, new Completion(msg) {
                     LongJobVO vo = dbf.findByUuid(msg.getJobUuid(), LongJobVO.class);
 
                     @Override
                     public void success() {
+                        reportProgress("100");
+                        vo = dbf.reload(vo);
                         vo.setState(LongJobState.Succeeded);
-                        vo.setJobResult("Succeeded");
+                        if (vo.getJobResult() == null || vo.getJobResult().isEmpty())
+                            vo.setJobResult("Succeeded");
                         dbf.update(vo);
                         logger.info(String.format("successfully run longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
                     }
 
                     @Override
                     public void fail(ErrorCode errorCode) {
+                        vo = dbf.reload(vo);
                         vo.setState(LongJobState.Failed);
-                        vo.setJobResult("Failed : " + errorCode.toString());
+                        if (vo.getJobResult() == null || vo.getJobResult().isEmpty())
+                            vo.setJobResult("Failed : " + errorCode.toString());
                         dbf.update(vo);
                         logger.info(String.format("failed to run longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
                     }
                 });
 
-                vo.setState(LongJobState.Running);
-                evt.setInventory(LongJobInventory.valueOf(dbf.updateAndRefresh(vo)));
+                reply.setInventory(LongJobInventory.valueOf(vo));
                 logger.info(String.format("longjob [uuid:%s, name:%s] has been started", vo.getUuid(), vo.getName()));
-                bus.publish(evt);
+                bus.reply(msg, reply);
 
                 chain.next();
             }
@@ -217,6 +262,18 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
 
     @Override
     public boolean start() {
+        collectLongJobs();
+
+        LongJobGlobalConfig.LONG_JOB_DEFAULT_TIMEOUT.installValidateExtension(new GlobalConfigValidatorExtensionPoint() {
+            @Override
+            public void validateGlobalConfig(String category, String name, String oldValue, String newValue) throws GlobalConfigException {
+                Long v = Long.valueOf(newValue);
+                if (v < 10800) {
+                    throw new GlobalConfigException("long job timeout must be larger than 10800s");
+                }
+            }
+        });
+
         return true;
     }
 
@@ -292,11 +349,12 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         if (vo.getState() == LongJobState.Waiting) {
             // launch the waiting jobs
             ThreadContext.put(Constants.THREAD_CONTEXT_API, vo.getApiId());
-            ThreadContext.put(Constants.THREAD_CONTEXT_TASK_NAME, vo.getJobName());
             LongJob job = longJobFactory.getLongJob(vo.getJobName());
+            ThreadContext.put(Constants.THREAD_CONTEXT_TASK_NAME, job.getClass().toString());
             job.start(vo, new Completion(null) {
                 @Override
                 public void success() {
+                    reportProgress("100");
                     vo.setState(LongJobState.Succeeded);
                     dbf.update(vo);
                     logger.info(String.format("successfully run longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
@@ -324,5 +382,16 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
     public void managementNodeReady() {
         logger.debug(String.format("Management node[uuid:%s] is ready, starts to load longjobs", Platform.getManagementServerId()));
         loadLongJob();
+    }
+
+    @Override
+    public Long getApiTimeout(Class claz) {
+        String type = ThreadContext.get(Constants.THREAD_CONTEXT_TASK_NAME);
+        if (type != null && longJobClasses.contains(type)) {
+            // default input unit is second should be changed to millis
+            return TimeUnit.SECONDS.toMillis(LongJobGlobalConfig.LONG_JOB_DEFAULT_TIMEOUT.value(Long.class));
+        }
+
+        return null;
     }
 }

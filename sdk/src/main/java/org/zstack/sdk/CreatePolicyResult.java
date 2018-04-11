@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.PolicyInventory;
+
 public class CreatePolicyResult {
     public PolicyInventory inventory;
     public void setInventory(PolicyInventory inventory) {

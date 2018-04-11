@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryIdentityZoneFromLocalAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryIdentityZoneFromLocalAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryIdentityZoneFromLocalResult value;
+        public org.zstack.sdk.QueryIdentityZoneFromLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryIdentityZoneFromLocalAction extends QueryAction {
             return ret;
         }
         
-        QueryIdentityZoneFromLocalResult value = res.getResult(QueryIdentityZoneFromLocalResult.class);
-        ret.value = value == null ? new QueryIdentityZoneFromLocalResult() : value; 
+        org.zstack.sdk.QueryIdentityZoneFromLocalResult value = res.getResult(org.zstack.sdk.QueryIdentityZoneFromLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryIdentityZoneFromLocalResult() : value; 
 
         return ret;
     }
@@ -53,15 +54,15 @@ public class QueryIdentityZoneFromLocalAction extends QueryAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
         info.path = "/hybrid/identity-zone";

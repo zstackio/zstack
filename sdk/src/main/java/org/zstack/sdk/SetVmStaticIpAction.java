@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class SetVmStaticIpAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class SetVmStaticIpAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SetVmStaticIpResult value;
+        public org.zstack.sdk.SetVmStaticIpResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +57,8 @@ public class SetVmStaticIpAction extends AbstractAction {
             return ret;
         }
         
-        SetVmStaticIpResult value = res.getResult(SetVmStaticIpResult.class);
-        ret.value = value == null ? new SetVmStaticIpResult() : value; 
+        org.zstack.sdk.SetVmStaticIpResult value = res.getResult(org.zstack.sdk.SetVmStaticIpResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SetVmStaticIpResult() : value; 
 
         return ret;
     }
@@ -76,15 +77,15 @@ public class SetVmStaticIpAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
         info.path = "/vm-instances/{vmInstanceUuid}/actions";

@@ -403,16 +403,16 @@ public class ZSClient {
                 }
 
                 if (info.httpMethod.equals("GET")) {
-                    reqBuilder.url(builder.build().url().toString()).get();
+                    reqBuilder.url(builder.build()).get();
                 } else if (info.httpMethod.equals("DELETE")) {
-                    reqBuilder.url(builder.build().url().toString()).delete();
+                    reqBuilder.url(builder.build()).delete();
                 } else {
                     throw new RuntimeException("should not be here");
                 }
             } else {
                 Map m = new HashMap();
                 m.put(info.parameterName, params);
-                reqBuilder.url(builder.build().url().toString()).method(info.httpMethod, RequestBody.create(Constants.JSON, gson.toJson(m)));
+                reqBuilder.url(builder.build()).method(info.httpMethod, RequestBody.create(Constants.JSON, gson.toJson(m)));
             }
 
             if (info.needSession) {
@@ -616,12 +616,12 @@ public class ZSClient {
         }
     }
 
-    static void call(AbstractAction action, InternalCompletion completion) {
+    public static void call(AbstractAction action, InternalCompletion completion) {
         errorIfNotConfigured();
         new Api(action).call(completion);
     }
 
-    static ApiResult call(AbstractAction action) {
+    public static ApiResult call(AbstractAction action) {
         errorIfNotConfigured();
         return new Api(action).call();
     }

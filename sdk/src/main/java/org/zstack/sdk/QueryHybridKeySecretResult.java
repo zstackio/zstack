@@ -5,7 +5,7 @@ public class QueryHybridKeySecretResult {
     public void setInventories(java.util.List<HybridAccountInventory> inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<HybridAccountInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

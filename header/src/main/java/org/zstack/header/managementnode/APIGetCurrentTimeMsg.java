@@ -8,7 +8,7 @@ import org.zstack.header.rest.RestRequest;
 /**
  * Created by Mei Lei <meilei007@gmail.com> on 11/1/16.
  */
-@SuppressCredentialCheck
+@SuppressCredentialCheck(supportBacthQuery = true)
 @RestRequest(
         path = "/management-nodes/actions",
         isAction = true,

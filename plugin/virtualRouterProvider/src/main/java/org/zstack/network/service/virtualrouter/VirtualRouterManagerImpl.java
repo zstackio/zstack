@@ -7,6 +7,7 @@ import org.zstack.appliancevm.*;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
@@ -25,11 +26,14 @@ import org.zstack.header.configuration.APIUpdateInstanceOfferingEvent;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.configuration.InstanceOfferingState;
 import org.zstack.header.configuration.InstanceOfferingVO;
+import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.WhileCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HypervisorType;
@@ -98,7 +102,7 @@ import static org.zstack.utils.VipUseForList.SNAT_NETWORK_SERVICE_TYPE;
 
 public class VirtualRouterManagerImpl extends AbstractService implements VirtualRouterManager,
         PrepareDbInitialValueExtensionPoint, L2NetworkCreateExtensionPoint,
-        GlobalApiMessageInterceptor, AddExpandedQueryExtensionPoint, GetCandidateVmNicsForLoadBalancerExtensionPoint, FilterVmNicsForEipInVirtualRouterExtensionPoint {
+        GlobalApiMessageInterceptor, AddExpandedQueryExtensionPoint, GetCandidateVmNicsForLoadBalancerExtensionPoint, FilterVmNicsForEipInVirtualRouterExtensionPoint, ApvmCascadeFilterExtensionPoint {
 	private final static CLogger logger = Utils.getLogger(VirtualRouterManagerImpl.class);
 	
 	private final static List<String> supportedL2NetworkTypes = new ArrayList<String>();
@@ -317,7 +321,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
                 // NOTE: don't open 22 port here; 22 port is default opened on mgmt network in virtual router with restricted rules
                 // open 22 here will cause a non-restricted rule to be added
-                openFirewall(aspec, mgmtNwUuid, 7272, ApplianceVmFirewallProtocol.tcp);
+                openFirewall(aspec, mgmtNwUuid, VirtualRouterGlobalProperty.AGENT_PORT, ApplianceVmFirewallProtocol.tcp);
                 openAdditionalPorts(aspec, mgmtNwUuid);
 
                 if (offering.getPublicNetworkUuid() != null && !offering.getManagementNetworkUuid().equals(offering.getPublicNetworkUuid())) {
@@ -1416,5 +1420,126 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                         .collect(Collectors.toList());
             }
         }.execute();
+    }
+
+    private void applianceVmsCascadeDeleteAdditionPubclicNic(List<VmNicInventory> toDeleteNics) {
+        ErrorCodeList errList = new ErrorCodeList();
+        FutureCompletion completion = new FutureCompletion(null);
+        new While<>(toDeleteNics).each((VmNicInventory nic, WhileCompletion completion1) -> {
+            if (!dbf.isExist(nic.getUuid(), VmNicVO.class)) {
+                logger.debug(String.format("nic[uuid:%s] not exists, skip", nic.getUuid()));
+                completion1.done();
+                return;
+            }
+            DetachNicFromVmMsg msg = new DetachNicFromVmMsg();
+            msg.setVmNicUuid(nic.getUuid());
+            msg.setVmInstanceUuid(nic.getVmInstanceUuid());
+            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, nic.getVmInstanceUuid());
+            bus.send(msg, new CloudBusCallBack(null) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        if (!dbf.isExist(nic.getUuid(), VmNicVO.class)) {
+                            logger.info(String.format("nic[uuid:%s] not exists, mark it as success", nic.getUuid()));
+                            completion1.done();
+                        } else {
+                            errList.getCauses().add(reply.getError());
+                            logger.error(String.format("detach nic[uuid: %s] for " +
+                                    "delete l3[uuid: %s] failed", nic.getUuid(), nic.getL3NetworkUuid()));
+                            completion1.allDone();
+                        }
+                    } else {
+                        logger.debug(String.format("detach nic[uuid: %s] for " +
+                                "delete l3[uuid: %s] success", nic.getUuid(), nic.getL3NetworkUuid()));
+                        completion1.done();
+                    }
+                }
+            });
+        }).run(new NoErrorCompletion() {
+            @Override
+            public void done() {
+                if (!errList.getCauses().isEmpty()) {
+                    completion.fail(errList.getCauses().get(0));
+                } else {
+                    logger.info(String.format("detach nics[%s] for delete l3[uuid:%s] success",
+                            toDeleteNics.stream()
+                                    .map(n -> n.getUuid())
+                                    .collect(Collectors.toList()),
+                            toDeleteNics.stream().map(n-> n.getL3NetworkUuid()).collect(Collectors.toSet())));
+                    completion.success();
+                }
+            }
+        });
+
+        completion.await(TimeUnit.MINUTES.toMillis(30));
+        if (!completion.isSuccess()) {
+            throw new OperationFailureException(operr("can not detach nic [uuid:%s]", toDeleteNics.stream()
+                    .map(n -> n.getUuid())
+                    .collect(Collectors.toList())).causedBy(completion.getErrorCode()));
+        }
+    }
+
+    private List<ApplianceVmVO> applianceVmsToBeDeleted(List<ApplianceVmVO> applianceVmVOS, List<String> deletedUuids) {
+        List<ApplianceVmVO> vos = new ArrayList<>();
+        for (ApplianceVmVO vo : applianceVmVOS) {
+            VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(dbf.findByUuid(vo.getUuid(), VirtualRouterVmVO.class));
+
+            List<String> l3Uuids = new ArrayList<>();
+            l3Uuids.addAll(vrInv.getGuestL3Networks());
+            l3Uuids.add(vrInv.getPublicNetworkUuid());
+            l3Uuids.add(vrInv.getManagementNetworkUuid());
+            for(String uuid: l3Uuids) {
+                if (deletedUuids.contains(uuid)) {
+                    vos.add(vo);
+                    break;
+                }
+            }
+        }
+
+        return vos;
+    }
+
+    List<VmNicInventory> applianceVmsAdditionalPublicNic(List<ApplianceVmVO> applianceVmVOS, List<String> parentIssuerUuids) {
+        List<VmNicInventory> toDeleteNics = new ArrayList<>();
+        for (ApplianceVmVO vo : applianceVmVOS) {
+            VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(dbf.findByUuid(vo.getUuid(), VirtualRouterVmVO.class));
+            for (VmNicInventory nic : vrInv.getAdditionalPublicNics()) {
+                if (parentIssuerUuids.contains(nic.getL3NetworkUuid())) {
+                    toDeleteNics.add(nic);
+                }
+            }
+        }
+
+        return toDeleteNics;
+    }
+
+    @Override
+    public List<ApplianceVmVO> filterApplianceVmCascade(List<ApplianceVmVO> applianceVmVOS, String parentIssuer, List<String> parentIssuerUuids) {
+
+        if (parentIssuer.equals(L3NetworkVO.class.getSimpleName())) {
+            List<ApplianceVmVO> vos = applianceVmsToBeDeleted(applianceVmVOS, parentIssuerUuids);
+
+            applianceVmVOS.removeAll(vos);
+            List<VmNicInventory> toDeleteNics = applianceVmsAdditionalPublicNic(applianceVmVOS, parentIssuerUuids);
+            applianceVmsCascadeDeleteAdditionPubclicNic(toDeleteNics);
+
+            return vos;
+        } else if (parentIssuer.equals(IpRangeVO.class.getSimpleName())) {
+            final List<String> iprL3Uuids = CollectionUtils.transformToList((List<String>) parentIssuerUuids, new Function<String, String>() {
+                @Override
+                public String call(String arg) {
+                    return Q.New(IpRangeVO.class).eq(IpRangeVO_.uuid, arg).select(IpRangeVO_.l3NetworkUuid).findValue();
+                }
+            });
+            List<ApplianceVmVO> vos = applianceVmsToBeDeleted(applianceVmVOS, iprL3Uuids);
+
+            applianceVmVOS.removeAll(vos);
+            List<VmNicInventory> toDeleteNics = applianceVmsAdditionalPublicNic(applianceVmVOS, iprL3Uuids);
+            applianceVmsCascadeDeleteAdditionPubclicNic(toDeleteNics);
+
+            return vos;
+        } else {
+            return applianceVmVOS;
+        }
     }
 }

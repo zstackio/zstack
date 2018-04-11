@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeletePortForwardingRuleAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeletePortForwardingRuleAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeletePortForwardingRuleResult value;
+        public org.zstack.sdk.DeletePortForwardingRuleResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DeletePortForwardingRuleAction extends AbstractAction {
             return ret;
         }
         
-        DeletePortForwardingRuleResult value = res.getResult(DeletePortForwardingRuleResult.class);
-        ret.value = value == null ? new DeletePortForwardingRuleResult() : value; 
+        org.zstack.sdk.DeletePortForwardingRuleResult value = res.getResult(org.zstack.sdk.DeletePortForwardingRuleResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeletePortForwardingRuleResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DeletePortForwardingRuleAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/port-forwarding/{uuid}";

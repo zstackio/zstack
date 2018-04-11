@@ -281,6 +281,10 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(argerr("the gateway[%s] is not in the subnet %s/%s", ipr.getGateway(), ipr.getStartIp(), ipr.getNetmask()));
         }
 
+        if (!info.isInRange(ipr.getEndIp())) {
+            throw new ApiMessageInterceptionException(argerr("the endip[%s] is not in the subnet %s/%s", ipr.getEndIp(), ipr.getStartIp(), ipr.getNetmask()));
+        }
+
         if (!NetworkUtils.isIpv4Address(ipr.getStartIp())) {
             throw new ApiMessageInterceptionException(argerr("start ip[%s] is not a IPv4 address", ipr.getStartIp()));
         }

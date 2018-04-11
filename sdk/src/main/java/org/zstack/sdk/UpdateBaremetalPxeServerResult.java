@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.BaremetalPxeServerInventory;
+
 public class UpdateBaremetalPxeServerResult {
     public BaremetalPxeServerInventory inventory;
     public void setInventory(BaremetalPxeServerInventory inventory) {

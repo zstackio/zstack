@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DetachVRouterRouteTableFromVRouterAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DetachVRouterRouteTableFromVRouterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DetachVRouterRouteTableFromVRouterResult value;
+        public org.zstack.sdk.DetachVRouterRouteTableFromVRouterResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DetachVRouterRouteTableFromVRouterAction extends AbstractAction {
             return ret;
         }
         
-        DetachVRouterRouteTableFromVRouterResult value = res.getResult(DetachVRouterRouteTableFromVRouterResult.class);
-        ret.value = value == null ? new DetachVRouterRouteTableFromVRouterResult() : value; 
+        org.zstack.sdk.DetachVRouterRouteTableFromVRouterResult value = res.getResult(org.zstack.sdk.DetachVRouterRouteTableFromVRouterResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DetachVRouterRouteTableFromVRouterResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DetachVRouterRouteTableFromVRouterAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
         info.path = "/vrouter-route-tables/{routeTableUuid}/detach";

@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class VpcVpnIkeConfigStruct  {
 
     public java.lang.String Psk;

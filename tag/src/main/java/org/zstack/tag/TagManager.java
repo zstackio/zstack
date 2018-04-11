@@ -50,4 +50,6 @@ public interface TagManager {
     void validateSystemTag(String resourceUuid, String resourceType, String tag);
 
     void installCreateMessageValidator(String resourceType, SystemTagCreateMessageValidator validator);
+
+    void createTags(List<String> systemTags, List<String> userTags, String resourceUuid, String resourceType);
 }

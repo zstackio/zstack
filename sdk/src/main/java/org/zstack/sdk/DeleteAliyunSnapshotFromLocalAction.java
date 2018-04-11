@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteAliyunSnapshotFromLocalAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteAliyunSnapshotFromLocalAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteAliyunSnapshotFromLocalResult value;
+        public org.zstack.sdk.DeleteAliyunSnapshotFromLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DeleteAliyunSnapshotFromLocalAction extends AbstractAction {
             return ret;
         }
         
-        DeleteAliyunSnapshotFromLocalResult value = res.getResult(DeleteAliyunSnapshotFromLocalResult.class);
-        ret.value = value == null ? new DeleteAliyunSnapshotFromLocalResult() : value; 
+        org.zstack.sdk.DeleteAliyunSnapshotFromLocalResult value = res.getResult(org.zstack.sdk.DeleteAliyunSnapshotFromLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteAliyunSnapshotFromLocalResult() : value; 
 
         return ret;
     }
@@ -73,15 +74,15 @@ public class DeleteAliyunSnapshotFromLocalAction extends AbstractAction {
         });
     }
 
-    Map<String, Parameter> getParameterMap() {
+    protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    Map<String, Parameter> getNonAPIParameterMap() {
+    protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    RestInfo getRestInfo() {
+    protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
         info.path = "/hybrid/aliyun/snapshot/{uuid}";

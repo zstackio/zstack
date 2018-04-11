@@ -100,6 +100,7 @@ public class VmInstanceSpec implements Serializable {
         private String imageUuid;
         private String primaryStorageUuid;
         private String backupStorageUuid;
+        private int deviceId;
 
         public String getBackupStorageUuid() {
             return backupStorageUuid;
@@ -131,6 +132,14 @@ public class VmInstanceSpec implements Serializable {
 
         public void setInstallPath(String installPath) {
             this.installPath = installPath;
+        }
+
+        public int getDeviceId() {
+            return deviceId;
+        }
+
+        public void setDeviceId(int deviceId) {
+            this.deviceId = deviceId;
         }
     }
 
@@ -179,7 +188,7 @@ public class VmInstanceSpec implements Serializable {
     @NoJsonSchema
     private Map<String, JsonWrapper> extensionData = new HashMap<>();
     private String dataIsoPath;
-    private IsoSpec destIso;
+    private List<IsoSpec> destIsoList = new ArrayList<>();
     private String userdata;
     private List<String> bootOrders;
     private boolean gcOnStopFailure;
@@ -277,12 +286,12 @@ public class VmInstanceSpec implements Serializable {
         this.userdata = userdata;
     }
 
-    public IsoSpec getDestIso() {
-        return destIso;
+    public List<IsoSpec> getDestIsoList() {
+        return destIsoList;
     }
 
-    public void setDestIso(IsoSpec destIso) {
-        this.destIso = destIso;
+    public void setDestIsoList(List<IsoSpec> destIsoList) {
+        this.destIsoList = destIsoList;
     }
 
     public VmInstanceSpec() {

@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class EcsInstanceType  {
 
     public java.lang.String typeId;

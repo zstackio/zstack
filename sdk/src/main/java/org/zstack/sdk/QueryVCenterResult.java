@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class QueryVCenterResult {
-    public java.util.List<VCenterInventory> inventories;
-    public void setInventories(java.util.List<VCenterInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<VCenterInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 
