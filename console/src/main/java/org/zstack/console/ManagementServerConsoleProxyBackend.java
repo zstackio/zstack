@@ -8,6 +8,7 @@ import org.zstack.core.ansible.AnsibleConstant;
 import org.zstack.core.ansible.AnsibleGlobalProperty;
 import org.zstack.core.ansible.AnsibleRunner;
 import org.zstack.core.ansible.SshFileMd5Checker;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.SimpleQuery;
@@ -17,9 +18,12 @@ import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.console.*;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -30,10 +34,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.ShellUtils;
-import org.zstack.utils.URLBuilder;
-import org.zstack.utils.Utils;
+import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
@@ -45,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created with IntelliJ IDEA.
@@ -64,6 +66,17 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
     private ThreadFacade thdf;
     @Autowired
     private ConsoleProxyAgentTracker tracker;
+
+    protected int setConsoleProxyOverridenIp(String newIp) {
+        if (CoreGlobalProperty.UNIT_TEST_ON) {
+            return 0;
+        }
+
+        ShellResult rst = ShellUtils.runAndReturn(
+                "/usr/bin/zstack-ctl configure consoleProxyOverriddenIp=" + newIp
+        );
+        return rst.getRetCode();
+    }
 
     protected ConsoleProxy getConsoleProxy(VmInstanceInventory vm, ConsoleProxyVO vo) {
         return new ConsoleProxyBase(vo, getAgentPort());
@@ -283,6 +296,8 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
     private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIReconnectConsoleProxyAgentMsg) {
             handle((APIReconnectConsoleProxyAgentMsg) msg);
+        } else if (msg instanceof APIUpdateConsoleProxyAgentMsg){
+            handle((APIUpdateConsoleProxyAgentMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -347,6 +362,115 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                 bus.publish(evt);
             }
         });
+    }
+
+    private void handle(APIUpdateConsoleProxyAgentMsg msg) {
+        final APIUpdateConsoleProxyAgentEvent evt = new APIUpdateConsoleProxyAgentEvent(msg.getId());
+
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("update-console-proxy-agent-%s", msg.getUuid()));
+        chain.then(new ShareFlow() {
+            ConsoleProxyAgentVO vo;
+            String oldProxyIp;
+
+            @Override
+            public void setup() {
+                flow(new Flow() {
+                    String __name__ = "update-console-proxy-agent-vo";
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        vo = dbf.findByUuid(msg.getUuid(), ConsoleProxyAgentVO.class);
+                        oldProxyIp = vo.getConsoleProxyOverriddenIp();
+                        vo.setConsoleProxyOverriddenIp(msg.getConsoleProxyOverriddenIp());
+                        dbf.update(vo);
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        vo = dbf.reload(vo);
+                        vo.setConsoleProxyOverriddenIp(oldProxyIp);
+                        dbf.update(vo);
+                        trigger.rollback();
+                    }
+                });
+
+                flow(new Flow() {
+                    String __name__ = "update-platform-global-properties";
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        Platform.getGlobalProperties().put("consoleProxyOverriddenIp", msg.getConsoleProxyOverriddenIp());
+                        CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP = msg.getConsoleProxyOverriddenIp();
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        Platform.getGlobalProperties().put("consoleProxyOverriddenIp", oldProxyIp);
+                        CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP = oldProxyIp;
+                        trigger.rollback();
+                    }
+                });
+
+                flow(new Flow() {
+                    String __name__ = "zstack-ctl-configure-consoleProxyOverriddenIp";
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        int rst = setConsoleProxyOverridenIp(msg.getConsoleProxyOverriddenIp());
+                        if (rst == 0) {
+                            trigger.next();
+                        } else {
+                            trigger.fail(operr("failed to configure consoleProxyOverriddenIp"));
+                        }
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        setConsoleProxyOverridenIp(oldProxyIp);
+                        trigger.rollback();
+                    }
+                });
+
+                if (!CoreGlobalProperty.UNIT_TEST_ON) {
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "reconnect-console-proxy";
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            ReconnectConsoleProxyMsg rmsg = new ReconnectConsoleProxyMsg();
+                            rmsg.setAgentUuid(msg.getUuid());
+                            bus.makeServiceIdByManagementNodeId(rmsg, ConsoleConstants.SERVICE_ID, msg.getUuid());
+                            bus.send(rmsg, new CloudBusCallBack(trigger) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    if (!reply.isSuccess()) {
+                                        trigger.fail(operr("failed to reconnect console proxy"));
+                                    } else {
+                                        trigger.next();
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        vo = dbf.reload(vo);
+                        evt.setInventory(ConsoleProxyAgentInventory.valueOf(vo));
+                        bus.publish(evt);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        evt.setError(errCode);
+                        bus.publish(evt);
+                    }
+                });
+            }
+        }).start();
     }
 
     @Override

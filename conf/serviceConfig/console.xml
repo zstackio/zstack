@@ -12,6 +12,10 @@
     </message>
 
     <message>
+        <name>org.zstack.header.console.APIUpdateConsoleProxyAgentMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.header.console.APIQueryConsoleProxyAgentMsg</name>
         <serviceId>query</serviceId>
     </message>
