@@ -9,7 +9,9 @@ import org.zstack.header.message.Message;
 import org.zstack.utils.DebugUtils;
 
 import javax.persistence.Tuple;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public interface Account {
     void handleMessage(Message msg);
@@ -20,6 +22,7 @@ public interface Account {
         String description;
         String password;
         AccountType type = AccountType.Normal;
+        Map<String, Long> quota = new HashMap<>();
 
         public static AccountBuilder New() {
             return new AccountBuilder();
@@ -27,6 +30,11 @@ public interface Account {
 
         public AccountBuilder uuid(String v) {
             uuid = v;
+            return this;
+        }
+
+        public AccountBuilder quota(Map<String, Long> v) {
+            quota = v;
             return this;
         }
 
@@ -77,6 +85,10 @@ public interface Account {
                 for (Tuple t : ts) {
                     String rtype = t.get(0, String.class);
                     long quota = Long.valueOf(t.get(1, String.class));
+
+                    if (builder.quota != null && builder.quota.containsKey(rtype)) {
+                        quota = builder.quota.get(rtype);
+                    }
 
                     QuotaVO qvo = new QuotaVO();
                     qvo.setUuid(Platform.getUuid());
