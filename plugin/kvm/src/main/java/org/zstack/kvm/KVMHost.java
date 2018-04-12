@@ -1031,15 +1031,21 @@ public class KVMHost extends HostBase implements Host {
         cmd.setVolumeInstallPath(msg.getVolume().getInstallPath());
         cmd.setInstallPath(msg.getInstallPath());
         cmd.setFullSnapshot(msg.isFullSnapshot());
+        for (KVMTakeSnapshotExtensionPoint f : pluginRgty.getExtensionList(KVMTakeSnapshotExtensionPoint.class)) {
+            cmd = f.beforeTakeSnapshot((KVMHostInventory) getSelfInventory(), msg, cmd);
+        }
         new Http<>(snapshotPath, cmd, TakeSnapshotResponse.class).call(new ReturnValueCompletion<TakeSnapshotResponse>(msg, completion) {
             @Override
             public void success(TakeSnapshotResponse ret) {
                 if (ret.isSuccess()) {
+                    extEmitter.afterTakeSnapshot((KVMHostInventory) getSelfInventory(), msg);
                     reply.setNewVolumeInstallPath(ret.getNewVolumeInstallPath());
                     reply.setSnapshotInstallPath(ret.getSnapshotInstallPath());
                     reply.setSize(ret.getSize());
                 } else {
-                    reply.setError(operr("operation error, because:%s", ret.getError()));
+                    ErrorCode err = operr("operation error, because:%s", ret.getError());
+                    extEmitter.afterTakeSnapshotFailed((KVMHostInventory) getSelfInventory(), msg, err);
+                    reply.setError(err);
                 }
                 bus.reply(msg, reply);
                 completion.done();
@@ -1047,6 +1053,7 @@ public class KVMHost extends HostBase implements Host {
 
             @Override
             public void fail(ErrorCode errorCode) {
+                extEmitter.afterTakeSnapshotFailed((KVMHostInventory) getSelfInventory(), msg, errorCode);
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
                 completion.done();

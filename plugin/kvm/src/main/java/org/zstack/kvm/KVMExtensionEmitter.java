@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.header.Component;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.host.TakeSnapshotOnHypervisorMsg;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.VolumeInventory;
@@ -32,6 +33,8 @@ public class KVMExtensionEmitter implements Component {
     private List<KVMStartVmAddonExtensionPoint> addonsExts = new ArrayList<>();
     private List<KVMAttachVolumeExtensionPoint> attachVolumeExts = new ArrayList<>();
     private List<KVMDetachVolumeExtensionPoint> detachVolumeExts = new ArrayList<>();
+    private List<KVMTakeSnapshotExtensionPoint> takeSnapshotExts = new ArrayList<>();
+    private List<KVMMergeSnapshotExtensionPoint> mergeSnapshotExts = new ArrayList<>();
 
     private void populateExtensions() {
         startVmExts = pluginRgty.getExtensionList(KVMStartVmExtensionPoint.class);
@@ -41,6 +44,8 @@ public class KVMExtensionEmitter implements Component {
         addonsExts = pluginRgty.getExtensionList(KVMStartVmAddonExtensionPoint.class);
         attachVolumeExts = pluginRgty.getExtensionList(KVMAttachVolumeExtensionPoint.class);
         detachVolumeExts = pluginRgty.getExtensionList(KVMDetachVolumeExtensionPoint.class);
+        takeSnapshotExts = pluginRgty.getExtensionList(KVMTakeSnapshotExtensionPoint.class);
+        mergeSnapshotExts = pluginRgty.getExtensionList(KVMMergeSnapshotExtensionPoint.class);
     }
 
     public void beforeStartVmOnKvm(final KVMHostInventory host, final VmInstanceSpec spec, final StartVmCmd cmd) throws KVMException {
@@ -148,6 +153,42 @@ public class KVMExtensionEmitter implements Component {
                 }
             }
         });
+    }
+
+    public void beforeTakeSnapshot(KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg, KVMAgentCommands.TakeSnapshotCmd cmd) {
+        for (KVMTakeSnapshotExtensionPoint ext : takeSnapshotExts) {
+            ext.beforeTakeSnapshot(host, msg, cmd);
+        }
+    }
+
+    public void afterTakeSnapshot(KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg) {
+        for (KVMTakeSnapshotExtensionPoint ext : takeSnapshotExts) {
+            ext.afterTakeSnapshot(host, msg);
+        }
+    }
+
+    public void afterTakeSnapshotFailed(KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg, ErrorCode err) {
+        for (KVMTakeSnapshotExtensionPoint ext : takeSnapshotExts) {
+            ext.afterTakeSnapshotFailed(host, msg, err);
+        }
+    }
+
+    public void beforeMergeSnapshot(KVMHostInventory host, MergeVolumeSnapshotOnKvmMsg msg, KVMAgentCommands.MergeSnapshotCmd cmd) {
+        for (KVMMergeSnapshotExtensionPoint ext : mergeSnapshotExts) {
+            ext.beforeMergeSnapshot(host, msg, cmd);
+        }
+    }
+
+    public void afterMergeSnapshot(KVMHostInventory host, MergeVolumeSnapshotOnKvmMsg msg, KVMAgentCommands.MergeSnapshotCmd cmd) {
+        for (KVMMergeSnapshotExtensionPoint ext : mergeSnapshotExts) {
+            ext.afterMergeSnapshot(host, msg, cmd);
+        }
+    }
+
+    public void afterMergeSnapshotFailed(KVMHostInventory host, MergeVolumeSnapshotOnKvmMsg msg, KVMAgentCommands.MergeSnapshotCmd cmd, ErrorCode err) {
+        for (KVMMergeSnapshotExtensionPoint ext : mergeSnapshotExts) {
+            ext.afterMergeSnapshotFailed(host, msg, cmd, err);
+        }
     }
 
     public void beforeAttachVolume(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory vol, AttachDataVolumeCmd cmd) {
