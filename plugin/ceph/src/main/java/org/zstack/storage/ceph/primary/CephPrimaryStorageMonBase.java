@@ -64,6 +64,9 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
     public static class AgentRsp {
         public boolean success;
         public String error;
+        public Long totalCapacity;
+        public Long availableCapacity;
+        public List<CephPoolCapacity> poolCapacities;
     }
 
     public static class PingCmd extends AgentCmd {
@@ -366,6 +369,14 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
                     res.success = false;
                     res.error = rsp.error;
                     res.failure = rsp.failure.toString();
+                }
+
+                if (rsp.success && rsp.availableCapacity != null && rsp.totalCapacity != null) {
+                    String fsid = Q.New(CephPrimaryStorageVO.class)
+                            .select(CephPrimaryStorageVO_.fsid)
+                            .eq(CephPrimaryStorageVO_.uuid, primaryStorageUuid)
+                            .findValue();
+                    new CephCapacityUpdater().update(fsid, rsp.totalCapacity, rsp.availableCapacity, rsp.poolCapacities);
                 }
 
                 completion.success(res);
