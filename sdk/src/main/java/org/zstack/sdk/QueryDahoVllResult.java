@@ -1,13 +1,11 @@
 package org.zstack.sdk;
 
-
-
-public class QueryAliyunKeySecretResult {
-    public java.util.List inventories;
-    public void setInventories(java.util.List inventories) {
+public class QueryDahoVllResult {
+    public java.util.List<DahoVllsInventory> inventories;
+    public void setInventories(java.util.List<DahoVllsInventory> inventories) {
         this.inventories = inventories;
     }
-    public java.util.List getInventories() {
+    public java.util.List<DahoVllsInventory> getInventories() {
         return this.inventories;
     }
 

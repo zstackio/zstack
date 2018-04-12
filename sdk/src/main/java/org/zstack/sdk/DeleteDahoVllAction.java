@@ -2,9 +2,8 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
-public class DeleteRouterInterfaceLocalAction extends AbstractAction {
+public class DeleteDahoVllAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +11,7 @@ public class DeleteRouterInterfaceLocalAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteRouterInterfaceLocalResult value;
+        public DeleteDahoVllResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -54,8 +53,8 @@ public class DeleteRouterInterfaceLocalAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteRouterInterfaceLocalResult value = res.getResult(org.zstack.sdk.DeleteRouterInterfaceLocalResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteRouterInterfaceLocalResult() : value; 
+        DeleteDahoVllResult value = res.getResult(DeleteDahoVllResult.class);
+        ret.value = value == null ? new DeleteDahoVllResult() : value; 
 
         return ret;
     }
@@ -85,7 +84,7 @@ public class DeleteRouterInterfaceLocalAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
-        info.path = "/hybrid/aliyun/router-interface/{uuid}";
+        info.path = "/hybrid/daho/vlls/{uuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";

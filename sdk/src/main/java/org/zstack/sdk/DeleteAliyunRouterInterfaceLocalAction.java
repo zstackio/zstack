@@ -2,8 +2,9 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
-public class DeleteSchedulerJobAction extends AbstractAction {
+public class DeleteAliyunRouterInterfaceLocalAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -11,7 +12,7 @@ public class DeleteSchedulerJobAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteSchedulerJobResult value;
+        public DeleteAliyunRouterInterfaceLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DeleteSchedulerJobAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteSchedulerJobResult value = res.getResult(org.zstack.sdk.DeleteSchedulerJobResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteSchedulerJobResult() : value; 
+        DeleteAliyunRouterInterfaceLocalResult value = res.getResult(DeleteAliyunRouterInterfaceLocalResult.class);
+        ret.value = value == null ? new DeleteAliyunRouterInterfaceLocalResult() : value; 
 
         return ret;
     }
@@ -84,7 +85,7 @@ public class DeleteSchedulerJobAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
-        info.path = "/scheduler/jobs/{uuid}";
+        info.path = "/hybrid/aliyun/router-interface/{uuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";

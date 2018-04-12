@@ -2,8 +2,9 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
-public class DeleteSchedulerJobAction extends AbstractAction {
+public class SyncAliyunRouterInterfaceFromRemoteAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -11,7 +12,7 @@ public class DeleteSchedulerJobAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteSchedulerJobResult value;
+        public SyncAliyunRouterInterfaceFromRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,10 +26,10 @@ public class DeleteSchedulerJobAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    public java.lang.String dataCenterUuid;
 
     @Param(required = false)
-    public java.lang.String deleteMode = "Permissive";
+    public java.lang.String resourceUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -53,8 +54,8 @@ public class DeleteSchedulerJobAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteSchedulerJobResult value = res.getResult(org.zstack.sdk.DeleteSchedulerJobResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteSchedulerJobResult() : value; 
+        SyncAliyunRouterInterfaceFromRemoteResult value = res.getResult(SyncAliyunRouterInterfaceFromRemoteResult.class);
+        ret.value = value == null ? new SyncAliyunRouterInterfaceFromRemoteResult() : value; 
 
         return ret;
     }
@@ -83,11 +84,11 @@ public class DeleteSchedulerJobAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/scheduler/jobs/{uuid}";
+        info.httpMethod = "PUT";
+        info.path = "/hybrid/aliyun/router-interface/{dataCenterUuid}/sync";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "syncAliyunRouterInterfaceFromRemote";
         return info;
     }
 

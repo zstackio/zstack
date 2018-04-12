@@ -3,7 +3,7 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class DeleteSchedulerJobAction extends AbstractAction {
+public class AddHybridKeySecretAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -11,7 +11,7 @@ public class DeleteSchedulerJobAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteSchedulerJobResult value;
+        public AddHybridKeySecretResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -24,11 +24,26 @@ public class DeleteSchedulerJobAction extends AbstractAction {
         }
     }
 
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String key;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String secret;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String accountUuid;
+
+    @Param(required = false, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
+
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    public java.lang.String type;
 
     @Param(required = false)
-    public java.lang.String deleteMode = "Permissive";
+    public java.lang.String resourceUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -53,8 +68,8 @@ public class DeleteSchedulerJobAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteSchedulerJobResult value = res.getResult(org.zstack.sdk.DeleteSchedulerJobResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteSchedulerJobResult() : value; 
+        AddHybridKeySecretResult value = res.getResult(AddHybridKeySecretResult.class);
+        ret.value = value == null ? new AddHybridKeySecretResult() : value; 
 
         return ret;
     }
@@ -83,11 +98,11 @@ public class DeleteSchedulerJobAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/scheduler/jobs/{uuid}";
+        info.httpMethod = "POST";
+        info.path = "/hybrid/hybrid/key";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

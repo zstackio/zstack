@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateRouterInterfacePairRemoteAction extends AbstractAction {
+public class UpdateAliyunRouteInterfaceRemoteAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateRouterInterfacePairRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateRouterInterfacePairRemoteResult value;
+        public UpdateAliyunRouteInterfaceRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,34 +26,13 @@ public class CreateRouterInterfacePairRemoteAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String dataCenterUuid;
+    public java.lang.String uuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String accessPointUuid;
+    @Param(required = true, validValues = {"active","inactive"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String op;
 
-    @Param(required = true, validValues = {"Small.1","Small.2","Small.5","Middle.1","Middle.2","Middle.5","Large.1","Large.2"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String spec;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vRouterUuid;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vBorderRouterUuid;
-
-    @Param(required = false, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String aDescription;
-
-    @Param(required = true, maxLength = 64, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String aName;
-
-    @Param(required = false, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String bDescription;
-
-    @Param(required = true, maxLength = 64, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String bName;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
+    @Param(required = true, validValues = {"vbr","vrouter"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String vRouterType;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -78,8 +57,8 @@ public class CreateRouterInterfacePairRemoteAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateRouterInterfacePairRemoteResult value = res.getResult(org.zstack.sdk.CreateRouterInterfacePairRemoteResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateRouterInterfacePairRemoteResult() : value; 
+        UpdateAliyunRouteInterfaceRemoteResult value = res.getResult(UpdateAliyunRouteInterfaceRemoteResult.class);
+        ret.value = value == null ? new UpdateAliyunRouteInterfaceRemoteResult() : value; 
 
         return ret;
     }
@@ -108,11 +87,11 @@ public class CreateRouterInterfacePairRemoteAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/hybrid/aliyun/router-interface";
+        info.httpMethod = "PUT";
+        info.path = "/hybrid/aliyun/router-interface/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "updateAliyunRouteInterfaceRemote";
         return info;
     }
 

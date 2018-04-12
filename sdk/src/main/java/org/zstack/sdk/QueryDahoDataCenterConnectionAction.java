@@ -3,7 +3,7 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class DeleteSchedulerJobAction extends AbstractAction {
+public class QueryDahoDataCenterConnectionAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -11,7 +11,7 @@ public class DeleteSchedulerJobAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteSchedulerJobResult value;
+        public QueryDahoDataCenterConnectionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -24,26 +24,6 @@ public class DeleteSchedulerJobAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false)
-    public java.lang.String deleteMode = "Permissive";
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = true)
-    public String sessionId;
-
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -53,8 +33,8 @@ public class DeleteSchedulerJobAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteSchedulerJobResult value = res.getResult(org.zstack.sdk.DeleteSchedulerJobResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteSchedulerJobResult() : value; 
+        QueryDahoDataCenterConnectionResult value = res.getResult(QueryDahoDataCenterConnectionResult.class);
+        ret.value = value == null ? new QueryDahoDataCenterConnectionResult() : value; 
 
         return ret;
     }
@@ -83,10 +63,10 @@ public class DeleteSchedulerJobAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/scheduler/jobs/{uuid}";
+        info.httpMethod = "GET";
+        info.path = "/hybrid/daho/connections";
         info.needSession = true;
-        info.needPoll = true;
+        info.needPoll = false;
         info.parameterName = "";
         return info;
     }

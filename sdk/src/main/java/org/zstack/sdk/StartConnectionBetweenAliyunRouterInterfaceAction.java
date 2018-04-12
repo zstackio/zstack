@@ -3,7 +3,7 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class DeleteSchedulerJobAction extends AbstractAction {
+public class StartConnectionBetweenAliyunRouterInterfaceAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -11,7 +11,7 @@ public class DeleteSchedulerJobAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteSchedulerJobResult value;
+        public StartConnectionBetweenAliyunRouterInterfaceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,10 +25,10 @@ public class DeleteSchedulerJobAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    public java.lang.String vrouterInterfaceUuid;
 
-    @Param(required = false)
-    public java.lang.String deleteMode = "Permissive";
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String vbrInterfaceUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -53,8 +53,8 @@ public class DeleteSchedulerJobAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteSchedulerJobResult value = res.getResult(org.zstack.sdk.DeleteSchedulerJobResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteSchedulerJobResult() : value; 
+        StartConnectionBetweenAliyunRouterInterfaceResult value = res.getResult(StartConnectionBetweenAliyunRouterInterfaceResult.class);
+        ret.value = value == null ? new StartConnectionBetweenAliyunRouterInterfaceResult() : value; 
 
         return ret;
     }
@@ -83,11 +83,11 @@ public class DeleteSchedulerJobAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/scheduler/jobs/{uuid}";
+        info.httpMethod = "PUT";
+        info.path = "/hybrid/aliyun/router-interface/{vbrInterfaceUuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "startConnectionBetweenAliyunRouterInterface";
         return info;
     }
 

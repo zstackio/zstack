@@ -2,9 +2,8 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
-public class QueryRouterInterfaceFromLocalAction extends QueryAction {
+public class SyncDahoCloudConnectionAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +11,7 @@ public class QueryRouterInterfaceFromLocalAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.QueryRouterInterfaceFromLocalResult value;
+        public SyncDahoCloudConnectionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,6 +24,26 @@ public class QueryRouterInterfaceFromLocalAction extends QueryAction {
         }
     }
 
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String dataCenterUuid;
+
+    @Param(required = false)
+    public java.lang.String resourceUuid;
+
+    @Param(required = false)
+    public java.util.List systemTags;
+
+    @Param(required = false)
+    public java.util.List userTags;
+
+    @Param(required = true)
+    public String sessionId;
+
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -34,8 +53,8 @@ public class QueryRouterInterfaceFromLocalAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.QueryRouterInterfaceFromLocalResult value = res.getResult(org.zstack.sdk.QueryRouterInterfaceFromLocalResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QueryRouterInterfaceFromLocalResult() : value; 
+        SyncDahoCloudConnectionResult value = res.getResult(SyncDahoCloudConnectionResult.class);
+        ret.value = value == null ? new SyncDahoCloudConnectionResult() : value; 
 
         return ret;
     }
@@ -64,11 +83,11 @@ public class QueryRouterInterfaceFromLocalAction extends QueryAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/hybrid/aliyun/router-interface";
+        info.httpMethod = "POST";
+        info.path = "/hybrid/daho/cloud_connections/{dataCenterUuid}/sync";
         info.needSession = true;
-        info.needPoll = false;
-        info.parameterName = "";
+        info.needPoll = true;
+        info.parameterName = "params";
         return info;
     }
 

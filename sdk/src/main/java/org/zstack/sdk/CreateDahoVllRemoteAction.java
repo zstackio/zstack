@@ -2,9 +2,8 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
-public class UpdateRouteInterfaceRemoteAction extends AbstractAction {
+public class CreateDahoVllRemoteAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +11,7 @@ public class UpdateRouteInterfaceRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateRouteInterfaceRemoteResult value;
+        public CreateDahoVllRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,14 +24,29 @@ public class UpdateRouteInterfaceRemoteAction extends AbstractAction {
         }
     }
 
+    @Param(required = true, maxLength = 32, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = false, maxLength = 128, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String description;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, numberRange = {1L,10240L}, noTrim = false)
+    public java.lang.Integer bandwidth;
+
+    @Param(required = true, validValues = {"shutdown","renewal"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String expirePolicy;
+
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    public java.lang.String dcConnUuid;
 
-    @Param(required = true, validValues = {"active","inactive"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String op;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String cloudConnUuid;
 
-    @Param(required = true, validValues = {"vbr","vrouter"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vRouterType;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, numberRange = {2L,4096L}, noTrim = false)
+    public java.lang.Integer vlan;
+
+    @Param(required = false)
+    public java.lang.String resourceUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -57,8 +71,8 @@ public class UpdateRouteInterfaceRemoteAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateRouteInterfaceRemoteResult value = res.getResult(org.zstack.sdk.UpdateRouteInterfaceRemoteResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateRouteInterfaceRemoteResult() : value; 
+        CreateDahoVllRemoteResult value = res.getResult(CreateDahoVllRemoteResult.class);
+        ret.value = value == null ? new CreateDahoVllRemoteResult() : value; 
 
         return ret;
     }
@@ -87,11 +101,11 @@ public class UpdateRouteInterfaceRemoteAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/hybrid/aliyun/router-interface/{uuid}/actions";
+        info.httpMethod = "POST";
+        info.path = "/hybrid/daho/vlls";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "updateRouteInterfaceRemote";
+        info.parameterName = "params";
         return info;
     }
 

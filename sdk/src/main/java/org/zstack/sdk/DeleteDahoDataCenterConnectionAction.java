@@ -3,7 +3,7 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class DeleteSchedulerJobAction extends AbstractAction {
+public class DeleteDahoDataCenterConnectionAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -11,7 +11,7 @@ public class DeleteSchedulerJobAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteSchedulerJobResult value;
+        public DeleteDahoDataCenterConnectionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +53,8 @@ public class DeleteSchedulerJobAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteSchedulerJobResult value = res.getResult(org.zstack.sdk.DeleteSchedulerJobResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteSchedulerJobResult() : value; 
+        DeleteDahoDataCenterConnectionResult value = res.getResult(DeleteDahoDataCenterConnectionResult.class);
+        ret.value = value == null ? new DeleteDahoDataCenterConnectionResult() : value; 
 
         return ret;
     }
@@ -84,7 +84,7 @@ public class DeleteSchedulerJobAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
-        info.path = "/scheduler/jobs/{uuid}";
+        info.path = "/hybrid/daho/connections/{uuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";

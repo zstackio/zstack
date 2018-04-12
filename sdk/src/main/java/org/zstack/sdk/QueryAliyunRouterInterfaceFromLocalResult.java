@@ -1,13 +1,11 @@
 package org.zstack.sdk;
 
-
-
-public class QueryRouterInterfaceFromLocalResult {
-    public java.util.List inventories;
-    public void setInventories(java.util.List inventories) {
+public class QueryAliyunRouterInterfaceFromLocalResult {
+    public java.util.List<AliyunRouterInterfaceInventory> inventories;
+    public void setInventories(java.util.List<AliyunRouterInterfaceInventory> inventories) {
         this.inventories = inventories;
     }
-    public java.util.List getInventories() {
+    public java.util.List<AliyunRouterInterfaceInventory> getInventories() {
         return this.inventories;
     }
 

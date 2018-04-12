@@ -30,11 +30,11 @@ public class SourceClassMap {
 			put("org.zstack.header.aliyun.image.EcsImageInventory", "org.zstack.sdk.EcsImageInventory");
 			put("org.zstack.header.aliyun.image.ProgressProperty", "org.zstack.sdk.ProgressProperty");
 			put("org.zstack.header.aliyun.network.HybridConnectionType", "org.zstack.sdk.HybridConnectionType");
+			put("org.zstack.header.aliyun.network.connection.AliyunRouterInterfaceInventory", "org.zstack.sdk.AliyunRouterInterfaceInventory");
 			put("org.zstack.header.aliyun.network.connection.ConnectionAccessPointInventory", "org.zstack.sdk.ConnectionAccessPointInventory");
 			put("org.zstack.header.aliyun.network.connection.ConnectionRelationShipInventory", "org.zstack.sdk.ConnectionRelationShipInventory");
 			put("org.zstack.header.aliyun.network.connection.ConnectionRelationShipProperty", "org.zstack.sdk.ConnectionRelationShipProperty");
 			put("org.zstack.header.aliyun.network.connection.VirtualBorderRouterInventory", "org.zstack.sdk.VirtualBorderRouterInventory");
-			put("org.zstack.header.aliyun.network.connection.VirtualRouterInterfaceInventory", "org.zstack.sdk.VirtualRouterInterfaceInventory");
 			put("org.zstack.header.aliyun.network.group.EcsSecurityGroupInventory", "org.zstack.sdk.EcsSecurityGroupInventory");
 			put("org.zstack.header.aliyun.network.group.EcsSecurityGroupRuleInventory", "org.zstack.sdk.EcsSecurityGroupRuleInventory");
 			put("org.zstack.header.aliyun.network.vpc.EcsVSwitchInventory", "org.zstack.sdk.EcsVSwitchInventory");
@@ -60,6 +60,10 @@ public class SourceClassMap {
 			put("org.zstack.header.console.ConsoleProxyAgentInventory", "org.zstack.sdk.ConsoleProxyAgentInventory");
 			put("org.zstack.header.core.progress.TaskProgressInventory", "org.zstack.sdk.TaskProgressInventory");
 			put("org.zstack.header.core.webhooks.WebhookInventory", "org.zstack.sdk.WebhookInventory");
+			put("org.zstack.header.daho.process.DahoCloudConnectionInventory", "org.zstack.sdk.DahoCloudConnectionInventory");
+			put("org.zstack.header.daho.process.DahoConnectionInventory", "org.zstack.sdk.DahoConnectionInventory");
+			put("org.zstack.header.daho.process.DahoVllVbrRefInventory", "org.zstack.sdk.DahoVllVbrRefInventory");
+			put("org.zstack.header.daho.process.DahoVllsInventory", "org.zstack.sdk.DahoVllsInventory");
 			put("org.zstack.header.datacenter.DataCenterInventory", "org.zstack.sdk.DataCenterInventory");
 			put("org.zstack.header.datacenter.DataCenterProperty", "org.zstack.sdk.DataCenterProperty");
 			put("org.zstack.header.errorcode.ErrorCode", "org.zstack.sdk.ErrorCode");
@@ -242,6 +246,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.AliyunDiskInventory", "org.zstack.header.aliyun.storage.disk.AliyunDiskInventory");
 			put("org.zstack.sdk.AliyunErrorCode", "org.zstack.header.aliyun.errorCode.AliyunErrorCode");
 			put("org.zstack.sdk.AliyunOssException", "org.zstack.header.aliyun.AliyunOssException");
+			put("org.zstack.sdk.AliyunRouterInterfaceInventory", "org.zstack.header.aliyun.network.connection.AliyunRouterInterfaceInventory");
 			put("org.zstack.sdk.AliyunSnapshotInventory", "org.zstack.header.aliyun.storage.snapshot.AliyunSnapshotInventory");
 			put("org.zstack.sdk.ApplianceVmInventory", "org.zstack.appliancevm.ApplianceVmInventory");
 			put("org.zstack.sdk.BackupStorageInventory", "org.zstack.header.storage.backup.BackupStorageInventory");
@@ -267,6 +272,10 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ConsoleInventory", "org.zstack.header.console.ConsoleInventory");
 			put("org.zstack.sdk.ConsoleProxyAgentInventory", "org.zstack.header.console.ConsoleProxyAgentInventory");
 			put("org.zstack.sdk.CreateRootVolumeTemplateFromVolumeSnapshotFailure", "org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotEvent$Failure");
+			put("org.zstack.sdk.DahoCloudConnectionInventory", "org.zstack.header.daho.process.DahoCloudConnectionInventory");
+			put("org.zstack.sdk.DahoConnectionInventory", "org.zstack.header.daho.process.DahoConnectionInventory");
+			put("org.zstack.sdk.DahoVllVbrRefInventory", "org.zstack.header.daho.process.DahoVllVbrRefInventory");
+			put("org.zstack.sdk.DahoVllsInventory", "org.zstack.header.daho.process.DahoVllsInventory");
 			put("org.zstack.sdk.DataCenterInventory", "org.zstack.header.datacenter.DataCenterInventory");
 			put("org.zstack.sdk.DataCenterProperty", "org.zstack.header.datacenter.DataCenterProperty");
 			put("org.zstack.sdk.DataVolumeSpending", "org.zstack.billing.DataVolumeSpending");
@@ -400,7 +409,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VipPortRangeInventory", "org.zstack.network.service.virtualrouter.APIGetVipUsedPortsReply$VipPortRangeInventory");
 			put("org.zstack.sdk.VipQosInventory", "org.zstack.header.vipQos.VipQosInventory");
 			put("org.zstack.sdk.VirtualBorderRouterInventory", "org.zstack.header.aliyun.network.connection.VirtualBorderRouterInventory");
-			put("org.zstack.sdk.VirtualRouterInterfaceInventory", "org.zstack.header.aliyun.network.connection.VirtualRouterInterfaceInventory");
 			put("org.zstack.sdk.VirtualRouterOfferingInventory", "org.zstack.network.service.virtualrouter.VirtualRouterOfferingInventory");
 			put("org.zstack.sdk.VirtualRouterVRouterRouteTableRefInventory", "org.zstack.vrouterRoute.VirtualRouterVRouterRouteTableRefInventory");
 			put("org.zstack.sdk.VirtualRouterVmInventory", "org.zstack.network.service.virtualrouter.VirtualRouterVmInventory");

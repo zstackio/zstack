@@ -2,8 +2,9 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
-public class DeleteSchedulerJobAction extends AbstractAction {
+public class CreateAliyunRouterInterfaceRemoteAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -11,7 +12,7 @@ public class DeleteSchedulerJobAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteSchedulerJobResult value;
+        public CreateAliyunRouterInterfaceRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,10 +26,28 @@ public class DeleteSchedulerJobAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    public java.lang.String dataCenterUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String accessPointUuid;
+
+    @Param(required = false, validRegexValues = "[XxlL]{1}arge.(\\d+)", nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String spec;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String vRouterUuid;
+
+    @Param(required = true, validValues = {"VBR","VRouter"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String routerType;
+
+    @Param(required = false, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
+
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String name;
 
     @Param(required = false)
-    public java.lang.String deleteMode = "Permissive";
+    public java.lang.String resourceUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -53,8 +72,8 @@ public class DeleteSchedulerJobAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteSchedulerJobResult value = res.getResult(org.zstack.sdk.DeleteSchedulerJobResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteSchedulerJobResult() : value; 
+        CreateAliyunRouterInterfaceRemoteResult value = res.getResult(CreateAliyunRouterInterfaceRemoteResult.class);
+        ret.value = value == null ? new CreateAliyunRouterInterfaceRemoteResult() : value; 
 
         return ret;
     }
@@ -83,11 +102,11 @@ public class DeleteSchedulerJobAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/scheduler/jobs/{uuid}";
+        info.httpMethod = "POST";
+        info.path = "/hybrid/aliyun/router-interface";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

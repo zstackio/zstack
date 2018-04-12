@@ -3,7 +3,7 @@ package org.zstack.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class DeleteSchedulerJobAction extends AbstractAction {
+public class DeleteAliyunRouterInterfaceRemoteAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -11,7 +11,7 @@ public class DeleteSchedulerJobAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteSchedulerJobResult value;
+        public DeleteAliyunRouterInterfaceRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,6 +26,9 @@ public class DeleteSchedulerJobAction extends AbstractAction {
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
+
+    @Param(required = true, validValues = {"vrouter","vbr"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String vRouterType;
 
     @Param(required = false)
     public java.lang.String deleteMode = "Permissive";
@@ -53,8 +56,8 @@ public class DeleteSchedulerJobAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteSchedulerJobResult value = res.getResult(org.zstack.sdk.DeleteSchedulerJobResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteSchedulerJobResult() : value; 
+        DeleteAliyunRouterInterfaceRemoteResult value = res.getResult(DeleteAliyunRouterInterfaceRemoteResult.class);
+        ret.value = value == null ? new DeleteAliyunRouterInterfaceRemoteResult() : value; 
 
         return ret;
     }
@@ -84,7 +87,7 @@ public class DeleteSchedulerJobAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
-        info.path = "/scheduler/jobs/{uuid}";
+        info.path = "/hybrid/aliyun/router-interface/remote/{uuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";

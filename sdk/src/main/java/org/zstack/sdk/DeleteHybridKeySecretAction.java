@@ -2,9 +2,8 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
-public class SyncRouterInterfaceFromRemoteAction extends AbstractAction {
+public class DeleteHybridKeySecretAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +11,7 @@ public class SyncRouterInterfaceFromRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.SyncRouterInterfaceFromRemoteResult value;
+        public DeleteHybridKeySecretResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,10 +25,10 @@ public class SyncRouterInterfaceFromRemoteAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String dataCenterUuid;
+    public java.lang.String uuid;
 
     @Param(required = false)
-    public java.lang.String resourceUuid;
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -54,8 +53,8 @@ public class SyncRouterInterfaceFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.SyncRouterInterfaceFromRemoteResult value = res.getResult(org.zstack.sdk.SyncRouterInterfaceFromRemoteResult.class);
-        ret.value = value == null ? new org.zstack.sdk.SyncRouterInterfaceFromRemoteResult() : value; 
+        DeleteHybridKeySecretResult value = res.getResult(DeleteHybridKeySecretResult.class);
+        ret.value = value == null ? new DeleteHybridKeySecretResult() : value; 
 
         return ret;
     }
@@ -84,11 +83,11 @@ public class SyncRouterInterfaceFromRemoteAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/hybrid/aliyun/router-interface/{dataCenterUuid}/sync";
+        info.httpMethod = "DELETE";
+        info.path = "/hybrid/hybrid/key/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "syncRouterInterfaceFromRemote";
+        info.parameterName = "";
         return info;
     }
 
