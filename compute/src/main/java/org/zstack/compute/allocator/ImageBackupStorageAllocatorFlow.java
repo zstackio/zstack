@@ -67,11 +67,6 @@ public class ImageBackupStorageAllocatorFlow extends AbstractHostAllocatorFlow {
             return;
         }
 
-        if (spec.getImage() == null){
-            next(candidates);
-            return;
-        }
-
         throwExceptionIfIAmTheFirstFlow();
 
         if (!checkIfNeedBackupStorageToDownloadImage(spec, candidates)) {

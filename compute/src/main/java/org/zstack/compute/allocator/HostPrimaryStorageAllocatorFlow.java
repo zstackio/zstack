@@ -164,11 +164,6 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
             throw new CloudRuntimeException("HostPrimaryStorageAllocatorFlow cannot be the first flow in the chain");
         }
 
-        if (spec.getImage() == null) {
-            next(candidates);
-            return;
-        }
-
         candidates = allocateFromCandidates();
 
         if (candidates.isEmpty()) {
