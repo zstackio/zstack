@@ -4,8 +4,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.FutureCompletion;
-import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.TakeSnapshotOnHypervisorMsg;
 import org.zstack.header.vm.VmInstanceInventory;
@@ -158,7 +156,7 @@ public class KVMExtensionEmitter implements Component {
         });
     }
 
-    public void dobeforeTakeSnapshot(final Iterator<KVMTakeSnapshotExtensionPoint> it, KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg,
+    public void doBeforeTakeSnapshot(final Iterator<KVMTakeSnapshotExtensionPoint> it, KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg,
                                      KVMAgentCommands.TakeSnapshotCmd cmd, Completion completion) {
         if (!it.hasNext()) {
             completion.success();
@@ -169,7 +167,7 @@ public class KVMExtensionEmitter implements Component {
         ext.beforeTakeSnapshot(host, msg, cmd, new Completion(completion) {
             @Override
             public void success() {
-                dobeforeTakeSnapshot(it, host, msg, cmd, completion);
+                doBeforeTakeSnapshot(it, host, msg, cmd, completion);
             }
 
             @Override
@@ -181,18 +179,18 @@ public class KVMExtensionEmitter implements Component {
 
     public void beforeTakeSnapshot(KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg, KVMAgentCommands.TakeSnapshotCmd cmd, Completion completion) {
         Iterator<KVMTakeSnapshotExtensionPoint> it = takeSnapshotExts.iterator();
-        dobeforeTakeSnapshot(it, host, msg, cmd, completion);
+        doBeforeTakeSnapshot(it, host, msg, cmd, completion);
     }
 
-    public void afterTakeSnapshot(KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg) {
+    public void afterTakeSnapshot(KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg, KVMAgentCommands.TakeSnapshotCmd cmd, KVMAgentCommands.TakeSnapshotResponse rsp) {
         for (KVMTakeSnapshotExtensionPoint ext : takeSnapshotExts) {
-            ext.afterTakeSnapshot(host, msg);
+            ext.afterTakeSnapshot(host, msg, cmd, rsp);
         }
     }
 
-    public void afterTakeSnapshotFailed(KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg, ErrorCode err) {
+    public void afterTakeSnapshotFailed(KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg, KVMAgentCommands.TakeSnapshotCmd cmd, KVMAgentCommands.TakeSnapshotResponse rsp, ErrorCode err) {
         for (KVMTakeSnapshotExtensionPoint ext : takeSnapshotExts) {
-            ext.afterTakeSnapshotFailed(host, msg, err);
+            ext.afterTakeSnapshotFailed(host, msg, cmd, rsp, err);
         }
     }
 

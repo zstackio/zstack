@@ -8,7 +8,7 @@ import org.zstack.header.host.TakeSnapshotOnHypervisorMsg;
 public interface KVMTakeSnapshotExtensionPoint {
     void beforeTakeSnapshot(KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg, KVMAgentCommands.TakeSnapshotCmd cmd, Completion completion);
 
-    void afterTakeSnapshot(KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg);
+    void afterTakeSnapshot(KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg, KVMAgentCommands.TakeSnapshotCmd cmd, KVMAgentCommands.TakeSnapshotResponse rsp);
 
-    void afterTakeSnapshotFailed(KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg, ErrorCode err);
+    void afterTakeSnapshotFailed(KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg, KVMAgentCommands.TakeSnapshotCmd cmd, KVMAgentCommands.TakeSnapshotResponse rsp, ErrorCode err);
 }

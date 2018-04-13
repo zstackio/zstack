@@ -1056,13 +1056,13 @@ public class KVMHost extends HostBase implements Host {
                     @Override
                     public void success(TakeSnapshotResponse ret) {
                         if (ret.isSuccess()) {
-                            extEmitter.afterTakeSnapshot((KVMHostInventory) getSelfInventory(), msg);
+                            extEmitter.afterTakeSnapshot((KVMHostInventory) getSelfInventory(), msg, cmd, ret);
                             reply.setNewVolumeInstallPath(ret.getNewVolumeInstallPath());
                             reply.setSnapshotInstallPath(ret.getSnapshotInstallPath());
                             reply.setSize(ret.getSize());
                         } else {
                             ErrorCode err = operr("operation error, because:%s", ret.getError());
-                            extEmitter.afterTakeSnapshotFailed((KVMHostInventory) getSelfInventory(), msg, err);
+                            extEmitter.afterTakeSnapshotFailed((KVMHostInventory) getSelfInventory(), msg, cmd, ret, err);
                             reply.setError(err);
                         }
                         bus.reply(msg, reply);
@@ -1071,7 +1071,7 @@ public class KVMHost extends HostBase implements Host {
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        extEmitter.afterTakeSnapshotFailed((KVMHostInventory) getSelfInventory(), msg, errorCode);
+                        extEmitter.afterTakeSnapshotFailed((KVMHostInventory) getSelfInventory(), msg, cmd, null, errorCode);
                         reply.setError(errorCode);
                         bus.reply(msg, reply);
                         trigger.fail(errorCode);
