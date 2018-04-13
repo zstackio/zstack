@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class QueryDahoCloudConnectionResult {
-    public java.util.List<DahoCloudConnectionInventory> inventories;
-    public void setInventories(java.util.List<DahoCloudConnectionInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<DahoCloudConnectionInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

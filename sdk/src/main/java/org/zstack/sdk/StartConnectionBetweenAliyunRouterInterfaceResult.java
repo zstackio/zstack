@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.AliyunRouterInterfaceInventory;
+
 public class StartConnectionBetweenAliyunRouterInterfaceResult {
     public AliyunRouterInterfaceInventory inventory;
     public void setInventory(AliyunRouterInterfaceInventory inventory) {

@@ -1,8 +1,10 @@
 package org.zstack.sdk;
 
+
+
 public class QueryHybridKeySecretResult {
-    public java.util.List<HybridAccountInventory> inventories;
-    public void setInventories(java.util.List<HybridAccountInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
     public java.util.List getInventories() {

@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class AddHybridKeySecretAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class AddHybridKeySecretAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public AddHybridKeySecretResult value;
+        public org.zstack.sdk.AddHybridKeySecretResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -68,8 +69,8 @@ public class AddHybridKeySecretAction extends AbstractAction {
             return ret;
         }
         
-        AddHybridKeySecretResult value = res.getResult(AddHybridKeySecretResult.class);
-        ret.value = value == null ? new AddHybridKeySecretResult() : value; 
+        org.zstack.sdk.AddHybridKeySecretResult value = res.getResult(org.zstack.sdk.AddHybridKeySecretResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddHybridKeySecretResult() : value; 
 
         return ret;
     }

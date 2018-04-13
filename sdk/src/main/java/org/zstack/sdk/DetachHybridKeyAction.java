@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DetachHybridKeyAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DetachHybridKeyAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DetachHybridKeyResult value;
+        public org.zstack.sdk.DetachHybridKeyResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +51,8 @@ public class DetachHybridKeyAction extends AbstractAction {
             return ret;
         }
         
-        DetachHybridKeyResult value = res.getResult(DetachHybridKeyResult.class);
-        ret.value = value == null ? new DetachHybridKeyResult() : value; 
+        org.zstack.sdk.DetachHybridKeyResult value = res.getResult(org.zstack.sdk.DetachHybridKeyResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DetachHybridKeyResult() : value; 
 
         return ret;
     }

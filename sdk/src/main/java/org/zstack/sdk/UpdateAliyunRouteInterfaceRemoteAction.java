@@ -12,7 +12,7 @@ public class UpdateAliyunRouteInterfaceRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public UpdateAliyunRouteInterfaceRemoteResult value;
+        public org.zstack.sdk.UpdateAliyunRouteInterfaceRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -57,8 +57,8 @@ public class UpdateAliyunRouteInterfaceRemoteAction extends AbstractAction {
             return ret;
         }
         
-        UpdateAliyunRouteInterfaceRemoteResult value = res.getResult(UpdateAliyunRouteInterfaceRemoteResult.class);
-        ret.value = value == null ? new UpdateAliyunRouteInterfaceRemoteResult() : value; 
+        org.zstack.sdk.UpdateAliyunRouteInterfaceRemoteResult value = res.getResult(org.zstack.sdk.UpdateAliyunRouteInterfaceRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateAliyunRouteInterfaceRemoteResult() : value; 
 
         return ret;
     }

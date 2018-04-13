@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class DahoVllsInventory  {
 
     public java.lang.String uuid;
@@ -32,6 +34,14 @@ public class DahoVllsInventory  {
     }
     public java.lang.String getVllId() {
         return this.vllId;
+    }
+
+    public java.lang.Integer vlanId;
+    public void setVlanId(java.lang.Integer vlanId) {
+        this.vlanId = vlanId;
+    }
+    public java.lang.Integer getVlanId() {
+        return this.vlanId;
     }
 
     public java.lang.String dataCenterUuid;

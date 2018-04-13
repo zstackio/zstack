@@ -12,7 +12,7 @@ public class DeleteAliyunRouterInterfaceLocalAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteAliyunRouterInterfaceLocalResult value;
+        public org.zstack.sdk.DeleteAliyunRouterInterfaceLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -54,8 +54,8 @@ public class DeleteAliyunRouterInterfaceLocalAction extends AbstractAction {
             return ret;
         }
         
-        DeleteAliyunRouterInterfaceLocalResult value = res.getResult(DeleteAliyunRouterInterfaceLocalResult.class);
-        ret.value = value == null ? new DeleteAliyunRouterInterfaceLocalResult() : value; 
+        org.zstack.sdk.DeleteAliyunRouterInterfaceLocalResult value = res.getResult(org.zstack.sdk.DeleteAliyunRouterInterfaceLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteAliyunRouterInterfaceLocalResult() : value; 
 
         return ret;
     }

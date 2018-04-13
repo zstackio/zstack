@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class QueryDahoDataCenterConnectionAction extends QueryAction {
 
@@ -11,7 +12,7 @@ public class QueryDahoDataCenterConnectionAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryDahoDataCenterConnectionResult value;
+        public org.zstack.sdk.QueryDahoDataCenterConnectionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,8 +34,8 @@ public class QueryDahoDataCenterConnectionAction extends QueryAction {
             return ret;
         }
         
-        QueryDahoDataCenterConnectionResult value = res.getResult(QueryDahoDataCenterConnectionResult.class);
-        ret.value = value == null ? new QueryDahoDataCenterConnectionResult() : value; 
+        org.zstack.sdk.QueryDahoDataCenterConnectionResult value = res.getResult(org.zstack.sdk.QueryDahoDataCenterConnectionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryDahoDataCenterConnectionResult() : value; 
 
         return ret;
     }

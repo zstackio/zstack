@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class CreateDahoVllRemoteAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class CreateDahoVllRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public CreateDahoVllRemoteResult value;
+        public org.zstack.sdk.CreateDahoVllRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -71,8 +72,8 @@ public class CreateDahoVllRemoteAction extends AbstractAction {
             return ret;
         }
         
-        CreateDahoVllRemoteResult value = res.getResult(CreateDahoVllRemoteResult.class);
-        ret.value = value == null ? new CreateDahoVllRemoteResult() : value; 
+        org.zstack.sdk.CreateDahoVllRemoteResult value = res.getResult(org.zstack.sdk.CreateDahoVllRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateDahoVllRemoteResult() : value; 
 
         return ret;
     }
