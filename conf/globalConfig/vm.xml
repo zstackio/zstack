@@ -86,4 +86,13 @@
 		<defaultValue>false</defaultValue>
 		<type>java.lang.Boolean</type>
 	</config>
+
+	<config>
+		<category>vm</category>
+		<name>vmPortOff</name>
+		<description>Disable VMWare io port emulation</description>
+		<type>java.lang.Boolean</type>
+		<defaultValue>false</defaultValue>
+	</config>
+
 </globalConfig>
