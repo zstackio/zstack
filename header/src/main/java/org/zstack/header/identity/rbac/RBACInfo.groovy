@@ -1,7 +1,9 @@
 package org.zstack.header.identity.rbac
 
 import org.zstack.header.exception.CloudRuntimeException
+import org.zstack.header.identity.rbac.condition.Condition
 import org.zstack.header.message.APIMessage
+import org.zstack.utils.BeanUtils
 import org.zstack.utils.Utils
 import org.zstack.utils.logging.CLogger
 
@@ -10,6 +12,10 @@ class RBACInfo {
 
     static List<RBACInfo> infos = []
     static List<RoleInfo> roleInfos = []
+
+
+    static Map<Class, List<Closure<Boolean>>> apiPermissionConditionMakers = [:]
+
 
     private static PolicyMatcher matcher = new PolicyMatcher()
 
@@ -169,5 +175,31 @@ class RBACInfo {
 
     Set<String> getNormalAPIs() {
         return normalAPIs
+    }
+
+    static void condition(Class<? extends APIMessage> parentAPIClz, Closure<Boolean> c) {
+        BeanUtils.reflections.getSubTypesOf(parentAPIClz).each { apiClz ->
+            def lst = apiPermissionConditionMakers[apiClz]
+            if (lst == null) {
+                lst = []
+                apiPermissionConditionMakers[apiClz] = lst
+            }
+            lst.add(c)
+        }
+    }
+
+    static boolean evalAPIPermissionIfHasConditions(APIMessage msg) {
+        List<Closure<Boolean>> conditionMakers = apiPermissionConditionMakers[msg.getClass()]
+        if (conditionMakers == null || conditionMakers.isEmpty()) {
+            return true
+        }
+
+        for (Closure<Boolean> c : conditionMakers) {
+            if (!c()) {
+                return false
+            }
+        }
+
+        return true
     }
 }
