@@ -1031,34 +1031,64 @@ public class KVMHost extends HostBase implements Host {
         cmd.setVolumeInstallPath(msg.getVolume().getInstallPath());
         cmd.setInstallPath(msg.getInstallPath());
         cmd.setFullSnapshot(msg.isFullSnapshot());
-        for (KVMTakeSnapshotExtensionPoint f : pluginRgty.getExtensionList(KVMTakeSnapshotExtensionPoint.class)) {
-            cmd = f.beforeTakeSnapshot((KVMHostInventory) getSelfInventory(), msg, cmd);
-        }
-        new Http<>(snapshotPath, cmd, TakeSnapshotResponse.class).call(new ReturnValueCompletion<TakeSnapshotResponse>(msg, completion) {
-            @Override
-            public void success(TakeSnapshotResponse ret) {
-                if (ret.isSuccess()) {
-                    extEmitter.afterTakeSnapshot((KVMHostInventory) getSelfInventory(), msg);
-                    reply.setNewVolumeInstallPath(ret.getNewVolumeInstallPath());
-                    reply.setSnapshotInstallPath(ret.getSnapshotInstallPath());
-                    reply.setSize(ret.getSize());
-                } else {
-                    ErrorCode err = operr("operation error, because:%s", ret.getError());
-                    extEmitter.afterTakeSnapshotFailed((KVMHostInventory) getSelfInventory(), msg, err);
-                    reply.setError(err);
-                }
-                bus.reply(msg, reply);
-                completion.done();
-            }
 
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("before-take-snapshot-%s-for-volume-%s", msg.getSnapshotName(), msg.getVolume().getUuid()));
+        chain.then(new NoRollbackFlow() {
             @Override
-            public void fail(ErrorCode errorCode) {
-                extEmitter.afterTakeSnapshotFailed((KVMHostInventory) getSelfInventory(), msg, errorCode);
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
+            public void run(FlowTrigger trigger, Map data) {
+                extEmitter.beforeTakeSnapshot((KVMHostInventory) getSelfInventory(), msg, cmd, new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                new Http<>(snapshotPath, cmd, TakeSnapshotResponse.class).call(new ReturnValueCompletion<TakeSnapshotResponse>(msg, trigger) {
+                    @Override
+                    public void success(TakeSnapshotResponse ret) {
+                        if (ret.isSuccess()) {
+                            extEmitter.afterTakeSnapshot((KVMHostInventory) getSelfInventory(), msg);
+                            reply.setNewVolumeInstallPath(ret.getNewVolumeInstallPath());
+                            reply.setSnapshotInstallPath(ret.getSnapshotInstallPath());
+                            reply.setSize(ret.getSize());
+                        } else {
+                            ErrorCode err = operr("operation error, because:%s", ret.getError());
+                            extEmitter.afterTakeSnapshotFailed((KVMHostInventory) getSelfInventory(), msg, err);
+                            reply.setError(err);
+                        }
+                        bus.reply(msg, reply);
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        extEmitter.afterTakeSnapshotFailed((KVMHostInventory) getSelfInventory(), msg, errorCode);
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
                 completion.done();
             }
-        });
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.done();
+            }
+        }).start();
     }
 
     private void migrateVm(final Iterator<MigrateStruct> it, final Completion completion) {

@@ -1,14 +1,12 @@
 package org.zstack.kvm;
 
+import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.TakeSnapshotOnHypervisorMsg;
-import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.volume.VolumeInventory;
-import org.zstack.kvm.KVMAgentCommands.AttachDataVolumeCmd;
 
 
 public interface KVMTakeSnapshotExtensionPoint {
-    KVMAgentCommands.TakeSnapshotCmd beforeTakeSnapshot(KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg, KVMAgentCommands.TakeSnapshotCmd cmd);
+    void beforeTakeSnapshot(KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg, KVMAgentCommands.TakeSnapshotCmd cmd, Completion completion);
 
     void afterTakeSnapshot(KVMHostInventory host, TakeSnapshotOnHypervisorMsg msg);
 
