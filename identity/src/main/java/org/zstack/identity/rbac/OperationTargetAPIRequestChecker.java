@@ -136,11 +136,17 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
 
             private void checkIfTheAccountCanAccessTheResource(APIMessage.FieldParam param) throws IllegalAccessException {
                 List<String> uuids = getResourceUuids(param);
-                Class resourceType = param.param.resourceType();
+                if (uuids.isEmpty()) {
+                    return;
+                }
 
-                List<String> auuids = sql("select ref.resourceUuid from AccountResourceRefVO ref where ((ref.ownerAccountUuid = :accountUuid and ref.resourceType = :rtype)" +
-                        " or ref.resourceUuid in (select sh.resourceUuid from SharedResourceVO sh where (sh.receiverAccountUuid = :accountUuid or sh.toPublic = 1) and sh.resourceType = :rtype))" +
-                        " and ref.resourceUuid in (:uuids)", String.class)
+                Class resourceType = param.param.resourceType();
+                String text = "select ref.resourceUuid from AccountResourceRefVO ref where" +
+                        " (ref.ownerAccountUuid = :accountUuid and ref.resourceType = :rtype)" +
+                        " or ref.resourceUuid in" +
+                        " (select sh.resourceUuid from SharedResourceVO sh where (sh.receiverAccountUuid = :accountUuid or sh.toPublic = 1) and sh.resourceType = :rtype)" +
+                        " and ref.resourceUuid in (:uuids)";
+                List<String> auuids = sql(text, String.class)
                         .param("accountUuid", message.getSession().getAccountUuid())
                         .param("rtype", acntMgr.getBaseResourceType(resourceType).getSimpleName())
                         .param("uuids", uuids)

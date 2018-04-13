@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetIAM2VirtualIDAPIPermissionAction extends AbstractAction {
+public class DeleteIAM2ProjectTemplateAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetIAM2VirtualIDAPIPermissionAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.iam2.api.GetIAM2VirtualIDAPIPermissionResult value;
+        public org.zstack.sdk.iam2.api.DeleteIAM2ProjectTemplateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,8 +25,8 @@ public class GetIAM2VirtualIDAPIPermissionAction extends AbstractAction {
         }
     }
 
-    @Param(required = false)
-    public java.util.List apisToCheck;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String uuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -37,6 +37,12 @@ public class GetIAM2VirtualIDAPIPermissionAction extends AbstractAction {
     @Param(required = true)
     public String sessionId;
 
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
+
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -45,8 +51,8 @@ public class GetIAM2VirtualIDAPIPermissionAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.iam2.api.GetIAM2VirtualIDAPIPermissionResult value = res.getResult(org.zstack.sdk.iam2.api.GetIAM2VirtualIDAPIPermissionResult.class);
-        ret.value = value == null ? new org.zstack.sdk.iam2.api.GetIAM2VirtualIDAPIPermissionResult() : value; 
+        org.zstack.sdk.iam2.api.DeleteIAM2ProjectTemplateResult value = res.getResult(org.zstack.sdk.iam2.api.DeleteIAM2ProjectTemplateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.iam2.api.DeleteIAM2ProjectTemplateResult() : value; 
 
         return ret;
     }
@@ -75,10 +81,10 @@ public class GetIAM2VirtualIDAPIPermissionAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/iam2/virtual-ids/api-permissions";
+        info.httpMethod = "DELETE";
+        info.path = "/iam2/projects/templates/{uuid}";
         info.needSession = true;
-        info.needPoll = false;
+        info.needPoll = true;
         info.parameterName = "";
         return info;
     }

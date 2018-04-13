@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetIAM2VirtualIDAPIPermissionAction extends AbstractAction {
+public class CreateIAM2ProjectTemplateFromProjectAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetIAM2VirtualIDAPIPermissionAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.iam2.api.GetIAM2VirtualIDAPIPermissionResult value;
+        public org.zstack.sdk.iam2.api.CreateIAM2ProjectTemplateFromProjectResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,8 +25,17 @@ public class GetIAM2VirtualIDAPIPermissionAction extends AbstractAction {
         }
     }
 
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String projectUuid;
+
     @Param(required = false)
-    public java.util.List apisToCheck;
+    public java.lang.String resourceUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -37,6 +46,12 @@ public class GetIAM2VirtualIDAPIPermissionAction extends AbstractAction {
     @Param(required = true)
     public String sessionId;
 
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
+
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -45,8 +60,8 @@ public class GetIAM2VirtualIDAPIPermissionAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.iam2.api.GetIAM2VirtualIDAPIPermissionResult value = res.getResult(org.zstack.sdk.iam2.api.GetIAM2VirtualIDAPIPermissionResult.class);
-        ret.value = value == null ? new org.zstack.sdk.iam2.api.GetIAM2VirtualIDAPIPermissionResult() : value; 
+        org.zstack.sdk.iam2.api.CreateIAM2ProjectTemplateFromProjectResult value = res.getResult(org.zstack.sdk.iam2.api.CreateIAM2ProjectTemplateFromProjectResult.class);
+        ret.value = value == null ? new org.zstack.sdk.iam2.api.CreateIAM2ProjectTemplateFromProjectResult() : value; 
 
         return ret;
     }
@@ -75,11 +90,11 @@ public class GetIAM2VirtualIDAPIPermissionAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/iam2/virtual-ids/api-permissions";
+        info.httpMethod = "POST";
+        info.path = "/iam2/projects/templates/from/projects/{projectUuid}";
         info.needSession = true;
-        info.needPoll = false;
-        info.parameterName = "";
+        info.needPoll = true;
+        info.parameterName = "params";
         return info;
     }
 

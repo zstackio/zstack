@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetIAM2VirtualIDAPIPermissionAction extends AbstractAction {
+public class QueryIAM2ProjectTemplateAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetIAM2VirtualIDAPIPermissionAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.iam2.api.GetIAM2VirtualIDAPIPermissionResult value;
+        public org.zstack.sdk.iam2.api.QueryIAM2ProjectTemplateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,17 +25,6 @@ public class GetIAM2VirtualIDAPIPermissionAction extends AbstractAction {
         }
     }
 
-    @Param(required = false)
-    public java.util.List apisToCheck;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = true)
-    public String sessionId;
 
 
     private Result makeResult(ApiResult res) {
@@ -45,8 +34,8 @@ public class GetIAM2VirtualIDAPIPermissionAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.iam2.api.GetIAM2VirtualIDAPIPermissionResult value = res.getResult(org.zstack.sdk.iam2.api.GetIAM2VirtualIDAPIPermissionResult.class);
-        ret.value = value == null ? new org.zstack.sdk.iam2.api.GetIAM2VirtualIDAPIPermissionResult() : value; 
+        org.zstack.sdk.iam2.api.QueryIAM2ProjectTemplateResult value = res.getResult(org.zstack.sdk.iam2.api.QueryIAM2ProjectTemplateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.iam2.api.QueryIAM2ProjectTemplateResult() : value; 
 
         return ret;
     }
@@ -76,7 +65,7 @@ public class GetIAM2VirtualIDAPIPermissionAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/iam2/virtual-ids/api-permissions";
+        info.path = "/iam2/projects/templates";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";
