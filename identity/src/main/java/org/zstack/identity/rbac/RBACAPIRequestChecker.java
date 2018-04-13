@@ -6,6 +6,7 @@ import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.PolicyInventory;
 import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.rbac.PolicyMatcher;
+import org.zstack.header.identity.rbac.RBACInfo;
 import org.zstack.header.identity.rbac.SuppressRBACCheck;
 import org.zstack.header.message.APIMessage;
 import org.zstack.identity.APIRequestChecker;
@@ -93,7 +94,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
 
     protected boolean evalAllowStatement(String as) {
         String ap = PolicyUtils.apiNamePatternFromAction(as);
-        return policyMatcher.match(ap, message.getClass().getName());
+        return policyMatcher.match(ap, message.getClass().getName()) && RBACInfo.checkAPIPermission(message);
     }
 
     protected boolean isPrincipalMatched(List<String> principals) {
