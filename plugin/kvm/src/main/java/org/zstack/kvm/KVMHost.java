@@ -950,13 +950,17 @@ public class KVMHost extends HostBase implements Host {
         cmd.setSrcPath(snapshot.getPrimaryStorageInstallPath());
         cmd.setVmUuid(volume.getVmInstanceUuid());
         cmd.setDeviceId(volume.getDeviceId());
+
+        extEmitter.beforeMergeSnapshot((KVMHostInventory) getSelfInventory(), msg, cmd);
         new Http<>(mergeSnapshotPath, cmd, MergeSnapshotRsp.class)
                 .call(new ReturnValueCompletion<MergeSnapshotRsp>(msg, completion) {
             @Override
             public void success(MergeSnapshotRsp ret) {
                 if (!ret.isSuccess()) {
                     reply.setError(operr("operation error, because:%s", ret.getError()));
+                    extEmitter.afterMergeSnapshotFailed((KVMHostInventory) getSelfInventory(), msg, cmd, reply.getError());
                 }
+                extEmitter.afterMergeSnapshot((KVMHostInventory) getSelfInventory(), msg, cmd);
                 bus.reply(msg, reply);
                 completion.done();
             }
@@ -964,6 +968,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void fail(ErrorCode errorCode) {
                 reply.setError(errorCode);
+                extEmitter.afterMergeSnapshotFailed((KVMHostInventory) getSelfInventory(), msg, cmd, reply.getError());
                 bus.reply(msg, reply);
                 completion.done();
             }
