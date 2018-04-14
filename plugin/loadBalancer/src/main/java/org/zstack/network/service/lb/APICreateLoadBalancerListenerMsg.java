@@ -33,8 +33,10 @@ public class APICreateLoadBalancerListenerMsg extends APICreateMessage implement
     private Integer instancePort;
     @APIParam(numberRange = {1, 65535})
     private int loadBalancerPort;
-    @APIParam(maxLength = 255, validValues = {LoadBalancerConstants.LB_PROTOCOL_TCP, LoadBalancerConstants.LB_PROTOCOL_HTTP}, required = false)
+    @APIParam(maxLength = 255, validValues = {LoadBalancerConstants.LB_PROTOCOL_TCP, LoadBalancerConstants.LB_PROTOCOL_HTTP, LoadBalancerConstants.LB_PROTOCOL_HTTPS}, required = false)
     private String protocol;
+    @APIParam(resourceType = CertificateVO.class, required = false)
+    private String certificateUuid;
 
     @Override
     public String getLoadBalancerUuid() {
@@ -84,7 +86,15 @@ public class APICreateLoadBalancerListenerMsg extends APICreateMessage implement
     public void setProtocol(String protocol) {
         this.protocol = protocol;
     }
- 
+
+    public String getCertificateUuid() {
+        return certificateUuid;
+    }
+
+    public void setCertificateUuid(String certificateUuid) {
+        this.certificateUuid = certificateUuid;
+    }
+
     public static APICreateLoadBalancerListenerMsg __example__() {
         APICreateLoadBalancerListenerMsg msg = new APICreateLoadBalancerListenerMsg();
 

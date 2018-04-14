@@ -66,6 +66,8 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
             validate((APIGetCandidateVmNicsForLoadBalancerMsg) msg);
         } else if(msg instanceof APIUpdateLoadBalancerListenerMsg){
             validate((APIUpdateLoadBalancerListenerMsg) msg);
+        } else if(msg instanceof APIChangeLoadBalancerListenerCertificateMsg){
+            validate((APIChangeLoadBalancerListenerCertificateMsg) msg);
         }
         return msg;
     }
@@ -259,6 +261,10 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
             }
 
         }
+
+        if (!msg.getProtocol().equals(LoadBalancerConstants.LB_PROTOCOL_HTTPS) && msg.getCertificateUuid() != null) {
+            throw new ApiMessageInterceptionException(argerr("ONLY https type listener can be created with a certificate"));
+        }
     }
 
     private void validate(APIDeleteLoadBalancerListenerMsg msg) {
@@ -279,5 +285,14 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
                         getLoadBalancerListenerUuid()).findValue();
         msg.setLoadBalancerUuid(loadBalancerUuid);
         bus.makeTargetServiceIdByResourceUuid(msg, LoadBalancerConstants.SERVICE_ID, loadBalancerUuid);
+    }
+
+    private void validate(APIChangeLoadBalancerListenerCertificateMsg msg) {
+        LoadBalancerListenerVO vo = dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class);
+        if (!vo.getProtocol().equals(LoadBalancerConstants.LB_PROTOCOL_HTTPS)) {
+            throw new ApiMessageInterceptionException(argerr("loadbalancer listener with type %s does not need certificate", vo.getProtocol()));
+        }
+
+        msg.setLoadBalancerUuid(vo.getLoadBalancerUuid());
     }
 }

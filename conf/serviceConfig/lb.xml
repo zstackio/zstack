@@ -52,4 +52,25 @@
     <message>
         <name>org.zstack.network.service.lb.APIUpdateLoadBalancerListenerMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.network.service.lb.APICreateCertificateMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.lb.APIDeleteCertificateMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.lb.APIUpdateCertificateMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.lb.APIChangeLoadBalancerListenerCertificateMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.lb.APIQueryCertificateMsg</name>
+        <serviceId>query</serviceId>
+    </message>
 </service>

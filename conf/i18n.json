@@ -6853,6 +6853,32 @@
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
+    "raw": "https type listener must be created with a certificate",
+    "en_US": "https type listener must be created with a certificate",
+    "zh_CN": "https类型的监听器必须配置证书",
+    "arguments": [],
+    "line": 266,
+    "fileName": "src/lb_https/zstack/./plugin/loadBalancer/src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
+  },
+  {
+    "raw": "ONLY https type listener can be created with a certificate",
+    "en_US": "ONLY https type listener can be created with a certificate",
+    "zh_CN": "只有https类型的监听器可以配置证书",
+    "arguments": [],
+    "line": 270,
+    "fileName": "src/lb_https/zstack/./plugin/loadBalancer/src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
+  },
+  {
+    "raw": "loadbalancer listener with type %s does not need certificate",
+    "en_US": "loadbalancer listener with type {0} does not need certificate",
+    "zh_CN": "[{0}]类型证书不需要证书",
+    "arguments": [
+      "vo.getProtocol()"
+    ],
+    "line": 297,
+    "fileName": "src/lb_https/zstack/./plugin/loadBalancer/src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
+  },
+  {
     "raw": "conflict loadBalancerPort[%s], a vip[uuid:%s] has used that port",
     "en_US": "conflict loadBalancerPort[{0}], a vip[uuid:{1}] has used that port",
     "zh_CN": "负载均衡端口[{0}]冲突，虚拟IP[uuid:{1}]已经占用这个端口",
