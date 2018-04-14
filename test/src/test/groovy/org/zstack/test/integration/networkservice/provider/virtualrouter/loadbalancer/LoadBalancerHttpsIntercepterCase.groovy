@@ -161,17 +161,6 @@ class LoadBalancerHttpsIntercepterCase extends SubCase{
             vipUuid = vip.uuid
         }
 
-        expect(AssertionError.class) {
-            createLoadBalancerListener {
-                protocol = "http"
-                loadBalancerUuid = lb.uuid
-                loadBalancerPort = 44
-                instancePort = 22
-                name = "test-listener"
-                certificateUuid = cerInv.uuid
-            }
-        }
-
         LoadBalancerListenerInventory listener = createLoadBalancerListener {
             protocol = "http"
             loadBalancerUuid = lb.uuid
@@ -181,7 +170,7 @@ class LoadBalancerHttpsIntercepterCase extends SubCase{
         }
 
         expect(AssertionError.class) {
-            changeLoadBalancerListenerCertificate {
+            addCertificateToLoadBalancerListener {
                 listenerUuid = listener.uuid
                 certificateUuid = cerInv.uuid
             }

@@ -1,22 +1,22 @@
 package org.zstack.network.service.lb
 
-import org.zstack.network.service.lb.APIChangeLoadBalancerListenerCertificateEvent
+import org.zstack.network.service.lb.APIRemoveCertificateFromLoadBalancerListenerEvent
 
 doc {
-    title "ChangeLoadBalancerListenerCertificate"
+    title "RemoveCertificateFromLoadBalancerListener"
 
     category "loadBalancer"
 
-    desc """更新负载均衡监听器证书"""
+    desc """从负载均衡移除证书"""
 
     rest {
         request {
-			url "POST /v1/load-balancers/listeners/{listenerUuid}/certificate"
+			url "DELETE /v1/load-balancers/listeners/{listenerUuid}/certificate"
 
 
             header(Authorization: 'OAuth the-session-uuid')
 
-            clz APIChangeLoadBalancerListenerCertificateMsg.class
+            clz APIRemoveCertificateFromLoadBalancerListenerMsg.class
 
             desc """"""
             
@@ -24,7 +24,7 @@ doc {
 
 				column {
 					name "certificateUuid"
-					enclosedIn "params"
+					enclosedIn ""
 					desc ""
 					location "body"
 					type "String"
@@ -34,7 +34,7 @@ doc {
 				}
 				column {
 					name "listenerUuid"
-					enclosedIn "params"
+					enclosedIn ""
 					desc ""
 					location "url"
 					type "String"
@@ -66,7 +66,7 @@ doc {
         }
 
         response {
-            clz APIChangeLoadBalancerListenerCertificateEvent.class
+            clz APIRemoveCertificateFromLoadBalancerListenerEvent.class
         }
     }
 }

@@ -271,7 +271,26 @@ class CreateLoadBalancerHttpsCase extends SubCase{
             return rsp
         }
 
-        changeLoadBalancerListenerCertificate {
+        expect(AssertionError.class) {
+            removeCertificateFromLoadBalancerListener {
+                listenerUuid = listener.uuid
+                certificateUuid = cerInv2.uuid
+            }
+        }
+
+        removeCertificateFromLoadBalancerListener {
+            listenerUuid = listener.uuid
+            certificateUuid = cerInv.uuid
+        }
+
+        expect(AssertionError.class) {
+            removeCertificateFromLoadBalancerListener {
+                listenerUuid = listener.uuid
+                certificateUuid = cerInv.uuid
+            }
+        }
+
+        addCertificateToLoadBalancerListener {
             listenerUuid = listener.uuid
             certificateUuid = cerInv2.uuid
         }

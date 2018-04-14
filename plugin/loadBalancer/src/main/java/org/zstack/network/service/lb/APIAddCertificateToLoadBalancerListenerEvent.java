@@ -1,6 +1,5 @@
 package org.zstack.network.service.lb;
 
-import org.zstack.core.Platform;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
 
@@ -10,13 +9,13 @@ import java.util.Arrays;
  * Created by shixin on 03/22/2018.
  */
 @RestResponse(allTo = "inventory")
-public class APIChangeLoadBalancerListenerCertificateEvent extends APIEvent {
+public class APIAddCertificateToLoadBalancerListenerEvent extends APIEvent {
     private LoadBalancerListenerInventory inventory;
 
-    public APIChangeLoadBalancerListenerCertificateEvent() {
+    public APIAddCertificateToLoadBalancerListenerEvent() {
     }
 
-    public APIChangeLoadBalancerListenerCertificateEvent(String apiId) {
+    public APIAddCertificateToLoadBalancerListenerEvent(String apiId) {
         super(apiId);
     }
 
@@ -28,8 +27,8 @@ public class APIChangeLoadBalancerListenerCertificateEvent extends APIEvent {
         this.inventory = inventory;
     }
  
-    public static APIChangeLoadBalancerListenerCertificateEvent __example__() {
-        APIChangeLoadBalancerListenerCertificateEvent event = new APIChangeLoadBalancerListenerCertificateEvent();
+    public static APIAddCertificateToLoadBalancerListenerEvent __example__() {
+        APIAddCertificateToLoadBalancerListenerEvent event = new APIAddCertificateToLoadBalancerListenerEvent();
         LoadBalancerListenerInventory listener = new LoadBalancerListenerInventory();
         LoadBalancerListenerVmNicRefInventory lvnr = new LoadBalancerListenerVmNicRefInventory();
         LoadBalancerListenerCertificateRefInventory ref = new LoadBalancerListenerCertificateRefInventory();

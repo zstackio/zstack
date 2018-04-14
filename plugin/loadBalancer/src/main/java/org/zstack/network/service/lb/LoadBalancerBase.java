@@ -7,7 +7,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -36,13 +35,11 @@ import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.operr;
 
-import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -535,8 +532,10 @@ public class LoadBalancerBase {
             handle((APIUpdateLoadBalancerMsg) msg);
         } else if (msg instanceof APIUpdateLoadBalancerListenerMsg) {
             handle((APIUpdateLoadBalancerListenerMsg) msg);
-        } else if (msg instanceof APIChangeLoadBalancerListenerCertificateMsg) {
-            handle((APIChangeLoadBalancerListenerCertificateMsg) msg);
+        } else if (msg instanceof APIAddCertificateToLoadBalancerListenerMsg) {
+            handle((APIAddCertificateToLoadBalancerListenerMsg) msg);
+        } else if (msg instanceof APIRemoveCertificateFromLoadBalancerListenerMsg) {
+            handle((APIRemoveCertificateFromLoadBalancerListenerMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -1253,20 +1252,60 @@ public class LoadBalancerBase {
         });
     }
 
-    private void handle(APIChangeLoadBalancerListenerCertificateMsg msg) {
-        APIChangeLoadBalancerListenerCertificateEvent evt = new APIChangeLoadBalancerListenerCertificateEvent(msg.getId());
+    private void handle(APIAddCertificateToLoadBalancerListenerMsg msg) {
+        APIAddCertificateToLoadBalancerListenerEvent evt = new APIAddCertificateToLoadBalancerListenerEvent(msg.getId());
 
         LoadBalancerListenerCertificateRefVO ref = Q.New(LoadBalancerListenerCertificateRefVO.class)
-                .eq(LoadBalancerListenerCertificateRefVO_.listenerUuid, msg.getListenerUuid()).limit(1).find();
-        LoadBalancerListenerCertificateRefVO original_ref = ref;
-        if (ref == null) {
+                .eq(LoadBalancerListenerCertificateRefVO_.listenerUuid, msg.getListenerUuid())
+                .eq(LoadBalancerListenerCertificateRefVO_.certificateUuid, msg.getCertificateUuid()).limit(1).find();
+        if (ref != null) {
+            LoadBalancerListenerInventory inv = LoadBalancerListenerInventory.valueOf(dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class));
+            evt.setInventory(inv);
+            bus.publish(evt);
+            return;
+        } else {
             ref = new LoadBalancerListenerCertificateRefVO();
             ref.setListenerUuid(msg.getListenerUuid());
             ref.setCertificateUuid(msg.getCertificateUuid());
             dbf.persist(ref);
+        }
+
+        final LoadBalancerListenerCertificateRefVO original_ref = ref;
+        LoadBalancerChangeCertificateMsg cmsg = new LoadBalancerChangeCertificateMsg();
+        cmsg.setListenerUuid(msg.getListenerUuid());
+        cmsg.setLoadBalancerUuid(msg.getLoadBalancerUuid());
+        cmsg.setCertificateUuid(msg.getCertificateUuid());
+        bus.makeLocalServiceId(cmsg, LoadBalancerConstants.SERVICE_ID);
+        bus.send(cmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()){
+                    LoadBalancerListenerInventory inv = LoadBalancerListenerInventory.valueOf(dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class));
+                    evt.setInventory(inv);
+                    bus.publish(evt);
+                } else {
+                    dbf.remove(original_ref);
+                    evt.setError(reply.getError());
+                    bus.publish(evt);
+                }
+            }
+        });
+    }
+
+    private void handle(APIRemoveCertificateFromLoadBalancerListenerMsg msg) {
+        APIRemoveCertificateFromLoadBalancerListenerEvent evt = new APIRemoveCertificateFromLoadBalancerListenerEvent(msg.getId());
+
+        LoadBalancerListenerCertificateRefVO ref = Q.New(LoadBalancerListenerCertificateRefVO.class)
+                .eq(LoadBalancerListenerCertificateRefVO_.listenerUuid, msg.getListenerUuid())
+                .eq(LoadBalancerListenerCertificateRefVO_.certificateUuid, msg.getCertificateUuid()).limit(1).find();
+        final LoadBalancerListenerCertificateRefVO original_ref = ref;
+        if (ref == null) {
+            LoadBalancerListenerInventory inv = LoadBalancerListenerInventory.valueOf(dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class));
+            evt.setInventory(inv);
+            bus.publish(evt);
+            return;
         } else {
-            ref.setCertificateUuid(msg.getCertificateUuid());
-            dbf.update(ref);
+            dbf.remove(ref);
         }
 
         LoadBalancerChangeCertificateMsg cmsg = new LoadBalancerChangeCertificateMsg();
@@ -1282,12 +1321,7 @@ public class LoadBalancerBase {
                     evt.setInventory(inv);
                     bus.publish(evt);
                 } else {
-                    if (original_ref == null) {
-                        SQL.New(LoadBalancerListenerCertificateRefVO.class).
-                                eq(LoadBalancerListenerCertificateRefVO_.listenerUuid, msg.getListenerUuid()).delete();
-                    } else {
-                        dbf.update(original_ref);
-                    }
+                    dbf.persist(original_ref);
                     evt.setError(reply.getError());
                     bus.publish(evt);
                 }
