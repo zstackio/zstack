@@ -3,13 +3,13 @@ package org.zstack.header.identity
 import org.zstack.header.core.StaticInit
 import org.zstack.header.identity.role.api.APIAttachRoleToAccountMsg
 import org.zstack.header.identity.role.api.APIDetachRoleFromAccountMsg
-import org.zstack.header.message.APIMessage
 
 import static org.zstack.header.identity.rbac.RBACInfo.rbac
+import static org.zstack.header.identity.rbac.RoleInfo.role
 
 @StaticInit
 static void init() {
-    rbac {
+    def info = rbac {
         adminOnlyAPIs(
                 APICreateAccountMsg.class.name,
                 APIUpdateAccountMsg.class.name,
@@ -22,12 +22,15 @@ static void init() {
                 APIDetachRoleFromAccountMsg.class.name
         )
 
-        def s = normalAPIs("org.zstack.header.identity.**")
+        normalAPIs("org.zstack.header.identity.**")
 
+    }
+
+    role {
         normalRole {
             uuid = "acf2695d8c7c4c5587f5b136098fe45e"
             name = "identity role"
-            allowedActions = s
+            allowedActions = info.normalAPIs
         }
     }
 }

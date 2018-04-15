@@ -10,7 +10,6 @@ class RBACInfo {
     private static final CLogger logger = Utils.getLogger(RBACInfo.class)
 
     static List<RBACInfo> infos = []
-    static List<RoleInfo> roleInfos = []
     static Map<Class, List<APIPermissionChecker>> apiPermissionCheckers = [:]
 
     private static PolicyMatcher matcher = new PolicyMatcher()
@@ -45,7 +44,7 @@ class RBACInfo {
         return infos.any { info -> info.adminOnlyAPIs.any { matcher.match(it, apiName) } }
     }
 
-    static void rbac(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = RBACInfo.class) Closure c) {
+    static RBACInfo rbac(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = RBACInfo.class) Closure c) {
         def info = new RBACInfo()
         c.delegate = info
         c.resolveStrategy = Closure.DELEGATE_FIRST
@@ -54,6 +53,8 @@ class RBACInfo {
         info = info.flatten()
         infos.each { interFlatten(info, it) }
         infos.add(info)
+
+        return info
     }
 
     private static class FlattenResult {
@@ -143,26 +144,6 @@ class RBACInfo {
         List<String> lst = (apis as Set).collect { it.name }
         _normalAPIs.addAll(lst)
         return lst
-    }
-
-    void adminRole(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = RoleInfo.class) Closure c) {
-        RoleInfo info = new RoleInfo(adminOnly: true)
-        c.delegate = info
-        c.resolveStrategy = Closure.DELEGATE_FIRST
-        c()
-
-        assert info.uuid != null : "uuid field must be set"
-        roleInfos.add(info)
-    }
-
-    void normalRole(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = RoleInfo.class) Closure c) {
-        RoleInfo info = new RoleInfo(adminOnly: false)
-        c.delegate = info
-        c.resolveStrategy = Closure.DELEGATE_FIRST
-        c()
-
-        assert info.uuid != null : "uuid field must be set"
-        roleInfos.add(info)
     }
 
     Set<String> getAdminOnlyAPIs() {

@@ -65,7 +65,7 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
     static {
         BeanUtils.reflections.getSubTypesOf(InternalPolicy.class).forEach(clz -> {
             try {
-                InternalPolicy p = clz.newInstance();
+                InternalPolicy p = clz.getConstructor().newInstance();
                 internalPolices.addAll(p.getPolices());
             } catch (CloudRuntimeException e) {
                 throw e;
@@ -142,13 +142,13 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
         new SQLBatch() {
             @Override
             protected void scripts() {
-                RBACInfo.getRoleInfos().forEach(role -> {
+                RoleInfo.getRoleInfos().forEach(role -> {
                     if (!q(SystemRoleVO.class).eq(SystemRoleVO_.uuid, role.getUuid()).isExists()) {
                         SystemRoleVO rvo = new SystemRoleVO();
                         rvo.setUuid(role.getUuid());
                         rvo.setName(String.format("system: %s", role.getName()));
                         rvo.setSystemRoleType(role.getAdminOnly() ? SystemRoleType.Admin : SystemRoleType.Normal);
-                        rvo.setType(RoleType.System);
+                        rvo.setType(RoleType.Predefined);
                         persist(rvo);
 
                         role.toStatements().forEach(s -> {
