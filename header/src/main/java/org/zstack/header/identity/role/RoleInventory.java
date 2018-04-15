@@ -1,6 +1,5 @@
 package org.zstack.header.identity.role;
 
-import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.search.Inventory;
 
 import java.sql.Timestamp;
@@ -13,6 +12,7 @@ public class RoleInventory {
     private String uuid;
     private String name;
     private String description;
+    private RoleType type;
     private Timestamp createDate;
     private Timestamp lastOpDate;
     private List<RolePolicyStatementInventory> statements;
@@ -21,6 +21,7 @@ public class RoleInventory {
         RoleInventory inv = new RoleInventory();
         inv.uuid = vo.getUuid();
         inv.name = vo.getName();
+        inv.type = vo.getType();
         inv.description = vo.getDescription();
         inv.createDate = vo.getCreateDate();
         inv.lastOpDate = vo.getLastOpDate();
@@ -30,6 +31,14 @@ public class RoleInventory {
 
     public static List<RoleInventory> valueOf(Collection<RoleVO> vos) {
         return vos.stream().map(RoleInventory::valueOf).collect(Collectors.toList());
+    }
+
+    public RoleType getType() {
+        return type;
+    }
+
+    public void setType(RoleType type) {
+        this.type = type;
     }
 
     public List<RolePolicyStatementInventory> getStatements() {

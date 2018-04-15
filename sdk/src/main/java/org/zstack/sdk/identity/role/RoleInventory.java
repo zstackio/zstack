@@ -1,6 +1,6 @@
 package org.zstack.sdk.identity.role;
 
-
+import org.zstack.sdk.identity.role.RoleType;
 
 public class RoleInventory  {
 
@@ -26,6 +26,14 @@ public class RoleInventory  {
     }
     public java.lang.String getDescription() {
         return this.description;
+    }
+
+    public RoleType type;
+    public void setType(RoleType type) {
+        this.type = type;
+    }
+    public RoleType getType() {
+        return this.type;
     }
 
     public java.sql.Timestamp createDate;
