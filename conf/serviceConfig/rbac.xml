@@ -11,6 +11,11 @@
     </message>
 
     <message>
+        <name>org.zstack.header.identity.role.api.APIQueryRoleMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
         <name>org.zstack.header.identity.role.api.APIAttachPolicyToRoleMsg</name>
     </message>
     
