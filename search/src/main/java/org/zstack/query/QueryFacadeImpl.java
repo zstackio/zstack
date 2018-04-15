@@ -226,7 +226,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             Method replySetter = getReplySetter(at);
             ZQLQueryResult result = queryUseZQL(msg, inventoryClass);
             if (result.getTotal() != null) {
-                reply.setTotal(reply.getTotal());
+                reply.setTotal(result.getTotal());
             }
             if (result.getInventories() != null) {
                 replySetter.invoke(reply, result.getInventories());
