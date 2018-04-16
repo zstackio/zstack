@@ -1070,7 +1070,6 @@ public class KVMHost extends HostBase implements Host {
                             extEmitter.afterTakeSnapshotFailed((KVMHostInventory) getSelfInventory(), msg, cmd, ret, err);
                             reply.setError(err);
                         }
-                        bus.reply(msg, reply);
                         trigger.next();
                     }
 
@@ -1078,7 +1077,6 @@ public class KVMHost extends HostBase implements Host {
                     public void fail(ErrorCode errorCode) {
                         extEmitter.afterTakeSnapshotFailed((KVMHostInventory) getSelfInventory(), msg, cmd, null, errorCode);
                         reply.setError(errorCode);
-                        bus.reply(msg, reply);
                         trigger.fail(errorCode);
                     }
                 });
@@ -1086,11 +1084,14 @@ public class KVMHost extends HostBase implements Host {
         }).done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
+                bus.reply(msg, reply);
                 completion.done();
             }
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
+                reply.setError(errCode);
+                bus.reply(msg, reply);
                 completion.done();
             }
         }).start();
