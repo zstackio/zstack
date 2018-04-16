@@ -24,7 +24,7 @@ doc {
 
 				column {
 					name "name"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "资源名称"
 					location "body"
 					type "String"
@@ -34,7 +34,7 @@ doc {
 				}
 				column {
 					name "description"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "资源的详细描述"
 					location "body"
 					type "String"
@@ -44,7 +44,7 @@ doc {
 				}
 				column {
 					name "statements"
-					enclosedIn ""
+					enclosedIn "params"
 					desc ""
 					location "body"
 					type "List"
@@ -54,7 +54,7 @@ doc {
 				}
 				column {
 					name "policyUuids"
-					enclosedIn ""
+					enclosedIn "params"
 					desc ""
 					location "body"
 					type "List"
@@ -64,7 +64,7 @@ doc {
 				}
 				column {
 					name "resourceUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc ""
 					location "body"
 					type "String"

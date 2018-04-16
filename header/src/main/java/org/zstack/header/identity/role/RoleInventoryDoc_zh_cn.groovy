@@ -1,5 +1,6 @@
 package org.zstack.header.identity.role
 
+import org.zstack.header.identity.role.RoleType
 import java.sql.Timestamp
 import java.sql.Timestamp
 import org.zstack.header.identity.role.RolePolicyStatementInventory
@@ -25,6 +26,14 @@ doc {
 		desc "资源的详细描述"
 		type "String"
 		since "0.6"
+	}
+	ref {
+		name "type"
+		path "org.zstack.header.identity.role.RoleInventory.type"
+		desc "null"
+		type "RoleType"
+		since "0.6"
+		clz RoleType.class
 	}
 	field {
 		name "createDate"

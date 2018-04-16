@@ -78,7 +78,7 @@ docpremium() {
     else
         cd test
     fi
-    mvn test -Dtest=TestGenerateDocTemplate
+    mvn test -Dtest=TestGenerateDocTemplate -Drepair=true
     cd - > /dev/null
 }
 
