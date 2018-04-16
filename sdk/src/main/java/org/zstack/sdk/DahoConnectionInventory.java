@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class DahoConnectionInventory  {
 
     public java.lang.String uuid;

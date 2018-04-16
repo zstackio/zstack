@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS `DahoConnectionVO` (
 CREATE TABLE IF NOT EXISTS `DahoVllsVO` (
 	  `uuid` varchar(32) UNIQUE NOT NULL,
 	  `vllId` varchar(64) NOT NULL,
+	  `vlanId` int(32) NOT NULL,
 	  `name` varchar(32) NOT NULL,
 	  `description` varchar(128) DEFAULT NULL,
 	  `bandwidthMbps` bigint unsigned NOT NULL,

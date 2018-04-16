@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteAliyunRouterInterfaceRemoteAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteAliyunRouterInterfaceRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteAliyunRouterInterfaceRemoteResult value;
+        public org.zstack.sdk.DeleteAliyunRouterInterfaceRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -56,8 +57,8 @@ public class DeleteAliyunRouterInterfaceRemoteAction extends AbstractAction {
             return ret;
         }
         
-        DeleteAliyunRouterInterfaceRemoteResult value = res.getResult(DeleteAliyunRouterInterfaceRemoteResult.class);
-        ret.value = value == null ? new DeleteAliyunRouterInterfaceRemoteResult() : value; 
+        org.zstack.sdk.DeleteAliyunRouterInterfaceRemoteResult value = res.getResult(org.zstack.sdk.DeleteAliyunRouterInterfaceRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteAliyunRouterInterfaceRemoteResult() : value; 
 
         return ret;
     }

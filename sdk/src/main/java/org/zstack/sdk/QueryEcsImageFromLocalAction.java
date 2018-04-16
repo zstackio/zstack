@@ -12,7 +12,7 @@ public class QueryEcsImageFromLocalAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryEcsImageFromLocalResult value;
+        public org.zstack.sdk.QueryEcsImageFromLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -34,8 +34,8 @@ public class QueryEcsImageFromLocalAction extends QueryAction {
             return ret;
         }
         
-        QueryEcsImageFromLocalResult value = res.getResult(QueryEcsImageFromLocalResult.class);
-        ret.value = value == null ? new QueryEcsImageFromLocalResult() : value; 
+        org.zstack.sdk.QueryEcsImageFromLocalResult value = res.getResult(org.zstack.sdk.QueryEcsImageFromLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryEcsImageFromLocalResult() : value; 
 
         return ret;
     }

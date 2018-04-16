@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteDahoCloudConnectionAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteDahoCloudConnectionAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteDahoCloudConnectionResult value;
+        public org.zstack.sdk.DeleteDahoCloudConnectionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DeleteDahoCloudConnectionAction extends AbstractAction {
             return ret;
         }
         
-        DeleteDahoCloudConnectionResult value = res.getResult(DeleteDahoCloudConnectionResult.class);
-        ret.value = value == null ? new DeleteDahoCloudConnectionResult() : value; 
+        org.zstack.sdk.DeleteDahoCloudConnectionResult value = res.getResult(org.zstack.sdk.DeleteDahoCloudConnectionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteDahoCloudConnectionResult() : value; 
 
         return ret;
     }

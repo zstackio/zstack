@@ -12,7 +12,7 @@ public class QueryHybridKeySecretAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public QueryHybridKeySecretResult value;
+        public org.zstack.sdk.QueryHybridKeySecretResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -34,8 +34,8 @@ public class QueryHybridKeySecretAction extends QueryAction {
             return ret;
         }
         
-        QueryHybridKeySecretResult value = res.getResult(QueryHybridKeySecretResult.class);
-        ret.value = value == null ? new QueryHybridKeySecretResult() : value; 
+        org.zstack.sdk.QueryHybridKeySecretResult value = res.getResult(org.zstack.sdk.QueryHybridKeySecretResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryHybridKeySecretResult() : value; 
 
         return ret;
     }

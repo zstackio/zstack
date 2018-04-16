@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class DahoVllVbrRefInventory  {
 
     public java.lang.Long id;

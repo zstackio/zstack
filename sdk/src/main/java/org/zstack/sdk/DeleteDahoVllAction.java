@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteDahoVllAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class DeleteDahoVllAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public DeleteDahoVllResult value;
+        public org.zstack.sdk.DeleteDahoVllResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class DeleteDahoVllAction extends AbstractAction {
             return ret;
         }
         
-        DeleteDahoVllResult value = res.getResult(DeleteDahoVllResult.class);
-        ret.value = value == null ? new DeleteDahoVllResult() : value; 
+        org.zstack.sdk.DeleteDahoVllResult value = res.getResult(org.zstack.sdk.DeleteDahoVllResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteDahoVllResult() : value; 
 
         return ret;
     }

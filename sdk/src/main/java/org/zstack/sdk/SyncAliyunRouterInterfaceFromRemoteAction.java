@@ -12,7 +12,7 @@ public class SyncAliyunRouterInterfaceFromRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SyncAliyunRouterInterfaceFromRemoteResult value;
+        public org.zstack.sdk.SyncAliyunRouterInterfaceFromRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -54,8 +54,8 @@ public class SyncAliyunRouterInterfaceFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        SyncAliyunRouterInterfaceFromRemoteResult value = res.getResult(SyncAliyunRouterInterfaceFromRemoteResult.class);
-        ret.value = value == null ? new SyncAliyunRouterInterfaceFromRemoteResult() : value; 
+        org.zstack.sdk.SyncAliyunRouterInterfaceFromRemoteResult value = res.getResult(org.zstack.sdk.SyncAliyunRouterInterfaceFromRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SyncAliyunRouterInterfaceFromRemoteResult() : value; 
 
         return ret;
     }

@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class SyncDahoDataCenterConnectionAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class SyncDahoDataCenterConnectionAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public SyncDahoDataCenterConnectionResult value;
+        public org.zstack.sdk.SyncDahoDataCenterConnectionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -50,8 +51,8 @@ public class SyncDahoDataCenterConnectionAction extends AbstractAction {
             return ret;
         }
         
-        SyncDahoDataCenterConnectionResult value = res.getResult(SyncDahoDataCenterConnectionResult.class);
-        ret.value = value == null ? new SyncDahoDataCenterConnectionResult() : value; 
+        org.zstack.sdk.SyncDahoDataCenterConnectionResult value = res.getResult(org.zstack.sdk.SyncDahoDataCenterConnectionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SyncDahoDataCenterConnectionResult() : value; 
 
         return ret;
     }

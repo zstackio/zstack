@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class StartConnectionBetweenAliyunRouterInterfaceAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class StartConnectionBetweenAliyunRouterInterfaceAction extends AbstractA
 
     public static class Result {
         public ErrorCode error;
-        public StartConnectionBetweenAliyunRouterInterfaceResult value;
+        public org.zstack.sdk.StartConnectionBetweenAliyunRouterInterfaceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -53,8 +54,8 @@ public class StartConnectionBetweenAliyunRouterInterfaceAction extends AbstractA
             return ret;
         }
         
-        StartConnectionBetweenAliyunRouterInterfaceResult value = res.getResult(StartConnectionBetweenAliyunRouterInterfaceResult.class);
-        ret.value = value == null ? new StartConnectionBetweenAliyunRouterInterfaceResult() : value; 
+        org.zstack.sdk.StartConnectionBetweenAliyunRouterInterfaceResult value = res.getResult(org.zstack.sdk.StartConnectionBetweenAliyunRouterInterfaceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.StartConnectionBetweenAliyunRouterInterfaceResult() : value; 
 
         return ret;
     }

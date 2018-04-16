@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class SyncDahoVllResult {
-    public java.util.List<DahoVllsInventory> inventories;
-    public void setInventories(java.util.List<DahoVllsInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<DahoVllsInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

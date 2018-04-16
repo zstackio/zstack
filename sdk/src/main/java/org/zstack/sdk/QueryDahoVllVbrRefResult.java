@@ -1,11 +1,13 @@
 package org.zstack.sdk;
 
+
+
 public class QueryDahoVllVbrRefResult {
-    public java.util.List<DahoVllVbrRefInventory> inventories;
-    public void setInventories(java.util.List<DahoVllVbrRefInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<DahoVllVbrRefInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 
