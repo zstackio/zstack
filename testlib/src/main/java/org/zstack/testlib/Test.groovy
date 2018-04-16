@@ -115,6 +115,7 @@ abstract class Test implements ApiHelper, Retry {
         currentEnvSpec.session = s
         c()
         currentEnvSpec.session = backup
+        logOut { sessionUuid = s.uuid }
     }
 
     protected void onCleanExecute(Closure c) {
