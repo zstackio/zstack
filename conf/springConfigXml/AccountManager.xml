@@ -19,6 +19,12 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="RBACApiInterceptor" class="org.zstack.identity.rbac.RBACApiInterceptor">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor"/>
+        </zstack:plugin>
+    </bean>
+
     <bean id="IdentityZQLExtension" class="org.zstack.identity.IdentityZQLExtension">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.zql.MarshalZQLASTTreeExtensionPoint"/>

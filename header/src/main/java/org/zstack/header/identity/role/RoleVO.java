@@ -1,6 +1,7 @@
 package org.zstack.header.identity.role;
 
 import org.zstack.header.identity.HasAccountResourceRef;
+import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.vo.ResourceVO;
 
 import javax.persistence.*;
@@ -12,7 +13,7 @@ import java.util.Set;
 @Entity
 @Table
 @HasAccountResourceRef
-public class RoleVO extends ResourceVO {
+public class RoleVO extends ResourceVO implements OwnedByAccount {
     @Column
     private String name;
     @Column
@@ -28,9 +29,22 @@ public class RoleVO extends ResourceVO {
     @JoinColumn(name = "roleUuid", insertable = false, updatable = false)
     private Set<RolePolicyStatementVO> statements = new HashSet<>();
 
+    @Transient
+    private String accountUuid;
+
     @PreUpdate
     private void preUpdate() {
         lastOpDate = null;
+    }
+
+    @Override
+    public String getAccountUuid() {
+        return accountUuid;
+    }
+
+    @Override
+    public void setAccountUuid(String accountUuid) {
+        this.accountUuid = accountUuid;
     }
 
     public Set<RolePolicyStatementVO> getStatements() {

@@ -102,6 +102,7 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
                 vo.setName(msg.getName());
                 vo.setDescription(msg.getDescription());
                 vo.setType(RoleType.Customized);
+                vo.setAccountUuid(msg.getSession().getAccountUuid());
                 persist(vo);
 
                 String roleUuid = vo.getUuid();
@@ -147,10 +148,18 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
                     if (!q(SystemRoleVO.class).eq(SystemRoleVO_.uuid, role.getUuid()).isExists()) {
                         SystemRoleVO rvo = new SystemRoleVO();
                         rvo.setUuid(role.getUuid());
-                        rvo.setName(String.format("system: %s", role.getName()));
+                        rvo.setName(String.format("predefined: %s", role.getName()));
                         rvo.setSystemRoleType(role.getAdminOnly() ? SystemRoleType.Admin : SystemRoleType.Normal);
                         rvo.setType(RoleType.Predefined);
+                        rvo.setAccountUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
                         persist(rvo);
+
+                        SharedResourceVO sh = new SharedResourceVO();
+                        sh.setOwnerAccountUuid(rvo.getAccountUuid());
+                        sh.setResourceType(RoleVO.class.getSimpleName());
+                        sh.setResourceUuid(rvo.getUuid());
+                        sh.setToPublic(true);
+                        persist(sh);
 
                         role.toStatements().forEach(s -> {
                             RolePolicyStatementVO rp = new RolePolicyStatementVO();
