@@ -1021,6 +1021,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                         if (StringUtils.isNotEmpty(re.getFormat())) {
                                             vo.setFormat(re.getFormat());
                                         }
+                                        if (vo.getFormat().equals(ImageConstant.ISO_FORMAT_STRING)) {
+                                            vo.setMediaType(ImageMediaType.ISO);
+                                        }
                                         dbf.update(vo);
                                     }
 
