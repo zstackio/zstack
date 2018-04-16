@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 import org.zstack.sdk.LoadBalancerListenerInventory;
 
-public class ChangeLoadBalancerListenerCertificateResult {
+public class AddCertificateToLoadBalancerListenerResult {
     public LoadBalancerListenerInventory inventory;
     public void setInventory(LoadBalancerListenerInventory inventory) {
         this.inventory = inventory;

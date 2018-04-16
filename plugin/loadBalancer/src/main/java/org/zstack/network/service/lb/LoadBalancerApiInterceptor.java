@@ -15,7 +15,6 @@ import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
-import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO_;
 import org.zstack.network.service.vip.VipVO;
@@ -66,8 +65,10 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
             validate((APIGetCandidateVmNicsForLoadBalancerMsg) msg);
         } else if(msg instanceof APIUpdateLoadBalancerListenerMsg){
             validate((APIUpdateLoadBalancerListenerMsg) msg);
-        } else if(msg instanceof APIChangeLoadBalancerListenerCertificateMsg){
-            validate((APIChangeLoadBalancerListenerCertificateMsg) msg);
+        } else if(msg instanceof APIAddCertificateToLoadBalancerListenerMsg){
+            validate((APIAddCertificateToLoadBalancerListenerMsg) msg);
+        } else if(msg instanceof APIRemoveCertificateFromLoadBalancerListenerMsg){
+            validate((APIRemoveCertificateFromLoadBalancerListenerMsg) msg);
         }
         return msg;
     }
@@ -261,10 +262,6 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
             }
 
         }
-
-        if (!msg.getProtocol().equals(LoadBalancerConstants.LB_PROTOCOL_HTTPS) && msg.getCertificateUuid() != null) {
-            throw new ApiMessageInterceptionException(argerr("ONLY https type listener can be created with a certificate"));
-        }
     }
 
     private void validate(APIDeleteLoadBalancerListenerMsg msg) {
@@ -287,12 +284,28 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
         bus.makeTargetServiceIdByResourceUuid(msg, LoadBalancerConstants.SERVICE_ID, loadBalancerUuid);
     }
 
-    private void validate(APIChangeLoadBalancerListenerCertificateMsg msg) {
+    private void validate(APIAddCertificateToLoadBalancerListenerMsg msg) {
         LoadBalancerListenerVO vo = dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class);
         if (!vo.getProtocol().equals(LoadBalancerConstants.LB_PROTOCOL_HTTPS)) {
             throw new ApiMessageInterceptionException(argerr("loadbalancer listener with type %s does not need certificate", vo.getProtocol()));
         }
 
+        if (Q.New(LoadBalancerListenerCertificateRefVO.class).eq(LoadBalancerListenerCertificateRefVO_.listenerUuid, msg.getListenerUuid()).isExists()) {
+            throw new ApiMessageInterceptionException(argerr("loadbalancer listener [uuid:%s] already had certificate",
+                    msg.getCertificateUuid(), msg.getListenerUuid()));
+        }
+
+        msg.setLoadBalancerUuid(vo.getLoadBalancerUuid());
+    }
+
+    private void validate(APIRemoveCertificateFromLoadBalancerListenerMsg msg) {
+        if (!Q.New(LoadBalancerListenerCertificateRefVO.class).eq(LoadBalancerListenerCertificateRefVO_.listenerUuid, msg.getListenerUuid())
+                .eq(LoadBalancerListenerCertificateRefVO_.certificateUuid, msg.getCertificateUuid()).isExists()) {
+            throw new ApiMessageInterceptionException(argerr("certificate [uuid:%s] is not added to loadbalancer listener [uuid:%s]",
+                    msg.getCertificateUuid(), msg.getListenerUuid()));
+        }
+
+        LoadBalancerListenerVO vo = dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class);
         msg.setLoadBalancerUuid(vo.getLoadBalancerUuid());
     }
 }

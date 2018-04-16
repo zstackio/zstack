@@ -16,11 +16,10 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = LoadBalancerConstants.ACTION_CATEGORY)
 @RestRequest(
         path = "/load-balancers/listeners/{listenerUuid}/certificate",
-        method = HttpMethod.POST,
-        parameterName = "params",
-        responseClass = APIChangeLoadBalancerListenerCertificateEvent.class
+        method = HttpMethod.DELETE,
+        responseClass = APIRemoveCertificateFromLoadBalancerListenerEvent.class
 )
-public class APIChangeLoadBalancerListenerCertificateMsg extends APIMessage implements LoadBalancerMessage, APIAuditor {
+public class APIRemoveCertificateFromLoadBalancerListenerMsg extends APIMessage implements LoadBalancerMessage, APIAuditor {
     @APIParam(resourceType = CertificateVO.class, checkAccount = true, operationTarget = true, nonempty = true)
     private String certificateUuid;
     @APIParam(resourceType = LoadBalancerListenerVO.class, checkAccount = true, operationTarget = true)
@@ -53,8 +52,8 @@ public class APIChangeLoadBalancerListenerCertificateMsg extends APIMessage impl
         this.loadBalancerUuid = loadBalancerUuid;
     }
  
-    public static APIChangeLoadBalancerListenerCertificateMsg __example__() {
-        APIChangeLoadBalancerListenerCertificateMsg msg = new APIChangeLoadBalancerListenerCertificateMsg();
+    public static APIRemoveCertificateFromLoadBalancerListenerMsg __example__() {
+        APIRemoveCertificateFromLoadBalancerListenerMsg msg = new APIRemoveCertificateFromLoadBalancerListenerMsg();
 
         msg.setCertificateUuid(uuid());
         msg.setListenerUuid(uuid());
@@ -70,7 +69,7 @@ public class APIChangeLoadBalancerListenerCertificateMsg extends APIMessage impl
             @Override
             public void after(APIEvent evt) {
                 if (evt.isSuccess()) {
-                    ntfy("Change certificate[uuid:%s] of the loadbalancer listener[uuid:%s] ", certificateUuid, listenerUuid)
+                    ntfy("Remove certificate[uuid:%s] from the loadbalancer listener[uuid:%s] ", certificateUuid, listenerUuid)
                             .resource(listenerUuid, LoadBalancerListenerVO.class.getSimpleName())
                             .messageAndEvent(that, evt).done();
                 }
@@ -80,6 +79,6 @@ public class APIChangeLoadBalancerListenerCertificateMsg extends APIMessage impl
 
     @Override
     public Result audit(APIMessage msg, APIEvent rsp) {
-        return new Result(((APIChangeLoadBalancerListenerCertificateMsg)msg).getLoadBalancerUuid(), LoadBalancerVO.class);
+        return new Result(((APIRemoveCertificateFromLoadBalancerListenerMsg)msg).getLoadBalancerUuid(), LoadBalancerVO.class);
     }
 }

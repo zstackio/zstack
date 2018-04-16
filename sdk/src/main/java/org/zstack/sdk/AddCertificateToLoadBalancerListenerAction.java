@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class ChangeLoadBalancerListenerCertificateAction extends AbstractAction {
+public class AddCertificateToLoadBalancerListenerAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class ChangeLoadBalancerListenerCertificateAction extends AbstractAction 
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.ChangeLoadBalancerListenerCertificateResult value;
+        public org.zstack.sdk.AddCertificateToLoadBalancerListenerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -54,8 +54,8 @@ public class ChangeLoadBalancerListenerCertificateAction extends AbstractAction 
             return ret;
         }
         
-        org.zstack.sdk.ChangeLoadBalancerListenerCertificateResult value = res.getResult(org.zstack.sdk.ChangeLoadBalancerListenerCertificateResult.class);
-        ret.value = value == null ? new org.zstack.sdk.ChangeLoadBalancerListenerCertificateResult() : value; 
+        org.zstack.sdk.AddCertificateToLoadBalancerListenerResult value = res.getResult(org.zstack.sdk.AddCertificateToLoadBalancerListenerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddCertificateToLoadBalancerListenerResult() : value; 
 
         return ret;
     }
