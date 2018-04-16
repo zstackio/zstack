@@ -35,7 +35,7 @@ public interface RBACManager {
             private List<PolicyInventory> getPoliciesForUser(SessionInventory session) {
                 // polices attached to the user
                 List<PolicyVO> vos = sql("select p from PolicyVO p, UserPolicyRefVO r where r.policyUuid = p.uuid" +
-                        " and r.userUuid = :uuid", PolicyVO.class).list();
+                        " and r.userUuid = :uuid", PolicyVO.class).param("uuid", session.getUserUuid()).list();
 
                 // polices attached to user groups the user is in
                 vos.addAll(sql("select p from PolicyVO p, UserGroupVO g, UserGroupPolicyRefVO up, UserGroupUserRefVO ugu where p.uuid = up.policyUuid" +

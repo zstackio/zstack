@@ -1822,6 +1822,10 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 ));
             }
 
+            if (msg.getPassword() != null && (!AccountConstant.INITIAL_SYSTEM_ADMIN_UUID.equals(msg.getSession().getUserUuid()))) {
+                throw new OperationFailureException(operr("only admin account can update it's password"));
+            }
+
             return;
         }
 

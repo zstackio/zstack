@@ -27,13 +27,6 @@ public interface AccountConstant {
     String PRINCIPAL_USER = "user";
     String PRINCIPAL_ACCOUNT = "account";
 
-    enum RoleDecision {
-        EXPLICIT_DENY,
-        DEFAULT_DENY,
-        DENY,
-        ALLOW,
-    }
-
     enum Principal {
         Account,
         User,
