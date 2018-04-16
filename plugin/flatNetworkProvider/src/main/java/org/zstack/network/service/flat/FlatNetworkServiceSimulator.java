@@ -13,8 +13,6 @@ import org.zstack.header.rest.RESTConstant;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
 import org.zstack.network.service.flat.FlatDhcpBackend.*;
-import org.zstack.network.service.flat.FlatDnsBackend.SetDnsCmd;
-import org.zstack.network.service.flat.FlatDnsBackend.SetDnsRsp;
 import org.zstack.network.service.flat.FlatEipBackend.ApplyEipCmd;
 import org.zstack.network.service.flat.FlatEipBackend.BatchApplyEipCmd;
 import org.zstack.network.service.flat.FlatEipBackend.BatchDeleteEipCmd;
@@ -74,15 +72,6 @@ public class FlatNetworkServiceSimulator {
         ReleaseDhcpCmd cmd = JSONObjectUtil.toObject(entity.getBody(), ReleaseDhcpCmd.class);
         config.releaseDhcpCmds.add(cmd);
         ReleaseDhcpRsp rsp = new ReleaseDhcpRsp();
-        reply(entity, rsp);
-        return null;
-    }
-
-    @RequestMapping(value = FlatDnsBackend.SET_DNS_PATH, method = RequestMethod.POST)
-    public @ResponseBody String setDns(HttpEntity<String> entity) {
-        SetDnsCmd cmd = JSONObjectUtil.toObject(entity.getBody(), SetDnsCmd.class);
-        config.setDnsCmds.add(cmd);
-        SetDnsRsp rsp = new SetDnsRsp();
         reply(entity, rsp);
         return null;
     }

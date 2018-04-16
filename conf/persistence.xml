@@ -54,6 +54,7 @@
         <class>org.zstack.header.network.l3.L3NetworkVO</class>
         <class>org.zstack.header.network.l3.L3NetworkEO</class>
         <class>org.zstack.header.network.l3.L3NetworkDnsVO</class>
+        <class>org.zstack.header.network.l3.L3NetworkHostRouteVO</class>
         <class>org.zstack.header.network.l3.IpRangeVO</class>
         <class>org.zstack.header.network.l3.IpRangeEO</class>
         <class>org.zstack.header.network.l3.UsedIpVO</class>
