@@ -85,7 +85,7 @@ public class DeleteIAM2VirtualIDAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
-        info.path = "/iam/virtual-ids";
+        info.path = "/iam2/virtual-ids/{uuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";
