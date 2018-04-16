@@ -37,3 +37,9 @@ CREATE TABLE  `zstack`.`L3NetworkHostRouteVO` (
     PRIMARY KEY (`id`),
     CONSTRAINT `fkL3NetworkHostRouteVOL3NetworkEO` FOREIGN KEY (`l3NetworkUuid`) REFERENCES `zstack`.`L3NetworkEO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+UPDATE `SchedulerJobVO` SET `jobData` = CONCAT('{"uuid":"', uuid, '",'
+                    ,'"targetResourceUuid":"', targetResourceUuid, '",'
+                    ,'"name":"', name,'",'
+                    ,'"createDate":"', Json_getKeyValue(jobData, 'createDate'), '",'
+                    ,'"accountUuid":"', Json_getKeyValue(jobData, 'accountUuid'), '"}');
