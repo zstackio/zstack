@@ -1,14 +1,21 @@
 package org.zstack.network.securitygroup
 
 import org.zstack.header.core.StaticInit
-import org.zstack.header.storage.backup.APIQueryBackupStorageMsg
-import org.zstack.header.vo.APIGetResourceNamesMsg
 
-import static org.zstack.header.identity.rbac.RBACInfo.rbac
+import static org.zstack.header.identity.rbac.RBAC.rbac
 
 @StaticInit
 static void init() {
     rbac {
-        normalAPIs("org.zstack.network.securitygroup.**")
+        permissions {
+            name = "security-group"
+            normalAPIs("org.zstack.network.securitygroup.**")
+        }
+
+        role {
+            name = "security-group"
+            uuid = "4266a67e46cb4e68864899458187941e"
+            normalActionsFromRBAC("security-group")
+        }
     }
 }

@@ -1,14 +1,21 @@
 package org.zstack.network.service.lb
 
 import org.zstack.header.core.StaticInit
-import org.zstack.header.storage.backup.APIQueryBackupStorageMsg
-import org.zstack.header.vo.APIGetResourceNamesMsg
 
-import static org.zstack.header.identity.rbac.RBACInfo.rbac
+import static org.zstack.header.identity.rbac.RBAC.rbac
 
 @StaticInit
 static void init() {
     rbac {
-        normalAPIs("org.zstack.network.service.lb.**")
+        permissions {
+            name = "load-balancer"
+            normalAPIs("org.zstack.network.service.lb.**")
+        }
+
+        role {
+            name = "load-balancer"
+            uuid = "cfc42f6e27be4fcc9e93b09356074e7e"
+            normalActionsFromRBAC("load-balancer", "vip")
+        }
     }
 }

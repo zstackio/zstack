@@ -426,7 +426,13 @@ public class Platform {
     }
 
     private static void callStaticInitMethods() throws InvocationTargetException, IllegalAccessException {
-        Set<Method> inits = reflections.getMethodsAnnotatedWith(StaticInit.class);
+        List<Method> inits = new ArrayList<>(reflections.getMethodsAnnotatedWith(StaticInit.class));
+        inits.sort((o1, o2) -> {
+            StaticInit a1 = o1.getAnnotation(StaticInit.class);
+            StaticInit a2 = o2.getAnnotation(StaticInit.class);
+            return a2.order() - a1.order();
+        });
+
         for (Method init : inits)  {
             if (!Modifier.isStatic(init.getModifiers())) {
                 throw new CloudRuntimeException(String.format("the method[%s:%s] annotated by @StaticInit is not a static method", init.getDeclaringClass(), init.getName()));

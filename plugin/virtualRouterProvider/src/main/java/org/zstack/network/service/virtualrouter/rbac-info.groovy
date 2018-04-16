@@ -1,16 +1,23 @@
 package org.zstack.network.service.virtualrouter
 
 import org.zstack.header.core.StaticInit
-import org.zstack.header.storage.backup.APIQueryBackupStorageMsg
-import org.zstack.header.vo.APIGetResourceNamesMsg
 
-import static org.zstack.header.identity.rbac.RBACInfo.rbac
+import static org.zstack.header.identity.rbac.RBAC.rbac
 
 @StaticInit
 static void init() {
     rbac {
-        normalAPIs("org.zstack.network.service.virtualrouter.**")
+        permissions {
+            name = "vrouter"
+            normalAPIs("org.zstack.network.service.virtualrouter.**")
 
-        adminOnlyAPIs(APICreateVirtualRouterOfferingMsg.class.name)
+            adminOnlyAPIs(APICreateVirtualRouterOfferingMsg.class.name)
+        }
+
+        role {
+            name = "vrouter"
+            uuid = "74a27f7f461e4601877c2728c52ec9e5"
+            normalActionsFromRBAC("vrouter", "vip")
+        }
     }
 }

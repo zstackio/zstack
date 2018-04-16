@@ -1,14 +1,21 @@
 package org.zstack.network.service.portforwarding
 
 import org.zstack.header.core.StaticInit
-import org.zstack.header.storage.backup.APIQueryBackupStorageMsg
-import org.zstack.header.vo.APIGetResourceNamesMsg
 
-import static org.zstack.header.identity.rbac.RBACInfo.rbac
+import static org.zstack.header.identity.rbac.RBAC.rbac
 
 @StaticInit
 static void init() {
     rbac {
-        normalAPIs("org.zstack.network.service.portforwarding.**")
+        permissions {
+            name = "port-forwarding"
+            normalAPIs("org.zstack.network.service.portforwarding.**")
+        }
+
+        role {
+            name = "port-forwarding"
+            uuid = "62617332af7241dbadf8e0570197d42f"
+            normalActionsFromRBAC("port-forwarding", "vip")
+        }
     }
 }

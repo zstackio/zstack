@@ -1,14 +1,21 @@
 package org.zstack.network.service.eip
 
 import org.zstack.header.core.StaticInit
-import org.zstack.header.storage.backup.APIQueryBackupStorageMsg
-import org.zstack.header.vo.APIGetResourceNamesMsg
 
-import static org.zstack.header.identity.rbac.RBACInfo.rbac
+import static org.zstack.header.identity.rbac.RBAC.rbac
 
 @StaticInit
 static void init() {
     rbac {
-        normalAPIs("org.zstack.network.service.eip.**")
+        permissions {
+            name = "eip"
+            normalAPIs("org.zstack.network.service.eip.**")
+        }
+
+        role {
+            uuid = "ecae3a96ee1b47c2aa2baee1e1110550"
+            name = "eip"
+            normalActionsFromRBAC("vip", "eip")
+        }
     }
 }

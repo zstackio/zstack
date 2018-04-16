@@ -2,12 +2,14 @@ package org.zstack.header.host
 
 import org.zstack.header.core.StaticInit
 
-import static org.zstack.header.identity.rbac.RBACInfo.rbac
+import static org.zstack.header.identity.rbac.RBAC.rbac
 
 @StaticInit
 static void init() {
     rbac {
-        adminOnlyAPIs("org.zstack.header.host.**")
+        permissions {
+            adminOnlyAPIs("org.zstack.header.host.**")
+        }
     }
 }
 

@@ -1,13 +1,21 @@
 package org.zstack.header.storage.primary
 
 import org.zstack.header.core.StaticInit
-import org.zstack.header.storage.backup.APIQueryBackupStorageMsg
 
-import static org.zstack.header.identity.rbac.RBACInfo.rbac
+import static org.zstack.header.identity.rbac.RBAC.rbac
 
 @StaticInit
 static void init() {
     rbac {
-        adminOnlyAPIs("org.zstack.header.storage.primary.**")
+        permissions {
+            adminOnlyAPIs("org.zstack.header.storage.primary.**")
+
+            normalAPIs(APIQueryPrimaryStorageMsg.class)
+        }
+
+        contributeToRole {
+            roleName = "other"
+            actions(APIQueryPrimaryStorageMsg.class.name)
+        }
     }
 }

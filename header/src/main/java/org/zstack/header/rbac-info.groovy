@@ -1,14 +1,20 @@
 package org.zstack.header
 
 import org.zstack.header.core.StaticInit
-import org.zstack.header.storage.backup.APIQueryBackupStorageMsg
-import org.zstack.header.vo.APIGetResourceNamesMsg
 
-import static org.zstack.header.identity.rbac.RBACInfo.rbac
+import static org.zstack.header.identity.rbac.RBAC.rbac
 
 @StaticInit
 static void init() {
     rbac {
-        normalAPIs(APIIsOpensourceVersionMsg.class.name)
+        permissions {
+            normalAPIs(APIIsOpensourceVersionMsg.class.name)
+        }
+
+        role {
+            name = "other"
+            uuid = "80315b1f85314917826b182bf6def552"
+            actions(APIIsOpensourceVersionMsg.class.name)
+        }
     }
 }

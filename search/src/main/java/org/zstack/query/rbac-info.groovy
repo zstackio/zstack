@@ -2,11 +2,18 @@ package org.zstack.query
 
 import org.zstack.header.core.StaticInit
 
-import static org.zstack.header.identity.rbac.RBACInfo.rbac
+import static org.zstack.header.identity.rbac.RBAC.rbac
 
 @StaticInit
 static void init() {
     rbac {
-        normalAPIs(APIBatchQueryMsg.class.name)
+        permissions {
+            normalAPIs(APIBatchQueryMsg.class.name)
+        }
+
+        contributeToRole {
+            roleName = "other"
+            actions(APIBatchQueryMsg.class.name)
+        }
     }
 }

@@ -5,6 +5,7 @@ import org.zstack.header.identity.APICreateAccountMsg
 import org.zstack.header.identity.SessionVO
 import org.zstack.header.identity.SuppressCredentialCheck
 import org.zstack.header.identity.rbac.PolicyMatcher
+import org.zstack.header.identity.rbac.RBAC
 import org.zstack.header.identity.rbac.RBACInfo
 import org.zstack.header.message.APIMessage
 import org.zstack.header.rest.RestRequest
@@ -83,7 +84,7 @@ class RBACAPIRequestCheckerCase extends SubCase {
         }
 
         Set<String> adminOnlyAPIs = []
-        RBACInfo.infos.each { info ->
+        RBAC.rbacInfos.each { info ->
             adminOnlyAPIs.addAll(info.adminOnlyAPIs)
         }
 
@@ -101,7 +102,7 @@ class RBACAPIRequestCheckerCase extends SubCase {
 
     @Override
     void test() {
-        RBACInfo.checkIfAPIsMissingRBACInfo()
+        RBAC.checkIfAPIsMissingRBACInfo()
         env.create {
             testAPIPermissions()
         }

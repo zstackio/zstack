@@ -10,12 +10,12 @@ import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.AccountResourceRefVO;
 import org.zstack.header.identity.AccountResourceRefVO_;
 import org.zstack.header.identity.rbac.PolicyMatcher;
+import org.zstack.header.identity.rbac.RBAC;
 import org.zstack.header.identity.rbac.RBACInfo;
 import org.zstack.header.message.APIMessage;
 import org.zstack.identity.APIRequestChecker;
 import org.zstack.identity.AccountManager;
-
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 
 import javax.persistence.Tuple;
 import java.util.*;
@@ -43,7 +43,7 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
 
     private RBACInfo getRBACInfo() {
         return rbacInfos.computeIfAbsent(message.getClass(), x-> {
-            for (RBACInfo rbacInfo : RBACInfo.getInfos()) {
+            for (RBACInfo rbacInfo : RBAC.getRbacInfos()) {
                 for (String s : rbacInfo.getNormalAPIs()) {
                     if (isMatch(s)) {
                         return rbacInfo;
@@ -56,7 +56,7 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
     }
 
     private void check() {
-        if (RBACInfo.isAdminOnlyAPI(message.getClass().getName()) && AccountConstant.INITIAL_SYSTEM_ADMIN_UUID.equals(message.getSession().getAccountUuid())) {
+        if (RBAC.isAdminOnlyAPI(message.getClass().getName()) && AccountConstant.INITIAL_SYSTEM_ADMIN_UUID.equals(message.getSession().getAccountUuid())) {
             return;
         }
 

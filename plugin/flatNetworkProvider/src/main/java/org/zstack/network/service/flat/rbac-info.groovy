@@ -1,14 +1,21 @@
 package org.zstack.network.service.flat
 
 import org.zstack.header.core.StaticInit
-import org.zstack.header.storage.backup.APIQueryBackupStorageMsg
-import org.zstack.header.vo.APIGetResourceNamesMsg
 
-import static org.zstack.header.identity.rbac.RBACInfo.rbac
+import static org.zstack.header.identity.rbac.RBAC.rbac
 
 @StaticInit
 static void init() {
     rbac {
-        normalAPIs("org.zstack.network.service.flat.**")
+        permissions {
+            name = "flat-l3"
+            normalAPIs("org.zstack.network.service.flat.**")
+        }
+
+        contributeToRole {
+            roleName = "l3"
+
+            normalActionsFromRBAC("flat-l3")
+        }
     }
 }

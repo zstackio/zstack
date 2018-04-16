@@ -1,14 +1,21 @@
 package org.zstack.header.volume
 
 import org.zstack.header.core.StaticInit
-import org.zstack.header.storage.backup.APIQueryBackupStorageMsg
-import org.zstack.header.vo.APIGetResourceNamesMsg
 
-import static org.zstack.header.identity.rbac.RBACInfo.rbac
+import static org.zstack.header.identity.rbac.RBAC.rbac
 
 @StaticInit
 static void init() {
     rbac {
-        normalAPIs("org.zstack.header.volume.**")
+        permissions {
+            name = "volume"
+            normalAPIs("org.zstack.header.volume.**")
+        }
+
+        role {
+            name = "volume"
+            uuid = "b4368d05a2394f1fb75173683f55456f"
+            normalActionsFromRBAC("volume")
+        }
     }
 }
