@@ -97,7 +97,7 @@ public class CreateRoleAction extends AbstractAction {
         info.path = "/identities/roles";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

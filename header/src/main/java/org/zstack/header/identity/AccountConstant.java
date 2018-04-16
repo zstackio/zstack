@@ -27,6 +27,10 @@ public interface AccountConstant {
     String PRINCIPAL_USER = "user";
     String PRINCIPAL_ACCOUNT = "account";
 
+    static boolean isAdmin(SessionInventory session) {
+        return INITIAL_SYSTEM_ADMIN_UUID.equals(session.getAccountUuid()) && INITIAL_SYSTEM_ADMIN_UUID.equals(session.getUserUuid());
+    }
+
     enum Principal {
         Account,
         User,

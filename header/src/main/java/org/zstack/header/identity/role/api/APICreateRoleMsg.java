@@ -10,7 +10,7 @@ import org.zstack.header.rest.RestRequest;
 
 import java.util.List;
 
-@RestRequest(path = "/identities/roles", method = HttpMethod.POST, responseClass = APICreateRoleEvent.class)
+@RestRequest(path = "/identities/roles", method = HttpMethod.POST, responseClass = APICreateRoleEvent.class, parameterName = "params")
 public class APICreateRoleMsg extends APICreateMessage {
     @APIParam(maxLength = 255)
     private String name;
