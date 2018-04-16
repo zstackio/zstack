@@ -24,6 +24,7 @@ class ZStackTest extends Test {
         eip()
         portForwarding()
         smp()
+        console()
 
         include("LdapManagerImpl.xml")
         include("CloudBusAopProxy.xml")
