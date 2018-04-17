@@ -13,8 +13,8 @@ doc {
         request {
 			url "POST /v1/load-balancers/{loadBalancerUuid}/listeners"
 
-			header (Authorization: 'OAuth the-session-uuid')
 
+            header(Authorization: 'OAuth the-session-uuid')
 
             clz APICreateLoadBalancerListenerMsg.class
 
@@ -79,8 +79,18 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "0.6"
-					values ("tcp","http")
+					since "2.3"
+					values ("tcp","http","https")
+				}
+				column {
+					name "certificateUuid"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "2.3"
+
 				}
 				column {
 					name "resourceUuid"

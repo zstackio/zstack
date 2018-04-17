@@ -30,6 +30,12 @@ public class CephPrimaryStoragePoolVO extends ResourceVO {
     private Timestamp lastOpDate;
     @Column
     private String type;
+    @Column
+    private long availableCapacity;
+    @Column
+    private long usedCapacity;
+    @Column
+    private Integer replicatedSize;
 
     public String getPrimaryStorageUuid() {
         return primaryStorageUuid;
@@ -79,12 +85,35 @@ public class CephPrimaryStoragePoolVO extends ResourceVO {
         this.type = type;
     }
 
-
     public String getAliasName() {
         return aliasName;
     }
 
     public void setAliasName(String aliasName) {
         this.aliasName = aliasName;
+    }
+
+    public long getAvailableCapacity() {
+        return availableCapacity;
+    }
+
+    public void setAvailableCapacity(long availableCapacity) {
+        this.availableCapacity = availableCapacity;
+    }
+
+    public long getUsedCapacity() {
+        return usedCapacity;
+    }
+
+    public void setUsedCapacity(long usedCapacity) {
+        this.usedCapacity = usedCapacity;
+    }
+
+    public Integer getReplicatedSize() {
+        return replicatedSize;
+    }
+
+    public void setReplicatedSize(Integer replicatedSize) {
+        this.replicatedSize = replicatedSize;
     }
 }

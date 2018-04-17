@@ -27,6 +27,18 @@ public class CephBackupStorageVO extends BackupStorageVO {
     @Column
     private String poolName;
 
+    @Column
+    private String fsid;
+
+    @Column
+    private long poolAvailableCapacity;
+
+    @Column
+    private long poolUsedCapacity;
+
+    @Column
+    private Integer poolReplicatedSize;
+
     public String getPoolName() {
         return poolName;
     }
@@ -34,9 +46,6 @@ public class CephBackupStorageVO extends BackupStorageVO {
     public void setPoolName(String poolName) {
         this.poolName = poolName;
     }
-
-    @Column
-    private String fsid;
 
     public String getFsid() {
         return fsid;
@@ -64,5 +73,29 @@ public class CephBackupStorageVO extends BackupStorageVO {
 
     public void setMons(Set<CephBackupStorageMonVO> mons) {
         this.mons = mons;
+    }
+
+    public long getPoolAvailableCapacity() {
+        return poolAvailableCapacity;
+    }
+
+    public void setPoolAvailableCapacity(long poolAvailableCapacity) {
+        this.poolAvailableCapacity = poolAvailableCapacity;
+    }
+
+    public long getPoolUsedCapacity() {
+        return poolUsedCapacity;
+    }
+
+    public void setPoolUsedCapacity(long poolUsedCapacity) {
+        this.poolUsedCapacity = poolUsedCapacity;
+    }
+
+    public Integer getPoolReplicatedSize() {
+        return poolReplicatedSize;
+    }
+
+    public void setPoolReplicatedSize(Integer poolReplicatedSize) {
+        this.poolReplicatedSize = poolReplicatedSize;
     }
 }

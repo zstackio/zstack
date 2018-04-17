@@ -101,6 +101,7 @@ public class SourceClassMap {
 			put("org.zstack.header.network.l2.L2VlanNetworkInventory", "org.zstack.sdk.L2VlanNetworkInventory");
 			put("org.zstack.header.network.l3.FreeIpInventory", "org.zstack.sdk.FreeIpInventory");
 			put("org.zstack.header.network.l3.IpRangeInventory", "org.zstack.sdk.IpRangeInventory");
+			put("org.zstack.header.network.l3.L3NetworkHostRouteInventory", "org.zstack.sdk.L3NetworkHostRouteInventory");
 			put("org.zstack.header.network.l3.L3NetworkInventory", "org.zstack.sdk.L3NetworkInventory");
 			put("org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory", "org.zstack.sdk.NetworkServiceL3NetworkRefInventory");
 			put("org.zstack.header.network.service.NetworkServiceProviderInventory", "org.zstack.sdk.NetworkServiceProviderInventory");
@@ -154,7 +155,9 @@ public class SourceClassMap {
 			put("org.zstack.network.securitygroup.SecurityGroupRuleInventory", "org.zstack.sdk.SecurityGroupRuleInventory");
 			put("org.zstack.network.securitygroup.VmNicSecurityGroupRefInventory", "org.zstack.sdk.VmNicSecurityGroupRefInventory");
 			put("org.zstack.network.service.eip.EipInventory", "org.zstack.sdk.EipInventory");
+			put("org.zstack.network.service.lb.CertificateInventory", "org.zstack.sdk.CertificateInventory");
 			put("org.zstack.network.service.lb.LoadBalancerInventory", "org.zstack.sdk.LoadBalancerInventory");
+			put("org.zstack.network.service.lb.LoadBalancerListenerCertificateRefInventory", "org.zstack.sdk.LoadBalancerListenerCertificateRefInventory");
 			put("org.zstack.network.service.lb.LoadBalancerListenerInventory", "org.zstack.sdk.LoadBalancerListenerInventory");
 			put("org.zstack.network.service.lb.LoadBalancerListenerVmNicRefInventory", "org.zstack.sdk.LoadBalancerListenerVmNicRefInventory");
 			put("org.zstack.network.service.portforwarding.PortForwardingRuleInventory", "org.zstack.sdk.PortForwardingRuleInventory");
@@ -263,6 +266,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.CephPrimaryStorageInventory", "org.zstack.storage.ceph.primary.CephPrimaryStorageInventory");
 			put("org.zstack.sdk.CephPrimaryStorageMonInventory", "org.zstack.storage.ceph.primary.CephPrimaryStorageMonInventory");
 			put("org.zstack.sdk.CephPrimaryStoragePoolInventory", "org.zstack.storage.ceph.primary.CephPrimaryStoragePoolInventory");
+			put("org.zstack.sdk.CertificateInventory", "org.zstack.network.service.lb.CertificateInventory");
 			put("org.zstack.sdk.CloneVmInstanceInventory", "org.zstack.header.vm.CloneVmInstanceInventory");
 			put("org.zstack.sdk.CloneVmInstanceResults", "org.zstack.header.vm.CloneVmInstanceResults");
 			put("org.zstack.sdk.ClusterInventory", "org.zstack.header.cluster.ClusterInventory");
@@ -328,11 +332,13 @@ public class SourceClassMap {
 			put("org.zstack.sdk.L2VlanNetworkInventory", "org.zstack.header.network.l2.L2VlanNetworkInventory");
 			put("org.zstack.sdk.L2VxlanNetworkInventory", "org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory");
 			put("org.zstack.sdk.L2VxlanNetworkPoolInventory", "org.zstack.network.l2.vxlan.vxlanNetworkPool.L2VxlanNetworkPoolInventory");
+			put("org.zstack.sdk.L3NetworkHostRouteInventory", "org.zstack.header.network.l3.L3NetworkHostRouteInventory");
 			put("org.zstack.sdk.L3NetworkInventory", "org.zstack.header.network.l3.L3NetworkInventory");
 			put("org.zstack.sdk.LdapAccountRefInventory", "org.zstack.ldap.LdapAccountRefInventory");
 			put("org.zstack.sdk.LdapServerInventory", "org.zstack.ldap.LdapServerInventory");
 			put("org.zstack.sdk.LicenseInventory", "org.zstack.license.LicenseInventory");
 			put("org.zstack.sdk.LoadBalancerInventory", "org.zstack.network.service.lb.LoadBalancerInventory");
+			put("org.zstack.sdk.LoadBalancerListenerCertificateRefInventory", "org.zstack.network.service.lb.LoadBalancerListenerCertificateRefInventory");
 			put("org.zstack.sdk.LoadBalancerListenerInventory", "org.zstack.network.service.lb.LoadBalancerListenerInventory");
 			put("org.zstack.sdk.LoadBalancerListenerVmNicRefInventory", "org.zstack.network.service.lb.LoadBalancerListenerVmNicRefInventory");
 			put("org.zstack.sdk.LocalStorageResourceRefInventory", "org.zstack.storage.primary.local.LocalStorageResourceRefInventory");

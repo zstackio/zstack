@@ -137,6 +137,12 @@ public class L3NetworkInventory implements Serializable {
     @Queryable(mappingClass = NetworkServiceL3NetworkRefInventory.class,
             joinColumn = @JoinColumn(name = "l3NetworkUuid"))
     private List<NetworkServiceL3NetworkRefInventory> networkServices;
+    /**
+     * @desc a list of host route
+     */
+    @Queryable(mappingClass = L3NetworkHostRouteInventory.class,
+            joinColumn = @JoinColumn(name = "l3NetworkUuid"))
+    private List<L3NetworkHostRouteInventory> hostRoute;
 
     public static L3NetworkInventory valueOf(L3NetworkVO vo) {
         L3NetworkInventory inv = new L3NetworkInventory();
@@ -156,6 +162,7 @@ public class L3NetworkInventory implements Serializable {
         inv.setLastOpDate(vo.getLastOpDate());
         inv.setNetworkServices(NetworkServiceL3NetworkRefInventory.valueOf(vo.getNetworkServices()));
         inv.setCategory(vo.getCategory().toString());
+        inv.setHostRoute(L3NetworkHostRouteInventory.valueOf(vo.getHostRoutes()));
         return inv;
     }
 
@@ -313,5 +320,13 @@ public class L3NetworkInventory implements Serializable {
 
     public void setCategory(String category) {
         this.category = category;
+    }
+
+    public List<L3NetworkHostRouteInventory> getHostRoute() {
+        return hostRoute;
+    }
+
+    public void setHostRoute(List<L3NetworkHostRouteInventory> hostRoute) {
+        this.hostRoute = hostRoute;
     }
 }

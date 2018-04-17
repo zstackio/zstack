@@ -30,4 +30,6 @@ public class VmGlobalConfig {
     public static GlobalConfig VM_BOOT_MENU = new GlobalConfig(CATEGORY, "bootMenu");
     @GlobalConfigValidation(validValues = {"true", "false"})
     public static GlobalConfig KVM_HIDDEN_STATE = new GlobalConfig(CATEGORY, "kvmHiddenState");
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    public static GlobalConfig VM_PORT_OFF = new GlobalConfig(CATEGORY, "vmPortOff");
 }

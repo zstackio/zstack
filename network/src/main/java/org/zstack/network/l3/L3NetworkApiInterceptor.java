@@ -80,6 +80,10 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             validate((APISetL3NetworkRouterInterfaceIpMsg) msg);
         } else if (msg instanceof APIUpdateL3NetworkMsg) {
             validate((APIUpdateL3NetworkMsg) msg);
+        } else if (msg instanceof APIAddHostRouteToL3NetworkMsg) {
+            validate((APIAddHostRouteToL3NetworkMsg) msg);
+        } else if (msg instanceof APIRemoveHostRouteFromL3NetworkMsg) {
+            validate((APIRemoveHostRouteFromL3NetworkMsg) msg);
         }
 
         setServiceId(msg);
@@ -351,6 +355,36 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
         q.add(L3NetworkDnsVO_.dns, Op.EQ, msg.getDns());
         if (q.isExists()) {
             throw new ApiMessageInterceptionException(operr("there has been a DNS[%s] on L3 network[uuid:%s]", msg.getDns(), msg.getL3NetworkUuid()));
+        }
+    }
+
+    private void validate(APIAddHostRouteToL3NetworkMsg msg) {
+        if (!NetworkUtils.isCidr(msg.getPrefix())) {
+            throw new ApiMessageInterceptionException(argerr("prefix [%s] is not a IPv4 network cidr", msg.getL3NetworkUuid()));
+        }
+
+        if (!NetworkUtils.isIpv4Address(msg.getNexthop())) {
+            throw new ApiMessageInterceptionException(argerr("nexthop[%s] is not a IPv4 address", msg.getNexthop()));
+        }
+
+        SimpleQuery<L3NetworkHostRouteVO> q = dbf.createQuery(L3NetworkHostRouteVO.class);
+        q.add(L3NetworkHostRouteVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
+        q.add(L3NetworkHostRouteVO_.prefix, Op.EQ, msg.getPrefix());
+        if (q.isExists()) {
+            throw new ApiMessageInterceptionException(operr("there has been a hostroute for prefix[%s] on L3 network[uuid:%s]", msg.getPrefix(), msg.getL3NetworkUuid()));
+        }
+    }
+
+    private void validate(APIRemoveHostRouteFromL3NetworkMsg msg) {
+        if (!NetworkUtils.isCidr(msg.getPrefix())) {
+            throw new ApiMessageInterceptionException(argerr("prefix [%s] is not a IPv4 network cidr", msg.getL3NetworkUuid()));
+        }
+
+        SimpleQuery<L3NetworkHostRouteVO> q = dbf.createQuery(L3NetworkHostRouteVO.class);
+        q.add(L3NetworkHostRouteVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
+        q.add(L3NetworkHostRouteVO_.prefix, Op.EQ, msg.getPrefix());
+        if (!q.isExists()) {
+            throw new ApiMessageInterceptionException(operr("there is no hostroute for prefix[%s] on L3 network[uuid:%s]", msg.getPrefix(), msg.getL3NetworkUuid()));
         }
     }
 }

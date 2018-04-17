@@ -355,6 +355,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             handle((APIGetResourceNamesMsg) msg);
         } else if (msg instanceof APIIsOpensourceVersionMsg) {
             handle((APIIsOpensourceVersionMsg) msg);
+        } else if (msg instanceof APIRenewSessionMsg) {
+            handle((APIRenewSessionMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -504,6 +506,45 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         bus.reply(msg, reply);
     }
 
+    private void handle(APIRenewSessionMsg msg) {
+        APIRenewSessionEvent evt = new APIRenewSessionEvent(msg.getId());
+
+        SessionInventory s = sessions.get(msg.getSessionUuid());
+        Timestamp current = dbf.getCurrentSqlTime();
+        boolean valid = true;
+        SessionVO session = dbf.findByUuid(msg.getSessionUuid(), SessionVO.class);
+
+        if (s != null) {
+            if (current.after(s.getExpiredDate())) {
+                valid = false;
+            }
+        } else {
+            if (session != null && current.after(session.getExpiredDate())) {
+                valid = false;
+            } else if (session == null) {
+                valid = false;
+            }
+        }
+
+        if (!valid) {
+            evt.setError(operr("session [uuid:%s] expired, can not renew", msg.getSessionUuid()));
+            bus.publish(evt);
+            return;
+        }
+
+        /* renew will create a new session, and destroy old session */
+        SessionInventory newSession;
+        logOutSession(session.getUuid());
+        if (msg.getDuration() != null) {
+            long expiredTime = getCurrentSqlDate().getTime() + TimeUnit.SECONDS.toMillis(msg.getDuration());
+            newSession = getSession(session.getAccountUuid(), session.getUserUuid(), expiredTime);
+        } else {
+            newSession = getSession(session.getAccountUuid(), session.getUserUuid());
+        }
+
+        evt.setInventory(newSession);
+        bus.publish(evt);
+    }
 
     private void handle(APILogOutMsg msg) {
         APILogOutReply reply = new APILogOutReply();
@@ -512,6 +553,12 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     }
 
     private SessionInventory getSession(String accountUuid, String userUuid) {
+        int sessionTimeout = IdentityGlobalConfig.SESSION_TIMEOUT.value(Integer.class);
+        long expiredTime = getCurrentSqlDate().getTime() + TimeUnit.SECONDS.toMillis(sessionTimeout);
+        return getSession(accountUuid, userUuid, expiredTime);
+    }
+
+    private SessionInventory getSession(String accountUuid, String userUuid, long expiredTime) {
         int maxLoginTimes = org.zstack.identity.IdentityGlobalConfig.MAX_CONCURRENT_SESSION.value(Integer.class);
         SimpleQuery<SessionVO> query = dbf.createQuery(SessionVO.class);
         query.add(SessionVO_.accountUuid, Op.EQ, accountUuid);
@@ -522,12 +569,10 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             throw new BadCredentialsException(err);
         }
 
-        int sessionTimeout = IdentityGlobalConfig.SESSION_TIMEOUT.value(Integer.class);
         SessionVO svo = new SessionVO();
         svo.setUuid(Platform.getUuid());
         svo.setAccountUuid(accountUuid);
         svo.setUserUuid(userUuid);
-        long expiredTime = getCurrentSqlDate().getTime() + TimeUnit.SECONDS.toMillis(sessionTimeout);
         svo.setExpiredDate(new Timestamp(expiredTime));
         svo = dbf.persistAndRefresh(svo);
         SessionInventory session = SessionInventory.valueOf(svo);

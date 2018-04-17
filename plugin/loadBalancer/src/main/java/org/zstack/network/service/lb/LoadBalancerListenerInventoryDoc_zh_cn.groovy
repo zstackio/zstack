@@ -5,6 +5,7 @@ import java.lang.Integer
 import java.sql.Timestamp
 import java.sql.Timestamp
 import org.zstack.network.service.lb.LoadBalancerListenerVmNicRefInventory
+import org.zstack.network.service.lb.LoadBalancerListenerCertificateRefInventory
 
 doc {
 
@@ -71,5 +72,13 @@ doc {
 		type "List"
 		since "0.6"
 		clz LoadBalancerListenerVmNicRefInventory.class
+	}
+	ref {
+		name "certificateRefs"
+		path "org.zstack.network.service.lb.LoadBalancerListenerInventory.certificateRefs"
+		desc "null"
+		type "List"
+		since "0.6"
+		clz LoadBalancerListenerCertificateRefInventory.class
 	}
 }

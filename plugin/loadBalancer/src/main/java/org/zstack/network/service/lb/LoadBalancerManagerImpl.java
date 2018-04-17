@@ -3,7 +3,9 @@ package org.zstack.network.service.lb;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
@@ -15,6 +17,7 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -26,7 +29,9 @@ import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.identity.ReportQuotaExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedQuotaCheckMessage;
+import org.zstack.header.network.l3.L3NetworkConstant;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
@@ -35,14 +40,17 @@ import org.zstack.header.tag.AbstractSystemTagOperationJudger;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.volume.VolumeInventory;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaGlobalConfig;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.service.vip.*;
 import org.zstack.tag.TagManager;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.RangeSet;
 import org.zstack.utils.Utils;
 import org.zstack.utils.VipUseForList;
+import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.argerr;
@@ -105,6 +113,12 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
     protected void handleApiMessage(APIMessage msg) {
         if (msg instanceof APICreateLoadBalancerMsg) {
             handle((APICreateLoadBalancerMsg) msg);
+        } else if (msg instanceof APICreateCertificateMsg) {
+            handle((APICreateCertificateMsg) msg);
+        } else if (msg instanceof APIDeleteCertificateMsg) {
+            handle((APIDeleteCertificateMsg) msg);
+        } else if (msg instanceof APIUpdateCertificateMsg) {
+            handle((APIUpdateCertificateMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -215,6 +229,119 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 });
             }
         }).start();
+    }
+
+    private void handle(final APICreateCertificateMsg msg) {
+        final APICreateCertificateEvent evt = new APICreateCertificateEvent(msg.getId());
+
+        CertificateVO vo = new CertificateVO();
+        vo.setUuid(msg.getResourceUuid() == null ? Platform.getUuid() : msg.getResourceUuid());
+        vo.setName(msg.getName());
+        if (msg.getDescription() != null) {
+            vo.setDescription(msg.getDescription());
+        }
+        vo.setCertificate(msg.getCertificate());
+        vo = dbf.persistAndRefresh(vo);
+
+        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), CertificateVO.class);
+        tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), CertificateVO.class.getSimpleName());
+
+        evt.setInventory(CertificateInventory.valueOf(vo));
+        bus.publish(evt);
+    }
+
+    private void handle(final APIDeleteCertificateMsg msg) {
+        final APIDeleteCertificateEvent evt = new APIDeleteCertificateEvent(msg.getId());
+
+        CertificateInventory inv = CertificateInventory.valueOf(dbf.findByUuid(msg.getUuid(), CertificateVO.class));
+        SQL.New(CertificateVO.class).eq(CertificateVO_.uuid, msg.getUuid()).delete();
+
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("delete-certificate-%s", msg.getUuid()));
+        chain.then(new ShareFlow() {
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        Set<String> lbUuids = CollectionUtils.transformToSet(inv.getListeners(), new Function<String, LoadBalancerListenerCertificateRefInventory>() {
+                            @Override
+                            public String call(LoadBalancerListenerCertificateRefInventory arg) {
+                                return Q.New(LoadBalancerListenerVO.class).eq(LoadBalancerListenerVO_.uuid, arg.getListenerUuid())
+                                        .select(LoadBalancerListenerVO_.loadBalancerUuid).findValue();
+                            }
+                        });
+
+                        if (lbUuids == null || lbUuids.isEmpty()) {
+                            trigger.next();
+                            return;
+                        }
+
+                        List<ErrorCode> errs = new ArrayList<>();
+                        new While<>(lbUuids).each((lbUuid, wcompl) -> {
+                            LoadBalancerChangeCertificateMsg cmsg = new LoadBalancerChangeCertificateMsg();
+                            cmsg.setLoadBalancerUuid(lbUuid);
+                            cmsg.setCertificateUuid(null);
+                            bus.makeLocalServiceId(cmsg, LoadBalancerConstants.SERVICE_ID);
+                            bus.send(cmsg, new CloudBusCallBack(wcompl) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    if (!reply.isSuccess()) {
+                                        errs.add(reply.getError());
+                                    }
+                                    wcompl.done();
+                                }
+                            });
+                        }).run(new NoErrorCompletion(trigger) {
+                            @Override
+                            public void done() {
+                                if (errs.isEmpty()) {
+                                    trigger.next();
+                                } else {
+                                    trigger.fail(errs.get(0));
+                                }
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        bus.publish(evt);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        evt.setError(errCode);
+                        bus.publish(evt);
+                    }
+                });
+            }
+        }).start();
+    }
+
+    private void handle(final APIUpdateCertificateMsg msg) {
+        APIUpdateCertificateEvent evt = new APIUpdateCertificateEvent(msg.getId());
+
+        CertificateVO vo = dbf.findByUuid(msg.getUuid(), CertificateVO.class);
+        boolean update = false;
+        if (msg.getName() != null) {
+            vo.setName(msg.getName());
+            update = true;
+        }
+        if (msg.getDescription() != null) {
+            vo.setDescription(msg.getDescription());
+            update = true;
+        }
+        if (update) {
+            vo = dbf.updateAndRefresh(vo);
+        }
+
+        evt.setInventory(CertificateInventory.valueOf(vo));
+        bus.publish(evt);
     }
 
     @Override
