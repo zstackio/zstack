@@ -59,10 +59,7 @@ import org.zstack.utils.path.PathUtil;
 
 import javax.persistence.Tuple;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.*;
@@ -1944,14 +1941,14 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         List<Flow> flows = new ArrayList<Flow>();
 
         SimpleQuery<KVMHostVO> q = dbf.createQuery(KVMHostVO.class);
-        q.select(KVMHostVO_.managementIp, KVMHostVO_.username, KVMHostVO_.password, KVMHostVO_.port);
+        q.select(KVMHostVO_.username, KVMHostVO_.password, KVMHostVO_.port);
         q.add(KVMHostVO_.uuid, Op.EQ, struct.getDestHostUuid());
         Tuple t = q.findTuple();
 
-        final String mgmtIp = t.get(0, String.class);
-        final String username = t.get(1, String.class);
-        final String password = t.get(2, String.class);
-        final int port = t.get(3, Integer.class);
+        final String destIp = localStorageFactory.getDestMigrationAddress(struct.getSrcHostUuid(), struct.getDestHostUuid());
+        final String username = t.get(0, String.class);
+        final String password = t.get(1, String.class);
+        final int port = t.get(2, Integer.class);
 
         class Context {
             GetMd5Rsp getMd5Rsp;
@@ -2097,7 +2094,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             @Override
                             public void run(final SyncTaskChain chain) {
                                 final CopyBitsFromRemoteCmd cmd = new CopyBitsFromRemoteCmd();
-                                cmd.dstIp = mgmtIp;
+                                cmd.dstIp = destIp;
                                 cmd.dstUsername = username;
                                 cmd.dstPassword = password;
                                 cmd.dstPort = port;
@@ -2282,7 +2279,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             @Override
             public void run(final FlowTrigger trigger, Map data) {
                 final CopyBitsFromRemoteCmd cmd = new CopyBitsFromRemoteCmd();
-                cmd.dstIp = mgmtIp;
+                cmd.dstIp = destIp;
                 cmd.dstUsername = username;
                 cmd.dstPassword = password;
                 cmd.dstPort = port;

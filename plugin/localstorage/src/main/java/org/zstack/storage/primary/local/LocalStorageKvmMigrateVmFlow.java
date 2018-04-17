@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
@@ -78,7 +79,11 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
     @Autowired
     private ThreadFacade thdf;
     @Autowired
+    private LocalStorageFactory localStorageFactory;
+    @Autowired
     private ApiTimeoutManager timeoutMgr;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     public static final String VERIFY_SNAPSHOT_CHAIN_PATH = "/localstorage/snapshot/verifychain";
     public static final String REBASE_SNAPSHOT_BACKING_FILES_PATH = "/localstorage/snapshot/rebasebackingfiles";
@@ -142,7 +147,11 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
             boolean downloadImage;
             ImageVO image;
             VolumeInventory rootVolume;
-            KVMHostVO dstHost;
+
+            final String destIp;
+            final String username;
+            final String password;
+            final int port;
 
             {
                 for (VolumeInventory vol : volumesOnLocalStorage) {
@@ -185,7 +194,11 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                             || image.getStatus() == ImageStatus.Deleted);
                 }
 
-                dstHost = dbf.findByUuid(dstHostUuid, KVMHostVO.class);
+                KVMHostVO dstHost = dbf.findByUuid(dstHostUuid, KVMHostVO.class);
+                destIp = localStorageFactory.getDestMigrationAddress(srcHostUuid, dstHostUuid);
+                username = dstHost.getUsername();
+                password = dstHost.getPassword();
+                port = dstHost.getPort();
             }
 
             @Override
@@ -329,10 +342,10 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                                 @Override
                                 public void run(final SyncTaskChain chain) {
                                     final CopyBitsFromRemoteCmd cmd = new CopyBitsFromRemoteCmd();
-                                    cmd.dstIp = dstHost.getManagementIp();
-                                    cmd.dstUsername = dstHost.getUsername();
-                                    cmd.dstPassword = dstHost.getPassword();
-                                    cmd.dstPort = dstHost.getPort();
+                                    cmd.dstIp = destIp;
+                                    cmd.dstUsername = username;
+                                    cmd.dstPassword = password;
+                                    cmd.dstPort = port;
                                     cmd.paths = list(backingImage.path);
                                     cmd.uuid = rootVolume.getUuid();
 
@@ -881,6 +894,12 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
         List<VSPair> volumeHasSnapshots = new ArrayList<VSPair>();
         List<VolumeInventory> volumeNoSnapshots = new ArrayList<VolumeInventory>();
 
+        KVMHostVO dstHost = dbf.findByUuid(dstHostUuid, KVMHostVO.class);
+        final String destIp = localStorageFactory.getDestMigrationAddress(srcHostUuid, dstHostUuid);
+        final String username = dstHost.getUsername();
+        final String password = dstHost.getPassword();
+        final int port = dstHost.getPort();
+
         for (final VolumeInventory vol : volumesOnLocalStorage) {
             final List<VolumeSnapshotTree> trees = CollectionUtils.transformToList(snapshotTrees, new Function<VolumeSnapshotTree, VolumeSnapshotTree>() {
                 @Override
@@ -1007,8 +1026,6 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                 String __name__ = String.format("copy-snapshots-for-volume-%s-on-dst-host", p.volume.getUuid());
 
                 List<VolumeSnapshotInventory> success = new ArrayList<VolumeSnapshotInventory>();
-                KVMHostVO dstHost = dbf.findByUuid(dstHostUuid, KVMHostVO.class);
-
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
                     CopyBitsFromRemoteCmd cmd = new CopyBitsFromRemoteCmd();
@@ -1018,10 +1035,10 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                             return arg.getPrimaryStorageInstallPath();
                         }
                     });
-                    cmd.dstIp = dstHost.getManagementIp();
-                    cmd.dstPassword = dstHost.getPassword();
-                    cmd.dstUsername = dstHost.getUsername();
-                    cmd.dstPort = dstHost.getPort();
+                    cmd.dstIp = destIp;
+                    cmd.dstPassword = password;
+                    cmd.dstUsername = username;
+                    cmd.dstPort = port;
                     cmd.uuid = p.volume.getUuid();
                     callKvmHost(srcHostUuid, p.volume.getPrimaryStorageUuid(), COPY_TO_REMOTE_BITS_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
                         @Override

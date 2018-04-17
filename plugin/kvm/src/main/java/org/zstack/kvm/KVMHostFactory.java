@@ -154,7 +154,6 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         return extp;
     }
 
-
     private void deployAnsibleModule() {
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             return;

@@ -59,9 +59,17 @@ class LocalStorageSpec extends PrimaryStorageSpec {
             return rsp
         }
 
-        simulator(LocalStorageKvmBackend.GET_MD5_PATH) {
+        simulator(LocalStorageKvmBackend.GET_MD5_PATH) {HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.GetMd5Cmd.class)
             def rsp = new LocalStorageKvmBackend.GetMd5Rsp()
             rsp.md5s = []
+            cmd.md5s.forEach{it ->
+                def t = new LocalStorageKvmBackend.Md5TO()
+                t.resourceUuid = it.resourceUuid
+                t.path = it .path
+                t.md5 = "mockmd5" + it.resourceUuid.substring(7)
+                rsp.md5s.add(t)
+            }
             return rsp
         }
 
