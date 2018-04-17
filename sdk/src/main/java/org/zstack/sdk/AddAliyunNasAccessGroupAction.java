@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateAliyunNasAccessGroupAction extends AbstractAction {
+public class AddAliyunNasAccessGroupAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateAliyunNasAccessGroupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateAliyunNasAccessGroupResult value;
+        public org.zstack.sdk.AddAliyunNasAccessGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -29,13 +29,7 @@ public class CreateAliyunNasAccessGroupAction extends AbstractAction {
     public java.lang.String dataCenterUuid;
 
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false, validValues = {"classic","vpc"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String networkType;
+    public java.lang.String groupName;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
@@ -63,8 +57,8 @@ public class CreateAliyunNasAccessGroupAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateAliyunNasAccessGroupResult value = res.getResult(org.zstack.sdk.CreateAliyunNasAccessGroupResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateAliyunNasAccessGroupResult() : value; 
+        org.zstack.sdk.AddAliyunNasAccessGroupResult value = res.getResult(org.zstack.sdk.AddAliyunNasAccessGroupResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddAliyunNasAccessGroupResult() : value; 
 
         return ret;
     }
@@ -93,11 +87,11 @@ public class CreateAliyunNasAccessGroupAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
+        info.httpMethod = "PUT";
         info.path = "/nas/aliyun/access";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "addAliyunNasAccessGroup";
         return info;
     }
 

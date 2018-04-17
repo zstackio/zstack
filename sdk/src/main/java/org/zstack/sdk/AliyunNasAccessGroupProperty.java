@@ -28,4 +28,12 @@ public class AliyunNasAccessGroupProperty  {
         return this.description;
     }
 
+    public java.lang.String networkType;
+    public void setNetworkType(java.lang.String networkType) {
+        this.networkType = networkType;
+    }
+    public java.lang.String getNetworkType() {
+        return this.networkType;
+    }
+
 }
