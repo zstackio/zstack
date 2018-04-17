@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class QueryEcsImageFromLocalAction extends QueryAction {
+public class UpdateDahoDataCenterConnectionAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class QueryEcsImageFromLocalAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.QueryEcsImageFromLocalResult value;
+        public org.zstack.sdk.UpdateDahoDataCenterConnectionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,6 +25,29 @@ public class QueryEcsImageFromLocalAction extends QueryAction {
         }
     }
 
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String uuid;
+
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = false, maxLength = 1024, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String description;
+
+    @Param(required = false)
+    public java.util.List systemTags;
+
+    @Param(required = false)
+    public java.util.List userTags;
+
+    @Param(required = true)
+    public String sessionId;
+
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -34,8 +57,8 @@ public class QueryEcsImageFromLocalAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.QueryEcsImageFromLocalResult value = res.getResult(org.zstack.sdk.QueryEcsImageFromLocalResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QueryEcsImageFromLocalResult() : value; 
+        org.zstack.sdk.UpdateDahoDataCenterConnectionResult value = res.getResult(org.zstack.sdk.UpdateDahoDataCenterConnectionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateDahoDataCenterConnectionResult() : value; 
 
         return ret;
     }
@@ -64,11 +87,11 @@ public class QueryEcsImageFromLocalAction extends QueryAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/hybrid/aliyun/image";
+        info.httpMethod = "PUT";
+        info.path = "/hybrid/daho/connections/{uuid}/actions";
         info.needSession = true;
-        info.needPoll = false;
-        info.parameterName = "";
+        info.needPoll = true;
+        info.parameterName = "updateDahoDataCenterConnection";
         return info;
     }
 

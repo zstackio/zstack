@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class QueryRouterInterfaceFromLocalAction extends QueryAction {
+public class QueryDahoDataCenterConnectionAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class QueryRouterInterfaceFromLocalAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.QueryRouterInterfaceFromLocalResult value;
+        public org.zstack.sdk.QueryDahoDataCenterConnectionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -34,8 +34,8 @@ public class QueryRouterInterfaceFromLocalAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.QueryRouterInterfaceFromLocalResult value = res.getResult(org.zstack.sdk.QueryRouterInterfaceFromLocalResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QueryRouterInterfaceFromLocalResult() : value; 
+        org.zstack.sdk.QueryDahoDataCenterConnectionResult value = res.getResult(org.zstack.sdk.QueryDahoDataCenterConnectionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryDahoDataCenterConnectionResult() : value; 
 
         return ret;
     }
@@ -65,7 +65,7 @@ public class QueryRouterInterfaceFromLocalAction extends QueryAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/hybrid/aliyun/router-interface";
+        info.path = "/hybrid/daho/connections";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

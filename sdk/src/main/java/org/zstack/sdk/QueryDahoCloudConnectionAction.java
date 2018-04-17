@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateRouteInterfaceRemoteAction extends AbstractAction {
+public class QueryDahoCloudConnectionAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateRouteInterfaceRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateRouteInterfaceRemoteResult value;
+        public org.zstack.sdk.QueryDahoCloudConnectionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,29 +25,6 @@ public class UpdateRouteInterfaceRemoteAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = true, validValues = {"active","inactive"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String op;
-
-    @Param(required = true, validValues = {"vbr","vrouter"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vRouterType;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = true)
-    public String sessionId;
-
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -57,8 +34,8 @@ public class UpdateRouteInterfaceRemoteAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateRouteInterfaceRemoteResult value = res.getResult(org.zstack.sdk.UpdateRouteInterfaceRemoteResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateRouteInterfaceRemoteResult() : value; 
+        org.zstack.sdk.QueryDahoCloudConnectionResult value = res.getResult(org.zstack.sdk.QueryDahoCloudConnectionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryDahoCloudConnectionResult() : value; 
 
         return ret;
     }
@@ -87,11 +64,11 @@ public class UpdateRouteInterfaceRemoteAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/hybrid/aliyun/router-interface/{uuid}/actions";
+        info.httpMethod = "GET";
+        info.path = "/hybrid/daho/cloud_connections";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "updateRouteInterfaceRemote";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 

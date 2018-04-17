@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class QueryEcsImageFromLocalAction extends QueryAction {
+public class QueryAliyunRouterInterfaceFromLocalAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class QueryEcsImageFromLocalAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.QueryEcsImageFromLocalResult value;
+        public org.zstack.sdk.QueryAliyunRouterInterfaceFromLocalResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -34,8 +34,8 @@ public class QueryEcsImageFromLocalAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.QueryEcsImageFromLocalResult value = res.getResult(org.zstack.sdk.QueryEcsImageFromLocalResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QueryEcsImageFromLocalResult() : value; 
+        org.zstack.sdk.QueryAliyunRouterInterfaceFromLocalResult value = res.getResult(org.zstack.sdk.QueryAliyunRouterInterfaceFromLocalResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryAliyunRouterInterfaceFromLocalResult() : value; 
 
         return ret;
     }
@@ -65,7 +65,7 @@ public class QueryEcsImageFromLocalAction extends QueryAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/hybrid/aliyun/image";
+        info.path = "/hybrid/aliyun/router-interface";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

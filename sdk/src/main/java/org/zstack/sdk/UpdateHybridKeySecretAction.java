@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class DeleteRouterInterfaceLocalAction extends AbstractAction {
+public class UpdateHybridKeySecretAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class DeleteRouterInterfaceLocalAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteRouterInterfaceLocalResult value;
+        public org.zstack.sdk.UpdateHybridKeySecretResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -28,8 +28,11 @@ public class DeleteRouterInterfaceLocalAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = false)
-    public java.lang.String deleteMode = "Permissive";
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -54,8 +57,8 @@ public class DeleteRouterInterfaceLocalAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteRouterInterfaceLocalResult value = res.getResult(org.zstack.sdk.DeleteRouterInterfaceLocalResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteRouterInterfaceLocalResult() : value; 
+        org.zstack.sdk.UpdateHybridKeySecretResult value = res.getResult(org.zstack.sdk.UpdateHybridKeySecretResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateHybridKeySecretResult() : value; 
 
         return ret;
     }
@@ -84,11 +87,11 @@ public class DeleteRouterInterfaceLocalAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/hybrid/aliyun/router-interface/{uuid}";
+        info.httpMethod = "POST";
+        info.path = "/hybrid/hybrid/{uuid}/key";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

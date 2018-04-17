@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class QueryEcsImageFromLocalAction extends QueryAction {
+public class SyncDahoDataCenterConnectionAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class QueryEcsImageFromLocalAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.QueryEcsImageFromLocalResult value;
+        public org.zstack.sdk.SyncDahoDataCenterConnectionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,6 +25,23 @@ public class QueryEcsImageFromLocalAction extends QueryAction {
         }
     }
 
+    @Param(required = false)
+    public java.lang.String resourceUuid;
+
+    @Param(required = false)
+    public java.util.List systemTags;
+
+    @Param(required = false)
+    public java.util.List userTags;
+
+    @Param(required = true)
+    public String sessionId;
+
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -34,8 +51,8 @@ public class QueryEcsImageFromLocalAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.QueryEcsImageFromLocalResult value = res.getResult(org.zstack.sdk.QueryEcsImageFromLocalResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QueryEcsImageFromLocalResult() : value; 
+        org.zstack.sdk.SyncDahoDataCenterConnectionResult value = res.getResult(org.zstack.sdk.SyncDahoDataCenterConnectionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SyncDahoDataCenterConnectionResult() : value; 
 
         return ret;
     }
@@ -64,11 +81,11 @@ public class QueryEcsImageFromLocalAction extends QueryAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/hybrid/aliyun/image";
+        info.httpMethod = "POST";
+        info.path = "/hybrid/daho/connections/sync";
         info.needSession = true;
-        info.needPoll = false;
-        info.parameterName = "";
+        info.needPoll = true;
+        info.parameterName = "params";
         return info;
     }
 

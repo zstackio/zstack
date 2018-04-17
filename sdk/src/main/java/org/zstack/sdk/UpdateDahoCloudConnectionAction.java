@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class QueryAliyunKeySecretAction extends QueryAction {
+public class UpdateDahoCloudConnectionAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class QueryAliyunKeySecretAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.QueryAliyunKeySecretResult value;
+        public org.zstack.sdk.UpdateDahoCloudConnectionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,6 +25,29 @@ public class QueryAliyunKeySecretAction extends QueryAction {
         }
     }
 
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String uuid;
+
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = false, maxLength = 1024, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String description;
+
+    @Param(required = false)
+    public java.util.List systemTags;
+
+    @Param(required = false)
+    public java.util.List userTags;
+
+    @Param(required = true)
+    public String sessionId;
+
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -34,8 +57,8 @@ public class QueryAliyunKeySecretAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.QueryAliyunKeySecretResult value = res.getResult(org.zstack.sdk.QueryAliyunKeySecretResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QueryAliyunKeySecretResult() : value; 
+        org.zstack.sdk.UpdateDahoCloudConnectionResult value = res.getResult(org.zstack.sdk.UpdateDahoCloudConnectionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateDahoCloudConnectionResult() : value; 
 
         return ret;
     }
@@ -64,11 +87,11 @@ public class QueryAliyunKeySecretAction extends QueryAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/hybrid/aliyun/key";
+        info.httpMethod = "PUT";
+        info.path = "/hybrid/daho/cloud_connections/{uuid}/actions";
         info.needSession = true;
-        info.needPoll = false;
-        info.parameterName = "";
+        info.needPoll = true;
+        info.parameterName = "updateDahoCloudConnection";
         return info;
     }
 

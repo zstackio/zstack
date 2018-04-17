@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class SyncRouterInterfaceFromRemoteAction extends AbstractAction {
+public class UpdateAliyunRouteInterfaceRemoteAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class SyncRouterInterfaceFromRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.SyncRouterInterfaceFromRemoteResult value;
+        public org.zstack.sdk.UpdateAliyunRouteInterfaceRemoteResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,10 +26,13 @@ public class SyncRouterInterfaceFromRemoteAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String dataCenterUuid;
+    public java.lang.String uuid;
 
-    @Param(required = false)
-    public java.lang.String resourceUuid;
+    @Param(required = true, validValues = {"active","inactive"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String op;
+
+    @Param(required = true, validValues = {"vbr","vrouter"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String vRouterType;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -54,8 +57,8 @@ public class SyncRouterInterfaceFromRemoteAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.SyncRouterInterfaceFromRemoteResult value = res.getResult(org.zstack.sdk.SyncRouterInterfaceFromRemoteResult.class);
-        ret.value = value == null ? new org.zstack.sdk.SyncRouterInterfaceFromRemoteResult() : value; 
+        org.zstack.sdk.UpdateAliyunRouteInterfaceRemoteResult value = res.getResult(org.zstack.sdk.UpdateAliyunRouteInterfaceRemoteResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateAliyunRouteInterfaceRemoteResult() : value; 
 
         return ret;
     }
@@ -85,10 +88,10 @@ public class SyncRouterInterfaceFromRemoteAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/hybrid/aliyun/router-interface/{dataCenterUuid}/sync";
+        info.path = "/hybrid/aliyun/router-interface/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "syncRouterInterfaceFromRemote";
+        info.parameterName = "updateAliyunRouteInterfaceRemote";
         return info;
     }
 

@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class QueryEcsImageFromLocalAction extends QueryAction {
+public class QueryDahoVllVbrRefAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class QueryEcsImageFromLocalAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.QueryEcsImageFromLocalResult value;
+        public org.zstack.sdk.QueryDahoVllVbrRefResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -34,8 +34,8 @@ public class QueryEcsImageFromLocalAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.QueryEcsImageFromLocalResult value = res.getResult(org.zstack.sdk.QueryEcsImageFromLocalResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QueryEcsImageFromLocalResult() : value; 
+        org.zstack.sdk.QueryDahoVllVbrRefResult value = res.getResult(org.zstack.sdk.QueryDahoVllVbrRefResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryDahoVllVbrRefResult() : value; 
 
         return ret;
     }
@@ -65,7 +65,7 @@ public class QueryEcsImageFromLocalAction extends QueryAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/hybrid/aliyun/image";
+        info.path = "/hybrid/daho/vllsRef";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";
