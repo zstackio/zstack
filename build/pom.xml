@@ -259,6 +259,11 @@
                 </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
+                    <artifactId>daho</artifactId>
+		    <version>${project.version}</version>
+		</dependency>
+		<dependency>
+                    <groupId>org.zstack</groupId>
                     <artifactId>zwatch</artifactId>
                     <version>${project.version}</version>
                 </dependency>

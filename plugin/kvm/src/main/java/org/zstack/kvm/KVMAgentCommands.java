@@ -790,6 +790,16 @@ public class KVMAgentCommands {
         private Integer VDIMonitorNumber;
         private boolean useBootMenu;
         private boolean kvmHiddenState;
+        private boolean vmPortOff;
+        private String vmCpuModel;
+
+        public String getVmCpuModel() {
+            return vmCpuModel;
+        }
+
+        public void setVmCpuModel(String vmCpuModel) {
+            this.vmCpuModel = vmCpuModel;
+        }
 
         public String getSpiceStreamingMode() {
             return spiceStreamingMode;
@@ -813,6 +823,14 @@ public class KVMAgentCommands {
 
         public void setKvmHiddenState(boolean kvmHiddenState) {
             this.kvmHiddenState = kvmHiddenState;
+        }
+
+        public void setVmPortOff(boolean vmPortOff){
+            this.vmPortOff = vmPortOff;
+        }
+
+        public boolean isVmPortOff() {
+            return vmPortOff;
         }
 
         public void setUseBootMenu(boolean useBootMenu) {

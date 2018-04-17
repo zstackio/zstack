@@ -1,6 +1,8 @@
 package org.zstack.test.integration.storage.primary.ceph.capacity
 
 import org.springframework.http.HttpEntity
+import org.zstack.sdk.CephBackupStorageInventory
+import org.zstack.sdk.CephPrimaryStoragePoolInventory
 import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.GetPrimaryStorageCapacityResult
@@ -8,6 +10,8 @@ import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.PrimaryStorageInventory
+import org.zstack.storage.ceph.CephPoolCapacity
+import org.zstack.storage.ceph.primary.CephPrimaryStoragePoolVO
 import org.zstack.test.integration.storage.Env
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
@@ -58,8 +62,9 @@ class CephCreateVmByIsoCapacityCase extends SubCase {
         DiskOfferingInventory diskOffering = env.inventoryByName("diskOffering")
         InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering")
         L3NetworkInventory l3 = env.inventoryByName("l3")
+        CephBackupStorageInventory bs = queryCephBackupStorage {}[0]
+        CephPrimaryStoragePoolInventory cephPrimaryStoragePool = queryCephPrimaryStoragePool {}[0]
 
-        def bs = env.inventoryByName("ceph-bk")
         def image_virtual_size = SizeUnit.GIGABYTE.toByte(10)//10G
         def image_physical_size = SizeUnit.GIGABYTE.toByte(1)//1G
 
@@ -67,12 +72,41 @@ class CephCreateVmByIsoCapacityCase extends SubCase {
             uuid = ps.uuid
         }
 
+        def bsPoolAvailableCapacity = 1
+        def bsPoolReplicatedSize = 2
+        def bsPoolUsedCapacity = 3
+        def psPoolAvailableCapacity = 4
+        def psPoolReplicatedSize = 5
+        def psPoolUsedCapacity = 6
         def download_image_path_invoked = false
         env.simulator(CephBackupStorageBase.DOWNLOAD_IMAGE_PATH) {
             def rsp = new CephBackupStorageBase.DownloadRsp()
             rsp.size = image_virtual_size
             rsp.actualSize = image_physical_size
             download_image_path_invoked = true
+
+            CephPoolCapacity bsPoolCapacity = new CephPoolCapacity()
+            bsPoolCapacity.availableCapacity = bsPoolAvailableCapacity
+            bsPoolCapacity.name = bs.getPoolName()
+            bsPoolCapacity.replicatedSize = bsPoolReplicatedSize
+            bsPoolCapacity.usedCapacity = bsPoolUsedCapacity
+
+            CephPoolCapacity otherPoolCapacity = new CephPoolCapacity()
+            otherPoolCapacity.availableCapacity = 8
+            otherPoolCapacity.name = "other-pool"
+            otherPoolCapacity.replicatedSize = 9
+            otherPoolCapacity.usedCapacity = 10
+
+            CephPoolCapacity psPoolCapacity = new CephPoolCapacity()
+            psPoolCapacity.availableCapacity = psPoolAvailableCapacity
+            psPoolCapacity.name = cephPrimaryStoragePool.poolName
+            psPoolCapacity.replicatedSize = psPoolReplicatedSize
+            psPoolCapacity.usedCapacity = psPoolUsedCapacity
+
+            rsp.setPoolCapacities(Arrays.asList(bsPoolCapacity, otherPoolCapacity, psPoolCapacity))
+            rsp.setTotalCapacity(bs.totalCapacity)
+            rsp.setAvailableCapacity(bs.availableCapacity)
+
             return rsp
         }
 
@@ -82,6 +116,15 @@ class CephCreateVmByIsoCapacityCase extends SubCase {
             backupStorageUuids = [bs.uuid]
             format = ImageConstant.ISO_FORMAT_STRING
         }
+        bs = queryCephBackupStorage {}[0]
+        assert bs.poolAvailableCapacity == bsPoolAvailableCapacity
+        assert bs.poolReplicatedSize == bsPoolReplicatedSize
+        assert bs.poolUsedCapacity == bsPoolUsedCapacity
+
+        cephPrimaryStoragePool = queryCephPrimaryStoragePool {}[0]
+        assert cephPrimaryStoragePool.availableCapacity == psPoolAvailableCapacity
+        assert cephPrimaryStoragePool.replicatedSize == psPoolReplicatedSize
+        assert cephPrimaryStoragePool.usedCapacity == psPoolUsedCapacity
 
         assert download_image_path_invoked
 

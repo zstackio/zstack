@@ -54,6 +54,7 @@
         <class>org.zstack.header.network.l3.L3NetworkVO</class>
         <class>org.zstack.header.network.l3.L3NetworkEO</class>
         <class>org.zstack.header.network.l3.L3NetworkDnsVO</class>
+        <class>org.zstack.header.network.l3.L3NetworkHostRouteVO</class>
         <class>org.zstack.header.network.l3.IpRangeVO</class>
         <class>org.zstack.header.network.l3.IpRangeEO</class>
         <class>org.zstack.header.network.l3.UsedIpVO</class>
@@ -128,6 +129,8 @@
         <class>org.zstack.network.service.lb.LoadBalancerVO</class>
         <class>org.zstack.network.service.lb.LoadBalancerListenerVmNicRefVO</class>
         <class>org.zstack.network.service.lb.LoadBalancerListenerVO</class>
+        <class>org.zstack.network.service.lb.CertificateVO</class>
+        <class>org.zstack.network.service.lb.LoadBalancerListenerCertificateRefVO</class>
         <class>org.zstack.header.console.ConsoleProxyAgentVO</class>
         <class>org.zstack.header.storage.primary.ImageCacheShadowVO</class>
         <class>org.zstack.ldap.LdapServerVO</class>

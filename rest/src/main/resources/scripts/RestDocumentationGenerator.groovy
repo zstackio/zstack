@@ -3,7 +3,6 @@ package scripts
 import com.google.common.io.Resources
 import groovy.json.JsonBuilder
 import org.apache.commons.io.Charsets
-import org.apache.commons.io.FileUtils
 import org.apache.commons.lang.StringUtils
 import org.springframework.http.HttpMethod
 import org.zstack.core.Platform
@@ -14,9 +13,7 @@ import org.zstack.header.message.APIMessage
 import org.zstack.header.message.APIMessage.InvalidApiMessageException
 import org.zstack.header.message.APIParam
 import org.zstack.header.message.DocUtils
-import org.zstack.header.message.OverriddenApiParams
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.AutoQuery
 import org.zstack.header.rest.APINoSee
 import org.zstack.header.rest.RestRequest
 import org.zstack.header.rest.RestResponse
@@ -27,7 +24,6 @@ import org.zstack.utils.DebugUtils
 import org.zstack.utils.FieldUtils
 import org.zstack.utils.ShellResult
 import org.zstack.utils.ShellUtils
-import org.zstack.utils.TypeUtils
 import org.zstack.utils.Utils
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.logging.CLogger
@@ -36,9 +32,9 @@ import org.zstack.utils.path.PathUtil
 import java.lang.reflect.Field
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
-import java.util.concurrent.TimeUnit
 import java.util.regex.Matcher
 import java.util.regex.Pattern
+import java.util.stream.Collectors
 
 /**
  * Created by xing5 on 2016/12/21.
@@ -159,7 +155,7 @@ class RestDocumentationGenerator implements DocumentGenerator {
                 return classes.contains(it.simpleName)
             }
         }
-
+        def errInfo = []
         apiClasses.each {
             def docPath = getDocTemplatePathFromClass(it)
             System.out.println("processing ${docPath}")
@@ -176,10 +172,17 @@ class RestDocumentationGenerator implements DocumentGenerator {
                 if (ignoreError()) {
                     System.out.println("failed to process ${docPath}, ${e.message}")
                     logger.warn(e.message, e)
+                } else if (e instanceof FileNotFoundException) {
+                    errInfo.add(e.message)
                 } else {
                     throw e
                 }
             }
+        }
+
+        if (!errInfo.isEmpty()) {
+            logger.warn(String.format("there are %d errors found:", errInfo.size()))
+            throw new FileNotFoundException(errInfo.stream().collect(Collectors.joining("\n")))
         }
 
         URL url = Resources.getResource("doc/RestIntroduction_zh_cn.md")

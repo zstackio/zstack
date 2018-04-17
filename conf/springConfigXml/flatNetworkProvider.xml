@@ -75,4 +75,18 @@
             <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor" />
         </zstack:plugin>
     </bean>
+
+    <bean id="FlatHostRouteBackend" class="org.zstack.network.service.flat.FlatHostRouteBackend">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.network.service.NetworkServiceHostRouteBackend" />
+            <zstack:extension interface="org.zstack.header.network.service.DhcpServerExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="FlatDnsBackend" class="org.zstack.network.service.flat.FlatDnsBackend">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.network.service.NetworkServiceDnsBackend" />
+        </zstack:plugin>
+    </bean>
 </beans>

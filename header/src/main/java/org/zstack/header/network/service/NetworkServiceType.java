@@ -12,6 +12,7 @@ public class NetworkServiceType {
     public static NetworkServiceType SNAT = new NetworkServiceType("SNAT");
     public static NetworkServiceType PortForwarding = new NetworkServiceType("PortForwarding");
     public static NetworkServiceType Centralized_DNS = new NetworkServiceType("CentralizedDNS");
+    public static NetworkServiceType HostRoute = new NetworkServiceType("HostRoute");
 
     private final String typeName;
 

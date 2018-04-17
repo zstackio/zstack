@@ -355,6 +355,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             handle((APIGetResourceNamesMsg) msg);
         } else if (msg instanceof APIIsOpensourceVersionMsg) {
             handle((APIIsOpensourceVersionMsg) msg);
+        } else if (msg instanceof APIRenewSessionMsg) {
+            handle((APIRenewSessionMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -504,6 +506,50 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         bus.reply(msg, reply);
     }
 
+    private void handle(APIRenewSessionMsg msg) {
+        APIRenewSessionEvent evt = new APIRenewSessionEvent(msg.getId());
+
+        SessionInventory s = sessions.get(msg.getSessionUuid());
+        Timestamp current = dbf.getCurrentSqlTime();
+        boolean valid = true;
+        SessionVO session = dbf.findByUuid(msg.getSessionUuid(), SessionVO.class);
+
+        if (s != null) {
+            if (current.after(s.getExpiredDate())) {
+                valid = false;
+            }
+        } else {
+            valid = false;
+        }
+
+        if (session != null) {
+            if (current.after(session.getExpiredDate())) {
+                valid = false;
+            }
+        } else if (session == null) {
+            valid = false;
+        }
+
+        if (!valid) {
+            evt.setError(operr("session [uuid:%s] expired, can not renew", msg.getSessionUuid()));
+            bus.publish(evt);
+            return;
+        }
+
+        long expiredTime;
+        if (msg.getDuration() != null) {
+            expiredTime = getCurrentSqlDate().getTime() + TimeUnit.SECONDS.toMillis(msg.getDuration());
+        } else {
+            int sessionTimeout = IdentityGlobalConfig.SESSION_TIMEOUT.value(Integer.class);
+            expiredTime = getCurrentSqlDate().getTime() + TimeUnit.SECONDS.toMillis(sessionTimeout);
+        }
+        s.setExpiredDate(new Timestamp(expiredTime));
+        session.setExpiredDate(new Timestamp(expiredTime));
+        session = dbf.updateAndRefresh(session);
+
+        evt.setInventory(SessionInventory.valueOf(session));
+        bus.publish(evt);
+    }
 
     private void handle(APILogOutMsg msg) {
         APILogOutReply reply = new APILogOutReply();

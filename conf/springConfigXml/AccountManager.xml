@@ -44,6 +44,7 @@
                 <value>org.zstack.header.configuration.DiskOfferingVO</value>
                 <value>org.zstack.network.service.lb.LoadBalancerVO</value>
                 <value>org.zstack.network.service.lb.LoadBalancerListenerVO</value>
+                <value>org.zstack.network.service.lb.CertificateVO</value>
                 <value>org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO</value>
                 <value>org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolVO</value>
                 <value>org.zstack.header.longjob.LongJobVO</value>

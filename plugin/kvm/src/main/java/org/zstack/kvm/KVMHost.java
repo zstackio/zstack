@@ -1962,6 +1962,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setUsbRedirect(spec.getUsbRedirect());
         cmd.setVDIMonitorNumber(Integer.valueOf(spec.getVDIMonitorNumber()));
         cmd.setUseNuma(VmGlobalConfig.NUMA.value(Boolean.class));
+        cmd.setVmPortOff(VmGlobalConfig.VM_PORT_OFF.value(Boolean.class));
         cmd.setConsoleMode("vnc");
 
         addons(spec, cmd);
@@ -2525,7 +2526,7 @@ public class KVMHost extends HostBase implements Host {
 
                 if (null == KVMSystemTags.CPU_MODEL_NAME.getTokenByResourceUuid(self.getUuid(), KVMSystemTags.CPU_MODEL_NAME_TOKEN)) {
                     creator = KVMSystemTags.CPU_MODEL_NAME.newSystemTagCreator(self.getUuid());
-                    creator.setTagByTokens(map(e(KVMSystemTags.CPU_MODEL_NAME_TOKEN, "Intel(R) Xeon(R) CPU E5-2630 v4 @ 2.20GHz")));
+                    creator.setTagByTokens(map(e(KVMSystemTags.CPU_MODEL_NAME_TOKEN, "Broadwell")));
                     creator.inherent = true;
                     creator.create();
                 }

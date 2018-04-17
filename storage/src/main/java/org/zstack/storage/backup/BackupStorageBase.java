@@ -658,11 +658,14 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
     }
 
     protected void updateCapacity(Long totalCapacity, Long availableCapacity) {
-        if (totalCapacity != null && availableCapacity != null) {
-            self.setTotalCapacity(totalCapacity);
-            self.setAvailableCapacity(availableCapacity);
-            dbf.update(self);
+        if (totalCapacity == null || availableCapacity == null) {
+            return;
         }
+
+        BackupStorageVO vo = dbf.findByUuid(self.getUuid(), BackupStorageVO.class);
+        vo.setTotalCapacity(totalCapacity);
+        vo.setAvailableCapacity(availableCapacity);
+        dbf.update(vo);
     }
 
     protected void fireDisconnectedCanonicalEvent(ErrorCode reason) {
