@@ -8,6 +8,7 @@ import javax.persistence.*;
 import java.sql.Timestamp;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 @Entity
 @Table
@@ -34,7 +35,7 @@ public class RoleVO extends ResourceVO implements OwnedByAccount {
     public RoleVO copy() {
         RoleVO vo = new RoleVO();
         vo.name = name;
-        vo.uuid = uuid();
+        vo.uuid = UUID.randomUUID().toString().replace("-", "");
         vo.description = description;
         vo.type = type;
         return vo;

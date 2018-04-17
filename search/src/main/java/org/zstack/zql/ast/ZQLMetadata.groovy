@@ -268,7 +268,6 @@ class ZQLMetadata {
 
         BeanUtils.reflections.getTypesAnnotatedWith(Inventory.class).findAll{ it.isAnnotationPresent(Inventory.class) }
                 .each { clz ->
-            println("xxxxxxxxxxxxxxxxxxxxxxxxxxxx ${clz}")
             ExpandedQueries queries = clz.getAnnotation(ExpandedQueries.class)
             ExpandedQueryAliases aliases = clz.getAnnotation(ExpandedQueryAliases.class)
             fillInventoryMetadata(clz,

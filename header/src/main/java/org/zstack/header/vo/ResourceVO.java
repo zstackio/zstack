@@ -6,7 +6,6 @@ import org.zstack.utils.FieldUtils;
 import javax.persistence.*;
 import java.lang.reflect.Field;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -28,10 +27,6 @@ public class ResourceVO {
     private String resourceType;
 
     private static Map<Class, Field> nameFields = new ConcurrentHashMap<>();
-
-    public static String uuid() {
-        return UUID.randomUUID().toString().replace("-", "");
-    }
 
     public ResourceVO() {
     }

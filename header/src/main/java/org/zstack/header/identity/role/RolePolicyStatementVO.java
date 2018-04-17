@@ -5,6 +5,7 @@ import org.zstack.header.vo.ResourceVO;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
+import java.util.UUID;
 
 @Entity
 @Table
@@ -27,7 +28,7 @@ public class RolePolicyStatementVO {
 
     public RolePolicyStatementVO copy(String roleUuid) {
         RolePolicyStatementVO vo = new RolePolicyStatementVO();
-        vo.uuid = ResourceVO.uuid();
+        vo.uuid = UUID.randomUUID().toString().replace("-", "");
         vo.statement = statement;
         vo.roleUuid = roleUuid;
         return vo;

@@ -88,7 +88,7 @@ public class AddRolesToIAM2VirtualIDAction extends AbstractAction {
         info.path = "/iam2/projects/virtual-ids/{virtualIDUuid}/roles";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 
