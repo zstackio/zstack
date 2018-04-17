@@ -83,7 +83,14 @@ class RBAC {
 
     static class PermissionCheckerWrapper {
         static void check(Class<? extends APIMessage> apiClz, Closure<Boolean> closure) {
-            RBAC.registerAPIPermissionChecker(apiClz, [check: closure] as APIPermissionChecker)
+            if (apiClz != null) {
+                RBAC.registerAPIPermissionChecker(apiClz, [check: closure] as APIPermissionChecker)
+            } else {
+                def checker = [check: closure] as APIPermissionChecker
+                APIMessage.apiMessageClasses.each {
+                    RBAC.registerAPIPermissionChecker(it, checker)
+                }
+            }
         }
     }
 

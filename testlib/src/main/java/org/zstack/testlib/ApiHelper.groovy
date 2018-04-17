@@ -19033,6 +19033,33 @@ trait ApiHelper {
     }
 
 
+    def getIAM2ProjectsOfVirtualID(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.iam2.api.GetIAM2ProjectsOfVirtualIDAction.class) Closure c) {
+        def a = new org.zstack.sdk.iam2.api.GetIAM2ProjectsOfVirtualIDAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def getIAM2SystemAttributes(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.iam2.api.GetIAM2SystemAttributesAction.class) Closure c) {
         def a = new org.zstack.sdk.iam2.api.GetIAM2SystemAttributesAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
