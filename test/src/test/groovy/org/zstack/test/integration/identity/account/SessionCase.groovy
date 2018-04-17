@@ -77,7 +77,7 @@ class SessionCase extends SubCase {
             duration = 31536000L
         }
 
-        assert sess2.uuid != sess1.uuid
+        assert sess2.uuid == sess1.uuid
         assert sess2.accountUuid == sess1.accountUuid
         assert sess2.userUuid == sess1.userUuid
     }
