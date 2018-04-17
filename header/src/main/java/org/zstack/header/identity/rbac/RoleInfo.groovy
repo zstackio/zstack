@@ -9,6 +9,7 @@ class RoleInfo {
     Set<String> allowedActions = []
     StatementEffect effect = StatementEffect.Allow
     boolean adminOnly = false
+    boolean predefine = true
     private List<String> normalActionsReferredRBACInfoNames = []
 
     PolicyStatement toStatement() {

@@ -6,9 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.identity.AccountConstant;
-import org.zstack.header.identity.AccountResourceRefVO;
-import org.zstack.header.identity.AccountResourceRefVO_;
+import org.zstack.header.identity.*;
 import org.zstack.header.identity.rbac.PolicyMatcher;
 import org.zstack.header.identity.rbac.RBAC;
 import org.zstack.header.identity.rbac.RBACInfo;
@@ -19,6 +17,7 @@ import static org.zstack.core.Platform.*;
 
 import javax.persistence.Tuple;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class OperationTargetAPIRequestChecker implements APIRequestChecker {
@@ -56,7 +55,7 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
     }
 
     private void check() {
-        if (RBAC.isAdminOnlyAPI(message.getClass().getName()) && AccountConstant.INITIAL_SYSTEM_ADMIN_UUID.equals(message.getSession().getAccountUuid())) {
+        if (AccountConstant.INITIAL_SYSTEM_ADMIN_UUID.equals(message.getSession().getAccountUuid())) {
             return;
         }
 
@@ -128,12 +127,22 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
                         .groupBy(AccountResourceRefVO_.accountUuid)
                         .listTuple();
 
-                ts.forEach(t -> {
-                    String accountUuid = t.get(0, String.class);
-                    String resourceUuid = t.get(1, String.class);
-                    if (!message.getSession().getAccountUuid().equals(accountUuid)) {
+                ts.addAll(
+                        q(SharedResourceVO.class).select(SharedResourceVO_.receiverAccountUuid, SharedResourceVO_.resourceUuid)
+                        .in(SharedResourceVO_.resourceUuid, uuids)
+                        .eq(SharedResourceVO_.permission, SharedResourceVO.PERMISSION_WRITE)
+                        .eq(SharedResourceVO_.resourceType, acntMgr.getBaseResourceType(resourceType).getSimpleName())
+                        .groupBy(SharedResourceVO_.receiverAccountUuid)
+                        .listTuple()
+                );
+
+                ts = ts.stream().filter(t-> t.get(0, String.class).equals(message.getSession().getAccountUuid())).collect(Collectors.toList());
+                List<Tuple> finalTs = ts;
+                uuids.forEach(uuid -> {
+                    Optional<Tuple> opt = finalTs.stream().filter(t -> t.get(1, String.class).equals(uuid)).findFirst();
+                    if (!opt.isPresent()) {
                         throw new OperationFailureException(operr("permission denied, the account[uuid:%s] is not the owner of the resource[uuid:%s, type:%s]",
-                                message.getSession().getAccountUuid(), resourceUuid, resourceType.getSimpleName()));
+                                message.getSession().getAccountUuid(), uuid, resourceType.getSimpleName()));
                     }
                 });
             }

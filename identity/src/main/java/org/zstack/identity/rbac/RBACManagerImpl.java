@@ -144,7 +144,7 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
         new SQLBatch() {
             @Override
             protected void scripts() {
-                RBAC.getRoleInfos().forEach(role -> {
+                RBAC.getRoleInfos().stream().filter(RoleInfo::isPredefine).forEach(role -> {
                     if (!q(SystemRoleVO.class).eq(SystemRoleVO_.uuid, role.getUuid()).isExists()) {
                         SystemRoleVO rvo = new SystemRoleVO();
                         rvo.setUuid(role.getUuid());

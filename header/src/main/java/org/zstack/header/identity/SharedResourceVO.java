@@ -14,6 +14,9 @@ import java.sql.Timestamp;
 @Table
 @BaseResource
 public class SharedResourceVO {
+    public static final int PERMISSION_READ = 1;
+    public static final int PERMISSION_WRITE = 1 << 1;
+
     @Column
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,6 +34,9 @@ public class SharedResourceVO {
     private boolean toPublic;
 
     @Column
+    private int permission = 1;
+
+    @Column
     private String resourceType;
 
     @Column
@@ -41,6 +47,14 @@ public class SharedResourceVO {
 
     @Column
     private Timestamp createDate;
+
+    public int getPermission() {
+        return permission;
+    }
+
+    public void setPermission(int permission) {
+        this.permission = permission;
+    }
 
     @PreUpdate
     private void preUpdate() {
