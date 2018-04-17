@@ -79,12 +79,12 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
                 }
 
                 //TODO: remove
-                if (info.getTargetResource() == null) {
+                if (info.getTargetResources().isEmpty()) {
                     return;
                 }
 
                 try {
-                    if (resourceType.isAssignableFrom(info.getTargetResource())) {
+                    if (info.isTargetResource(resourceType)) {
                         checkIfTheAccountOwnTheResource(param);
                     } else {
                         checkIfTheAccountCanAccessTheResource(param);
@@ -117,9 +117,13 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
 
             private void checkIfTheAccountOwnTheResource(APIMessage.FieldParam param) throws IllegalAccessException {
                 List<String> uuids = getResourceUuids(param);
+                if (uuids.isEmpty()) {
+                    return;
+                }
 
                 Class resourceType = param.param.resourceType();
-                List<Tuple> ts = q(AccountResourceRefVO.class).select(AccountResourceRefVO_.accountUuid, AccountResourceRefVO_.resourceUuid).in(AccountResourceRefVO_.resourceUuid, uuids)
+                List<Tuple> ts = q(AccountResourceRefVO.class).select(AccountResourceRefVO_.accountUuid, AccountResourceRefVO_.resourceUuid)
+                        .in(AccountResourceRefVO_.resourceUuid, uuids)
                         .eq(AccountResourceRefVO_.resourceType, acntMgr.getBaseResourceType(resourceType).getSimpleName())
                         .groupBy(AccountResourceRefVO_.accountUuid)
                         .listTuple();

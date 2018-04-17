@@ -8,10 +8,14 @@ class RBACInfo {
 
     private Set<String> adminOnlyAPIs = []
     private Set<String> normalAPIs = []
-    Class targetResource
+    List<Class> targetResources = []
     private Set<String> _adminOnlyAPIs = []
     private Set<String> _normalAPIs = []
     String name
+
+    boolean isTargetResource(Class clz) {
+        return targetResources.any { clz.isAssignableFrom(it) }
+    }
 
     List<String> adminOnlyAPIs(Class...apis) {
         List<String> lst = (apis as Set).collect { it.name }

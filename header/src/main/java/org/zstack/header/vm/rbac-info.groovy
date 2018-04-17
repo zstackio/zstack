@@ -11,7 +11,7 @@ static void init() {
             name = "vm"
             normalAPIs("org.zstack.header.vm.**")
 
-            targetResource = VmInstanceVO.class
+            targetResources = [VmInstanceVO.class]
         }
 
         role {
