@@ -3152,7 +3152,7 @@
   {
     "raw": "the VM[uuid:%s] volume stored location primary storage is in a state of maintenance",
     "en_US": "the VM[uuid:{0}] volume stored location primary storage is in a state of maintenance",
-    "zh_CN": "存储在本地存储的虚拟机[{0}]云盘处于维护状态",
+    "zh_CN": "虚拟机[{0}]云盘所在主存储处于维护状态",
     "arguments": [
       "vmUuid"
     ],
