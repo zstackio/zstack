@@ -1,6 +1,7 @@
 package org.zstack.header.identity.role;
 
 import org.zstack.header.vo.ForeignKey;
+import org.zstack.header.vo.ResourceVO;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
@@ -23,6 +24,14 @@ public class RolePolicyStatementVO {
     private Timestamp createDate;
     @Column
     private Timestamp lastOpDate;
+
+    public RolePolicyStatementVO copy(String roleUuid) {
+        RolePolicyStatementVO vo = new RolePolicyStatementVO();
+        vo.uuid = ResourceVO.uuid();
+        vo.statement = statement;
+        vo.roleUuid = roleUuid;
+        return vo;
+    }
 
     @PreUpdate
     private void preUpdate() {

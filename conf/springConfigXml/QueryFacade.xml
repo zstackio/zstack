@@ -20,6 +20,7 @@
 		</zstack:plugin>
     </bean>
 
+	<!--
     <bean id="MysqlQueryBuilder" class = "org.zstack.query.MysqlQueryBuilderImpl3">
     	<zstack:plugin>
 			<zstack:extension interface="org.zstack.header.Component" />
@@ -33,4 +34,6 @@
 			<zstack:extension interface="org.zstack.header.query.QueryBuilderFactory" />
 		</zstack:plugin>
     </bean>
+    -->
+
 </beans>

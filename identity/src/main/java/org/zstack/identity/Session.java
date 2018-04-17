@@ -44,6 +44,7 @@ public class Session {
                 long expiredTime = getCurrentSqlDate().getTime() + TimeUnit.SECONDS.toMillis(IdentityGlobalConfig.SESSION_TIMEOUT.value(Long.class));
                 vo.setExpiredDate(new Timestamp(expiredTime));
                 persist(vo);
+                reload(vo);
                 SessionInventory inv = SessionInventory.valueOf(vo);
                 sessions.put(inv.getUuid(), inv);
 

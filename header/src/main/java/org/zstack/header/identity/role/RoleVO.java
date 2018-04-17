@@ -7,7 +7,6 @@ import org.zstack.header.vo.ResourceVO;
 import javax.persistence.*;
 import java.sql.Timestamp;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -31,6 +30,15 @@ public class RoleVO extends ResourceVO implements OwnedByAccount {
 
     @Transient
     private String accountUuid;
+
+    public RoleVO copy() {
+        RoleVO vo = new RoleVO();
+        vo.name = name;
+        vo.uuid = uuid();
+        vo.description = description;
+        vo.type = type;
+        return vo;
+    }
 
     @PreUpdate
     private void preUpdate() {

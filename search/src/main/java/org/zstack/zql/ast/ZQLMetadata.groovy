@@ -3,6 +3,8 @@ package org.zstack.zql.ast
 import org.zstack.header.core.StaticInit
 import org.zstack.header.exception.CloudRuntimeException
 import org.zstack.header.query.ExpandedQueries
+import org.zstack.header.query.ExpandedQuery
+import org.zstack.header.query.ExpandedQueryAlias
 import org.zstack.header.query.ExpandedQueryAliases
 import org.zstack.header.rest.APINoSee
 import org.zstack.header.search.Inventory
@@ -201,47 +203,88 @@ class ZQLMetadata {
         }
     }
 
-    @StaticInit
-    static void staticInit() {
-        BeanUtils.reflections.getTypesAnnotatedWith(Inventory.class).each { clz ->
-            Inventory inventory = clz.getAnnotation(Inventory.class)
-            InventoryMetadata metadata = new InventoryMetadata(
+    private static void fillInventoryMetadata(Class clz,
+                                              List<ExpandedQuery> queries, List<ExpandedQueryAlias> aliases,
+                                              List<ExpandedQuery> queryForOther, List<ExpandedQueryAlias> aliasForOther) {
+        Inventory inventory = clz.getAnnotation(Inventory.class)
+        assert inventory : "class[${clz}] not annotated by @Inventory"
+
+        InventoryMetadata metadata = inventoryMetadata[clz.name]
+        if (metadata == null) {
+            metadata = new InventoryMetadata(
                     inventoryAnnotation: inventory,
                     selfInventoryClass: clz,
                     selfInventoryFieldNames: FieldUtils.getAllFields(clz).findAll {
                         return !it.isAnnotationPresent(APINoSee.class)
                     }.collect { it.name } as Set<String>
             )
+        }
 
+        if (queries != null) {
+            queries.each {
+                if (it.target() != Object.class && it.target() != clz) {
+                    assert queryForOther != null : "found ${clz} has an expanded query with target[${it.target()}], but queryForOther == null"
+                    queryForOther.add(it)
+                    return
+                }
+
+                Class targetInventoryClass = it.inventoryClass()
+                if (!targetInventoryClass.isAnnotationPresent(Inventory.class)) {
+                    throw new CloudRuntimeException("inventory class[${targetInventoryClass}] is query expanded by ${clz} but not have @Inventory annotation")
+                }
+
+                ExpandQueryMetadata emetadata = new ExpandQueryMetadata(
+                        selfVOClass: inventory.mappingVOClass(),
+                        targetVOClass: targetInventoryClass.getAnnotation(Inventory.class).mappingVOClass(),
+                        targetInventoryClass: it.inventoryClass(),
+                        selfKeyName: it.foreignKey(),
+                        targetKeyName: it.expandedInventoryKey(),
+                        name: it.expandedField()
+                )
+
+                metadata.expandQueries[emetadata.name] = emetadata
+            }
+        }
+
+        if (aliases != null) {
+            aliases.each {
+                if (it.target() != Object.class && it.target() != clz) {
+                    assert queryForOther != null : "found ${clz} has an expanded alias with target[${it.target()}], but aliasForOther == null"
+                    aliasForOther.add(it)
+                    return
+                }
+
+                metadata.expandQueryAliases[it.alias()] = new ExpandQueryAliasMetadata(aliasName: it.alias(), expandQueryText: it.expandedField())
+            }
+        }
+
+        inventoryMetadata[clz.name] = metadata
+    }
+
+    @StaticInit
+    static void staticInit() {
+        List<ExpandedQuery> queryForOther = []
+        List<ExpandedQueryAlias> aliasForOther = []
+
+        BeanUtils.reflections.getTypesAnnotatedWith(Inventory.class).findAll{ it.isAnnotationPresent(Inventory.class) }
+                .each { clz ->
+            println("xxxxxxxxxxxxxxxxxxxxxxxxxxxx ${clz}")
             ExpandedQueries queries = clz.getAnnotation(ExpandedQueries.class)
-            if (queries != null) {
-                queries.value().each {
-                    Class targetInventoryClass = it.inventoryClass()
-                    if (!targetInventoryClass.isAnnotationPresent(Inventory.class)) {
-                        throw new CloudRuntimeException("inventory class[${targetInventoryClass}] is query expanded by ${clz} but not have @Inventory annotation")
-                    }
-
-                    ExpandQueryMetadata emetadata = new ExpandQueryMetadata(
-                            selfVOClass: inventory.mappingVOClass(),
-                            targetVOClass: targetInventoryClass.getAnnotation(Inventory.class).mappingVOClass(),
-                            targetInventoryClass: it.inventoryClass(),
-                            selfKeyName: it.foreignKey(),
-                            targetKeyName: it.expandedInventoryKey(),
-                            name: it.expandedField()
-                    )
-
-                    metadata.expandQueries[emetadata.name] = emetadata
-                }
-            }
-
             ExpandedQueryAliases aliases = clz.getAnnotation(ExpandedQueryAliases.class)
-            if (aliases != null) {
-                aliases.value().each {
-                    metadata.expandQueryAliases[it.alias()] = new ExpandQueryAliasMetadata(aliasName: it.alias(), expandQueryText: it.expandedField())
-                }
-            }
+            fillInventoryMetadata(clz,
+                    queries ? queries.value() as List : null,
+                    aliases ? aliases.value() as List : null,
+                    queryForOther, aliasForOther)
+        }
 
-            inventoryMetadata[clz.name] = metadata
+        queryForOther.each {
+            Class clz = it.target()
+            fillInventoryMetadata(clz, [it], null,  null, null)
+        }
+
+        aliasForOther.each {
+            Class clz = it.target()
+            fillInventoryMetadata(clz, null, [it],  null, null)
         }
     }
 }

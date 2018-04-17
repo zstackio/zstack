@@ -10,6 +10,8 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ExpandedQueryAlias {
+    Class target() default Object.class;
+
     String expandedField();
 
     String alias();
