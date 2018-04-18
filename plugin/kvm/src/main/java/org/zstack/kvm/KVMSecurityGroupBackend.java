@@ -14,6 +14,8 @@ import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.MessageReply;
 import org.zstack.kvm.KVMAgentCommands.ApplySecurityGroupRuleCmd;
+import org.zstack.kvm.KVMAgentCommands.CheckDefaultSecurityGroupCmd;
+import org.zstack.kvm.KVMAgentCommands.CheckDefaultSecurityGroupResponse;
 import org.zstack.kvm.KVMAgentCommands.ApplySecurityGroupRuleResponse;
 import org.zstack.kvm.KVMAgentCommands.CleanupUnusedRulesOnHostResponse;
 import org.zstack.kvm.KVMAgentCommands.RefreshAllRulesOnHostCmd;
@@ -31,6 +33,7 @@ public class KVMSecurityGroupBackend implements SecurityGroupHypervisorBackend, 
     
     public static final String SECURITY_GROUP_APPLY_RULE_PATH = "/securitygroup/applyrules";
     public static final String SECURITY_GROUP_REFRESH_RULE_ON_HOST_PATH = "/securitygroup/refreshrulesonhost";
+    public static final String SECURITY_GROUP_CHECK_DEFAULT_RULES_ON_HOST_PATH = "/securitygroup/checkdefaultrulesonhost";
     public static final String SECURITY_GROUP_CLEANUP_UNUSED_RULE_ON_HOST_PATH = "/securitygroup/cleanupunusedrules";
     public static final String SECURITY_GROUP_UPDATE_GROUP_MEMBER = "/securitygroup/updategroupmember";
 
@@ -115,6 +118,40 @@ public class KVMSecurityGroupBackend implements SecurityGroupHypervisorBackend, 
         } else {
             reApplyAllRulesOnHost(hto, complete);
         }
+    }
+
+    @Override
+    public void checkDefaultRules(String hostUuid, Completion completion) {
+        CheckDefaultSecurityGroupCmd cmd = new CheckDefaultSecurityGroupCmd();
+
+        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+        msg.setHostUuid(hostUuid);
+        msg.setPath(SECURITY_GROUP_CHECK_DEFAULT_RULES_ON_HOST_PATH);
+        msg.setCommand(cmd);
+        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
+        msg.setNoStatusCheck(true);
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                KVMHostAsyncHttpCallReply hreply = reply.castReply();
+                CheckDefaultSecurityGroupResponse rsp = hreply.toResponse(CheckDefaultSecurityGroupResponse.class);
+                if (!rsp.isSuccess()) {
+                    ErrorCode err = operr("failed to check default rules of security group on kvm host[uuid:%s], because %s", hostUuid, rsp.getError());
+                    completion.fail(err);
+                    return;
+                }
+
+                String info = String.format("successfully applied rules of security group rules to kvm host[uuid:%s]", hostUuid);
+                logger.debug(info);
+                completion.success();
+            }
+        });
     }
 
     @Override

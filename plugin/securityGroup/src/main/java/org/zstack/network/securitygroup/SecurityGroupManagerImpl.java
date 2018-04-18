@@ -20,6 +20,8 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostStatus;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.Quota.QuotaOperator;
 import org.zstack.header.identity.Quota.QuotaPair;
@@ -514,6 +516,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         q.add(VmNicSecurityGroupRefVO_.vmInstanceUuid, Op.EQ, msg.getVmInstanceUuid());
         List<String> nicUuids = q.listValue();
         if (nicUuids.isEmpty()) {
+            checkDefaultRulesOnHost(msg.getHostUuid());
             logger.debug(String.format("no nic of vm[uuid:%s] needs to refresh security group rule", msg.getVmInstanceUuid()));
             bus.reply(msg, reply);
             return;
@@ -539,6 +542,11 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         }
 
         applyRules(htos);
+
+        if (htos.isEmpty()) {
+            checkDefaultRulesOnHost(msg.getHostUuid());
+        }
+
         logger.debug(String.format("refreshed security group rule for vm[uuid:%s]", msg.getVmInstanceUuid()));
         bus.reply(msg, reply);
     }
@@ -939,6 +947,27 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         }
     }
 
+    private void checkDefaultRulesOnHost(String hostUuid) {
+        String hypervisorType = Q.New(HostVO.class).select(HostVO_.hypervisorType).eq(HostVO_.uuid, hostUuid).findValue();
+        SecurityGroupHypervisorBackend bkend = hypervisorBackends.get(hypervisorType);
+        bkend.checkDefaultRules(hostUuid, new Completion(null) {
+            private void copeWithFailureHost() {
+                createFailureHostTask(hostUuid);
+            }
+
+            @Override
+            public void success() {
+                logger.debug(String.format("successfully applied security rules on host[uuid:%s]", hostUuid));
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.debug(String.format("failed to apply security rules on host[uuid:%s], because %s, will try it later", hostUuid, errorCode));
+                copeWithFailureHost();
+            }
+        });
+    }
+
     private void updateGroupMembers(HostSecurityGroupMembersTO gto){
         for(String hostUuid : gto.getHostUuids()){
             SecurityGroupHypervisorBackend bkend = hypervisorBackends.get(gto.getHypervisorType());
@@ -1159,6 +1188,11 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         cal.vmStates = asList(VmInstanceState.Running);
         List<HostRuleTO> htos = cal.calculate();
         applyRules(htos);
+
+        // check default rules when no rules to apply
+        if (htos.isEmpty()) {
+            checkDefaultRulesOnHost(inv.getHostUuid());
+        }
 
         SecurityGroupHypervisorBackend bkd = getHypervisorBackend(inv.getHypervisorType());
         bkd.cleanUpUnusedRuleOnHost(inv.getLastHostUuid(), new Completion(null) {
