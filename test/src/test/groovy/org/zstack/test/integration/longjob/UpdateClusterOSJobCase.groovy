@@ -160,6 +160,7 @@ class UpdateClusterOSJobCase extends SubCase {
             testUpdateClusterWithHostPreMaintenance()
             testUpdateClusterWithHostMaintenance()
             testUpdateClusterUsingAPI()
+            testUpdateClusterExcludePackages()
         }
     }
 
@@ -294,5 +295,21 @@ class UpdateClusterOSJobCase extends SubCase {
         VmInstanceVO vmVO = dbFindByUuid(vmInv.uuid, VmInstanceVO.class)
         assert vmVO.hostUuid == hvo.uuid
         assert vmVO.state == VmInstanceState.Running
+    }
+
+    void testUpdateClusterExcludePackages() {
+        ClusterInventory cls = env.inventoryByName("cluster1") as ClusterInventory
+
+        // try to update cluster os
+        LongJobInventory jobInv = updateClusterOS {
+            uuid = cls.uuid
+            excludePackages = ["kernel", "systemd*"]
+        }
+
+        assert jobInv.getJobName() == "APIUpdateClusterOSMsg"
+        retryInSecs() {
+            LongJobVO job = dbFindByUuid(jobInv.getUuid(), LongJobVO.class)
+            assert job.state == LongJobState.Succeeded
+        }
     }
 }

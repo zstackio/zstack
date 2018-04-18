@@ -11,6 +11,7 @@ import org.zstack.header.message.NeedReplyMessage;
 public class UpdateHostOSMsg extends NeedReplyMessage implements HostMessage {
     private String uuid;
     private String clusterUuid;
+    private String excludePackages;
 
     public String getUuid() {
         return uuid;
@@ -26,6 +27,14 @@ public class UpdateHostOSMsg extends NeedReplyMessage implements HostMessage {
 
     public void setClusterUuid(String clusterUuid) {
         this.clusterUuid = clusterUuid;
+    }
+
+    public String getExcludePackages() {
+        return excludePackages;
+    }
+
+    public void setExcludePackages(String excludePackages) {
+        this.excludePackages = excludePackages;
     }
 
     @Override
