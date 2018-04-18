@@ -60,4 +60,12 @@ public class IAM2ProjectInventory  {
         return this.attributes;
     }
 
+    public java.lang.String linkedAccountUuid;
+    public void setLinkedAccountUuid(java.lang.String linkedAccountUuid) {
+        this.linkedAccountUuid = linkedAccountUuid;
+    }
+    public java.lang.String getLinkedAccountUuid() {
+        return this.linkedAccountUuid;
+    }
+
 }
