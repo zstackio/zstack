@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddAliyunNasPrimaryStorageAction extends AbstractAction {
+public class CreateAliyunNasAccessGroupRuleAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddAliyunNasPrimaryStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddPrimaryStorageResult value;
+        public org.zstack.sdk.CreateAliyunNasAccessGroupRuleResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,28 +26,16 @@ public class AddAliyunNasPrimaryStorageAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String nasUuid;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String accessGroupUuid;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vSwitchUuid;
-
-    @Param(required = true, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String url;
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false)
-    public java.lang.String type;
-
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String zoneUuid;
+    public java.lang.String sourceCidrIp;
+
+    @Param(required = false, validValues = {"RDWR","RDONLY"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String rwAccessType = "RDWR";
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,100L}, noTrim = false)
+    public java.lang.Integer priority = 1;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
@@ -75,8 +63,8 @@ public class AddAliyunNasPrimaryStorageAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddPrimaryStorageResult value = res.getResult(org.zstack.sdk.AddPrimaryStorageResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddPrimaryStorageResult() : value; 
+        org.zstack.sdk.CreateAliyunNasAccessGroupRuleResult value = res.getResult(org.zstack.sdk.CreateAliyunNasAccessGroupRuleResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateAliyunNasAccessGroupRuleResult() : value; 
 
         return ret;
     }
@@ -106,7 +94,7 @@ public class AddAliyunNasPrimaryStorageAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/primary-storage/aliyun/nas";
+        info.path = "/nas/aliyun/rule";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

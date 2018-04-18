@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddAliyunNasPrimaryStorageAction extends AbstractAction {
+public class DeleteAliyunNasAccessGroupRuleAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddAliyunNasPrimaryStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddPrimaryStorageResult value;
+        public org.zstack.sdk.DeleteAliyunNasAccessGroupRuleResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,31 +26,10 @@ public class AddAliyunNasPrimaryStorageAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String nasUuid;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String accessGroupUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vSwitchUuid;
-
-    @Param(required = true, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String url;
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
+    public java.lang.String uuid;
 
     @Param(required = false)
-    public java.lang.String type;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String zoneUuid;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -75,8 +54,8 @@ public class AddAliyunNasPrimaryStorageAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddPrimaryStorageResult value = res.getResult(org.zstack.sdk.AddPrimaryStorageResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddPrimaryStorageResult() : value; 
+        org.zstack.sdk.DeleteAliyunNasAccessGroupRuleResult value = res.getResult(org.zstack.sdk.DeleteAliyunNasAccessGroupRuleResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteAliyunNasAccessGroupRuleResult() : value; 
 
         return ret;
     }
@@ -105,11 +84,11 @@ public class AddAliyunNasPrimaryStorageAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/primary-storage/aliyun/nas";
+        info.httpMethod = "DELETE";
+        info.path = "/nas/access/rule/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 
