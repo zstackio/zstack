@@ -107,13 +107,14 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
 
             class VmIpL3Uuid {
                 String vmIp;
+                String netmask;
                 String l3Uuid;
                 String dhcpServerIp;
             }
 
             @Transactional(readOnly = true)
             private Map<String, VmIpL3Uuid> getVmIpL3Uuid(List<String> vmUuids) {
-                String sql = "select vm.uuid, nic.ip, nic.l3NetworkUuid from VmInstanceVO vm," +
+                String sql = "select vm.uuid, nic.ip, nic.l3NetworkUuid, nic.netmask from VmInstanceVO vm," +
                         "VmNicVO nic, NetworkServiceL3NetworkRefVO ref," +
                         "NetworkServiceProviderVO pro where " +
                         " vm.uuid = nic.vmInstanceUuid and vm.uuid in (:uuids)" +
@@ -133,6 +134,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     VmIpL3Uuid v = new VmIpL3Uuid();
                     v.vmIp = t.get(1, String.class);
                     v.l3Uuid = t.get(2, String.class);
+                    v.netmask = t.get(3, String.class);
                     ret.put(vmUuid, v);
                 }
 
@@ -178,6 +180,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     VmIpL3Uuid l = vmipl3.get(vmuuid);
                     to.dhcpServerIp = l.dhcpServerIp;
                     to.vmIp = l.vmIp;
+                    to.netmask = l.netmask;
                     to.bridgeName = bridgeNames.get(l.l3Uuid);
                     to.namespaceName = FlatDhcpBackend.makeNamespaceName(to.bridgeName, l.l3Uuid);
                     to.userdata = userdata.get(vmuuid);
@@ -430,6 +433,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
         public MetadataTO metadata;
         public String userdata;
         public String vmIp;
+        public String netmask;
         public String dhcpServerIp;
         public String bridgeName;
         public String namespaceName;
@@ -527,6 +531,12 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                             @Override
                             public String call(VmNicInventory arg) {
                                 return arg.getL3NetworkUuid().equals(struct.getL3NetworkUuid()) ? arg.getIp() : null;
+                            }
+                        });
+                        uto.netmask = CollectionUtils.find(struct.getVmNics(), new Function<String, VmNicInventory>() {
+                            @Override
+                            public String call(VmNicInventory arg) {
+                                return arg.getL3NetworkUuid().equals(struct.getL3NetworkUuid()) ? arg.getNetmask() : null;
                             }
                         });
                         uto.bridgeName = new BridgeNameFinder().findByL3Uuid(struct.getL3NetworkUuid());

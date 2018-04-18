@@ -35,7 +35,7 @@ public class NetworkServiceFilter {
 
     @Transactional(readOnly = true)
     public List<String> filterVmByServiceTypeAndProviderType(Collection<String> vmUuids, String serviceType, String providerType) {
-        String sql = "select vm.uuid from VmNicVO nic, VmInstanceVO vm, NetworkServiceL3NetworkRefVO l3ref, NetworkServiceProviderVO provider," +
+        String sql = "select distinct vm.uuid from VmNicVO nic, VmInstanceVO vm, NetworkServiceL3NetworkRefVO l3ref, NetworkServiceProviderVO provider," +
                 "NetworkServiceProviderL2NetworkRefVO l2ref, L3NetworkVO l3 where l3.uuid = nic.l3NetworkUuid and nic.vmInstanceUuid = vm.uuid and vm.uuid in (:uuids)" +
                 " and l3.uuid = l3ref.l3NetworkUuid and l3ref.networkServiceType = :serviceType and l3ref.networkServiceProviderUuid = provider.uuid" +
                 " and provider.uuid = l2ref.networkServiceProviderUuid and l2ref.l2NetworkUuid = l3.l2NetworkUuid" +

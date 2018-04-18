@@ -372,6 +372,7 @@ class OneVmUserdataCase extends SubCase {
 
         VmNicInventory nic = vm.vmNics[0]
         assert nic.ip == cmd.userdata.vmIp
+        assert nic.netmask == cmd.userdata.netmask
         assert cmd.userdata.namespaceName != null
         assert UserdataGlobalProperty.HOST_PORT == cmd.userdata.port
         assert userdata == cmd.userdata.userdata
