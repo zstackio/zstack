@@ -59,10 +59,7 @@ import org.zstack.identity.QuotaGlobalConfig;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.ObjectUtils;
-import org.zstack.utils.RunOnce;
-import org.zstack.utils.Utils;
+import org.zstack.utils.*;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -70,8 +67,7 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.net.*;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -1018,6 +1014,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                         vo.setSize(re.getSize());
                                         vo.setActualSize(re.getActualSize());
                                         vo.setStatus(ref.getStatus());
+                                        vo.setUrl(URLBuilder.hideUrlPassword(vo.getUrl()));
                                         if (StringUtils.isNotEmpty(re.getFormat())) {
                                             vo.setFormat(re.getFormat());
                                         }
