@@ -1,6 +1,6 @@
 package org.zstack.sdk.iam2.entity;
 
-import org.zstack.sdk.iam2.entity.State;
+import org.zstack.sdk.iam2.entity.ProjectState;
 
 public class IAM2ProjectInventory  {
 
@@ -28,11 +28,11 @@ public class IAM2ProjectInventory  {
         return this.description;
     }
 
-    public State state;
-    public void setState(State state) {
+    public ProjectState state;
+    public void setState(ProjectState state) {
         this.state = state;
     }
-    public State getState() {
+    public ProjectState getState() {
         return this.state;
     }
 

@@ -1,5 +1,6 @@
 package org.zstack.testlib
 
+import groovy.transform.AutoClone
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.springframework.http.*
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
@@ -24,7 +25,6 @@ import org.zstack.header.rest.RESTConstant
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager
 import org.zstack.header.vo.EO
 import org.zstack.header.volume.VolumeDeletionPolicyManager
-import org.zstack.identity.Account
 import org.zstack.image.ImageGlobalConfig
 import org.zstack.sdk.*
 import org.zstack.sdk.sns.CreateSNSTopicAction
@@ -46,7 +46,6 @@ import org.zstack.testlib.identity.AccountSpec
 import org.zstack.testlib.identity.IdentitySpec
 import org.zstack.utils.BeanUtils
 import org.zstack.utils.DebugUtils
-import org.zstack.utils.FieldUtils
 import org.zstack.utils.data.Pair
 import org.zstack.utils.gson.JSONObjectUtil
 
@@ -60,7 +59,8 @@ import java.util.concurrent.TimeUnit
 /**
  * Created by xing5 on 2017/2/12.
  */
-class EnvSpec implements Node {
+@AutoClone
+class EnvSpec implements Node, ApiHelper {
     protected List<ZoneSpec> zones = []
     List<AccountSpec> accounts = []
 
@@ -147,6 +147,14 @@ class EnvSpec implements Node {
             def remaining = it.newInstance()
             allowedDBRemainingList.add(remaining.reportRemaining())
         }
+    }
+
+    protected void withSession(SessionInventory s, Closure c)  {
+        SessionInventory backup = Test.currentEnvSpec.session
+        Test.currentEnvSpec.session = s
+        c()
+        Test.currentEnvSpec.session = backup
+        logOut { sessionUuid = s.uuid }
     }
 
     private void installDeletionMethods() {
@@ -838,5 +846,11 @@ class EnvSpec implements Node {
         if (ele != null) {
             lst.remove(ele)
         }
+    }
+
+    void more(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = EnvSpec.class) Closure c) {
+        c.delegate = this
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c()
     }
 }

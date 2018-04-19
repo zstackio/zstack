@@ -1,5 +1,8 @@
 package org.zstack.testlib
 
+import groovy.transform.AutoClone
+
+@AutoClone
 class SimpleEnvSpec extends EnvSpec {
     @Override
     void delete() {

@@ -82,7 +82,7 @@ public class DeleteIAM2ProjectAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
-        info.path = "/iam2/projects";
+        info.path = "/iam2/projects/{uuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";
