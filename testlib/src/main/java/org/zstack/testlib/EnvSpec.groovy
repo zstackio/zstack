@@ -149,15 +149,14 @@ class EnvSpec implements Node, ApiHelper {
         }
     }
 
-    protected void withSession(SessionInventory s, Closure c)  {
-        SessionInventory backup = Test.currentEnvSpec.session
-        Test.currentEnvSpec.session = s
-        c()
-        Test.currentEnvSpec.session = backup
-        logOut { sessionUuid = s.uuid }
+    void withSession(String name, String password)  {
+        SessionSpec spec = new SessionSpec(this)
+        spec.name = name
+        spec.password = password
+        addChild(spec)
     }
 
-    private void installDeletionMethods() {
+    protected void installDeletionMethods() {
         deletionMethods.each { it ->
             def (actionMeta, resultMeta, deleteClass) = it
 
@@ -344,7 +343,10 @@ class EnvSpec implements Node, ApiHelper {
             } else {
                 def n = it.parent
                 while (n != null) {
-                    if (n instanceof AccountSpec) {
+                    if (n instanceof SessionSpec) {
+                        suuid = n.getSessionUuid()
+                        break
+                    } else if (n instanceof AccountSpec) {
                         suuid = n.session.uuid
                         break
                     } else if (!(n instanceof HasSession) || n.accountName == null) {
@@ -848,7 +850,7 @@ class EnvSpec implements Node, ApiHelper {
         }
     }
 
-    void more(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = EnvSpec.class) Closure c) {
+    EnvSpec more(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = EnvSpec.class) Closure c) {
         c.delegate = this
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()
