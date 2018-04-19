@@ -7,6 +7,7 @@ import com.rabbitmq.client.impl.recovery.RecoveryAwareAMQConnection;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -26,6 +27,8 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudConfigureFailException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.managementnode.IsManagementNodeReadyMsg;
+import org.zstack.header.managementnode.IsManagementNodeReadyReply;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
 import org.zstack.header.message.*;
 import org.zstack.header.search.APISearchMessage;
@@ -533,6 +536,10 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         }
 
         public boolean logMessage(Message msg) {
+            if (CoreGlobalProperty.UNIT_TEST_ON) {
+                return true;
+            }
+
             if (CloudBusGlobalProperty.READ_API_LOG_OFF &&
                     (msg instanceof APISyncCallMessage || msg instanceof APIReply)) {
                 return false;
