@@ -249,11 +249,6 @@ class MaintainHostCase extends SubCase{
 
     private recoverEnviroment(){
         HostState originState = Q.New(HostVO.class).eq(HostVO_.uuid, host.uuid).select(HostVO_.state).findValue()
-        changeHostState {
-            uuid = host.uuid
-            stateEvent = HostStateEvent.enable
-        }
-
         if (originState == HostState.Maintenance){
             boolean connected = false
             EventFacade evtf = bean(EventFacadeImpl.class)
@@ -266,9 +261,18 @@ class MaintainHostCase extends SubCase{
                     }
                 }
             })
+            changeHostState {
+                uuid = host.uuid
+                stateEvent = HostStateEvent.enable
+            }
 
             retryInSecs{
                 assert connected
+            }
+        } else {
+            changeHostState {
+                uuid = host.uuid
+                stateEvent = HostStateEvent.enable
             }
         }
 
