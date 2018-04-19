@@ -1650,17 +1650,13 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 VmQuotaUtil.VmQuota vmQuotaUsed = new VmQuotaUtil().getUsedVmCpuMemory(currentAccountUuid);
 
                 if (vmQuotaUsed.totalVmNum + 1 > totalVmNumQuota) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                            String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    currentAccountUuid, QuotaConstant.VM_TOTAL_NUM, totalVmNumQuota)
-                    ));
+                    throw new ApiMessageInterceptionException(new QuotaUtil().buildQuataExceedError(
+                                    currentAccountUuid, QuotaConstant.VM_TOTAL_NUM, totalVmNumQuota));
                 }
 
                 if (vmQuotaUsed.runningVmNum + 1 > runningVmNumQuota) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                            String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    currentAccountUuid, QuotaConstant.VM_RUNNING_NUM, runningVmNumQuota)
-                    ));
+                    throw new ApiMessageInterceptionException(new QuotaUtil().buildQuataExceedError(
+                                    currentAccountUuid, QuotaConstant.VM_RUNNING_NUM, runningVmNumQuota));
                 }
 
                 String sql = "select i.cpuNum, i.memorySize" +
@@ -1673,17 +1669,13 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 long memoryAsked = it.get(1, Long.class);
 
                 if (vmQuotaUsed.runningVmCpuNum + cpuNumAsked > runningVmCpuNumQuota) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                            String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    currentAccountUuid, QuotaConstant.VM_RUNNING_CPU_NUM, runningVmCpuNumQuota)
-                    ));
+                    throw new ApiMessageInterceptionException(new QuotaUtil().buildQuataExceedError(
+                                    currentAccountUuid, QuotaConstant.VM_RUNNING_CPU_NUM, runningVmCpuNumQuota));
                 }
 
                 if (vmQuotaUsed.runningVmMemorySize + memoryAsked > runningVmMemorySizeQuota) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                            String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    currentAccountUuid, QuotaConstant.VM_RUNNING_MEMORY_SIZE, runningVmMemorySizeQuota)
-                    ));
+                    throw new ApiMessageInterceptionException(new QuotaUtil().buildQuataExceedError(
+                                    currentAccountUuid, QuotaConstant.VM_RUNNING_MEMORY_SIZE, runningVmMemorySizeQuota));
                 }
 
                 // check data volume num
@@ -1691,10 +1683,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     long dataVolumeNumUsed = new VmQuotaUtil().getUsedDataVolumeCount(currentAccountUuid);
                     long dataVolumeNumAsked = msg.getDataDiskOfferingUuids().size();
                     if (dataVolumeNumUsed + dataVolumeNumAsked > dataVolumeNumQuota) {
-                        throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                                String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                        currentAccountUuid, QuotaConstant.DATA_VOLUME_NUM, dataVolumeNumQuota)
-                        ));
+                        throw new ApiMessageInterceptionException(new QuotaUtil().buildQuataExceedError(
+                                        currentAccountUuid, QuotaConstant.DATA_VOLUME_NUM, dataVolumeNumQuota));
                     }
                 }
 

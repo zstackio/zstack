@@ -282,10 +282,8 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
                 long vxlan = getUsedVxlan(msg.getSession().getAccountUuid());
 
                 if (vxlan + 1 > vxlanNum) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                            String.format("quota exceeding.  The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    msg.getSession().getAccountUuid(), QuotaConstant.VXLAN_NUM, vxlanNum)
-                    ));
+                    throw new ApiMessageInterceptionException(new QuotaUtil().buildQuataExceedError(
+                                    msg.getSession().getAccountUuid(), QuotaConstant.VXLAN_NUM, vxlanNum));
                 }
             }
         };

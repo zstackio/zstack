@@ -601,10 +601,8 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 long en = getUsedLb(msg.getSession().getAccountUuid());
 
                 if (en + 1 > lbNum) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                            String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    msg.getSession().getAccountUuid(), QuotaConstant.LOAD_BALANCER_NUM, lbNum)
-                    ));
+                    throw new ApiMessageInterceptionException(new QuotaUtil().buildQuataExceedError(
+                                    msg.getSession().getAccountUuid(), QuotaConstant.LOAD_BALANCER_NUM, lbNum));
                 }
             }
         };

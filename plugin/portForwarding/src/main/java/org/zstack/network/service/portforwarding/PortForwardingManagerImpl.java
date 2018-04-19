@@ -1086,10 +1086,8 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                 long pfn = getUsedPf(msg.getSession().getAccountUuid());
 
                 if (pfn + 1 > pfNum) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                            String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    msg.getSession().getAccountUuid(), QuotaConstant.PF_NUM, pfNum)
-                    ));
+                    throw new ApiMessageInterceptionException(new QuotaUtil().buildQuataExceedError(
+                                    msg.getSession().getAccountUuid(), QuotaConstant.PF_NUM, pfNum));
                 }
             }
         };
