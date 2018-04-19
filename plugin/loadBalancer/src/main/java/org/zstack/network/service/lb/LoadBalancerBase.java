@@ -1340,6 +1340,14 @@ public class LoadBalancerBase {
             public void run(SyncTaskChain chain) {
                 LoadBalancerChangeCertificateReply reply = new LoadBalancerChangeCertificateReply();
 
+                /* there is no vm nic, can not installed to backend
+                 * it will be installed to backend when binding vm nic */
+                if (self.getProviderType() == null) {
+                    bus.reply(msg, reply);
+                    chain.next();
+                    return;
+                }
+
                 LoadBalancerBackend bkd = getBackend();
                 LoadBalancerStruct s = makeStruct();
                 s.setInit(false);
