@@ -1362,6 +1362,13 @@ public class KVMAgentCommands {
     public static class RefreshAllRulesOnHostResponse extends AgentResponse {
     }
 
+    public static class CheckDefaultSecurityGroupCmd extends AgentCommand {
+    }
+
+    public static class CheckDefaultSecurityGroupResponse extends AgentResponse {
+
+    }
+
     public static class UpdateGroupMemberCmd extends AgentCommand {
         private List<SecurityGroupMembersTO> updateGroupTOs;
 

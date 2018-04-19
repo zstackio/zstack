@@ -121,6 +121,10 @@ class SecurityGroupSpec extends Spec implements HasSession {
         simulator(KVMSecurityGroupBackend.SECURITY_GROUP_UPDATE_GROUP_MEMBER){
             return new KVMAgentCommands.UpdateGroupMemberResponse()
         }
+
+        simulator(KVMSecurityGroupBackend.SECURITY_GROUP_CHECK_DEFAULT_RULES_ON_HOST_PATH) {
+            return new KVMAgentCommands.CheckDefaultSecurityGroupResponse()
+        }
     }
 
     @Override
