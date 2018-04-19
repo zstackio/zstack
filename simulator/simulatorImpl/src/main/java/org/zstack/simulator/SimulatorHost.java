@@ -67,7 +67,7 @@ class SimulatorHost extends HostBase {
     }
 
     @Override
-    protected void updateOsHook(Completion completion) {
+    protected void updateOsHook(String exclude, Completion completion) {
         logger.debug("update operating system of host " + self.getUuid());
     }
 

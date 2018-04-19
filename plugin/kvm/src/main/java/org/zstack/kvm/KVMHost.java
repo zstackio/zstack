@@ -2884,7 +2884,7 @@ public class KVMHost extends HostBase implements Host {
     }
 
     @Override
-    protected void updateOsHook(Completion completion) {
+    protected void updateOsHook(String exclude, Completion completion) {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("update-operating-system-for-host-%s", self.getUuid()));
         chain.then(new ShareFlow() {
@@ -2960,6 +2960,7 @@ public class KVMHost extends HostBase implements Host {
                     public void run(FlowTrigger trigger, Map data) {
                         UpdateHostOSCmd cmd = new UpdateHostOSCmd();
                         cmd.hostUuid = self.getUuid();
+                        cmd.excludePackages = exclude;
 
                         new Http<>(updateHostOSPath, cmd, UpdateHostOSRsp.class)
                                 .call(new ReturnValueCompletion<UpdateHostOSRsp>(trigger) {

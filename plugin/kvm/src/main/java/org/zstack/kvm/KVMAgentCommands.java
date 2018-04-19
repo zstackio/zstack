@@ -1715,6 +1715,7 @@ public class KVMAgentCommands {
     @ApiTimeout(apiClasses = APIUpdateClusterOSMsg.class)
     public static class UpdateHostOSCmd extends AgentCommand {
         public String hostUuid;
+        public String excludePackages;
     }
 
     public static class UpdateHostOSRsp extends AgentResponse {
