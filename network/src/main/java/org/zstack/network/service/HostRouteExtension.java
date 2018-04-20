@@ -110,7 +110,7 @@ public class HostRouteExtension extends AbstractNetworkServiceExtension implemen
         L3NetworkInventory l3 = L3NetworkInventory.valueOf(dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class));
         NetworkServiceProviderType ptype = getNetworkServiceProviderType(NetworkServiceType.HostRoute, l3);
         if (ptype == null) {
-            reply.setError(operr("L3Network [uuid: %s] can not add host Route", msg.getL3NetworkUuid()));
+            reply.setError(operr("L3Network [uuid: %s] does not have host route service", msg.getL3NetworkUuid()));
             bus.reply(msg, reply);
             return;
         }
