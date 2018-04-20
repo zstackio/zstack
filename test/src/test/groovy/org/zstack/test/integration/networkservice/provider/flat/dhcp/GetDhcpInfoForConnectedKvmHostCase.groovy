@@ -128,8 +128,7 @@ class GetDhcpInfoForConnectedKvmHostCase extends SubCase {
             cmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.ApplyDhcpCmd.class)
 
             assert 1 == cmd.dhcp.size()
-            assert cmd.dhcp.get(0).hostname == VmSystemTags.HOSTNAME.getTag(vm.uuid)
-
+            assert cmd.dhcp.get(0).hostname == VmSystemTags.HOSTNAME.getTokenByResourceUuid(vm.uuid, VmSystemTags.HOSTNAME_TOKEN)
             return rsp
         }
 
