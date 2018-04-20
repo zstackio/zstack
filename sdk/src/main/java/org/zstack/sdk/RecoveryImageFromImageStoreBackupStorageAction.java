@@ -34,7 +34,7 @@ public class RecoveryImageFromImageStoreBackupStorageAction extends AbstractActi
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String dstBackupStorageUuid;
 
-    @Param(required = true, maxLength = 128, minLength = 2, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String name;
 
     @Param(required = false, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
