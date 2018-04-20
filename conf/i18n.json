@@ -4226,7 +4226,7 @@
   {
     "raw": "url must starts with \u0027file:///\u0027, \u0027http://\u0027, \u0027https://\u0027， \u0027ftp://\u0027, \u0027sftp://\u0027 or \u0027/\u0027",
     "en_US": "url must starts with \u0027file:///\u0027, \u0027http://\u0027, \u0027https://\u0027， \u0027ftp://\u0027, \u0027sftp://\u0027 or \u0027/\u0027",
-    "zh_CN": "",
+    "zh_CN": "url必须以下列格式开头\u0027file:///\u0027, \u0027http://\u0027, \u0027https://\u0027， \u0027ftp://\u0027, \u0027sftp://\u0027 or \u0027/\u0027",
     "arguments": [],
     "line": 197,
     "fileName": "src/main/java/org/zstack/image/ImageApiInterceptor.java"
@@ -5051,7 +5051,7 @@
   {
     "raw": "failed to check default rules of security group on kvm host[uuid:%s], because %s",
     "en_US": "failed to check default rules of security group on kvm host[uuid:{0}], because {1}",
-    "zh_CN": "",
+    "zh_CN": "在host[uuid:{0}]上检查默认安全组规则失败",
     "arguments": [
       "hostUuid",
       "rsp.getError()"
@@ -8349,7 +8349,7 @@
     "en_US": "cron must be set when use cron scheduler",
     "zh_CN": "当使用定时器任务时，必须设置cron",
     "arguments": [],
-    "line": 145,
+    "line": 143,
     "fileName": "src/main/java/org/zstack/scheduler/SchedulerApiInterceptor.java"
   },
   {
@@ -8357,7 +8357,7 @@
     "en_US": "cron task must follow format like this : \\\"0 0/3 17-23 * * ?\\\" ",
     "zh_CN": "定时器任务必须符合以下格式: \\\"0 0/3 17-23 * * ?\\\" ",
     "arguments": [],
-    "line": 148,
+    "line": 146,
     "fileName": "src/main/java/org/zstack/scheduler/SchedulerApiInterceptor.java"
   },
   {
@@ -8365,7 +8365,7 @@
     "en_US": "cron scheduler only need to specify cron task",
     "zh_CN": "定时调度器（Cron Scheduler）仅需要指定定时任务（Cron Task）",
     "arguments": [],
-    "line": 151,
+    "line": 149,
     "fileName": "src/main/java/org/zstack/scheduler/SchedulerApiInterceptor.java"
   },
   {
@@ -8389,7 +8389,7 @@
     "en_US": "stopTime has been passed",
     "zh_CN": "截止时间已经过去了",
     "arguments": [],
-    "line": 140,
+    "line": 138,
     "fileName": "src/main/java/org/zstack/scheduler/SchedulerApiInterceptor.java"
   },
   {
@@ -8397,7 +8397,7 @@
     "en_US": "stopTime out of mysql timestamp range",
     "zh_CN": "定时任务停止时间超出mysql的timestamp的范围",
     "arguments": [],
-    "line": 138,
+    "line": 136,
     "fileName": "src/main/java/org/zstack/scheduler/SchedulerApiInterceptor.java"
   },
   {
@@ -8405,7 +8405,7 @@
     "en_US": "duration time out of range",
     "zh_CN": "任务需要的时间超出范围",
     "arguments": [],
-    "line": 136,
+    "line": 134,
     "fileName": "src/main/java/org/zstack/scheduler/SchedulerApiInterceptor.java"
   },
   {
@@ -8413,7 +8413,7 @@
     "en_US": "interval must be set when use simple scheduler when repeat more than once",
     "zh_CN": "当简单定时任务执行超过一次时，必须设置间隔时间",
     "arguments": [],
-    "line": 132,
+    "line": 71,
     "fileName": "src/main/java/org/zstack/scheduler/SchedulerApiInterceptor.java"
   },
   {
@@ -8439,17 +8439,17 @@
     "fileName": "src/main/java/org/zstack/scheduler/SchedulerApiInterceptor.java"
   },
   {
-    "raw": "startTime must be set when use simple scheduler",
-    "en_US": "startTime must be set when use simple scheduler",
-    "zh_CN": "必须设置简单定时任务的开始时间",
+    "raw": "startTime must be set for simple scheduler",
+    "en_US": "startTime must be set for simple scheduler",
+    "zh_CN": "simple类型的定时任务必须设置开始时间[startTime]",
     "arguments": [],
     "line": 120,
     "fileName": "src/main/java/org/zstack/scheduler/SchedulerApiInterceptor.java"
   },
   {
-    "raw": "interval must be set when use simple scheduler when repeat forever",
-    "en_US": "interval must be set when use simple scheduler when repeat forever",
-    "zh_CN": "当简单定时任务永远重复的时，必须设置间隔时间",
+    "raw": "schedulerInterval must be set for simple scheduler",
+    "en_US": "schedulerInterval must be set for simple scheduler",
+    "zh_CN": "simple类型的定时任务必须设置执行间隔[schedulerInterval]",
     "arguments": [],
     "line": 130,
     "fileName": "src/main/java/org/zstack/scheduler/SchedulerApiInterceptor.java"
