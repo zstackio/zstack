@@ -87,14 +87,14 @@ class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
         if (node.limit != null) {
             def v = new LimitVisitor()
             sqlClauses.add(node.limit.accept(v) as String)
-            assert v.limit
+            assert v.limit != null
             st.limit = v.limit
         }
 
         if (node.offset != null) {
             def v = new OffsetVisitor()
             sqlClauses.add(node.offset.accept(v) as String)
-            assert v.offset
+            assert v.offset != null
             st.offset = v.offset
         }
 

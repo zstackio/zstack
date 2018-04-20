@@ -340,7 +340,11 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
         }
 
         ZQLContext.putAPISession(msg.getSession());
-        ZQL zql = ZQL.fromString(StringUtils.join(sb, " "));
+        String text = StringUtils.join(sb, " ");
+        if (logger.isTraceEnabled()) {
+            logger.trace(text);
+        }
+        ZQL zql = ZQL.fromString(text);
         ZQLQueryResult result = zql.execute();
         ZQLContext.cleanAPISession();
         return result;
