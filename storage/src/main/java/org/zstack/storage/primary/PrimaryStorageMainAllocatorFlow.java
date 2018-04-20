@@ -4,13 +4,18 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.storage.backup.BackupStorageType;
+import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.PrimaryStorageConstant.AllocatorParams;
+import org.zstack.header.vo.ResourceVO;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -19,8 +24,10 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.CollectionUtils.distinctByKey;
 
 /**
  */
@@ -76,12 +83,11 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
                     spec.getRequiredHostUuid(), PrimaryStorageState.Enabled, PrimaryStorageStatus.Connected, spec.getSize());
         } else if (spec.getRequiredClusterUuids() != null && !spec.getRequiredClusterUuids().isEmpty()) {
             sql = "select pri" +
-                    " from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref, ClusterVO cluster" +
-                    " where cluster.uuid = ref.clusterUuid" +
+                    " from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref" +
+                    " where ref.clusterUuid in (:clusterUuids)" +
                     " and ref.primaryStorageUuid = pri.uuid" +
                     " and pri.status = :status" +
-                    " and pri.state = :priState" +
-                    " and cluster.uuid in (:clusterUuids)";
+                    " and pri.state = :priState";
             query = dbf.getEntityManager().createQuery(sql, PrimaryStorageVO.class);
             query.setParameter("clusterUuids", spec.getRequiredClusterUuids());
             query.setParameter("status", PrimaryStorageStatus.Connected);
@@ -113,7 +119,8 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
                     PrimaryStorageState.Enabled, PrimaryStorageStatus.Connected, spec.getSize());
         }
 
-        List<PrimaryStorageVO> vos = query.getResultList();
+        List<PrimaryStorageVO> vos = query.getResultList()
+                .stream().filter(distinctByKey(PrimaryStorageVO::getUuid)).collect(Collectors.toList());
         logger.debug("select primary storage by sql: " + sql);
 
         /**
@@ -148,6 +155,7 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
         List<PrimaryStorageVO> res = new ArrayList<>();
         if (PrimaryStorageAllocationPurpose.CreateNewVm.toString().equals(spec.getPurpose())) {
             res.addAll(considerImageCache(spec, vos));
+            res = considerImageBackupStorageRef(spec, vos);
         } else {
             for (PrimaryStorageVO vo : vos) {
                 if (ratioMgr.calculatePrimaryStorageAvailableCapacityByRatio(vo.getUuid(),
@@ -200,6 +208,23 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
         }
 
         return res;
+    }
+
+    @Transactional(readOnly = true)
+    private List<PrimaryStorageVO> considerImageBackupStorageRef(PrimaryStorageAllocationSpec spec, List<PrimaryStorageVO> vos){
+        List<BackupStorageVO> bsvos = SQL.New("select bs" +
+                " from BackupStorageVO bs, ImageBackupStorageRefVO ref" +
+                " where ref.imageUuid = :imgUuid" +
+                " and bs.uuid = ref.backupStorageUuid", BackupStorageVO.class)
+                .param("imgUuid", spec.getImageUuid())
+                .list();
+        vos.removeIf(ps ->
+            bsvos.stream().noneMatch(bs -> {
+                List<String> relatedPsUuids = BackupStorageType.valueOf(bs.getType()).findRelatedPrimaryStorage(bs.getUuid());
+                return relatedPsUuids == null || relatedPsUuids.contains(ps.getUuid());
+            })
+        );
+        return vos;
     }
 
     @Override

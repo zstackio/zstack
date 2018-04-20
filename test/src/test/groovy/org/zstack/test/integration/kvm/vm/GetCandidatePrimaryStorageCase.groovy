@@ -4,18 +4,14 @@ import org.zstack.core.db.Q
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO_
-import org.zstack.header.storage.primary.PrimaryStorageVO
-import org.zstack.header.storage.primary.PrimaryStorageVO_
 import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
-import org.zstack.sdk.BackupStorageInventory
 import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.GetCandidatePrimaryStoragesForCreatingVmAction
 import org.zstack.sdk.GetCandidatePrimaryStoragesForCreatingVmResult
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.PrimaryStorageInventory
-import org.zstack.test.integration.kvm.Env
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -26,6 +22,11 @@ import org.zstack.utils.data.SizeUnit
  */
 class GetCandidatePrimaryStorageCase extends SubCase{
     EnvSpec env
+    ImageInventory imageOnSftp, imageOnCeph
+    L3NetworkInventory l3
+    PrimaryStorageInventory ps
+    DiskOfferingInventory disk
+    ImageInventory iso
 
     @Override
     void setup() {
@@ -54,7 +55,7 @@ class GetCandidatePrimaryStorageCase extends SubCase{
                 hostname = "localhost"
 
                 image {
-                    name = "image1"
+                    name = "image-on-sftp"
                     url = "http://zstack.org/download/test.qcow2"
                 }
 
@@ -67,6 +68,19 @@ class GetCandidatePrimaryStorageCase extends SubCase{
                 image {
                     name = "vr-image"
                     url = "http://zstack.org/download/vr.qcow2"
+                }
+            }
+
+            cephBackupStorage {
+                name="ceph"
+                totalCapacity = SizeUnit.GIGABYTE.toByte(100)
+                availableCapacity= SizeUnit.GIGABYTE.toByte(100)
+                fsid ="7ff218d9-f525-435f-8a40-3618d1772a64"
+                monUrls = ["root:password@localhost/?monPort=7777"]
+
+                image {
+                    name = "image-on-ceph"
+                    url  = "http://zstack.org/download/image.qcow2"
                 }
             }
 
@@ -91,9 +105,42 @@ class GetCandidatePrimaryStorageCase extends SubCase{
                     attachL2Network("l2")
                 }
 
+                cluster {
+                    name = "cluster-ceph-1"
+                    hypervisorType = "KVM"
+                    attachPrimaryStorage("ceph-1")
+                    attachL2Network("l2")
+                }
+
+                cluster {
+                    name = "cluster-ceph-2"
+                    hypervisorType = "KVM"
+                    attachPrimaryStorage("ceph-2")
+                    attachL2Network("l2")
+                }
+
                 smpPrimaryStorage {
                     name = "smp"
                     url = "/opt/smp"
+                }
+
+                cephPrimaryStorage {
+                    name="ceph-1"
+                    description="Test"
+                    totalCapacity = SizeUnit.GIGABYTE.toByte(100)
+                    availableCapacity= SizeUnit.GIGABYTE.toByte(100)
+                    fsid="7ff218d9-f525-435f-8a40-3618d1772a64"
+                    monUrls=["root:password@localhost/?monPort=7777"]
+
+                }
+
+                cephPrimaryStorage {
+                    name="ceph-2"
+                    totalCapacity = SizeUnit.GIGABYTE.toByte(100)
+                    availableCapacity= SizeUnit.GIGABYTE.toByte(100)
+                    fsid="2ff218d9-f525-435f-8a40-3618d1772a64"
+                    monUrls=["root:password@127.0.0.10/?monPort=7777"]
+
                 }
 
                 l2NoVlanNetwork {
@@ -142,7 +189,7 @@ class GetCandidatePrimaryStorageCase extends SubCase{
                     useImage("vr-image")
                 }
 
-                attachBackupStorage("sftp")
+                attachBackupStorage("sftp", "ceph")
             }
 
         }
@@ -151,7 +198,14 @@ class GetCandidatePrimaryStorageCase extends SubCase{
     @Override
     void test() {
         env.create {
+            imageOnSftp = env.inventoryByName("image-on-sftp") as ImageInventory
+            imageOnCeph = env.inventoryByName("image-on-ceph") as ImageInventory
+            l3 = env.inventoryByName("l3") as L3NetworkInventory
+            ps = env.inventoryByName("smp") as PrimaryStorageInventory
+            disk = env.inventoryByName("diskOffering") as DiskOfferingInventory
+            iso = env.inventoryByName("iso") as ImageInventory
             testGetPsForCreatingVm()
+            testGetCephPsCandidate()
         }
     }
 
@@ -161,14 +215,8 @@ class GetCandidatePrimaryStorageCase extends SubCase{
     }
 
     void testGetPsForCreatingVm(){
-        ImageInventory image = env.inventoryByName("image1") as ImageInventory
-        L3NetworkInventory l3 = env.inventoryByName("l3") as L3NetworkInventory
-        PrimaryStorageInventory ps = env.inventoryByName("smp") as PrimaryStorageInventory
-        DiskOfferingInventory disk = env.inventoryByName("diskOffering") as DiskOfferingInventory
-        ImageInventory iso = env.inventoryByName("iso") as ImageInventory
-
         GetCandidatePrimaryStoragesForCreatingVmResult result = getCandidatePrimaryStoragesForCreatingVm {
-            imageUuid = image.uuid
+            imageUuid = imageOnSftp.uuid
             l3NetworkUuids = [l3.uuid]
         } as GetCandidatePrimaryStoragesForCreatingVmResult
 
@@ -204,4 +252,15 @@ class GetCandidatePrimaryStorageCase extends SubCase{
                 .select(PrimaryStorageCapacityVO_.availableCapacity).findValue() == ps.availableCapacity
     }
 
+    void testGetCephPsCandidate() {
+        def cephRelateBs = env.inventoryByName("ceph-1") as PrimaryStorageInventory
+        def result = getCandidatePrimaryStoragesForCreatingVm {
+            imageUuid = imageOnCeph.uuid
+            l3NetworkUuids = [l3.uuid]
+        } as GetCandidatePrimaryStoragesForCreatingVmResult
+
+        assert result.rootVolumePrimaryStorages.size() == 1
+        assert result.rootVolumePrimaryStorages.get(0).uuid == cephRelateBs.uuid
+        assert result.dataVolumePrimaryStorages.size() == 0
+    }
 }

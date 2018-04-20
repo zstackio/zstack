@@ -112,16 +112,6 @@ doc {
 					since "2.1"
 					
 				}
-				column {
-					name "backupStorageUuid"
-					enclosedIn ""
-					desc "镜像存储UUID"
-					location "query"
-					type "String"
-					optional true
-					since "2.2"
-					
-				}
 			}
         }
 

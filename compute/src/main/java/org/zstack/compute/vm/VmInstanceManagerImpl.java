@@ -594,21 +594,18 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     ));
                 }
 
-                return ImageInventory.valueOf(dbf.findByUuid(msg.getImageUuid(), ImageVO.class));
+                ImageVO imageVO = q(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).find();
+                return ImageInventory.valueOf(imageVO);
             }
         }.execute();
 
 
         // allocate ps for root volume
         AllocatePrimaryStorageMsg rmsg = new AllocatePrimaryStorageMsg();
-
         rmsg.setDryRun(true);
         rmsg.setImageUuid(msg.getImageUuid());
         rmsg.setRequiredClusterUuids(clusterUuids);
         if (ImageMediaType.ISO.toString().equals(imageInv.getMediaType())) {
-            if (msg.getRootDiskOfferingUuid() == null){
-                throw new OperationFailureException(operr("rootVolumeOffering is needed when image media type is ISO"));
-            }
             Tuple t = Q.New(DiskOfferingVO.class).eq(DiskOfferingVO_.uuid, msg.getRootDiskOfferingUuid())
                     .select(DiskOfferingVO_.diskSize, DiskOfferingVO_.allocatorStrategy).findTuple();
             rmsg.setSize((long)t.get(0));
