@@ -950,13 +950,17 @@ public class KVMHost extends HostBase implements Host {
         cmd.setSrcPath(snapshot.getPrimaryStorageInstallPath());
         cmd.setVmUuid(volume.getVmInstanceUuid());
         cmd.setDeviceId(volume.getDeviceId());
+
+        extEmitter.beforeMergeSnapshot((KVMHostInventory) getSelfInventory(), msg, cmd);
         new Http<>(mergeSnapshotPath, cmd, MergeSnapshotRsp.class)
                 .call(new ReturnValueCompletion<MergeSnapshotRsp>(msg, completion) {
             @Override
             public void success(MergeSnapshotRsp ret) {
                 if (!ret.isSuccess()) {
                     reply.setError(operr("operation error, because:%s", ret.getError()));
+                    extEmitter.afterMergeSnapshotFailed((KVMHostInventory) getSelfInventory(), msg, cmd, reply.getError());
                 }
+                extEmitter.afterMergeSnapshot((KVMHostInventory) getSelfInventory(), msg, cmd);
                 bus.reply(msg, reply);
                 completion.done();
             }
@@ -964,6 +968,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void fail(ErrorCode errorCode) {
                 reply.setError(errorCode);
+                extEmitter.afterMergeSnapshotFailed((KVMHostInventory) getSelfInventory(), msg, cmd, reply.getError());
                 bus.reply(msg, reply);
                 completion.done();
             }
@@ -1031,27 +1036,65 @@ public class KVMHost extends HostBase implements Host {
         cmd.setVolumeInstallPath(msg.getVolume().getInstallPath());
         cmd.setInstallPath(msg.getInstallPath());
         cmd.setFullSnapshot(msg.isFullSnapshot());
-        new Http<>(snapshotPath, cmd, TakeSnapshotResponse.class).call(new ReturnValueCompletion<TakeSnapshotResponse>(msg, completion) {
-            @Override
-            public void success(TakeSnapshotResponse ret) {
-                if (ret.isSuccess()) {
-                    reply.setNewVolumeInstallPath(ret.getNewVolumeInstallPath());
-                    reply.setSnapshotInstallPath(ret.getSnapshotInstallPath());
-                    reply.setSize(ret.getSize());
-                } else {
-                    reply.setError(operr("operation error, because:%s", ret.getError()));
-                }
-                bus.reply(msg, reply);
-                completion.done();
-            }
 
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("before-take-snapshot-%s-for-volume-%s", msg.getSnapshotName(), msg.getVolume().getUuid()));
+        chain.then(new NoRollbackFlow() {
             @Override
-            public void fail(ErrorCode errorCode) {
-                reply.setError(errorCode);
+            public void run(FlowTrigger trigger, Map data) {
+                extEmitter.beforeTakeSnapshot((KVMHostInventory) getSelfInventory(), msg, cmd, new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                new Http<>(snapshotPath, cmd, TakeSnapshotResponse.class).call(new ReturnValueCompletion<TakeSnapshotResponse>(msg, trigger) {
+                    @Override
+                    public void success(TakeSnapshotResponse ret) {
+                        if (ret.isSuccess()) {
+                            extEmitter.afterTakeSnapshot((KVMHostInventory) getSelfInventory(), msg, cmd, ret);
+                            reply.setNewVolumeInstallPath(ret.getNewVolumeInstallPath());
+                            reply.setSnapshotInstallPath(ret.getSnapshotInstallPath());
+                            reply.setSize(ret.getSize());
+                        } else {
+                            ErrorCode err = operr("operation error, because:%s", ret.getError());
+                            extEmitter.afterTakeSnapshotFailed((KVMHostInventory) getSelfInventory(), msg, cmd, ret, err);
+                            reply.setError(err);
+                        }
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        extEmitter.afterTakeSnapshotFailed((KVMHostInventory) getSelfInventory(), msg, cmd, null, errorCode);
+                        reply.setError(errorCode);
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
                 bus.reply(msg, reply);
                 completion.done();
             }
-        });
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                reply.setError(errCode);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+        }).start();
     }
 
     private void migrateVm(final Iterator<MigrateStruct> it, final Completion completion) {
