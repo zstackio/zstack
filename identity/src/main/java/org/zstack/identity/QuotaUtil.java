@@ -8,6 +8,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
 
@@ -15,6 +16,9 @@ import javax.persistence.Tuple;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.zstack.core.Platform.i18n;
+import static org.zstack.core.Platform.toI18nString;
 
 /**
  * Created by miao on 16-10-9.
@@ -53,15 +57,16 @@ public class QuotaUtil {
     public void CheckQuota(QuotaCompareInfo quotaCompareInfo) {
         if (quotaCompareInfo.currentUsed + quotaCompareInfo.request > quotaCompareInfo.quotaValue) {
             throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                    String.format("quota exceeding. Current account is [uuid: %s]. " +
+                    i18n("quota exceeding. Current account is [uuid: %s]. " +
                                     "The resource target owner account[uuid: %s] exceeds a quota[name: %s, value: %s], " +
-                                    "Current used:%s, Request:%s. ",
+                                    "Current used:%s, Request:%s. Please contact the administrator.",
                             quotaCompareInfo.currentAccountUuid, quotaCompareInfo.resourceTargetOwnerAccountUuid,
                             quotaCompareInfo.quotaName, quotaCompareInfo.quotaValue,
                             quotaCompareInfo.currentUsed, quotaCompareInfo.request)
             ));
         }
     }
+
 
     public Map<String, Quota.QuotaPair> makeQuotaPairs(String accountUuid) {
         SimpleQuery<QuotaVO> q = dbf.createQuery(QuotaVO.class);
@@ -100,4 +105,19 @@ public class QuotaUtil {
         AccountResourceRefVO accResRefVO = q.find();
         return accResRefVO.getResourceType();
     }
+
+    public ErrorCode buildQuataExceedError(String currentAccountUuid, String quotaName, long quotaValue){
+        return errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
+                i18n("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]. Please contact the administrator.",
+                        currentAccountUuid, quotaName, quotaValue));
+    }
+
+
+    public ErrorCode buildQuataExceedError(String currentAccountUuid, String quotaName, long quotaValue, long currentUsed, long request){
+        return errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
+                i18n("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]," +
+                                " Current used:%s, Request:%s. Please contact the administrator.",
+                        currentAccountUuid, quotaName, quotaValue, currentUsed, request));
+    }
+
 }

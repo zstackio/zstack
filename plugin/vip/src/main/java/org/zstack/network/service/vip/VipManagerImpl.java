@@ -358,10 +358,8 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
                 long vn = getUsedVip(msg.getSession().getAccountUuid());
 
                 if (vn + 1 > vipNum) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                            String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    msg.getSession().getAccountUuid(), QuotaConstant.VIP_NUM, vipNum)
-                    ));
+                    throw new ApiMessageInterceptionException(new QuotaUtil().buildQuataExceedError(
+                                    msg.getSession().getAccountUuid(), QuotaConstant.VIP_NUM, vipNum));
                 }
             }
         };

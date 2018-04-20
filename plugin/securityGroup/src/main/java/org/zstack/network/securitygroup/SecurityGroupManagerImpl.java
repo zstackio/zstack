@@ -128,10 +128,8 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 long sgn = getUsedSg(msg.getSession().getAccountUuid());
 
                 if (sgn + 1 > sgNum) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                            String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    msg.getSession().getAccountUuid(), QuotaConstant.SG_NUM, sgNum)
-                    ));
+                    throw new ApiMessageInterceptionException(new QuotaUtil().buildQuataExceedError(
+                                    msg.getSession().getAccountUuid(), QuotaConstant.SG_NUM, sgNum));
                 }
             }
         };

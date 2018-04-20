@@ -18,6 +18,7 @@ import org.zstack.header.image.ImageVO;
 import org.zstack.header.quota.QuotaConstant;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
+import org.zstack.identity.QuotaUtil;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -91,10 +92,8 @@ public class ImageQuotaUtil {
         long imageSizeUsed = new ImageQuotaUtil().getUsedImageSize(msg.getSession().getAccountUuid());
         long imageSizeAsked = getLocalImageSizeOnBackupStorage(msg);
         if ((imageSizeQuota == 0) || (imageSizeUsed + imageSizeAsked > imageSizeQuota)) {
-            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                    String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                            msg.getSession().getAccountUuid(), QuotaConstant.IMAGE_SIZE, imageSizeQuota)
-            ));
+            throw new ApiMessageInterceptionException(new QuotaUtil().buildQuataExceedError(
+                            msg.getSession().getAccountUuid(), QuotaConstant.IMAGE_SIZE, imageSizeQuota));
         }
     }
 

@@ -481,10 +481,8 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                 long l3n = getUsedL3(msg.getSession().getAccountUuid());
 
                 if (l3n + 1 > l3Num) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                            String.format("quota exceeding.  The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    msg.getSession().getAccountUuid(), QuotaConstant.L3_NUM, l3Num)
-                    ));
+                    throw new ApiMessageInterceptionException(new QuotaUtil().buildQuataExceedError(
+                            msg.getSession().getAccountUuid(), QuotaConstant.L3_NUM, l3Num));
                 }
             }
         };
