@@ -147,8 +147,18 @@ public class KvmBackend extends HypervisorBackend {
         public String primaryStorageInstallPath;
     }
 
+    public static class ReInitImageCmd extends AgentCmd {
+        public String volumeInstallPath;
+        public String imageInstallPath;
+    }
+
     public static class RevertVolumeFromSnapshotCmd extends AgentCmd {
         public String snapshotInstallPath;
+    }
+
+    public static class ReInitImageRsp extends AgentRsp {
+        @Validation
+        public String newVolumeInstallPath;
     }
 
     public static class RevertVolumeFromSnapshotRsp extends AgentRsp {
@@ -211,6 +221,7 @@ public class KvmBackend extends HypervisorBackend {
     public static final String UPLOAD_BITS_TO_SFTP_BACKUPSTORAGE_PATH = "/sharedmountpointprimarystorage/sftp/upload";
     public static final String DOWNLOAD_BITS_FROM_SFTP_BACKUPSTORAGE_PATH = "/sharedmountpointprimarystorage/sftp/download";
     public static final String REVERT_VOLUME_FROM_SNAPSHOT_PATH = "/sharedmountpointprimarystorage/volume/revertfromsnapshot";
+    public static final String REINIT_IMAGE_PATH = "/sharedmountpointprimarystorage/volume/reinitimage";
     public static final String MERGE_SNAPSHOT_PATH = "/sharedmountpointprimarystorage/snapshot/merge";
     public static final String OFFLINE_MERGE_SNAPSHOT_PATH = "/sharedmountpointprimarystorage/snapshot/offlinemerge";
     public static final String CREATE_EMPTY_VOLUME_PATH = "/sharedmountpointprimarystorage/volume/createempty";
@@ -970,13 +981,14 @@ public class KvmBackend extends HypervisorBackend {
 
     @Override
     void handle(ReInitRootVolumeFromTemplateOnPrimaryStorageMsg msg, final ReturnValueCompletion<ReInitRootVolumeFromTemplateOnPrimaryStorageReply> completion) {
-        RevertVolumeFromSnapshotCmd cmd = new RevertVolumeFromSnapshotCmd();
-        cmd.snapshotInstallPath = makeCachedImageInstallUrlFromImageUuidForTemplate(msg.getVolume().getRootImageUuid());
+        ReInitImageCmd cmd = new ReInitImageCmd();
+        cmd.imageInstallPath = makeCachedImageInstallUrlFromImageUuidForTemplate(msg.getVolume().getRootImageUuid());
+        cmd.volumeInstallPath = makeRootVolumeInstallUrl(msg.getVolume());
 
-        new Do().go(REVERT_VOLUME_FROM_SNAPSHOT_PATH, cmd, RevertVolumeFromSnapshotRsp.class, new ReturnValueCompletion<AgentRsp>(completion) {
+        new Do().go(REINIT_IMAGE_PATH, cmd, ReInitImageRsp.class, new ReturnValueCompletion<AgentRsp>(completion) {
             @Override
             public void success(AgentRsp returnValue) {
-                RevertVolumeFromSnapshotRsp rsp = (RevertVolumeFromSnapshotRsp) returnValue;
+                ReInitImageRsp rsp = (ReInitImageRsp) returnValue;
                 ReInitRootVolumeFromTemplateOnPrimaryStorageReply reply = new ReInitRootVolumeFromTemplateOnPrimaryStorageReply();
                 reply.setNewVolumeInstallPath(rsp.newVolumeInstallPath);
                 completion.success(reply);
