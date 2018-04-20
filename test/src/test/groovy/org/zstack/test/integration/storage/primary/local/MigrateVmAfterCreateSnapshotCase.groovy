@@ -171,8 +171,8 @@ class MigrateVmAfterCreateSnapshotCase extends SubCase {
             uuid = vm.uuid
         }
 
-        env.afterSimulator(LocalStorageKvmBackend.REVERT_SNAPSHOT_PATH) {
-            LocalStorageKvmBackend.RevertVolumeFromSnapshotRsp rsp = new LocalStorageKvmBackend.RevertVolumeFromSnapshotRsp()
+        env.afterSimulator(LocalStorageKvmBackend.REINIT_IMAGE_PATH) {
+            LocalStorageKvmBackend.ReinitImageRsp rsp = new LocalStorageKvmBackend.ReinitImageRsp()
             rsp.newVolumeInstallPath = vm.allVolumes[0].installPath
             return rsp
         }

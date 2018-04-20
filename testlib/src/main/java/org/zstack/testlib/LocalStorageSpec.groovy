@@ -153,6 +153,12 @@ class LocalStorageSpec extends PrimaryStorageSpec {
             return new LocalStorageKvmBackend.CreateTemplateFromVolumeRsp()
         }
 
+        simulator(LocalStorageKvmBackend.REINIT_IMAGE_PATH) {
+            def rsp = new LocalStorageKvmBackend.ReinitImageRsp()
+            rsp.newVolumeInstallPath = "/new/snapshot/install/path"
+            return rsp
+        }
+
         simulator(LocalStorageKvmBackend.REVERT_SNAPSHOT_PATH) {
             def rsp = new LocalStorageKvmBackend.RevertVolumeFromSnapshotRsp()
             rsp.newVolumeInstallPath = "/new/snapshot/install/path"

@@ -370,6 +370,40 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         }
     }
 
+    public static class ReinitImageCmd extends AgentCommand {
+        private String imagePath;
+        private String volumePath;
+
+        public String getImagePath() {
+            return imagePath;
+        }
+
+        public void setImagePath(String imagePath) {
+            this.imagePath = imagePath;
+        }
+
+        public String getVolumePath() {
+            return volumePath;
+        }
+
+        public void setVolumePath(String volumePath) {
+            this.volumePath = volumePath;
+        }
+    }
+
+    public static class ReinitImageRsp extends AgentResponse {
+        @Validation
+        private String newVolumeInstallPath;
+
+        public String getNewVolumeInstallPath() {
+            return newVolumeInstallPath;
+        }
+
+        public void setNewVolumeInstallPath(String newVolumeInstallPath) {
+            this.newVolumeInstallPath = newVolumeInstallPath;
+        }
+    }
+
     public static class RevertVolumeFromSnapshotRsp extends AgentResponse {
         @Validation
         private String newVolumeInstallPath;
@@ -630,6 +664,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static final String CHECK_BITS_PATH = "/localstorage/checkbits";
     public static final String CREATE_TEMPLATE_FROM_VOLUME = "/localstorage/volume/createtemplate";
     public static final String REVERT_SNAPSHOT_PATH = "/localstorage/snapshot/revert";
+    public static final String REINIT_IMAGE_PATH = "/localstorage/reinit/image";
     public static final String MERGE_SNAPSHOT_PATH = "/localstorage/snapshot/merge";
     public static final String MERGE_AND_REBASE_SNAPSHOT_PATH = "/localstorage/snapshot/mergeandrebase";
     public static final String OFFLINE_MERGE_PATH = "/localstorage/snapshot/offlinemerge";
@@ -1524,12 +1559,22 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
     @Override
     void handle(ReInitRootVolumeFromTemplateOnPrimaryStorageMsg msg, String hostUuid, final ReturnValueCompletion<ReInitRootVolumeFromTemplateOnPrimaryStorageReply> completion) {
-        RevertVolumeFromSnapshotCmd cmd = new RevertVolumeFromSnapshotCmd();
-        cmd.setSnapshotInstallPath(makeCachedImageInstallUrlFromImageUuidForTemplate(msg.getVolume().getRootImageUuid()));
+        ReinitImageCmd cmd = new ReinitImageCmd();
+        if (msg.getVolume().getRootImageUuid() == null) {
+            completion.fail(operr("root image has been deleted, cannot reimage now"));
+            return;
+        }
+        ImageInventory image = ImageInventory.valueOf(dbf.findByUuid(msg.getVolume().getRootImageUuid(), ImageVO.class));
+        if (image == null) {
+            completion.fail(operr("root image has been deleted, cannot reimage now"));
+            return;
+        }
+        cmd.imagePath = makeCachedImageInstallUrlFromImageUuidForTemplate(msg.getVolume().getRootImageUuid());
+        cmd.volumePath = makeRootVolumeInstallUrl(msg.getVolume());
 
-        httpCall(REVERT_SNAPSHOT_PATH, hostUuid, cmd, RevertVolumeFromSnapshotRsp.class, new ReturnValueCompletion<RevertVolumeFromSnapshotRsp>(completion) {
+        httpCall(REINIT_IMAGE_PATH, hostUuid, cmd, ReinitImageRsp.class, new ReturnValueCompletion<ReinitImageRsp>(completion) {
             @Override
-            public void success(RevertVolumeFromSnapshotRsp rsp) {
+            public void success(ReinitImageRsp rsp) {
                 ReInitRootVolumeFromTemplateOnPrimaryStorageReply ret = new ReInitRootVolumeFromTemplateOnPrimaryStorageReply();
                 ret.setNewVolumeInstallPath(rsp.getNewVolumeInstallPath());
                 completion.success(ret);
