@@ -156,7 +156,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         ts = tq.getResultList();
         Map<String, String> hostnames = new HashMap<String, String>();
         for (Tuple t : ts) {
-            hostnames.put(t.get(1, String.class), t.get(0, String.class));
+            hostnames.put(t.get(1, String.class), VmSystemTags.HOSTNAME.getTokenByTag(t.get(0, String.class), VmSystemTags.HOSTNAME_TOKEN));
         }
 
         sql = "select l3 from L3NetworkVO l3 where l3.uuid in (:l3Uuids)";
@@ -516,7 +516,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         tq.setParameter("vmUuid", vm.getUuid());
         Map<String, String> hostnames = new HashMap<String, String>();
         for (Tuple t : ts) {
-            hostnames.put(t.get(1, String.class), t.get(0, String.class));
+            hostnames.put(t.get(1, String.class), VmSystemTags.HOSTNAME.getTokenByTag(t.get(0, String.class), VmSystemTags.HOSTNAME_TOKEN));
         }
 
         sql = "select l3 from L3NetworkVO l3 where l3.uuid in (:l3Uuids)";
