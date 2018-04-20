@@ -6788,9 +6788,9 @@
     "fileName": "src/main/java/org/zstack/network/service/HostRouteExtension.java"
   },
   {
-    "raw": "L3Network [uuid: %s] can not add host Route",
-    "en_US": "L3Network [uuid: {0}] can not add host Route",
-    "zh_CN": "三层网络{0}不能添加主机路由",
+    "raw": "L3Network [uuid: %s] does not have host route service",
+    "en_US": "L3Network [uuid: {0}] does not have host route service",
+    "zh_CN": "三层网络{0}没有主机路由功能",
     "arguments": [
       "msg.getL3NetworkUuid()"
     ],
