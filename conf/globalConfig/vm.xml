@@ -95,4 +95,50 @@
 		<defaultValue>false</defaultValue>
 	</config>
 
+	<config>
+		<name>vm.totalNum</name>
+		<description>default quota for vm.total number</description>
+		<defaultValue>20</defaultValue>
+		<category>quota</category>
+		<type>java.lang.Long</type>
+	</config>
+	<config>
+		<name>vm.num</name>
+		<description>default quota for vm runnig number</description>
+		<defaultValue>20</defaultValue>
+		<category>quota</category>
+		<type>java.lang.Long</type>
+	</config>
+
+	<config>
+		<name>vm.memorySize</name>
+		<description>default quota for vm.memorySize</description>
+		<defaultValue>85899345920</defaultValue>
+		<category>quota</category>
+		<type>java.lang.Long</type>
+	</config>
+
+	<config>
+		<name>vm.cpuNum</name>
+		<description>default quota for vm.cpuNum</description>
+		<defaultValue>80</defaultValue>
+		<category>quota</category>
+		<type>java.lang.Long</type>
+	</config>
+
+	<config>
+		<name>volume.data.num</name>
+		<description>default quota for volume.data.num</description>
+		<defaultValue>40</defaultValue>
+		<category>quota</category>
+		<type>java.lang.Long</type>
+	</config>
+
+	<config>
+		<name>volume.capacity</name>
+		<description>default quota for volume.capacity</description>
+		<defaultValue>10995116277760</defaultValue>
+		<category>quota</category>
+		<type>java.lang.Long</type>
+	</config>
 </globalConfig>

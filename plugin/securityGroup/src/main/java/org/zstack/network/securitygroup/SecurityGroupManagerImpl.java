@@ -32,10 +32,8 @@ import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
-import org.zstack.header.quota.QuotaConstant;
 import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
-import org.zstack.identity.QuotaGlobalConfig;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO;
 import org.zstack.query.QueryFacade;
@@ -106,7 +104,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             @Override
             public List<Quota.QuotaUsage> getQuotaUsageByAccount(String accountUuid) {
                 Quota.QuotaUsage usage = new Quota.QuotaUsage();
-                usage.setName(QuotaConstant.SG_NUM);
+                usage.setName(SecurityGroupQuotaConstant.SG_NUM);
                 usage.setUsed(getUsedSg(accountUuid));
                 return list(usage);
             }
@@ -124,12 +122,12 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             }
 
             private void check(APICreateSecurityGroupMsg msg, Map<String, QuotaPair> pairs) {
-                long sgNum = pairs.get(QuotaConstant.SG_NUM).getValue();
+                long sgNum = pairs.get(SecurityGroupQuotaConstant.SG_NUM).getValue();
                 long sgn = getUsedSg(msg.getSession().getAccountUuid());
 
                 if (sgn + 1 > sgNum) {
                     throw new ApiMessageInterceptionException(new QuotaUtil().buildQuataExceedError(
-                                    msg.getSession().getAccountUuid(), QuotaConstant.SG_NUM, sgNum));
+                                    msg.getSession().getAccountUuid(), SecurityGroupQuotaConstant.SG_NUM, sgNum));
                 }
             }
         };
@@ -139,8 +137,8 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         quota.addMessageNeedValidation(APICreateSecurityGroupMsg.class);
 
         QuotaPair p = new QuotaPair();
-        p.setName(QuotaConstant.SG_NUM);
-        p.setValue(QuotaGlobalConfig.SG_NUM.defaultValue(Long.class));
+        p.setName(SecurityGroupQuotaConstant.SG_NUM);
+        p.setValue(SecurityGroupQuotaGlobalConfig.SG_NUM.defaultValue(Long.class));
         quota.addPair(p);
 
         return list(quota);

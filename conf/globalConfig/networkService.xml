@@ -28,4 +28,11 @@
         <category>networkService</category>
         <type>java.lang.Integer</type>
     </config>
+    <config>
+        <name>l3.num</name>
+        <description>default quota for l3.num</description>
+        <defaultValue>20</defaultValue>
+        <category>quota</category>
+        <type>java.lang.Long</type>
+    </config>
 </globalConfig>

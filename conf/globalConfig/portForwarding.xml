@@ -7,4 +7,12 @@
         <defaultValue>false</defaultValue>
         <type>java.lang.Boolean</type>
     </config>
+
+    <config>
+        <name>portForwarding.num</name>
+        <description>default quota for port forwarding</description>
+        <defaultValue>20</defaultValue>
+        <category>quota</category>
+        <type>java.lang.Long</type>
+    </config>
 </globalConfig>

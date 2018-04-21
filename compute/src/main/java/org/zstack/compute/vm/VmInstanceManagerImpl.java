@@ -54,7 +54,6 @@ import org.zstack.header.image.ImageVO_;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
-import org.zstack.header.quota.QuotaConstant;
 import org.zstack.header.search.SearchOp;
 import org.zstack.header.storage.backup.BackupStorageType;
 import org.zstack.header.storage.backup.BackupStorageVO;
@@ -69,7 +68,6 @@ import org.zstack.header.volume.*;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.identity.AccountManager;
-import org.zstack.identity.QuotaGlobalConfig;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.SystemTagUtils;
@@ -1330,32 +1328,32 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 Quota.QuotaUsage usage;
 
                 usage = new Quota.QuotaUsage();
-                usage.setName(QuotaConstant.VM_TOTAL_NUM);
+                usage.setName(VmQuotaConstant.VM_TOTAL_NUM);
                 usage.setUsed(vmQuota.totalVmNum);
                 usages.add(usage);
 
                 usage = new Quota.QuotaUsage();
-                usage.setName(QuotaConstant.VM_RUNNING_NUM);
+                usage.setName(VmQuotaConstant.VM_RUNNING_NUM);
                 usage.setUsed(vmQuota.runningVmNum);
                 usages.add(usage);
 
                 usage = new Quota.QuotaUsage();
-                usage.setName(QuotaConstant.VM_RUNNING_CPU_NUM);
+                usage.setName(VmQuotaConstant.VM_RUNNING_CPU_NUM);
                 usage.setUsed(vmQuota.runningVmCpuNum);
                 usages.add(usage);
 
                 usage = new Quota.QuotaUsage();
-                usage.setName(QuotaConstant.VM_RUNNING_MEMORY_SIZE);
+                usage.setName(VmQuotaConstant.VM_RUNNING_MEMORY_SIZE);
                 usage.setUsed(vmQuota.runningVmMemorySize);
                 usages.add(usage);
 
                 usage = new Quota.QuotaUsage();
-                usage.setName(QuotaConstant.DATA_VOLUME_NUM);
+                usage.setName(VmQuotaConstant.DATA_VOLUME_NUM);
                 usage.setUsed(new VmQuotaUtil().getUsedDataVolumeCount(accountUuid));
                 usages.add(usage);
 
                 usage = new Quota.QuotaUsage();
-                usage.setName(QuotaConstant.VOLUME_SIZE);
+                usage.setName(VmQuotaConstant.VOLUME_SIZE);
                 usage.setUsed(new VmQuotaUtil().getUsedAllVolumeSize(accountUuid));
                 usages.add(usage);
 
@@ -1383,9 +1381,9 @@ public class VmInstanceManagerImpl extends AbstractService implements
                                               String resourceTargetOwnerAccountUuid,
                                               String vmInstanceUuid,
                                               Map<String, Quota.QuotaPair> pairs) {
-                long vmNumQuota = pairs.get(QuotaConstant.VM_RUNNING_NUM).getValue();
-                long cpuNumQuota = pairs.get(QuotaConstant.VM_RUNNING_CPU_NUM).getValue();
-                long memoryQuota = pairs.get(QuotaConstant.VM_RUNNING_MEMORY_SIZE).getValue();
+                long vmNumQuota = pairs.get(VmQuotaConstant.VM_RUNNING_NUM).getValue();
+                long cpuNumQuota = pairs.get(VmQuotaConstant.VM_RUNNING_CPU_NUM).getValue();
+                long memoryQuota = pairs.get(VmQuotaConstant.VM_RUNNING_MEMORY_SIZE).getValue();
 
                 VmQuotaUtil.VmQuota vmQuotaUsed = new VmQuotaUtil().getUsedVmCpuMemory(resourceTargetOwnerAccountUuid);
                 //
@@ -1394,7 +1392,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
                     quotaCompareInfo.currentAccountUuid = currentAccountUuid;
                     quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                    quotaCompareInfo.quotaName = QuotaConstant.VM_RUNNING_NUM;
+                    quotaCompareInfo.quotaName = VmQuotaConstant.VM_RUNNING_NUM;
                     quotaCompareInfo.quotaValue = vmNumQuota;
                     quotaCompareInfo.currentUsed = vmQuotaUsed.runningVmNum;
                     quotaCompareInfo.request = 1;
@@ -1407,7 +1405,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
                     quotaCompareInfo.currentAccountUuid = currentAccountUuid;
                     quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                    quotaCompareInfo.quotaName = QuotaConstant.VM_RUNNING_CPU_NUM;
+                    quotaCompareInfo.quotaName = VmQuotaConstant.VM_RUNNING_CPU_NUM;
                     quotaCompareInfo.quotaValue = cpuNumQuota;
                     quotaCompareInfo.currentUsed = vmQuotaUsed.runningVmCpuNum;
                     quotaCompareInfo.request = vm.getCpuNum();
@@ -1418,7 +1416,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
                     quotaCompareInfo.currentAccountUuid = currentAccountUuid;
                     quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                    quotaCompareInfo.quotaName = QuotaConstant.VM_RUNNING_MEMORY_SIZE;
+                    quotaCompareInfo.quotaName = VmQuotaConstant.VM_RUNNING_MEMORY_SIZE;
                     quotaCompareInfo.quotaValue = memoryQuota;
                     quotaCompareInfo.currentUsed = vmQuotaUsed.runningVmMemorySize;
                     quotaCompareInfo.request = vm.getMemorySize();
@@ -1432,8 +1430,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
                                                                 String resourceTargetOwnerAccountUuid,
                                                                 String currentAccountUuid,
                                                                 Map<String, Quota.QuotaPair> pairs) {
-                long dataVolumeNumQuota = pairs.get(QuotaConstant.DATA_VOLUME_NUM).getValue();
-                long allVolumeSizeQuota = pairs.get(QuotaConstant.VOLUME_SIZE).getValue();
+                long dataVolumeNumQuota = pairs.get(VmQuotaConstant.DATA_VOLUME_NUM).getValue();
+                long allVolumeSizeQuota = pairs.get(VmQuotaConstant.VOLUME_SIZE).getValue();
 
                 ArrayList<String> volumeUuids = new ArrayList<>();
                 if (dataVolumeUuids != null && !dataVolumeUuids.isEmpty()) {
@@ -1460,7 +1458,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
                         quotaCompareInfo.currentAccountUuid = currentAccountUuid;
                         quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                        quotaCompareInfo.quotaName = QuotaConstant.DATA_VOLUME_NUM;
+                        quotaCompareInfo.quotaName = VmQuotaConstant.DATA_VOLUME_NUM;
                         quotaCompareInfo.quotaValue = dataVolumeNumQuota;
                         quotaCompareInfo.currentUsed = dataVolumeNumUsed;
                         quotaCompareInfo.request = dataVolumeNumAsked;
@@ -1483,7 +1481,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
                     quotaCompareInfo.currentAccountUuid = currentAccountUuid;
                     quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                    quotaCompareInfo.quotaName = QuotaConstant.VOLUME_SIZE;
+                    quotaCompareInfo.quotaName = VmQuotaConstant.VOLUME_SIZE;
                     quotaCompareInfo.quotaValue = allVolumeSizeQuota;
                     quotaCompareInfo.currentUsed = allVolumeSizeUsed;
                     quotaCompareInfo.request = allVolumeSizeAsked;
@@ -1569,7 +1567,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 String currentAccountUuid = msg.getSession().getAccountUuid();
                 String resourceTargetOwnerAccountUuid = new QuotaUtil().getResourceOwnerAccountUuid(msg.getVolumeUuid());
                 // check data volume num
-                long dataVolumeNumQuota = pairs.get(QuotaConstant.DATA_VOLUME_NUM).getValue();
+                long dataVolumeNumQuota = pairs.get(VmQuotaConstant.DATA_VOLUME_NUM).getValue();
                 long dataVolumeNumUsed = new VmQuotaUtil().getUsedDataVolumeCount(resourceTargetOwnerAccountUuid);
                 long dataVolumeNumAsked = 1;
 
@@ -1578,7 +1576,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
                     quotaCompareInfo.currentAccountUuid = currentAccountUuid;
                     quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                    quotaCompareInfo.quotaName = QuotaConstant.DATA_VOLUME_NUM;
+                    quotaCompareInfo.quotaName = VmQuotaConstant.DATA_VOLUME_NUM;
                     quotaCompareInfo.quotaValue = dataVolumeNumQuota;
                     quotaCompareInfo.currentUsed = dataVolumeNumUsed;
                     quotaCompareInfo.request = dataVolumeNumAsked;
@@ -1591,8 +1589,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 String currentAccountUuid = msg.getSession().getAccountUuid();
                 String resourceTargetOwnerAccountUuid = msg.getSession().getAccountUuid();
 
-                long dataVolumeNumQuota = pairs.get(QuotaConstant.DATA_VOLUME_NUM).getValue();
-                long allVolumeSizeQuota = pairs.get(QuotaConstant.VOLUME_SIZE).getValue();
+                long dataVolumeNumQuota = pairs.get(VmQuotaConstant.DATA_VOLUME_NUM).getValue();
+                long allVolumeSizeQuota = pairs.get(VmQuotaConstant.VOLUME_SIZE).getValue();
 
                 // check data volume num
                 long dataVolumeNumUsed = new VmQuotaUtil().getUsedDataVolumeCount(currentAccountUuid);
@@ -1602,7 +1600,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
                     quotaCompareInfo.currentAccountUuid = currentAccountUuid;
                     quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                    quotaCompareInfo.quotaName = QuotaConstant.DATA_VOLUME_NUM;
+                    quotaCompareInfo.quotaName = VmQuotaConstant.DATA_VOLUME_NUM;
                     quotaCompareInfo.quotaValue = dataVolumeNumQuota;
                     quotaCompareInfo.currentUsed = dataVolumeNumUsed;
                     quotaCompareInfo.request = dataVolumeNumAsked;
@@ -1623,7 +1621,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
                     quotaCompareInfo.currentAccountUuid = currentAccountUuid;
                     quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                    quotaCompareInfo.quotaName = QuotaConstant.VOLUME_SIZE;
+                    quotaCompareInfo.quotaName = VmQuotaConstant.VOLUME_SIZE;
                     quotaCompareInfo.quotaValue = allVolumeSizeQuota;
                     quotaCompareInfo.currentUsed = allVolumeSizeUsed;
                     quotaCompareInfo.request = allVolumeSizeAsked;
@@ -1636,24 +1634,24 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 String currentAccountUuid = msg.getSession().getAccountUuid();
                 String resourceTargetOwnerAccountUuid = msg.getSession().getAccountUuid();
 
-                long totalVmNumQuota = pairs.get(QuotaConstant.VM_TOTAL_NUM).getValue();
-                long runningVmNumQuota = pairs.get(QuotaConstant.VM_RUNNING_NUM).getValue();
-                long runningVmCpuNumQuota = pairs.get(QuotaConstant.VM_RUNNING_CPU_NUM).getValue();
-                long runningVmMemorySizeQuota = pairs.get(QuotaConstant.VM_RUNNING_MEMORY_SIZE).getValue();
-                long dataVolumeNumQuota = pairs.get(QuotaConstant.DATA_VOLUME_NUM).getValue();
-                long allVolumeSizeQuota = pairs.get(QuotaConstant.VOLUME_SIZE).getValue();
+                long totalVmNumQuota = pairs.get(VmQuotaConstant.VM_TOTAL_NUM).getValue();
+                long runningVmNumQuota = pairs.get(VmQuotaConstant.VM_RUNNING_NUM).getValue();
+                long runningVmCpuNumQuota = pairs.get(VmQuotaConstant.VM_RUNNING_CPU_NUM).getValue();
+                long runningVmMemorySizeQuota = pairs.get(VmQuotaConstant.VM_RUNNING_MEMORY_SIZE).getValue();
+                long dataVolumeNumQuota = pairs.get(VmQuotaConstant.DATA_VOLUME_NUM).getValue();
+                long allVolumeSizeQuota = pairs.get(VmQuotaConstant.VOLUME_SIZE).getValue();
 
 
                 VmQuotaUtil.VmQuota vmQuotaUsed = new VmQuotaUtil().getUsedVmCpuMemory(currentAccountUuid);
 
                 if (vmQuotaUsed.totalVmNum + 1 > totalVmNumQuota) {
                     throw new ApiMessageInterceptionException(new QuotaUtil().buildQuataExceedError(
-                                    currentAccountUuid, QuotaConstant.VM_TOTAL_NUM, totalVmNumQuota));
+                                    currentAccountUuid, VmQuotaConstant.VM_TOTAL_NUM, totalVmNumQuota));
                 }
 
                 if (vmQuotaUsed.runningVmNum + 1 > runningVmNumQuota) {
                     throw new ApiMessageInterceptionException(new QuotaUtil().buildQuataExceedError(
-                                    currentAccountUuid, QuotaConstant.VM_RUNNING_NUM, runningVmNumQuota));
+                                    currentAccountUuid, VmQuotaConstant.VM_RUNNING_NUM, runningVmNumQuota));
                 }
 
                 String sql = "select i.cpuNum, i.memorySize" +
@@ -1667,12 +1665,12 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
                 if (vmQuotaUsed.runningVmCpuNum + cpuNumAsked > runningVmCpuNumQuota) {
                     throw new ApiMessageInterceptionException(new QuotaUtil().buildQuataExceedError(
-                                    currentAccountUuid, QuotaConstant.VM_RUNNING_CPU_NUM, runningVmCpuNumQuota));
+                                    currentAccountUuid, VmQuotaConstant.VM_RUNNING_CPU_NUM, runningVmCpuNumQuota));
                 }
 
                 if (vmQuotaUsed.runningVmMemorySize + memoryAsked > runningVmMemorySizeQuota) {
                     throw new ApiMessageInterceptionException(new QuotaUtil().buildQuataExceedError(
-                                    currentAccountUuid, QuotaConstant.VM_RUNNING_MEMORY_SIZE, runningVmMemorySizeQuota));
+                                    currentAccountUuid, VmQuotaConstant.VM_RUNNING_MEMORY_SIZE, runningVmMemorySizeQuota));
                 }
 
                 // check data volume num
@@ -1681,7 +1679,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     long dataVolumeNumAsked = msg.getDataDiskOfferingUuids().size();
                     if (dataVolumeNumUsed + dataVolumeNumAsked > dataVolumeNumQuota) {
                         throw new ApiMessageInterceptionException(new QuotaUtil().buildQuataExceedError(
-                                        currentAccountUuid, QuotaConstant.DATA_VOLUME_NUM, dataVolumeNumQuota));
+                                        currentAccountUuid, VmQuotaConstant.DATA_VOLUME_NUM, dataVolumeNumQuota));
                     }
                 }
 
@@ -1732,7 +1730,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
                     quotaCompareInfo.currentAccountUuid = currentAccountUuid;
                     quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                    quotaCompareInfo.quotaName = QuotaConstant.VOLUME_SIZE;
+                    quotaCompareInfo.quotaName = VmQuotaConstant.VOLUME_SIZE;
                     quotaCompareInfo.quotaValue = allVolumeSizeQuota;
                     quotaCompareInfo.currentUsed = allVolumeSizeUsed;
                     quotaCompareInfo.request = allVolumeSizeAsked;
@@ -1744,7 +1742,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 String currentAccountUuid = msg.getSession().getAccountUuid();
                 String resourceTargetOwnerAccountUuid = msg.getSession().getAccountUuid();
 
-                long totalVmNumQuota = pairs.get(QuotaConstant.VM_TOTAL_NUM).getValue();
+                long totalVmNumQuota = pairs.get(VmQuotaConstant.VM_TOTAL_NUM).getValue();
                 VmQuotaUtil.VmQuota vmQuotaUsed = new VmQuotaUtil().getUsedVmCpuMemory(currentAccountUuid);
                 long totalVmNumAsked = 1;
                 QuotaUtil.QuotaCompareInfo quotaCompareInfo;
@@ -1752,7 +1750,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
                     quotaCompareInfo.currentAccountUuid = currentAccountUuid;
                     quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                    quotaCompareInfo.quotaName = QuotaConstant.VM_TOTAL_NUM;
+                    quotaCompareInfo.quotaName = VmQuotaConstant.VM_TOTAL_NUM;
                     quotaCompareInfo.quotaValue = totalVmNumQuota;
                     quotaCompareInfo.currentUsed = vmQuotaUsed.totalVmNum;
                     quotaCompareInfo.request = totalVmNumAsked;
@@ -1765,33 +1763,33 @@ public class VmInstanceManagerImpl extends AbstractService implements
         QuotaPair p;
 
         p = new QuotaPair();
-        p.setName(QuotaConstant.VM_TOTAL_NUM);
-        p.setValue(QuotaGlobalConfig.VM_TOTAL_NUM.defaultValue(Long.class));
+        p.setName(VmQuotaConstant.VM_TOTAL_NUM);
+        p.setValue(VmQuotaGlobalConfig.VM_TOTAL_NUM.defaultValue(Long.class));
         quota.addPair(p);
 
         p = new QuotaPair();
-        p.setName(QuotaConstant.VM_RUNNING_NUM);
-        p.setValue(QuotaGlobalConfig.VM_RUNNING_NUM.defaultValue(Long.class));
+        p.setName(VmQuotaConstant.VM_RUNNING_NUM);
+        p.setValue(VmQuotaGlobalConfig.VM_RUNNING_NUM.defaultValue(Long.class));
         quota.addPair(p);
 
         p = new QuotaPair();
-        p.setName(QuotaConstant.VM_RUNNING_CPU_NUM);
-        p.setValue(QuotaGlobalConfig.VM_RUNNING_CPU_NUM.defaultValue(Long.class));
+        p.setName(VmQuotaConstant.VM_RUNNING_CPU_NUM);
+        p.setValue(VmQuotaGlobalConfig.VM_RUNNING_CPU_NUM.defaultValue(Long.class));
         quota.addPair(p);
 
         p = new QuotaPair();
-        p.setName(QuotaConstant.VM_RUNNING_MEMORY_SIZE);
-        p.setValue(QuotaGlobalConfig.VM_RUNNING_MEMORY_SIZE.defaultValue(Long.class));
+        p.setName(VmQuotaConstant.VM_RUNNING_MEMORY_SIZE);
+        p.setValue(VmQuotaGlobalConfig.VM_RUNNING_MEMORY_SIZE.defaultValue(Long.class));
         quota.addPair(p);
 
         p = new QuotaPair();
-        p.setName(QuotaConstant.DATA_VOLUME_NUM);
-        p.setValue(QuotaGlobalConfig.DATA_VOLUME_NUM.defaultValue(Long.class));
+        p.setName(VmQuotaConstant.DATA_VOLUME_NUM);
+        p.setValue(VmQuotaGlobalConfig.DATA_VOLUME_NUM.defaultValue(Long.class));
         quota.addPair(p);
 
         p = new QuotaPair();
-        p.setName(QuotaConstant.VOLUME_SIZE);
-        p.setValue(QuotaGlobalConfig.VOLUME_SIZE.defaultValue(Long.class));
+        p.setName(VmQuotaConstant.VOLUME_SIZE);
+        p.setValue(VmQuotaGlobalConfig.VOLUME_SIZE.defaultValue(Long.class));
         quota.addPair(p);
 
         quota.addMessageNeedValidation(APICreateVmInstanceMsg.class);
