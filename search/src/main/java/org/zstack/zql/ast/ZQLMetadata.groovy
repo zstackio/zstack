@@ -19,6 +19,7 @@ class ZQLMetadata {
         String selfKeyName
         String targetKeyName
         String name
+        boolean hidden
     }
 
     static class ExpandQueryAliasMetadata {
@@ -239,7 +240,8 @@ class ZQLMetadata {
                         targetInventoryClass: it.inventoryClass(),
                         selfKeyName: it.foreignKey(),
                         targetKeyName: it.expandedInventoryKey(),
-                        name: it.expandedField()
+                        name: it.expandedField(),
+                        hidden: it.hidden()
                 )
 
                 metadata.expandQueries[emetadata.name] = emetadata

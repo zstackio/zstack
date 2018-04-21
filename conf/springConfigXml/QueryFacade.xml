@@ -20,6 +20,12 @@
 		</zstack:plugin>
     </bean>
 
+	<bean id="ZQLPythonWriter" class = "org.zstack.zql.ZQLPythonWriter">
+		<zstack:plugin>
+			<zstack:extension interface="org.zstack.header.configuration.PythonApiBindingWriter" />
+		</zstack:plugin>
+	</bean>
+
 	<!--
     <bean id="MysqlQueryBuilder" class = "org.zstack.query.MysqlQueryBuilderImpl3">
     	<zstack:plugin>

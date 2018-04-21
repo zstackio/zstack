@@ -199,7 +199,8 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
             ExpandedQueries expandedQueries = (ExpandedQueries) invClass.getAnnotation(ExpandedQueries.class);
             if (expandedQueries != null) {
                 for (ExpandedQuery e : expandedQueries.value()) {
-                    ExpandedQueryStruct s = ExpandedQueryStruct.fromExpandedQueryAnnotation(inventoryClass, e);
+                    Class iclass = e.target() == Object.class ? inventoryClass : e.target();
+                    ExpandedQueryStruct s = ExpandedQueryStruct.fromExpandedQueryAnnotation(iclass, e);
                     s.check();
                     this.expandedQueries.put(s.getExpandedField(), s);
                 }
