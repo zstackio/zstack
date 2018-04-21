@@ -59,7 +59,7 @@ import java.util.concurrent.TimeUnit
 /**
  * Created by xing5 on 2017/2/12.
  */
-@AutoClone
+@AutoClone(includeFields=true)
 class EnvSpec implements Node, ApiHelper {
     protected List<ZoneSpec> zones = []
     List<AccountSpec> accounts = []
@@ -396,7 +396,8 @@ class EnvSpec implements Node, ApiHelper {
             specsByUuid[uuid] = it
 
 
-            def suuid = retrieveSessionUuid(it)
+            Spec s = it as Spec
+            def suuid = s.getSessionUuid == null ? retrieveSessionUuid(it) : s.getSessionUuid()
 
             try {
                 def id

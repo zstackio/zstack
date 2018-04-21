@@ -9,9 +9,11 @@ import org.zstack.header.rest.RESTConstant
  */
 abstract class Spec implements Node, CreateAction, Tag, ApiHelper, DeleteAction {
     EnvSpec envSpec
+    Closure getSessionUuid
 
     Spec(EnvSpec envSpec) {
         this.envSpec = envSpec
+        getSessionUuid = TestContext.getSesionClosure()
     }
 
     def findSpec(String name, Class type) {
