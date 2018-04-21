@@ -12,6 +12,7 @@ import org.zstack.network.service.virtualrouter.VirtualRouterVmVO_
 import org.zstack.sdk.EipInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.VmInstanceInventory
+import org.zstack.sdk.VmNicInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.test.integration.networkservice.provider.virtualrouter.VirtualRouterNetworkServiceEnv
 import org.zstack.testlib.EipSpec
@@ -62,6 +63,23 @@ class VirtualRouterOperationCase extends SubCase {
     void testVirtualRouterReconnect() {
         DatabaseFacade dbf = bean(DatabaseFacade.class)
         ApplianceVmVO vr = dbf.listAll(ApplianceVmVO.class).get(0)
+        VmInstanceInventory vm = env.inventoryByName("vm")
+        EipInventory eip = env.inventoryByName("eip")
+
+        VmNicInventory nic1 = vm.getVmNics().get(0)
+        attachEip {
+            eipUuid = eip.uuid
+            vmNicUuid = nic1.uuid
+        }
+
+        VirtualRouterCommands.CreateVipCmd vipCmd = null
+        env.afterSimulator(VirtualRouterConstant.VR_CREATE_VIP) { rsp, HttpEntity<String> entity ->
+            vipCmd = JSONObjectUtil.toObject(entity.body, VirtualRouterCommands.CreateVipCmd.class)
+            assert vipCmd.vips.size() == 2
+            assert vipCmd.vips.get(0).vipUuid == eip.vipUuid || vipCmd.vips.get(1).vipUuid
+            return rsp
+        }
+
         ApplianceVmInventory inv = reconnectVirtualRouter {
             vmInstanceUuid = vr.uuid
             sessionId = adminSession()
