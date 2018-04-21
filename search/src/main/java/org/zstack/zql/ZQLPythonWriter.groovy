@@ -31,7 +31,7 @@ class ZQLPythonWriter implements PythonApiBindingWriter {
                     expandedFields.add(name)
                 }
             }
-            expandedFields + it.expandQueryAliases.keySet()
+            expandedFields += it.expandQueryAliases.keySet()
             def expandedFieldsStr = expandedFields.collect { "'" + it + "'" }.join(",")
 
             def queryObjectMap = [:]
