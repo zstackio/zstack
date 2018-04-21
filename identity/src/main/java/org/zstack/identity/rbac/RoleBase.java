@@ -61,9 +61,24 @@ public class RoleBase implements Role {
             handle((APIAddPolicyStatementsToRoleMsg) msg);
         } else if (msg instanceof APIRemovePolicyStatementsFromRoleMsg) {
             handle((APIRemovePolicyStatementsFromRoleMsg) msg);
+        } else if (msg instanceof APIChangeRoleStateMsg) {
+            handle((APIChangeRoleStateMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIChangeRoleStateMsg msg) {
+        if (msg.getStateEvent() == RoleStateEvent.enable) {
+            self.setState(RoleState.Enabled);
+        } else {
+            self.setState(RoleState.Disabled);
+        }
+
+        self = dbf.updateAndRefresh(self);
+        APIChangeRoleStateEvent evt = new APIChangeRoleStateEvent(msg.getId());
+        evt.setInventory(getSelfInventory());
+        bus.publish(evt);
     }
 
     private void handle(APIRemovePolicyStatementsFromRoleMsg msg) {

@@ -34,6 +34,7 @@ CREATE TABLE `RoleVO` (
     `uuid` VARCHAR(32) NOT NULL,
     `name` VARCHAR(255) NOT NULL,
     `type` VARCHAR(32) NOT NULL,
+    `state` VARCHAR(64) NOT NULL,
     `description` VARCHAR(2048) DEFAULT NULL,
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',

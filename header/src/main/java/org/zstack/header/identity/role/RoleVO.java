@@ -24,6 +24,9 @@ public class RoleVO extends ResourceVO implements OwnedByAccount {
     private Timestamp lastOpDate;
     @Column
     @Enumerated(EnumType.STRING)
+    private RoleState state = RoleState.Enabled;
+    @Column
+    @Enumerated(EnumType.STRING)
     private RoleType type;
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "roleUuid", insertable = false, updatable = false)
@@ -36,9 +39,18 @@ public class RoleVO extends ResourceVO implements OwnedByAccount {
         RoleVO vo = new RoleVO();
         vo.name = name;
         vo.uuid = UUID.randomUUID().toString().replace("-", "");
+        vo.state = RoleState.Enabled;
         vo.description = description;
         vo.type = type;
         return vo;
+    }
+
+    public RoleState getState() {
+        return state;
+    }
+
+    public void setState(RoleState state) {
+        this.state = state;
     }
 
     @PreUpdate

@@ -17,6 +17,10 @@
     </message>
 
     <message>
+        <name>org.zstack.header.identity.role.api.APIChangeRoleStateMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.header.identity.role.api.APIAttachPolicyToRoleMsg</name>
     </message>
     
