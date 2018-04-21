@@ -1146,11 +1146,8 @@ public class KVMHost extends HostBase implements Host {
                         cmd.setVmUuid(vmUuid);
                         cmd.setUseNuma(VmGlobalConfig.NUMA.value(Boolean.class));
 
-                        UriComponentsBuilder ub = UriComponentsBuilder.newInstance();
-                        ub.scheme(KVMGlobalProperty.AGENT_URL_SCHEME);
+                        UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(migrateVmPath);
                         ub.host(migrateFromDestination ? dstHostMnIp : srcHostMnIp);
-                        ub.port(KVMGlobalProperty.AGENT_PORT);
-                        ub.path(KVMConstant.KVM_MIGRATE_VM_PATH);
                         String migrateUrl = ub.build().toString();
                         new Http<>(migrateUrl, cmd, MigrateVmResponse.class).call(migrateFromDestination ? dstHostUuid : srcHostUuid, new ReturnValueCompletion<MigrateVmResponse>(trigger) {
                             @Override
@@ -1189,13 +1186,10 @@ public class KVMHost extends HostBase implements Host {
                         cmd.vmUuid = vmUuid;
                         cmd.hostManagementIp = dstHostMnIp;
 
-                        UriComponentsBuilder ub = UriComponentsBuilder.newInstance();
-                        ub.scheme(KVMGlobalProperty.AGENT_URL_SCHEME);
+                        UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
                         ub.host(dstHostMnIp);
-                        ub.port(KVMGlobalProperty.AGENT_PORT);
                         ub.path(KVMConstant.KVM_HARDEN_CONSOLE_PATH);
                         String url = ub.build().toString();
-
                         new Http<>(url, cmd, AgentResponse.class).call(dstHostUuid, new ReturnValueCompletion<AgentResponse>(trigger) {
                             @Override
                             public void success(AgentResponse ret) {
