@@ -10,6 +10,8 @@ static void init() {
         permissions {
             name = "volume"
             normalAPIs("org.zstack.header.volume.**")
+
+            targetResources = [VolumeVO.class]
         }
 
         role {

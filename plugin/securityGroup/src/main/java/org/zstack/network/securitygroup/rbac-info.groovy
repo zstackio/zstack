@@ -10,6 +10,7 @@ static void init() {
         permissions {
             name = "security-group"
             normalAPIs("org.zstack.network.securitygroup.**")
+            targetResources = [SecurityGroupVO.class]
         }
 
         role {

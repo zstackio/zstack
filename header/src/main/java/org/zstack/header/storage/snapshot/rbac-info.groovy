@@ -10,6 +10,8 @@ static void init() {
         permissions {
             name = "snapshot"
             normalAPIs("org.zstack.header.storage.snapshot.**")
+
+            targetResources = [VolumeSnapshotVO.class, VolumeSnapshotTreeVO.class]
         }
 
         role {

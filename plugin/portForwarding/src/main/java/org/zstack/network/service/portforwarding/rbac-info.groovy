@@ -10,6 +10,7 @@ static void init() {
         permissions {
             name = "port-forwarding"
             normalAPIs("org.zstack.network.service.portforwarding.**")
+            targetResources = [PortForwardingRuleVO.class]
         }
 
         role {

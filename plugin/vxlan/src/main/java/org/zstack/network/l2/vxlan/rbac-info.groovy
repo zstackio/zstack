@@ -1,6 +1,7 @@
 package org.zstack.network.l2.vxlan
 
 import org.zstack.header.core.StaticInit
+import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.APIQueryL2VxlanNetworkPoolMsg
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.APIQueryVniRangeMsg
 
@@ -16,6 +17,8 @@ static void init() {
                     APIQueryVniRangeMsg.class.name,
                     APIQueryL2VxlanNetworkPoolMsg.class.name
             )
+
+            targetResources = [VxlanNetworkVO.class]
 
             adminOnlyAPIs("org.zstack.network.l2.vxlan.vtep.**")
             adminOnlyAPIs("org.zstack.network.l2.vxlan.vxlanNetworkPool.**")

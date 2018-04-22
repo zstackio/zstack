@@ -10,6 +10,7 @@ static void init() {
         permissions {
             name = "vip"
             normalAPIs("org.zstack.network.service.vip.**")
+            targetResources = [VipVO.class]
         }
     }
 }

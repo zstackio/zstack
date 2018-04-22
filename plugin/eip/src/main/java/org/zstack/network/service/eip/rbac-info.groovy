@@ -9,6 +9,7 @@ static void init() {
     rbac {
         permissions {
             name = "eip"
+            targetResources = [EipVO.class]
             normalAPIs("org.zstack.network.service.eip.**")
         }
 

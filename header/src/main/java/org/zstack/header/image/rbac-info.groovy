@@ -10,6 +10,8 @@ static void init() {
         permissions {
             name = "image"
             normalAPIs("org.zstack.header.image.**")
+
+            targetResources = [ImageVO.class]
         }
 
         role {

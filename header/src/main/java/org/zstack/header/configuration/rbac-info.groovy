@@ -11,6 +11,8 @@ static void init() {
             name = "configuration"
             adminOnlyAPIs("org.zstack.header.configuration.**")
 
+            targetResources = [InstanceOfferingVO.class, DiskOfferingVO.class]
+
             normalAPIs(
                     APIQueryDiskOfferingMsg.class.name,
                     APIQueryInstanceOfferingMsg.class.name

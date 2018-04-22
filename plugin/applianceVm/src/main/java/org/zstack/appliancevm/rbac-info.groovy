@@ -9,6 +9,7 @@ static void init() {
     rbac {
         permissions {
             name = "appliance-vm"
+            targetResources = [ApplianceVmVO.class]
             normalAPIs("org.zstack.appliancevm.**")
         }
 

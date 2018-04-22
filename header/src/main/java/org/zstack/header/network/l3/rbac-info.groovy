@@ -10,6 +10,8 @@ static void init() {
         permissions {
             name = "l3"
             normalAPIs("org.zstack.header.network.l3.**")
+
+            targetResources = [L3NetworkVO.class]
         }
 
         role {

@@ -10,6 +10,7 @@ static void init() {
         permissions {
             name = "load-balancer"
             normalAPIs("org.zstack.network.service.lb.**")
+            targetResources = [LoadBalancerVO.class]
         }
 
         role {
