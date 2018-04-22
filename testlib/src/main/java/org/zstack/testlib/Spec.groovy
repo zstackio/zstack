@@ -10,6 +10,7 @@ import org.zstack.header.rest.RESTConstant
 abstract class Spec implements Node, CreateAction, Tag, ApiHelper, DeleteAction {
     EnvSpec envSpec
     Closure getSessionUuid
+    boolean toPublic
 
     Spec(EnvSpec envSpec) {
         this.envSpec = envSpec
@@ -25,6 +26,10 @@ abstract class Spec implements Node, CreateAction, Tag, ApiHelper, DeleteAction 
         assert dep != null: "cannot find the dependency[name:$name, type:$type] for ${hasProperty("name") ? name : this}," +
                 "check your environment()"
         dependencies.add(dep as Node)
+    }
+
+    void shareToPublic() {
+        toPublic = true
     }
 
     void message(Class<? extends Message> msgClz, Closure cl) {

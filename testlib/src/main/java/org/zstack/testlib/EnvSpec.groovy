@@ -149,13 +149,6 @@ class EnvSpec implements Node, ApiHelper {
         }
     }
 
-    void withSession(String name, String password)  {
-        SessionSpec spec = new SessionSpec(this)
-        spec.name = name
-        spec.password = password
-        addChild(spec)
-    }
-
     protected void installDeletionMethods() {
         deletionMethods.each { it ->
             def (actionMeta, resultMeta, deleteClass) = it
@@ -343,10 +336,7 @@ class EnvSpec implements Node, ApiHelper {
             } else {
                 def n = it.parent
                 while (n != null) {
-                    if (n instanceof SessionSpec) {
-                        suuid = n.getSessionUuid()
-                        break
-                    } else if (n instanceof AccountSpec) {
+                    if (n instanceof AccountSpec) {
                         suuid = n.session.uuid
                         break
                     } else if (!(n instanceof HasSession) || n.accountName == null) {
@@ -395,14 +385,21 @@ class EnvSpec implements Node, ApiHelper {
             def uuid = Platform.getUuid()
             specsByUuid[uuid] = it
 
-
             Spec s = it as Spec
             def suuid = s.getSessionUuid == null ? retrieveSessionUuid(it) : s.getSessionUuid()
 
             try {
-                def id
                 logger.debug(String.format("create resource of class %s", it.getClass().getName()))
-                id = (it as CreateAction).create(uuid, suuid) as SpecID
+                def id = (it as CreateAction).create(uuid, suuid) as SpecID
+
+                (it as CreateAction).afterCreateOperations.each { it() }
+
+                if ((it as Spec).toPublic) {
+                    shareResource {
+                        resourceUuids = [id.uuid]
+                        toPublic = true
+                    }
+                }
 
                 if (id != null) {
                     specsByName[id.name] = it
