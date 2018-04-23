@@ -3,10 +3,11 @@ package org.zstack.identity;
 import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.header.identity.SessionInventory;
 
+import java.util.Collection;
 import java.util.List;
 
 public class ResourceFilter {
-    public static List<String> filter(List<String> resourceUuids, SessionInventory session) {
+    public static Collection<String> filter(Collection<String> resourceUuids, SessionInventory session) {
         if (resourceUuids.isEmpty()) {
             return resourceUuids;
         }
