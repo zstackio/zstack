@@ -126,3 +126,5 @@ UPDATE `SchedulerJobVO` SET `jobData` = CONCAT('{"uuid":"', uuid, '",'
                     ,'"name":"', name,'",'
                     ,'"createDate":"', Json_getKeyValue(jobData, 'createDate'), '",'
                     ,'"accountUuid":"', Json_getKeyValue(jobData, 'accountUuid'), '"}');
+
+ALTER TABLE `SharedBlockVO` modify diskUuid VARCHAR(255) NOT NULL;
