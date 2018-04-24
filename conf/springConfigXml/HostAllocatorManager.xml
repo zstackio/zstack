@@ -87,6 +87,7 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component"/>
             <zstack:extension interface="org.zstack.header.allocator.HostAllocatorStrategyFactory"/>
+            <zstack:extension interface="org.zstack.header.host.HostAllocateExtensionPoint"/>
         </zstack:plugin>
 
         <property name="allocatorFlowNames">
