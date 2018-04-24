@@ -574,6 +574,7 @@ public class VirtualRouterCommands {
         private String netmask;
         private String gateway;
         private String ownerEthernetMac;
+        private String vipUuid;
         
         public static VipTO valueOf(VipInventory inv, String ownerMac) {
             VipTO to = new VipTO();
@@ -581,6 +582,7 @@ public class VirtualRouterCommands {
             to.setNetmask(inv.getNetmask());
             to.setGateway(inv.getGateway());
             to.setOwnerEthernetMac(ownerMac);
+            to.setVipUuid(inv.getUuid());
             return to;
         }
         
@@ -620,7 +622,15 @@ public class VirtualRouterCommands {
         public void setOwnerEthernetMac(String ownerEthernetMac) {
             this.ownerEthernetMac = ownerEthernetMac;
         }
-    }
+
+		public String getVipUuid() {
+			return vipUuid;
+		}
+
+		public void setVipUuid(String vipUuid) {
+			this.vipUuid = vipUuid;
+		}
+	}
 
 	public static class CreateVipCmd extends AgentCommand {
 	    private List<VipTO> vips;

@@ -22,6 +22,7 @@ import org.zstack.test.integration.networkservice.provider.virtualrouter.Virtual
 import org.zstack.testlib.*
 import org.zstack.utils.CollectionUtils
 import org.zstack.utils.function.Function
+import org.zstack.utils.gson.JSONObjectUtil
 
 import javax.persistence.Tuple
 
@@ -54,6 +55,13 @@ class VirtualRouterEipCase extends SubCase {
 
     void testDetachEipJustAfterAttachToStoppedVm() {
         VirtualRouterVmInventory vrvm = queryVirtualRouterVm {}[0]
+
+        VirtualRouterCommands.CreateVipCmd vipCmd = null
+        env.afterSimulator(VirtualRouterConstant.VR_CREATE_VIP) { rsp, HttpEntity<String> entity ->
+            vipCmd = JSONObjectUtil.toObject(entity.body, VirtualRouterCommands.CreateVipCmd.class)
+            return rsp
+        }
+
         VirtualRouterCommands.CreateEipCmd cmd = new VirtualRouterCommands.CreateEipCmd()
         env.afterSimulator(VirtualRouterConstant.VR_CREATE_EIP) { rsp, HttpEntity<String> entity ->
             cmd = json(entity.getBody(), VirtualRouterCommands.CreateEipCmd)
@@ -66,6 +74,8 @@ class VirtualRouterEipCase extends SubCase {
         assert cmd.eip.publicMac.equals(vrvm.vmNics.stream().filter{ nic ->
             nic.l3NetworkUuid.equals(publicL3.uuid)
         }.findFirst().get().mac)
+        assert vipCmd.vips.size() == 1
+        assert vipCmd.vips.get(0).vipUuid == eip1.vipUuid
 
         detachEip {
             uuid = eip1.uuid
