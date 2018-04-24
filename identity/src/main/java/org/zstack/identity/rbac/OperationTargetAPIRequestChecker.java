@@ -129,17 +129,15 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
 
                 ts.addAll(
                         q(SharedResourceVO.class).select(SharedResourceVO_.receiverAccountUuid, SharedResourceVO_.resourceUuid)
-                        .in(SharedResourceVO_.resourceUuid, uuids)
-                        .eq(SharedResourceVO_.permission, SharedResourceVO.PERMISSION_WRITE)
-                        .eq(SharedResourceVO_.resourceType, acntMgr.getBaseResourceType(resourceType).getSimpleName())
-                        .groupBy(SharedResourceVO_.receiverAccountUuid)
-                        .listTuple()
+                                .in(SharedResourceVO_.resourceUuid, uuids)
+                                .eq(SharedResourceVO_.permission, SharedResourceVO.PERMISSION_WRITE)
+                                .eq(SharedResourceVO_.receiverAccountUuid, message.getSession().getAccountUuid())
+                                .eq(SharedResourceVO_.resourceType, acntMgr.getBaseResourceType(resourceType).getSimpleName())
+                                .listTuple()
                 );
 
-                ts = ts.stream().filter(t-> t.get(0, String.class).equals(message.getSession().getAccountUuid())).collect(Collectors.toList());
-                List<Tuple> finalTs = ts;
                 uuids.forEach(uuid -> {
-                    Optional<Tuple> opt = finalTs.stream().filter(t -> t.get(1, String.class).equals(uuid)).findFirst();
+                    Optional<Tuple> opt = ts.stream().filter(t -> t.get(1, String.class).equals(uuid)).findFirst();
                     if (!opt.isPresent()) {
                         throw new OperationFailureException(operr("permission denied, the account[uuid:%s] is not the owner of the resource[uuid:%s, type:%s]",
                                 message.getSession().getAccountUuid(), uuid, resourceType.getSimpleName()));

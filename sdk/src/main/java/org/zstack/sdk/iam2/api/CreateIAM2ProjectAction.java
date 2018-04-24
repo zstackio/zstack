@@ -35,6 +35,9 @@ public class CreateIAM2ProjectAction extends AbstractAction {
     public java.util.List attributes;
 
     @Param(required = false)
+    public java.util.Map quota;
+
+    @Param(required = false)
     public java.lang.String resourceUuid;
 
     @Param(required = false)
