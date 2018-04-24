@@ -1,5 +1,6 @@
 package org.zstack.test.integration.identity.account
 
+import org.zstack.compute.vm.VmQuotaGlobalConfig
 import org.zstack.core.config.GlobalConfig
 import org.zstack.core.db.Q
 import org.zstack.header.apimediator.ApiMessageInterceptionException
@@ -173,7 +174,7 @@ class AccountCase extends SubCase {
             password = "password"
         } as AccountInventory
 
-        testUpdateQuotaGlobalConfig(QuotaGlobalConfig.VM_TOTAL_NUM.getName())
+        testUpdateQuotaGlobalConfig(VmQuotaGlobalConfig.VM_TOTAL_NUM.getName())
 
         def acount2 = createAccount {
             name = "testAccount2"
@@ -181,10 +182,10 @@ class AccountCase extends SubCase {
         } as AccountInventory
 
         assert Q.New(QuotaVO.class).select(QuotaVO_.value)
-                .eq(QuotaVO_.identityUuid, acount1.uuid).eq(QuotaVO_.name, QuotaGlobalConfig.VM_TOTAL_NUM.name)
-                .findValue() == QuotaGlobalConfig.VM_TOTAL_NUM.defaultValue(Long.class)
+                .eq(QuotaVO_.identityUuid, acount1.uuid).eq(QuotaVO_.name, VmQuotaGlobalConfig.VM_TOTAL_NUM.name)
+                .findValue() == VmQuotaGlobalConfig.VM_TOTAL_NUM.defaultValue(Long.class)
         assert Q.New(QuotaVO.class).select(QuotaVO_.value)
-                .eq(QuotaVO_.identityUuid, acount2.uuid).eq(QuotaVO_.name, QuotaGlobalConfig.VM_TOTAL_NUM.name)
+                .eq(QuotaVO_.identityUuid, acount2.uuid).eq(QuotaVO_.name, VmQuotaGlobalConfig.VM_TOTAL_NUM.name)
                 .findValue() == 1
     }
 

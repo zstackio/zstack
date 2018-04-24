@@ -22,7 +22,6 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.identity.Quota;
 import org.zstack.header.identity.Quota.QuotaOperator;
 import org.zstack.header.identity.Quota.QuotaPair;
@@ -31,18 +30,14 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedQuotaCheckMessage;
-import org.zstack.header.network.l3.L3NetworkConstant;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
-import org.zstack.header.quota.QuotaConstant;
 import org.zstack.header.tag.AbstractSystemTagOperationJudger;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.header.volume.VolumeInventory;
 import org.zstack.identity.AccountManager;
-import org.zstack.identity.QuotaGlobalConfig;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.service.vip.*;
 import org.zstack.tag.TagManager;
@@ -578,7 +573,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
             @Override
             public List<Quota.QuotaUsage> getQuotaUsageByAccount(String accountUuid) {
                 Quota.QuotaUsage usage = new Quota.QuotaUsage();
-                usage.setName(QuotaConstant.LOAD_BALANCER_NUM);
+                usage.setName(LoadBalanceQuotaConstant.LOAD_BALANCER_NUM);
                 usage.setUsed(getUsedLb(accountUuid));
                 return list(usage);
             }
@@ -597,12 +592,12 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
             }
 
             private void check(APICreateLoadBalancerMsg msg, Map<String, QuotaPair> pairs) {
-                long lbNum = pairs.get(QuotaConstant.LOAD_BALANCER_NUM).getValue();
+                long lbNum = pairs.get(LoadBalanceQuotaConstant.LOAD_BALANCER_NUM).getValue();
                 long en = getUsedLb(msg.getSession().getAccountUuid());
 
                 if (en + 1 > lbNum) {
                     throw new ApiMessageInterceptionException(new QuotaUtil().buildQuataExceedError(
-                                    msg.getSession().getAccountUuid(), QuotaConstant.LOAD_BALANCER_NUM, lbNum));
+                                    msg.getSession().getAccountUuid(), LoadBalanceQuotaConstant.LOAD_BALANCER_NUM, lbNum));
                 }
             }
         };
@@ -612,8 +607,8 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         quota.setOperator(checker);
 
         QuotaPair p = new QuotaPair();
-        p.setName(QuotaConstant.LOAD_BALANCER_NUM);
-        p.setValue(QuotaGlobalConfig.LOAD_BALANCER_NUM.defaultValue(Long.class));
+        p.setName(LoadBalanceQuotaConstant.LOAD_BALANCER_NUM);
+        p.setValue(LoadBalanceQuotaGlobalConfig.LOAD_BALANCER_NUM.defaultValue(Long.class));
         quota.addPair(p);
 
         return list(quota);
