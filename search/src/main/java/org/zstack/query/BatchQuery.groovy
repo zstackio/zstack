@@ -384,11 +384,8 @@ class BatchQuery {
     }
 
     private long getMapMemorySize(Map m) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream()
-        ObjectOutputStream oos=new ObjectOutputStream(baos)
-        oos.writeObject(m)
-        oos.close()
-        return baos.size()
+        String jstr = JSONObjectUtil.toJsonString(m)
+        return jstr.length()
     }
 
     private String errorLine(String code, Throwable  e) {
@@ -433,6 +430,7 @@ class BatchQuery {
             try {
                 shell.evaluate(msg.script)
             } catch (Throwable t) {
+                logger.warn(t.message, t)
                 sandbox.unregister()
                 throw new OperationFailureException(Platform.operr("${errorLine(msg.script, t)}"))
             } finally {
