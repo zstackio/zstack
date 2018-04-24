@@ -13,6 +13,7 @@ public class RoleInventory {
     private String name;
     private String description;
     private RoleType type;
+    private RoleState state;
     private Timestamp createDate;
     private Timestamp lastOpDate;
     private List<RolePolicyStatementInventory> statements;
@@ -22,6 +23,7 @@ public class RoleInventory {
         inv.uuid = vo.getUuid();
         inv.name = vo.getName();
         inv.type = vo.getType();
+        inv.state = vo.getState();
         inv.description = vo.getDescription();
         inv.createDate = vo.getCreateDate();
         inv.lastOpDate = vo.getLastOpDate();
@@ -31,6 +33,14 @@ public class RoleInventory {
 
     public static List<RoleInventory> valueOf(Collection<RoleVO> vos) {
         return vos.stream().map(RoleInventory::valueOf).collect(Collectors.toList());
+    }
+
+    public RoleState getState() {
+        return state;
+    }
+
+    public void setState(RoleState state) {
+        this.state = state;
     }
 
     public RoleType getType() {
