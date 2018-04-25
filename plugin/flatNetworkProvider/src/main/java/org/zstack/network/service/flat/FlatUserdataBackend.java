@@ -185,6 +185,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     to.namespaceName = FlatDhcpBackend.makeNamespaceName(to.bridgeName, l.l3Uuid);
                     to.userdata = userdata.get(vmuuid);
                     to.port = UserdataGlobalProperty.HOST_PORT;
+                    to.l3NetworkUuid = l.l3Uuid;
                     tos.add(to);
                 }
 
@@ -264,6 +265,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
 
         CleanupUserdataCmd cmd = new CleanupUserdataCmd();
         cmd.bridgeName = new BridgeNameFinder().findByL3Uuid(l3.getUuid());
+        cmd.l3NetworkUuid = l3.getUuid();
 
         for (String huuid : hostUuids) {
             new KvmCommandSender(huuid).send(cmd, CLEANUP_USER_DATA, new KvmCommandFailureChecker() {
@@ -437,6 +439,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
         public String dhcpServerIp;
         public String bridgeName;
         public String namespaceName;
+        public String l3NetworkUuid;
         public int port;
     }
 
@@ -446,6 +449,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
 
     public static class CleanupUserdataCmd extends KVMAgentCommands.AgentCommand {
         public String bridgeName;
+        public String l3NetworkUuid;
     }
 
     public static class CleanupUserdataRsp extends KVMAgentCommands.AgentResponse {
@@ -542,6 +546,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                         uto.bridgeName = new BridgeNameFinder().findByL3Uuid(struct.getL3NetworkUuid());
                         uto.namespaceName = FlatDhcpBackend.makeNamespaceName(uto.bridgeName, struct.getL3NetworkUuid());
                         uto.port = UserdataGlobalProperty.HOST_PORT;
+                        uto.l3NetworkUuid = struct.getL3NetworkUuid();
                         cmd.userdata = uto;
 
                         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
