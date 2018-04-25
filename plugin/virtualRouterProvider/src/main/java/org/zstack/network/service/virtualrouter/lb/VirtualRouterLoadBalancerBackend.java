@@ -797,9 +797,10 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         final VipInventory vip = VipInventory.valueOf(dbf.findByUuid(struct.getLb().getVipUuid(), VipVO.class));
 
         VipUseForList useForList = new VipUseForList(vip.getUseFor());
-        DebugUtils.Assert(useForList.isIncluded(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING),
-                String.format("the vip[uuid:%s, name:%s, ip:%s, useFor: %s] is not for load balancer", vip.getUuid(),
-                        vip.getName(), vip.getIp(), vip.getUseFor()));
+        if (!useForList.isIncluded(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING)) {
+            logger.warn(String.format("the vip[uuid:%s, name:%s, ip:%s, useFor: %s] is not for load balancer", vip.getUuid(),
+                            vip.getName(), vip.getIp(), vip.getUseFor()));
+        }
 
         final boolean separateVr = LoadBalancerSystemTags.SEPARATE_VR.hasTag(struct.getLb().getUuid());
 
