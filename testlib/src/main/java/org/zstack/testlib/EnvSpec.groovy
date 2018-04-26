@@ -135,6 +135,8 @@ class EnvSpec implements Node, ApiHelper {
             [CreateEmailMonitorTriggerActionAction.metaClass, CreateEmailMonitorTriggerActionAction.Result.metaClass, DeleteMonitorTriggerActionAction.class],
             [CreateEmailMediaAction.metaClass, CreateEmailMediaAction.Result.metaClass, DeleteMediaAction.class],
             [SubmitLongJobAction.metaClass, SubmitLongJobAction.Result.metaClass, DeleteLongJobAction.class],
+            [UpdateClusterOSAction.metaClass, UpdateClusterOSAction.Result.metaClass, DeleteLongJobAction.class],
+            [AddSharedBlockGroupPrimaryStorageAction.metaClass, AddSharedBlockGroupPrimaryStorageAction.Result.metaClass, DeletePrimaryStorageAction.class],
     ]
 
     static Closure GLOBAL_DELETE_HOOK
@@ -382,6 +384,8 @@ class EnvSpec implements Node, ApiHelper {
                 return
             }
 
+            it.beforeOperations.each { cl -> cl() }
+
             def uuid = Platform.getUuid()
             specsByUuid[uuid] = it
 
@@ -423,6 +427,8 @@ class EnvSpec implements Node, ApiHelper {
 
                 throw new Exception("failed to create a spec[name: $name, spec type: ${it.class.simpleName}], ${t.message}", t)
             }
+
+            it.afterOperations.each { cl -> cl() }
         }
 
         allNodes.each {

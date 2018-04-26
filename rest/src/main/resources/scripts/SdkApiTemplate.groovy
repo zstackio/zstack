@@ -339,8 +339,18 @@ ${generateMethods(path)}
 
             return ret
         } else {
-            if (requestAnnotation.path() == "null") {
+            def requestPath = requestAnnotation.path()
+            if (requestPath == "null") {
                 throw new CloudRuntimeException("'path' is set to 'null' but no @SDK found on the class[${apiMessageClass.name}]")
+            }
+
+            if (requestPath.contains("{") || requestPath.contains("}")) {
+                def pattern = ~/\{([^}]*)}/
+                requestPath = requestPath.replaceAll(pattern, "")
+
+                if (requestPath.contains("{") || requestPath.contains("}")) {
+                    throw new CloudRuntimeException("'path' value format is missing please check '{' and '}' in path on the class[${apiMessageClass.name}]")
+                }
             }
 
             return [generateAction(generateClassName(), requestAnnotation.path())]

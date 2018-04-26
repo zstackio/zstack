@@ -138,6 +138,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         boolean success = true;
         Long totalCapacity;
         Long availableCapacity;
+        List<CephPoolCapacity> poolCapacities;
 
         public String getError() {
             return error;
@@ -169,6 +170,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         public void setAvailableCapacity(Long availableCapacity) {
             this.availableCapacity = availableCapacity;
+        }
+
+        public List<CephPoolCapacity> getPoolCapacities() {
+            return poolCapacities;
+        }
+
+        public void setPoolCapacities(List<CephPoolCapacity> poolCapacities) {
+            this.poolCapacities = poolCapacities;
         }
     }
 
@@ -2229,7 +2238,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     private void updateCapacityIfNeeded(AgentResponse rsp) {
         if (rsp.totalCapacity != null && rsp.availableCapacity != null) {
-            new CephCapacityUpdater().update(getSelf().getFsid(), rsp.totalCapacity, rsp.availableCapacity);
+            new CephCapacityUpdater().update(getSelf().getFsid(), rsp.totalCapacity, rsp.availableCapacity, rsp.getPoolCapacities());
         }
     }
 
@@ -2487,7 +2496,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 self = dbf.updateAndRefresh(self);
 
                                 CephCapacityUpdater updater = new CephCapacityUpdater();
-                                updater.update(ret.fsid, ret.totalCapacity, ret.availableCapacity, true);
+                                updater.update(ret.fsid, ret.totalCapacity, ret.availableCapacity, ret.getPoolCapacities(), true);
                                 trigger.next();
                             }
                         });

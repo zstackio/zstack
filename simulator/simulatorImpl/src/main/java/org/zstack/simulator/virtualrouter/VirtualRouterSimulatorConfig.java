@@ -2,8 +2,11 @@ package org.zstack.simulator.virtualrouter;
 
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.*;
 import org.zstack.network.service.virtualrouter.eip.EipTO;
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.DeleteLbCmd;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.RefreshLbCmd;
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.CertificateCmd;
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend.CertificateRsp;
 import org.zstack.network.service.virtualrouter.portforwarding.PortForwardingRuleTO;
 
 import java.util.ArrayList;
@@ -40,5 +43,7 @@ public class VirtualRouterSimulatorConfig {
     public volatile boolean refreshLbSuccess = true;
 	public volatile List<DeleteLbCmd> deleteLbCmds = new ArrayList<DeleteLbCmd>();
 	public volatile List<RemoveDnsCmd> removeDnsCmds = new ArrayList<RemoveDnsCmd>();
+	public volatile CertificateCmd certificateCmd;
+	public volatile CertificateRsp certificateRsp;
 
 }

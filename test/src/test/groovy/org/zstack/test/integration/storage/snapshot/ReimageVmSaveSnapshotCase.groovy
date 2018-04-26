@@ -315,9 +315,9 @@ class ReimageVmSaveSnapshotCase extends SubCase {
         
         LocalStorageKvmBackend.RevertVolumeFromSnapshotCmd cmd = new LocalStorageKvmBackend.RevertVolumeFromSnapshotCmd()
         Boolean check = false
-        env.afterSimulator(LocalStorageKvmBackend.REVERT_SNAPSHOT_PATH){ rsp, HttpEntity<String> entity ->
-            cmd = json(entity.getBody(), LocalStorageKvmBackend.RevertVolumeFromSnapshotCmd)
-            if(cmd.getSnapshotInstallPath() == PathUtil.join(local.getUrl(),
+        env.afterSimulator(LocalStorageKvmBackend.REINIT_IMAGE_PATH){ rsp, HttpEntity<String> entity ->
+            def cmd1 = json(entity.getBody(), LocalStorageKvmBackend.ReinitImageCmd)
+            if(cmd1.getImagePath() == PathUtil.join(local.getUrl(),
                     PrimaryStoragePathMaker.makeCachedImageInstallPathFromImageUuidForTemplate(vm.getImageUuid()))){
                 check = true
             }
@@ -341,8 +341,6 @@ class ReimageVmSaveSnapshotCase extends SubCase {
         revertVolumeFromSnapshot {
             uuid = snapshotVO.uuid
         }
-        assert cmd.snapshotInstallPath ==  snapshotVO.getPrimaryStorageInstallPath()
-
     }
 
     void testReimageVmSaveSnapshotCeph(){
@@ -393,9 +391,9 @@ class ReimageVmSaveSnapshotCase extends SubCase {
 
         KvmBackend.RevertVolumeFromSnapshotCmd cmd = new KvmBackend.RevertVolumeFromSnapshotCmd()
         Boolean check = false
-        env.afterSimulator(KvmBackend.REVERT_VOLUME_FROM_SNAPSHOT_PATH){ rsp, HttpEntity<String> entity ->
-            cmd = json(entity.getBody(), KvmBackend.RevertVolumeFromSnapshotCmd)
-            if(cmd.snapshotInstallPath == PathUtil.join(smp.getUrl(),
+        env.afterSimulator(KvmBackend.REINIT_IMAGE_PATH){ rsp, HttpEntity<String> entity ->
+            def cmd1 = json(entity.getBody(), KvmBackend.ReInitImageCmd)
+            if(cmd1.imageInstallPath == PathUtil.join(smp.getUrl(),
                     PrimaryStoragePathMaker.makeCachedImageInstallPathFromImageUuidForTemplate(vm.getImageUuid()))){
                 check = true
             }
@@ -437,9 +435,9 @@ class ReimageVmSaveSnapshotCase extends SubCase {
         PrimaryStorageVO ps = Q.New(PrimaryStorageVO.class).eq(PrimaryStorageVO_.uuid, nfs.uuid).find()
         NfsPrimaryStorageKVMBackendCommands.RevertVolumeFromSnapshotCmd cmd = new NfsPrimaryStorageKVMBackendCommands.RevertVolumeFromSnapshotCmd()
         Boolean check = false
-        env.afterSimulator(NfsPrimaryStorageKVMBackend.REVERT_VOLUME_FROM_SNAPSHOT_PATH){ rsp, HttpEntity<String> entity ->
-            cmd = json(entity.getBody(), NfsPrimaryStorageKVMBackendCommands.RevertVolumeFromSnapshotCmd)
-            if(cmd.getSnapshotInstallPath() == NfsPrimaryStorageKvmHelper.makeCachedImageInstallUrlFromImageUuidForTemplate(org.zstack.header.storage.primary.PrimaryStorageInventory.valueOf(ps), vm.getImageUuid())){
+        env.afterSimulator(NfsPrimaryStorageKVMBackend.REINIT_IMAGE_PATH){ rsp, HttpEntity<String> entity ->
+            def cmd1 = json(entity.getBody(), NfsPrimaryStorageKVMBackendCommands.ReInitImageCmd)
+            if(cmd1.getImagePath() == NfsPrimaryStorageKvmHelper.makeCachedImageInstallUrlFromImageUuidForTemplate(org.zstack.header.storage.primary.PrimaryStorageInventory.valueOf(ps), vm.getImageUuid())){
                 check = true
             }
             return rsp

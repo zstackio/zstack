@@ -6,7 +6,6 @@ import org.zstack.header.message.MessageReply
 import org.zstack.header.storage.primary.PingPrimaryStorageMsg
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.sdk.PrimaryStorageInventory
-import org.zstack.storage.primary.PrimaryStorageCapacityRecalculator
 import org.zstack.storage.primary.local.LocalStorageKvmBackend
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackend
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands
@@ -31,9 +30,6 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
 
         postCreate {
             envSpec.revokeMessage(PingPrimaryStorageMsg.class, null)
-            PrimaryStorageCapacityRecalculator recalculator = new PrimaryStorageCapacityRecalculator()
-            recalculator.psUuids = [inventory.uuid]
-            recalculator.recalculate()
         }
     }
 
@@ -131,6 +127,12 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
 
         simulator(NfsPrimaryStorageKVMBackend.CREATE_TEMPLATE_FROM_VOLUME_PATH) {
             return new NfsPrimaryStorageKVMBackendCommands.CreateTemplateFromVolumeRsp()
+        }
+
+        simulator(NfsPrimaryStorageKVMBackend.REINIT_IMAGE_PATH) {
+            def rsp = new NfsPrimaryStorageKVMBackendCommands.ReInitImageRsp()
+            rsp.newVolumeInstallPath = "/new/volume/install/path"
+            return rsp
         }
 
         simulator(NfsPrimaryStorageKVMBackend.REVERT_VOLUME_FROM_SNAPSHOT_PATH) {

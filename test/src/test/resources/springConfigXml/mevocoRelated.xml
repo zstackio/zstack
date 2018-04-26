@@ -6,6 +6,8 @@
        default-init-method="init" default-destroy-method="destory">
 
     <import resource="hybrid/datacenter.xml"/>
+    <import resource="hybrid/daho.xml"/>
+    <import resource="hybrid/aliyun.xml"/>
     <import resource="hybrid/ecsoss.xml"/>
     <import resource="hybrid/network.xml"/>
     <import resource="hybrid/identityzone.xml"/>

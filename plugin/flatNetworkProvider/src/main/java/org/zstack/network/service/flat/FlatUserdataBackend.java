@@ -107,13 +107,14 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
 
             class VmIpL3Uuid {
                 String vmIp;
+                String netmask;
                 String l3Uuid;
                 String dhcpServerIp;
             }
 
             @Transactional(readOnly = true)
             private Map<String, VmIpL3Uuid> getVmIpL3Uuid(List<String> vmUuids) {
-                String sql = "select vm.uuid, nic.ip, nic.l3NetworkUuid from VmInstanceVO vm," +
+                String sql = "select vm.uuid, nic.ip, nic.l3NetworkUuid, nic.netmask from VmInstanceVO vm," +
                         "VmNicVO nic, NetworkServiceL3NetworkRefVO ref," +
                         "NetworkServiceProviderVO pro where " +
                         " vm.uuid = nic.vmInstanceUuid and vm.uuid in (:uuids)" +
@@ -133,6 +134,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     VmIpL3Uuid v = new VmIpL3Uuid();
                     v.vmIp = t.get(1, String.class);
                     v.l3Uuid = t.get(2, String.class);
+                    v.netmask = t.get(3, String.class);
                     ret.put(vmUuid, v);
                 }
 
@@ -178,10 +180,12 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     VmIpL3Uuid l = vmipl3.get(vmuuid);
                     to.dhcpServerIp = l.dhcpServerIp;
                     to.vmIp = l.vmIp;
+                    to.netmask = l.netmask;
                     to.bridgeName = bridgeNames.get(l.l3Uuid);
                     to.namespaceName = FlatDhcpBackend.makeNamespaceName(to.bridgeName, l.l3Uuid);
                     to.userdata = userdata.get(vmuuid);
                     to.port = UserdataGlobalProperty.HOST_PORT;
+                    to.l3NetworkUuid = l.l3Uuid;
                     tos.add(to);
                 }
 
@@ -261,6 +265,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
 
         CleanupUserdataCmd cmd = new CleanupUserdataCmd();
         cmd.bridgeName = new BridgeNameFinder().findByL3Uuid(l3.getUuid());
+        cmd.l3NetworkUuid = l3.getUuid();
 
         for (String huuid : hostUuids) {
             new KvmCommandSender(huuid).send(cmd, CLEANUP_USER_DATA, new KvmCommandFailureChecker() {
@@ -430,9 +435,11 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
         public MetadataTO metadata;
         public String userdata;
         public String vmIp;
+        public String netmask;
         public String dhcpServerIp;
         public String bridgeName;
         public String namespaceName;
+        public String l3NetworkUuid;
         public int port;
     }
 
@@ -442,6 +449,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
 
     public static class CleanupUserdataCmd extends KVMAgentCommands.AgentCommand {
         public String bridgeName;
+        public String l3NetworkUuid;
     }
 
     public static class CleanupUserdataRsp extends KVMAgentCommands.AgentResponse {
@@ -529,9 +537,16 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                                 return arg.getL3NetworkUuid().equals(struct.getL3NetworkUuid()) ? arg.getIp() : null;
                             }
                         });
+                        uto.netmask = CollectionUtils.find(struct.getVmNics(), new Function<String, VmNicInventory>() {
+                            @Override
+                            public String call(VmNicInventory arg) {
+                                return arg.getL3NetworkUuid().equals(struct.getL3NetworkUuid()) ? arg.getNetmask() : null;
+                            }
+                        });
                         uto.bridgeName = new BridgeNameFinder().findByL3Uuid(struct.getL3NetworkUuid());
                         uto.namespaceName = FlatDhcpBackend.makeNamespaceName(uto.bridgeName, struct.getL3NetworkUuid());
                         uto.port = UserdataGlobalProperty.HOST_PORT;
+                        uto.l3NetworkUuid = struct.getL3NetworkUuid();
                         cmd.userdata = uto;
 
                         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();

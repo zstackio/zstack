@@ -36,6 +36,11 @@ public class L3NetworkVO extends L3NetworkAO {
     @NoView
     private Set<NetworkServiceL3NetworkRefVO> networkServices = new HashSet<NetworkServiceL3NetworkRefVO>();
 
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinColumn(name = "l3NetworkUuid", insertable = false, updatable = false)
+    @NoView
+    private Set<L3NetworkHostRouteVO> hostRoutes = new HashSet<L3NetworkHostRouteVO>();
+
     public Set<L3NetworkDnsVO> getDns() {
         return dns;
     }
@@ -58,5 +63,13 @@ public class L3NetworkVO extends L3NetworkAO {
 
     public void setNetworkServices(Set<NetworkServiceL3NetworkRefVO> networkServices) {
         this.networkServices = networkServices;
+    }
+
+    public Set<L3NetworkHostRouteVO> getHostRoutes() {
+        return hostRoutes;
+    }
+
+    public void setHostRoutes(Set<L3NetworkHostRouteVO> hostRoutes) {
+        this.hostRoutes = hostRoutes;
     }
 }

@@ -18,4 +18,7 @@ public class CephPrimaryStoragePoolVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<CephPrimaryStoragePoolVO, Timestamp> createDate;
     public static volatile SingularAttribute<CephPrimaryStoragePoolVO, Timestamp> lastOpDate;
     public static volatile SingularAttribute<CephPrimaryStoragePoolVO, String> type;
+    public static volatile SingularAttribute<CephPrimaryStoragePoolVO, Long> availableCapacity;
+    public static volatile SingularAttribute<CephPrimaryStoragePoolVO, Long> usedCapacity;
+    public static volatile SingularAttribute<CephPrimaryStoragePoolVO, Integer> replicatedSize;
 }

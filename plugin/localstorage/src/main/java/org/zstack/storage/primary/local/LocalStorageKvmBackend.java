@@ -59,10 +59,7 @@ import org.zstack.utils.path.PathUtil;
 
 import javax.persistence.Tuple;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.*;
@@ -373,6 +370,40 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         }
     }
 
+    public static class ReinitImageCmd extends AgentCommand {
+        private String imagePath;
+        private String volumePath;
+
+        public String getImagePath() {
+            return imagePath;
+        }
+
+        public void setImagePath(String imagePath) {
+            this.imagePath = imagePath;
+        }
+
+        public String getVolumePath() {
+            return volumePath;
+        }
+
+        public void setVolumePath(String volumePath) {
+            this.volumePath = volumePath;
+        }
+    }
+
+    public static class ReinitImageRsp extends AgentResponse {
+        @Validation
+        private String newVolumeInstallPath;
+
+        public String getNewVolumeInstallPath() {
+            return newVolumeInstallPath;
+        }
+
+        public void setNewVolumeInstallPath(String newVolumeInstallPath) {
+            this.newVolumeInstallPath = newVolumeInstallPath;
+        }
+    }
+
     public static class RevertVolumeFromSnapshotRsp extends AgentResponse {
         @Validation
         private String newVolumeInstallPath;
@@ -633,6 +664,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static final String CHECK_BITS_PATH = "/localstorage/checkbits";
     public static final String CREATE_TEMPLATE_FROM_VOLUME = "/localstorage/volume/createtemplate";
     public static final String REVERT_SNAPSHOT_PATH = "/localstorage/snapshot/revert";
+    public static final String REINIT_IMAGE_PATH = "/localstorage/reinit/image";
     public static final String MERGE_SNAPSHOT_PATH = "/localstorage/snapshot/merge";
     public static final String MERGE_AND_REBASE_SNAPSHOT_PATH = "/localstorage/snapshot/mergeandrebase";
     public static final String OFFLINE_MERGE_PATH = "/localstorage/snapshot/offlinemerge";
@@ -1527,12 +1559,22 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
     @Override
     void handle(ReInitRootVolumeFromTemplateOnPrimaryStorageMsg msg, String hostUuid, final ReturnValueCompletion<ReInitRootVolumeFromTemplateOnPrimaryStorageReply> completion) {
-        RevertVolumeFromSnapshotCmd cmd = new RevertVolumeFromSnapshotCmd();
-        cmd.setSnapshotInstallPath(makeCachedImageInstallUrlFromImageUuidForTemplate(msg.getVolume().getRootImageUuid()));
+        ReinitImageCmd cmd = new ReinitImageCmd();
+        if (msg.getVolume().getRootImageUuid() == null) {
+            completion.fail(operr("root image has been deleted, cannot reimage now"));
+            return;
+        }
+        ImageInventory image = ImageInventory.valueOf(dbf.findByUuid(msg.getVolume().getRootImageUuid(), ImageVO.class));
+        if (image == null) {
+            completion.fail(operr("root image has been deleted, cannot reimage now"));
+            return;
+        }
+        cmd.imagePath = makeCachedImageInstallUrlFromImageUuidForTemplate(msg.getVolume().getRootImageUuid());
+        cmd.volumePath = makeRootVolumeInstallUrl(msg.getVolume());
 
-        httpCall(REVERT_SNAPSHOT_PATH, hostUuid, cmd, RevertVolumeFromSnapshotRsp.class, new ReturnValueCompletion<RevertVolumeFromSnapshotRsp>(completion) {
+        httpCall(REINIT_IMAGE_PATH, hostUuid, cmd, ReinitImageRsp.class, new ReturnValueCompletion<ReinitImageRsp>(completion) {
             @Override
-            public void success(RevertVolumeFromSnapshotRsp rsp) {
+            public void success(ReinitImageRsp rsp) {
                 ReInitRootVolumeFromTemplateOnPrimaryStorageReply ret = new ReInitRootVolumeFromTemplateOnPrimaryStorageReply();
                 ret.setNewVolumeInstallPath(rsp.getNewVolumeInstallPath());
                 completion.success(ret);
@@ -1944,14 +1986,14 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         List<Flow> flows = new ArrayList<Flow>();
 
         SimpleQuery<KVMHostVO> q = dbf.createQuery(KVMHostVO.class);
-        q.select(KVMHostVO_.managementIp, KVMHostVO_.username, KVMHostVO_.password, KVMHostVO_.port);
+        q.select(KVMHostVO_.username, KVMHostVO_.password, KVMHostVO_.port);
         q.add(KVMHostVO_.uuid, Op.EQ, struct.getDestHostUuid());
         Tuple t = q.findTuple();
 
-        final String mgmtIp = t.get(0, String.class);
-        final String username = t.get(1, String.class);
-        final String password = t.get(2, String.class);
-        final int port = t.get(3, Integer.class);
+        final String destIp = localStorageFactory.getDestMigrationAddress(struct.getSrcHostUuid(), struct.getDestHostUuid());
+        final String username = t.get(0, String.class);
+        final String password = t.get(1, String.class);
+        final int port = t.get(2, Integer.class);
 
         class Context {
             GetMd5Rsp getMd5Rsp;
@@ -2097,7 +2139,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             @Override
                             public void run(final SyncTaskChain chain) {
                                 final CopyBitsFromRemoteCmd cmd = new CopyBitsFromRemoteCmd();
-                                cmd.dstIp = mgmtIp;
+                                cmd.dstIp = destIp;
                                 cmd.dstUsername = username;
                                 cmd.dstPassword = password;
                                 cmd.dstPort = port;
@@ -2282,7 +2324,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             @Override
             public void run(final FlowTrigger trigger, Map data) {
                 final CopyBitsFromRemoteCmd cmd = new CopyBitsFromRemoteCmd();
-                cmd.dstIp = mgmtIp;
+                cmd.dstIp = destIp;
                 cmd.dstUsername = username;
                 cmd.dstPassword = password;
                 cmd.dstPort = port;

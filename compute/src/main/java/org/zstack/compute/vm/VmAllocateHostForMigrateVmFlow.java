@@ -16,10 +16,7 @@ import org.zstack.header.allocator.DesignatedAllocateHostMsg;
 import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.vm.APIMigrateVmMsg;
-import org.zstack.header.vm.MigrateVmMsg;
-import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
@@ -43,6 +40,10 @@ public class VmAllocateHostForMigrateVmFlow implements Flow {
         String destHostUuid = null;
         if (spec.getMessage() != null && spec.getMessage() instanceof APIMigrateVmMsg) {
             destHostUuid = ((APIMigrateVmMsg)spec.getMessage()).getHostUuid();
+        }
+
+        if (spec.getMessage() != null && spec.getMessage() instanceof MigrateVmInnerMsg) {
+            destHostUuid = ((MigrateVmInnerMsg)spec.getMessage()).getHostUuid();
         }
 
         DesignatedAllocateHostMsg msg = new DesignatedAllocateHostMsg();

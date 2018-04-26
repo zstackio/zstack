@@ -44,6 +44,8 @@ public class CoreGlobalProperty {
     public static boolean SHADOW_ENTITY_ON;
     @GlobalProperty(name = "consoleProxyPort", defaultValue = "4900")
     public static int CONSOLE_PROXY_PORT;
+    @GlobalProperty(name = "consoleProxyCertFile", defaultValue = "")
+    public static String CONSOLE_PROXY_CERT_FILE;
     @GlobalProperty(name = "dataDir", defaultValue = "/var/lib/zstack/")
     public static String DATA_DIR;
     @GlobalProperty(name = "logDir", defaultValue = "{catalina.home}/logs/")

@@ -159,19 +159,24 @@ class UpdateClusterOSJobCase extends SubCase {
             testUpdateClusterWithHostNotConnected()
             testUpdateClusterWithHostPreMaintenance()
             testUpdateClusterWithHostMaintenance()
+            testUpdateClusterUsingAPI()
+            testUpdateClusterExcludePackages()
         }
     }
 
     void testUpdateClusterWithNfsRunningOnHost() {
         ClusterInventory cls = env.inventoryByName("cluster2") as ClusterInventory
-        VmInstanceInventory vm2 = env.inventoryByName("vm2") as VmInstanceInventory
 
         // try to update cluster os
-        UpdateClusterOSAction action = new UpdateClusterOSAction()
-        action.sessionId = adminSession()
-        action.uuid = cls.uuid
-        UpdateClusterOSAction.Result result = action.call()
-        assert result.error != null
+        LongJobInventory jobInv = updateClusterOS {
+            uuid = cls.uuid
+        }
+
+        assert jobInv.getJobName() == "APIUpdateClusterOSMsg"
+        retryInSecs() {
+            LongJobVO job = dbFindByUuid(jobInv.getUuid(), LongJobVO.class)
+            assert job.state == LongJobState.Failed
+        }
     }
 
     void testUpdateHostNotKvm() {
@@ -267,5 +272,44 @@ class UpdateClusterOSJobCase extends SubCase {
         VmInstanceVO vmVO = dbFindByUuid(vmInv.uuid, VmInstanceVO.class)
         assert vmVO.hostUuid == hvo.uuid
         assert vmVO.state == VmInstanceState.Running
+    }
+
+    void testUpdateClusterUsingAPI() {
+        ClusterInventory cls = env.inventoryByName("cluster1") as ClusterInventory
+        HostInventory kvm1 = env.inventoryByName("kvm1") as HostInventory
+        VmInstanceInventory vmInv = env.inventoryByName("vm1") as VmInstanceInventory
+
+        // try to update cluster os
+        LongJobInventory jobInv = updateClusterOS {
+            uuid = cls.uuid
+        }
+
+        assert jobInv.getJobName() == "APIUpdateClusterOSMsg"
+        retryInSecs() {
+            LongJobVO job = dbFindByUuid(jobInv.getUuid(), LongJobVO.class)
+            assert job.state == LongJobState.Succeeded
+        }
+
+        // vm1 still running
+        HostVO hvo = dbFindByUuid(kvm1.uuid, HostVO.class)
+        VmInstanceVO vmVO = dbFindByUuid(vmInv.uuid, VmInstanceVO.class)
+        assert vmVO.hostUuid == hvo.uuid
+        assert vmVO.state == VmInstanceState.Running
+    }
+
+    void testUpdateClusterExcludePackages() {
+        ClusterInventory cls = env.inventoryByName("cluster1") as ClusterInventory
+
+        // try to update cluster os
+        LongJobInventory jobInv = updateClusterOS {
+            uuid = cls.uuid
+            excludePackages = ["kernel", "systemd*"]
+        }
+
+        assert jobInv.getJobName() == "APIUpdateClusterOSMsg"
+        retryInSecs() {
+            LongJobVO job = dbFindByUuid(jobInv.getUuid(), LongJobVO.class)
+            assert job.state == LongJobState.Succeeded
+        }
     }
 }

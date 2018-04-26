@@ -1,14 +1,14 @@
 package org.zstack.sdk;
 
-
+import org.zstack.sdk.LongJobInventory;
 
 public class UpdateClusterOSResult {
-    public java.util.Map results;
-    public void setResults(java.util.Map results) {
-        this.results = results;
+    public LongJobInventory inventory;
+    public void setInventory(LongJobInventory inventory) {
+        this.inventory = inventory;
     }
-    public java.util.Map getResults() {
-        return this.results;
+    public LongJobInventory getInventory() {
+        return this.inventory;
     }
 
 }

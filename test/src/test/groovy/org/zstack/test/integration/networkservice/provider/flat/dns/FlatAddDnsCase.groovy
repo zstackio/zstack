@@ -1,7 +1,7 @@
 package org.zstack.test.integration.networkservice.provider.flat.dns
 
 import org.springframework.http.HttpEntity
-import org.zstack.network.service.flat.FlatDnsBackend
+import org.zstack.network.service.flat.FlatDhcpBackend
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.test.integration.networkservice.provider.flat.FlatNetworkServiceEnv
@@ -18,7 +18,6 @@ class FlatAddDnsCase extends SubCase {
 
     L3NetworkInventory l3
     String dns1 = "8.8.8.8"
-    String dns2 = "8.8.4.4"
 
     @Override
     void clean() {
@@ -38,10 +37,9 @@ class FlatAddDnsCase extends SubCase {
     }
 
     void testAddDns() {
-        FlatDnsBackend.SetDnsCmd cmd = null
-
-        env.afterSimulator(FlatDnsBackend.SET_DNS_PATH) { rsp, HttpEntity<String> e ->
-            cmd = JSONObjectUtil.toObject(e.body, FlatDnsBackend.SetDnsCmd.class)
+        FlatDhcpBackend.ApplyDhcpCmd cmd = null
+        env.afterSimulator(FlatDhcpBackend.APPLY_DHCP_PATH) { rsp, HttpEntity<String> e ->
+            cmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.ApplyDhcpCmd.class)
             return rsp
         }
 
@@ -50,11 +48,9 @@ class FlatAddDnsCase extends SubCase {
             delegate.dns = dns1
         }
 
-        assert cmd == null
-        // Note(WeiW): Yes, actually though setDns of FlatDnsBackend has been implemented,
-        // but workflow will always return in
-        // org.zstack.network.service.DnsExtension.handle(org.zstack.header.network.service.AddDnsMsg),
-        // because the ptype is null
+        assert cmd != null
+        assert cmd.dhcp.get(0).dns.size() == 1
+        assert cmd.dhcp.get(0).dns.get(0) == dns1
     }
 
     @Override

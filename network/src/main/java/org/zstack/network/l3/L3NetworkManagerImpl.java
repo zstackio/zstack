@@ -25,9 +25,7 @@ import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.L2NetworkVO_;
 import org.zstack.header.network.l3.*;
-import org.zstack.header.quota.QuotaConstant;
 import org.zstack.identity.AccountManager;
-import org.zstack.identity.QuotaGlobalConfig;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.service.MtuGetter;
 import org.zstack.network.service.NetworkServiceSystemTag;
@@ -459,7 +457,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
             @Override
             public List<Quota.QuotaUsage> getQuotaUsageByAccount(String accountUuid) {
                 Quota.QuotaUsage usage = new Quota.QuotaUsage();
-                usage.setName(QuotaConstant.L3_NUM);
+                usage.setName(L3NetworkQuotaConstant.L3_NUM);
                 usage.setUsed(getUsedL3(accountUuid));
                 return list(usage);
             }
@@ -477,14 +475,12 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
             }
 
             private void check(APICreateL3NetworkMsg msg, Map<String, QuotaPair> pairs) {
-                long l3Num = pairs.get(QuotaConstant.L3_NUM).getValue();
+                long l3Num = pairs.get(L3NetworkQuotaConstant.L3_NUM).getValue();
                 long l3n = getUsedL3(msg.getSession().getAccountUuid());
 
                 if (l3n + 1 > l3Num) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                            String.format("quota exceeding.  The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    msg.getSession().getAccountUuid(), QuotaConstant.L3_NUM, l3Num)
-                    ));
+                    throw new ApiMessageInterceptionException(new QuotaUtil().buildQuataExceedError(
+                            msg.getSession().getAccountUuid(), L3NetworkQuotaConstant.L3_NUM, l3Num));
                 }
             }
         };
@@ -494,8 +490,8 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         quota.addMessageNeedValidation(APICreateL3NetworkMsg.class);
 
         QuotaPair p = new QuotaPair();
-        p.setName(QuotaConstant.L3_NUM);
-        p.setValue(QuotaGlobalConfig.L3_NUM.defaultValue(Long.class));
+        p.setName(L3NetworkQuotaConstant.L3_NUM);
+        p.setValue(L3NetworkQuotaGlobalConfig.L3_NUM.defaultValue(Long.class));
         quota.addPair(p);
 
         return list(quota);

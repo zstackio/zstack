@@ -19,7 +19,9 @@ import java.util.List;
         @ExpandedQuery(expandedField = "loadBalancer", inventoryClass = LoadBalancerInventory.class,
                 foreignKey = "loadBalancerUuid", expandedInventoryKey = "uuid"),
         @ExpandedQuery(expandedField = "vmNicRef", inventoryClass = LoadBalancerListenerVmNicRefInventory.class,
-                foreignKey = "uuid", expandedInventoryKey = "listenerUuid", hidden = true)
+                foreignKey = "uuid", expandedInventoryKey = "listenerUuid", hidden = true),
+        @ExpandedQuery(expandedField = "certificate", inventoryClass = LoadBalancerListenerCertificateRefInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "listenerUuid")
 })
 @ExpandedQueryAliases({
         @ExpandedQueryAlias(alias = "vmNic", expandedField = "vmNicRef.vmNic")
@@ -35,6 +37,7 @@ public class LoadBalancerListenerInventory {
     private Timestamp createDate;
     private Timestamp lastOpDate;
     private List<LoadBalancerListenerVmNicRefInventory> vmNicRefs;
+    private List<LoadBalancerListenerCertificateRefInventory> certificateRefs;
 
     public static LoadBalancerListenerInventory valueOf(LoadBalancerListenerVO vo) {
         LoadBalancerListenerInventory inv = new LoadBalancerListenerInventory();
@@ -48,6 +51,7 @@ public class LoadBalancerListenerInventory {
         inv.setName(vo.getName());
         inv.setDescription(vo.getDescription());
         inv.setVmNicRefs(LoadBalancerListenerVmNicRefInventory.valueOf(vo.getVmNicRefs()));
+        inv.setCertificateRefs(LoadBalancerListenerCertificateRefInventory.valueOf(vo.getCertificateRefs()));
         return inv;
     }
 
@@ -137,5 +141,13 @@ public class LoadBalancerListenerInventory {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
+    }
+
+    public List<LoadBalancerListenerCertificateRefInventory> getCertificateRefs() {
+        return certificateRefs;
+    }
+
+    public void setCertificateRefs(List<LoadBalancerListenerCertificateRefInventory> certificateRefs) {
+        this.certificateRefs = certificateRefs;
     }
 }

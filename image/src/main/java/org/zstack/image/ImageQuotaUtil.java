@@ -11,13 +11,12 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.BypassWhenUnitTest;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.identity.Quota;
 import org.zstack.header.image.APIAddImageMsg;
 import org.zstack.header.image.ImageVO;
-import org.zstack.header.quota.QuotaConstant;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
+import org.zstack.identity.QuotaUtil;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -87,14 +86,12 @@ public class ImageQuotaUtil {
 
     @BypassWhenUnitTest
     public void checkImageSizeQuotaUseHttpHead(APIAddImageMsg msg, Map<String, Quota.QuotaPair> pairs) {
-        long imageSizeQuota = pairs.get(QuotaConstant.IMAGE_SIZE).getValue();
+        long imageSizeQuota = pairs.get(ImageQuotaConstant.IMAGE_SIZE).getValue();
         long imageSizeUsed = new ImageQuotaUtil().getUsedImageSize(msg.getSession().getAccountUuid());
         long imageSizeAsked = getLocalImageSizeOnBackupStorage(msg);
         if ((imageSizeQuota == 0) || (imageSizeUsed + imageSizeAsked > imageSizeQuota)) {
-            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                    String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                            msg.getSession().getAccountUuid(), QuotaConstant.IMAGE_SIZE, imageSizeQuota)
-            ));
+            throw new ApiMessageInterceptionException(new QuotaUtil().buildQuataExceedError(
+                            msg.getSession().getAccountUuid(), ImageQuotaConstant.IMAGE_SIZE, imageSizeQuota));
         }
     }
 

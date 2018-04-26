@@ -247,9 +247,10 @@ class CleanImageCacheOnPrimaryStorageCase extends SubCase{
         cleanUpImageCacheOnPrimaryStorage {
             uuid = nfs.uuid
         }
-        TimeUnit.SECONDS.sleep(3)
 
-        assert checked
+        retryInSecs {
+            assert checked
+        }
         q = dbf.createQuery(ImageCacheVO.class)
         q.add(ImageCacheVO_.imageUuid, SimpleQuery.Op.EQ, image1.getUuid())
         q.add(ImageCacheVO_.primaryStorageUuid, SimpleQuery.Op.EQ, nfs1.getUuid())

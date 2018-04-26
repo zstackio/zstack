@@ -400,12 +400,16 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
             });
         } else {
             final AllocateHostReply reply = new AllocateHostReply();
-            strategy.allocate(spec, new ReturnValueCompletion<List<HostInventory>>(msg) {
+             strategy.allocate(spec, new ReturnValueCompletion<List<HostInventory>>(msg) {
                 @Override
                 public void success(List<HostInventory> hosts) {
                     sortors.sort(spec, hosts, new ReturnValueCompletion<HostInventory>(msg) {
                         @Override
                         public void success(HostInventory returnValue) {
+                            for (HostAllocateExtensionPoint exp: pluginRgty.getExtensionList(HostAllocateExtensionPoint.class)) {
+                                exp.beforeAllocateHostSuccessReply(spec, returnValue.getUuid());
+                            }
+
                             reply.setHost(returnValue);
                             bus.reply(msg, reply);
                             completion.success();
