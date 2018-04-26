@@ -17,6 +17,7 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.statemachine.StateMachine;
 import org.zstack.core.statemachine.StateMachineImpl;
 import org.zstack.header.Component;
+import org.zstack.header.core.StaticInit;
 import org.zstack.header.core.encrypt.ENCRYPT;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
@@ -344,13 +345,6 @@ public class Platform {
         try {
             msId = getUuid();
 
-            /*
-            reflections = new Reflections(ClasspathHelper.forPackage("org.zstack"),
-                    new SubTypesScanner(), new MethodAnnotationsScanner(), new FieldAnnotationsScanner(),
-                    new MemberUsageScanner(), new MethodParameterNamesScanner(), new ResourcesScanner(),
-                    new TypeAnnotationsScanner(), new TypeElementsScanner(), new MethodParameterScanner());
-                    */
-
             // TODO: get code version from MANIFEST file
             codeVersion = "0.1.0";
 
@@ -432,7 +426,13 @@ public class Platform {
     }
 
     private static void callStaticInitMethods() throws InvocationTargetException, IllegalAccessException {
-        Set<Method> inits = reflections.getMethodsAnnotatedWith(StaticInit.class);
+        List<Method> inits = new ArrayList<>(reflections.getMethodsAnnotatedWith(StaticInit.class));
+        inits.sort((o1, o2) -> {
+            StaticInit a1 = o1.getAnnotation(StaticInit.class);
+            StaticInit a2 = o2.getAnnotation(StaticInit.class);
+            return a2.order() - a1.order();
+        });
+
         for (Method init : inits)  {
             if (!Modifier.isStatic(init.getModifiers())) {
                 throw new CloudRuntimeException(String.format("the method[%s:%s] annotated by @StaticInit is not a static method", init.getDeclaringClass(), init.getName()));

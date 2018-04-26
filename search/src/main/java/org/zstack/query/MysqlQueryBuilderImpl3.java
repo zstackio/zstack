@@ -199,7 +199,8 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
             ExpandedQueries expandedQueries = (ExpandedQueries) invClass.getAnnotation(ExpandedQueries.class);
             if (expandedQueries != null) {
                 for (ExpandedQuery e : expandedQueries.value()) {
-                    ExpandedQueryStruct s = ExpandedQueryStruct.fromExpandedQueryAnnotation(inventoryClass, e);
+                    Class iclass = e.target() == Object.class ? inventoryClass : e.target();
+                    ExpandedQueryStruct s = ExpandedQueryStruct.fromExpandedQueryAnnotation(iclass, e);
                     s.check();
                     this.expandedQueries.put(s.getExpandedField(), s);
                 }
@@ -1142,6 +1143,8 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
             }
 
             for (ExpandedQueryAlias alias : aliases.value()) {
+                invClass = alias.target() == Object.class ? invClass : alias.target();
+
                 ExpandedQueryAliasInfo info = new ExpandedQueryAliasInfo();
                 info.alias = alias.alias();
                 info.expandField = alias.expandedField();
@@ -1153,11 +1156,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
                             invClass.getName()));
                 }
 
-                List<ExpandedQueryAliasInfo> lst = aliasInfos.get(info.queryMessageClass);
-                if (lst == null) {
-                    lst = new ArrayList<ExpandedQueryAliasInfo>();
-                    aliasInfos.put(info.queryMessageClass, lst);
-                }
+                List<ExpandedQueryAliasInfo> lst = aliasInfos.computeIfAbsent(info.queryMessageClass, k -> new ArrayList<>());
                 lst.add(info);
             }
         }

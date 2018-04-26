@@ -9,9 +9,12 @@ import org.zstack.header.rest.RESTConstant
  */
 abstract class Spec implements Node, CreateAction, Tag, ApiHelper, DeleteAction {
     EnvSpec envSpec
+    Closure getSessionUuid
+    boolean toPublic
 
     Spec(EnvSpec envSpec) {
         this.envSpec = envSpec
+        getSessionUuid = TestContext.getSesionClosure()
     }
 
     def findSpec(String name, Class type) {
@@ -25,12 +28,16 @@ abstract class Spec implements Node, CreateAction, Tag, ApiHelper, DeleteAction 
         dependencies.add(dep as Node)
     }
 
-    void simulator(String path, Closure cl) {
-        envSpec.simulator(path, cl)
+    void shareToPublic() {
+        toPublic = true
     }
 
     void message(Class<? extends Message> msgClz, Closure cl) {
         envSpec.message(msgClz, cl)
+    }
+
+    void simulator(String path, Closure cl) {
+        envSpec.simulator(path, cl)
     }
 
     final static void checkHttpCallType(HttpEntity<String> e, boolean isSync) {

@@ -1,5 +1,6 @@
 package org.zstack.header.storage.backup;
 
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.SoftDeletionCascade;
@@ -16,6 +17,12 @@ import java.sql.Timestamp;
         @SoftDeletionCascade(parent = ZoneVO.class, joinColumn = "zoneUuid"),
         @SoftDeletionCascade(parent = BackupStorageVO.class, joinColumn = "backupStorageUuid")
 })
+@EntityGraph(
+        friends = {
+                @EntityGraph.Neighbour(type = ZoneVO.class, myField = "zoneUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = BackupStorageVO.class, myField = "backupStorageUuid", targetField = "uuid"),
+        }
+)
 public class BackupStorageZoneRefVO {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

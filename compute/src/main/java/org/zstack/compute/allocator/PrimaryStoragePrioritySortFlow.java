@@ -21,11 +21,12 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import javax.persistence.Tuple;
+import javax.persistence.criteria.CriteriaBuilder;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.zstack.utils.CollectionUtils.distinctByKey;
 
 /**
  * Created by mingjian.deng on 2017/10/31.
@@ -40,6 +41,8 @@ public class PrimaryStoragePrioritySortFlow extends AbstractHostSortorFlow {
     protected DatabaseFacade dbf;
 
     private boolean skip = true;
+
+    private static int defaultPriroty = 10;
 
     @Override
     public void sort() {
@@ -57,67 +60,63 @@ public class PrimaryStoragePrioritySortFlow extends AbstractHostSortorFlow {
         //TODO: we suppose imageUuid is only in 1 bs, if it could be in 2 or more bss, then we should improve the bellow code
         BackupStorageInventory bs = BackupStorageInventory.valueOf(dbf.findByUuid(bsUuids.get(0), BackupStorageVO.class));
 
-        List<BackupStoragePrimaryStorageExtensionPoint> extenstions = pluginRgty.getExtensionList(BackupStoragePrimaryStorageExtensionPoint.class);
-        Map<String, Integer> priMap = new HashMap<>();
-        extenstions.forEach(ext -> priMap.putAll(formatPriority(ext.getPrimaryStoragePriorityMap(bs, spec.getImage()))));
+
+        List<PriorityMap> priMap = new ArrayList<>();
+        for (BackupStoragePrimaryStorageExtensionPoint ext : pluginRgty.getExtensionList(BackupStoragePrimaryStorageExtensionPoint.class)) {
+            priMap.addAll(formatPriority(ext.getPrimaryStoragePriorityMap(bs, spec.getImage())));
+        }
+
+        priMap = priMap.stream()
+                .sorted(Comparator.comparingInt(it -> it.priority))
+                .filter(distinctByKey(it -> it.PS))
+                .collect(Collectors.toList());
 
         adjustCandidates(priMap);
     }
 
-    // get ps type from hostuuid
-    private Map<String, List<HostInventory>> groupByPSType() {
-        Map<String, List<HostInventory>> res = new HashMap<>();
-        String sql = "select distinct(pr.type) from PrimaryStorageVO pr where pr.uuid in " +
-                "(select ref.primaryStorageUuid from PrimaryStorageClusterRefVO ref, HostVO h, ClusterVO c " +
-                "where h.clusterUuid=c.uuid and c.uuid=ref.clusterUuid and h.uuid= :huuid)";
-        for(HostInventory host: candidates) {
-            List<String> types = SQL.New(sql).param("huuid", host.getUuid()).list();
-            types.forEach(type -> {
-                List<HostInventory> hs = res.get(type);
-                if (hs == null) {
-                    res.put(type, CollectionDSL.list(host));
-                } else {
-                    hs.add(host);
-                    res.put(type, hs);
-                }
-            });
-        }
-        return res;
-    }
-
-    private void addAll(final List<HostInventory> list) {
-        for (HostInventory host: list) {
-            if (candidates.indexOf(host) == -1) {
-                candidates.add(host);
-            }
-        }
-    }
-
-    private void adjustCandidates(Map<String, Integer> priMap) {
+    private void adjustCandidates(List<PriorityMap> priMap) {
         if (priMap.size() == 0) {
             prepareForNext(candidates);
             return;
         }
+
         logger.debug(String.format("before PrimaryStoragePrioritySortFlow adjustCandidates: %s", candidates.stream().map(HostInventory::getName).collect(Collectors.toList())));
-        Map<String, List<HostInventory>> hostPsMap = groupByPSType();
+        String psPriorityCondition = String.join(" ", priMap.stream()
+                .map(it -> String.format("when '%s' then %d", it.PS, it.priority))
+                .collect(Collectors.toList()));
+        logger.debug(String.format("ps priority condition : %s", psPriorityCondition));
 
-        List<List<HostInventory>> sorted = hostPsMap.entrySet().stream().sorted((e1, e2) -> {
-            logger.debug(priMap.toString());
-            int p1 = priMap.get(e1.getKey().toLowerCase()) == null ? 10 : priMap.get(e1.getKey().toLowerCase());
-            int p2 = priMap.get(e2.getKey().toLowerCase()) == null ? 10 : priMap.get(e2.getKey().toLowerCase());
-            return p1 - p2;
-        }).map(w -> w.getValue()).collect(Collectors.toList());
-        for (List<HostInventory> sub: sorted) {
-            if (sub.size() > 0) {
-                // we choose the first ps type as sub candidates
-                prepareForNext(sub);
-                logger.debug(String.format("subCandidates: %s",candidates.stream().map(HostInventory::getName).collect(Collectors.toList()).toString()));
-                break;
-            }
-        }
+        List<Tuple> ts = SQL.New("select min(case pr.type " +
+                psPriorityCondition +
+                " else :defaultPriority end) as priority, h.uuid" +
+                " from PrimaryStorageClusterRefVO ref, HostVO h, ClusterVO c, PrimaryStorageVO pr" +
+                " where h.uuid in (:huuids)" +
+                " and h.clusterUuid=c.uuid" +
+                " and c.uuid=ref.clusterUuid" +
+                " and pr.uuid=ref.primaryStorageUuid " +
+                " group by h.uuid", Tuple.class)
+                .param("huuids", candidates.stream().map(HostInventory::getUuid).collect(Collectors.toList()))
+                .param("defaultPriority", defaultPriroty)
+                .list();
 
+        Map<String, Integer> hostPriority = new HashMap<>();
+        Integer topPriority = ts.stream()
+                .peek(it -> hostPriority.put(it.get(1, String.class), it.get(0, Integer.class)))
+                .mapToInt(it -> it.get(0, Integer.class))
+                .min().orElse(defaultPriroty);
+
+        // sort by priority
+        List<HostInventory> sorted = candidates.stream()
+                .sorted(Comparator.comparingInt(it -> hostPriority.get(it.getUuid())))
+                .collect(Collectors.toList());
         candidates.clear();
-        sorted.forEach(list -> addAll(list));
+        candidates.addAll(sorted);
+
+        // choose hosts on top priority ps
+        sorted.removeIf(it -> hostPriority.get(it.getUuid()) > topPriority);
+        prepareForNext(sorted);
+
+        logger.debug(String.format("subCandidates: %s",subCandidates.stream().map(HostInventory::getName).collect(Collectors.toList())));
         logger.debug(String.format("after PrimaryStoragePrioritySortFlow adjustCandidates: %s", candidates.stream().map(HostInventory::getName).collect(Collectors.toList())));
     }
 
@@ -128,13 +127,11 @@ public class PrimaryStoragePrioritySortFlow extends AbstractHostSortorFlow {
 
     @SuppressWarnings("unchecked")
     // priorityStr format is: [{"PS":"Ceph", "priority":"5"},{"PS":"LocalStorage", "priority":"10"}]
-    private Map<String, Integer> formatPriority(final String priorityStr) {
-        Map<String, Integer> priMap = new HashMap<>();
+    private List<PriorityMap> formatPriority(final String priorityStr) {
         if (priorityStr != null) {
-            List<PriorityMap> maps = JSONObjectUtil.toCollection(priorityStr, ArrayList.class, PriorityMap.class);
-            maps.forEach(map -> priMap.put(map.PS.toLowerCase(), map.priority));
+            return JSONObjectUtil.toCollection(priorityStr, ArrayList.class, PriorityMap.class);
         }
-        return priMap;
+        return new ArrayList<>();
     }
 
     private void prepareForNext(List<HostInventory> hosts) {

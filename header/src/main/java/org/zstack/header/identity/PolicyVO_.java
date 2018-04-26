@@ -11,7 +11,7 @@ public class PolicyVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<PolicyVO, String> name;
     public static volatile SingularAttribute<PolicyVO, String> description;
     public static volatile SingularAttribute<PolicyVO, String> accountUuid;
-    public static volatile SingularAttribute<PolicyVO, String> type;
+    public static volatile SingularAttribute<PolicyVO, PolicyType> type;
     public static volatile SingularAttribute<PolicyVO, String> data;
     public static volatile SingularAttribute<PolicyVO, Timestamp> createDate;
 }

@@ -1,8 +1,10 @@
 package org.zstack.header.network.l2;
 
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EO;
 import org.zstack.header.vo.NoView;
+import org.zstack.header.zone.ZoneVO;
 
 import javax.persistence.*;
 import java.util.HashSet;
@@ -12,6 +14,14 @@ import java.util.Set;
 @Table
 @EO(EOClazz = L2NetworkEO.class)
 @BaseResource
+@EntityGraph(
+        parents = {
+                @EntityGraph.Neighbour(type = ZoneVO.class, myField = "zoneUuid", targetField = "uuid")
+        },
+        friends = {
+                @EntityGraph.Neighbour(type = L2NetworkClusterRefVO.class, myField = "uuid", targetField = "l2NetworkUuid")
+        }
+)
 public class L2NetworkVO extends L2NetworkAO {
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "l2NetworkUuid", insertable = false, updatable = false)

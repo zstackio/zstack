@@ -1,5 +1,6 @@
 package org.zstack.testlib
 
+import groovy.transform.AutoClone
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.springframework.http.*
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
@@ -41,9 +42,10 @@ import org.zstack.sdk.zwatch.alarm.UnsubscribeEventAction
 import org.zstack.sdk.zwatch.alarm.sns.CreateSNSTextTemplateAction
 import org.zstack.sdk.zwatch.alarm.sns.DeleteSNSTextTemplateAction
 import org.zstack.storage.volume.VolumeGlobalConfig
+import org.zstack.testlib.identity.AccountSpec
+import org.zstack.testlib.identity.IdentitySpec
 import org.zstack.utils.BeanUtils
 import org.zstack.utils.DebugUtils
-import org.zstack.utils.FieldUtils
 import org.zstack.utils.data.Pair
 import org.zstack.utils.gson.JSONObjectUtil
 
@@ -57,7 +59,8 @@ import java.util.concurrent.TimeUnit
 /**
  * Created by xing5 on 2017/2/12.
  */
-class EnvSpec implements Node {
+@AutoClone(includeFields=true)
+class EnvSpec implements Node, ApiHelper {
     protected List<ZoneSpec> zones = []
     List<AccountSpec> accounts = []
 
@@ -74,7 +77,7 @@ class EnvSpec implements Node {
     protected ConcurrentHashMap<Class, List<Tuple>> messageHandlers = [:]
     private ConcurrentHashMap<Class, List<Tuple>> defaultMessageHandlers = [:]
     private static RestTemplate restTemplate
-    private static Set<Class> simulatorClasses = Platform.reflections.getSubTypesOf(Simulator.class)
+    protected static Set<Class> simulatorClasses = Platform.reflections.getSubTypesOf(Simulator.class)
 
     private Set<Closure> cleanupClosures = []
 
@@ -148,7 +151,7 @@ class EnvSpec implements Node {
         }
     }
 
-    private void installDeletionMethods() {
+    protected void installDeletionMethods() {
         deletionMethods.each { it ->
             def (actionMeta, resultMeta, deleteClass) = it
 
@@ -173,13 +176,15 @@ class EnvSpec implements Node {
         }
     }
 
-    EnvSpec() {
-        installDeletionMethods()
-
+    static {
         HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory()
         factory.setReadTimeout(CoreGlobalProperty.REST_FACADE_READ_TIMEOUT)
         factory.setConnectTimeout(CoreGlobalProperty.REST_FACADE_CONNECT_TIMEOUT)
         restTemplate = new RestTemplate(factory)
+    }
+
+    EnvSpec() {
+        installDeletionMethods()
     }
 
     Closure getSimulator(String path) {
@@ -209,6 +214,14 @@ class EnvSpec implements Node {
         cleanSimulatorHandlers()
         cleanAfterSimulatorHandlers()
         cleanMessageHandlers()
+    }
+
+    void identities(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = IdentitySpec.class) Closure c) {
+        def ispec = new IdentitySpec(this)
+        c.delegate = ispec
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c()
+        addChild(ispec)
     }
 
     ZoneSpec zone(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = ZoneSpec.class) Closure c)  {
@@ -325,7 +338,10 @@ class EnvSpec implements Node {
             } else {
                 def n = it.parent
                 while (n != null) {
-                    if (!(n instanceof HasSession) || n.accountName == null) {
+                    if (n instanceof AccountSpec) {
+                        suuid = n.session.uuid
+                        break
+                    } else if (!(n instanceof HasSession) || n.accountName == null) {
                         n = n.parent
                     } else {
                         // one of the parent has the accountName set, use it
@@ -341,7 +357,7 @@ class EnvSpec implements Node {
         return suuid
     }
 
-    private void deploy() {
+    protected void deploy() {
         def allNodes = []
 
         walk {
@@ -373,13 +389,21 @@ class EnvSpec implements Node {
             def uuid = Platform.getUuid()
             specsByUuid[uuid] = it
 
-
-            def suuid = retrieveSessionUuid(it)
+            Spec s = it as Spec
+            def suuid = s.getSessionUuid == null ? retrieveSessionUuid(it) : s.getSessionUuid()
 
             try {
-                def id
                 logger.debug(String.format("create resource of class %s", it.getClass().getName()))
-                id = (it as CreateAction).create(uuid, suuid) as SpecID
+                def id = (it as CreateAction).create(uuid, suuid) as SpecID
+
+                (it as CreateAction).afterCreateOperations.each { it() }
+
+                if ((it as Spec).toPublic) {
+                    shareResource {
+                        resourceUuids = [id.uuid]
+                        toPublic = true
+                    }
+                }
 
                 if (id != null) {
                     specsByName[id.name] = it
@@ -474,6 +498,26 @@ class EnvSpec implements Node {
         return spec
     }
 
+    protected void installSimulatorHandlers() {
+        simulatorClasses.each { clz ->
+            def con = clz.getConstructors()[0]
+
+            Simulator sim
+            if (con.getParameterCount() == 0) {
+                sim = con.newInstance() as Simulator
+            } else {
+                Object[] params = new Objects[con.getParameterCount()]
+                for (int i=0; i<con.getParameterCount(); i++) {
+                    params[i] = null
+                }
+
+                sim = con.newInstance(params) as Simulator
+            }
+
+            sim.registerSimulators(this)
+        }
+    }
+
     EnvSpec create(Closure cl = null) {
         assert Test.currentEnvSpec == null: "There is another EnvSpec created but not deleted. There can be only one EnvSpec" +
                 " in used, you must delete the previous one"
@@ -484,11 +528,14 @@ class EnvSpec implements Node {
         adminLogin()
         resetAllGlobalConfig()
 
+        installSimulatorHandlers()
+
+        /*
         simulatorClasses.each {
             Simulator sim = it.newInstance() as Simulator
             sim.registerSimulators(this)
         }
-
+        */
 
         deploy()
 
@@ -805,5 +852,11 @@ class EnvSpec implements Node {
         if (ele != null) {
             lst.remove(ele)
         }
+    }
+
+    EnvSpec more(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = EnvSpec.class) Closure c) {
+        c.delegate = this
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c()
     }
 }

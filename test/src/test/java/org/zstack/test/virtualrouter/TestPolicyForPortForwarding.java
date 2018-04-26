@@ -6,9 +6,9 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.identity.AccountConstant.StatementEffect;
+import org.zstack.header.identity.StatementEffect;
 import org.zstack.header.identity.IdentityErrors;
-import org.zstack.header.identity.PolicyInventory.Statement;
+import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.query.QueryCondition;
@@ -84,13 +84,13 @@ public class TestPolicyForPortForwarding {
         IdentityCreator identityCreator = new IdentityCreator(api);
         identityCreator.useAccount("test");
         identityCreator.createUser("user1", "password");
-        Statement s = new Statement();
+        PolicyStatement s = new PolicyStatement();
         s.setEffect(StatementEffect.Allow);
         s.setName("allowvip");
         s.addAction(String.format("%s:%s", VipConstant.ACTION_CATEGORY, APICreateVipMsg.class.getSimpleName()));
         identityCreator.createPolicy("allowvip", s);
 
-        s = new Statement();
+        s = new PolicyStatement();
         s.setEffect(StatementEffect.Allow);
         s.setName("allow");
         s.addAction(String.format("%s:%s", PortForwardingConstant.ACTION_CATEGORY, APICreatePortForwardingRuleMsg.class.getSimpleName()));
@@ -115,7 +115,7 @@ public class TestPolicyForPortForwarding {
 
         rule = createPortForwarding(vipNw.getUuid(), session);
 
-        s = new Statement();
+        s = new PolicyStatement();
         s.setEffect(StatementEffect.Deny);
         s.setName("deny");
         s.addAction(String.format("%s:%s", PortForwardingConstant.ACTION_CATEGORY, APICreatePortForwardingRuleMsg.class.getSimpleName()));

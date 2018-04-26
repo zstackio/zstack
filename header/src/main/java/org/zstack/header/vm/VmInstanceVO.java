@@ -1,9 +1,13 @@
 package org.zstack.header.vm;
 
+import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EO;
 import org.zstack.header.vo.NoView;
 import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.zone.ZoneVO;
 
 import javax.persistence.*;
 import java.util.HashSet;
@@ -14,6 +18,13 @@ import java.util.Set;
 @Table
 @EO(EOClazz = VmInstanceEO.class)
 @BaseResource
+@EntityGraph(
+        parents = {
+                @EntityGraph.Neighbour(type = ZoneVO.class, myField = "zoneUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = ClusterVO.class, myField = "clusterUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = HostVO.class, myField = "hostUuid", targetField = "uuid"),
+        }
+)
 public class VmInstanceVO extends VmInstanceAO {
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "vmInstanceUuid", insertable = false, updatable = false)

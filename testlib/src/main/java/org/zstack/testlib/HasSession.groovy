@@ -1,5 +1,7 @@
 package org.zstack.testlib
 
+import org.zstack.testlib.identity.AccountSpec
+
 /**
  * Created by xing5 on 2017/2/15.
  */

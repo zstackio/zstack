@@ -24,6 +24,7 @@ import org.zstack.header.query.QueryOp
 import org.zstack.utils.Utils
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.logging.CLogger
+import org.zstack.zql.ZQLQueryResult
 
 import java.lang.reflect.Modifier
 import java.util.regex.Pattern
@@ -366,17 +367,16 @@ class BatchQuery {
             }
         }
 
-        Long total = null
-        if (count || replyWithCount) {
-            total = queryf.count(msg, inventoryClass)
+        if (count) {
+            msg.setCount(true)
+        }
+        if (replyWithCount) {
+            msg.setReplyWithCount(true)
         }
 
-        List ret = null
-        if (!count) {
-            ret = queryf.query(msg, inventoryClass)
-        }
+        ZQLQueryResult ret = queryf.queryUseZQL(msg, inventoryClass)
 
-        def res = ["total": total, "result": JSONObjectUtil.rehashObject(ret, ArrayList.class)]
+        def res = ["total": ret.total, "result": ret.inventories == null ? null : JSONObjectUtil.rehashObject(ret.inventories, ArrayList.class)]
 
         endDebug(msg, res)
 

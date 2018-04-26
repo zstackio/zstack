@@ -12,6 +12,34 @@
          http://zstack.org/schema/zstack/plugin.xsd"
        default-init-method="init" default-destroy-method="destroy">
 
+    <bean id="AuthorizationManager" class="org.zstack.identity.AuthorizationManager">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component"/>
+            <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="RBACApiInterceptor" class="org.zstack.identity.rbac.RBACApiInterceptor">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="IdentityZQLExtension" class="org.zstack.identity.IdentityZQLExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.zql.MarshalZQLASTTreeExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.zql.RestrictByExprExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="RBACManager" class="org.zstack.identity.rbac.RBACManagerImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component"/>
+            <zstack:extension interface="org.zstack.header.Service"/>
+            <zstack:extension interface="org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint" order="9998"/>
+        </zstack:plugin>
+    </bean>
+
     <bean id="AccountManager" class="org.zstack.identity.AccountManagerImpl">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" order="9001"/>
@@ -19,7 +47,6 @@
             <zstack:extension interface="org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint" order="9999"/>
             <zstack:extension interface="org.zstack.core.db.SoftDeleteEntityExtensionPoint"/>
             <zstack:extension interface="org.zstack.core.db.HardDeleteEntityExtensionPoint"/>
-            <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor"/>
             <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor"/>
         </zstack:plugin>
 
@@ -58,11 +85,19 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="DefaultAuthorizationBackend" class="org.zstack.identity.DefaultAuthorizationBackend">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.identity.extension.AuthorizationBackend"/>
+        </zstack:plugin>
+    </bean>
+
+    <!--
     <bean id="QuotaChecker" class="org.zstack.identity.QuotaChecker">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor"/>
         </zstack:plugin>
     </bean>
+    -->
 
     <bean id="AccountCascadeExtension" class="org.zstack.identity.AccountCascadeExtension">
         <zstack:plugin>

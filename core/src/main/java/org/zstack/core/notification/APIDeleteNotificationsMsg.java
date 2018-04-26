@@ -17,6 +17,7 @@ import static java.util.Arrays.asList;
         method = HttpMethod.DELETE,
         responseClass = APIDeleteNotificationsEvent.class
 )
+@Deprecated
 public class APIDeleteNotificationsMsg extends APIMessage {
     @APIParam(nonempty = true)
     private List<String> uuids;

@@ -1,7 +1,8 @@
 package org.zstack.test.integration.networkservice.provider.virtualrouter.eip
 
-import org.zstack.header.identity.AccountConstant
 import org.zstack.header.identity.IdentityErrors
+import org.zstack.header.identity.PolicyStatement
+import org.zstack.header.identity.StatementEffect
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.service.eip.APIAttachEipMsg
 import org.zstack.network.service.eip.APIChangeEipStateMsg
@@ -65,7 +66,7 @@ class PolicyForEipCase extends SubCase {
     VmNicInventory nic
     VipInventory newVip
     EipInventory eip
-    org.zstack.header.identity.PolicyInventory.Statement s
+    PolicyStatement s
     SessionInventory testAccountSession
     SessionInventory userSession
     UserInventory user1
@@ -230,9 +231,9 @@ class PolicyForEipCase extends SubCase {
             sessionId = testAccountSession.uuid
         }
 
-        s = new org.zstack.header.identity.PolicyInventory.Statement()
+        s = new PolicyStatement()
         s.setName("allowvip")
-        s.setEffect(AccountConstant.StatementEffect.Allow)
+        s.setEffect(StatementEffect.Allow)
         s.addAction(String.format("%s:%s", VipConstant.ACTION_CATEGORY, APICreateVipMsg.class.getSimpleName()))
         allowvip = createPolicy {
             name = "allowvip"
@@ -240,9 +241,9 @@ class PolicyForEipCase extends SubCase {
             sessionId = testAccountSession.uuid
         }
 
-        s = new org.zstack.header.identity.PolicyInventory.Statement()
+        s = new PolicyStatement()
         s.setName("allow")
-        s.setEffect(AccountConstant.StatementEffect.Allow)
+        s.setEffect(StatementEffect.Allow)
         s.addAction(String.format("%s:%s", EipConstant.ACTION_CATEGORY, APICreateEipMsg.class.getSimpleName()))
         s.addAction(String.format("%s:%s", EipConstant.ACTION_CATEGORY, APIUpdateEipMsg.class.getSimpleName()))
         s.addAction(String.format("%s:%s", EipConstant.ACTION_CATEGORY, APIChangeEipStateMsg.class.getSimpleName()))
@@ -320,9 +321,9 @@ class PolicyForEipCase extends SubCase {
             vipUuid = newVip.uuid
             sessionId = userSession.uuid
         }
-        s = new org.zstack.header.identity.PolicyInventory.Statement()
+        s = new PolicyStatement()
         s.setName("deny")
-        s.setEffect(AccountConstant.StatementEffect.Deny)
+        s.setEffect(StatementEffect.Deny)
         s.addAction(String.format("%s:%s", EipConstant.ACTION_CATEGORY, APICreateEipMsg.class.getSimpleName()))
         s.addAction(String.format("%s:%s", EipConstant.ACTION_CATEGORY, APIUpdateEipMsg.class.getSimpleName()))
         s.addAction(String.format("%s:%s", EipConstant.ACTION_CATEGORY, APIChangeEipStateMsg.class.getSimpleName()))

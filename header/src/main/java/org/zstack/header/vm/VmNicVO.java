@@ -1,9 +1,9 @@
 package org.zstack.header.vm;
 
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.network.l3.L3NetworkEO;
+import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.UsedIpVO;
-import org.zstack.header.search.SqlTrigger;
-import org.zstack.header.search.TriggerIndex;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
@@ -16,6 +16,12 @@ import java.sql.Timestamp;
 @Entity
 @Table
 @BaseResource
+@EntityGraph(
+        parents = {
+                @EntityGraph.Neighbour(type = VmInstanceVO.class, myField = "vmInstanceUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = L3NetworkVO.class, myField = "l3NetworkUuid", targetField = "uuid")
+        }
+)
 public class VmNicVO extends ResourceVO {
     @Column
     @ForeignKey(parentEntityClass = VmInstanceEO.class, onDeleteAction = ReferenceOption.CASCADE)

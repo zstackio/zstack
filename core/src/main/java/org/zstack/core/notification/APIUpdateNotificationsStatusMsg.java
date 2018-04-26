@@ -18,6 +18,7 @@ import static java.util.Arrays.asList;
         isAction = true,
         responseClass = APIUpdateNotificationsStatusEvent.class
 )
+@Deprecated
 public class APIUpdateNotificationsStatusMsg extends APIMessage {
     @APIParam(nonempty = true)
     private List<String> uuids;

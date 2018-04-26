@@ -19,6 +19,7 @@ import static org.codehaus.groovy.runtime.InvokerHelper.asList;
         parameterName = "params",
         responseClass = APIAddMonToFusionstorBackupStorageEvent.class
 )
+@Deprecated
 public class APIAddMonToFusionstorBackupStorageMsg extends APIMessage implements BackupStorageMessage {
     @APIParam(resourceType = FusionstorBackupStorageVO.class)
     private String uuid;

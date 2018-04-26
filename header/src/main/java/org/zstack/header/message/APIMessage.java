@@ -1,9 +1,10 @@
 package org.zstack.header.message;
 
-import org.apache.commons.lang.StringUtils;
+import org.springframework.util.StringUtils;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.rest.APINoSee;
+import org.zstack.header.rest.RestRequest;
 import org.zstack.header.rest.RestResponse;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.DebugUtils;
@@ -17,7 +18,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static org.codehaus.groovy.runtime.InvokerHelper.asList;
+import static java.util.Arrays.asList;
+
 
 public abstract class APIMessage extends NeedReplyMessage {
     /**
@@ -43,7 +45,14 @@ public abstract class APIMessage extends NeedReplyMessage {
     @NoJsonSchema
     @APINoSee
     @GsonTransient
-    private static Map<Class, Collection<FieldParam>> apiParams = new HashMap<>();
+    public static Map<Class, Collection<FieldParam>> apiParams = new HashMap<>();
+
+    @NoJsonSchema
+    @APINoSee
+    @GsonTransient
+    public static Set<Class> apiMessageClasses = BeanUtils.reflections.getSubTypesOf(APIMessage.class)
+            .stream().filter(c -> !Modifier.isStatic(c.getModifiers()) && c.isAnnotationPresent(RestRequest.class))
+            .collect(Collectors.toSet());
 
     static {
         collectApiParams();
@@ -90,11 +99,7 @@ public abstract class APIMessage extends NeedReplyMessage {
     }
 
     private static void collectApiParams() {
-        Set<Class> apiClass = BeanUtils.reflections.getSubTypesOf(APIMessage.class)
-                .stream().filter(c -> !Modifier.isStatic(c.getModifiers())).collect(Collectors.toSet());
-
         class Nothing { @APIParam(required = false) public String nothing;}
-
         APIParam defaultAnnotation;
         try {
             defaultAnnotation = Nothing.class.getField("nothing").getAnnotation(APIParam.class);
@@ -102,7 +107,7 @@ public abstract class APIMessage extends NeedReplyMessage {
             throw new CloudRuntimeException(e);
         }
 
-        for (Class clz : apiClass) {
+        for (Class clz : apiMessageClasses) {
             List<Field> fields = FieldUtils.getAllFields(clz);
 
             Map<String, FieldParam> fmap = new HashMap<>();

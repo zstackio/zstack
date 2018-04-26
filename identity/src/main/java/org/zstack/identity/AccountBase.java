@@ -25,7 +25,6 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.IdentityCanonicalEvents.AccountDeletedData;
 import org.zstack.header.identity.IdentityCanonicalEvents.UserDeletedData;
-import org.zstack.header.message.APIDeleteMessage.DeletionMode;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.utils.CollectionUtils;
@@ -65,10 +64,10 @@ public class AccountBase extends AbstractAccount {
     @Autowired
     private EventFacade evtf;
 
-    private AccountVO vo;
+    private AccountVO self;
 
-    public AccountBase(AccountVO vo) {
-        this.vo = vo;
+    public AccountBase(AccountVO self) {
+        this.self = self;
     }
 
     @Override
@@ -102,136 +101,123 @@ public class AccountBase extends AbstractAccount {
     private void handleLocalMessage(Message msg) {
         if (msg instanceof AccountDeletionMsg) {
             handle((AccountDeletionMsg) msg);
+        } else if (msg instanceof DeleteAccountMsg) {
+            handle((DeleteAccountMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
     }
 
+    private void handle(DeleteAccountMsg msg) {
+        DeleteAccountReply reply = new DeleteAccountReply();
+        deleteAccount(new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, reply);
+            }
 
-    private void handle(final APIDeleteAccountMsg msg) {
-        final APIDeleteAccountEvent evt = new APIDeleteAccountEvent(msg.getId());
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
 
-        final AccountVO vo = dbf.findByUuid(msg.getUuid(), AccountVO.class);
-        if (vo == null) {
-            bus.publish(evt);
-            return;
-        }
-
+    private void deleteAccount(Completion completion) {
         final String issuer = AccountVO.class.getSimpleName();
-        final List<AccountInventory> ctx = list(AccountInventory.valueOf(vo));
+        final List<AccountInventory> ctx = list(AccountInventory.valueOf(self));
         final FlowChain chain = FlowChainBuilder.newShareFlowChain();
-        chain.setName(String.format("delete-account-%s", vo.getUuid()));
+        chain.setName(String.format("delete-account-%s", self.getUuid()));
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
-                if (msg.getDeletionMode() == DeletionMode.Permissive) {
-                    flow(new NoRollbackFlow() {
-                        String __name__ = "check-before-deleting";
+                flow(new NoRollbackFlow() {
+                    String __name__ = "delete";
 
-                        @Override
-                        public void run(final FlowTrigger trigger, Map data) {
-                            casf.asyncCascade(CascadeConstant.DELETION_CHECK_CODE, issuer, ctx, new Completion(trigger) {
-                                @Override
-                                public void success() {
-                                    trigger.next();
-                                }
-
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    trigger.fail(errorCode);
-                                }
-                            });
-                        }
-                    });
-
-                    flow(new NoRollbackFlow() {
-                        String __name__ = "delete";
-
-                        @Override
-                        public void run(final FlowTrigger trigger, Map data) {
-                            casf.asyncCascade(CascadeConstant.DELETION_DELETE_CODE, issuer, ctx, new Completion(trigger) {
-                                @Override
-                                public void success() {
-                                    trigger.next();
-                                }
-
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    trigger.fail(errorCode);
-                                }
-                            });
-                        }
-                    });
-                } else {
-                    flow(new NoRollbackFlow() {
-                        @Override
-                        public void run(final FlowTrigger trigger, Map data) {
-                            casf.asyncCascade(CascadeConstant.DELETION_FORCE_DELETE_CODE, issuer, ctx, new Completion(trigger) {
-                                @Override
-                                public void success() {
-                                    trigger.next();
-                                }
-
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    trigger.fail(errorCode);
-                                }
-                            });
-                        }
-                    });
-                }
-
-                done(new FlowDoneHandler(msg) {
                     @Override
-                    public void handle(Map data) {
-                        dbf.remove(vo);
-                        acntMgr.adminAdoptAllOrphanedResource();
-                        bus.publish(evt);
+                    public void run(final FlowTrigger trigger, Map data) {
+                        casf.asyncCascade(CascadeConstant.DELETION_DELETE_CODE, issuer, ctx, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
 
-                        AccountDeletedData evtData = new AccountDeletedData();
-                        evtData.setAccountUuid(vo.getUuid());
-                        evtData.setInventory(AccountInventory.valueOf(vo));
-                        evtf.fire(IdentityCanonicalEvents.ACCOUNT_DELETED_PATH, evtData);
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
                     }
                 });
 
-                error(new FlowErrorHandler(msg) {
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        completion.success();
+                    }
+                });
+
+                error(new FlowErrorHandler(completion) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        evt.setError(errCode);
-                        bus.publish(evt);
+                        completion.fail(errCode);
                     }
                 });
             }
         }).start();
     }
 
+    private void handle(final APIDeleteAccountMsg msg) {
+        final APIDeleteAccountEvent evt = new APIDeleteAccountEvent(msg.getId());
+
+        deleteAccount(new Completion(msg) {
+            @Override
+            public void success() {
+                dbf.remove(self);
+                acntMgr.adminAdoptAllOrphanedResource();
+                bus.publish(evt);
+
+                AccountDeletedData evtData = new AccountDeletedData();
+                evtData.setAccountUuid(self.getUuid());
+                evtData.setInventory(AccountInventory.valueOf(self));
+                evtf.fire(IdentityCanonicalEvents.ACCOUNT_DELETED_PATH, evtData);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                evt.setError(errorCode);
+                bus.publish(evt);
+            }
+        });
+    }
+
     @Transactional
     private void deleteRelatedResources() {
         String sql = "delete from QuotaVO q where q.identityUuid = :uuid and q.identityType = :itype";
         Query q = dbf.getEntityManager().createQuery(sql);
-        q.setParameter("uuid", vo.getUuid());
+        q.setParameter("uuid", self.getUuid());
         q.setParameter("itype", AccountVO.class.getSimpleName());
         q.executeUpdate();
 
         sql = "delete from UserVO u where u.accountUuid = :uuid";
         q = dbf.getEntityManager().createQuery(sql);
-        q.setParameter("uuid", vo.getUuid());
+        q.setParameter("uuid", self.getUuid());
         q.executeUpdate();
 
         sql = "delete from UserGroupVO g where g.accountUuid = :uuid";
         q = dbf.getEntityManager().createQuery(sql);
-        q.setParameter("uuid", vo.getUuid());
+        q.setParameter("uuid", self.getUuid());
         q.executeUpdate();
 
         sql = "delete from PolicyVO p where p.accountUuid = :uuid";
         q = dbf.getEntityManager().createQuery(sql);
-        q.setParameter("uuid", vo.getUuid());
+        q.setParameter("uuid", self.getUuid());
         q.executeUpdate();
 
         sql = "delete from SharedResourceVO s where s.ownerAccountUuid = :uuid or s.receiverAccountUuid = :uuid";
         q = dbf.getEntityManager().createQuery(sql);
-        q.setParameter("uuid", vo.getUuid());
+        q.setParameter("uuid", self.getUuid());
         q.executeUpdate();
     }
 
@@ -415,7 +401,7 @@ public class AccountBase extends AbstractAccount {
         if (msg.isAll()) {
             String sql = "delete from SharedResourceVO vo where vo.ownerAccountUuid = :auuid and vo.resourceUuid in (:resUuids)";
             q = dbf.getEntityManager().createQuery(sql);
-            q.setParameter("auuid", vo.getUuid());
+            q.setParameter("auuid", self.getUuid());
             q.setParameter("resUuids", msg.getResourceUuids());
         }
 
@@ -423,14 +409,14 @@ public class AccountBase extends AbstractAccount {
             String sql = "delete from SharedResourceVO vo where vo.toPublic = :public and vo.ownerAccountUuid = :auuid and vo.resourceUuid in (:resUuids)";
             q = dbf.getEntityManager().createQuery(sql);
             q.setParameter("public", msg.isToPublic());
-            q.setParameter("auuid", vo.getUuid());
+            q.setParameter("auuid", self.getUuid());
             q.setParameter("resUuids", msg.getResourceUuids());
         }
 
         if (msg.getAccountUuids() != null && !msg.getAccountUuids().isEmpty()) {
             String sql = "delete from SharedResourceVO vo where vo.receiverAccountUuid in (:ruuids) and vo.ownerAccountUuid = :auuid and vo.resourceUuid in (:resUuids)";
             q = dbf.getEntityManager().createQuery(sql);
-            q.setParameter("auuid", vo.getUuid());
+            q.setParameter("auuid", self.getUuid());
             q.setParameter("ruuids", msg.getAccountUuids());
             q.setParameter("resUuids", msg.getResourceUuids());
         }
@@ -445,10 +431,10 @@ public class AccountBase extends AbstractAccount {
 
             if (msg.getAccountUuids() != null) {
                 for (String auuid : msg.getAccountUuids()) {
-                    N.New(resourceType, ruuid).info_("Revoke Shared resource[uuid:%s type:%s] of account[uuid:%s] from account[uuid:%s]", ruuid, resourceType, vo.getUuid(), auuid);
+                    N.New(resourceType, ruuid).info_("Revoke Shared resource[uuid:%s type:%s] of account[uuid:%s] from account[uuid:%s]", ruuid, resourceType, self.getUuid(), auuid);
                 }
             } else {
-                N.New(resourceType, ruuid).info_("Revoke Shared resource[uuid:%s type:%s] of account[uuid:%s]", ruuid, resourceType, vo.getUuid());
+                N.New(resourceType, ruuid).info_("Revoke Shared resource[uuid:%s type:%s] of account[uuid:%s]", ruuid, resourceType, self.getUuid());
             }
 
         }
@@ -477,7 +463,7 @@ public class AccountBase extends AbstractAccount {
 
         for (String ruuid : msg.getResourceUuids()) {
             if (!uuidType.containsKey(ruuid)) {
-                throw new OperationFailureException(argerr("the account[uuid: %s] doesn't have a resource[uuid: %s]", vo.getUuid(), ruuid));
+                throw new OperationFailureException(argerr("the account[uuid: %s] doesn't have a resource[uuid: %s]", self.getUuid(), ruuid));
             }
         }
 
@@ -659,7 +645,7 @@ public class AccountBase extends AbstractAccount {
         } else {
             gvo.setUuid(Platform.getUuid());
         }
-        gvo.setAccountUuid(vo.getUuid());
+        gvo.setAccountUuid(self.getUuid());
         gvo.setDescription(msg.getDescription());
         gvo.setName(msg.getName());
 
@@ -705,9 +691,10 @@ public class AccountBase extends AbstractAccount {
         } else {
             pvo.setUuid(Platform.getUuid());
         }
-        pvo.setAccountUuid(vo.getUuid());
+        pvo.setAccountUuid(self.getUuid());
         pvo.setName(msg.getName());
         pvo.setData(JSONObjectUtil.toJsonString(msg.getStatements()));
+        pvo.setType(PolicyType.Customized);
 
         PolicyVO finalPvo = pvo;
         pvo = new SQLBatchWithReturn<PolicyVO>() {
@@ -738,7 +725,7 @@ public class AccountBase extends AbstractAccount {
                 } else {
                     uvo.setUuid(Platform.getUuid());
                 }
-                uvo.setAccountUuid(vo.getUuid());
+                uvo.setAccountUuid(self.getUuid());
                 uvo.setName(msg.getName());
                 uvo.setPassword(msg.getPassword());
                 uvo.setDescription(msg.getDescription());
@@ -746,7 +733,7 @@ public class AccountBase extends AbstractAccount {
                 reload(uvo);
 
                 PolicyVO p = Q.New(PolicyVO.class).eq(PolicyVO_.name, "DEFAULT-READ")
-                        .eq(PolicyVO_.accountUuid, vo.getUuid()).find();
+                        .eq(PolicyVO_.accountUuid, self.getUuid()).find();
                 if (p != null) {
                     UserPolicyRefVO uref = new UserPolicyRefVO();
                     uref.setPolicyUuid(p.getUuid());
@@ -755,7 +742,7 @@ public class AccountBase extends AbstractAccount {
                 }
 
                 p = Q.New(PolicyVO.class).eq(PolicyVO_.name, "USER-RESET-PASSWORD")
-                        .eq(PolicyVO_.accountUuid, vo.getUuid()).find();
+                        .eq(PolicyVO_.accountUuid, self.getUuid()).find();
                 if (p != null) {
                     UserPolicyRefVO uref = new UserPolicyRefVO();
                     uref.setPolicyUuid(p.getUuid());

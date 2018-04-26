@@ -24,17 +24,15 @@ public interface AccountConstant {
 
     String QUOTA_GLOBAL_CONFIG_CATETORY = "quota";
 
-    enum RoleDecision {
-        EXPLICIT_DENY,
-        DEFAULT_DENY,
-        DENY,
-        ALLOW,
+    String PRINCIPAL_USER = "user";
+    String PRINCIPAL_ACCOUNT = "account";
+
+    static boolean isAdminPermission(SessionInventory session) {
+        return INITIAL_SYSTEM_ADMIN_UUID.equals(session.getAccountUuid());
     }
 
-    @SDK(sdkClassName = "PolicyStatementEffect")
-    enum StatementEffect {
-        Allow,
-        Deny,
+    static boolean isAdmin(SessionInventory session) {
+        return INITIAL_SYSTEM_ADMIN_UUID.equals(session.getAccountUuid()) && INITIAL_SYSTEM_ADMIN_UUID.equals(session.getUserUuid());
     }
 
     enum Principal {

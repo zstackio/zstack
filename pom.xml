@@ -15,6 +15,8 @@
         <hibernate.version>5.1.0.Final</hibernate.version>
         <aspectj.version>1.8.9</aspectj.version>
         <aspectj.plugin.version>1.10</aspectj.plugin.version>
+        <groovy.eclipse.compiler>2.9.2-01</groovy.eclipse.compiler>
+        <groovy.eclipse.batch>2.4.3-01</groovy.eclipse.batch>
     </properties>
 
     <modelVersion>4.0.0</modelVersion>
@@ -51,6 +53,11 @@
     <dependencyManagement>
         <dependencies>
             <!-- third-party dependency -->
+            <dependency>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr4</artifactId>
+                <version>4.7</version>
+            </dependency>
             <dependency>
                 <groupId>org.kohsuke</groupId>
                 <artifactId>groovy-sandbox</artifactId>

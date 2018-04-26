@@ -1,7 +1,8 @@
 package org.zstack.header.network.l3;
 
+import org.zstack.header.vo.EntityGraph;
+import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
-import org.zstack.header.tag.AutoDeleteTag;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EO;
 import org.zstack.header.vo.NoView;
@@ -14,6 +15,11 @@ import java.util.Set;
 @Table
 @EO(EOClazz = L3NetworkEO.class)
 @BaseResource
+@EntityGraph(
+        parents = {
+                @EntityGraph.Neighbour(type = L2NetworkVO.class, myField = "l2NetworkUuid", targetField = "uuid")
+        }
+)
 public class L3NetworkVO extends L3NetworkAO {
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "l3NetworkUuid", insertable = false, updatable = false)

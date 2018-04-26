@@ -96,7 +96,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
 
         if (IpRangeVO.class.getSimpleName().equals(action.getParentIssuer()) &&
                 IpRangeVO.class.getSimpleName().equals(action.getRootIssuer())) {
-            return OP_STOP;
+            return OP_DETACH_NIC;
         }
 
         if (VmInstanceVO.class.getSimpleName().equals(action.getParentIssuer())) {
@@ -381,7 +381,20 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
             });
         } else if (op == OP_DETACH_NIC) {
             final List<DetachNicFromVmMsg> msgs = new ArrayList<>();
-            List<L3NetworkInventory> l3s = action.getParentIssuerContext();
+            List<L3NetworkInventory> l3s = new ArrayList<>();
+            if (IpRangeVO.class.getSimpleName().equals(action.getParentIssuer()) &&
+                    IpRangeVO.class.getSimpleName().equals(action.getRootIssuer())) {
+                l3s = CollectionUtils.transformToList(action.getParentIssuerContext(), new Function<L3NetworkInventory, IpRangeInventory>() {
+                    @Override
+                    public L3NetworkInventory call(IpRangeInventory arg) {
+                        L3NetworkVO vo = dbf.findByUuid(arg.getL3NetworkUuid(), L3NetworkVO.class);
+                        return L3NetworkInventory.valueOf(vo);
+                    }
+                });
+            } else {
+                l3s = action.getParentIssuerContext();
+            }
+
             for (VmDeletionStruct vm : vminvs) {
                 for (L3NetworkInventory l3 : l3s) {
                     VmNicInventory nic = vm.getInventory().findNic(l3.getUuid());

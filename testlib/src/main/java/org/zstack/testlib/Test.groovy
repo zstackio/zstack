@@ -110,12 +110,28 @@ abstract class Test implements ApiHelper, Retry {
         return spec
     }
 
+    protected void withSession(SessionInventory s, Closure c)  {
+        SessionInventory backup = currentEnvSpec.session
+        currentEnvSpec.session = s
+        c()
+        currentEnvSpec.session = backup
+        logOut { sessionUuid = s.uuid }
+    }
+
     protected void onCleanExecute(Closure c) {
         methodsOnClean.add(c)
     }
 
     protected EnvSpec env(@DelegatesTo(strategy=Closure.DELEGATE_FIRST, value=EnvSpec.class) Closure c) {
         def spec = new EnvSpec()
+        c.delegate = spec
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c()
+        return spec
+    }
+
+    protected SimpleEnvSpec senv(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = SimpleEnvSpec.class) Closure c) {
+        def spec = new SimpleEnvSpec()
         c.delegate = spec
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()

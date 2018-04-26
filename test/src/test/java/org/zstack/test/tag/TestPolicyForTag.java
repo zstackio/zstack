@@ -7,9 +7,9 @@ import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.identity.AccountConstant.StatementEffect;
+import org.zstack.header.identity.StatementEffect;
 import org.zstack.header.identity.IdentityErrors;
-import org.zstack.header.identity.PolicyInventory.Statement;
+import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.query.QueryCondition;
 import org.zstack.header.tag.*;
@@ -54,7 +54,7 @@ public class TestPolicyForTag {
         identityCreator.useAccount("test");
         identityCreator.createUser("user1", "password");
 
-        Statement s = new Statement();
+        PolicyStatement s = new PolicyStatement();
         s.setName("allow");
         s.setEffect(StatementEffect.Allow);
         s.addAction(String.format("%s:%s", TagConstant.ACTION_CATEGORY, APICreateUserTagMsg.class.getSimpleName()));
@@ -69,7 +69,7 @@ public class TestPolicyForTag {
         api.deleteTag(utag.getUuid(), session);
         api.deleteTag(stag.getUuid(), session);
 
-        s = new Statement();
+        s = new PolicyStatement();
         s.setName("deny");
         s.setEffect(StatementEffect.Deny);
         s.addAction(String.format("%s:%s", TagConstant.ACTION_CATEGORY, APICreateUserTagMsg.class.getSimpleName()));

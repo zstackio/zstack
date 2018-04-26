@@ -167,7 +167,20 @@ class TestUserDataBatchApllyCase extends SubCase {
         for (FlatUserdataBackend.UserdataTO to : cmd.userdata) {
             assert to.vmIp == nic1.ip || to.vmIp == nic2.ip || to.vmIp == nic3.ip
             assert to.netmask == nic1.netmask || to.netmask == nic2.netmask || to.netmask == nic3.netmask
+            assert to.l3NetworkUuid == nic1.l3NetworkUuid || to.l3NetworkUuid == nic2.l3NetworkUuid || to.l3NetworkUuid == nic3.l3NetworkUuid
         }
+
+        FlatUserdataBackend.CleanupUserdataCmd ccmd = null
+        env.afterSimulator(FlatUserdataBackend.CLEANUP_USER_DATA) { rsp, HttpEntity<String> e ->
+            ccmd = json(e.body, FlatUserdataBackend.CleanupUserdataCmd.class)
+            return rsp
+        }
+
+        deleteL3Network {
+            uuid = l31.uuid
+        }
+        assert ccmd.l3NetworkUuid == l31.uuid
+
     }
 }
 

@@ -13,6 +13,7 @@ public class SharedResourceVO_ {
     public static volatile SingularAttribute<SharedResourceVO, String> ownerAccountUuid;
     public static volatile SingularAttribute<SharedResourceVO, String> receiverAccountUuid;
     public static volatile SingularAttribute<SharedResourceVO, Boolean> toPublic;
+    public static volatile SingularAttribute<SharedResourceVO, Integer> permission;
     public static volatile SingularAttribute<SharedResourceVO, String> resourceUuid;
     public static volatile SingularAttribute<SharedResourceVO, String> resourceType;
     public static volatile SingularAttribute<SharedResourceVO, Timestamp> lastOpDate;
