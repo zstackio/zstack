@@ -17,10 +17,7 @@ import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -34,21 +31,34 @@ public class VirtualRouterSyncVipFlow implements Flow {
     @Override
     public void run(final FlowTrigger chain, Map data) {
         final VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
-        if (vr.getGuestL3Networks() == null || vr.getGuestL3Networks().isEmpty()) {
-            chain.next();
-            return;
+
+        List<String> vrVips = Q.New(VirtualRouterVipVO.class).eq(VirtualRouterVipVO_.virtualRouterVmUuid, vr.getUuid())
+                .select(VirtualRouterVipVO_.uuid).listValues();
+        List<String> peerL3Vips = null;
+        if (vr.getGuestL3Networks() != null && !vr.getGuestL3Networks().isEmpty()) {
+            peerL3Vips = Q.New(VipPeerL3NetworkRefVO.class).select(VipPeerL3NetworkRefVO_.vipUuid)
+                    .in(VipPeerL3NetworkRefVO_.l3NetworkUuid, vr.getGuestL3Networks())
+                    .listValues();
         }
-        List<VipPeerL3NetworkRefVO> refs = Q.New(VipPeerL3NetworkRefVO.class)
-                .in(VipPeerL3NetworkRefVO_.l3NetworkUuid, vr.getGuestL3Networks())
-                .list();
-        if (refs == null || refs.isEmpty()) {
+
+        Set<String> vipUuids = null;
+        if (vrVips != null && !vrVips.isEmpty()) {
+            vipUuids = new HashSet<>(vrVips);
+        }
+
+        if (peerL3Vips != null && !peerL3Vips.isEmpty()) {
+            if (vipUuids == null) {
+                vipUuids = new HashSet<>(peerL3Vips);
+            } else {
+                vipUuids.addAll(new HashSet<String>(peerL3Vips));
+            }
+        }
+
+        if (vipUuids == null) {
             chain.next();
             return;
         }
 
-        List<String> vipUuids = new ArrayList<>(refs.stream()
-                .map(ref -> ref.getVipUuid())
-                .collect(Collectors.toSet()));
         List<VipVO> vips = vipUuids.stream()
                 .map(uuid -> (VipVO)Q.New(VipVO.class).eq(VipVO_.uuid, uuid).find())
                 .collect(Collectors.toList());
