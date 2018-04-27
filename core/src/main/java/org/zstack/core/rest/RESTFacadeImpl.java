@@ -622,6 +622,11 @@ public class RESTFacadeImpl implements RESTFacade {
     }
 
     @Override
+    public String getHostName() {
+        return hostname;
+    }
+
+    @Override
     public String makeUrl(String path) {
         UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(path);
