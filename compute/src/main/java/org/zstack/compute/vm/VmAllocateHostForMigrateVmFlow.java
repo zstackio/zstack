@@ -38,12 +38,8 @@ public class VmAllocateHostForMigrateVmFlow implements Flow {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
         String destHostUuid = null;
-        if (spec.getMessage() != null && spec.getMessage() instanceof APIMigrateVmMsg) {
-            destHostUuid = ((APIMigrateVmMsg)spec.getMessage()).getHostUuid();
-        }
-
-        if (spec.getMessage() != null && spec.getMessage() instanceof MigrateVmInnerMsg) {
-            destHostUuid = ((MigrateVmInnerMsg)spec.getMessage()).getHostUuid();
+        if (spec.getMessage() instanceof MigrateVmMessage) {
+            destHostUuid = ((MigrateVmMessage)spec.getMessage()).getHostUuid();
         }
 
         DesignatedAllocateHostMsg msg = new DesignatedAllocateHostMsg();
