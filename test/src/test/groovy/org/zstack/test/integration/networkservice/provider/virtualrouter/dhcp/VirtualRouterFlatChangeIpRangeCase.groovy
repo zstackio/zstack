@@ -1,10 +1,13 @@
 package org.zstack.test.integration.networkservice.provider.virtualrouter.dhcp
 
+import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
 import org.zstack.header.network.l3.UsedIpVO
 import org.zstack.header.network.l3.UsedIpVO_
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.header.vm.VmInstanceState
+import org.zstack.header.vm.VmNicVO
+import org.zstack.header.vm.VmNicVO_
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.flat.FlatNetworkServiceConstant
 import org.zstack.network.service.lb.LoadBalancerConstants
@@ -166,6 +169,7 @@ class VirtualRouterFlatChangeIpRangeCase extends SubCase {
     void test() {
         env.create {
             testChangeIpRange()
+            testDeleteIpRange()
         }
     }
 
@@ -195,5 +199,92 @@ class VirtualRouterFlatChangeIpRangeCase extends SubCase {
             assert vm.vmNics.size() == 1
             assert vm.state == VmInstanceState.Running.toString()
         }
+    }
+
+    void testDeleteIpRange() {
+        InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
+        ImageInventory image = env.inventoryByName("image") as ImageInventory
+        L3NetworkInventory l32 = env.inventoryByName("l32") as L3NetworkInventory
+
+        VmInstanceInventory vm1 = createVmInstance {
+            name = "vm-1"
+            instanceOfferingUuid = instanceOffering.uuid
+            imageUuid = image.uuid
+            defaultL3NetworkUuid = l32.uuid
+            l3NetworkUuids = [l32.uuid]
+        }
+        String usedIpUuid = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, vm1.getVmNics().get(0).getUuid())
+
+        deleteIpRange {
+            uuid = l32.getIpRanges().get(0).getUuid()
+        }
+
+        vm1 = queryVmInstance {conditions=["name=vm-1"]}[0]
+        assert vm1.getVmNics().size() == 0
+        assert !Q.New(UsedIpVO.class).eq(UsedIpVO_.uuid, usedIpUuid).isExists()
+
+        /* test stopped vm */
+        addIpRange {
+            name = "TestIpRange_2"
+            l3NetworkUuid = l32.getUuid()
+            startIp = "192.168.101.10"
+            endIp = "192.168.101.100"
+            netmask = "255.255.255.0"
+            gateway = "192.168.101.1"
+        }
+
+        vm1 = attachL3NetworkToVm {
+            l3NetworkUuid = l32.uuid
+            vmInstanceUuid = vm1.uuid
+        }
+        assert vm1.getVmNics().size() == 1
+        usedIpUuid = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, vm1.getVmNics().get(0).getUuid())
+
+        stopVmInstance {
+            uuid = vm1.uuid
+        }
+
+        l32 = queryL3Network {conditions=["name=l32"]} [0]
+        deleteIpRange {
+            uuid = l32.getIpRanges().get(0).getUuid()
+        }
+
+        vm1 = queryVmInstance {conditions=["name=vm-1"]}[0]
+        assert vm1.getVmNics().size() == 0
+        assert !Q.New(UsedIpVO.class).eq(UsedIpVO_.uuid, usedIpUuid).isExists()
+
+        /* test paused vm */
+        addIpRange {
+            name = "TestIpRange_3"
+            l3NetworkUuid = l32.getUuid()
+            startIp = "192.168.101.10"
+            endIp = "192.168.101.100"
+            netmask = "255.255.255.0"
+            gateway = "192.168.101.1"
+        }
+
+        vm1 = attachL3NetworkToVm {
+            l3NetworkUuid = l32.uuid
+            vmInstanceUuid = vm1.uuid
+        }
+        assert vm1.getVmNics().size() == 1
+        usedIpUuid = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, vm1.getVmNics().get(0).getUuid())
+
+        startVmInstance {
+            uuid = vm1.uuid
+        }
+
+        pauseVmInstance {
+            uuid = vm1.uuid
+        }
+
+        l32 = queryL3Network {conditions=["name=l32"]} [0]
+        deleteIpRange {
+            uuid = l32.getIpRanges().get(0).getUuid()
+        }
+
+        vm1 = queryVmInstance {conditions=["name=vm-1"]}[0]
+        assert vm1.getVmNics().size() == 0
+        assert !Q.New(UsedIpVO.class).eq(UsedIpVO_.uuid, usedIpUuid).isExists()
     }
 }
