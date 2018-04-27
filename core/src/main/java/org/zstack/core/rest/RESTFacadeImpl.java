@@ -62,6 +62,7 @@ public class RESTFacadeImpl implements RESTFacade {
     private TimeoutRestTemplate template;
     private String baseUrl;
     private String sendCommandUrl;
+    private String callbackHostName;
 
     private Map<String, HttpCallStatistic> statistics = new ConcurrentHashMap<String, HttpCallStatistic>();
     private Map<String, HttpCallHandlerWrapper> httpCallhandlers = new ConcurrentHashMap<String, HttpCallHandlerWrapper>();
@@ -84,18 +85,17 @@ public class RESTFacadeImpl implements RESTFacade {
     void init() {
         IptablesUtils.insertRuleToFilterTable(String.format("-A INPUT -p tcp -m state --state NEW -m tcp --dport %s -j ACCEPT", port));
 
-        String hname = null;
         if ("AUTO".equals(hostname)) {
-            hname = Platform.getManagementServerIp();
+            callbackHostName = Platform.getManagementServerIp();
         } else {
-            hname = hostname.trim();
+            callbackHostName = hostname.trim();
         }
 
         String url;
         if ("".equals(path) || path == null) {
-            url = String.format("http://%s:%s", hname, port);
+            url = String.format("http://%s:%s", callbackHostName, port);
         } else {
-            url = String.format("http://%s:%s/%s", hname, port, path);
+            url = String.format("http://%s:%s/%s", callbackHostName, port, path);
         }
         UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(url);
         ub.path(RESTConstant.CALLBACK_PATH);
@@ -619,6 +619,11 @@ public class RESTFacadeImpl implements RESTFacade {
     @Override
     public String getCallbackUrl() {
         return callbackUrl;
+    }
+
+    @Override
+    public String getHostName() {
+        return callbackHostName;
     }
 
     @Override
