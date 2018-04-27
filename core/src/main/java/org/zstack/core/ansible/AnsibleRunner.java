@@ -13,7 +13,6 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.rest.RESTFacade;
 import org.zstack.utils.ShellUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -46,8 +45,6 @@ public class AnsibleRunner {
     private AnsibleFacade asf;
     @Autowired
     private CloudBus bus;
-    @Autowired
-    private RESTFacade restf;
 
     private static String privKeyFile;
     private List<AnsibleChecker> checkers = new ArrayList<AnsibleChecker>();
@@ -357,9 +354,9 @@ public class AnsibleRunner {
                 return;
             }
 
-            putArgument("pip_url", String.format("http://%s:8080/zstack/static/pypi/simple", restf.getHostName()));
-            putArgument("trusted_host", restf.getHostName());
-            putArgument("yum_server", String.format("%s:8080", restf.getHostName()));
+            putArgument("pip_url", String.format("http://%s:8080/zstack/static/pypi/simple", Platform.getManagementServerIp()));
+            putArgument("trusted_host", Platform.getManagementServerIp());
+            putArgument("yum_server", String.format("%s:8080", Platform.getManagementServerIp()));
             putArgument("remote_user", username);
             if (password != null && !password.isEmpty()) {
                 putArgument("remote_pass", password);
