@@ -1,7 +1,6 @@
 package org.zstack.header.vm;
 
 import org.zstack.header.core.ApiTimeout;
-import org.zstack.header.image.APIAddImageMsg;
 import org.zstack.header.message.NeedReplyMessage;
 
 /**
@@ -9,7 +8,7 @@ import org.zstack.header.message.NeedReplyMessage;
  * copy by APIMigrateVmMsg for LongJob
  */
 @ApiTimeout(apiClasses = {APIMigrateVmMsg.class})
-public class MigrateVmInnerMsg extends NeedReplyMessage implements VmInstanceMessage  {
+public class MigrateVmInnerMsg extends NeedReplyMessage implements VmInstanceMessage, MigrateVmMessage {
     private String vmInstanceUuid;
     private String hostUuid;
     private Boolean migrateFromDestination;
@@ -31,6 +30,7 @@ public class MigrateVmInnerMsg extends NeedReplyMessage implements VmInstanceMes
         this.vmInstanceUuid = vmInstanceUuid;
     }
 
+    @Override
     public String getHostUuid() {
         return hostUuid;
     }
@@ -39,8 +39,9 @@ public class MigrateVmInnerMsg extends NeedReplyMessage implements VmInstanceMes
         this.hostUuid = hostUuid;
     }
 
-    public Boolean getMigrateFromDestination() {
-        return migrateFromDestination;
+    @Override
+    public boolean isMigrateFromDestination() {
+        return migrateFromDestination == null ? false : migrateFromDestination;
     }
 
     public void setMigrateFromDestination(Boolean migrateFromDestination) {
