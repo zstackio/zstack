@@ -7,6 +7,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.thread.SyncThread;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
@@ -153,6 +154,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
         }
     }
 
+    @SyncThread(signature = "batch-query", level = 50)
     private void handle(APIBatchQueryMsg msg) {
         APIBatchQueryReply reply = new APIBatchQueryReply();
         reply.setResult(new BatchQuery().query(msg));
