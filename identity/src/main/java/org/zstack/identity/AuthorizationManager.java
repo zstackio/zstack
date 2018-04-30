@@ -51,9 +51,7 @@ public class AuthorizationManager implements GlobalApiMessageInterceptor, Compon
     }
 
     void init() {
-        long start = System.currentTimeMillis();
         apiByPassAuthorizationCheck = BeanUtils.reflections.getTypesAnnotatedWith(SuppressCredentialCheck.class);
-        logger.debug(String.format("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz %sms", System.currentTimeMillis() - start));
     }
 
     private SessionInventory evaluateSession(APIMessage msg) {
