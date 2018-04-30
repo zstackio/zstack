@@ -248,31 +248,26 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
     }
 
     private void populateComponents() {
-        components = new ArrayList<ComponentWrapper>();
+        components = new ArrayList<>();
         for (final Component c : pluginRgty.getExtensionList(Component.class)) {
             components.add(new ComponentWrapper() {
                 boolean isStart = false;
 
                 @Override
                 public void start() {
-                    long start = System.currentTimeMillis();
                     logger.info("starting component: " + c.getClass().getName());
                     c.start();
                     logger.info(String.format("component[%s] starts successfully", c.getClass()));
                     isStart = true;
-                    logger.debug(String.format("xxxxxxxxxxxxxxxxxxxxxxx %s %sms", c.getClass(), System.currentTimeMillis() - start));
                 }
 
                 @Override
                 public void stop() {
                     if (isStart) {
-                        throwableSafe(new Runnable() {
-                            @Override
-                            public void run() {
-                                c.stop();
-                                logger.info("Stopped component: " + c.getClass().getName());
-                                isStart = false;
-                            }
+                        throwableSafe((Runnable) () -> {
+                            c.stop();
+                            logger.info("Stopped component: " + c.getClass().getName());
+                            isStart = false;
                         }, String.format("unable to stop component[%s]", c.getClass().getName()));
                     }
                 }

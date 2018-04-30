@@ -438,11 +438,9 @@ public class Platform {
                 throw new CloudRuntimeException(String.format("the method[%s:%s] annotated by @StaticInit is not a static method", init.getDeclaringClass(), init.getName()));
             }
 
-            long start = System.currentTimeMillis();
             logger.debug(String.format("calling static init method[%s:%s]", init.getDeclaringClass(), init.getName()));
             init.setAccessible(true);
             init.invoke(null);
-            logger.debug(String.format("yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy %s.%s %sms", init.getDeclaringClass(), init.getName(), System.currentTimeMillis() - start));
         }
     }
 
