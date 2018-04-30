@@ -8,7 +8,16 @@ import static org.zstack.header.identity.rbac.RBAC.rbac
 static void init() {
     rbac {
         permissions {
+            name = "l2"
+
             adminOnlyAPIs("org.zstack.header.network.l2.**")
+
+            normalAPIs(APIUpdateL2NetworkMsg.class.name)
+        }
+
+        contributeToRole {
+            roleName = "networks"
+            normalActionsFromRBAC("l2")
         }
     }
 }

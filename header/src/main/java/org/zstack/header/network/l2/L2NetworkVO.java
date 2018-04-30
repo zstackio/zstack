@@ -1,9 +1,7 @@
 package org.zstack.header.network.l2;
 
+import org.zstack.header.vo.*;
 import org.zstack.header.vo.EntityGraph;
-import org.zstack.header.vo.BaseResource;
-import org.zstack.header.vo.EO;
-import org.zstack.header.vo.NoView;
 import org.zstack.header.zone.ZoneVO;
 
 import javax.persistence.*;
@@ -22,7 +20,7 @@ import java.util.Set;
                 @EntityGraph.Neighbour(type = L2NetworkClusterRefVO.class, myField = "uuid", targetField = "l2NetworkUuid")
         }
 )
-public class L2NetworkVO extends L2NetworkAO {
+public class L2NetworkVO extends L2NetworkAO implements ToInventory {
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "l2NetworkUuid", insertable = false, updatable = false)
     @NoView

@@ -15,7 +15,7 @@ static void init() {
         }
 
         role {
-            name = "l3"
+            name = "networks"
             uuid = "884b0fcc99b04120807e64466fd63336"
             normalActionsFromRBAC("l3")
         }

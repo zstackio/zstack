@@ -27,7 +27,7 @@ public class VirtualRouterPortForwardingRuleRefInventory {
     private String vipUuid;
     private String virtualRouterVmUuid;
 
-    public VirtualRouterPortForwardingRuleRefInventory valueOf(VirtualRouterPortForwardingRuleRefVO vo) {
+    public static VirtualRouterPortForwardingRuleRefInventory valueOf(VirtualRouterPortForwardingRuleRefVO vo) {
         VirtualRouterPortForwardingRuleRefInventory inv = new VirtualRouterPortForwardingRuleRefInventory();
         inv.setVirtualRouterVmUuid(vo.getVirtualRouterVmUuid());
         inv.setUuid(vo.getUuid());
@@ -35,7 +35,7 @@ public class VirtualRouterPortForwardingRuleRefInventory {
         return inv;
     }
 
-    public List<VirtualRouterPortForwardingRuleRefInventory> valueOf(Collection<VirtualRouterPortForwardingRuleRefVO> vos) {
+    public static List<VirtualRouterPortForwardingRuleRefInventory> valueOf(Collection<VirtualRouterPortForwardingRuleRefVO> vos) {
         List<VirtualRouterPortForwardingRuleRefInventory> invs = new ArrayList<VirtualRouterPortForwardingRuleRefInventory>();
         for (VirtualRouterPortForwardingRuleRefVO vo : vos) {
             invs.add(valueOf(vo));

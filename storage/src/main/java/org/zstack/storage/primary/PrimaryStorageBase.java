@@ -6,11 +6,13 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
-import org.zstack.core.cloudbus.*;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.CloudBusListCallBack;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.inventory.InventoryFacade;
 import org.zstack.core.job.JobQueueFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -44,6 +46,7 @@ import org.zstack.header.volume.VolumeReportPrimaryStorageCapacityUsageReply;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import static org.zstack.core.Platform.*;
 
 import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
@@ -51,8 +54,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
-import static org.zstack.core.Platform.operr;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE, dependencyCheck = true)
 public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
@@ -68,8 +69,6 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     protected JobQueueFacade jobf;
     @Autowired
     protected PrimaryStorageExtensionPointEmitter extpEmitter;
-    @Autowired
-    protected InventoryFacade invf;
     @Autowired
     protected CascadeFacade casf;
     @Autowired
@@ -937,7 +936,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                 self = dbf.reload(self);
                 extpEmitter.afterAttach(self, msg.getClusterUuid());
 
-                PrimaryStorageInventory pinv = (PrimaryStorageInventory) invf.valueOf(self);
+                PrimaryStorageInventory pinv = self.toInventory();
                 evt.setInventory(pinv);
                 logger.debug(String.format("successfully attached primary storage[name:%s, uuid:%s]",
                         pinv.getName(), pinv.getUuid()));

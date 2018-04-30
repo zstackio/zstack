@@ -23,7 +23,6 @@ public class BeanConstructor {
             "<import resource=\"springConfigXml/ThreadFacade.xml\" />",
             "<import resource=\"springConfigXml/CloudBus.xml\" />",
             "<import resource=\"springConfigXml/validation.xml\" />",
-            "<import resource=\"springConfigXml/InventoryFacade.xml\" />",
             "<import resource=\"springConfigXml/DatabaseFacade.xml\" />",
             "<import resource=\"springConfigXml/JobQueueFacade.xml\" />",
             "<import resource=\"springConfigXml/GlobalConfigFacade.xml\" />",

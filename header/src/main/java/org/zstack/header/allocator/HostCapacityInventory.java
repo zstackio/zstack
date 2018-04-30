@@ -20,7 +20,7 @@ public class HostCapacityInventory {
     private Long totalPhysicalMemory;
     private Long availablePhysicalMemory;
 
-    public HostCapacityInventory valueOf(HostCapacityVO vo) {
+    public static HostCapacityInventory valueOf(HostCapacityVO vo) {
         HostCapacityInventory inv = new HostCapacityInventory();
         inv.setUuid(vo.getUuid());
         inv.setTotalMemory(vo.getTotalMemory());
@@ -34,7 +34,7 @@ public class HostCapacityInventory {
         return inv;
     }
 
-    public List<HostCapacityInventory> valueOf(Collection<HostCapacityVO> vos) {
+    public static List<HostCapacityInventory> valueOf(Collection<HostCapacityVO> vos) {
         List<HostCapacityInventory> invs = new ArrayList<HostCapacityInventory>();
         for (HostCapacityVO vo : vos) {
             invs.add(valueOf(vo));
