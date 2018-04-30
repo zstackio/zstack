@@ -11,14 +11,14 @@ public class NetworkServiceTypeInventory {
     private String networkServiceProviderUuid;
     private String type;
 
-    public NetworkServiceTypeInventory valueOf(NetworkServiceTypeVO vo) {
+    public static NetworkServiceTypeInventory valueOf(NetworkServiceTypeVO vo) {
         NetworkServiceTypeInventory inv = new NetworkServiceTypeInventory();
         inv.setNetworkServiceProviderUuid(vo.getNetworkServiceProviderUuid());
         inv.setType(vo.getType());
         return inv;
     }
 
-    public List<NetworkServiceTypeInventory> valueOf(Collection<NetworkServiceTypeVO> vos) {
+    public static List<NetworkServiceTypeInventory> valueOf(Collection<NetworkServiceTypeVO> vos) {
         List<NetworkServiceTypeInventory> invs = new ArrayList<NetworkServiceTypeInventory>();
         for (NetworkServiceTypeVO vo : vos) {
             invs.add(valueOf(vo));

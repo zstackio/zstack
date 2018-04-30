@@ -24,7 +24,7 @@ public class BackupStorageZoneRefInventory {
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
-    public BackupStorageZoneRefInventory valueOf(BackupStorageZoneRefVO vo) {
+    public static BackupStorageZoneRefInventory valueOf(BackupStorageZoneRefVO vo) {
         BackupStorageZoneRefInventory inv = new BackupStorageZoneRefInventory();
         inv.setBackupStorageUuid(vo.getBackupStorageUuid());
         inv.setCreateDate(vo.getCreateDate());
@@ -34,7 +34,7 @@ public class BackupStorageZoneRefInventory {
         return inv;
     }
 
-    public List<BackupStorageZoneRefInventory> valueOf(Collection<BackupStorageZoneRefVO> vos) {
+    public static List<BackupStorageZoneRefInventory> valueOf(Collection<BackupStorageZoneRefVO> vos) {
         List<BackupStorageZoneRefInventory> invs = new ArrayList<BackupStorageZoneRefInventory>();
         for (BackupStorageZoneRefVO vo : vos) {
             invs.add(valueOf(vo));

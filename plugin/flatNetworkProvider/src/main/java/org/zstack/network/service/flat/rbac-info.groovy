@@ -13,7 +13,7 @@ static void init() {
         }
 
         contributeToRole {
-            roleName = "l3"
+            roleName = "networks"
 
             normalActionsFromRBAC("flat-l3")
         }

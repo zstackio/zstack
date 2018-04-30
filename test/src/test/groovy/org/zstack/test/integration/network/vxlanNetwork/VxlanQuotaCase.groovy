@@ -1,18 +1,8 @@
 package org.zstack.test.integration.network.vxlanNetwork
 
-import org.zstack.core.db.Q
-import org.zstack.header.apimediator.ApiMessageInterceptionException
 import org.zstack.header.identity.AccountConstant
-import org.zstack.header.identity.SharedResourceVO
-import org.zstack.header.identity.SharedResourceVO_
 import org.zstack.identity.AccountManagerImpl
-import org.zstack.sdk.AccountInventory
-import org.zstack.sdk.CreateL2VxlanNetworkAction
-import org.zstack.sdk.L2NetworkInventory
-import org.zstack.sdk.L2VxlanNetworkPoolInventory
-import org.zstack.sdk.SessionInventory
-import org.zstack.sdk.UpdateQuotaAction
-import org.zstack.sdk.ZoneInventory
+import org.zstack.sdk.*
 import org.zstack.test.integration.network.NetworkTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase

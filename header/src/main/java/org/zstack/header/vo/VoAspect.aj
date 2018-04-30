@@ -4,6 +4,7 @@ import org.zstack.header.core.keyvalue.KeyValueEntity;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.FieldUtils;
+import org.zstack.header.vo.ToInventory;
 
 import javax.persistence.Entity;
 import java.lang.reflect.Field;
@@ -56,5 +57,15 @@ public aspect VoAspect {
 
     after(Object entity) returning : completeVO(entity) || completeKeyValueEntity(entity) {
         completeField(entity);
+    }
+
+    Object around(ToInventory inv) : this(inv) && execution(Object ToInventory+.toInventory()) {
+         Object ret = proceed(inv);
+
+         if (ret != null) {
+             return ret;
+         }
+
+         return ToInventory.toInventory(inv);
     }
 }
