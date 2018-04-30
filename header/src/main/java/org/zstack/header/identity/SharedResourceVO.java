@@ -3,6 +3,7 @@ package org.zstack.header.identity;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
+import org.zstack.header.vo.ResourceVO;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
@@ -40,6 +41,7 @@ public class SharedResourceVO {
     private String resourceType;
 
     @Column
+    @ForeignKey(parentEntityClass = ResourceVO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String resourceUuid;
 
     @Column

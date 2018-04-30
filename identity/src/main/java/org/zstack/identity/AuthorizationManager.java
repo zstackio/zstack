@@ -13,6 +13,8 @@ import org.zstack.header.identity.SuppressCredentialCheck;
 import org.zstack.header.identity.extension.AuthorizationBackend;
 import org.zstack.header.message.APIMessage;
 import org.zstack.utils.BeanUtils;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.err;
 
@@ -21,6 +23,8 @@ import java.util.List;
 import java.util.Set;
 
 public class AuthorizationManager implements GlobalApiMessageInterceptor, Component {
+    private static final CLogger logger = Utils.getLogger(AuthorizationManager.class);
+
     private Set apiByPassAuthorizationCheck = new HashSet<>();
 
     @Autowired
@@ -47,7 +51,9 @@ public class AuthorizationManager implements GlobalApiMessageInterceptor, Compon
     }
 
     void init() {
+        long start = System.currentTimeMillis();
         apiByPassAuthorizationCheck = BeanUtils.reflections.getTypesAnnotatedWith(SuppressCredentialCheck.class);
+        logger.debug(String.format("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz %sms", System.currentTimeMillis() - start));
     }
 
     private SessionInventory evaluateSession(APIMessage msg) {

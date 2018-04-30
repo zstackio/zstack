@@ -167,8 +167,6 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
                 handle((APIGenerateGroovyClassMsg) msg);
             } else if (msg instanceof APIGenerateSqlVOViewMsg) {
                 handle((APIGenerateSqlVOViewMsg) msg);
-            } else if (msg instanceof APIGenerateApiTypeScriptDefinitionMsg) {
-                handle((APIGenerateApiTypeScriptDefinitionMsg) msg);
             } else if (msg instanceof APIGenerateSqlForeignKeyMsg) {
                 handle((APIGenerateSqlForeignKeyMsg) msg);
             } else if (msg instanceof APIGenerateSqlIndexMsg) {
@@ -216,51 +214,6 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
         SqlForeignKeyGenerator generator = new SqlForeignKeyGenerator(msg);
         generator.generate();
         APIGenerateSqlForeignKeyEvent evt = new APIGenerateSqlForeignKeyEvent(msg.getId());
-        bus.publish(evt);
-    }
-
-    private void handle(APIGenerateApiTypeScriptDefinitionMsg msg) {
-        TypeScriptApiWriter writer = GroovyUtils.newInstance("scripts/TypeScriptApiWriterImpl.groovy", this.getClass().getClassLoader());
-        List<Class> apiMsgClass = BeanUtils.scanClassByType("org.zstack", APIMessage.class);
-        List<Class> apiEventClass = BeanUtils.scanClassByType("org.zstack", APIEvent.class);
-        List<Class> apiReplyClass = BeanUtils.scanClassByType("org.zstack", APIReply.class);
-        List<Class> inventoryClass = BeanUtils.scanClass("org.zstack", Inventory.class);
-
-        apiMsgClass = CollectionUtils.transformToList(apiMsgClass, new Function<Class, Class>() {
-            @Override
-            public Class call(Class arg) {
-                if (!java.lang.reflect.Modifier.isAbstract(arg.getModifiers())) {
-                    return arg;
-                }
-                return null;
-            }
-        });
-
-        apiEventClass = CollectionUtils.transformToList(apiEventClass, new Function<Class, Class>() {
-            @Override
-            public Class call(Class arg) {
-                if (!java.lang.reflect.Modifier.isAbstract(arg.getModifiers())) {
-                    return arg;
-                }
-                return null;
-            }
-        });
-        apiEventClass.addAll(apiReplyClass);
-
-        inventoryClass = CollectionUtils.transformToList(inventoryClass, new Function<Class, Class>() {
-            @Override
-            public Class call(Class arg) {
-                if (!java.lang.reflect.Modifier.isAbstract(arg.getModifiers())) {
-                    return arg;
-                }
-                return null;
-            }
-        });
-
-        String exportPath = msg.getOutputPath() != null ?
-                msg.getOutputPath() : PathUtil.join(System.getProperty("user.home"), "zstack-api-typescript", "api.ts");
-        writer.write(exportPath, apiMsgClass, apiEventClass, inventoryClass);
-        APIGenerateApiTypeScriptDefinitionEvent evt = new APIGenerateApiTypeScriptDefinitionEvent(msg.getId());
         bus.publish(evt);
     }
 

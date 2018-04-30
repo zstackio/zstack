@@ -255,10 +255,12 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
                 @Override
                 public void start() {
+                    long start = System.currentTimeMillis();
                     logger.info("starting component: " + c.getClass().getName());
                     c.start();
                     logger.info(String.format("component[%s] starts successfully", c.getClass()));
                     isStart = true;
+                    logger.debug(String.format("xxxxxxxxxxxxxxxxxxxxxxx %s %sms", c.getClass(), System.currentTimeMillis() - start));
                 }
 
                 @Override

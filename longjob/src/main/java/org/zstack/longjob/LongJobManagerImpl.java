@@ -36,6 +36,7 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.argerr;
@@ -68,7 +69,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
     private List<String> longJobClasses = new ArrayList<String>();
 
     private void collectLongJobs() {
-        List<Class> subs = BeanUtils.scanClass("org.zstack", LongJobFor.class);
+        Set<Class<?>> subs = BeanUtils.reflections.getTypesAnnotatedWith(LongJobFor.class);
         for (Class sub : subs) {
             longJobClasses.add(sub.toString());
         }

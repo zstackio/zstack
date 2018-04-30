@@ -215,6 +215,65 @@ CREATE TABLE `IAM2ProjectTemplateVO` (
 
 ALTER TABLE `zstack`.`SharedResourceVO` ADD COLUMN `permission` int unsigned DEFAULT 1;
 
+# Foreign keys for table IAM2OrganizationAttributeVO
+
+ALTER TABLE IAM2OrganizationAttributeVO ADD CONSTRAINT fkIAM2OrganizationAttributeVOIAM2OrganizationVO FOREIGN KEY (organizationUuid) REFERENCES IAM2OrganizationVO (uuid) ;
+
+# Foreign keys for table IAM2ProjectAttributeVO
+
+ALTER TABLE IAM2ProjectAttributeVO ADD CONSTRAINT fkIAM2ProjectAttributeVOIAM2ProjectVO FOREIGN KEY (projectUuid) REFERENCES IAM2ProjectVO (uuid) ;
+
+# Foreign keys for table IAM2VirtualIDAttributeVO
+
+ALTER TABLE IAM2VirtualIDAttributeVO ADD CONSTRAINT fkIAM2VirtualIDAttributeVOIAM2VirtualIDVO FOREIGN KEY (virtualIDUuid) REFERENCES IAM2VirtualIDVO (uuid) ;
+
+# Foreign keys for table IAM2VirtualIDGroupAttributeVO
+
+ALTER TABLE IAM2VirtualIDGroupAttributeVO ADD CONSTRAINT fkIAM2VirtualIDGroupAttributeVOIAM2VirtualIDGroupVO FOREIGN KEY (groupUuid) REFERENCES IAM2VirtualIDGroupVO (uuid) ;
+
+# Foreign keys for table IAM2GroupVirtualIDRefVO
+
+ALTER TABLE IAM2GroupVirtualIDRefVO ADD CONSTRAINT fkIAM2GroupVirtualIDRefVOIAM2VirtualIDGroupVO FOREIGN KEY (groupUuid) REFERENCES IAM2VirtualIDGroupVO (uuid) ON DELETE CASCADE;
+ALTER TABLE IAM2GroupVirtualIDRefVO ADD CONSTRAINT fkIAM2GroupVirtualIDRefVOIAM2VirtualIDVO FOREIGN KEY (virtualIDUuid) REFERENCES IAM2VirtualIDVO (uuid) ON DELETE CASCADE;
+
+# Foreign keys for table IAM2ProjectAccountRefVO
+
+ALTER TABLE IAM2ProjectAccountRefVO ADD CONSTRAINT fkIAM2ProjectAccountRefVOAccountVO FOREIGN KEY (accountUuid) REFERENCES AccountVO (uuid) ON DELETE CASCADE;
+ALTER TABLE IAM2ProjectAccountRefVO ADD CONSTRAINT fkIAM2ProjectAccountRefVOIAM2ProjectVO FOREIGN KEY (projectUuid) REFERENCES IAM2ProjectVO (uuid) ON DELETE CASCADE;
+
+# Foreign keys for table IAM2ProjectVirtualIDRefVO
+
+ALTER TABLE IAM2ProjectVirtualIDRefVO ADD CONSTRAINT fkIAM2ProjectVirtualIDRefVOIAM2ProjectVO FOREIGN KEY (projectUuid) REFERENCES IAM2ProjectVO (uuid) ON DELETE CASCADE;
+ALTER TABLE IAM2ProjectVirtualIDRefVO ADD CONSTRAINT fkIAM2ProjectVirtualIDRefVOIAM2VirtualIDVO FOREIGN KEY (virtualIDUuid) REFERENCES IAM2VirtualIDVO (uuid) ON DELETE CASCADE;
+
+# Foreign keys for table IAM2VirtualIDGroupRefVO
+
+ALTER TABLE IAM2VirtualIDGroupRefVO ADD CONSTRAINT fkIAM2VirtualIDGroupRefVOIAM2VirtualIDGroupVO FOREIGN KEY (groupUuid) REFERENCES IAM2VirtualIDGroupVO (uuid) ON DELETE CASCADE;
+ALTER TABLE IAM2VirtualIDGroupRefVO ADD CONSTRAINT fkIAM2VirtualIDGroupRefVOIAM2VirtualIDVO FOREIGN KEY (virtualIDUuid) REFERENCES IAM2VirtualIDVO (uuid) ON DELETE CASCADE;
+
+# Foreign keys for table IAM2VirtualIDGroupRoleRefVO
+
+ALTER TABLE IAM2VirtualIDGroupRoleRefVO ADD CONSTRAINT fkIAM2VirtualIDGroupRoleRefVOIAM2VirtualIDGroupVO FOREIGN KEY (groupUuid) REFERENCES IAM2VirtualIDGroupVO (uuid) ON DELETE CASCADE;
+ALTER TABLE IAM2VirtualIDGroupRoleRefVO ADD CONSTRAINT fkIAM2VirtualIDGroupRoleRefVORoleVO FOREIGN KEY (roleUuid) REFERENCES RoleVO (uuid) ON DELETE CASCADE;
+
+# Foreign keys for table IAM2VirtualIDOrganizationRefVO
+
+ALTER TABLE IAM2VirtualIDOrganizationRefVO ADD CONSTRAINT fkIAM2VirtualIDOrganizationRefVOIAM2OrganizationVO FOREIGN KEY (organizationUuid) REFERENCES IAM2OrganizationVO (uuid) ON DELETE CASCADE;
+ALTER TABLE IAM2VirtualIDOrganizationRefVO ADD CONSTRAINT fkIAM2VirtualIDOrganizationRefVOIAM2VirtualIDVO FOREIGN KEY (virtualIDUuid) REFERENCES IAM2VirtualIDVO (uuid) ON DELETE CASCADE;
+
+# Foreign keys for table IAM2VirtualIDRoleRefVO
+
+ALTER TABLE IAM2VirtualIDRoleRefVO ADD CONSTRAINT fkIAM2VirtualIDRoleRefVOIAM2VirtualIDVO FOREIGN KEY (virtualIDUuid) REFERENCES IAM2VirtualIDVO (uuid) ON DELETE CASCADE;
+ALTER TABLE IAM2VirtualIDRoleRefVO ADD CONSTRAINT fkIAM2VirtualIDRoleRefVORoleVO FOREIGN KEY (roleUuid) REFERENCES RoleVO (uuid) ON DELETE CASCADE;
+
+ALTER TABLE SharedResourceVO ADD CONSTRAINT fkSharedResourceVOResourceVO FOREIGN KEY (resourceUuid) REFERENCES ResourceVO (uuid) ON DELETE CASCADE;
+
+# Foreign keys for table RolePolicyRefVO
+
+ALTER TABLE RolePolicyRefVO ADD CONSTRAINT fkRolePolicyRefVOPolicyVO FOREIGN KEY (policyUuid) REFERENCES PolicyVO (uuid) ON DELETE CASCADE;
+ALTER TABLE RolePolicyRefVO ADD CONSTRAINT fkRolePolicyRefVORoleVO FOREIGN KEY (roleUuid) REFERENCES RoleVO (uuid) ON DELETE CASCADE;
+
+
 SET FOREIGN_KEY_CHECKS = 0;
 CREATE TABLE IF NOT EXISTS `DahoDCAccessVO` (
 	  `uuid` varchar(32) UNIQUE NOT NULL,

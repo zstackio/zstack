@@ -60,23 +60,21 @@ class ZQL {
     }
 
     private List entityVOtoInventories(List vos) {
+        List ret = []
         if (astResult.targetFieldName != null) {
-            List ret = []
             vos.each {
                 def inv = astResult.inventoryMetadata.selfInventoryClass.getConstructor().newInstance()
                 inv[astResult.targetFieldName] = it
                 ret.add(inv)
             }
-
-            return ret
         } else {
-            String collectionMethodName = astResult.inventoryMetadata.inventoryAnnotation.collectionValueOfMethod()
-            if (collectionMethodName == "") {
-                collectionMethodName = "valueOf"
+            vos.each { vo ->
+                ZQLMetadata.InventoryMetadata metadata = ZQLMetadata.getInventoryMetadataByVOClassName(vo.class)
+                ret.add(metadata.selfInventoryClass.invokeMethod("valueOf", vo))
             }
-
-            return astResult.inventoryMetadata.selfInventoryClass.invokeMethod(collectionMethodName, vos)
         }
+
+        return ret
     }
 
     private static void callExtensions(ASTNode.Query node) {

@@ -458,7 +458,8 @@ abstract class Test implements ApiHelper, Retry {
         boolean hasFailure = false
 
         for (SubCaseResult r in allCases) {
-            def c = r.caseType.newInstance() as Case
+            logger.debug("creating sub-case ${r.caseType}")
+            def c = r.caseType.getConstructor().newInstance() as Case
 
             String caseLogStartLine = "case log of ${c.class} starts here"
             String caseLogEndLine = "case log of ${c.class} ends here"

@@ -62,6 +62,11 @@ class ZQLMetadata {
      * value: InventoryMetadata
      */
     static Map<String, InventoryMetadata> inventoryMetadata = [:]
+    /**
+     * key: the full class name of inventory, e.g. org.zstack.host.HostVO
+     * value: InventoryMetadata
+     */
+    static Map<String, InventoryMetadata> inventoryMetadataByVOClassName = [:]
 
     trait ChainQueryStruct {
         void verify() {
@@ -73,6 +78,19 @@ class ZQLMetadata {
         def entry = inventoryMetadata.find { it.value.isUs(queryName) }
         assert entry != null : "cannot find inventory with name[${queryName}]"
         return entry.value
+    }
+
+    static InventoryMetadata getInventoryMetadataByVOClassName(Class clz) {
+        while (clz != Object.class) {
+            InventoryMetadata m = ZQLMetadata.inventoryMetadataByVOClassName[clz.name]
+            if (m != null) {
+                return m
+            }
+
+            clz = clz.superclass
+        }
+
+        assert false : "cannot find metadata for inventory class[${clz}]"
     }
 
     static InventoryMetadata getInventoryMetadataByName(String name) {
@@ -287,5 +305,7 @@ class ZQLMetadata {
             Class clz = it.target()
             fillInventoryMetadata(clz, null, [it],  null, null)
         }
+
+        inventoryMetadata.values().each { inventoryMetadataByVOClassName[it.inventoryAnnotation.mappingVOClass().name] = it }
     }
 }

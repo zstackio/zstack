@@ -27,6 +27,8 @@ import org.zstack.header.vo.EO
 import org.zstack.header.volume.VolumeDeletionPolicyManager
 import org.zstack.image.ImageGlobalConfig
 import org.zstack.sdk.*
+import org.zstack.sdk.identity.role.api.CreateRoleAction
+import org.zstack.sdk.identity.role.api.DeleteRoleAction
 import org.zstack.sdk.sns.CreateSNSTopicAction
 import org.zstack.sdk.sns.DeleteSNSApplicationEndpointAction
 import org.zstack.sdk.sns.DeleteSNSApplicationPlatformAction
@@ -94,6 +96,7 @@ class EnvSpec implements Node, ApiHelper {
             [CreatePolicyAction.metaClass, CreatePolicyAction.Result.metaClass, DeletePolicyAction.class],
             [CreateUserGroupAction.metaClass, CreateUserGroupAction.Result.metaClass, DeleteUserGroupAction.class],
             [CreateUserAction.metaClass, CreateUserAction.Result.metaClass, DeleteUserAction.class],
+            [CreateRoleAction.metaClass, CreateRoleAction.Result.metaClass, DeleteRoleAction.class],
             [AddImageAction.metaClass, AddImageAction.Result.metaClass, DeleteImageAction.class],
             [CreateDataVolumeTemplateFromVolumeAction.metaClass, CreateDataVolumeTemplateFromVolumeAction.Result.metaClass, DeleteImageAction.class],
             [CreateRootVolumeTemplateFromRootVolumeAction.metaClass, CreateRootVolumeTemplateFromRootVolumeAction.Result.metaClass, DeleteImageAction.class],
@@ -158,7 +161,7 @@ class EnvSpec implements Node, ApiHelper {
             actionMeta.call = {
                 ApiResult res = ZSClient.call(delegate)
                 def ret = delegate.makeResult(res)
-                resourcesNeedDeletion.add(ret)
+                Test.currentEnvSpec.resourcesNeedDeletion.add(ret)
                 return ret
             }
 
@@ -167,7 +170,8 @@ class EnvSpec implements Node, ApiHelper {
                     return false
                 }
 
-                def action = (deleteClass as Class).newInstance()
+                def action = (deleteClass as Class).getConstructor().newInstance()
+                logger.debug("auto-deleting resource by ${deleteClass} uuid:${delegate.value.inventory.uuid}")
                 action.uuid = delegate.value.inventory.uuid
                 action.sessionId = session.uuid
                 def res = action.call()
@@ -184,7 +188,6 @@ class EnvSpec implements Node, ApiHelper {
     }
 
     EnvSpec() {
-        installDeletionMethods()
     }
 
     Closure getSimulator(String path) {
@@ -396,8 +399,6 @@ class EnvSpec implements Node, ApiHelper {
                 logger.debug(String.format("create resource of class %s", it.getClass().getName()))
                 def id = (it as CreateAction).create(uuid, suuid) as SpecID
 
-                (it as CreateAction).afterCreateOperations.each { it() }
-
                 if ((it as Spec).toPublic) {
                     shareResource {
                         resourceUuids = [id.uuid]
@@ -529,6 +530,7 @@ class EnvSpec implements Node, ApiHelper {
         resetAllGlobalConfig()
 
         installSimulatorHandlers()
+        installDeletionMethods()
 
         /*
         simulatorClasses.each {
@@ -683,6 +685,13 @@ class EnvSpec implements Node, ApiHelper {
         new TraverseCleanEO(g.generateEORelations(), nodes, eoNameEOClassMap, eoNameVOClassMap).traverse()
     }
 
+    protected void callDeleteOnResourcesNeedDeletion() {
+        resourcesNeedDeletion.each {
+            logger.info("run delete() method on ${it.class}")
+            it.delete()
+        }
+    }
+
     void delete() {
         try {
             ImageGlobalConfig.DELETION_POLICY.updateValue(ImageDeletionPolicyManager.ImageDeletionPolicy.Direct.toString())
@@ -696,10 +705,7 @@ class EnvSpec implements Node, ApiHelper {
                 destroy(session.uuid)
             }
 
-            resourcesNeedDeletion.each {
-                logger.info("run delete() method on ${it.class}")
-                it.delete()
-            }
+            callDeleteOnResourcesNeedDeletion()
 
             SQL.New(NotificationVO.class).hardDelete()
             SQL.New(TaskProgressVO.class).hardDelete()

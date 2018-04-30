@@ -53,9 +53,7 @@ public class SqlForeignKeyGenerator {
     public List<Pair<String, String>> generateEORelations() {
         List<Pair<String, String>> result = new ArrayList<>();
 
-        for (String pkgName : basePkgs) {
-            entityClass.addAll(BeanUtils.scanClass(pkgName, Entity.class));
-        }
+        entityClass.addAll(BeanUtils.reflections.getTypesAnnotatedWith(Entity.class));
 
         for (Class entity : entityClass) {
             collectForeignKeys(entity);
@@ -192,9 +190,7 @@ public class SqlForeignKeyGenerator {
     }
 
     public void generate() {
-        for (String pkgName: basePkgs) {
-            entityClass.addAll(BeanUtils.scanClass(pkgName, Entity.class));
-        }
+        entityClass.addAll(BeanUtils.reflections.getTypesAnnotatedWith(Entity.class));
 
         for (Class entity : entityClass) {
             collectForeignKeys(entity);

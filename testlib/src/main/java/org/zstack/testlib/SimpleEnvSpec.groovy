@@ -6,13 +6,12 @@ import groovy.transform.AutoClone
 class SimpleEnvSpec extends EnvSpec {
     @Override
     void delete() {
-        resourcesNeedDeletion.each {
-            logger.info("run delete() method on ${it.class}")
-            it.delete()
-        }
+        callDeleteOnResourcesNeedDeletion()
     }
 
     void use(Closure c) {
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+
         def backup = Test.currentEnvSpec
 
         Test.currentEnvSpec = this
@@ -23,9 +22,10 @@ class SimpleEnvSpec extends EnvSpec {
     }
 
     @Override
-    EnvSpec create(Closure cl = null) {
+    SimpleEnvSpec create(Closure cl = null) {
         adminLogin()
 
+        installDeletionMethods()
         installSimulatorHandlers()
 
         deploy()
@@ -36,5 +36,17 @@ class SimpleEnvSpec extends EnvSpec {
         }
 
         return this
+    }
+
+    @Override
+    SimpleEnvSpec more(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = EnvSpec.class) Closure c) {
+        c.delegate = this
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c()
+        return this
+    }
+
+    static Closure makeCreator(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = EnvSpec.class) Closure c) {
+        return c
     }
 }
