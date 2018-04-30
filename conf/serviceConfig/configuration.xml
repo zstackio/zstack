@@ -78,10 +78,6 @@
     </message>
 
     <message>
-        <name>org.zstack.header.configuration.APIGenerateApiTypeScriptDefinitionMsg</name>
-    </message>
-
-    <message>
         <name>org.zstack.header.configuration.APIGenerateSqlForeignKeyMsg</name>
     </message>
 

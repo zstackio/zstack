@@ -711,7 +711,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         return true;
     }
 
-
     private void updateResourceVONameOnEntityUpdate() {
         dbf.installEntityLifeCycleCallback(null, EntityEvent.PRE_UPDATE, (evt, o) -> {
             if (o instanceof ResourceVO) {
@@ -1082,9 +1081,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     }
 
     private void buildActions() {
-        List<Class> apiMsgClasses = BeanUtils.scanClassByType("org.zstack", APIMessage.class);
-        for (Class clz : apiMsgClasses) {
-            Action a = (Action) clz.getAnnotation(Action.class);
+        BeanUtils.reflections.getSubTypesOf(APIMessage.class).forEach(clz -> {
+            Action a = clz.getAnnotation(Action.class);
             if (a == null) {
                 logger.debug(String.format("API message[%s] doesn't have annotation @Action, assume it's an admin only API", clz));
                 MessageAction ma = new MessageAction();
@@ -1092,7 +1090,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 ma.accountOnly = true;
                 ma.accountControl = false;
                 actions.put(clz, ma);
-                continue;
+                return;
             }
 
             MessageAction ma = new MessageAction();
@@ -1130,7 +1128,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             ma.actions.add(String.format("%s:%s", ma.category, clz.getName()));
             ma.actions.add(String.format("%s:%s", ma.category, clz.getSimpleName()));
             actions.put(clz, ma);
-        }
+        });
     }
 
     @Override

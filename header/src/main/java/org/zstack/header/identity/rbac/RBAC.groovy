@@ -123,7 +123,6 @@ class RBAC {
         return rbacInfos.any { info -> info.adminOnlyAPIs.any { matcher.match(it, apiName) } }
     }
 
-
     private static RBACInfo _flatten(RBACInfo info) {
         FlattenResult ret = flatten(info._adminOnlyAPIs, info._normalAPIs)
         info.adminOnlyAPIs = ret.adminOnly

@@ -66,6 +66,7 @@ class AllowedDBRemaining {
     class Table extends DBUtil {
         Class tableVOClass
         boolean noLimitRows
+        Closure<List> checker
 
         List<Row> rows = []
 
@@ -80,6 +81,11 @@ class AllowedDBRemaining {
         List check(List vos) {
             if (noLimitRows) {
                 return []
+            }
+
+            if (checker) {
+                vos = checker(vos)
+                assert vos != null : "checker must return a list of remained VOs"
             }
 
             List remain = []

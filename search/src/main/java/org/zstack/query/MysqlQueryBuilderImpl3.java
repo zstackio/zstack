@@ -306,13 +306,13 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
     }
 
     private void populateEntityInfo() throws NoSuchMethodException {
-        List<Class> metaClasses = BeanUtils.scanClass("org.zstack", StaticMetamodel.class);
+        Set<Class<?>> metaClasses = BeanUtils.reflections.getTypesAnnotatedWith(StaticMetamodel.class);
         for (Class it : metaClasses) {
             StaticMetamodel at = (StaticMetamodel) it.getAnnotation(StaticMetamodel.class);
             metaModelClasses.put(at.value(), it);
         }
 
-        List<Class> invClasses = BeanUtils.scanClass("org.zstack", Inventory.class);
+        Set<Class<?>> invClasses = BeanUtils.reflections.getTypesAnnotatedWith(Inventory.class);
 
         for (Class invClass : invClasses) {
             EntityInfo info = buildEntityInfo(invClass);
@@ -1134,7 +1134,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
     }
 
     private void buildExpandedQueryAliasInfo() {
-        List<Class> invClasses = BeanUtils.scanClass("org.zstack", Inventory.class);
+        Set<Class<?>> invClasses = BeanUtils.reflections.getTypesAnnotatedWith(Inventory.class);
 
         for (Class invClass : invClasses) {
             ExpandedQueryAliases aliases = (ExpandedQueryAliases) invClass.getAnnotation(ExpandedQueryAliases.class);
@@ -1165,16 +1165,15 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
     @Override
     public boolean start() {
         try {
-            List<Class> queryMessageClasses = BeanUtils.scanClassByType("org.zstack", APIQueryMessage.class);
-
-            for (Class msgClass : queryMessageClasses) {
-                AutoQuery at = (AutoQuery) msgClass.getAnnotation(AutoQuery.class);
+            BeanUtils.reflections.getSubTypesOf(APIQueryMessage.class).forEach(msgClass -> {
+                AutoQuery at = msgClass.getAnnotation(AutoQuery.class);
                 if (at == null) {
                     logger.warn(String.format("query message[%s] doesn't have AutoQuery annotation, expanded query alias would not take effect", msgClass.getName()));
-                    continue;
+                    return;
                 }
+
                 inventoryQueryMessageMap.put(at.inventoryClass(), msgClass);
-            }
+            });
 
             // NOTE: don't change the order
             populateExtensions();

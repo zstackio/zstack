@@ -95,7 +95,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             return;
         }
 
-        List<Class> inventoryClasses = BeanUtils.scanClass("org.zstack", Inventory.class);
+        Set<Class<?>> inventoryClasses = BeanUtils.reflections.getTypesAnnotatedWith(Inventory.class);
         List<String> errors = new ArrayList<>();
         for (Class clz : inventoryClasses) {
             boolean error = false;

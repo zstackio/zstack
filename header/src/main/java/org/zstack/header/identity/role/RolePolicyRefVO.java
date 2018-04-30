@@ -1,5 +1,8 @@
 package org.zstack.header.identity.role;
 
+import org.zstack.header.identity.PolicyVO;
+import org.zstack.header.vo.ForeignKey;
+
 import javax.persistence.*;
 import java.io.Serializable;
 import java.sql.Timestamp;
@@ -31,9 +34,11 @@ public class RolePolicyRefVO {
 
     @Column
     @Id
+    @ForeignKey(parentEntityClass = RoleVO.class, onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
     private String roleUuid;
     @Column
     @Id
+    @ForeignKey(parentEntityClass = PolicyVO.class, onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
     private String policyUuid;
     @Column
     private Timestamp createDate;

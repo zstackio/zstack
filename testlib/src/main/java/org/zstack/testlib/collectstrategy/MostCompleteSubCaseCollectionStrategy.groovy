@@ -4,6 +4,8 @@ import org.zstack.core.Platform
 import org.zstack.testlib.Case
 import org.zstack.testlib.Test
 
+import java.lang.reflect.Modifier
+
 /**
  * Created by lining on 2017/7/19.
  */
@@ -36,7 +38,7 @@ class MostCompleteSubCaseCollectionStrategy implements SubCaseCollectionStrategy
     List<Class> collectSubCases(Test test) {
         assert null != test : "test is null, can not find subcase"
 
-        def cases = Platform.reflections.getSubTypesOf(Case.class)
+        def cases = Platform.reflections.getSubTypesOf(Case.class).findAll { !Modifier.isAbstract(it.modifiers) }
         cases = cases.findAll { it.package.name.startsWith(test.class.package.name) }
         cases = cases.sort{ a, b ->
             return a.name.compareTo(b.name)

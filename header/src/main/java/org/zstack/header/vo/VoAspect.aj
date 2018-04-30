@@ -10,6 +10,7 @@ import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -20,8 +21,8 @@ public aspect VoAspect {
     private static Map<Class, Field> objectUuidMap =  new ConcurrentHashMap<Class, Field>();
 
     static {
-        List<Class> entities = BeanUtils.scanClass("org.zstack", Entity.class);
-        entities.addAll(BeanUtils.scanClassByType("org.zstack", KeyValueEntity.class));
+        Set<Class<?>> entities = BeanUtils.reflections.getTypesAnnotatedWith(Entity.class);
+        entities.addAll(BeanUtils.reflections.getSubTypesOf(KeyValueEntity.class));
         for (Class entity : entities) {
             Field uuidField = FieldUtils.getAnnotatedField(Uuid.class, entity);
             if (uuidField == null) {
