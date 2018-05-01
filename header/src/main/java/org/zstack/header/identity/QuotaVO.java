@@ -13,7 +13,7 @@ import java.sql.Timestamp;
 @Entity
 @Table
 @BaseResource
-public class QuotaVO extends ResourceVO {
+public class QuotaVO extends ResourceVO implements OwnedByAccount {
     @Column
     private String name;
 
@@ -31,6 +31,19 @@ public class QuotaVO extends ResourceVO {
 
     @Column
     private Timestamp createDate;
+
+    @Transient
+    private String accountUuid;
+
+    @Override
+    public String getAccountUuid() {
+        return accountUuid;
+    }
+
+    @Override
+    public void setAccountUuid(String accountUuid) {
+        this.accountUuid = accountUuid;
+    }
 
     @PreUpdate
     private void preUpdate() {

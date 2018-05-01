@@ -102,9 +102,9 @@ public interface Account {
                     qvo.setIdentityUuid(avo.getUuid());
                     qvo.setName(rtype);
                     qvo.setValue(quota);
+                    qvo.setAccountUuid(avo.getUuid());
                     persist(qvo);
                     reload(qvo);
-                    persist(AccountResourceRefVO.newOwn(avo.getUuid(), qvo.getUuid(), QuotaVO.class));
                 }
 
                 reload(avo);

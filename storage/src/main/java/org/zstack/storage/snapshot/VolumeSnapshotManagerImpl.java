@@ -197,7 +197,9 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         vo.setParentUuid(null);
         vo.setLatest(true);
         vo.setFullSnapshot(fullsnapshot);
-        vo = dbf.getEntityManager().merge(vo);
+        dbf.getEntityManager().persist(vo);
+        dbf.getEntityManager().flush();
+        dbf.getEntityManager().refresh(vo);
 
         VolumeSnapshotStruct struct = new VolumeSnapshotStruct();
         struct.setCurrent(VolumeSnapshotInventory.valueOf(vo));
@@ -243,7 +245,9 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             vo.setLatest(true);
             vo.setParentUuid(latest.getUuid());
             vo.setDistance(latest.getDistance() + 1);
-            vo = dbf.getEntityManager().merge(vo);
+            dbf.getEntityManager().persist(vo);
+            dbf.getEntityManager().flush();
+            dbf.getEntityManager().refresh(vo);
 
             VolumeSnapshotStruct struct = new VolumeSnapshotStruct();
             struct.setParent(VolumeSnapshotInventory.valueOf(latest));

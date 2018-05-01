@@ -611,7 +611,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 p.setData(JSONObjectUtil.toJsonString(list(s)));
                 persist(p);
                 reload(p);
-                persist(AccountResourceRefVO.newOwn(vo.getUuid(), p.getUuid(), PolicyVO.class));
 
                 p = new PolicyVO();
                 p.setUuid(Platform.getUuid());
@@ -622,9 +621,9 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 s.setEffect(StatementEffect.Allow);
                 s.addAction(String.format("%s:%s", AccountConstant.ACTION_CATEGORY, APIUpdateUserMsg.class.getSimpleName()));
                 p.setData(JSONObjectUtil.toJsonString(list(s)));
+                p.setAccountUuid(vo.getUuid());
                 persist(p);
                 reload(p);
-                persist(AccountResourceRefVO.newOwn(vo.getUuid(), p.getUuid(), PolicyVO.class));
 
                 List<Tuple> ts = Q.New(GlobalConfigVO.class).select(GlobalConfigVO_.name, GlobalConfigVO_.value)
                         .eq(GlobalConfigVO_.category, AccountConstant.QUOTA_GLOBAL_CONFIG_CATETORY).listTuple();
@@ -639,9 +638,9 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                     qvo.setIdentityUuid(vo.getUuid());
                     qvo.setName(rtype);
                     qvo.setValue(quota);
+                    qvo.setAccountUuid(vo.getUuid());
                     persist(qvo);
                     reload(qvo);
-                    persist(AccountResourceRefVO.newOwn(vo.getUuid(), qvo.getUuid(), QuotaVO.class));
                 }
 
                 reload(vo);

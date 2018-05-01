@@ -24,9 +24,7 @@ public interface RBACManager {
             protected List<PolicyInventory> scripts() {
                 SessionInventory session = message.getSession();
                 List<PolicyInventory> ret = new ArrayList<>(internalPolices);
-                if (session.isAccountSession()) {
-                    ret.addAll(getPoliciesForAccount(session));
-                } else {
+                if (!session.isAccountSession()) {
                     ret.addAll(getPoliciesForUser(session));
                 }
 
@@ -42,29 +40,6 @@ public interface RBACManager {
                 vos.addAll(sql("select p from PolicyVO p, UserGroupVO g, UserGroupPolicyRefVO up, UserGroupUserRefVO ugu where p.uuid = up.policyUuid" +
                         " and g.uuid = up.groupUuid and g.uuid = ugu.groupUuid and ugu.userUuid = :uuid", PolicyVO.class).param("uuid", session.getUserUuid()).list());
 
-                // polices attached to roles the user has
-                vos.addAll(sql("select p from PolicyVO p, RolePolicyRefVO rp, RoleUserRefVO ru, RoleVO role where p.uuid = rp.policyUuid and" +
-                        " rp.roleUuid = ru.roleUuid and ru.userUuid = :uuid and role.uuid = rp.roleUuid and role.state = :state", PolicyVO.class)
-                        .param("uuid", session.getUserUuid())
-                        .param("state", RoleState.Enabled)
-                        .list());
-
-                // polices attached to roles of user groups the user is in
-                vos.addAll(sql("select p from PolicyVO, RolePolicyRefVO rp, RoleUserGroupRefVO rug, UserGroupUserRefVO ugu, RoleVO role where" +
-                        " p.uuid = rp.policyUuid and rp.roleUuid = rug.roleUuid and rug.groupUuid = ugu.groupUuid and ugu.userUuid = :uuid" +
-                        " and rp.roleUuid = role.uuid and role.state = :state", PolicyVO.class)
-                        .param("state", RoleState.Enabled)
-                        .param("uuid", session.getUserUuid()).list());
-
-                return PolicyInventory.valueOf(vos);
-            }
-
-            private List<PolicyInventory> getPoliciesForAccount(SessionInventory session) {
-                List<PolicyVO> vos = sql("select p from PolicyVO p, RoleAccountRefVO ra, RoleVO role, RolePolicyRefVO rp" +
-                        " where p.uuid = rp.policyUuid and rp.roleUuid = role.uuid and role.uuid = ra.roleUuid and" +
-                        " ra.accountUuid = :uuid and role.state = :state", PolicyVO.class)
-                        .param("state", RoleState.Enabled)
-                        .param("uuid", session.getAccountUuid()).list();
                 return PolicyInventory.valueOf(vos);
             }
         }.execute();
