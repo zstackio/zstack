@@ -10,8 +10,12 @@ import org.zstack.header.rest.APINoSee
 import org.zstack.header.search.Inventory
 import org.zstack.utils.BeanUtils
 import org.zstack.utils.FieldUtils
+import org.zstack.utils.Utils
+import org.zstack.utils.logging.CLogger
 
 class ZQLMetadata {
+    private static final CLogger logger = Utils.getLogger(ZQLMetadata.class)
+
     static class ExpandQueryMetadata {
         Class selfVOClass
         Class targetVOClass
@@ -146,12 +150,19 @@ class ZQLMetadata {
 
             List<ChainQueryStruct> ret = []
 
-            nestConditionNames = preProcessingNestConditionNames(metadata, nestConditionNames)
-
             if (nestConditionNames.size() == 1) {
                 ret.add(new FieldChainQuery(self: metadata, fieldName: nestConditionNames[0]))
             } else {
-                Iterator<String> iterator = nestConditionNames[0..nestConditionNames.size() - 2].iterator()
+                String lastField = nestConditionNames[-1]
+
+                def processedConditionsNames = []
+                preProcessingNestConditionNames(
+                        metadata,
+                        nestConditionNames[0..nestConditionNames.size()-2].iterator(),
+                        processedConditionsNames
+                )
+
+                Iterator<String> iterator = processedConditionsNames.iterator()
 
                 InventoryMetadata self = metadata
                 ExpandQueryMetadata left = null
@@ -166,7 +177,7 @@ class ZQLMetadata {
                 }
 
                 ExpandChainQuery last = ret.last() as ExpandChainQuery
-                ret.add(new FieldChainQuery(right: last.right, self: last.self, fieldName: nestConditionNames.last()))
+                ret.add(new FieldChainQuery(right: last.right, self: last.self, fieldName: lastField))
             }
 
             ret.each { it.verify() }
@@ -174,33 +185,27 @@ class ZQLMetadata {
             return ret
         }
 
-        private List<String> preProcessingNestConditionNames(InventoryMetadata current, List<String> names, boolean removeLast=true) {
-            List<String> ret = []
+        private void preProcessingNestConditionNames(InventoryMetadata current, Iterator<String> names, List<String> result) {
+            if (!names.hasNext()) {
+                return
+            }
 
-            def toProcessing = names.size() == 1 ? [] : removeLast ? names[0..names.size()-2] : names
-
-            toProcessing.each {
-                def alias = current.expandQueryAliases[it]
-                if (alias != null) {
-                    ret.addAll(preProcessingNestConditionNames(current, alias.expandQueryText.split("\\.") as List, false))
-                    return
-                }
-
-                def expand = current.expandQueries[it]
-                assert expand != null : "invalid nested query condition[${names.join(".")}] on ${current.selfInventoryClass}," +
-                            "the expanded target[${current.selfInventoryClass}] have no expanded query[${it}]"
+            String name = names.next()
+            def alias = current.expandQueryAliases[name]
+            if (alias != null) {
+                def newNames = (alias.expandQueryText.split("\\.") as List) + names.toList()
+                preProcessingNestConditionNames(current, newNames.iterator(), result)
+            } else {
+                def expand = current.expandQueries[name]
+                assert expand != null: "invalid nested query condition[${names.join(".")}] on ${current.selfInventoryClass}," +
+                        "the expanded target[${current.selfInventoryClass}] have no expanded query[${name}]"
 
                 current = inventoryMetadata[expand.targetInventoryClass.name]
-                assert current != null : "unable to find inventory metadata for ${expand.targetInventoryClass}"
+                assert current != null: "unable to find inventory metadata for ${expand.targetInventoryClass}"
 
-                ret.add(it)
+                result.add(name)
+                preProcessingNestConditionNames(current, names, result)
             }
-
-            if (removeLast) {
-                ret.add(names.last())
-            }
-
-            return ret
         }
     }
 
