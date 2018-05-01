@@ -5,12 +5,16 @@ import org.zstack.header.core.StaticInit;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.search.Inventory;
 import org.zstack.utils.BeanUtils;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
 
 public interface ToInventory {
+    CLogger logger = Utils.getLogger(ToInventory.class);
+
     class InventoryMetadata {
         Class inventoryClass;
         Method valueOf;
@@ -34,10 +38,14 @@ public interface ToInventory {
                     for (Method method : tmp.getDeclaredMethods()) {
                         if (m.valueOf == null && method.getName().equals("valueOf")
                                 && !Collection.class.isAssignableFrom(method.getReturnType())
-                                && Modifier.isStatic(method.getModifiers())) {
+                                && Modifier.isStatic(method.getModifiers())
+                                && method.getParameterTypes().length == 1
+                                && method.getParameterTypes()[0].isAssignableFrom(at.mappingVOClass())) {
                             m.valueOf = method;
                         } else if (m.valueOfCollection == null && method.getName().equals(collectionMethodName)
                                 && Collection.class.isAssignableFrom(method.getReturnType())
+                                && method.getParameterTypes().length == 1
+                                && Collection.class.isAssignableFrom(method.getParameterTypes()[0])
                                 && Modifier.isStatic(method.getModifiers())) {
                             m.valueOfCollection = method;
                         }
@@ -92,6 +100,7 @@ public interface ToInventory {
         try {
             return m.valueOf.invoke(null, vo);
         } catch (Exception e) {
+            logger.warn(String.format("unable to convert class[%s] to inventory[%s]", vo.getClass(), m.inventoryClass));
             throw new CloudRuntimeException(e);
         }
     }
