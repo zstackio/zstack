@@ -194,10 +194,10 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         vo.setState(LongJobState.Waiting);
         vo.setTargetResourceUuid(msg.getTargetResourceUuid());
         vo.setManagementNodeUuid(Platform.getManagementServerId());
+        vo.setAccountUuid(msg.getAccountUuid());
         vo = dbf.persistAndRefresh(vo);
         msg.setJobUuid(vo.getUuid());
         tagMgr.createTags(msg.getSystemTags(), msg.getUserTags(), vo.getUuid(), LongJobVO.class.getSimpleName());
-        acntMgr.createAccountResourceRef(msg.getAccountUuid(), vo.getUuid(), LongJobVO.class);
         logger.info(String.format("new longjob [uuid:%s, name:%s] has been created", vo.getUuid(), vo.getName()));
 
         // wait in line

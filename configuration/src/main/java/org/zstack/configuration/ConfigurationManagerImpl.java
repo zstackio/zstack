@@ -925,10 +925,8 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
             @Deferred
             protected InstanceOfferingInventory scripts() {
                 Defer.guard(() -> dbf.remove(vo));
-                InstanceOfferingInventory inv = f.createInstanceOffering(vo, msg);
-                acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), InstanceOfferingVO.class);
-                tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), InstanceOfferingVO.class.getSimpleName());
-                return inv;
+                vo.setAccountUuid(msg.getSession().getAccountUuid());
+                return f.createInstanceOffering(vo, msg);
             }
         }.execute();
 
@@ -975,10 +973,8 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
         DiskOfferingInventory inv = new SQLBatchWithReturn<DiskOfferingInventory>() {
             @Override
             protected DiskOfferingInventory scripts() {
-
-                DiskOfferingInventory inv = f.createDiskOffering(vo, msg);
-                acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), DiskOfferingVO.class);
-                return inv;
+                vo.setAccountUuid(msg.getSession().getAccountUuid());
+                return f.createDiskOffering(vo, msg);
             }
         }.execute();
 

@@ -1046,6 +1046,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         vo.setDescription(msg.getDescription());
         vo.setState(SecurityGroupState.Enabled);
         vo.setInternalId(dbf.generateSequenceNumber(SecurityGroupSequenceNumberVO.class));
+        vo.setAccountUuid(msg.getSession().getAccountUuid());
 
         SecurityGroupVO finalVo = vo;
         vo = new SQLBatchWithReturn<SecurityGroupVO>() {
@@ -1053,7 +1054,6 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             protected SecurityGroupVO scripts() {
                 persist(finalVo);
                 reload(finalVo);
-                acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), finalVo.getUuid(), SecurityGroupVO.class);
                 tagMgr.createTagsFromAPICreateMessage(msg, finalVo.getUuid(), SecurityGroupVO.class.getSimpleName());
                 return finalVo;
             }

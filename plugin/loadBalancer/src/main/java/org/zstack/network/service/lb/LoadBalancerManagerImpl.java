@@ -142,9 +142,9 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                         vo.setDescription(msg.getDescription());
                         vo.setVipUuid(msg.getVipUuid());
                         vo.setState(LoadBalancerState.Enabled);
+                        vo.setAccountUuid(msg.getSession().getAccountUuid());
                         vo = dbf.persistAndRefresh(vo);
 
-                        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), LoadBalancerVO.class);
                         tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), LoadBalancerVO.class.getSimpleName());
                         /* put vo to data for rollback */
                         data.put(LoadBalancerConstants.Param.LOAD_BALANCER_VO, vo);
@@ -236,9 +236,9 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
             vo.setDescription(msg.getDescription());
         }
         vo.setCertificate(msg.getCertificate());
+        vo.setAccountUuid(msg.getSession().getAccountUuid());
         vo = dbf.persistAndRefresh(vo);
 
-        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), CertificateVO.class);
         tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), CertificateVO.class.getSimpleName());
 
         evt.setInventory(CertificateInventory.valueOf(vo));

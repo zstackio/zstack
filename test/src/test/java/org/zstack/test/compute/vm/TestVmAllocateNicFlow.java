@@ -71,9 +71,8 @@ public class TestVmAllocateNicFlow {
         vo.setPlatform(ImagePlatform.Linux.toString());
         vo.setUuid(Platform.getUuid());
         vo.setInternalId(10);
+        vo.setAccountUuid(api.getAdminSession().getAccountUuid());
         dbf.persist(vo);
-
-        acntMgr.createAccountResourceRef(api.getAdminSession().getAccountUuid(), vo.getUuid(), VmInstanceVO.class);
 
         VmInstanceInventory vminv = VmInstanceInventory.valueOf(vo);
         VmInstanceSpec spec = new VmInstanceSpec();

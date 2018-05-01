@@ -251,6 +251,7 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
                         vipvo.setL3NetworkUuid(ip.getL3NetworkUuid());
                         vipvo.setNetmask(ip.getNetmask());
                         vipvo.setUsedIpUuid(ip.getUuid());
+                        vipvo.setAccountUuid(msg.getSession().getAccountUuid());
 
                         VipVO finalVipvo = vipvo;
                         vipvo = new SQLBatchWithReturn<VipVO>() {
@@ -258,7 +259,6 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
                             protected VipVO scripts() {
                                 persist(finalVipvo);
                                 reload(finalVipvo);
-                                acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), finalVipvo.getUuid(), VipVO.class);
                                 tagMgr.createTagsFromAPICreateMessage(msg, finalVipvo.getUuid(), VipVO.class.getSimpleName());
                                 return finalVipvo;
                             }

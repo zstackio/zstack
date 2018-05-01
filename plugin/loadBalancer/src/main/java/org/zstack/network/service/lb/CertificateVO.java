@@ -1,5 +1,6 @@
 package org.zstack.network.service.lb;
 
+import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.NoView;
 import org.zstack.header.vo.ResourceVO;
@@ -15,7 +16,7 @@ import java.util.Set;
 @Entity
 @Table
 @BaseResource
-public class CertificateVO extends ResourceVO {
+public class CertificateVO extends ResourceVO implements OwnedByAccount {
     @Column
     private String name;
 
@@ -39,6 +40,19 @@ public class CertificateVO extends ResourceVO {
     @PreUpdate
     private void preUpdate() {
         lastOpDate = null;
+    }
+
+    @Transient
+    private String accountUuid;
+
+    @Override
+    public String getAccountUuid() {
+        return accountUuid;
+    }
+
+    @Override
+    public void setAccountUuid(String accountUuid) {
+        this.accountUuid = accountUuid;
     }
 
     public Set<LoadBalancerListenerCertificateRefVO> getListeners() {

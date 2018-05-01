@@ -9,6 +9,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowException;
@@ -18,6 +19,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.vm.*;
+import org.zstack.identity.Account;
 import org.zstack.identity.AccountManager;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -39,50 +41,6 @@ public class VmAllocateNicFlow implements Flow {
     protected CloudBus bus;
     @Autowired
     protected ErrorFacade errf;
-    @Autowired
-    protected AccountManager acntMgr;
-
-    private VmNicVO persistAndRetryIfMacCollision(VmNicVO vo) {
-        int tries = 5;
-        while (tries-- > 0) {
-            try {
-                vo = dbf.persistAndRefresh(vo);
-                return vo;
-            } catch (JpaSystemException e) {
-                if (e.getRootCause() instanceof MySQLIntegrityConstraintViolationException &&
-                        e.getRootCause().getMessage().contains("Duplicate entry")) {
-                    logger.debug(String.format("Concurrent mac allocation. Mac[%s] has been allocated, try allocating another one. " +
-                            "The error[Duplicate entry] printed by jdbc.spi.SqlExceptionHelper is no harm, " +
-                            "we will try finding another mac", vo.getMac()));
-                    logger.trace("", e);
-                    vo.setMac(NetworkUtils.generateMacWithDeviceId((short) vo.getDeviceId()));
-                } else {
-                    throw e;
-                }
-            }
-        }
-        return null;
-    }
-
-    private void persistNicToDb(List<VmNicInventory> nics) {
-        for (VmNicInventory nic : nics) {
-            VmNicVO vo = new VmNicVO();
-            vo.setUuid(nic.getUuid());
-            vo.setIp(nic.getIp());
-            vo.setL3NetworkUuid(nic.getL3NetworkUuid());
-            vo.setUsedIpUuid(nic.getUsedIpUuid());
-            vo.setVmInstanceUuid(nic.getVmInstanceUuid());
-            vo.setDeviceId(nic.getDeviceId());
-            vo.setMac(nic.getMac());
-            vo.setNetmask(nic.getNetmask());
-            vo.setGateway(nic.getGateway());
-            vo.setInternalName(nic.getInternalName());
-            vo = persistAndRetryIfMacCollision(vo);
-            if (vo == null) {
-                throw new FlowException(errf.instantiateErrorCode(VmErrors.ALLOCATE_MAC_ERROR, "unable to find an available mac address after re-try 5 times, too many collisions"));
-            }
-        }
-    }
 
     @Override
     public void run(final FlowTrigger trigger, final Map data) {
@@ -149,12 +107,54 @@ public class VmAllocateNicFlow implements Flow {
                 if (err != null) {
                     trigger.fail(err);
                 } else {
-                    persistNicToDb(spec.getDestNics());
 
-                    String acntUuid = acntMgr.getOwnerAccountUuidOfResource(spec.getVmInventory().getUuid());
-                    for (VmNicInventory nic : spec.getDestNics()) {
-                        acntMgr.createAccountResourceRef(acntUuid, nic.getUuid(), VmNicVO.class);
-                    }
+                    new SQLBatch() {
+                        private VmNicVO persistAndRetryIfMacCollision(VmNicVO vo) {
+                            int tries = 5;
+                            while (tries-- > 0) {
+                                try {
+                                    persist(vo);
+                                    return reload(vo);
+                                } catch (JpaSystemException e) {
+                                    if (e.getRootCause() instanceof MySQLIntegrityConstraintViolationException &&
+                                            e.getRootCause().getMessage().contains("Duplicate entry")) {
+                                        logger.debug(String.format("Concurrent mac allocation. Mac[%s] has been allocated, try allocating another one. " +
+                                                "The error[Duplicate entry] printed by jdbc.spi.SqlExceptionHelper is no harm, " +
+                                                "we will try finding another mac", vo.getMac()));
+                                        logger.trace("", e);
+                                        vo.setMac(NetworkUtils.generateMacWithDeviceId((short) vo.getDeviceId()));
+                                    } else {
+                                        throw e;
+                                    }
+                                }
+                            }
+                            return null;
+                        }
+
+                        @Override
+                        protected void scripts() {
+                            String acntUuid = Account.getAccountUuidOfResource(spec.getVmInventory().getUuid());
+
+                            spec.getDestNics().forEach(nic -> {
+                                VmNicVO vo = new VmNicVO();
+                                vo.setUuid(nic.getUuid());
+                                vo.setIp(nic.getIp());
+                                vo.setL3NetworkUuid(nic.getL3NetworkUuid());
+                                vo.setUsedIpUuid(nic.getUsedIpUuid());
+                                vo.setVmInstanceUuid(nic.getVmInstanceUuid());
+                                vo.setDeviceId(nic.getDeviceId());
+                                vo.setMac(nic.getMac());
+                                vo.setNetmask(nic.getNetmask());
+                                vo.setGateway(nic.getGateway());
+                                vo.setInternalName(nic.getInternalName());
+                                vo.setAccountUuid(acntUuid);
+                                vo = persistAndRetryIfMacCollision(vo);
+                                if (vo == null) {
+                                    throw new FlowException(errf.instantiateErrorCode(VmErrors.ALLOCATE_MAC_ERROR, "unable to find an available mac address after re-try 5 times, too many collisions"));
+                                }
+                            });
+                        }
+                    }.execute();
 
                     trigger.next();
                 }

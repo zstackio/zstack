@@ -6,6 +6,7 @@ import org.apache.commons.lang.StringUtils
 import org.zstack.core.Platform
 import org.zstack.core.componentloader.PluginRegistry
 import org.zstack.core.db.SQLBatch
+import org.zstack.header.vo.ToInventory
 import org.zstack.header.zql.MarshalZQLASTTreeExtensionPoint
 import org.zstack.utils.Utils
 import org.zstack.utils.logging.CLogger
@@ -68,10 +69,7 @@ class ZQL {
                 ret.add(inv)
             }
         } else {
-            vos.each { vo ->
-                ZQLMetadata.InventoryMetadata metadata = ZQLMetadata.getInventoryMetadataByVOClassName(vo.class)
-                ret.add(metadata.selfInventoryClass.invokeMethod("valueOf", vo))
-            }
+            vos.each { ret.add(ToInventory.toInventory(it)) }
         }
 
         return ret

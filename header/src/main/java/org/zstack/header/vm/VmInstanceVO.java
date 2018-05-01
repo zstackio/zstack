@@ -2,6 +2,7 @@ package org.zstack.header.vm;
 
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.host.HostVO;
+import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EO;
@@ -25,7 +26,7 @@ import java.util.Set;
                 @EntityGraph.Neighbour(type = HostVO.class, myField = "hostUuid", targetField = "uuid"),
         }
 )
-public class VmInstanceVO extends VmInstanceAO {
+public class VmInstanceVO extends VmInstanceAO implements OwnedByAccount {
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "vmInstanceUuid", insertable = false, updatable = false)
     @NoView
@@ -36,6 +37,19 @@ public class VmInstanceVO extends VmInstanceAO {
     @NoView
     private Set<VolumeVO> allVolumes = new HashSet<VolumeVO>();
 
+    @Transient
+    private String accountUuid;
+
+    @Override
+    public String getAccountUuid() {
+        return accountUuid;
+    }
+
+    @Override
+    public void setAccountUuid(String accountUuid) {
+        this.accountUuid = accountUuid;
+    }
+
     public VmInstanceVO() {
     }
 
@@ -43,6 +57,7 @@ public class VmInstanceVO extends VmInstanceAO {
         super(other);
         this.vmNics = other.vmNics;
         this.allVolumes = other.allVolumes;
+        this.accountUuid = other.accountUuid;
     }
 
     public Set<VmNicVO> getVmNics() {

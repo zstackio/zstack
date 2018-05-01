@@ -502,9 +502,9 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         vo = new SQLBatchWithReturn<EipVO>() {
             @Override
             protected EipVO scripts() {
+                finalVo1.setAccountUuid(msg.getSession().getAccountUuid());
                 persist(finalVo1);
                 reload(finalVo1);
-                acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), finalVo1.getUuid(), EipVO.class);
                 tagMgr.createTagsFromAPICreateMessage(msg, finalVo1.getUuid(), EipVO.class.getSimpleName());
                 return finalVo1;
             }

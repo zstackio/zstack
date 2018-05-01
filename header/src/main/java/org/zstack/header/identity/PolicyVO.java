@@ -11,7 +11,7 @@ import java.sql.Timestamp;
 @Entity
 @Table
 @BaseResource
-public class PolicyVO extends ResourceVO {
+public class PolicyVO extends ResourceVO implements OwnedByAccount {
     @Column
     private String name;
 

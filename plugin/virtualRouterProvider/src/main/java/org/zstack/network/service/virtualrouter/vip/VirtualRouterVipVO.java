@@ -1,5 +1,6 @@
 package org.zstack.network.service.virtualrouter.vip;
 
+import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.vm.VmInstanceEO;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
@@ -8,10 +9,7 @@ import org.zstack.header.vo.SoftDeletionCascades;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 @Entity
 @Table
@@ -19,7 +17,7 @@ import javax.persistence.Table;
         @SoftDeletionCascade(parent = VirtualRouterVmVO.class, joinColumn = "virtualRouterVmUuid"),
         @SoftDeletionCascade(parent = VipVO.class, joinColumn = "uuid")
 })
-public class VirtualRouterVipVO {
+public class VirtualRouterVipVO implements OwnedByAccount {
     @Id
     @Column
     @ForeignKey(parentEntityClass = VipVO.class, onDeleteAction = ReferenceOption.RESTRICT)
@@ -28,6 +26,20 @@ public class VirtualRouterVipVO {
     @Column
     @ForeignKey(parentEntityClass = VmInstanceEO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String virtualRouterVmUuid;
+
+    @Transient
+    private String accountUuid;
+
+    @Override
+    public String getAccountUuid() {
+        return accountUuid;
+    }
+
+    @Override
+    public void setAccountUuid(String accountUuid) {
+        this.accountUuid = accountUuid;
+    }
+
 
     public String getUuid() {
         return uuid;
