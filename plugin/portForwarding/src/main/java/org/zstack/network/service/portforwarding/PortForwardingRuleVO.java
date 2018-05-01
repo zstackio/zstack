@@ -1,5 +1,6 @@
 package org.zstack.network.service.portforwarding;
 
+import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.ForeignKey;
@@ -14,7 +15,7 @@ import java.sql.Timestamp;
 @Entity
 @Table
 @BaseResource
-public class PortForwardingRuleVO extends ResourceVO {
+public class PortForwardingRuleVO extends ResourceVO implements OwnedByAccount {
     @Column
     @Index
     private String name;
@@ -68,6 +69,20 @@ public class PortForwardingRuleVO extends ResourceVO {
     
     @Column
     private Timestamp lastOpDate;
+
+    @Transient
+    private String accountUuid;
+
+    @Override
+    public String getAccountUuid() {
+        return accountUuid;
+    }
+
+    @Override
+    public void setAccountUuid(String accountUuid) {
+        this.accountUuid = accountUuid;
+    }
+
 
     @PreUpdate
     private void preUpdate() {

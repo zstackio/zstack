@@ -655,7 +655,6 @@ public class AccountBase extends AbstractAccount {
             protected UserGroupVO scripts() {
                 persist(finalGvo);
                 reload(finalGvo);
-                acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), finalGvo.getUuid(), UserGroupVO.class);
                 return finalGvo;
             }
         }.execute();
@@ -702,7 +701,6 @@ public class AccountBase extends AbstractAccount {
             protected PolicyVO scripts() {
                 persist(finalPvo);
                 reload(finalPvo);
-                acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), finalPvo.getUuid(), PolicyVO.class);
                 return finalPvo;
             }
         }.execute();
@@ -750,7 +748,6 @@ public class AccountBase extends AbstractAccount {
                     persist(uref);
                 }
 
-                acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), uvo.getUuid(), UserVO.class);
                 return uvo;
             }
         }.execute();

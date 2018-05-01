@@ -1,5 +1,6 @@
 package org.zstack.network.service.vip;
 
+import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.network.l3.IpRangeEO;
 import org.zstack.header.network.l3.L3NetworkEO;
 import org.zstack.header.vo.*;
@@ -18,7 +19,7 @@ import java.util.stream.Collectors;
 @Entity
 @Table
 @BaseResource
-public class VipVO extends ResourceVO {
+public class VipVO extends ResourceVO implements OwnedByAccount {
     protected static final CLogger logger = Utils.getLogger(VipVO.class);
 
     @Column
@@ -69,6 +70,19 @@ public class VipVO extends ResourceVO {
     
     @Column
     private Timestamp lastOpDate;
+
+    @Transient
+    private String accountUuid;
+
+    @Override
+    public String getAccountUuid() {
+        return accountUuid;
+    }
+
+    @Override
+    public void setAccountUuid(String accountUuid) {
+        this.accountUuid = accountUuid;
+    }
 
     @PreUpdate
     private void preUpdate() {

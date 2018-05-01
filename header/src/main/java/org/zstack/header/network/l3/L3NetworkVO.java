@@ -1,5 +1,6 @@
 package org.zstack.header.network.l3;
 
+import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
@@ -20,7 +21,7 @@ import java.util.Set;
                 @EntityGraph.Neighbour(type = L2NetworkVO.class, myField = "l2NetworkUuid", targetField = "uuid")
         }
 )
-public class L3NetworkVO extends L3NetworkAO {
+public class L3NetworkVO extends L3NetworkAO implements OwnedByAccount {
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "l3NetworkUuid", insertable = false, updatable = false)
     @NoView
@@ -40,6 +41,19 @@ public class L3NetworkVO extends L3NetworkAO {
     @JoinColumn(name = "l3NetworkUuid", insertable = false, updatable = false)
     @NoView
     private Set<L3NetworkHostRouteVO> hostRoutes = new HashSet<L3NetworkHostRouteVO>();
+
+    @Transient
+    private String accountUuid;
+
+    @Override
+    public String getAccountUuid() {
+        return accountUuid;
+    }
+
+    @Override
+    public void setAccountUuid(String accountUuid) {
+        this.accountUuid = accountUuid;
+    }
 
     public Set<L3NetworkDnsVO> getDns() {
         return dns;

@@ -1161,6 +1161,7 @@ public class LoadBalancerBase {
         vo.setInstancePort(msg.getInstancePort());
         vo.setLoadBalancerPort(msg.getLoadBalancerPort());
         vo.setProtocol(msg.getProtocol());
+        vo.setAccountUuid(msg.getSession().getAccountUuid());
         vo = dbf.persistAndRefresh(vo);
         if (msg.getCertificateUuid() != null) {
             LoadBalancerListenerCertificateRefVO ref = new LoadBalancerListenerCertificateRefVO();
@@ -1169,7 +1170,6 @@ public class LoadBalancerBase {
             dbf.persist(ref);
         }
 
-        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), LoadBalancerListenerVO.class);
         tagMgr.createNonInherentSystemTags(msg.getSystemTags(), vo.getUuid(), LoadBalancerListenerVO.class.getSimpleName());
         vo = dbf.updateAndRefresh(vo);
         evt.setInventory(LoadBalancerListenerInventory.valueOf(vo));

@@ -159,6 +159,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         if (vo.getType() == VolumeType.Root) {
             vo.setDeviceId(0);
         }
+        vo.setAccountUuid(msg.getAccountUuid());
 
         VolumeVO finalVo = vo;
         vo = new SQLBatchWithReturn<VolumeVO>() {
@@ -167,7 +168,6 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                 dbf.getEntityManager().persist(finalVo);
                 dbf.getEntityManager().flush();
                 dbf.getEntityManager().refresh(finalVo);
-                acntMgr.createAccountResourceRef(msg.getAccountUuid(), finalVo.getUuid(), VolumeVO.class);
                 return finalVo;
             }
         }.execute();
@@ -206,12 +206,12 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         vo.setStatus(VolumeStatus.Creating);
         vo.setType(VolumeType.Data);
         vo.setSize(0);
+        vo.setAccountUuid(msg.getSession().getAccountUuid());
         VolumeVO vvo = new SQLBatchWithReturn<VolumeVO>() {
             @Override
             protected VolumeVO scripts() {
                 persist(vo);
                 reload(vo);
-                acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), VolumeVO.class);
                 tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), VolumeVO.class.getSimpleName());
                 return vo;
             }
@@ -307,12 +307,12 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         vol.setState(VolumeState.Enabled);
         vol.setType(VolumeType.Data);
         vol.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+        vol.setAccountUuid(msg.getSession().getAccountUuid());
         VolumeVO vvo = new SQLBatchWithReturn<VolumeVO>() {
             @Override
             protected VolumeVO scripts() {
                 persist(vol);
                 reload(vol);
-                acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vol.getUuid(), VolumeVO.class);
                 tagMgr.createTagsFromAPICreateMessage(msg, vol.getUuid(), VolumeVO.class.getSimpleName());
                 return vol;
             }
@@ -574,6 +574,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         vo.setActualSize(0L);
         vo.setType(VolumeType.Data);
         vo.setStatus(VolumeStatus.NotInstantiated);
+        vo.setAccountUuid(msg.getSession().getAccountUuid());
 
         if (msg.hasSystemTag(VolumeSystemTags.SHAREABLE.getTagFormat())) {
             vo.setShareable(true);
@@ -590,7 +591,6 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                 dbf.getEntityManager().persist(finalVo1);
                 dbf.getEntityManager().flush();
                 dbf.getEntityManager().refresh(finalVo1);
-                acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), finalVo1.getUuid(), VolumeVO.class);
                 tagMgr.createTagsFromAPICreateMessage(msg, finalVo1.getUuid(), VolumeVO.class.getSimpleName());
                 return finalVo1;
             }

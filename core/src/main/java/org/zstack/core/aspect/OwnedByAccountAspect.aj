@@ -32,7 +32,7 @@ public aspect OwnedByAccountAspect {
         }
 
         OwnedByAccount oa = (OwnedByAccount) entity;
-        AccountResourceRefVO ref = AccountResourceRefVO.newOwn(oa.getAccountUuid(), ((ResourceVO)entity).getUuid(), entity.getClass());
+        AccountResourceRefVO ref = AccountResourceRefVO.newOwn(oa.getAccountUuid(), OwnedByAccount.getResourceUuid(entity), entity.getClass());
         mgr.persist(ref);
     }
 }

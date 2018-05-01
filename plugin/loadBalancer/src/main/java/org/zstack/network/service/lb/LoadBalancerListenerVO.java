@@ -1,5 +1,6 @@
 package org.zstack.network.service.lb;
 
+import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
@@ -17,7 +18,7 @@ import java.util.Set;
 @Entity
 @Table
 @BaseResource
-public class LoadBalancerListenerVO extends ResourceVO {
+public class LoadBalancerListenerVO extends ResourceVO implements OwnedByAccount {
     @Column
     @ForeignKey(parentEntityClass = LoadBalancerVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.RESTRICT)
     private String loadBalancerUuid;
@@ -52,6 +53,20 @@ public class LoadBalancerListenerVO extends ResourceVO {
 
     @Column
     private Timestamp lastOpDate;
+
+    @Transient
+    private String accountUuid;
+
+    @Override
+    public String getAccountUuid() {
+        return accountUuid;
+    }
+
+    @Override
+    public void setAccountUuid(String accountUuid) {
+        this.accountUuid = accountUuid;
+    }
+
 
     @PreUpdate
     private void preUpdate() {

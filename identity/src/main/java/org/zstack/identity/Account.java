@@ -3,6 +3,7 @@ package org.zstack.identity;
 import org.zstack.core.Platform;
 import org.zstack.core.config.GlobalConfigVO;
 import org.zstack.core.config.GlobalConfigVO_;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.header.identity.*;
 import org.zstack.header.message.Message;
@@ -62,6 +63,11 @@ public interface Account {
             // nothing, just for builder style
             return this;
         }
+    }
+
+    static String getAccountUuidOfResource(String resUuid) {
+        return Q.New(AccountResourceRefVO.class).select(AccountResourceRefVO_.ownerAccountUuid)
+                .eq(AccountResourceRefVO_.resourceUuid, resUuid).findValue();
     }
 
     static AccountInventory create(AccountBuilder builder) {
