@@ -346,7 +346,7 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
                     return;
                 }
 
-                Vip vip = getVipWithSnatService(vr);
+                Vip vip = getVipWithSnatService(vr, nic);
                 if (vip == null) {
                     completion.success();
                     return;
@@ -366,8 +366,8 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
         });
     }
 
-    private Vip getVipWithSnatService(VirtualRouterVmInventory vr){
-        String vipUuid = Q.New(VipVO.class).eq(VipVO_.usedIpUuid, vr.getPublicNic().getUsedIpUuid()).find();
+    private Vip getVipWithSnatService(VirtualRouterVmInventory vr, VmNicInventory nic){
+        String vipUuid = Q.New(VipVO.class).eq(VipVO_.usedIpUuid, vr.getPublicNic().getUsedIpUuid()).select(VipVO_.uuid).findValue();
         if (vipUuid == null){
             return null;
         }
@@ -376,15 +376,13 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
         struct.setUseFor(NetworkServiceType.SNAT.toString());
 
         Vip vip = new Vip(vipUuid);
-        if (!vr.getGuestL3Networks().isEmpty()){
-            String l3NetworkUuuid = vr.getGuestL3Networks().get(0);
-            try {
-                NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(l3NetworkUuuid, NetworkServiceType.SNAT);
-                struct.setPeerL3NetworkUuid(l3NetworkUuuid);
-                struct.setServiceProvider(providerType.toString());
-            } catch (OperationFailureException e){
-                logger.debug(String.format("Get providerType exception %s", e.toString()));
-            }
+        String l3NetworkUuuid = nic.getL3NetworkUuid();
+        try {
+            NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(l3NetworkUuuid, NetworkServiceType.SNAT);
+            struct.setPeerL3NetworkUuid(l3NetworkUuuid);
+            struct.setServiceProvider(providerType.toString());
+        } catch (OperationFailureException e){
+            logger.debug(String.format("Get providerType exception %s", e.toString()));
         }
         vip.setStruct(struct);
         return vip;

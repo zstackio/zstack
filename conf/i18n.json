@@ -7920,7 +7920,7 @@
   {
     "raw": "new add vm nics[uuids:%s] and peer l3s[uuids:%s] of loadbalancer[uuid: %s]\u0027s vip are not on the same vrouter, they are on vrouters[uuids:%s]",
     "en_US": "new add vm nics[uuids:{0}] and peer l3s[uuids:{1}] of loadbalancer[uuid: {2}]\u0027s vip are not on the same vrouter, they are on vrouters[uuids:{3}]",
-    "zh_CN": "新添加的虚拟机网卡[uuids:{0}]和负载均衡器[uuid: {2}]的弹性IP的三层网络[uuids:{1}]没有在相同的云路由上，它们分别在云路由[uuids:{1}]上",
+    "zh_CN": "新添加的虚拟机网卡[uuids:{0}]和负载均衡器[uuid: {2}]的弹性IP的三层网络[uuids:{1}]没有在相同的云路由上，它们分别在云路由[uuids:{3}]上",
     "arguments": [
       "msg.getVmNicUuids()",
       "peerL3NetworkUuids",
