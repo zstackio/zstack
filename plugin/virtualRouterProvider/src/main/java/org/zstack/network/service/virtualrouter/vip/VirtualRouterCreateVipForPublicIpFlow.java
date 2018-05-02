@@ -119,12 +119,13 @@ public class VirtualRouterCreateVipForPublicIpFlow implements Flow {
 
     @Override
     public void rollback(FlowRollback chain, Map data) {
+        String vipUuid = (String) data.get(VirtualRouterConstant.Param.PUB_VIP_UUID.toString());
+        if (vipUuid == null) {
+            chain.rollback();
+            return;
+        }
 
-        VirtualRouterVipVO vrVip = new VirtualRouterVipVO();
-        vrVip.setUuid((String) data.get(VirtualRouterConstant.Param.PUB_VIP_UUID.toString()));
-        vrVip.setVirtualRouterVmUuid((String) data.get(VirtualRouterConstant.Param.VR_UUID.toString()));
-        dbf.remove(vrVip);
-
+        SQL.New(VirtualRouterVipVO.class).eq(VirtualRouterVipVO_.uuid, vipUuid).delete();
         chain.rollback();
     }
 }
