@@ -10,6 +10,6 @@ class ExprVisitor implements ASTVisitor<String, ASTNode.Expr> {
     String visit(ASTNode.Expr node) {
         String inventoryTarget = ZQLContext.peekQueryTargetInventoryName()
         return new SQLConditionBuilder(inventoryTarget, node.left).build(node.operator,
-                (node.right as ASTNode).accept(new ValueVisitor()) as String)
+               node.right == null ? "" : (node.right as ASTNode).accept(new ValueVisitor()) as String)
     }
 }

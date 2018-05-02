@@ -143,6 +143,8 @@ test a VM's start/stop/reboot/destroy/recover operations
     @Override
     void test() {
         env.create {
+            ZQL.fromString("count vip where useFor is null and l3Network.zoneUuid = '0f0ff43535164fe4bf1a09b245389c91' limit 1000")
+                    .execute()
             ZoneInventory zone = env.inventoryByName("zone")
             def ret = ZQL.fromString("query vminstance where vmNics.l3Network.l2Network.zoneUuid = '${zone.uuid}'" +
                     " restrict by (zone.name = 'zone')" +
