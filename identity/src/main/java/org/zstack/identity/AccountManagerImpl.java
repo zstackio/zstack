@@ -86,7 +86,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     @Autowired
     private GlobalConfigFacade gcf;
 
-    private List<String> resourceTypeForAccountRef;
+    private List<String> resourceTypeForAccountRef = new ArrayList<>();
     private Map<String, Class> resourceTypeClassMap = new HashMap<>();
     private Map<String, Class> childrenResourceTypeClassMap = new HashMap<>();
     private List<Class> resourceTypes;
@@ -681,8 +681,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             }
         }
 
-        Platform.getReflections().getTypesAnnotatedWith(HasAccountResourceRef.class)
-                .stream().filter(clz -> clz.isAnnotationPresent(HasAccountResourceRef.class))
+        Platform.getReflections().getSubTypesOf(OwnedByAccount.class)
                 .forEach(clz -> resourceTypeForAccountRef.add(clz.getName()));
     }
 

@@ -1,6 +1,5 @@
 package org.zstack.header.identity.role;
 
-import org.zstack.header.identity.HasAccountResourceRef;
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.vo.ResourceVO;
 
@@ -12,7 +11,6 @@ import java.util.UUID;
 
 @Entity
 @Table
-@HasAccountResourceRef
 public class RoleVO extends ResourceVO implements OwnedByAccount {
     @Column
     private String name;

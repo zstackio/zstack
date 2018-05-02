@@ -1,8 +1,10 @@
 package org.zstack.test
 
 import org.zstack.header.network.service.NetworkServiceType
+import org.zstack.header.zone.ZoneVO
 import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
+import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.ZoneInventory
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
@@ -145,6 +147,7 @@ test a VM's start/stop/reboot/destroy/recover operations
         env.create {
             ZQL.fromString("count vip where useFor is null and l3Network.zoneUuid = '0f0ff43535164fe4bf1a09b245389c91' limit 1000")
                     .execute()
+
             ZoneInventory zone = env.inventoryByName("zone")
             def ret = ZQL.fromString("query vminstance where vmNics.l3Network.l2Network.zoneUuid = '${zone.uuid}'" +
                     " restrict by (zone.name = 'zone')" +
@@ -154,6 +157,24 @@ test a VM's start/stop/reboot/destroy/recover operations
             logger.debug("xxxxxxxxxxxxxxxx ${JSONObjectUtil.toJsonString(ret)}")
             ret = ZQL.fromString("count instanceoffering where memorySize > 1").execute()
             logger.debug("yyyyyyyyyyyy ${JSONObjectUtil.toJsonString(ret)}")
+
+            createUserTag {
+                resourceUuid = zone.uuid
+                resourceType = ZoneVO.class.simpleName
+                tag = "abc"
+            }
+
+            ZoneInventory zone1 = queryZone { conditions = ["__userTag__=abc"] }[0]
+            assert zone.uuid == zone1.uuid
+
+            VmInstanceInventory vm = env.inventoryByName("vm")
+            setVmHostname {
+                uuid = vm.uuid
+                hostname = "localhost"
+            }
+
+            VmInstanceInventory vm1 = queryVmInstance { conditions=["__systemTag__~=%localhost%"] }[0]
+            assert vm.uuid == vm1.uuid
         }
     }
 
