@@ -288,6 +288,11 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
                 values.add(String.format("'%s'", v));
             }
 
+            if (values.isEmpty()) {
+                // use '' to represent an empty collection
+                values.add("''");
+            }
+
             return String.format("%s %s (%s)", c.getName(), c.getOp(), StringUtils.join(values, ","));
         } else {
             return String.format("%s %s '%s'", c.getName(), c.getOp(), c.getValue());
