@@ -302,8 +302,6 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
         List<QueryCondition> tagConditions = new ArrayList<>();
 
         if (msg.getConditions() != null && !msg.getConditions().isEmpty()) {
-            sb.add("where");
-
             List<String> conds = new ArrayList<>();
             msg.getConditions().forEach(c -> {
                 if (c.getName().equals(SYSTEM_TAG) || c.getName().equals(USER_TAG)) {
@@ -314,7 +312,10 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
                 conds.add(toZQLConditionString(c));
             });
 
-            sb.add(StringUtils.join(conds, " and "));
+            if (!conds.isEmpty()) {
+                sb.add("where");
+                sb.add(StringUtils.join(conds, " and "));
+            }
         }
 
         if (!tagConditions.isEmpty()) {

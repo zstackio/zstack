@@ -8,7 +8,7 @@ class RestrictExprVisitor extends ZQLBaseVisitor<ASTNode.RestrictExpr> {
     @Override
     ASTNode.RestrictExpr visitRestrictByExpr(ZQLParser.RestrictByExprContext ctx) {
         return new ASTNode.RestrictExpr(
-                entity: ctx.entity().getText(),
+                entity: ctx.entity()?.getText(),
                 field: ctx.ID().getText(),
                 operator: ctx.operator().getText(),
                 value: ctx.value() == null ? null : ctx.value().accept(new ValueVisitor())

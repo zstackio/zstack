@@ -79,6 +79,7 @@ offset
 
 restrictByExpr
     : entity '.' ID operator value?
+    | ID operator value?
     ;
 
 restrictBy

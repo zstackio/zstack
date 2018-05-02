@@ -33,6 +33,10 @@ class RestrictExprVisitor implements ASTVisitor<String, ASTNode.RestrictExpr> {
             return null
         }
 
+        if (node.entity == null) {
+            throw new ZQLError("the restrict by clause[${node.field} ${node.operator} ${node.value}] without entity name is not handled by any extension")
+        }
+
         String srcTargetName = ZQLContext.peekQueryTargetInventoryName()
         ZQLMetadata.InventoryMetadata src = ZQLMetadata.getInventoryMetadataByName(srcTargetName)
         ZQLMetadata.InventoryMetadata dst = ZQLMetadata.findInventoryMetadata(node.entity)
