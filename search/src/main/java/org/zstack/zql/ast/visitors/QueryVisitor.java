@@ -3,6 +3,8 @@ package org.zstack.zql.ast.visitors;
 import org.apache.commons.lang.StringUtils;
 import org.zstack.header.zql.ASTNode;
 import org.zstack.header.zql.ASTVisitor;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 import org.zstack.zql.ZQLContext;
 import org.zstack.zql.ast.ZQLMetadata;
 import org.zstack.zql.ast.visitors.result.QueryResult;
@@ -15,6 +17,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
+    private static final CLogger logger = Utils.getLogger(QueryVisitor.class);
+
     QueryResult ret = new QueryResult();
 
     private boolean countQuery;
@@ -115,6 +119,8 @@ public class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
     public QueryResult visit(ASTNode.Query node) {
         SQLText st = makeSQL(node, false);
         ret.sql = st.sql;
+        logger.debug(String.format("sssssssssssssssssssssssssql %s", ret.sql));
+        logger.debug(String.format("jjjjjjjjjjjjjjjjjjjjjjjjpql %s", st.jpql));
         ret.createJPAQuery = (EntityManager emgr) -> {
             Query q = emgr.createQuery(st.jpql);
             if (st.limit != null) {

@@ -24,7 +24,7 @@ import org.zstack.header.query.QueryOp
 import org.zstack.utils.Utils
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.logging.CLogger
-import org.zstack.zql1.ZQLQueryResult
+import org.zstack.zql.ZQLQueryResult
 
 import java.lang.reflect.Modifier
 import java.util.regex.Pattern

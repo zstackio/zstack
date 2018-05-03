@@ -3,7 +3,7 @@ import org.zstack.core.Platform
 import org.zstack.core.db.DBGraph
 import org.zstack.header.cluster.ClusterVO
 import org.zstack.header.vm.VmInstanceVO
-import org.zstack.zql1.ZQL
+import org.zstack.zql.ZQL
 
 class TestZQL {
     String text = "query vm.vmNics.id where ((uuid = 23 and name = \"hello\") or " +

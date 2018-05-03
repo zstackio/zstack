@@ -1,9 +1,9 @@
-package org.zstack.zql1
+package org.zstack.zql
 
 import org.zstack.header.configuration.PythonApiBindingWriter
 import org.zstack.header.query.AutoQuery
 import org.zstack.utils.BeanUtils
-import org.zstack.zql1.ast.ZQLMetadata
+import org.zstack.zql.ast.ZQLMetadata
 
 class ZQLPythonWriter implements PythonApiBindingWriter {
 

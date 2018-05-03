@@ -4,7 +4,6 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.zql.ASTNode;
 import org.zstack.header.zql.ASTVisitor;
 import org.zstack.utils.DebugUtils;
-import org.zstack.zql1.ast.visitors.LogicalOperatorVisitor;
 
 public class ConditionVisitor implements ASTVisitor<String, ASTNode> {
     @Override

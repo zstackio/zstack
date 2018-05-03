@@ -24,9 +24,9 @@ import org.zstack.utils.TypeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.zql1.ZQL;
-import org.zstack.zql1.ZQLContext;
-import org.zstack.zql1.ZQLQueryResult;
+import org.zstack.zql.ZQL;
+import org.zstack.zql.ZQLContext;
+import org.zstack.zql.ZQLQueryResult;
 
 import static org.zstack.core.Platform.argerr;
 
@@ -60,14 +60,14 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
     public <T> List<T> query(APIQueryMessage msg, Class<T> inventoryClass) {
         validateConditions(msg.getConditions());
         ZQLQueryResult result = queryUseZQL(msg, inventoryClass);
-        return result.getInventories();
+        return result.inventories;
     }
 
     @Override
     public long count(APIQueryMessage msg, Class inventoryClass) {
         validateConditions(msg.getConditions());
         ZQLQueryResult result = queryUseZQL(msg, inventoryClass);
-        return result.getTotal();
+        return result.total;
     }
 
     private void populateExtensions() {
@@ -224,11 +224,11 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             APIQueryReply reply = (APIQueryReply) replyClass.getConstructor().newInstance();
             Method replySetter = getReplySetter(at);
             ZQLQueryResult result = queryUseZQL(msg, inventoryClass);
-            if (result.getTotal() != null) {
-                reply.setTotal(result.getTotal());
+            if (result.total != null) {
+                reply.setTotal(result.total);
             }
-            if (result.getInventories() != null) {
-                replySetter.invoke(reply, result.getInventories());
+            if (result.inventories != null) {
+                replySetter.invoke(reply, result.inventories);
             }
             bus.reply(msg, reply);
         } catch (OperationFailureException of) {

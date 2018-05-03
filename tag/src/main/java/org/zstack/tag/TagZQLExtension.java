@@ -8,7 +8,7 @@ import org.zstack.header.zql.ASTNode;
 import org.zstack.header.zql.RestrictByExprExtensionPoint;
 import org.zstack.header.zql.ZQLExtensionContext;
 import org.zstack.identity.AccountManager;
-import org.zstack.zql1.ast.ZQLMetadata;
+import org.zstack.zql.ast.ZQLMetadata;
 
 public class TagZQLExtension implements RestrictByExprExtensionPoint {
     public static final String USER_TAG_NAME = "__userTag__";
@@ -28,12 +28,12 @@ public class TagZQLExtension implements RestrictByExprExtensionPoint {
         }
 
         ZQLMetadata.InventoryMetadata src = ZQLMetadata.getInventoryMetadataByName(context.getQueryTargetInventoryName());
-        Class resourceType = acntMgr.getBaseResourceType(src.getInventoryAnnotation().mappingVOClass());
+        Class resourceType = acntMgr.getBaseResourceType(src.inventoryAnnotation.mappingVOClass());
         if (resourceType == null) {
-            resourceType = src.getInventoryAnnotation().mappingVOClass();
+            resourceType = src.inventoryAnnotation.mappingVOClass();
         }
 
-        String primaryKey = EntityMetadata.getPrimaryKeyField(src.getInventoryAnnotation().mappingVOClass()).getName();
+        String primaryKey = EntityMetadata.getPrimaryKeyField(src.inventoryAnnotation.mappingVOClass()).getName();
         String tableName = expr.getField().equals(USER_TAG_NAME) ? UserTagVO.class.getSimpleName() : SystemTagVO.class.getSimpleName();
 
         if (expr.getValue() == null) {

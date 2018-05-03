@@ -12,7 +12,10 @@ public class RestrictByVisitor implements ASTVisitor<String, ASTNode.RestrictBy>
     public String visit(ASTNode.RestrictBy node) {
         List<String> conds = new ArrayList<>();
         node.getExprs().forEach(it -> {
-            conds.add((String) it.accept(new RestrictByVisitor()));
+            String cond = (String) it.accept(new RestrictExprVisitor());
+            if (cond != null) {
+                conds.add(cond);
+            }
         });
 
         return conds.isEmpty() ? null : String.format("(%s)", StringUtils.join(conds, " AND "));

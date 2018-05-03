@@ -8,8 +8,8 @@ import org.zstack.header.zql.ASTNode;
 import org.zstack.header.zql.MarshalZQLASTTreeExtensionPoint;
 import org.zstack.header.zql.RestrictByExprExtensionPoint;
 import org.zstack.header.zql.ZQLExtensionContext;
-import org.zstack.zql1.ZQLContext;
-import org.zstack.zql1.ast.ZQLMetadata;
+import org.zstack.zql.ZQLContext;
+import org.zstack.zql.ast.ZQLMetadata;
 
 public class IdentityZQLExtension implements MarshalZQLASTTreeExtensionPoint, RestrictByExprExtensionPoint {
     private static final String ENTITY_NAME = "__ACCOUNT_FILTER__";
@@ -45,12 +45,12 @@ public class IdentityZQLExtension implements MarshalZQLASTTreeExtensionPoint, Re
             throw new SkipThisRestrictExprException();
         }
 
-        if (!acntMgr.isResourceHavingAccountReference(src.getInventoryAnnotation().mappingVOClass())) {
+        if (!acntMgr.isResourceHavingAccountReference(src.inventoryAnnotation.mappingVOClass())) {
             throw new SkipThisRestrictExprException();
         }
 
-        String resourceType = acntMgr.getBaseResourceType(src.getInventoryAnnotation().mappingVOClass()).getSimpleName();
-        String primaryKey = EntityMetadata.getPrimaryKeyField(src.getInventoryAnnotation().mappingVOClass()).getName();
+        String resourceType = acntMgr.getBaseResourceType(src.inventoryAnnotation.mappingVOClass()).getSimpleName();
+        String primaryKey = EntityMetadata.getPrimaryKeyField(src.inventoryAnnotation.mappingVOClass()).getName();
 
         return String.format("(%s.%s IN (SELECT accountresourcerefvo.resourceUuid FROM AccountResourceRefVO accountresourcerefvo WHERE" +
                         "  (accountresourcerefvo.ownerAccountUuid = '%s' AND accountresourcerefvo.resourceType = '%s') OR (accountresourcerefvo.resourceUuid" +

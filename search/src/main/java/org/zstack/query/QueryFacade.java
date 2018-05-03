@@ -1,7 +1,7 @@
 package org.zstack.query;
 
 import org.zstack.header.query.APIQueryMessage;
-import org.zstack.zql1.ZQLQueryResult;
+import org.zstack.zql.ZQLQueryResult;
 
 import java.util.List;
 

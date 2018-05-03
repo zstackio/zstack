@@ -2,7 +2,6 @@ package org.zstack.zql.ast;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
-import org.apache.logging.log4j.message.StringFormattedMessage;
 import org.zstack.header.core.StaticInit;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.query.ExpandedQueries;
@@ -77,7 +76,7 @@ public class ZQLMetadata {
      */
     public static Map<String, InventoryMetadata> inventoryMetadata = new HashMap<>();
 
-    interface ChainQueryStruct {
+    public interface ChainQueryStruct {
         default void verify() {
         }
     }
@@ -96,9 +95,9 @@ public class ZQLMetadata {
     }
 
     public static class FieldChainQuery implements ChainQueryStruct {
-        InventoryMetadata self;
-        ExpandQueryMetadata right;
-        String fieldName;
+        public InventoryMetadata self;
+        public ExpandQueryMetadata right;
+        public String fieldName;
 
         @Override
         public void verify() {
@@ -126,9 +125,9 @@ public class ZQLMetadata {
     }
 
     public static class ExpandChainQuery implements ChainQueryStruct {
-        String selfKey;
-        InventoryMetadata self;
-        ExpandQueryMetadata right;
+        public String selfKey;
+        public InventoryMetadata self;
+        public ExpandQueryMetadata right;
 
 
         @Override
