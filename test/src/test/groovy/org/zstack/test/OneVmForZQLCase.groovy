@@ -145,17 +145,26 @@ test a VM's start/stop/reboot/destroy/recover operations
     @Override
     void test() {
         env.create {
+            long start = 0
+            start = System.currentTimeMillis()
             ZQL.fromString("count vip where useFor is null and l3Network.zoneUuid = '0f0ff43535164fe4bf1a09b245389c91' limit 1000")
                     .execute()
+            logger.debug("1111111111111111111111111111111111111 ${System.currentTimeMillis()-start}ms")
 
             ZoneInventory zone = env.inventoryByName("zone")
+            start = System.currentTimeMillis()
             def ret = ZQL.fromString("query vminstance where vmNics.l3Network.l2Network.zoneUuid = '${zone.uuid}'" +
                     " restrict by (zone.name = 'zone')" +
                     " return with (total)").execute()
+            logger.debug("22222222222222222222222222222222 ${System.currentTimeMillis()-start}ms")
             logger.debug("xxxxxxxxxxxxxxxx ${JSONObjectUtil.toJsonString(ret)}")
+            start = System.currentTimeMillis()
             ret = ZQL.fromString("query instanceoffering where memorySize > 1 return with (total)").execute()
+            logger.debug("33333333333333333333333333333 ${System.currentTimeMillis()-start}ms")
             logger.debug("xxxxxxxxxxxxxxxx ${JSONObjectUtil.toJsonString(ret)}")
+            start = System.currentTimeMillis()
             ret = ZQL.fromString("count instanceoffering where memorySize > 1").execute()
+            logger.debug("4444444444444444444444444444 ${System.currentTimeMillis()-start}ms")
             logger.debug("yyyyyyyyyyyy ${JSONObjectUtil.toJsonString(ret)}")
 
             createUserTag {

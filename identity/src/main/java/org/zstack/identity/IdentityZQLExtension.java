@@ -45,12 +45,12 @@ public class IdentityZQLExtension implements MarshalZQLASTTreeExtensionPoint, Re
             throw new SkipThisRestrictExprException();
         }
 
-        if (!acntMgr.isResourceHavingAccountReference(src.getInventoryAnnotation().mappingVOClass())) {
+        if (!acntMgr.isResourceHavingAccountReference(src.inventoryAnnotation.mappingVOClass())) {
             throw new SkipThisRestrictExprException();
         }
 
-        String resourceType = acntMgr.getBaseResourceType(src.getInventoryAnnotation().mappingVOClass()).getSimpleName();
-        String primaryKey = EntityMetadata.getPrimaryKeyField(src.getInventoryAnnotation().mappingVOClass()).getName();
+        String resourceType = acntMgr.getBaseResourceType(src.inventoryAnnotation.mappingVOClass()).getSimpleName();
+        String primaryKey = EntityMetadata.getPrimaryKeyField(src.inventoryAnnotation.mappingVOClass()).getName();
 
         return String.format("(%s.%s IN (SELECT accountresourcerefvo.resourceUuid FROM AccountResourceRefVO accountresourcerefvo WHERE" +
                         "  (accountresourcerefvo.ownerAccountUuid = '%s' AND accountresourcerefvo.resourceType = '%s') OR (accountresourcerefvo.resourceUuid" +
