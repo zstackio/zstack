@@ -2080,6 +2080,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
             public void inactive() {
                 try {
                     echan.queueUnbind(baseName, BusExchange.P2P.toString(), baseName);
+                    // consumer will not be removed
                     for (String aliasName: aliasNames) {
                         echan.queueUnbind(aliasName, BusExchange.P2P.toString(), aliasName);
                     }

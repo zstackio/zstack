@@ -14,7 +14,6 @@ public class MessageReply extends Message {
      * @desc indicate the reason of api failure. It presents only if success = false
      * @nullable
      */
-    @NoJsonSchema
     private ErrorCode error;
 
     public boolean isSuccess() {
