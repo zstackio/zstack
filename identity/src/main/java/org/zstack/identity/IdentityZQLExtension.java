@@ -8,8 +8,8 @@ import org.zstack.header.zql.ASTNode;
 import org.zstack.header.zql.MarshalZQLASTTreeExtensionPoint;
 import org.zstack.header.zql.RestrictByExprExtensionPoint;
 import org.zstack.header.zql.ZQLExtensionContext;
-import org.zstack.zql.ZQLContext;
-import org.zstack.zql.ast.ZQLMetadata;
+import org.zstack.zql1.ZQLContext;
+import org.zstack.zql1.ast.ZQLMetadata;
 
 public class IdentityZQLExtension implements MarshalZQLASTTreeExtensionPoint, RestrictByExprExtensionPoint {
     private static final String ENTITY_NAME = "__ACCOUNT_FILTER__";

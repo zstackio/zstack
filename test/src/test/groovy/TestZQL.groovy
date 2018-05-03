@@ -2,14 +2,8 @@ import org.junit.Test
 import org.zstack.core.Platform
 import org.zstack.core.db.DBGraph
 import org.zstack.header.cluster.ClusterVO
-import org.zstack.header.vm.VmInstanceInventory
 import org.zstack.header.vm.VmInstanceVO
-import org.zstack.header.vm.VmNicVO
-import org.zstack.header.zone.ZoneVO
-import org.zstack.testlib.SubCase
-import org.zstack.zql.ZQL
-import org.zstack.zql.ast.ZQLMetadata
-import org.zstack.zql.ast.sql.SQLConditionBuilder
+import org.zstack.zql1.ZQL
 
 class TestZQL {
     String text = "query vm.vmNics.id where ((uuid = 23 and name = \"hello\") or " +

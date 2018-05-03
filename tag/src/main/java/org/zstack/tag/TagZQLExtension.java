@@ -8,7 +8,7 @@ import org.zstack.header.zql.ASTNode;
 import org.zstack.header.zql.RestrictByExprExtensionPoint;
 import org.zstack.header.zql.ZQLExtensionContext;
 import org.zstack.identity.AccountManager;
-import org.zstack.zql.ast.ZQLMetadata;
+import org.zstack.zql1.ast.ZQLMetadata;
 
 public class TagZQLExtension implements RestrictByExprExtensionPoint {
     public static final String USER_TAG_NAME = "__userTag__";

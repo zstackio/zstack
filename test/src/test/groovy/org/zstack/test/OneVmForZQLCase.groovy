@@ -11,7 +11,7 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
-import org.zstack.zql.ZQL
+import org.zstack.zql1.ZQL
 
 /**
  * Created by xing5 on 2017/2/22.

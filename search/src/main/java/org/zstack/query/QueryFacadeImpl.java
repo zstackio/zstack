@@ -24,14 +24,13 @@ import org.zstack.utils.TypeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.zql.ZQL;
-import org.zstack.zql.ZQLContext;
-import org.zstack.zql.ZQLQueryResult;
+import org.zstack.zql1.ZQL;
+import org.zstack.zql1.ZQLContext;
+import org.zstack.zql1.ZQLQueryResult;
 
 import static org.zstack.core.Platform.argerr;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
