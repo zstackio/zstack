@@ -218,8 +218,9 @@ public class ZQLMetadata {
             String name = names.next();
             ExpandQueryAliasMetadata alias = current.expandQueryAliases.get(name);
             if (alias != null) {
-                List<String> newNames = asList(alias.expandQueryText.split("\\."));
-                newNames.addAll(Lists.newArrayList(names));
+                List<String> newNames = new ArrayList<>();
+                Collections.addAll(newNames, alias.expandQueryText.split("\\."));
+                names.forEachRemaining(newNames::add);
                 preProcessingNestConditionNames(current, newNames.iterator(), result);
             } else {
                 ExpandQueryMetadata expand = current.expandQueries.get(name);

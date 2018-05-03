@@ -146,10 +146,12 @@ test a VM's start/stop/reboot/destroy/recover operations
     void test() {
         env.create {
             long start = 0
-            start = System.currentTimeMillis()
-            ZQL.fromString("count vip where useFor is null and l3Network.zoneUuid = '0f0ff43535164fe4bf1a09b245389c91' limit 1000")
-                    .execute()
-            logger.debug("1111111111111111111111111111111111111 ${System.currentTimeMillis()-start}ms")
+            for (int i=0; i<100; i++) {
+                start = System.currentTimeMillis()
+                ZQL.fromString("count vip where useFor is null and l3Network.zoneUuid = '0f0ff43535164fe4bf1a09b245389c91' limit 1000")
+                        .execute()
+                logger.debug("1111111111111111111111111111111111111 ${System.currentTimeMillis() - start}ms")
+            }
 
             ZoneInventory zone = env.inventoryByName("zone")
             start = System.currentTimeMillis()

@@ -119,8 +119,6 @@ public class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
     public QueryResult visit(ASTNode.Query node) {
         SQLText st = makeSQL(node, false);
         ret.sql = st.sql;
-        logger.debug(String.format("sssssssssssssssssssssssssql %s", ret.sql));
-        logger.debug(String.format("jjjjjjjjjjjjjjjjjjjjjjjjpql %s", st.jpql));
         ret.createJPAQuery = (EntityManager emgr) -> {
             Query q = emgr.createQuery(st.jpql);
             if (st.limit != null) {
