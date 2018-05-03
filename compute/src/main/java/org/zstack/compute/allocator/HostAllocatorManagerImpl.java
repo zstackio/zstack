@@ -406,7 +406,6 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                     sortors.sort(spec, hosts, new ReturnValueCompletion<HostInventory>(msg) {
                         @Override
                         public void success(HostInventory returnValue) {
-
                             for (HostAllocateExtensionPoint exp: pluginRgty.getExtensionList(HostAllocateExtensionPoint.class)) {
                                 exp.beforeAllocateHostSuccessReply(spec, returnValue.getUuid());
                             }
