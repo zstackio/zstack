@@ -2,10 +2,12 @@ package org.zstack.header.rest;
 
 import org.springframework.http.HttpEntity;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 import org.zstack.header.core.Completion;
 
 import javax.servlet.http.HttpServletRequest;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -75,6 +77,18 @@ public interface RESTFacade {
         HttpComponentsClientHttpRequestFactory factory = new TimeoutHttpComponentsClientHttpRequestFactory();
         factory.setReadTimeout(readTimeout);
         factory.setConnectTimeout(connectTimeout);
-        return new TimeoutRestTemplate(factory);
+        TimeoutRestTemplate template = new TimeoutRestTemplate(factory);
+
+        StringHttpMessageConverter stringHttpMessageConverter = new StringHttpMessageConverter(StandardCharsets.UTF_8);
+        stringHttpMessageConverter.setWriteAcceptCharset(true);
+        for (int i = 0; i < template.getMessageConverters().size(); i++) {
+            if (template.getMessageConverters().get(i) instanceof StringHttpMessageConverter) {
+                template.getMessageConverters().remove(i);
+                template.getMessageConverters().add(i, stringHttpMessageConverter);
+                break;
+            }
+        }
+
+        return template;
     }
 }
