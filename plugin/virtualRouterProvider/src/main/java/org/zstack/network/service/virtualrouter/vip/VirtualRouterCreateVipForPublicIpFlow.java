@@ -76,7 +76,7 @@ public class VirtualRouterCreateVipForPublicIpFlow implements Flow {
         vipvo.setIpRangeUuid(ips.getUuid());
         vipvo.setL3NetworkUuid(nic.getL3NetworkUuid());
         vipvo.setNetmask(nic.getNetmask());
-        vipvo.setUsedIpUuid(nic.getUuid());
+        vipvo.setUsedIpUuid(nic.getUsedIpUuid());
         vipvo.setUseFor(VirtualRouterConstant.SNAT_NETWORK_SERVICE_TYPE);
         if(!vr.getGuestL3Networks().isEmpty()){
             String peerL3network = vr.getGuestL3Networks().get(0);
