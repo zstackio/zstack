@@ -8,6 +8,7 @@ import org.springframework.web.client.RestTemplate;
 import org.zstack.core.retry.Retry;
 import org.zstack.core.retry.RetryCondition;
 import org.zstack.header.core.webhooks.WebhookInventory;
+import org.zstack.header.rest.RESTConstant;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -28,11 +29,10 @@ public abstract class WebhookCaller {
             (int)TimeUnit.SECONDS.toMillis(30)
     );
 
-
     protected void postToWebhooks(List<WebhookInventory> hooks, String body) {
         for (WebhookInventory hook : hooks) {
             HttpHeaders requestHeaders = new HttpHeaders();
-            requestHeaders.setContentType(MediaType.APPLICATION_JSON);
+            requestHeaders.setContentType(MediaType.valueOf(RESTConstant.APP_JSON_UTF8));
             requestHeaders.setContentLength(body.length());
             HttpEntity<String> req = new HttpEntity<String>(body, requestHeaders);
 
