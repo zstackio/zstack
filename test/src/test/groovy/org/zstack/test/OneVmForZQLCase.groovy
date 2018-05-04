@@ -145,9 +145,7 @@ test a VM's start/stop/reboot/destroy/recover operations
     @Override
     void test() {
         env.create {
-            ZQL.fromString("count l2network where zone.uuid = '13eb449d4f144ab7a613321cfee9da6a' and uuid not in (\"\") and type != 'VxlanNetworkPool' limit 1000")
             ZQL.fromString("count l2network where zone.uuid = '13eb449d4f144ab7a613321cfee9da6a' and uuid not in ('') and type != 'VxlanNetworkPool' limit 1000")
-            logger.debug(String.format("jjjjjjjjjjjjjjjjjjjjjjjjpql %s", st.jpql));
                     .execute()
 
             long start = 0
