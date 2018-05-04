@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddAttributesToOrganizationAction extends AbstractAction {
+public class QueryIAM2OrganizationAttributeAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddAttributesToOrganizationAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.iam2.api.AddAttributesToOrganizationResult value;
+        public org.zstack.sdk.iam2.api.QueryIAM2OrganizationAttributeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,26 +25,6 @@ public class AddAttributesToOrganizationAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List attributes;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = true)
-    public String sessionId;
-
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -54,8 +34,8 @@ public class AddAttributesToOrganizationAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.iam2.api.AddAttributesToOrganizationResult value = res.getResult(org.zstack.sdk.iam2.api.AddAttributesToOrganizationResult.class);
-        ret.value = value == null ? new org.zstack.sdk.iam2.api.AddAttributesToOrganizationResult() : value; 
+        org.zstack.sdk.iam2.api.QueryIAM2OrganizationAttributeResult value = res.getResult(org.zstack.sdk.iam2.api.QueryIAM2OrganizationAttributeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.iam2.api.QueryIAM2OrganizationAttributeResult() : value; 
 
         return ret;
     }
@@ -84,11 +64,11 @@ public class AddAttributesToOrganizationAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/iam2/organizations/{uuid}/attributes";
+        info.httpMethod = "GET";
+        info.path = "/iam2/organizations/attributes";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "params";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 
