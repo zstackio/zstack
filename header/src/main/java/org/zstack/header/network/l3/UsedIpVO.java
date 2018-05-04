@@ -1,5 +1,6 @@
 package org.zstack.header.network.l3;
 
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.Index;
@@ -12,6 +13,12 @@ import java.sql.Timestamp;
 
 @Entity
 @Table
+@EntityGraph(
+        parents = {
+                @EntityGraph.Neighbour(type = IpRangeVO.class, myField = "ipRangeUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = L3NetworkVO.class, myField = "l3NetworkUuid", targetField = "uuid"),
+        }
+)
 public class UsedIpVO {
     @Id
     @Column

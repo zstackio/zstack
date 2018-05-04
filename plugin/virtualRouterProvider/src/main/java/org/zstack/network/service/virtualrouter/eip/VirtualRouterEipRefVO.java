@@ -1,6 +1,8 @@
 package org.zstack.network.service.virtualrouter.eip;
 
 import org.zstack.header.vm.VmInstanceEO;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.SoftDeletionCascade;
@@ -22,6 +24,12 @@ import javax.persistence.Table;
         @SoftDeletionCascade(parent = VirtualRouterVmVO.class, joinColumn = "virtualRouterVmUuid"),
         @SoftDeletionCascade(parent = EipVO.class, joinColumn = "eipUuid")
 })
+@EntityGraph(
+        friends = {
+                @EntityGraph.Neighbour(type = EipVO.class, myField = "eipUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = VmInstanceVO.class, myField = "virtualRouterVmUuid", targetField = "uuid"),
+        }
+)
 public class VirtualRouterEipRefVO {
     @Id
     @Column

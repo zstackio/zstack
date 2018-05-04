@@ -1,5 +1,6 @@
 package org.zstack.header.storage.primary;
 
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.Index;
@@ -12,6 +13,11 @@ import java.sql.Timestamp;
  */
 @Entity
 @Table
+@EntityGraph(
+        parents = {
+                @EntityGraph.Neighbour(type = PrimaryStorageVO.class, myField = "uuid", targetField = "uuid")
+        }
+)
 public class PrimaryStorageCapacityVO implements ShadowEntity {
     @Column
     @Id

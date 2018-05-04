@@ -2,6 +2,8 @@ package org.zstack.network.service.virtualrouter.vip;
 
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.vm.VmInstanceEO;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.SoftDeletionCascade;
@@ -17,6 +19,12 @@ import javax.persistence.*;
         @SoftDeletionCascade(parent = VirtualRouterVmVO.class, joinColumn = "virtualRouterVmUuid"),
         @SoftDeletionCascade(parent = VipVO.class, joinColumn = "uuid")
 })
+@EntityGraph(
+        friends = {
+                @EntityGraph.Neighbour(type = VmInstanceVO.class, myField = "virtualRouterVmUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = VipVO.class, myField = "uuid", targetField = "uuid"),
+        }
+)
 public class VirtualRouterVipVO implements OwnedByAccount {
     @Id
     @Column

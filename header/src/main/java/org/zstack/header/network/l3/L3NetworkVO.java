@@ -7,6 +7,7 @@ import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EO;
 import org.zstack.header.vo.NoView;
+import org.zstack.header.zone.ZoneVO;
 
 import javax.persistence.*;
 import java.util.HashSet;
@@ -18,7 +19,8 @@ import java.util.Set;
 @BaseResource
 @EntityGraph(
         parents = {
-                @EntityGraph.Neighbour(type = L2NetworkVO.class, myField = "l2NetworkUuid", targetField = "uuid")
+                @EntityGraph.Neighbour(type = L2NetworkVO.class, myField = "l2NetworkUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = ZoneVO.class, myField = "zoneUuid", targetField = "uuid"),
         }
 )
 public class L3NetworkVO extends L3NetworkAO implements OwnedByAccount {
