@@ -20,7 +20,7 @@ import java.sql.Timestamp;
         @SoftDeletionCascade(parent = ImageVO.class, joinColumn = "imageUuid"),
         @SoftDeletionCascade(parent = BackupStorageVO.class, joinColumn = "backupStorageUuid")
 })
-@org.zstack.header.vo.EntityGraph(
+@EntityGraph(
         parents = {
                 @EntityGraph.Neighbour(type = ImageVO.class, myField = "imageUuid", targetField = "uuid")
         },

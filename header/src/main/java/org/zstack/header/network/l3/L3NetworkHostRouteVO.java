@@ -1,5 +1,6 @@
 package org.zstack.header.network.l3;
 
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 
@@ -8,6 +9,11 @@ import java.sql.Timestamp;
 
 @Entity
 @Table
+@EntityGraph(
+        parents = {
+                @EntityGraph.Neighbour(type = L3NetworkVO.class, myField = "l3NetworkUuid", targetField = "uuid")
+        }
+)
 public class L3NetworkHostRouteVO {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

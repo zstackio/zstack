@@ -190,8 +190,11 @@ public class DBGraph {
                     entityGraph = (EntityGraph) clz.getAnnotation(EntityGraph.class);
 
                     if (entityGraph == null) {
+                        return;
+                        /*
                         throw new CloudRuntimeException(String.format("missing @EntityGraph for class[%s] referred by other" +
                                 " entities having @EntityGraph", clz));
+                                */
                     }
 
                     resolveNeighbours();
