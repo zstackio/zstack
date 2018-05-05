@@ -2,6 +2,7 @@ package org.zstack.network.service.lb;
 
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.vo.BaseResource;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.NoView;
 import org.zstack.header.vo.ResourceVO;
@@ -18,6 +19,12 @@ import java.util.Set;
 @Entity
 @Table
 @BaseResource
+@EntityGraph(
+        friends = {
+                @EntityGraph.Neighbour(type = VipVO.class, myField = "vipUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = LoadBalancerListenerVO.class, myField = "loadBalancerUuid", targetField = "uuid"),
+        }
+)
 public class LoadBalancerVO extends ResourceVO implements OwnedByAccount {
     @Column
     private String name;

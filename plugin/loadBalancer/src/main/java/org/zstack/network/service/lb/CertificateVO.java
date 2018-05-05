@@ -2,6 +2,7 @@ package org.zstack.network.service.lb;
 
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.vo.BaseResource;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.NoView;
 import org.zstack.header.vo.ResourceVO;
 
@@ -16,6 +17,11 @@ import java.util.Set;
 @Entity
 @Table
 @BaseResource
+@EntityGraph(
+        friends = {
+                @EntityGraph.Neighbour(type = LoadBalancerListenerCertificateRefVO.class, myField = "certificateUuid", targetField = "uuid")
+        }
+)
 public class CertificateVO extends ResourceVO implements OwnedByAccount {
     @Column
     private String name;
