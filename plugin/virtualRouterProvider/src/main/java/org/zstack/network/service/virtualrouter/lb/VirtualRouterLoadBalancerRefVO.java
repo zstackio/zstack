@@ -1,5 +1,7 @@
 package org.zstack.network.service.virtualrouter.lb;
 
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.network.service.lb.LoadBalancerVO;
@@ -14,6 +16,12 @@ import java.sql.Timestamp;
  */
 @Entity
 @Table
+@EntityGraph(
+        friends = {
+                @EntityGraph.Neighbour(type = VmInstanceVO.class, myField = "virtualRouterVmUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = LoadBalancerVO.class, myField = "loadBalancerUuid", targetField = "uuid"),
+        }
+)
 public class VirtualRouterLoadBalancerRefVO {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)

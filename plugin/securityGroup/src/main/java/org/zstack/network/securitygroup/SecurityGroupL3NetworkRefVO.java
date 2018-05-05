@@ -2,6 +2,7 @@ package org.zstack.network.securitygroup;
 
 import org.zstack.header.network.l3.L3NetworkEO;
 import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.SoftDeletionCascade;
@@ -16,6 +17,15 @@ import java.sql.Timestamp;
         @SoftDeletionCascade(parent = L3NetworkVO.class, joinColumn = "l3NetworkUuid"),
         @SoftDeletionCascade(parent = SecurityGroupVO.class, joinColumn = "securityGroupUuid")
 })
+@EntityGraph(
+        friends = {
+                @EntityGraph.Neighbour(type = L3NetworkVO.class, myField = "l3NetworkUuid", targetField = "uuid")
+        },
+
+        parents = {
+                @EntityGraph.Neighbour(type = SecurityGroupVO.class, myField = "securityGroupUuid", targetField = "uuid")
+        }
+)
 public class SecurityGroupL3NetworkRefVO {
     @Id
     @Column

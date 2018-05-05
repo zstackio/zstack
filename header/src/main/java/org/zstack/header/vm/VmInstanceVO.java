@@ -1,8 +1,10 @@
 package org.zstack.header.vm;
 
 import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.OwnedByAccount;
+import org.zstack.header.image.ImageVO;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EO;
@@ -24,6 +26,13 @@ import java.util.Set;
                 @EntityGraph.Neighbour(type = ZoneVO.class, myField = "zoneUuid", targetField = "uuid"),
                 @EntityGraph.Neighbour(type = ClusterVO.class, myField = "clusterUuid", targetField = "uuid"),
                 @EntityGraph.Neighbour(type = HostVO.class, myField = "hostUuid", targetField = "uuid"),
+        },
+
+        friends = {
+                @EntityGraph.Neighbour(type = ImageVO.class, myField = "imageUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = InstanceOfferingVO.class, myField = "instanceOfferingUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = VolumeVO.class, myField = "rootVolumeUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = VmNicVO.class, myField = "uuid", targetField = "vmInstanceUuid"),
         }
 )
 public class VmInstanceVO extends VmInstanceAO implements OwnedByAccount {
