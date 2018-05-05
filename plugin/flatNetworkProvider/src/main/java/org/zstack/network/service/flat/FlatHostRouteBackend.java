@@ -76,6 +76,14 @@ public class FlatHostRouteBackend implements NetworkServiceHostRouteBackend, Dhc
 
     @Override
     public void afterAllocateDhcpServerIP(String L3NetworkUuid, UsedIpInventory dhcpSererIp) {
+        /* skip adding host route for network without host route service */
+        NetworkServiceL3NetworkRefVO ref = Q.New(NetworkServiceL3NetworkRefVO.class).eq(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, L3NetworkUuid)
+                .eq(NetworkServiceL3NetworkRefVO_.networkServiceType, NetworkServiceType.HostRoute.toString()).find();
+        if (ref == null) {
+            logger.debug(String.format("L3 Network doesn't has %s service", NetworkServiceType.HostRoute.toString()));
+            return;
+        }
+
         L3NetworkHostRouteVO vo = Q.New(L3NetworkHostRouteVO.class).eq(L3NetworkHostRouteVO_.l3NetworkUuid, L3NetworkUuid)
                 .eq(L3NetworkHostRouteVO_.prefix, NetworkServiceConstants.METADATA_HOST_PREFIX).find();
         if (vo != null) {
