@@ -101,7 +101,7 @@
 
         <Logger name="org.zstack.billing" level="TRACE" />
 
-        <Logger name="org.zstack.zql1" level="TRACE" />
+        <Logger name="org.zstack.zql" level="TRACE" />
 
         <Logger name="org.springframework" level="WARN" />
 

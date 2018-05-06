@@ -1,4 +1,4 @@
-package org.zstack.test
+package org.zstack.test.integration.zql
 
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.header.zone.ZoneVO
