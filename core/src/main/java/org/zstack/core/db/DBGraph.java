@@ -72,6 +72,10 @@ public class DBGraph {
         return key;
     }
 
+    public static boolean isTwoResourcesConnected(Class src, Class dst) {
+        return findVerticesWithSmallestWeight(src, dst) != null;
+    }
+
     public static EntityVertex findVerticesWithSmallestWeight(Class src, Class dst) {
         List<List<Node>> all = findPath(src, dst);
         if (all.isEmpty()) {
@@ -190,11 +194,18 @@ public class DBGraph {
                     entityGraph = (EntityGraph) clz.getAnnotation(EntityGraph.class);
 
                     if (entityGraph == null) {
-                        return;
-                        /*
-                        throw new CloudRuntimeException(String.format("missing @EntityGraph for class[%s] referred by other" +
-                                " entities having @EntityGraph", clz));
-                                */
+                        Class tmp = clz;
+                        while (tmp != Object.class) {
+                            entityGraph = (EntityGraph) tmp.getAnnotation(EntityGraph.class);
+                            if (entityGraph != null) {
+                                break;
+                            }
+                            tmp = tmp.getSuperclass();
+                        }
+
+                        if (entityGraph == null) {
+                            return;
+                        }
                     }
 
                     resolveNeighbours();
@@ -227,8 +238,7 @@ public class DBGraph {
             }
         }
 
-        BeanUtils.reflections.getTypesAnnotatedWith(EntityGraph.class).stream()
-                .filter(c -> c.isAnnotationPresent(EntityGraph.class))
+        BeanUtils.reflections.getTypesAnnotatedWith(EntityGraph.class)
                 .forEach(clz -> new NodeResolver(clz).resolve());
     }
 }

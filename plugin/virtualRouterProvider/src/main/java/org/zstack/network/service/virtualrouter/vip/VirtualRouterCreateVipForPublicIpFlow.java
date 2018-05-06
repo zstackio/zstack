@@ -95,7 +95,6 @@ public class VirtualRouterCreateVipForPublicIpFlow implements Flow {
         VirtualRouterVipVO vrvip = new VirtualRouterVipVO();
         vrvip.setUuid(vipvo.getUuid());
         vrvip.setVirtualRouterVmUuid(vr.getUuid());
-        vrvip.setAccountUuid(accountUuid);
         new SQLBatch(){
             @Override
             protected void scripts() {
