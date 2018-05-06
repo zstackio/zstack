@@ -1,6 +1,5 @@
 package org.zstack.network.service.virtualrouter.vip;
 
-import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.vm.VmInstanceEO;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vo.EntityGraph;
@@ -25,7 +24,7 @@ import javax.persistence.*;
                 @EntityGraph.Neighbour(type = VipVO.class, myField = "uuid", targetField = "uuid"),
         }
 )
-public class VirtualRouterVipVO implements OwnedByAccount {
+public class VirtualRouterVipVO {
     @Id
     @Column
     @ForeignKey(parentEntityClass = VipVO.class, onDeleteAction = ReferenceOption.RESTRICT)
@@ -34,19 +33,6 @@ public class VirtualRouterVipVO implements OwnedByAccount {
     @Column
     @ForeignKey(parentEntityClass = VmInstanceEO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String virtualRouterVmUuid;
-
-    @Transient
-    private String accountUuid;
-
-    @Override
-    public String getAccountUuid() {
-        return accountUuid;
-    }
-
-    @Override
-    public void setAccountUuid(String accountUuid) {
-        this.accountUuid = accountUuid;
-    }
 
 
     public String getUuid() {
