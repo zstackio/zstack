@@ -15,6 +15,8 @@ public class IdentityZQLExtension implements MarshalZQLASTTreeExtensionPoint, Re
     private static final String ENTITY_NAME = "__ACCOUNT_FILTER__";
     private static final String ENTITY_FIELD = "__ACCOUNT_FILTER_FIELD__";
 
+    public static final String SKIP_IDENTITY_FILTER = "__SKIP_IDENTITY_FILTER __";
+
     @Autowired
     private AccountManager acntMgr;
 
@@ -37,6 +39,11 @@ public class IdentityZQLExtension implements MarshalZQLASTTreeExtensionPoint, Re
         if (!ENTITY_NAME.equals(expr.getEntity()) || !ENTITY_FIELD.equals(expr.getField())) {
             // not for us
             return null;
+        }
+
+        Boolean skip = (Boolean) ZQLContext.getCustomizedContext(SKIP_IDENTITY_FILTER);
+        if (skip != null && skip) {
+            throw new SkipThisRestrictExprException();
         }
 
         ZQLMetadata.InventoryMetadata src = ZQLMetadata.getInventoryMetadataByName(context.getQueryTargetInventoryName());

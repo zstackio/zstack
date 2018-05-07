@@ -3,6 +3,9 @@ package org.zstack.zql;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowire;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.SQLBatch;
@@ -10,6 +13,7 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.vo.ToInventory;
 import org.zstack.header.zql.ASTNode;
 import org.zstack.header.zql.MarshalZQLASTTreeExtensionPoint;
+import org.zstack.header.zql.ZQLCustomizeContextExtensionPoint;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -24,11 +28,15 @@ import javax.persistence.Query;
 import java.util.ArrayList;
 import java.util.List;
 
+@Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class ZQL {
     private static final CLogger logger = Utils.getLogger(ZQL.class);
 
     private QueryResult astResult;
     private String text;
+
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     static class ThrowingErrorListener extends BaseErrorListener {
         String text;
@@ -92,11 +100,22 @@ public class ZQL {
                 .forEach(it -> it.marshalZQLASTTree(node));
     }
 
-    private static Runnable prepareZQLContext(ASTNode.Query node) {
+    private Runnable prepareZQLContext(ASTNode.Query node) {
         ZQLMetadata.InventoryMetadata inventory = ZQLMetadata.findInventoryMetadata(node.getTarget().getEntity());
         org.zstack.zql.ZQLContext.setQueryTargetInventoryName(inventory.fullInventoryName());
 
-        return () -> ZQLContext.cleanQueryTargetInventoryName();
+        List<Runnable> cleanUps = new ArrayList<>();
+        pluginRgty.getExtensionList(ZQLCustomizeContextExtensionPoint.class).forEach(e->{
+            Runnable r = e.zqlCustomizeContext(node);
+            if (r != null) {
+                cleanUps.add(r);
+            }
+        });
+
+        return () -> {
+            cleanUps.forEach(Runnable::run);
+            ZQLContext.cleanQueryTargetInventoryName();
+        };
     }
 
     public ZQLQueryResult execute() {
