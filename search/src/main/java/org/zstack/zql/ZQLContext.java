@@ -107,4 +107,16 @@ public class ZQLContext {
     public static ZQLExtensionContext createZQLExtensionContext() {
         return new ZQLExtensionContextImpl();
     }
+
+    public static void putCustomizedContext(String key, Object value) {
+        put(key, value);
+    }
+
+    public static Object getCustomizedContext(String key) {
+        return get(key);
+    }
+
+    public static void removeCustomizedContext(String key) {
+        remove(key);
+    }
 }
