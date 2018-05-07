@@ -69,4 +69,12 @@
         <category>quota</category>
         <type>java.lang.Long</type>
     </config>
+
+    <config>
+        <name>listener.num</name>
+        <description>default quota for listener.num</description>
+        <defaultValue>20</defaultValue>
+        <category>quota</category>
+        <type>java.lang.Long</type>
+    </config>
 </globalConfig>
