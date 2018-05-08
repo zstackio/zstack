@@ -68,4 +68,12 @@ public class PriceInventory  {
         return this.lastOpDate;
     }
 
+    public java.util.List gpuOfferings;
+    public void setGpuOfferings(java.util.List gpuOfferings) {
+        this.gpuOfferings = gpuOfferings;
+    }
+    public java.util.List getGpuOfferings() {
+        return this.gpuOfferings;
+    }
+
 }
