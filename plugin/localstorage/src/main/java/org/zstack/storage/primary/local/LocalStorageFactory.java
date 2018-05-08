@@ -590,6 +590,11 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     }
 
     @Override
+    public void afterInstantiateVolume(VmInstanceInventory vm, VolumeInventory volume) {
+
+    }
+
+    @Override
     public void failedToAttachVolume(VmInstanceInventory vm, VolumeInventory volume, ErrorCode errorCode) {
 
     }
