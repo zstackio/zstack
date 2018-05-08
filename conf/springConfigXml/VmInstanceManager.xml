@@ -74,7 +74,6 @@
             <list>
                 <value>org.zstack.compute.vm.VmAllocatePrimaryStorageForAttachingDiskFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateAttachingVolumeFlow</value>
-                <value>org.zstack.compute.vm.VmAfterInstantiateVolumeInAttachingVolumeFlow</value>
                 <value>org.zstack.compute.vm.VmAssignDeviceIdToAttachingVolumeFlow</value>
                 <value>org.zstack.compute.vm.VmAttachVolumeOnHypervisorFlow</value>
             </list>
