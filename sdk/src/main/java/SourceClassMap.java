@@ -8,7 +8,10 @@ public class SourceClassMap {
 			put("org.zstack.appliancevm.ApplianceVmInventory", "org.zstack.sdk.ApplianceVmInventory");
 			put("org.zstack.billing.DataVolumeSpending", "org.zstack.sdk.DataVolumeSpending");
 			put("org.zstack.billing.DataVolumeSpendingInventory", "org.zstack.sdk.DataVolumeSpendingInventory");
+			put("org.zstack.billing.PciDeviceSpending", "org.zstack.sdk.PciDeviceSpending");
+			put("org.zstack.billing.PciDeviceSpendingInventory", "org.zstack.sdk.PciDeviceSpendingInventory");
 			put("org.zstack.billing.PriceInventory", "org.zstack.sdk.PriceInventory");
+			put("org.zstack.billing.PricePciDeviceOfferingRefInventory", "org.zstack.sdk.PricePciDeviceOfferingRefInventory");
 			put("org.zstack.billing.RootVolumeSpending", "org.zstack.sdk.RootVolumeSpending");
 			put("org.zstack.billing.RootVolumeSpendingInventory", "org.zstack.sdk.RootVolumeSpendingInventory");
 			put("org.zstack.billing.SnapShotSpendingInventory", "org.zstack.sdk.SnapShotSpendingInventory");
@@ -370,6 +373,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.PciDeviceOfferingInventory", "org.zstack.pciDevice.PciDeviceOfferingInventory");
 			put("org.zstack.sdk.PciDeviceOfferingType", "org.zstack.pciDevice.PciDeviceOfferingType");
 			put("org.zstack.sdk.PciDevicePciDeviceOfferingRefInventory", "org.zstack.pciDevice.PciDevicePciDeviceOfferingRefInventory");
+			put("org.zstack.sdk.PciDeviceSpending", "org.zstack.billing.PciDeviceSpending");
+			put("org.zstack.sdk.PciDeviceSpendingInventory", "org.zstack.billing.PciDeviceSpendingInventory");
 			put("org.zstack.sdk.PciDeviceState", "org.zstack.pciDevice.PciDeviceState");
 			put("org.zstack.sdk.PciDeviceStatus", "org.zstack.pciDevice.PciDeviceStatus");
 			put("org.zstack.sdk.PciDeviceType", "org.zstack.pciDevice.PciDeviceType");
@@ -378,6 +383,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.PolicyStatementEffect", "org.zstack.header.identity.AccountConstant$StatementEffect");
 			put("org.zstack.sdk.PortForwardingRuleInventory", "org.zstack.network.service.portforwarding.PortForwardingRuleInventory");
 			put("org.zstack.sdk.PriceInventory", "org.zstack.billing.PriceInventory");
+			put("org.zstack.sdk.PricePciDeviceOfferingRefInventory", "org.zstack.billing.PricePciDeviceOfferingRefInventory");
 			put("org.zstack.sdk.PrimaryStorageHostStatus", "org.zstack.header.storage.primary.PrimaryStorageHostStatus");
 			put("org.zstack.sdk.PrimaryStorageInventory", "org.zstack.header.storage.primary.PrimaryStorageInventory");
 			put("org.zstack.sdk.ProgressProperty", "org.zstack.header.aliyun.image.ProgressProperty");
