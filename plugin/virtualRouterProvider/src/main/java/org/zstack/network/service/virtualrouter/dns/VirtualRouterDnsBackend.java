@@ -2,7 +2,6 @@ package org.zstack.network.service.virtualrouter.dns;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.appliancevm.ApplianceVmStatus;
-import org.zstack.core.cascade.AsyncBranchCascadeExtensionPoint;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
@@ -15,25 +14,18 @@ import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l3.L3NetworkDnsVO;
-import org.zstack.header.network.l3.L3NetworkDnsVO_;
-import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.*;
 import org.zstack.header.vm.*;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.*;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.operr;
 
-import java.sql.Timestamp;
 import java.util.*;
-import java.util.stream.Collectors;
 import javax.persistence.Tuple;
 
 /**
@@ -235,12 +227,7 @@ public class VirtualRouterDnsBackend extends AbstractVirtualRouterBackend implem
 
     @Override
     public void applyDnsService(List<DnsStruct> dnsStructList, VmInstanceSpec spec, Completion completion) {
-        if (dnsStructList.isEmpty()) {
-            completion.success();
-            return;
-        }
-
-        applyDns(dnsStructList.iterator(), spec, completion);
+        completion.success();
     }
 
 
@@ -304,12 +291,7 @@ public class VirtualRouterDnsBackend extends AbstractVirtualRouterBackend implem
 
     @Override
     public void releaseDnsService(List<DnsStruct> dnsStructList, VmInstanceSpec spec, NoErrorCompletion completion) {
-        if (dnsStructList.isEmpty()) {
-            completion.done();
-            return;
-        }
-
-        releaseDns(dnsStructList.iterator(), spec, completion);
+        completion.done();
     }
 
     private void ApplyDnsForVirtualRouter(String vrUuid, String execludeL3NetworkUuid, Completion completion){
@@ -347,10 +329,9 @@ public class VirtualRouterDnsBackend extends AbstractVirtualRouterBackend implem
         });
     }
 
-
     @Override
     public void beforeDetachNic(VmNicInventory nic, Completion completion) {
-        if (!VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST.contains(nic.getMetaData())) {
+        if (!isVirtualRouterDnsBackend(nic)) {
             completion.success();
             return;
         }
@@ -360,7 +341,7 @@ public class VirtualRouterDnsBackend extends AbstractVirtualRouterBackend implem
 
     @Override
     public void beforeDetachNicRollback(VmNicInventory nic, NoErrorCompletion completion) {
-        if (!VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST.contains(nic.getMetaData())) {
+        if (!isVirtualRouterDnsBackend(nic)) {
             completion.done();
             return;
         }
@@ -380,7 +361,7 @@ public class VirtualRouterDnsBackend extends AbstractVirtualRouterBackend implem
 
     @Override
     public void afterAttachNic(VmNicInventory nic, Completion completion) {
-        if (!VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST.contains(nic.getMetaData())) {
+        if (!isVirtualRouterDnsBackend(nic)) {
             completion.success();
             return;
         }
@@ -390,7 +371,7 @@ public class VirtualRouterDnsBackend extends AbstractVirtualRouterBackend implem
 
     @Override
     public void afterAttachNicRollback(VmNicInventory nic, NoErrorCompletion completion) {
-        if (!VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST.contains(nic.getMetaData())) {
+        if (!isVirtualRouterDnsBackend(nic)) {
             completion.done();
             return;
         }
@@ -406,5 +387,23 @@ public class VirtualRouterDnsBackend extends AbstractVirtualRouterBackend implem
                 completion.done();
             }
         });
+    }
+
+    private boolean isVirtualRouterDnsBackend(VmNicInventory nic) {
+        if (!VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST.contains(nic.getMetaData())) {
+            return false;
+        }
+
+        if (!Q.New(NetworkServiceL3NetworkRefVO.class).eq(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, nic.getL3NetworkUuid())
+                .eq(NetworkServiceL3NetworkRefVO_.networkServiceType, NetworkServiceType.DNS.toString()).isExists()) {
+            return false;
+        }
+
+        L3NetworkVO l3Vo = dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class);
+        if (!L3NetworkConstant.L3_BASIC_NETWORK_TYPE.equals(l3Vo.getType())) {
+            return false;
+        }
+
+        return true;
     }
 }
