@@ -214,6 +214,8 @@ CREATE TABLE `IAM2ProjectTemplateVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `zstack`.`SharedResourceVO` ADD COLUMN `permission` int unsigned DEFAULT 1;
+ALTER TABLE `zstack`.`SNSTopicVO` ADD COLUMN `ownerType` varchar(32) DEFAULT 'Customized';
+ALTER TABLE `zstack`.`SNSApplicationEndpointVO` ADD COLUMN `ownerType` varchar(32) DEFAULT 'Customized';
 
 # Foreign keys for table IAM2OrganizationAttributeVO
 
