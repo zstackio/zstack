@@ -182,7 +182,7 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     @ApiTimeout(apiClasses = {APICreateDataVolumeFromVolumeSnapshotMsg.class, APIDeleteVolumeSnapshotMsg.class})
-    public static class OfflineMergeSnapshotCmd extends AgentCmd {
+    public static class OfflineMergeSnapshotCmd extends AgentCmd implements HasThreadContext {
         public String srcPath;
         public String destPath;
         public boolean fullRebase;

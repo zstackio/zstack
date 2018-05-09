@@ -11,12 +11,10 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.longjob.LongJobFor;
 import org.zstack.header.longjob.LongJobVO;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.backup.APIExportImageFromBackupStorageMsg;
-import org.zstack.header.storage.backup.BackupStorageConstant;
 import org.zstack.header.vm.APIMigrateVmMsg;
 import org.zstack.header.vm.MigrateVmInnerMsg;
 import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.longjob.LongJob;
+import org.zstack.header.longjob.LongJob;
 import org.zstack.utils.gson.JSONObjectUtil;
 
 
