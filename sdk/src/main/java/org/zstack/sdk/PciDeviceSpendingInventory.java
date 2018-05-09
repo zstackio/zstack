@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class GpuSpendingInventory  {
+public class PciDeviceSpendingInventory  {
 
     public long startTime;
     public void setStartTime(long startTime) {
