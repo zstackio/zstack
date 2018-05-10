@@ -434,6 +434,12 @@ public class ZSClient {
                         " doesn't return the polling location url", action.getClass().getSimpleName()));
             }
 
+            String configHost = String.format("%s:%s", config.getHostname(), config.getPort());
+            if (!pollingUrl.contains(configHost)) {
+                String splitRegex = "/zstack/v1/api-jobs";
+                pollingUrl = String.format("http://%s%s%s", configHost, splitRegex ,pollingUrl.split(splitRegex)[1]);
+            }
+
             if (completion == null) {
                 // sync polling
                 return syncPollResult(pollingUrl);
