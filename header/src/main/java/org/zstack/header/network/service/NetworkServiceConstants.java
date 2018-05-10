@@ -10,4 +10,5 @@ public class NetworkServiceConstants {
     public final static String HOSTROUTE_SERVICE_ID = "networkService.hostroute";
 
     public final static String METADATA_HOST_PREFIX = "169.254.169.254/32";
+    public final static String DEFAULT_ROUTE_HOST_PREFIX = "0.0.0.0/0";
 }

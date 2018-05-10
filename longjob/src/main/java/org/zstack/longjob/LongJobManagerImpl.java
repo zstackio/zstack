@@ -325,7 +325,8 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         }
     }
 
-    private void loadLongJob() {
+    @Override
+    public void loadLongJob() {
         new SQLBatch() {
             @Override
             protected void scripts() {

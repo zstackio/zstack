@@ -7,6 +7,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -71,6 +72,12 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
         proxy.establishProxy(session, vm, new ReturnValueCompletion<ConsoleProxyInventory>(complete) {
             @Override
             public void success(ConsoleProxyInventory ret) {
+                if (Q.New(ConsoleProxyVO.class).eq(ConsoleProxyVO_.targetHostname, ret.getTargetHostname())
+                        .eq(ConsoleProxyVO_.targetPort, ret.getTargetPort()).isExists()) {
+                    complete.fail(operr("There is already a console proxy connection with %s:%s", ret.getTargetHostname(), ret.getTargetPort()));
+                    return;
+                }
+
                 ConsoleProxyVO vo = new ConsoleProxyVO();
                 vo.setAgentIp(ret.getAgentIp());
                 vo.setProxyIdentity(ret.getProxyIdentity());

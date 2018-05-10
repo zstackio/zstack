@@ -61,6 +61,11 @@ public class SimulatorSecurityGroupBackend implements
 		complete.success();
 	}
 
+    @Override
+    public void checkDefaultRules(String hostUuid, Completion completion) {
+        completion.success();
+    }
+
 	@Override
 	public void updateGroupMembers(SecurityGroupMembersTO gto, String hostUuid, Completion completion) {
 

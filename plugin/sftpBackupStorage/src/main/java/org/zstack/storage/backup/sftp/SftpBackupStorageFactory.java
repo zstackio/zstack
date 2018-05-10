@@ -29,7 +29,9 @@ public class SftpBackupStorageFactory implements BackupStorageFactory, GlobalApi
             BackupStorageConstant.SCHEME_HTTP,
             BackupStorageConstant.SCHEME_HTTPS,
             BackupStorageConstant.SCHEME_NFS,
-            BackupStorageConstant.SCHEME_FILE
+            BackupStorageConstant.SCHEME_FILE,
+            BackupStorageConstant.SCHEME_FTP,
+            BackupStorageConstant.SCHEME_SFTP
     );
 
     @Autowired

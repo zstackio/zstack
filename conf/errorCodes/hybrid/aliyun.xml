@@ -99,5 +99,9 @@
         <id>1021</id>
         <description>Current action is not a support ecs action</description>
     </code>
+    <code>
+        <id>1022</id>
+        <description>can not find a paired router interface between vbr and vrouter</description>
+    </code>
 </error>
 

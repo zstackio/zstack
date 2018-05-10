@@ -80,6 +80,12 @@ class SharedMountPointPrimaryStorageSpec extends PrimaryStorageSpec {
             return rsp
         }
 
+        simulator(KvmBackend.REINIT_IMAGE_PATH) {
+            def rsp = new KvmBackend.ReInitImageRsp()
+            rsp.newVolumeInstallPath = "/new/path"
+            return rsp
+        }
+
         simulator(KvmBackend.MERGE_SNAPSHOT_PATH) {
             return new KvmBackend.MergeSnapshotRsp()
         }

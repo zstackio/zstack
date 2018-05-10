@@ -27,8 +27,6 @@ import static java.util.Arrays.asList;
 public class APIGetCandidatePrimaryStoragesForCreatingVmMsg extends APISyncCallMessage {
     @APIParam(resourceType = ImageVO.class, checkAccount = true)
     private String imageUuid;
-    @APIParam(resourceType = BackupStorageVO.class, checkAccount = true, required = false)
-    private String backupStorageUuid;
     @APIParam(resourceType = L3NetworkVO.class, nonempty = true, checkAccount = true)
     private List<String> l3NetworkUuids;
     @APIParam(required = false, resourceType = DiskOfferingVO.class, checkAccount = true)
@@ -95,20 +93,11 @@ public class APIGetCandidatePrimaryStoragesForCreatingVmMsg extends APISyncCallM
         this.dataDiskOfferingUuids = dataDiskOfferingUuids;
     }
 
-    public String getBackupStorageUuid() {
-        return backupStorageUuid;
-    }
-
-    public void setBackupStorageUuid(String backupStorageUuid) {
-        this.backupStorageUuid = backupStorageUuid;
-    }
-
     public static APIGetCandidatePrimaryStoragesForCreatingVmMsg __example__() {
         APIGetCandidatePrimaryStoragesForCreatingVmMsg msg = new APIGetCandidatePrimaryStoragesForCreatingVmMsg();
         msg.setClusterUuid(uuid());
         msg.setDataDiskOfferingUuids(asList(uuid(), uuid()));
         msg.setImageUuid(uuid());
-        msg.setBackupStorageUuid(uuid());
         msg.setL3NetworkUuids(asList(uuid()));
         return msg;
     }

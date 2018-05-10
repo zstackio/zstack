@@ -15,6 +15,7 @@ import org.zstack.test.integration.networkservice.provider.NetworkServiceProvide
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
+import org.zstack.utils.gson.JSONObjectUtil
 
 class VerifyPrepareDhcpWhenReconnectHostCase extends SubCase {
     EnvSpec env
@@ -153,14 +154,33 @@ class VerifyPrepareDhcpWhenReconnectHostCase extends SubCase {
         def host = queryHost {}[0] as HostInventory
         def vm = env.inventoryByName("vm") as VmInstanceInventory
 
+        setVmHostname {
+            uuid = vm.uuid
+            hostname = "test-name"
+        }
+
         def called = 0
+        FlatDhcpBackend.ApplyDhcpCmd cmd = null
         env.afterSimulator(FlatDhcpBackend.APPLY_DHCP_PATH) { rsp, HttpEntity<String> e1 ->
+            cmd = JSONObjectUtil.toObject(e1.body, FlatDhcpBackend.ApplyDhcpCmd.class)
             called += 1
             return rsp
         }
 
+        stopVmInstance {
+            uuid = vm.uuid
+        }
+        startVmInstance {
+            uuid = vm.uuid
+        }
+        assert called == 1
+        assert cmd.dhcp.get(0).hostname == "test-name"
+
+        called = 0
+        cmd = null
         reconnectHost { uuid=host.uuid }
         assert called == 1
+        assert cmd.dhcp.get(0).hostname == "test-name"
 
         def vr = queryVirtualRouterVm {}[0] as VirtualRouterVmInventory
         assert vr != null

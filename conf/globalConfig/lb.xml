@@ -61,4 +61,20 @@
         <description>The number of max concurrent connections. Options are roundrobin, leastconn and source</description>
         <defaultValue>roundrobin</defaultValue>
     </config>
+
+    <config>
+        <name>loadBalancer.num</name>
+        <description>default quota for loadBalancer.num</description>
+        <defaultValue>20</defaultValue>
+        <category>quota</category>
+        <type>java.lang.Long</type>
+    </config>
+
+    <config>
+        <name>listener.num</name>
+        <description>default quota for listener.num</description>
+        <defaultValue>20</defaultValue>
+        <category>quota</category>
+        <type>java.lang.Long</type>
+    </config>
 </globalConfig>

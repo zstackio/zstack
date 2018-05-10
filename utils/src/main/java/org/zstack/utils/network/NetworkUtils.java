@@ -476,12 +476,36 @@ public class NetworkUtils {
         return isIpv4RangeOverlap(info1.getLowAddress(), info1.getHighAddress(), info2.getLowAddress(), info2.getHighAddress());
     }
 
+    public static boolean isSameCidr(String cidr1, String cidr2) {
+        DebugUtils.Assert(isCidr(cidr1), String.format("%s is not a cidr", cidr1));
+        DebugUtils.Assert(isCidr(cidr2), String.format("%s is not a cidr", cidr2));
+
+        SubnetUtils su1 = new SubnetUtils(cidr1);
+        SubnetUtils su2 = new SubnetUtils(cidr2);
+
+        return su1.getInfo().getNetworkAddress().equals(su2.getInfo().getNetworkAddress());
+    }
+
     public static boolean isIpv4InCidr(String ipv4, String cidr) {
         DebugUtils.Assert(isCidr(cidr), String.format("%s is not a cidr", cidr));
         validateIp(ipv4);
 
         SubnetUtils.SubnetInfo info = new SubnetUtils(cidr).getInfo();
         return isIpv4InRange(ipv4, info.getLowAddress(), info.getHighAddress());
+    }
+
+    public static List<String> filterIpv4sInCidr(List<String> ipv4s, String cidr){
+        DebugUtils.Assert(isCidr(cidr), String.format("%s is not a cidr", cidr));
+        SubnetUtils.SubnetInfo info = new SubnetUtils(cidr).getInfo();
+        List<String> results = new ArrayList<>();
+
+        for (String ipv4 : ipv4s) {
+            validateIp(ipv4);
+            if (isIpv4InRange(ipv4, info.getLowAddress(), info.getHighAddress())) {
+                results.add(ipv4) ;
+            }
+        }
+        return results;
     }
 
     public static boolean isIpRoutedByDefaultGateway(String ip) {
@@ -519,9 +543,9 @@ public class NetworkUtils {
     }
 
     public static String fmtCidr(final String origin) {
-        // format "*.*.*.1/24" to "*.*.*.0/24"
+        // format "*.*.1.1/16" to "*.*.0.0/16"
         DebugUtils.Assert(isCidr(origin), String.format("%s is not a cidr", origin));
-        return origin.replaceFirst(".[0-9]{1,3}/", ".0/");
+        return new SubnetUtils(origin).getInfo().getNetworkAddress() + "/" + origin.split("/")[1];
     }
 
     public static List<String> getCidrsFromIpRange(String startIp, String endIp) {

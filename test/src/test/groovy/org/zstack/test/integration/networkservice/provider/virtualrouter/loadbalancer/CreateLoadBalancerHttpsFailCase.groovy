@@ -196,6 +196,16 @@ class CreateLoadBalancerHttpsFailCase extends SubCase{
         }
         assert cmd.uuid == cerInv.uuid
 
+        env.simulator(VirtualRouterLoadBalancerBackend.REFRESH_LB_PATH) {
+            VirtualRouterLoadBalancerBackend.RefreshLbRsp rsp = new VirtualRouterLoadBalancerBackend.RefreshLbRsp()
+            return rsp
+        }
+
+        addVmNicToLoadBalancer {
+            listenerUuid = listener.uuid
+            vmNicUuids = [vm.getVmNics().get(0).getUuid()]
+        }
+
         deleteLoadBalancer {
             uuid = lb.uuid
         }

@@ -405,6 +405,40 @@ public class NfsPrimaryStorageKVMBackendCommands {
         }
     }
 
+    public static class ReInitImageCmd extends NfsPrimaryStorageAgentCommand {
+        private String imagePath;
+        private String volumePath;
+
+        public String getImagePath() {
+            return imagePath;
+        }
+
+        public void setImagePath(String imagePath) {
+            this.imagePath = imagePath;
+        }
+
+        public String getVolumePath() {
+            return volumePath;
+        }
+
+        public void setVolumePath(String volumePath) {
+            this.volumePath = volumePath;
+        }
+    }
+
+    public static class ReInitImageRsp extends NfsPrimaryStorageAgentResponse {
+        @Validation
+        private String newVolumeInstallPath;
+
+        public String getNewVolumeInstallPath() {
+            return newVolumeInstallPath;
+        }
+
+        public void setNewVolumeInstallPath(String newVolumeInstallPath) {
+            this.newVolumeInstallPath = newVolumeInstallPath;
+        }
+    }
+
     public static class UploadToSftpCmd extends NfsPrimaryStorageAgentCommand implements HasThreadContext{
         private String primaryStorageInstallPath;
         private String backupStorageInstallPath;

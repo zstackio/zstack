@@ -3,6 +3,7 @@ package org.zstack.storage.primary.local;
 import com.google.common.collect.Lists;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.compute.host.MigrateNetworkExtensionPoint;
 import org.zstack.compute.vm.VmAllocatePrimaryStorageFlow;
 import org.zstack.compute.vm.VmAllocatePrimaryStorageForAttachingDiskFlow;
 import org.zstack.compute.vm.VmMigrateOnHypervisorFlow;
@@ -590,6 +591,11 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     }
 
     @Override
+    public void afterInstantiateVolume(VmInstanceInventory vm, VolumeInventory volume) {
+
+    }
+
+    @Override
     public void failedToAttachVolume(VmInstanceInventory vm, VolumeInventory volume, ErrorCode errorCode) {
 
     }
@@ -1034,5 +1040,20 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             }
         }.execute();
 
+    }
+
+    protected String getDestMigrationAddress(String srcHostUuid, String dstHostUuid){
+        MigrateNetworkExtensionPoint.MigrateInfo migrateIpInfo = null;
+        for (MigrateNetworkExtensionPoint ext: pluginRgty.getExtensionList(MigrateNetworkExtensionPoint.class)) {
+            MigrateNetworkExtensionPoint.MigrateInfo r = ext.getMigrationAddressForVM(srcHostUuid, dstHostUuid);
+            if (r == null) {
+                continue;
+            }
+
+            migrateIpInfo = r;
+        }
+
+        return migrateIpInfo != null ? migrateIpInfo.dstMigrationAddress :
+                Q.New(HostVO.class).eq(HostVO_.uuid, dstHostUuid).select(HostVO_.managementIp).findValue();
     }
 }

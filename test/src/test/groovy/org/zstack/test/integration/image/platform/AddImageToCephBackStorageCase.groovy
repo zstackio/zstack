@@ -20,6 +20,7 @@ class AddImageToCephBackStorageCase extends SubCase {
     EnvSpec env
     DatabaseFacade dbf
     VmInstanceInventory vm
+    BackupStorageInventory bs
 
     @Override
     void setup() {
@@ -95,12 +96,15 @@ class AddImageToCephBackStorageCase extends SubCase {
     @Override
     void test() {
         env.create {
+            bs = env.inventoryByName("ceph-bk") as BackupStorageInventory
             testAddQcowImage()
+            testAddImageFromSftp()
+            testAddImageFromFtp()
         }
     }
 
     void testAddQcowImage() {
-        BackupStorageInventory bs = env.inventoryByName("ceph-bk")
+
 
         env.simulator(CephBackupStorageBase.DOWNLOAD_IMAGE_PATH) { HttpEntity<String> e, EnvSpec spec ->
             def reply = new DownloadImageReply()
@@ -108,9 +112,10 @@ class AddImageToCephBackStorageCase extends SubCase {
             return reply
         }
 
+        def u = "http://192.168.1.1/vm-snapshot.qcow2"
         ImageInventory img = addImage {
             name = "vm-snapshot"
-            url = "http://192.168.1.1/vm-snapshot.qcow2"
+            url = u
             format = "iso"
             mediaType = "RootVolumeTemplate"
             system = false
@@ -118,6 +123,34 @@ class AddImageToCephBackStorageCase extends SubCase {
         }
 
         assert img.format == ImageConstant.RAW_FORMAT_STRING
+        assert img.url == u
+    }
+
+    void testAddImageFromSftp(){
+        ImageInventory img = addImage {
+            name = "vm-snapshot"
+            url = "sftp://root:password@192.168.1.1/vm-snapshot.qcow2"
+            format = "iso"
+            mediaType = "RootVolumeTemplate"
+            system = false
+            backupStorageUuids = [bs.uuid]
+        } as ImageInventory
+
+        assert img.url.indexOf("password") == -1
+
+    }
+
+    void testAddImageFromFtp(){
+        ImageInventory img = addImage {
+            name = "vm-snapshot"
+            url = "ftp://root:password@192.168.1.1/vm-snapshot.qcow2"
+            format = "iso"
+            mediaType = "RootVolumeTemplate"
+            system = false
+            backupStorageUuids = [bs.uuid]
+        } as ImageInventory
+
+        assert img.url.indexOf("password") == -1
     }
 
     @Override

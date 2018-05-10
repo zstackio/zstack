@@ -103,12 +103,9 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(final APIGetCandidatePrimaryStoragesForCreatingVmMsg msg) {
-        if (msg.getBackupStorageUuid() == null) {
-            Long refSize = Q.New(ImageBackupStorageRefVO.class).eq(ImageBackupStorageRefVO_.imageUuid, msg.getImageUuid()).count();
-            if (refSize > 1) {
-                throw new ApiMessageInterceptionException(argerr("imageUuid: %s is in more than one backupStorage, " +
-                        "so user must indict the backupStorageUuid", msg.getImageUuid()));
-            }
+        ImageMediaType mediaType = Q.New(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).select(ImageVO_.mediaType).findValue();
+        if (ImageMediaType.ISO == mediaType && msg.getRootDiskOfferingUuid() == null) {
+            throw new ApiMessageInterceptionException(argerr("rootVolumeOffering is needed when image media type is ISO"));
         }
     }
 

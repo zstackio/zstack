@@ -8,8 +8,8 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.quota.QuotaConstant;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.network.service.eip.EipQuotaConstant;
 import org.zstack.network.service.flat.FlatNetworkServiceSimulatorConfig;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.test.Api;
@@ -62,10 +62,10 @@ public class TestChangeOwnerOfEipOfVmExceedEipQuota {
         IdentityCreator identityCreator = new IdentityCreator(api);
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         identityCreator.useAccount("test2");
-        api.updateQuota(identityCreator.getAccountSession().getAccountUuid(), QuotaConstant.EIP_NUM, 0);
+        api.updateQuota(identityCreator.getAccountSession().getAccountUuid(), EipQuotaConstant.EIP_NUM, 0);
         String targetAccountUuid = identityCreator.getAccountSession().getAccountUuid();
         thrown.expect(ApiSenderException.class);
-        thrown.expectMessage(QuotaConstant.EIP_NUM);
+        thrown.expectMessage(EipQuotaConstant.EIP_NUM);
         api.changeResourceOwner(vm.getUuid(), targetAccountUuid);
     }
 }

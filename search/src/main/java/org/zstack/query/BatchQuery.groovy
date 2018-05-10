@@ -2,6 +2,8 @@ package org.zstack.query
 
 import org.apache.commons.lang.StringUtils
 import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.reflection.ClassInfo
+import org.codehaus.groovy.reflection.GroovyClassValue
 import org.kohsuke.groovy.sandbox.GroovyInterceptor
 import org.kohsuke.groovy.sandbox.SandboxTransformer
 import org.kohsuke.groovy.sandbox.impl.Super
@@ -13,6 +15,7 @@ import org.zstack.header.identity.AccountConstant
 import org.zstack.header.identity.Action
 import org.zstack.header.identity.SessionInventory
 import org.zstack.header.identity.SuppressCredentialCheck
+import org.zstack.header.message.APIMessage
 import org.zstack.header.message.APIResponse
 import org.zstack.header.message.APISyncCallMessage
 import org.zstack.header.message.MessageReply
@@ -24,6 +27,7 @@ import org.zstack.utils.Utils
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.logging.CLogger
 
+import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 import java.util.regex.Pattern
 
@@ -33,6 +37,24 @@ class BatchQuery {
     private QueryFacade queryf
     private SessionInventory session
     private CloudBus bus
+
+    private static class DebugObject {
+        static class APIStatistics {
+            transient long startTime
+
+            int timeCostPerCall
+            int totalTimeCost
+            int callTimes
+            long totalResultSize
+            long resultSizePerCall
+        }
+
+        Map<String, APIStatistics> APIStats = [:]
+        long resultSize
+        long totalTimeCost
+    }
+
+    private DebugObject debugObject;
 
     static class SandBox extends GroovyInterceptor {
         static List<Class> RECEIVER_WHITE_LIST = [
@@ -140,7 +162,12 @@ class BatchQuery {
     BatchQuery() {
         this.queryf = Platform.getComponentLoader().getComponent(QueryFacade.class)
         this.bus = Platform.getComponentLoader().getComponent(CloudBus.class)
+
+        if (isDebugOn()) {
+            debugObject = new DebugObject()
+        }
     }
+
     private static SandBox sandbox = new SandBox()
 
     static Map<String, Class> queryMessageClass = [:]
@@ -185,6 +212,46 @@ class BatchQuery {
         QUERY_OP_MAPPING.put("<", QueryOp.LT.toString())
     }
 
+    private static boolean isDebugOn() {
+        return QueryGlobalConfig.BATCH_QUERY_DEBUG.value(Boolean.class)
+    }
+
+    private void startDebug(APIMessage msg) {
+        if (isDebugOn()) {
+            DebugObject.APIStatistics stat = debugObject.APIStats.computeIfAbsent(msg.class.name, {new DebugObject.APIStatistics()})
+            stat.startTime = System.currentTimeMillis()
+        }
+    }
+
+    private void endDebug(APIMessage msg, Map res) {
+        if (isDebugOn()) {
+            DebugObject.APIStatistics stat = debugObject.APIStats[msg.class.name]
+            long timeCost = System.currentTimeMillis() - stat.startTime
+            stat.totalTimeCost += timeCost
+            stat.totalResultSize += getMapMemorySize(res)
+            stat.callTimes += 1
+        }
+    }
+
+    private void printDebugInfo() {
+        if (!isDebugOn()) {
+            return
+        }
+
+        // some APIs may not complete because of error
+        debugObject.APIStats = debugObject.APIStats.findAll { it.value.callTimes != 0 }
+
+        debugObject.APIStats.values().each { stat ->
+            stat.timeCostPerCall = (int) (stat.totalTimeCost / stat.callTimes)
+            stat.resultSizePerCall = (long) (stat.totalResultSize / stat.callTimes)
+
+            debugObject.resultSize += stat.totalResultSize
+            debugObject.totalTimeCost += stat.totalTimeCost
+        }
+
+        logger.debug("""BATCH QUERY DEBUG INFO: ${JSONObjectUtil.toJsonString(debugObject)}""")
+    }
+
     private Map syncApiCall(String apiname, String jstr) {
         Class msgClz = queryMessageClass[apiname]
         if (msgClz == null) {
@@ -192,6 +259,9 @@ class BatchQuery {
         }
 
         APISyncCallMessage msg = JSONObjectUtil.toObject(jstr, msgClz)
+
+        startDebug(msg)
+
         msg.setSession(session)
         msg.setServiceId("api.portal")
         MessageReply reply = bus.call(msg)
@@ -200,7 +270,11 @@ class BatchQuery {
         }
 
         APIResponse rsp = reply as APIResponse
-        return ["result":rsp.toResponseMap(rsp)]
+        def res = ["result":rsp.toResponseMap(rsp)]
+
+        endDebug(msg, res)
+
+        return res
     }
 
     private Map doQuery(String qstr) {
@@ -217,6 +291,9 @@ class BatchQuery {
         }
 
         APIQueryMessage msg = msgClz.newInstance() as APIQueryMessage
+
+        startDebug(msg)
+
         msg.setSession(session)
         if (AccountConstant.INITIAL_SYSTEM_ADMIN_UUID != msg.session.accountUuid && !msgClz.isAnnotationPresent(Action.class)) {
             // the resource is owned by admin and the account is a normal account
@@ -302,7 +379,16 @@ class BatchQuery {
             ret = queryf.query(msg, inventoryClass)
         }
 
-        return ["total": total, "result": JSONObjectUtil.rehashObject(ret, ArrayList.class)]
+        def res = ["total": total, "result": JSONObjectUtil.rehashObject(ret, ArrayList.class)]
+
+        endDebug(msg, res)
+
+        return res
+    }
+
+    private long getMapMemorySize(Map m) {
+        String jstr = JSONObjectUtil.toJsonString(m)
+        return jstr.length()
     }
 
     private String errorLine(String code, Throwable  e) {
@@ -325,6 +411,15 @@ class BatchQuery {
         return "${e.message}, error at line ${lineNum}: ${line}"
     }
 
+    // To mitigate Metaspace been occupied
+    // c.f. https://stackoverflow.com/questions/41465834
+    private static void clearAllClassInfo(Class<?> type) {
+        Field globalClassValue = ClassInfo.class.getDeclaredField("globalClassValue")
+        globalClassValue.setAccessible(true)
+        GroovyClassValue classValueBean = (GroovyClassValue) globalClassValue.get(null)
+        classValueBean.remove(type)
+    }
+
     Map<String, Object> query(APIBatchQueryMsg msg) {
         try {
             session = msg.getSession()
@@ -342,16 +437,22 @@ class BatchQuery {
             def cc = new CompilerConfiguration()
             cc.addCompilationCustomizers(new SandboxTransformer())
 
-            def shell = new GroovyShell(binding, cc)
+            def shell = new GroovyShell(new GroovyClassLoader(), binding, cc)
             sandbox.register()
             try {
-                shell.evaluate(msg.script)
+                Script script = shell.parse(msg.script)
+                script.run()
+                clearAllClassInfo(script.getClass())
             } catch (Throwable t) {
+                logger.warn(t.message, t)
                 sandbox.unregister()
                 throw new OperationFailureException(Platform.operr("${errorLine(msg.script, t)}"))
             } finally {
                 sandbox.unregister()
+                shell.resetLoadedClasses()
             }
+
+            printDebugInfo()
 
             return output
         } catch (Throwable t) {

@@ -1445,6 +1445,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 .eq(LocalStorageHostRefVO_.hostUuid, msg.getHostUuid())
                 .eq(LocalStorageHostRefVO_.primaryStorageUuid, msg.getPrimaryStorageUuid())
                 .find();
+        // jira: http://jira.zstack.io/browse/ZSTAC-9635
+        deleteResourceRef(msg.getHostUuid());
         if (ref != null) {
             dbf.remove(ref);
             decreaseCapacity(ref.getTotalCapacity(),
@@ -1453,8 +1455,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     ref.getAvailablePhysicalCapacity(),
                     ref.getSystemUsedCapacity());
         }
-        
-        deleteResourceRef(msg.getHostUuid());
+
         bus.reply(msg, new RemoveHostFromLocalStorageReply());
     }
 

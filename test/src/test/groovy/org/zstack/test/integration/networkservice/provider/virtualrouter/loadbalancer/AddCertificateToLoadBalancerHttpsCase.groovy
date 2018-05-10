@@ -142,6 +142,7 @@ class AddCertificateToLoadBalancerHttpsCase extends SubCase{
         dbf = bean(DatabaseFacade.class)
         env.create {
             TestAddRemoveCertificateFromLoadBalancer()
+            TestAddCertificateThenAddVmNic()
         }
     }
 
@@ -246,6 +247,89 @@ class AddCertificateToLoadBalancerHttpsCase extends SubCase{
 
         deleteCertificate {
             uuid = cerInv2.uuid
+        }
+    }
+
+    void TestAddCertificateThenAddVmNic(){
+        L3NetworkInventory pubL3 = env.inventoryByName("pubL3")
+        VmInstanceInventory vm = env.inventoryByName("vm")
+
+        def cerStr = "Test certificate" as String
+        CertificateInventory cerInv = createCertificate {
+            name = "cer-1"
+            certificate = cerStr
+        }
+
+        VipInventory vip = createVip {
+            name = "test-vip"
+            l3NetworkUuid = pubL3.uuid
+        }
+        LoadBalancerInventory lb = createLoadBalancer {
+            name = "test-lb"
+            vipUuid = vip.uuid
+        }
+
+        LoadBalancerListenerInventory listener = createLoadBalancerListener {
+            protocol = "https"
+            loadBalancerUuid = lb.uuid
+            loadBalancerPort = 44
+            instancePort = 22
+            name = "test-listener"
+        }
+
+        addCertificateToLoadBalancerListener {
+            listenerUuid = listener.uuid
+            certificateUuid = cerInv.uuid
+        }
+
+        List<VirtualRouterLoadBalancerBackend.RefreshLbCmd> cmds = new ArrayList<>()
+        env.afterSimulator(VirtualRouterLoadBalancerBackend.REFRESH_LB_PATH) { rsp, HttpEntity<String> e ->
+            VirtualRouterLoadBalancerBackend.RefreshLbCmd cmd =
+                    JSONObjectUtil.toObject(e.body, VirtualRouterLoadBalancerBackend.RefreshLbCmd.class)
+            cmds.add(cmd)
+            return rsp
+        }
+
+        addVmNicToLoadBalancer {
+            listenerUuid = listener.uuid
+            vmNicUuids = [vm.getVmNics().get(0).getUuid()]
+        }
+
+        assert cmds.size() == 1
+        for (VirtualRouterLoadBalancerBackend.RefreshLbCmd cmd : cmds) {
+            assert cmd.lbs.get(0).certificateUuid == cerInv.uuid
+            assert cmd.lbs.get(0).mode == LoadBalancerConstants.LB_PROTOCOL_HTTPS
+        }
+
+        List<VirtualRouterLoadBalancerBackend.RefreshLbCmd> cmds1 = new ArrayList<>()
+        env.afterSimulator(VirtualRouterLoadBalancerBackend.REFRESH_LB_PATH) { rsp, HttpEntity<String> e ->
+            VirtualRouterLoadBalancerBackend.RefreshLbCmd cmd =
+                    JSONObjectUtil.toObject(e.body, VirtualRouterLoadBalancerBackend.RefreshLbCmd.class)
+            cmds1.add(cmd)
+            return rsp
+        }
+
+        removeCertificateFromLoadBalancerListener {
+            listenerUuid = listener.uuid
+            certificateUuid = cerInv.uuid
+        }
+        assert cmds1.size() == 1
+        assert cmds1.get(0).lbs.size() == 1
+        for (VirtualRouterLoadBalancerBackend.LbTO lbto : cmds1.get(0).lbs) {
+            assert lbto.certificateUuid == null
+            assert lbto.mode == LoadBalancerConstants.LB_PROTOCOL_HTTPS
+        }
+
+        deleteLoadBalancer {
+            uuid = lb.uuid
+        }
+
+        deleteVip {
+            uuid = vip.uuid
+        }
+
+        deleteCertificate {
+            uuid = cerInv.uuid
         }
     }
 

@@ -12,9 +12,7 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.host.MigrateVmOnHypervisorMsg;
-import org.zstack.header.vm.APIMigrateVmMsg;
-import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.*;
 
 import java.util.Map;
 
@@ -28,12 +26,10 @@ public class VmMigrateOnHypervisorFlow implements Flow {
     @Override
     public void run(final FlowTrigger chain, Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+
         boolean migrateFromDest = false;
-        if (spec.getMessage() instanceof APIMigrateVmMsg) {
-            APIMigrateVmMsg mmsg = (APIMigrateVmMsg)spec.getMessage();
-            if (mmsg.getMigrateFromDestination() != null) {
-                migrateFromDest = mmsg.getMigrateFromDestination();
-            }
+        if (spec.getMessage() instanceof MigrateVmMessage) {
+            migrateFromDest = ((MigrateVmMessage)spec.getMessage()).isMigrateFromDestination();
         }
 
         MigrateVmOnHypervisorMsg msg = new MigrateVmOnHypervisorMsg();

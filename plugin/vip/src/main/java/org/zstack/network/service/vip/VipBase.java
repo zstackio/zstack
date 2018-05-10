@@ -132,10 +132,9 @@ public class VipBase {
 
     protected boolean acquireCheckModifyVipAttributeStruct(ModifyVipAttributesStruct s) {
         if (s.isUserFor()) {
-             /* snat service is bound the router interface, don't need to bound to backend */
-            if (s.getUseFor().equals(NetworkServiceType.SNAT.toString())) {
-                return false;
-            }
+            VipUseForList useForList = new VipUseForList(self.getUseFor());
+            useForList.add(s.getUseFor());
+            self.setUseFor(useForList.toString());
         }
 
         if (s.isServiceProvider()) {
@@ -144,31 +143,27 @@ public class VipBase {
                 throw new OperationFailureException(operr("service provider of the vip[uuid:%s, name:%s, ip: %s] has been set to %s",
                         self.getUuid(), self.getName(), self.getIp(), self.getServiceProvider()));
             }
+            self.setServiceProvider(s.getServiceProvider());
         }
 
         if (s.isPeerL3NetworkUuid()) {
             try {
                 if (s.isServiceProvider()) {
                     addPeerL3NetworkUuid(s.getPeerL3NetworkUuid());
-                    refresh();
                 }
             } catch (CloudRuntimeException e) {
                 throw new OperationFailureException(operr(e.getMessage()));
             }
         }
 
-        if (s.isPeerL3NetworkUuid() && s.isServiceProvider()) {
-            self.setServiceProvider(s.getServiceProvider());
-            self = dbf.updateAndRefresh(self);
-            logger.debug(String.format("set vip[uuid: %s] service provider as[%s]", self.getUuid(), self.getServiceProvider()));
-            return true;
+        self = dbf.updateAndRefresh(self);
+
+        /* snat service is bound the router interface, don't need to bound to backend */
+        if (s.getUseFor().equals(NetworkServiceType.SNAT.toString())) {
+            return false;
         }
 
-        if (self.getPeerL3NetworkUuids() == null || self.getServiceProvider() == null) {
-            return false;
-        } else {
-            return true;
-        }
+        return s.isPeerL3NetworkUuid() && s.isServiceProvider();
     }
 
     protected boolean releaseCheckModifyVipAttributeStruct( ModifyVipAttributesStruct s) {
@@ -336,13 +331,6 @@ public class VipBase {
 
         if (!acquireCheckModifyVipAttributeStruct(s)) {
             /* no need to install vip to backend */
-            if (s.isUserFor()){
-                /* useFor is not changed */
-                VipUseForList useForList = new VipUseForList(self.getUseFor());
-                useForList.add(s.getUseFor());
-                self.setUseFor(useForList.toString());
-                dbf.update(self);
-            }
             completion.success();
             return;
         }
@@ -687,8 +675,6 @@ public class VipBase {
         if (peerL3NetworkUuid == null) {
             return false;
         }
-
-        refresh();
 
         if (self.getPeerL3NetworkRefs() == null || self.getPeerL3NetworkRefs().isEmpty()) {
             return true;
