@@ -8,8 +8,8 @@ public class SourceClassMap {
 			put("org.zstack.appliancevm.ApplianceVmInventory", "org.zstack.sdk.ApplianceVmInventory");
 			put("org.zstack.billing.DataVolumeSpending", "org.zstack.sdk.DataVolumeSpending");
 			put("org.zstack.billing.DataVolumeSpendingInventory", "org.zstack.sdk.DataVolumeSpendingInventory");
-			put("org.zstack.billing.GpuSpending", "org.zstack.sdk.GpuSpending");
-			put("org.zstack.billing.GpuSpendingInventory", "org.zstack.sdk.GpuSpendingInventory");
+			put("org.zstack.billing.PciDeviceSpending", "org.zstack.sdk.PciDeviceSpending");
+			put("org.zstack.billing.PciDeviceSpendingInventory", "org.zstack.sdk.PciDeviceSpendingInventory");
 			put("org.zstack.billing.PriceInventory", "org.zstack.sdk.PriceInventory");
 			put("org.zstack.billing.PricePciDeviceOfferingRefInventory", "org.zstack.sdk.PricePciDeviceOfferingRefInventory");
 			put("org.zstack.billing.RootVolumeSpending", "org.zstack.sdk.RootVolumeSpending");
@@ -316,8 +316,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.FusionstorPrimaryStorageMonInventory", "org.zstack.storage.fusionstor.primary.FusionstorPrimaryStorageMonInventory");
 			put("org.zstack.sdk.GarbageCollectorInventory", "org.zstack.core.gc.GarbageCollectorInventory");
 			put("org.zstack.sdk.GlobalConfigInventory", "org.zstack.core.config.GlobalConfigInventory");
-			put("org.zstack.sdk.GpuSpending", "org.zstack.billing.GpuSpending");
-			put("org.zstack.sdk.GpuSpendingInventory", "org.zstack.billing.GpuSpendingInventory");
 			put("org.zstack.sdk.HostDiskCapacity", "org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply$HostDiskCapacity");
 			put("org.zstack.sdk.HostInventory", "org.zstack.header.host.HostInventory");
 			put("org.zstack.sdk.HostIommuStateType", "org.zstack.pciDevice.HostIommuStateType");
@@ -375,6 +373,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.PciDeviceOfferingInventory", "org.zstack.pciDevice.PciDeviceOfferingInventory");
 			put("org.zstack.sdk.PciDeviceOfferingType", "org.zstack.pciDevice.PciDeviceOfferingType");
 			put("org.zstack.sdk.PciDevicePciDeviceOfferingRefInventory", "org.zstack.pciDevice.PciDevicePciDeviceOfferingRefInventory");
+			put("org.zstack.sdk.PciDeviceSpending", "org.zstack.billing.PciDeviceSpending");
+			put("org.zstack.sdk.PciDeviceSpendingInventory", "org.zstack.billing.PciDeviceSpendingInventory");
 			put("org.zstack.sdk.PciDeviceState", "org.zstack.pciDevice.PciDeviceState");
 			put("org.zstack.sdk.PciDeviceStatus", "org.zstack.pciDevice.PciDeviceStatus");
 			put("org.zstack.sdk.PciDeviceType", "org.zstack.pciDevice.PciDeviceType");
