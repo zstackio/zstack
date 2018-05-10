@@ -3,17 +3,21 @@ package org.zstack.identity;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.cloudbus.CloudBusGson;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.header.Component;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
+import org.zstack.header.identity.IdentityByPassCheck;
 import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.identity.SuppressCredentialCheck;
 import org.zstack.header.identity.extension.AuthorizationBackend;
 import org.zstack.header.message.APIMessage;
 import org.zstack.utils.BeanUtils;
+import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.err;
@@ -93,7 +97,13 @@ public class AuthorizationManager implements GlobalApiMessageInterceptor, Compon
             return msg;
         }
 
-        SessionInventory session = evaluateSession(msg);
+        SessionInventory session;
+        if (msg.getHeaders().containsKey(IdentityByPassCheck.NoSessionEvaluation.toString())) {
+            session = msg.getSession();
+            DebugUtils.Assert(session != null, String.format("NoSessionEvaluation set but no session set in the message: %s", CloudBusGson.toJson(msg)));
+        } else {
+            session = evaluateSession(msg);
+        }
 
         return findAuthorizationBackend(session).authorize(msg);
     }

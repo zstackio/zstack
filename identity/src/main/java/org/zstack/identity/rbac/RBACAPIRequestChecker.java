@@ -3,6 +3,7 @@ package org.zstack.identity.rbac;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.AccountConstant;
+import org.zstack.header.identity.IdentityByPassCheck;
 import org.zstack.header.identity.PolicyInventory;
 import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.rbac.PolicyMatcher;
@@ -28,6 +29,11 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
 
     protected APIMessage message;
     protected PolicyMatcher policyMatcher = new PolicyMatcher();
+
+
+    public boolean bypass(APIMessage msg) {
+        return msg.getHeaders().containsKey(IdentityByPassCheck.NoRBACCheck.toString());
+    }
 
     @Override
     public void check(APIMessage msg) {

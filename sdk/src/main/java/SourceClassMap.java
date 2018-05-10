@@ -233,6 +233,11 @@ public class SourceClassMap {
 			put("org.zstack.storage.primary.sharedblock.SharedBlockState", "org.zstack.sdk.SharedBlockState");
 			put("org.zstack.storage.primary.sharedblock.SharedBlockStatus", "org.zstack.sdk.SharedBlockStatus");
 			put("org.zstack.storage.primary.sharedblock.SharedBlockType", "org.zstack.sdk.SharedBlockType");
+			put("org.zstack.ticket.entity.TicketFlowCollectionInventory", "org.zstack.sdk.ticket.entity.TicketFlowCollectionInventory");
+			put("org.zstack.ticket.entity.TicketFlowInventory", "org.zstack.sdk.ticket.entity.TicketFlowInventory");
+			put("org.zstack.ticket.entity.TicketInventory", "org.zstack.sdk.ticket.entity.TicketInventory");
+			put("org.zstack.ticket.entity.TicketRequest", "org.zstack.sdk.ticket.entity.TicketRequest");
+			put("org.zstack.ticket.entity.TicketStatus", "org.zstack.sdk.ticket.entity.TicketStatus");
 			put("org.zstack.usbDevice.UsbDeviceInventory", "org.zstack.sdk.UsbDeviceInventory");
 			put("org.zstack.usbDevice.UsbDeviceState", "org.zstack.sdk.UsbDeviceState");
 			put("org.zstack.vmware.ESXHostInventory", "org.zstack.sdk.ESXHostInventory");
@@ -514,6 +519,11 @@ public class SourceClassMap {
 			put("org.zstack.sdk.sns.platform.email.SNSEmailEndpointInventory", "org.zstack.sns.platform.email.SNSEmailEndpointInventory");
 			put("org.zstack.sdk.sns.platform.email.SNSEmailPlatformInventory", "org.zstack.sns.platform.email.SNSEmailPlatformInventory");
 			put("org.zstack.sdk.sns.platform.http.SNSHttpEndpointInventory", "org.zstack.sns.platform.http.SNSHttpEndpointInventory");
+			put("org.zstack.sdk.ticket.entity.TicketFlowCollectionInventory", "org.zstack.ticket.entity.TicketFlowCollectionInventory");
+			put("org.zstack.sdk.ticket.entity.TicketFlowInventory", "org.zstack.ticket.entity.TicketFlowInventory");
+			put("org.zstack.sdk.ticket.entity.TicketInventory", "org.zstack.ticket.entity.TicketInventory");
+			put("org.zstack.sdk.ticket.entity.TicketRequest", "org.zstack.ticket.entity.TicketRequest");
+			put("org.zstack.sdk.ticket.entity.TicketStatus", "org.zstack.ticket.entity.TicketStatus");
 			put("org.zstack.sdk.zwatch.alarm.ActionParam", "org.zstack.zwatch.alarm.APICreateAlarmMsg$ActionParam");
 			put("org.zstack.sdk.zwatch.alarm.AlarmActionInventory", "org.zstack.zwatch.alarm.AlarmActionInventory");
 			put("org.zstack.sdk.zwatch.alarm.AlarmInventory", "org.zstack.zwatch.alarm.AlarmInventory");
