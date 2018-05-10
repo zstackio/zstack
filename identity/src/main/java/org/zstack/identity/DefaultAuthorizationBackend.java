@@ -22,7 +22,11 @@ public class DefaultAuthorizationBackend implements AuthorizationBackend {
         checkers.add(new OperationTargetAPIRequestChecker());
         checkers.add(new QuotaAPIRequestChecker());
 
-        checkers.forEach(c->c.check(msg));
+        checkers.forEach(c-> {
+            if (!c.bypass(msg)) {
+                c.check(msg);
+            }
+        });
         return msg;
     }
 }
