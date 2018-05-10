@@ -217,6 +217,57 @@ ALTER TABLE `zstack`.`SharedResourceVO` ADD COLUMN `permission` int unsigned DEF
 ALTER TABLE `zstack`.`SNSTopicVO` ADD COLUMN `ownerType` varchar(32) DEFAULT 'Customized';
 ALTER TABLE `zstack`.`SNSApplicationEndpointVO` ADD COLUMN `ownerType` varchar(32) DEFAULT 'Customized';
 
+CREATE TABLE `TicketFlowVO` (
+    `uuid` VARCHAR(32) NOT NULL,
+    `name` VARCHAR(255) NOT NULL,
+    `description` VARCHAR(2048) DEFAULT NULL,
+    `collectionUuid` VARCHAR(32) NOT NULL,
+    `parentFlowUuid` VARCHAR(32) DEFAULT NULL,
+    `flowContext` VARCHAR(65535) NOT NULL,
+    `flowContextType` VARCHAR(255) NOT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `TicketFlowCollectionVO` (
+    `uuid` VARCHAR(32) NOT NULL,
+    `name` VARCHAR(255) NOT NULL,
+    `description` VARCHAR(2048) DEFAULT NULL,
+    `isDefault` tinyint(1) unsigned DEFAULT 0,
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `TicketStatusHistoryVO` (
+    `uuid` VARCHAR(32) NOT NULL,
+    `ticketUuid` VARCHAR(32) NOT NULL,
+    `fromStatus` VARCHAR(255) NOT NULL,
+    `toStatus` VARCHAR(255) NOT NULL,
+    `comment` VARCHAR(65535) DEFAULT NULL,
+    `operatorUuid` VARCHAR(32) NOT NULL,
+    `operatorType` VARCHAR(255) NOT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `TicketVO` (
+    `uuid` VARCHAR(32) NOT NULL,
+    `name` VARCHAR(255) DEFAULT NULL,
+    `description` VARCHAR(65535) DEFAULT NULL,
+    `status` VARCHAR(255) NOT NULL,
+    `accountSystemType` VARCHAR(255) NOT NULL,
+    `accountSystemContext` VARCHAR(65535) DEFAULT NULL,
+    `requests` VARCHAR(65535) NOT NULL,
+    `flowCollectionUuid` VARCHAR(32) NOT NULL,
+    `currentFlowUuid` VARCHAR(32) NOT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 # Foreign keys for table IAM2OrganizationAttributeVO
 
 ALTER TABLE IAM2OrganizationAttributeVO ADD CONSTRAINT fkIAM2OrganizationAttributeVOIAM2OrganizationVO FOREIGN KEY (organizationUuid) REFERENCES IAM2OrganizationVO (uuid) ;
