@@ -1,6 +1,5 @@
 package org.zstack.portal.apimediator;
 
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,11 +24,11 @@ import org.zstack.header.rest.RestRequest;
 import org.zstack.portal.apimediator.schema.Service;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.FieldUtils;
-import org.zstack.utils.TypeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.FunctionNoArg;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
+import static org.zstack.core.Platform.*;
 
 import javax.persistence.TypedQuery;
 import javax.xml.bind.JAXBContext;
@@ -37,12 +36,9 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import java.io.File;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static org.zstack.core.Platform.argerr;
 
 /**
  * Created with IntelliJ IDEA.
@@ -333,8 +329,14 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
                 }
             });
         } catch (ApiMessageInterceptionException | StopRoutingException ae) {
+            if (logger.isTraceEnabled()) {
+                logger.trace(ae.getMessage(), ae);
+            }
             throw ae;
         } catch (APIMessage.InvalidApiMessageException ie) {
+            if (logger.isTraceEnabled()) {
+                logger.trace(ie.getMessage(), ie);
+            }
             throw new ApiMessageInterceptionException(argerr(ie.getMessage(), ie.getArguments()));
         } catch (Exception e) {
             logger.warn(e.getMessage(), e);
