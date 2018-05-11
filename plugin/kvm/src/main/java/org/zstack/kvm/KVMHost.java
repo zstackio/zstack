@@ -355,8 +355,6 @@ public class KVMHost extends HostBase implements Host {
             handle((KvmRunShellMsg) msg);
         } else if (msg instanceof VmDirectlyDestroyOnHypervisorMsg) {
             handle((VmDirectlyDestroyOnHypervisorMsg) msg);
-        } else if (msg instanceof OnlineChangeVmCpuMemoryMsg) {
-            handle((OnlineChangeVmCpuMemoryMsg) msg);
         } else if (msg instanceof IncreaseVmCpuMsg) {
             handle((IncreaseVmCpuMsg) msg);
         } else if (msg instanceof IncreaseVmMemoryMsg) {
@@ -496,33 +494,6 @@ public class KVMHost extends HostBase implements Host {
         }
 
         bus.reply(msg, reply);
-    }
-
-    private void handle(final OnlineChangeVmCpuMemoryMsg msg) {
-//        final OnlineChangeVmCpuMemoryReply reply = new OnlineChangeVmCpuMemoryReply();
-//
-//        ChangeCpuMemoryCmd cmd = new ChangeCpuMemoryCmd();
-//        cmd.setVmUuid(msg.getVmInstanceUuid());
-//        cmd.setCpuNum(msg.getCpuNum());
-//        cmd.setMemorySize(msg.getMemorySize());
-//        new Http<>(onlineChangeCpuMemoryPath, cmd, ChangeCpuMemoryResponse.class).call(new ReturnValueCompletion<ChangeCpuMemoryResponse>(msg) {
-//            @Override
-//            public void success(ChangeCpuMemoryResponse ret) {
-//                if (!ret.isSuccess()) {
-//                    reply.setError(operr("operation error, because:%s", ret.getError()));
-//                } else {
-//                    reply.setCpuNum(ret.getCpuNum());
-//                    reply.setMemorySize(ret.getMemorySize());
-//                }
-//                bus.reply(msg, reply);
-//            }
-//
-//            @Override
-//            public void fail(ErrorCode errorCode) {
-//                reply.setError(errorCode);
-//                bus.reply(msg, reply);
-//            }
-//        });
     }
 
     private void handle(final GetVmConsoleAddressFromHostMsg msg) {
