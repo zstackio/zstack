@@ -75,7 +75,7 @@ public class AuthorizationManager implements GlobalApiMessageInterceptor, Compon
     }
 
     private AuthorizationBackend findAuthorizationBackend(SessionInventory session) {
-        AuthorizationBackend bkd = authorizationBackendsCache.getIfPresent(session.getUuid());
+        AuthorizationBackend bkd = session.getUuid() == null ? null : authorizationBackendsCache.getIfPresent(session.getUuid());
         if (bkd == null) {
             bkd = defaultAuthorizationBackend;
             for (AuthorizationBackend b : authorizationBackends) {
@@ -85,7 +85,9 @@ public class AuthorizationManager implements GlobalApiMessageInterceptor, Compon
                 }
             }
 
-            authorizationBackendsCache.put(session.getUuid(), bkd);
+            if (session.getUuid() != null) {
+                authorizationBackendsCache.put(session.getUuid(), bkd);
+            }
         }
 
         return bkd;

@@ -31,11 +31,17 @@ public class CreateTicketAction extends AbstractAction {
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List requests;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String flowCollectionUuid;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String accountSystemType;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Object accountSystemContext;
 
     @Param(required = false)
     public java.lang.String resourceUuid;

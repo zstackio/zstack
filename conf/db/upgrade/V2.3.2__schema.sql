@@ -262,7 +262,7 @@ CREATE TABLE `TicketVO` (
     `accountSystemContext` VARCHAR(65535) DEFAULT NULL,
     `requests` VARCHAR(65535) NOT NULL,
     `flowCollectionUuid` VARCHAR(32) NOT NULL,
-    `currentFlowUuid` VARCHAR(32) NOT NULL,
+    `currentFlowUuid` VARCHAR(32) DEFAULT NULL,
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY (`uuid`)
