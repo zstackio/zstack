@@ -15,7 +15,7 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.longjob.LongJobFor;
 import org.zstack.header.longjob.LongJobVO;
 import org.zstack.header.message.MessageReply;
-import org.zstack.longjob.LongJob;
+import org.zstack.header.longjob.LongJob;
 import org.zstack.utils.gson.JSONObjectUtil;
 
 /**

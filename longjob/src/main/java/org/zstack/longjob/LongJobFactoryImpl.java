@@ -2,6 +2,7 @@ package org.zstack.longjob;
 
 import org.zstack.header.Component;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.longjob.LongJob;
 import org.zstack.header.longjob.LongJobFor;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
