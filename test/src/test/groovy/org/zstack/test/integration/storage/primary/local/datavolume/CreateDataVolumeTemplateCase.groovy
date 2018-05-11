@@ -1,5 +1,6 @@
 package org.zstack.test.integration.storage.primary.local.datavolume
 
+import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
 import org.zstack.header.image.ImageVO
 import org.zstack.sdk.BackupStorageInventory
@@ -9,10 +10,13 @@ import org.zstack.sdk.KVMHostInventory
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VolumeInventory
+import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl
 import org.zstack.test.integration.storage.Env
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
+import org.zstack.utils.gson.JSONObjectUtil
+
 /**
  * Created by mingjian.deng on 2017/10/19.
  */
@@ -78,5 +82,23 @@ class CreateDataVolumeTemplateCase extends SubCase {
 
         assert image.name == "data-volume-1"
         assert Q.New(ImageVO.class).count() == count + 2
+
+        // make sure create data volume is copy from image
+        LocalStorageKvmSftpBackupStorageMediatorImpl.SftpDownloadBitsCmd cmd
+        env.simulator(LocalStorageKvmSftpBackupStorageMediatorImpl.DOWNLOAD_BIT_PATH) {HttpEntity<String> e ->
+            cmd = JSONObjectUtil.toObject(e.getBody(), LocalStorageKvmSftpBackupStorageMediatorImpl.SftpDownloadBitsCmd.class)
+            return new LocalStorageKvmSftpBackupStorageMediatorImpl.SftpDownloadBitsRsp()
+        }
+
+        def vol = createDataVolumeFromVolumeTemplate {
+            primaryStorageUuid = ps.uuid
+            imageUuid = image.uuid
+            hostUuid = kvm.uuid
+            name = "test"
+        } as VolumeInventory
+
+        assert cmd != null
+        assert vol.installPath == cmd.primaryStorageInstallPath :
+                "you change the create data volume from template logic, make sure the imageCacheVO will be created correctly after volume migrated!!!"
     }
 }

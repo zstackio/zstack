@@ -49,6 +49,7 @@ class LocalStorageSpec extends PrimaryStorageSpec {
         simulator(LocalStorageKvmBackend.GET_BASE_IMAGE_PATH) {
             def rsp = new LocalStorageKvmBackend.GetVolumeBaseImagePathRsp()
             rsp.path = "/some/patch"
+            rsp.size = 0
             return rsp
         }
 
