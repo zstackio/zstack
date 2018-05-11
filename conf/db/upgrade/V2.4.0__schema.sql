@@ -12,6 +12,7 @@ CREATE TABLE  `zstack`.`PricePciDeviceOfferingRefVO` (
 CREATE TABLE  `zstack`.`PciDeviceUsageVO` (
     `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
     `pciDeviceUuid` varchar(32) NOT NULL,
+    `description` varchar(2048) DEFAULT NULL,
     `vmUuid` varchar(32) NOT NULL,
     `status` varchar(64) NOT NULL,
     `accountUuid` varchar(32) NOT NULL,
