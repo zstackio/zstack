@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class ChangeTicketStatusAction extends AbstractAction {
+public class UpdateTicketRequestAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class ChangeTicketStatusAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.ticket.api.ChangeTicketStatusResult value;
+        public org.zstack.sdk.ticket.api.UpdateTicketRequestResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -28,11 +28,8 @@ public class ChangeTicketStatusAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public org.zstack.sdk.ticket.entity.TicketStatusEvent statusEvent;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String comment;
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List requests;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -57,8 +54,8 @@ public class ChangeTicketStatusAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.ticket.api.ChangeTicketStatusResult value = res.getResult(org.zstack.sdk.ticket.api.ChangeTicketStatusResult.class);
-        ret.value = value == null ? new org.zstack.sdk.ticket.api.ChangeTicketStatusResult() : value; 
+        org.zstack.sdk.ticket.api.UpdateTicketRequestResult value = res.getResult(org.zstack.sdk.ticket.api.UpdateTicketRequestResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ticket.api.UpdateTicketRequestResult() : value; 
 
         return ret;
     }
@@ -91,7 +88,7 @@ public class ChangeTicketStatusAction extends AbstractAction {
         info.path = "/tickets/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "changeTicketStatus";
+        info.parameterName = "updateTicketRequest";
         return info;
     }
 
