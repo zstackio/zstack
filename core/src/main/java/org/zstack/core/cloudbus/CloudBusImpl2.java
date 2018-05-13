@@ -1326,6 +1326,21 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         }
     }
 
+    @Override
+    public void send(APIMessage msg, java.util.function.Consumer<APIEvent> consumer) {
+        subscribeEvent((e) -> {
+            APIEvent ae = (APIEvent) e;
+            if (ae.getApiId().equals(msg.getId())) {
+                consumer.accept(ae);
+                return true;
+            }
+
+            return false;
+        }, new APIEvent());
+
+        send(msg);
+    }
+
     private void evaluateMessageTimeout(NeedReplyMessage msg) {
         Long timeout = timeoutMgr.getTimeout(msg.getClass());
 

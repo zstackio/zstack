@@ -248,6 +248,8 @@ CREATE TABLE `TicketStatusHistoryVO` (
     `comment` VARCHAR(65535) DEFAULT NULL,
     `operatorUuid` VARCHAR(32) NOT NULL,
     `operatorType` VARCHAR(255) NOT NULL,
+    `operationContext` VARCHAR(65535) DEFAULT NULL,
+    `operationContextType` VARCHAR(255) DEFAULT NULL,
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY (`uuid`)

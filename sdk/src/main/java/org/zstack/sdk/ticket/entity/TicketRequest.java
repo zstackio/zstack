@@ -4,6 +4,14 @@ package org.zstack.sdk.ticket.entity;
 
 public class TicketRequest  {
 
+    public java.lang.String requestName;
+    public void setRequestName(java.lang.String requestName) {
+        this.requestName = requestName;
+    }
+    public java.lang.String getRequestName() {
+        return this.requestName;
+    }
+
     public java.lang.String apiName;
     public void setApiName(java.lang.String apiName) {
         this.apiName = apiName;

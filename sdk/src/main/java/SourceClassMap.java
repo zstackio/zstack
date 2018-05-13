@@ -239,6 +239,7 @@ public class SourceClassMap {
 			put("org.zstack.ticket.entity.TicketRequest", "org.zstack.sdk.ticket.entity.TicketRequest");
 			put("org.zstack.ticket.entity.TicketStatus", "org.zstack.sdk.ticket.entity.TicketStatus");
 			put("org.zstack.ticket.entity.TicketStatusEvent", "org.zstack.sdk.ticket.entity.TicketStatusEvent");
+			put("org.zstack.ticket.entity.TicketStatusHistoryInventory", "org.zstack.sdk.ticket.entity.TicketStatusHistoryInventory");
 			put("org.zstack.usbDevice.UsbDeviceInventory", "org.zstack.sdk.UsbDeviceInventory");
 			put("org.zstack.usbDevice.UsbDeviceState", "org.zstack.sdk.UsbDeviceState");
 			put("org.zstack.vmware.ESXHostInventory", "org.zstack.sdk.ESXHostInventory");
@@ -526,6 +527,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ticket.entity.TicketRequest", "org.zstack.ticket.entity.TicketRequest");
 			put("org.zstack.sdk.ticket.entity.TicketStatus", "org.zstack.ticket.entity.TicketStatus");
 			put("org.zstack.sdk.ticket.entity.TicketStatusEvent", "org.zstack.ticket.entity.TicketStatusEvent");
+			put("org.zstack.sdk.ticket.entity.TicketStatusHistoryInventory", "org.zstack.ticket.entity.TicketStatusHistoryInventory");
 			put("org.zstack.sdk.zwatch.alarm.ActionParam", "org.zstack.zwatch.alarm.APICreateAlarmMsg$ActionParam");
 			put("org.zstack.sdk.zwatch.alarm.AlarmActionInventory", "org.zstack.zwatch.alarm.AlarmActionInventory");
 			put("org.zstack.sdk.zwatch.alarm.AlarmInventory", "org.zstack.zwatch.alarm.AlarmInventory");
