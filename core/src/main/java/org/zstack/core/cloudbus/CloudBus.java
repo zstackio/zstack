@@ -8,12 +8,15 @@ import org.zstack.header.message.*;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 public interface CloudBus extends Component {
     void send(Message msg);
     
     <T extends Message> void send(List<T> msgs);
-    
+
+    void send(APIMessage msg, Consumer<APIEvent> consumer);
+
     void send(NeedReplyMessage msg, CloudBusCallBack callback);
 
     @Deprecated
