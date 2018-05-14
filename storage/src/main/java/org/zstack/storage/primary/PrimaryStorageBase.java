@@ -1148,21 +1148,4 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                     operr("cannot attach volume[uuid:%s] whose primary storage is Maintenance", volumeUuid));
         }
     }
-
-    @Transactional(readOnly = true)
-    public String getAvailableHostUuidForOperation() {
-        List<String> hostUuids = Q.New(PrimaryStorageHostRefVO.class).
-                eq(PrimaryStorageHostRefVO_.primaryStorageUuid, self.getUuid()).
-                eq(PrimaryStorageHostRefVO_.status, PrimaryStorageHostStatus.Connected).select(PrimaryStorageHostRefVO_.hostUuid).listValues();
-        if (hostUuids == null || hostUuids.size() == 0) {
-            return null;
-        }
-        List<String> results = Q.New(HostVO.class).eq(HostVO_.status, HostStatus.Connected).in(HostVO_.uuid, hostUuids).
-                eq(HostVO_.state, HostState.Enabled).select(HostVO_.uuid).listValues();
-        if (results == null || results.size() == 0) {
-            return null;
-        }
-        Collections.shuffle(results);
-        return results.get(0);
-    }
 }

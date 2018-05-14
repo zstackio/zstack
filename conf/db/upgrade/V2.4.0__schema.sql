@@ -97,7 +97,7 @@ CREATE TABLE IF NOT EXISTS `AliyunNasMountVolumeRefVO` (
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY  (`id`),
     CONSTRAINT `fkAliyunNasMountVolumeRefVOVolumeEO` FOREIGN KEY (`volumeUuid`) REFERENCES `zstack`.`VolumeEO` (`uuid`) ON DELETE CASCADE,
-    CONSTRAINT `fkAliyunNasMountVolumeRefVOImageEO` FOREIGN KEY (`imageUuid`) REFERENCES `zstack`.`ImageEO` (`uuid`) ON DELETE NO ACTION,
+    CONSTRAINT `fkAliyunNasMountVolumeRefVOImageEO` FOREIGN KEY (`imageUuid`) REFERENCES `zstack`.`ImageEO` (`uuid`) ON DELETE CASCADE,
     CONSTRAINT `fkAliyunNasMountVolumeRefVOHostEO` FOREIGN KEY (`hostUuid`) REFERENCES `zstack`.`HostEO` (`uuid`) ON DELETE CASCADE,
     CONSTRAINT `fkAliyunNasMountVolumeRefVOAliyunNasMountTargetVO` FOREIGN KEY (`nasMountUuid`) REFERENCES `zstack`.`AliyunNasMountTargetVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

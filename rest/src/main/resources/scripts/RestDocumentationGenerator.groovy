@@ -76,7 +76,9 @@ class RestDocumentationGenerator implements DocumentGenerator {
             "securityGroupUuid": "安全组UUID",
             "eipUuid": "弹性IP UUID",
             "loadBalancerUuid": "负载均衡器UUID",
-            "rootVolumeUuid": "根云盘UUID"
+            "rootVolumeUuid": "根云盘UUID",
+            "userTag": "用户标签",
+            "systemTag": "系统标签"
     ]
 
     String CHINESE_CN = "zh_cn"

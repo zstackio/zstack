@@ -8,6 +8,8 @@ import org.zstack.identity.AccountManager;
 import org.zstack.utils.path.PathUtil;
 
 public class PrimaryStoragePathMaker {
+    public static String cachedImageInstallDir = "imagecache";
+
     private static AccountManager acntMgr;
 
     protected static String getAccountUuidOfResource(String resourceUuid) {
@@ -31,13 +33,17 @@ public class PrimaryStoragePathMaker {
 
     public static String makeCachedImageInstallPath(ImageInventory iminv) {
         if (iminv.getMediaType().equals(ImageMediaType.ISO.toString())) {
-            return PathUtil.join("imagecache", "iso", iminv.getUuid(), iminv.getUuid() + ".iso");
+            return PathUtil.join(getCachedImageInstallDir(), "iso", iminv.getUuid(), iminv.getUuid() + ".iso");
         } else {
-            return PathUtil.join("imagecache", "template", iminv.getUuid(), iminv.getUuid() + ".qcow2");
+            return PathUtil.join(getCachedImageInstallDir(), "template", iminv.getUuid(), iminv.getUuid() + ".qcow2");
         }
     }
 
     public static String makeCachedImageInstallPathFromImageUuidForTemplate(String imageUuid) {
-        return PathUtil.join("imagecache", "template", imageUuid, imageUuid + ".qcow2");
+        return PathUtil.join(getCachedImageInstallDir(), "template", imageUuid, imageUuid + ".qcow2");
+    }
+
+    public static String getCachedImageInstallDir(){
+        return cachedImageInstallDir;
     }
 }
