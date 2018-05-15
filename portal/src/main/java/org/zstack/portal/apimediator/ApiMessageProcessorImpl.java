@@ -259,75 +259,7 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
 
     private void apiParamValidation(APIMessage msg) {
         try {
-            msg.validate((msg1, f, value, at) -> {
-                if (value != null && at.resourceType() != Object.class) {
-                    if (value instanceof Collection) {
-                        final Collection col = (Collection) value;
-                        if (!col.isEmpty()) {
-                            List<String> uuids = new FunctionNoArg<List<String>>() {
-                                @Override
-                                @Transactional(readOnly = true)
-                                public List<String> call() {
-                                    String sql = String.format("select e.uuid from %s e where e.uuid in (:uuids)", at.resourceType().getSimpleName());
-                                    TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-                                    q.setParameter("uuids", col);
-                                    return q.getResultList();
-                                }
-                            }.call();
-
-                            if (uuids.size() != col.size()) {
-                                List<String> invalids = new ArrayList<>();
-                                for (Object o : col) {
-                                    String uuid = (String) o;
-                                    if (!uuids.contains(uuid)) {
-                                        invalids.add(uuid);
-                                    }
-                                }
-
-                                if (!invalids.isEmpty()) {
-                                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND,
-                                            String.format("invalid field[%s], resource[uuids:%s, type:%s] not found", f.getName(), invalids, at.resourceType().getSimpleName())
-                                    ));
-                                }
-                            }
-                        }
-
-                    } else {
-                        DebugUtils.Assert(String.class.isAssignableFrom(f.getType()), String.format("field[%s] of message[%s] has APIParam.resourceType specified, then the field must be uuid which is a String, but actual is %s",
-                                f.getName(), msg.getClass().getName(), f.getType()));
-
-                        if (!dbf.isExist(value, at.resourceType())) {
-                            if (at.successIfResourceNotExisting()) {
-                                RestRequest rat = msg.getClass().getAnnotation(RestRequest.class);
-                                if (rat == null) {
-                                    throw new CloudRuntimeException(String.format("the API class[%s] does not have @RestRequest but it uses a successIfResourceNotExisting helper", msg.getClass()));
-                                }
-
-                                Pattern p = Pattern.compile("[0-9a-f]{8}[0-9a-f]{4}[1-5][0-9a-f]{3}[89ab][0-9a-f]{3}[0-9a-f]{12}");
-                                Matcher mt = p.matcher(value.toString());
-                                if (!mt.matches()){
-                                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND,
-                                            String.format("invalid value[%s] of field [%s]", value, f.getName())));
-                                }
-
-                                APIEvent evt;
-                                try {
-                                    evt = (APIEvent) rat.responseClass().getConstructor(String.class).newInstance(msg.getId());
-                                } catch (Exception e) {
-                                    throw new CloudRuntimeException(e);
-                                }
-
-                                bus.publish(evt);
-                                throw new StopRoutingException();
-                            } else {
-                                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND,
-                                        String.format("invalid field[%s], resource[uuid:%s, type:%s] not found", f.getName(), value, at.resourceType().getSimpleName())
-                                ));
-                            }
-                        }
-                    }
-                }
-            });
+            msg.validate(new PortApiValidator());
         } catch (ApiMessageInterceptionException | StopRoutingException ae) {
             if (logger.isTraceEnabled()) {
                 logger.trace(ae.getMessage(), ae);
