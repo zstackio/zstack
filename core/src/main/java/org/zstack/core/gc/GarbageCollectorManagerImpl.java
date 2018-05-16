@@ -96,15 +96,6 @@ public class GarbageCollectorManagerImpl extends AbstractService
 
     @Override
     public boolean start() {
-        startScanOrphanJobs();
-
-        GCGlobalConfig.SCAN_ORPHAN_JOB_INTERVAL.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
-            @Override
-            public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
-                startScanOrphanJobs();
-            }
-        });
-
         return true;
     }
 
@@ -162,11 +153,14 @@ public class GarbageCollectorManagerImpl extends AbstractService
 
     @Override
     public void managementNodeReady() {
-        try {
-            loadOrphanJobs();
-        } catch (Exception e) {
-            throw new CloudRuntimeException(e);
-        }
+        startScanOrphanJobs();
+
+        GCGlobalConfig.SCAN_ORPHAN_JOB_INTERVAL.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
+            @Override
+            public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
+                startScanOrphanJobs();
+            }
+        });
     }
 
     @Override

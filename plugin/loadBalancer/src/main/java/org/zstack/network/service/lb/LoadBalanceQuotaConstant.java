@@ -5,4 +5,5 @@ package org.zstack.network.service.lb;
  */
 public interface LoadBalanceQuotaConstant {
     String LOAD_BALANCER_NUM = "loadBalancer.num";
+    String LOAD_BALANCER_LISTENER_NUM = "listener.num";
 }

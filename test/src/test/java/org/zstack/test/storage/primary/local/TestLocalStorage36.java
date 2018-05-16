@@ -96,6 +96,7 @@ public class TestLocalStorage36 {
 
         config.backingFilePath = image.getBackupStorageRefs().get(0).getInstallPath();
         config.backingFileSize = image.getSize();
+        config.baseImageSize = image.getSize();
         config.checkBitsSuccess = true;
         config.copyBitsFromRemoteSuccess = false;
 

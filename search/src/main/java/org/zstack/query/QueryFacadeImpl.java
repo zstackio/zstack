@@ -7,6 +7,10 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.thread.SyncTask;
+import org.zstack.core.thread.SyncThread;
+import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.thread.ThreadGlobalProperty;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
@@ -45,6 +49,8 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
     private CloudBus bus;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private ThreadFacade thdf;
 
     public static final String USER_TAG = "__userTag__";
     public static final String SYSTEM_TAG = "__systemTag__";
@@ -156,9 +162,30 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
     }
 
     private void handle(APIBatchQueryMsg msg) {
-        APIBatchQueryReply reply = new APIBatchQueryReply();
-        reply.setResult(new BatchQuery().query(msg));
-        bus.reply(msg, reply);
+        thdf.syncSubmit(new SyncTask<Void>() {
+            @Override
+            public Void call() {
+                APIBatchQueryReply reply = new APIBatchQueryReply();
+                reply.setResult(new BatchQuery().query(msg));
+                bus.reply(msg, reply);
+                return null;
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
+            }
+
+            @Override
+            public String getSyncSignature() {
+                return "batch-query";
+            }
+
+            @Override
+            public int getSyncLevel() {
+                return ThreadGlobalProperty.MAX_THREAD_NUM / 2;
+            }
+        });
     }
 
     private void handle(APIGenerateQueryableFieldsMsg msg) {

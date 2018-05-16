@@ -1,19 +1,17 @@
 package org.zstack.test.integration.kvm.nic
 
 import org.zstack.core.db.DatabaseFacade
-import org.zstack.core.thread.AsyncThread
+import org.zstack.header.network.l3.L3NetworkCategory
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.header.vm.VmInstanceVO
-import org.zstack.header.vm.VmNicVO
 import org.zstack.network.service.flat.FlatNetworkServiceConstant
+import org.zstack.sdk.L2NetworkInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.testlib.VmSpec
 import org.zstack.utils.data.SizeUnit
-
-
 /**
  * Created by ads6ads6 on 2018/1/3O
  */
@@ -318,6 +316,15 @@ class GetVmAttachableL3NetworkCase extends SubCase {
         def l3_5 = env.inventoryByName("l3_5") as L3NetworkInventory
         def l3_6 = env.inventoryByName("l3_6") as L3NetworkInventory
         assert vm.clusterUuid != null
+
+        def l2 = env.inventoryByName("l2_0") as L2NetworkInventory
+
+        def system_l3 = createL3Network {
+            name = "system network"
+            l2NetworkUuid = l2.uuid
+            category = L3NetworkCategory.System
+            system = true
+        } as L3NetworkInventory
 
         def l3s = getVmAttachableL3Network {
             vmInstanceUuid = vm.uuid

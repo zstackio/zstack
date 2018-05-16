@@ -683,9 +683,15 @@ public class NfsPrimaryStorageKVMBackendCommands {
         public String url;
     }
 
+    /**
+     * volumeInstallDir contains all snapshots and base volume file,
+     * their backing file in imageCacheDir will be identified as the base image.
+     * This takes into consideration multiple snapshot chains and chain-based image.
+     */
     public static class GetVolumeBaseImagePathCmd extends NfsPrimaryStorageAgentCommand {
-        public String volumeUUid;
-        public String installPath;
+        public String volumeUuid;
+        public String volumeInstallDir;
+        public String imageCacheDir;
     }
 
     public static class GetVolumeBaseImagePathRsp extends NfsPrimaryStorageAgentResponse {

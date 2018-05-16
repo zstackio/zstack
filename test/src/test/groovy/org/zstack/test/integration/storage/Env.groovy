@@ -419,6 +419,7 @@ class Env {
                 image {
                     name = "image1"
                     url  = "http://zstack.org/download/test.qcow2"
+                    actualSize = 1
                 }
 
                 image {
