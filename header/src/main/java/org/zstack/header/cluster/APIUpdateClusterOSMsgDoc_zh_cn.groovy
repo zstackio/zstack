@@ -52,6 +52,26 @@ doc {
 					since "2.3"
 					
 				}
+				column {
+					name "excludePackages"
+					enclosedIn "updateClusterOS"
+					desc ""
+					location "body"
+					type "List"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "resourceUuid"
+					enclosedIn "updateClusterOS"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "0.6"
+					
+				}
 			}
         }
 
