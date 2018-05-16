@@ -53,6 +53,7 @@ import org.zstack.utils.gson.JSONObjectUtil
 
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
+import java.lang.reflect.Modifier
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
@@ -148,9 +149,8 @@ class EnvSpec implements Node, ApiHelper {
     protected ConcurrentLinkedQueue resourcesNeedDeletion = new ConcurrentLinkedQueue()
 
     static {
-        BeanUtils.reflections.getSubTypesOf(DBRemaining.class).each {
-            def remaining = it.newInstance()
-            allowedDBRemainingList.add(remaining.reportRemaining())
+        BeanUtils.reflections.getSubTypesOf(AllowedDBRemaining.class).findAll { !Modifier.isAbstract(it.modifiers) }.each {
+            allowedDBRemainingList.add(it.getConstructor().newInstance())
         }
     }
 
@@ -582,6 +582,7 @@ class EnvSpec implements Node, ApiHelper {
                 List vos = SQL.New("select a from ${type.name} a".toString(), voClz).list()
 
                 for (AllowedDBRemaining a : allowedDBRemainingList) {
+                    logger.debug("perform AllowedDBRemaining[${a.class}] check")
                     vos = a.check(type.name, vos)
                     if (vos.isEmpty()) {
                         // the remaining rows are allowed by test
@@ -589,8 +590,10 @@ class EnvSpec implements Node, ApiHelper {
                     }
                 }
 
+                List lst = vos.collect { it.getProperties() }
+
                 def err = "[${Test.CURRENT_SUB_CASE != null ? Test.CURRENT_SUB_CASE.class : this.class}] EnvSpec.delete() didn't cleanup the environment, there are still ${vos.size()} records in the database" +
-                        " table ${type.name}, go fix it immediately!!! Abort the system"
+                        " table ${type.name}, go fix it immediately!!! Abort the system\n ${lst}"
                 logger.fatal(err)
 
                 // abort the test suite
