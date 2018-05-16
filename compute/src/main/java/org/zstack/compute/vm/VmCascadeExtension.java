@@ -607,9 +607,8 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                     TypedQuery<VmInstanceVO> q = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
                     q.setParameter("vmType", VmInstanceConstant.USER_VM_TYPE);
                     q.setParameter("vmStates", Arrays.asList(
-                            VmInstanceState.Stopped,
-                            VmInstanceState.Running,
-                            VmInstanceState.Destroyed));
+                            VmInstanceState.Stopped, VmInstanceState.Paused,
+                            VmInstanceState.Running, VmInstanceState.Destroyed));
                     q.setParameter("uuids", l3uuids);
                     return q.getResultList();
                 }
@@ -635,14 +634,16 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                     String sql = "select vm from VmInstanceVO vm, VmNicVO nic, UsedIpVO ip, IpRangeVO ipr" +
                             " where vm.type = :vmType" +
                             " and vm.uuid = nic.vmInstanceUuid" +
-                            " and vm.state not in (:vmStates)" +
+                            " and vm.state in (:vmStates)" +
                             " and nic.usedIpUuid = ip.uuid" +
                             " and ip.ipRangeUuid = ipr.uuid" +
                             " and ipr.uuid in (:uuids)" +
                             " group by vm.uuid";
                     TypedQuery<VmInstanceVO> q = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
                     q.setParameter("vmType", VmInstanceConstant.USER_VM_TYPE);
-                    q.setParameter("vmStates", Arrays.asList(VmInstanceState.Stopped, VmInstanceState.Stopping));
+                    q.setParameter("vmStates", Arrays.asList(
+                            VmInstanceState.Stopped, VmInstanceState.Paused,
+                            VmInstanceState.Running, VmInstanceState.Destroyed));
                     q.setParameter("uuids", ipruuids);
                     return q.getResultList();
                 }

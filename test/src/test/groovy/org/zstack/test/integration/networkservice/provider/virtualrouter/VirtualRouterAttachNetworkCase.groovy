@@ -3,6 +3,10 @@ package org.zstack.test.integration.networkservice.provider.virtualrouter
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
+import org.zstack.header.network.l3.L3NetworkHostRouteVO
+import org.zstack.header.network.l3.L3NetworkHostRouteVO_
+import org.zstack.header.network.service.NetworkServiceConstants
+import org.zstack.network.service.flat.FlatNetworkSystemTags
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO
@@ -35,8 +39,15 @@ class VirtualRouterAttachNetworkCase extends SubCase {
     @Override
     void test() {
         env.create {
+            testHostRouteOnL3Network()
             testAttachOneSystemNetwork()
         }
+    }
+
+    void testHostRouteOnL3Network() {
+        def l3 = env.inventoryByName("l3") as L3NetworkInventory
+        assert !Q.New(L3NetworkHostRouteVO.class).eq(L3NetworkHostRouteVO_.l3NetworkUuid, l3.uuid)
+                .eq(L3NetworkHostRouteVO_.prefix, NetworkServiceConstants.METADATA_HOST_PREFIX).exists
     }
 
     void testAttachOneSystemNetwork() {

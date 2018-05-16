@@ -85,7 +85,8 @@ public class VolumeInventory implements Serializable {
 
     private String diskOfferingUuid;
     /**
-     * @desc uuid of image from which the volume is created when type = 'Root'. Null when type = 'Data'
+     * @desc uuid of image from which the volume is created when type = 'Root'.
+     * Null when type = 'Data' and created from empty
      * @nullable
      */
     private String rootImageUuid;

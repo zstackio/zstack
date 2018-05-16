@@ -11,9 +11,7 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.core.Completion;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l3.L3NetworkHostRouteVO;
-import org.zstack.header.network.l3.L3NetworkHostRouteVO_;
-import org.zstack.header.network.l3.UsedIpInventory;
+import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -76,13 +74,31 @@ public class FlatHostRouteBackend implements NetworkServiceHostRouteBackend, Dhc
 
     @Override
     public void afterAllocateDhcpServerIP(String L3NetworkUuid, UsedIpInventory dhcpSererIp) {
+        /* skip adding host route for network without host route service */
+        NetworkServiceL3NetworkRefVO ref = Q.New(NetworkServiceL3NetworkRefVO.class).eq(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, L3NetworkUuid)
+                .eq(NetworkServiceL3NetworkRefVO_.networkServiceType, NetworkServiceType.HostRoute.toString()).find();
+        if (ref == null) {
+            logger.debug(String.format("L3 Network doesn't has %s service", NetworkServiceType.HostRoute.toString()));
+            return;
+        }
+
+        IpRangeVO rangeVO = Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, L3NetworkUuid).limit(0).find();
+        if (rangeVO == null) {
+            return;
+        }
+
+        updateMetadataRoute(L3NetworkUuid, dhcpSererIp.getIp());
+        updateDefaultRoute(L3NetworkUuid, rangeVO.getGateway());
+    }
+
+    private void updateMetadataRoute(String L3NetworkUuid, String dhcpSererIp) {
         L3NetworkHostRouteVO vo = Q.New(L3NetworkHostRouteVO.class).eq(L3NetworkHostRouteVO_.l3NetworkUuid, L3NetworkUuid)
                 .eq(L3NetworkHostRouteVO_.prefix, NetworkServiceConstants.METADATA_HOST_PREFIX).find();
         if (vo != null) {
-            if (vo.getNexthop().equals(dhcpSererIp.getIp())) {
+            if (vo.getNexthop().equals(dhcpSererIp)) {
                 return;
             }
-            vo.setNexthop(dhcpSererIp.getIp());
+            vo.setNexthop(dhcpSererIp);
             dbf.update(vo);
             return;
         }
@@ -90,7 +106,26 @@ public class FlatHostRouteBackend implements NetworkServiceHostRouteBackend, Dhc
         vo = new L3NetworkHostRouteVO();
         vo.setL3NetworkUuid(L3NetworkUuid);
         vo.setPrefix(NetworkServiceConstants.METADATA_HOST_PREFIX);
-        vo.setNexthop(dhcpSererIp.getIp());
+        vo.setNexthop(dhcpSererIp);
+        dbf.persist(vo);
+    }
+
+    private void updateDefaultRoute(String L3NetworkUuid, String gwIp) {
+        L3NetworkHostRouteVO vo = Q.New(L3NetworkHostRouteVO.class).eq(L3NetworkHostRouteVO_.l3NetworkUuid, L3NetworkUuid)
+                .eq(L3NetworkHostRouteVO_.prefix, NetworkServiceConstants.DEFAULT_ROUTE_HOST_PREFIX).find();
+        if (vo != null) {
+            if (vo.getNexthop().equals(gwIp)) {
+                return;
+            }
+            vo.setNexthop(gwIp);
+            dbf.update(vo);
+            return;
+        }
+
+        vo = new L3NetworkHostRouteVO();
+        vo.setL3NetworkUuid(L3NetworkUuid);
+        vo.setPrefix(NetworkServiceConstants.DEFAULT_ROUTE_HOST_PREFIX);
+        vo.setNexthop(gwIp);
         dbf.persist(vo);
     }
 

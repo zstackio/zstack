@@ -561,6 +561,8 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 if (!new QuotaUtil().isAdminAccount(msg.getSession().getAccountUuid())) {
                     if (msg instanceof APICreateLoadBalancerMsg) {
                         check((APICreateLoadBalancerMsg) msg, pairs);
+                    } else if (msg instanceof APICreateLoadBalancerListenerMsg) {
+                        check((APICreateLoadBalancerListenerMsg) msg, pairs);
                     }
                 }
             }
@@ -572,15 +574,24 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
 
             @Override
             public List<Quota.QuotaUsage> getQuotaUsageByAccount(String accountUuid) {
+                List<Quota.QuotaUsage> usages = new ArrayList<>();
+
                 Quota.QuotaUsage usage = new Quota.QuotaUsage();
                 usage.setName(LoadBalanceQuotaConstant.LOAD_BALANCER_NUM);
                 usage.setUsed(getUsedLb(accountUuid));
-                return list(usage);
+                usages.add(usage);
+
+                Quota.QuotaUsage listenerUsage = new Quota.QuotaUsage();
+                listenerUsage.setName(LoadBalanceQuotaConstant.LOAD_BALANCER_LISTENER_NUM);
+                listenerUsage.setUsed(getUsedLbListener(accountUuid));
+                usages.add(listenerUsage);
+
+                return usages;
             }
 
             @Transactional(readOnly = true)
             private long getUsedLb(String accountUuid) {
-                String sql = "select count(lb) from LoadBalancerVO lb, AccountResourceRefVO ref where ref.resourceUuid = lb.uuid and " +
+                String sql = "select count(lb.uuid) from LoadBalancerVO lb, AccountResourceRefVO ref where ref.resourceUuid = lb.uuid and " +
                         "ref.accountUuid = :auuid and ref.resourceType = :rtype";
 
                 TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
@@ -589,6 +600,29 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 Long en = q.getSingleResult();
                 en = en == null ? 0 : en;
                 return en;
+            }
+
+            @Transactional(readOnly = true)
+            private long getUsedLbListener(String accountUuid) {
+                String sql = "select count(lb.uuid) from LoadBalancerListenerVO lb, AccountResourceRefVO ref where ref.resourceUuid = lb.uuid and " +
+                        "ref.accountUuid = :auuid and ref.resourceType = :rtype";
+
+                TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+                q.setParameter("auuid", accountUuid);
+                q.setParameter("rtype", LoadBalancerListenerVO.class.getSimpleName());
+                Long en = q.getSingleResult();
+                en = en == null ? 0 : en;
+                return en;
+            }
+
+            private void check(APICreateLoadBalancerListenerMsg msg, Map<String, QuotaPair> pairs) {
+                long lbNum = pairs.get(LoadBalanceQuotaConstant.LOAD_BALANCER_LISTENER_NUM).getValue();
+                long en = getUsedLbListener(msg.getSession().getAccountUuid());
+
+                if (en + 1 > lbNum) {
+                    throw new ApiMessageInterceptionException(new QuotaUtil().buildQuataExceedError(
+                                    msg.getSession().getAccountUuid(), LoadBalanceQuotaConstant.LOAD_BALANCER_LISTENER_NUM, lbNum));
+                }
             }
 
             private void check(APICreateLoadBalancerMsg msg, Map<String, QuotaPair> pairs) {
@@ -604,12 +638,18 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
 
         Quota quota = new Quota();
         quota.addMessageNeedValidation(APICreateLoadBalancerMsg.class);
+        quota.addMessageNeedValidation(APICreateLoadBalancerListenerMsg.class);
         quota.setOperator(checker);
 
         QuotaPair p = new QuotaPair();
         p.setName(LoadBalanceQuotaConstant.LOAD_BALANCER_NUM);
         p.setValue(LoadBalanceQuotaGlobalConfig.LOAD_BALANCER_NUM.defaultValue(Long.class));
         quota.addPair(p);
+
+        QuotaPair listener = new QuotaPair();
+        listener.setName(LoadBalanceQuotaConstant.LOAD_BALANCER_LISTENER_NUM);
+        listener.setValue(LoadBalanceQuotaGlobalConfig.LOAD_BALANCER_LISTENER_NUM.defaultValue(Long.class));
+        quota.addPair(listener);
 
         return list(quota);
     }

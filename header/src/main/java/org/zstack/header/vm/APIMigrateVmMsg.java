@@ -43,7 +43,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIMigrateVmEvent.class,
         method = HttpMethod.PUT
 )
-public class APIMigrateVmMsg extends APIMessage implements VmInstanceMessage {
+public class APIMigrateVmMsg extends APIMessage implements VmInstanceMessage, MigrateVmMessage {
     /**
      * @desc vm uuid
      */
@@ -75,6 +75,7 @@ public class APIMigrateVmMsg extends APIMessage implements VmInstanceMessage {
         this.vmInstanceUuid = vmInstanceUuid;
     }
 
+    @Override
     public String getHostUuid() {
         return hostUuid;
     }
@@ -83,8 +84,9 @@ public class APIMigrateVmMsg extends APIMessage implements VmInstanceMessage {
         this.hostUuid = hostUuid;
     }
 
-    public Boolean getMigrateFromDestination() {
-        return migrateFromDestination;
+    @Override
+    public boolean isMigrateFromDestination() {
+        return migrateFromDestination == null ? false : migrateFromDestination;
     }
 
     public void setMigrateFromDestination(Boolean migrateFromDestination) {

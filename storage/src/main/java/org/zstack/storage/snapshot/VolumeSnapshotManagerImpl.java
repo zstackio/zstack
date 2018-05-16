@@ -2,6 +2,7 @@ package org.zstack.storage.snapshot;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -219,6 +220,15 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         DebugUtils.Assert(rets.size() < 2, "can not have more than one VolumeSnapshotTreeVO with current=1");
         VolumeSnapshotTreeVO chain = rets.isEmpty() ? null : rets.get(0);
         final Integer maxIncrementalSnapshotNum = getMaxIncrementalSnapshotNum(vo.getVolumeUuid());
+        if (!CoreGlobalProperty.UNIT_TEST_ON) {
+            if (maxIncrementalSnapshotNum <= 1) {
+                throw new OperationFailureException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
+                        String.format("Unsupported maximum snapshot number (%d) for volume [uuid:%s]",
+                                maxIncrementalSnapshotNum, vo.getVolumeUuid())
+                ));
+            }
+        }
+
         if (chain == null) {
             return newChain(vo, maxIncrementalSnapshotNum == 0);
         } else {

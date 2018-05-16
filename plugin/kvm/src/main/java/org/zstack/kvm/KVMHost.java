@@ -25,6 +25,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.SyncThread;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
@@ -263,6 +264,7 @@ public class KVMHost extends HostBase implements Host {
             call(null, completion);
         }
 
+        @SyncThread(signature = "kvm-agent-http-async-call", level = 50)
         void call(String resourceUuid, ReturnValueCompletion<T> completion)  {
             Map<String, String> header = new HashMap<>();
             header.put(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID, resourceUuid == null ? self.getUuid() : resourceUuid);
@@ -353,8 +355,6 @@ public class KVMHost extends HostBase implements Host {
             handle((KvmRunShellMsg) msg);
         } else if (msg instanceof VmDirectlyDestroyOnHypervisorMsg) {
             handle((VmDirectlyDestroyOnHypervisorMsg) msg);
-        } else if (msg instanceof OnlineChangeVmCpuMemoryMsg) {
-            handle((OnlineChangeVmCpuMemoryMsg) msg);
         } else if (msg instanceof IncreaseVmCpuMsg) {
             handle((IncreaseVmCpuMsg) msg);
         } else if (msg instanceof IncreaseVmMemoryMsg) {
@@ -494,33 +494,6 @@ public class KVMHost extends HostBase implements Host {
         }
 
         bus.reply(msg, reply);
-    }
-
-    private void handle(final OnlineChangeVmCpuMemoryMsg msg) {
-//        final OnlineChangeVmCpuMemoryReply reply = new OnlineChangeVmCpuMemoryReply();
-//
-//        ChangeCpuMemoryCmd cmd = new ChangeCpuMemoryCmd();
-//        cmd.setVmUuid(msg.getVmInstanceUuid());
-//        cmd.setCpuNum(msg.getCpuNum());
-//        cmd.setMemorySize(msg.getMemorySize());
-//        new Http<>(onlineChangeCpuMemoryPath, cmd, ChangeCpuMemoryResponse.class).call(new ReturnValueCompletion<ChangeCpuMemoryResponse>(msg) {
-//            @Override
-//            public void success(ChangeCpuMemoryResponse ret) {
-//                if (!ret.isSuccess()) {
-//                    reply.setError(operr("operation error, because:%s", ret.getError()));
-//                } else {
-//                    reply.setCpuNum(ret.getCpuNum());
-//                    reply.setMemorySize(ret.getMemorySize());
-//                }
-//                bus.reply(msg, reply);
-//            }
-//
-//            @Override
-//            public void fail(ErrorCode errorCode) {
-//                reply.setError(errorCode);
-//                bus.reply(msg, reply);
-//            }
-//        });
     }
 
     private void handle(final GetVmConsoleAddressFromHostMsg msg) {
@@ -2687,7 +2660,7 @@ public class KVMHost extends HostBase implements Host {
                                                 "please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), getSelf().getPort(), ret.getExitErrorMessage()));
                             } else if (ret.getReturnCode() != 0) {
                                 throw new OperationFailureException(operr("the KVM host[ip:%s] cannot access the management node's callback url. It seems" +
-                                                " that the KVM host cannot reach the management IP[%s]. %s %s", self.getManagementIp(), Platform.getManagementServerIp(),
+                                                " that the KVM host cannot reach the management IP[%s]. %s %s", self.getManagementIp(), restf.getHostName(),
                                         ret.getStderr(), ret.getExitErrorMessage()));
                             }
 

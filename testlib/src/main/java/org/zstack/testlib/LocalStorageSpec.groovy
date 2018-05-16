@@ -58,6 +58,13 @@ class LocalStorageSpec extends PrimaryStorageSpec {
                 return new LocalStorageKvmBackend.AgentResponse()
             }
 
+            simulator(LocalStorageKvmBackend.GET_BASE_IMAGE_PATH) {
+                def rsp = new LocalStorageKvmBackend.GetVolumeBaseImagePathRsp()
+                rsp.path = "/some/patch"
+                rsp.size = 0
+                return rsp
+            }
+
             simulator(LocalStorageKvmMigrateVmFlow.COPY_TO_REMOTE_BITS_PATH) {
                 return new LocalStorageKvmBackend.AgentResponse()
             }

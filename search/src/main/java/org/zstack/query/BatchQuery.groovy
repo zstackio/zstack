@@ -2,6 +2,8 @@ package org.zstack.query
 
 import org.apache.commons.lang.StringUtils
 import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.reflection.ClassInfo
+import org.codehaus.groovy.reflection.GroovyClassValue
 import org.kohsuke.groovy.sandbox.GroovyInterceptor
 import org.kohsuke.groovy.sandbox.SandboxTransformer
 import org.kohsuke.groovy.sandbox.impl.Super
@@ -26,6 +28,7 @@ import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.logging.CLogger
 import org.zstack.zql.ZQLQueryResult
 
+import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 import java.util.regex.Pattern
 
@@ -408,6 +411,15 @@ class BatchQuery {
         return "${e.message}, error at line ${lineNum}: ${line}"
     }
 
+    // To mitigate Metaspace been occupied
+    // c.f. https://stackoverflow.com/questions/41465834
+    private static void clearAllClassInfo(Class<?> type) {
+        Field globalClassValue = ClassInfo.class.getDeclaredField("globalClassValue")
+        globalClassValue.setAccessible(true)
+        GroovyClassValue classValueBean = (GroovyClassValue) globalClassValue.get(null)
+        classValueBean.remove(type)
+    }
+
     Map<String, Object> query(APIBatchQueryMsg msg) {
         try {
             session = msg.getSession()
@@ -425,16 +437,19 @@ class BatchQuery {
             def cc = new CompilerConfiguration()
             cc.addCompilationCustomizers(new SandboxTransformer())
 
-            def shell = new GroovyShell(binding, cc)
+            def shell = new GroovyShell(new GroovyClassLoader(), binding, cc)
             sandbox.register()
             try {
-                shell.evaluate(msg.script)
+                Script script = shell.parse(msg.script)
+                script.run()
+                clearAllClassInfo(script.getClass())
             } catch (Throwable t) {
                 logger.warn(t.message, t)
                 sandbox.unregister()
                 throw new OperationFailureException(Platform.operr("${errorLine(msg.script, t)}"))
             } finally {
                 sandbox.unregister()
+                shell.resetLoadedClasses()
             }
 
             printDebugInfo()

@@ -1,7 +1,10 @@
 package org.zstack.test.integration.longjob
 
 import com.google.gson.Gson
+import org.springframework.http.HttpEntity
 import org.zstack.core.db.DatabaseFacade
+import org.zstack.core.thread.ChainTaskStatistic
+import org.zstack.core.thread.ThreadFacadeImpl
 import org.zstack.header.cluster.APIUpdateClusterOSMsg
 import org.zstack.header.host.HostState
 import org.zstack.header.host.HostStatus
@@ -10,11 +13,17 @@ import org.zstack.header.longjob.LongJobState
 import org.zstack.header.longjob.LongJobVO
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
+import org.zstack.kvm.KVMAgentCommands
+import org.zstack.kvm.KVMConstant
 import org.zstack.sdk.*
 import org.zstack.test.integration.ZStackTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
+import org.zstack.utils.gson.JSONObjectUtil
+
+import java.util.concurrent.TimeUnit
+
 /**
  * Created by GuoYi on 3/13/18
  */
@@ -22,6 +31,7 @@ class UpdateClusterOSJobCase extends SubCase {
     Gson gson
     EnvSpec env
     DatabaseFacade dbf
+    ThreadFacadeImpl thdf
 
     @Override
     void clean() {
@@ -153,6 +163,7 @@ class UpdateClusterOSJobCase extends SubCase {
         env.create {
             gson = new Gson()
             dbf = bean(DatabaseFacade.class)
+            thdf = bean(ThreadFacadeImpl.class)
 
             testUpdateClusterWithNfsRunningOnHost()
             testUpdateHostNotKvm()
@@ -161,6 +172,7 @@ class UpdateClusterOSJobCase extends SubCase {
             testUpdateClusterWithHostMaintenance()
             testUpdateClusterUsingAPI()
             testUpdateClusterExcludePackages()
+            testUpdateClusterParallelismDegree()
         }
     }
 
@@ -311,5 +323,42 @@ class UpdateClusterOSJobCase extends SubCase {
             LongJobVO job = dbFindByUuid(jobInv.getUuid(), LongJobVO.class)
             assert job.state == LongJobState.Succeeded
         }
+    }
+
+    void testUpdateClusterParallelismDegree() {
+        ClusterInventory cls = env.inventoryByName("cluster1") as ClusterInventory
+
+        def cmdList = []
+        def syncSignal = "update-host-os-of-cluster-" + cls.uuid
+
+        def checkChain = false
+        env.afterSimulator(KVMConstant.KVM_UPDATE_HOST_OS_PATH) { rsp, HttpEntity<String> e ->
+            while (true) {
+                if (checkChain) {
+                    break
+                }
+
+                ChainTaskStatistic updateOsChainTask = thdf.getChainTaskStatistics().get(syncSignal)
+                if (updateOsChainTask.currentRunningThreadNum == 2 && updateOsChainTask.pendingTaskNum == 0) {
+                    checkChain = true
+                    break
+                }
+            }
+
+            def cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.UpdateHostOSCmd.class)
+            cmdList.add(cmd)
+
+            return rsp
+        }
+
+        // try to update cluster os
+        LongJobInventory jobInv = updateClusterOS {
+            uuid = cls.uuid
+        }
+
+        retryInSecs {
+            assert cmdList.size() == 2
+        }
+
     }
 }

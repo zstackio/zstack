@@ -97,6 +97,7 @@ public class TestLocalStorage34 {
 
         config.backingFilePath = image.getBackupStorageRefs().get(0).getInstallPath();
         config.backingFileSize = image.getSize();
+        config.baseImageSize = image.getSize();
         config.checkBitsSuccess = false;
 
         api.deleteImage(image.getUuid());

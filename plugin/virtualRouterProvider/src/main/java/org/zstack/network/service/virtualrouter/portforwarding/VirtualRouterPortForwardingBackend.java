@@ -5,10 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SQL;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
@@ -447,7 +444,7 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
                 }
 
                 VirtualRouterAsyncHttpCallReply re = reply.castReply();
-                VirtualRouterCommands.SyncEipRsp ret = re.toResponse(VirtualRouterCommands.SyncEipRsp.class);
+                VirtualRouterCommands.RevokePortForwardingRuleRsp ret = re.toResponse(VirtualRouterCommands.RevokePortForwardingRuleRsp.class);
                 if (!ret.isSuccess()) {
                     ErrorCode err = operr("failed to revoke port forwardings on virtual router[uuid:%s], %s",
                             vrVO.getUuid(), ret.getError());
@@ -456,20 +453,14 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
                     List<Tuple> pfs = findPortForwardingTuplesOnVmNic(nic);
                     for (Tuple t : pfs) {
                         PortForwardingRuleVO rule = t.get(0, PortForwardingRuleVO.class);
-                        if (Q.New(VirtualRouterPortForwardingRuleRefVO.class)
-                                .eq(VirtualRouterPortForwardingRuleRefVO_.uuid, rule.getUuid())
-                                .eq(VirtualRouterPortForwardingRuleRefVO_.virtualRouterVmUuid, nic.getVmInstanceUuid())
-                                .isExists()) {
-                            VirtualRouterPortForwardingRuleRefVO ref = new VirtualRouterPortForwardingRuleRefVO();
-                            ref.setVirtualRouterVmUuid(nic.getVmInstanceUuid());
-                            ref.setVipUuid(rule.getVipUuid());
-                            ref.setUuid(rule.getUuid());
-                            dbf.remove(ref);
-                        }
-
-                        rule.setGuestIp(null);
-                        rule.setVmNicUuid(null);
-                        dbf.updateAndRefresh(rule);
+                        new SQLBatch(){
+                            @Override
+                            protected void scripts() {
+                                sql(VirtualRouterPortForwardingRuleRefVO.class).eq(VirtualRouterPortForwardingRuleRefVO_.uuid, rule.getUuid()).delete();
+                                sql(PortForwardingRuleVO.class).eq(PortForwardingRuleVO_.uuid, rule.getUuid())
+                                        .set(PortForwardingRuleVO_.guestIp, null).set(PortForwardingRuleVO_.vmNicUuid, null).update();
+                            }
+                        }.execute();
                     }
                     String info = String.format("sync port forwardings on virtual router[uuid:%s] successfully",
                             vrVO.getUuid());

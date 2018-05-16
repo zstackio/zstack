@@ -2881,8 +2881,10 @@ public class VmInstanceBase extends AbstractVmInstance {
                         " and l2ref.l2NetworkUuid = l2.uuid" +
                         " and l2.uuid = l3.l2NetworkUuid" +
                         " and l3.state = :l3State" +
+                        " and l3.category != :l3Category" +
                         " group by l3.uuid";
                 q = dbf.getEntityManager().createQuery(sql, L3NetworkVO.class);
+                q.setParameter("l3Category", L3NetworkCategory.System);
             } else {
                 // accessed by a normal account
                 sql = "select l3" +
@@ -2893,9 +2895,11 @@ public class VmInstanceBase extends AbstractVmInstance {
                         " and l2.uuid = l3.l2NetworkUuid" +
                         " and l3.state = :l3State" +
                         " and l3.uuid in (:l3uuids)" +
+                        " and l3.category != :l3Category" +
                         " group by l3.uuid";
                 q = dbf.getEntityManager().createQuery(sql, L3NetworkVO.class);
                 q.setParameter("l3uuids", l3Uuids);
+                q.setParameter("l3Category", L3NetworkCategory.System);
             }
         } else {
             if (l3Uuids == null) {
@@ -2909,8 +2913,10 @@ public class VmInstanceBase extends AbstractVmInstance {
                         " and l2ref.l2NetworkUuid = l2.uuid" +
                         " and l2.uuid = l3.l2NetworkUuid" +
                         " and l3.state = :l3State" +
+                        " and l3.category != :l3Category" +
                         " group by l3.uuid";
                 q = dbf.getEntityManager().createQuery(sql, L3NetworkVO.class);
+                q.setParameter("l3Category", L3NetworkCategory.System);
             } else {
                 // accessed by a normal account
                 sql = "select l3" +
@@ -2922,10 +2928,12 @@ public class VmInstanceBase extends AbstractVmInstance {
                         " and l2ref.l2NetworkUuid = l2.uuid" +
                         " and l2.uuid = l3.l2NetworkUuid" +
                         " and l3.state = :l3State" +
+                        " and l3.category != :l3Category" +
                         " and l3.uuid in (:l3uuids)" +
                         " group by l3.uuid";
                 q = dbf.getEntityManager().createQuery(sql, L3NetworkVO.class);
                 q.setParameter("l3uuids", l3Uuids);
+                q.setParameter("l3Category", L3NetworkCategory.System);
             }
         }
 
@@ -2967,8 +2975,10 @@ public class VmInstanceBase extends AbstractVmInstance {
                         " and l2.uuid = l2ref.l2NetworkUuid " +
                         " and l2ref.clusterUuid in (:Uuids)" +
                         " and l3.state = :l3State " +
+                        " and l3.category != :l3Category" +
                         " group by l3.uuid")
                         .param("Uuids", clusterUuids)
+                        .param("l3Category", L3NetworkCategory.System)
                         .param("l3State", L3NetworkState.Enabled).list();
 
                if (l3s.isEmpty()){
@@ -2998,9 +3008,11 @@ public class VmInstanceBase extends AbstractVmInstance {
                         " where l3.uuid = :l3Uuid " +
                         " and l3.l2NetworkUuid = l2.uuid " +
                         " and l2.uuid = l2ref.l2NetworkUuid" +
+                        " and l3.category != :l3Category" +
                         " and l2ref.clusterUuid in (:uuids) " +
                         " group by l2ref.clusterUuid", String.class)
                         .param("l3Uuid", l3Uuid)
+                        .param("l3Category", L3NetworkCategory.System)
                         .param("uuids", clusterUuids).list();
             }
         }.execute();
