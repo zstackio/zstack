@@ -133,6 +133,7 @@ class VolumeSnapshotOperationLongJobCase extends SubCase {
         env.create {
             testDeleteSnapshotLongJob()
             testRevertSnapshotLongJob()
+            testDeleteNotExistsSnapshotLongJob()
         }
     }
 
@@ -214,6 +215,29 @@ class VolumeSnapshotOperationLongJobCase extends SubCase {
             def vo = dbFindByUuid(job.getUuid(), LongJobVO.class)
             assert vo.state.toString() == LongJobState.Succeeded.toString()
         }
+
+        env.cleanAfterSimulatorHandlers()
+    }
+
+    void testDeleteNotExistsSnapshotLongJob() {
+        gson = new Gson()
+
+        def msg = new APIDeleteVolumeSnapshotMsg()
+        msg.setUuid(Platform.getUuid())
+        msg.setVolumeUuid(Platform.getUuid())
+
+        def id = Platform.getUuid()
+
+        def job = submitLongJob {
+            jobName = msg.getClass().getSimpleName()
+            jobData = gson.toJson(msg)
+            description = "this is a long job to delete snapshot"
+            sessionId = adminSession()
+            apiId = id
+        } as LongJobInventory
+
+        assert job.getJobName() == msg.getClass().getSimpleName()
+        assert job.state == org.zstack.sdk.LongJobState.Succeeded
 
         env.cleanAfterSimulatorHandlers()
     }
