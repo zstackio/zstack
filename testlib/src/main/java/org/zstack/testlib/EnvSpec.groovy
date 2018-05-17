@@ -518,7 +518,7 @@ class EnvSpec implements Node {
                               "NetworkServiceTypeVO", "VmInstanceSequenceNumberVO",
                               "GarbageCollectorVO",
                               "TaskProgressVO", "NotificationVO", "TaskStepVO",
-                              "DataVolumeUsageVO", "RootVolumeUsageVO", "VmUsageVO",
+                              "DataVolumeUsageVO", "RootVolumeUsageVO", "VmUsageVO", "GpuUsageVO",
                               "ResourceVO","SecurityGroupSequenceNumberVO","SnapShotUsageVO", "MediaVO"]) {
                 // those tables will continue having entries during running a test suite
                 return
