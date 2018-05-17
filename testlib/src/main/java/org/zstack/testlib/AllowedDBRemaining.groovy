@@ -48,9 +48,9 @@ abstract class AllowedDBRemaining {
     List check(String tblName, List vos) {
         resolve()
 
-        Table t = tables.find { it.tableVOClass.simpleName == tblName }
-        if (t != null) {
-            return t.check(vos)
+        List<Table> ts = tables.findAll { it.tableVOClass.simpleName == tblName }
+        ts.each {
+            vos = it.check(vos)
         }
 
         return vos
