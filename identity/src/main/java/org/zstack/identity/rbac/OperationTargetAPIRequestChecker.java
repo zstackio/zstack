@@ -3,6 +3,7 @@ package org.zstack.identity.rbac;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.Platform;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -153,13 +154,12 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
 
                 Class resourceType = param.param.resourceType();
                 String text = "select ref.resourceUuid from AccountResourceRefVO ref where" +
-                        " (ref.ownerAccountUuid = :accountUuid and ref.resourceType = :rtype)" +
+                        " ref.ownerAccountUuid = :accountUuid" +
                         " or ref.resourceUuid in" +
-                        " (select sh.resourceUuid from SharedResourceVO sh where (sh.receiverAccountUuid = :accountUuid or sh.toPublic = 1) and sh.resourceType = :rtype)" +
+                        " (select sh.resourceUuid from SharedResourceVO sh where sh.receiverAccountUuid = :accountUuid or sh.toPublic = 1)" +
                         " and ref.resourceUuid in (:uuids)";
                 List<String> auuids = sql(text, String.class)
                         .param("accountUuid", message.getSession().getAccountUuid())
-                        .param("rtype", acntMgr.getBaseResourceType(resourceType).getSimpleName())
                         .param("uuids", uuids)
                         .list();
 

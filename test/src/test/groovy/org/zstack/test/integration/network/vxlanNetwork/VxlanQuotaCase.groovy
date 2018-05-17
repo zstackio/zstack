@@ -143,6 +143,11 @@ class VxlanQuotaCase extends SubCase{
             password = "password"
         }
 
+        shareResource {
+            resourceUuids = [poolinv.uuid]
+            toPublic = true
+        }
+
         /* default vxlan.num is 8 */
         for (int i = 1; i < 9; i++) {
             createL2VxlanNetwork {

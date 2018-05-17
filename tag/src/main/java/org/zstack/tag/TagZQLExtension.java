@@ -2,6 +2,7 @@ package org.zstack.tag;
 
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.Platform;
 import org.zstack.core.db.EntityMetadata;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.UserTagVO;
@@ -49,10 +50,6 @@ public class TagZQLExtension implements RestrictByExprExtensionPoint {
         }
 
         ZQLMetadata.InventoryMetadata src = ZQLMetadata.getInventoryMetadataByName(context.getQueryTargetInventoryName());
-        Class resourceType = acntMgr.getBaseResourceType(src.inventoryAnnotation.mappingVOClass());
-        if (resourceType == null) {
-            resourceType = src.inventoryAnnotation.mappingVOClass();
-        }
 
         String primaryKey = EntityMetadata.getPrimaryKeyField(src.inventoryAnnotation.mappingVOClass()).getName();
         String tableName = expr.getField().equals(USER_TAG_NAME) ? UserTagVO.class.getSimpleName() : SystemTagVO.class.getSimpleName();
@@ -63,8 +60,8 @@ public class TagZQLExtension implements RestrictByExprExtensionPoint {
             subCondition = String.format("tagvo.uuid IN (SELECT tagvo_.uuid FROM %s tagvo_ WHERE tagvo_.tag %s %s)",
                     tableName, reserveOp, getConditionValue(reserveOp, expr));
 
-            return String.format("(%s.%s NOT IN (SELECT tagvo.resourceUuid FROM %s tagvo WHERE tagvo.resourceType = '%s' AND %s))",
-                    src.simpleInventoryName(), primaryKey, tableName, resourceType.getSimpleName(), subCondition);
+            return String.format("(%s.%s NOT IN (SELECT tagvo.resourceUuid FROM %s tagvo WHERE %s))",
+                    src.simpleInventoryName(), primaryKey, tableName, subCondition);
         } else {
             if (expr.getValue() == null) {
                 subCondition = String.format("tagvo.tag %s", expr.getOperator());
@@ -72,8 +69,8 @@ public class TagZQLExtension implements RestrictByExprExtensionPoint {
                 subCondition = String.format("tagvo.tag %s %s", expr.getOperator(), getConditionValue(expr.getOperator(), expr));
             }
 
-            return String.format("(%s.%s IN (SELECT tagvo.resourceUuid FROM %s tagvo WHERE tagvo.resourceType = '%s' AND %s))",
-                    src.simpleInventoryName(), primaryKey, tableName, resourceType.getSimpleName(), subCondition);
+            return String.format("(%s.%s IN (SELECT tagvo.resourceUuid FROM %s tagvo WHERE %s))",
+                    src.simpleInventoryName(), primaryKey, tableName, subCondition);
         }
     }
 }
