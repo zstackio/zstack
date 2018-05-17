@@ -44,7 +44,8 @@ class IdentityDBRemaining extends AllowedDBRemaining {
             tableVOClass = AccountResourceRefVO.class
 
             checker = { List<AccountResourceRefVO> vos ->
-                return vos.findAll { it.resourceType != SystemRoleVO.class.simpleName }
+                List<String> systemRoleUuids = Q.New(SystemRoleVO.class).select(SystemRoleVO_.uuid).listValues()
+                return vos.findAll { !systemRoleUuids.contains(it.resourceUuid) }
             }
         }
 
