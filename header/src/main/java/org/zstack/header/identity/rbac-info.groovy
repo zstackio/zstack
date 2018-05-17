@@ -14,7 +14,6 @@ static void init() {
             name = "identity"
             adminOnlyAPIs(
                     APICreateAccountMsg.class.name,
-                    APIUpdateAccountMsg.class.name,
                     APIShareResourceMsg.class.name,
                     APIRevokeResourceSharingMsg.class.name,
                     APIUpdateQuotaMsg.class.name,

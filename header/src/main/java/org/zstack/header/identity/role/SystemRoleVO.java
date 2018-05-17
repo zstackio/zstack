@@ -4,7 +4,7 @@ import javax.persistence.*;
 
 @Table
 @Entity
-@PrimaryKeyJoinColumn(name="uuid", referencedColumnName="uuid")
+@PrimaryKeyJoinColumn(name = "uuid", referencedColumnName = "uuid")
 public class SystemRoleVO extends RoleVO {
     @Column
     @Enumerated(EnumType.STRING)

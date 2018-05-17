@@ -8,6 +8,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.header.identity.OwnedByAccount;
 import javax.persistence.EntityManager;
+import org.zstack.core.Platform;
 
 public aspect OwnedByAccountAspect {
     private static final CLogger logger = Utils.getLogger(OwnedByAccountAspect.class);
@@ -33,6 +34,7 @@ public aspect OwnedByAccountAspect {
 
         OwnedByAccount oa = (OwnedByAccount) entity;
         AccountResourceRefVO ref = AccountResourceRefVO.newOwn(oa.getAccountUuid(), OwnedByAccount.getResourceUuid(entity), entity.getClass());
+        ref.setResourceType(Platform.getBaseResourceType(entity.getClass().getSimpleName()));
         mgr.persist(ref);
     }
 }

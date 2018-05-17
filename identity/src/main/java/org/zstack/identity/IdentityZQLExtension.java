@@ -1,6 +1,7 @@
 package org.zstack.identity;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.Platform;
 import org.zstack.core.db.EntityMetadata;
 import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.SessionInventory;
@@ -56,7 +57,7 @@ public class IdentityZQLExtension implements MarshalZQLASTTreeExtensionPoint, Re
             throw new SkipThisRestrictExprException();
         }
 
-        String resourceType = acntMgr.getBaseResourceType(src.inventoryAnnotation.mappingVOClass()).getSimpleName();
+        String resourceType = Platform.getBaseResourceType(src.inventoryAnnotation.mappingVOClass().getSimpleName());
         String primaryKey = EntityMetadata.getPrimaryKeyField(src.inventoryAnnotation.mappingVOClass()).getName();
 
         return String.format("(%s.%s IN (SELECT accountresourcerefvo.resourceUuid FROM AccountResourceRefVO accountresourcerefvo WHERE" +

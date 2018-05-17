@@ -10,8 +10,6 @@ static void init() {
         permissions {
             name = "vrouter"
             normalAPIs("org.zstack.network.service.virtualrouter.**")
-
-            adminOnlyAPIs(APICreateVirtualRouterOfferingMsg.class.name)
         }
 
         role {

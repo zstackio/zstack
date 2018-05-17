@@ -38,9 +38,7 @@ import org.zstack.header.storage.backup.BackupStorageCanonicalEvents.BackupStora
 import org.zstack.header.storage.backup.BackupStorageErrors.Opaque;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
-
-import static org.zstack.core.Platform.childResourceToBaseResourceMap;
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 
 import javax.persistence.LockModeType;
 import javax.persistence.Query;

@@ -1,6 +1,7 @@
 package org.zstack.header.identity.role;
 
 import org.zstack.header.identity.OwnedByAccount;
+import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.ResourceVO;
 
 import javax.persistence.*;
@@ -11,6 +12,7 @@ import java.util.UUID;
 
 @Entity
 @Table
+@BaseResource
 public class RoleVO extends ResourceVO implements OwnedByAccount {
     @Column
     private String name;
