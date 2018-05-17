@@ -145,7 +145,11 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
 
     private VolumeInventory createVolume(CreateVolumeMsg msg) {
         VolumeVO vo = new VolumeVO();
-        vo.setUuid(Platform.getUuid());
+        if (msg.getResourceUuid() != null) {
+            vo.setUuid(msg.getResourceUuid());
+        } else {
+            vo.setUuid(Platform.getUuid());
+        }
         vo.setRootImageUuid(msg.getRootImageUuid());
         vo.setDescription(msg.getDescription());
         vo.setName(msg.getName());
