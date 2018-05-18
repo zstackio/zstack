@@ -21,6 +21,8 @@ import org.zstack.utils.ShellUtils
 import org.zstack.utils.Utils
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.logging.CLogger
+import org.zstack.utils.path.PathUtil
+
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 import java.util.concurrent.ConcurrentHashMap
@@ -436,6 +438,13 @@ abstract class Test implements ApiHelper, Retry {
         SubCaseCollectionStrategy strategy = getSubCaseCollectionStrategy()
         def caseTypes = strategy.collectSubCases(this)
         caseTypes = caseTypes.findAll { !it.isAnnotationPresent(SkipTestSuite.class) && !it.isAnnotationPresent(Deprecated.class) }
+
+        File blackList = PathUtil.findFileOnClassPath("blackList.ut")
+        if (blackList != null) {
+            List<String> skippedCases = blackList.readLines().collect { it.trim() }
+            logger.warn("cases listed in blackList.ut will be skipped:\n${skippedCases.join("\n")}")
+            caseTypes = caseTypes.findAll { !skippedCases.contains(it.simpleName) }
+        }
 
         def cases = new File([dir.absolutePath, "cases"].join("/"))
         cases.write(caseTypes.collect {it.name}.join("\n"))

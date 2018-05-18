@@ -398,7 +398,7 @@ public class Platform {
     public static String getBaseResourceType(String childResourceType) {
         String type = childResourceToBaseResourceMap.get(childResourceType);
         if (type == null) {
-            throw new CloudRuntimeException(String.format("cannot find base resource type for the child resource type[%s]", childResourceType));
+            type = childResourceType;
         }
         return type;
     }
