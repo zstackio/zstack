@@ -28,6 +28,7 @@ import static java.util.Arrays.asList;
         responseClass = APIAddPrimaryStorageEvent.class,
         parameterName = "params"
 )
+@Deprecated
 public class APIAddFusionstorPrimaryStorageMsg extends APIAddPrimaryStorageMsg {
     @APIParam(nonempty = false, emptyString = false)
     private List<String> monUrls;

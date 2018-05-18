@@ -49,8 +49,8 @@ public class VxlanNetworkPoolFactory implements L2NetworkFactory, Component, Glo
         if (vo.getPhysicalInterface() == null) {
             vo.setPhysicalInterface("");
         }
+        vo.setAccountUuid(msg.getSession().getAccountUuid());
         vo = dbf.persistAndRefresh(vo);
-        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), VxlanNetworkPoolVO.class);
 
         L2VxlanNetworkPoolInventory inv = L2VxlanNetworkPoolInventory.valueOf(vo);
         String info = String.format("successfully create L2VxlanNetworkPool, %s", JSONObjectUtil.toJsonString(inv));

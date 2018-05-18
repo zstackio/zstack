@@ -575,7 +575,8 @@ class RestDocumentationGenerator implements DocumentGenerator {
 
                 return m.invoke(null) as List<String>
             } catch (NoSuchMethodException e) {
-                throw new CloudRuntimeException("class[${clz.name}] doesn't have static __example__ method", e)
+                //throw new CloudRuntimeException("class[${clz.name}] doesn't have static __example__ method", e)
+                logger.warn("class[${clz.name}] doesn't have static __example__ method")
             }
         }
 
@@ -849,7 +850,8 @@ ${table.join("\n")}
             } catch (InvalidApiMessageException ie) {
                 throw new CloudRuntimeException("cannot generate the markdown document for the class[${clz.name}], the __example__() method has an error: ${String.format(ie.getMessage(), ie.getArguments())}")
             } catch (NoSuchMethodException e) {
-                throw new CloudRuntimeException("class[${clz.name}] doesn't have static __example__ method", e)
+                //throw new CloudRuntimeException("class[${clz.name}] doesn't have static __example__ method", e)
+                logger.warn("class[${clz.name}] doesn't have static __example__ method")
             }
         }
 
@@ -1134,7 +1136,8 @@ ${cols.join("\n")}
         }
 
         String generate() {
-            return  """\
+            try {
+                return """\
 ## ${doc._category} - ${doc._title}
 
 ${doc._desc}
@@ -1167,6 +1170,9 @@ ${javaSdk()}
 
 ${pythonSdk()}
 """
+            } catch (Exception e) {
+                logger.warn(e.message, e)
+            }
         }
     }
 

@@ -194,7 +194,7 @@ export var ${inventoryClass.getSimpleName()}Queryable = ${ret};
             dir.mkdirs()
         }
 
-        List<Class> inventories = BeanUtils.scanClass("org.zstack", Inventory.class);
+        List<Class> inventories = BeanUtils.reflections.getTypesAnnotatedWith(Inventory.class);
         inventories.each {
             buildQueryable(it);
             Inventory inventory = it.getAnnotation(Inventory.class);

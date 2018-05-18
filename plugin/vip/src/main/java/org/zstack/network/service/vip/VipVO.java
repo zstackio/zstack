@@ -1,8 +1,9 @@
 package org.zstack.network.service.vip;
 
-import org.zstack.header.network.l3.IpRangeEO;
-import org.zstack.header.network.l3.L3NetworkEO;
+import org.zstack.header.identity.OwnedByAccount;
+import org.zstack.header.network.l3.*;
 import org.zstack.header.vo.*;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.Index;
@@ -18,7 +19,18 @@ import java.util.stream.Collectors;
 @Entity
 @Table
 @BaseResource
-public class VipVO extends ResourceVO {
+@EntityGraph(
+        parents = {
+                @EntityGraph.Neighbour(type = IpRangeVO.class, myField = "ipRangeUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = L3NetworkVO.class, myField = "l3NetworkUuid", targetField = "uuid"),
+        },
+
+        friends = {
+                @EntityGraph.Neighbour(type = UsedIpVO.class, myField = "usedIpUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = VipPeerL3NetworkRefVO.class, myField = "uuid", targetField = "vipUuid")
+        }
+)
+public class VipVO extends ResourceVO implements OwnedByAccount {
     protected static final CLogger logger = Utils.getLogger(VipVO.class);
 
     @Column
@@ -69,6 +81,19 @@ public class VipVO extends ResourceVO {
     
     @Column
     private Timestamp lastOpDate;
+
+    @Transient
+    private String accountUuid;
+
+    @Override
+    public String getAccountUuid() {
+        return accountUuid;
+    }
+
+    @Override
+    public void setAccountUuid(String accountUuid) {
+        this.accountUuid = accountUuid;
+    }
 
     @PreUpdate
     private void preUpdate() {

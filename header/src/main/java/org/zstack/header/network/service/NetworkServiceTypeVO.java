@@ -1,5 +1,6 @@
 package org.zstack.header.network.service;
 
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 
@@ -7,6 +8,11 @@ import javax.persistence.*;
 
 @Entity
 @Table
+@EntityGraph(
+        parents = {
+                @EntityGraph.Neighbour(type = NetworkServiceProviderVO.class, myField = "networkServiceProviderUuid", targetField = "uuid")
+        }
+)
 public class NetworkServiceTypeVO {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

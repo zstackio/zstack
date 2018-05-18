@@ -10,14 +10,14 @@ import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.inventory.InventoryFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.*;
+import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HypervisorType;
 import org.zstack.header.identity.Quota;
 import org.zstack.header.identity.ReportQuotaExtensionPoint;
 import org.zstack.header.message.APIMessage;
@@ -51,8 +51,6 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
     protected DatabaseFacade dbf;
     @Autowired
     protected L2NetworkManager l2Mgr;
-    @Autowired
-    protected InventoryFacade inventoryMgr;
     @Autowired
     protected CascadeFacade casf;
     @Autowired

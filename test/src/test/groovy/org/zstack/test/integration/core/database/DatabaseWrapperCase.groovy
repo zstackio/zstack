@@ -7,6 +7,7 @@ import org.zstack.core.db.Q
 import org.zstack.core.db.SQLBatch
 import org.zstack.header.configuration.InstanceOfferingVO
 import org.zstack.header.configuration.InstanceOfferingVO_
+import org.zstack.header.identity.AccountConstant
 import org.zstack.testlib.SubCase
 
 import java.sql.SQLException
@@ -70,6 +71,7 @@ class DatabaseWrapperCase extends SubCase {
         v2.state = "Enabled"
         v2.sortKey = 0
         v2.type = "UserVm"
+        v2.setAccountUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID)
         dbf.persist(v2)
 
         try {

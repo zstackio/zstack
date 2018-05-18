@@ -13,8 +13,8 @@ doc {
         request {
 			url "DELETE /v1/l3-networks/{l3NetworkUuid}/hostroute"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header(Authorization: 'OAuth the-session-uuid')
 
             clz APIRemoveHostRouteFromL3NetworkMsg.class
 

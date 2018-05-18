@@ -88,8 +88,8 @@ public class LongJobApiInterceptor implements ApiMessageInterceptor, Component {
 
     @Override
     public boolean start() {
-        Class<APIMessage> apiClass = null;
-        List<Class> longJobClasses = BeanUtils.scanClass("org.zstack", LongJobFor.class);
+        Class<APIMessage> apiClass;
+        Set<Class<?>> longJobClasses = BeanUtils.reflections.getTypesAnnotatedWith(LongJobFor.class);
         for (Class it : longJobClasses) {
             LongJobFor at = (LongJobFor) it.getAnnotation(LongJobFor.class);
             try {

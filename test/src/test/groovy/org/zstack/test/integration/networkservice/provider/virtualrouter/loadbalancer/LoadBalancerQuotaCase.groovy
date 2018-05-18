@@ -131,6 +131,11 @@ class LoadBalancerQuotaCase extends SubCase{
     void TestLoadBalancerQuota(){
         L3NetworkInventory pubL3 = env.inventoryByName("pubL3")
 
+        shareResource {
+            resourceUuids = [pubL3.uuid]
+            toPublic = true
+        }
+
         AccountInventory account = createAccount {
             name = "test"
             password = "password"

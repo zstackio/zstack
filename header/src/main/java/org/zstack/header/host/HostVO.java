@@ -1,11 +1,13 @@
 package org.zstack.header.host;
 
 import org.zstack.header.allocator.HostCapacityVO;
+import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.tag.AutoDeleteTag;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EO;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.NoView;
-import org.zstack.header.vo.BaseResource;
+import org.zstack.header.zone.ZoneVO;
 
 import javax.persistence.*;
 
@@ -14,6 +16,12 @@ import javax.persistence.*;
 @EO(EOClazz = HostEO.class)
 @AutoDeleteTag
 @BaseResource
+@EntityGraph(
+        parents = {
+                @EntityGraph.Neighbour(type = ClusterVO.class, myField = "clusterUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = ZoneVO.class, myField = "zoneUuid", targetField = "uuid"),
+        }
+)
 public class HostVO extends HostAO {
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "uuid")

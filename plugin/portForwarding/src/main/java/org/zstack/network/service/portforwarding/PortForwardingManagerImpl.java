@@ -657,12 +657,12 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         vo.setPrivatePortEnd(privatePortEnd);
         vo.setPrivatePortStart(msg.getPrivatePortStart());
         vo.setProtocolType(PortForwardingProtocolType.valueOf(msg.getProtocolType()));
+        vo.setAccountUuid(msg.getSession().getAccountUuid());
 
         new SQLBatch() {
             @Override
             protected void scripts() {
                 persist(vo);
-                acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), PortForwardingRuleVO.class);
                 tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), PortForwardingRuleVO.class.getSimpleName());
             }
         }.execute();

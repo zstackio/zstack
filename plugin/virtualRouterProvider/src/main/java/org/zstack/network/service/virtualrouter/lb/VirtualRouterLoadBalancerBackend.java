@@ -820,7 +820,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                         vipStruct.setUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
 
                         Set<String> guestL3NetworkUuids = nics.stream()
-                                .map(nic -> nic.getL3NetworkUuid())
+                                .map(VmNicInventory::getL3NetworkUuid)
                                 .collect(Collectors.toSet());
                         ErrorCodeList errList = new ErrorCodeList();
 
@@ -1025,7 +1025,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                             vipStruct.setServiceProvider(providerType.toString());
 
                             Set<String> guestL3NetworkUuids = nics.stream()
-                                    .map(nic -> nic.getL3NetworkUuid())
+                                    .map(VmNicInventory::getL3NetworkUuid)
                                     .collect(Collectors.toSet());
                             ErrorCodeList errList = new ErrorCodeList();
 
@@ -1069,11 +1069,11 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                             List<String> attachedVmNicUuids = new ArrayList<>();
                             for (LoadBalancerListenerInventory ll : struct.getLb().getListeners()) {
                                 attachedVmNicUuids.addAll(ll.getVmNicRefs().stream()
-                                        .map(r -> r.getVmNicUuid()).collect(Collectors.toList()));
+                                        .map(LoadBalancerListenerVmNicRefInventory::getVmNicUuid).collect(Collectors.toList()));
                             }
                             attachedVmNicUuids.removeAll(
-                                    nics.stream().map(n -> n.getUuid()).collect(Collectors.toSet()));
-                            if (attachedVmNicUuids != null && !attachedVmNicUuids.isEmpty()) {
+                                    nics.stream().map(VmNicInventory::getUuid).collect(Collectors.toSet()));
+                            if (!attachedVmNicUuids.isEmpty()) {
                                 logger.debug(String.format("there are vmnics[uuids:%s] attached on loadbalancer[uuid:%s], " +
                                         "wont release vip[uuid: %s]", attachedVmNicUuids, struct.getLb().getUuid(), vip.getUuid()));
                                 trigger.rollback();
@@ -1226,11 +1226,6 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                             trigger.next();
                             return;
                         }
-
-                        SimpleQuery<VirtualRouterLoadBalancerRefVO> q = dbf.createQuery(VirtualRouterLoadBalancerRefVO.class);
-                        q.add(VirtualRouterLoadBalancerRefVO_.loadBalancerUuid, Op.EQ, struct.getLb().getUuid());
-                        q.add(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid, Op.EQ, vr.getUuid());
-                        final VirtualRouterLoadBalancerRefVO ref = q.find();
 
                         List<String> roles = new VirtualRouterRoleManager().getAllRoles(vr.getUuid());
                         if (roles.size() == 1 && roles.contains(VirtualRouterSystemTags.VR_LB_ROLE.getTagFormat())) {

@@ -1,6 +1,8 @@
 package org.zstack.network.service.virtualrouter.vip;
 
 import org.zstack.header.vm.VmInstanceEO;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.SoftDeletionCascade;
@@ -8,10 +10,7 @@ import org.zstack.header.vo.SoftDeletionCascades;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 @Entity
 @Table
@@ -19,6 +18,12 @@ import javax.persistence.Table;
         @SoftDeletionCascade(parent = VirtualRouterVmVO.class, joinColumn = "virtualRouterVmUuid"),
         @SoftDeletionCascade(parent = VipVO.class, joinColumn = "uuid")
 })
+@EntityGraph(
+        friends = {
+                @EntityGraph.Neighbour(type = VmInstanceVO.class, myField = "virtualRouterVmUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = VipVO.class, myField = "uuid", targetField = "uuid"),
+        }
+)
 public class VirtualRouterVipVO {
     @Id
     @Column
@@ -28,6 +33,7 @@ public class VirtualRouterVipVO {
     @Column
     @ForeignKey(parentEntityClass = VmInstanceEO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String virtualRouterVmUuid;
+
 
     public String getUuid() {
         return uuid;

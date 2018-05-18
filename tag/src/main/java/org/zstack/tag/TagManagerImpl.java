@@ -32,6 +32,7 @@ import javax.persistence.metamodel.EntityType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -64,7 +65,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
 
     private void initSystemTags() throws IllegalAccessException {
-        List<Class> classes = BeanUtils.scanClass("org.zstack", TagDefinition.class);
+        Set<Class<?>> classes = BeanUtils.reflections.getTypesAnnotatedWith(TagDefinition.class);
         for (Class clz : classes) {
             List<Field> fields = FieldUtils.getAllFields(clz);
             for (Field f : fields) {
@@ -129,7 +130,8 @@ public class TagManagerImpl extends AbstractService implements TagManager,
             throw new CloudRuntimeException(e);
         }
 
-        List<Class> createMessageClass = BeanUtils.scanClass("org.zstack", TagResourceType.class);
+        Set<Class<?>> createMessageClass = BeanUtils.reflections.getTypesAnnotatedWith(TagResourceType.class)
+                .stream().filter(i->i.isAnnotationPresent(TagResourceType.class)).collect(Collectors.toSet());
         for (Class cmsgClz : createMessageClass) {
             TagResourceType at = (TagResourceType) cmsgClz.getAnnotation(TagResourceType.class);
             Class resType = at.value();
@@ -141,7 +143,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
             resourceTypeCreateMessageMap.put(cmsgClz, resType);
         }
 
-        autoDeleteTagClasses = BeanUtils.scanClass("org.zstack", AutoDeleteTag.class);
+        autoDeleteTagClasses = new ArrayList<>(BeanUtils.reflections.getTypesAnnotatedWith(AutoDeleteTag.class));
         List<String> clzNames = CollectionUtils.transformToList(autoDeleteTagClasses, new Function<String, Class>() {
             @Override
             public String call(Class arg) {

@@ -87,6 +87,8 @@
 
         <Logger name="org.zstack.storage.primary" level="TRACE" />
 
+        <Logger name="org.zstack.portal.apimediator" level="TRACE" />
+
         <Logger name="org.zstack.core.rest" level="TRACE" />
 
         <Logger name="org.zstack.core.workflow" level="TRACE" />
@@ -100,6 +102,8 @@
         <Logger name="org.zstack.core.cloudbus" level="TRACE" />
 
         <Logger name="org.zstack.billing" level="TRACE" />
+
+        <Logger name="org.zstack.zql" level="TRACE" />
 
         <Logger name="org.springframework" level="WARN" />
 

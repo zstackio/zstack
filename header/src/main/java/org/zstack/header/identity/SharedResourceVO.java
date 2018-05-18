@@ -1,8 +1,10 @@
 package org.zstack.header.identity;
 
 import org.zstack.header.vo.BaseResource;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
+import org.zstack.header.vo.ResourceVO;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
@@ -14,6 +16,9 @@ import java.sql.Timestamp;
 @Table
 @BaseResource
 public class SharedResourceVO {
+    public static final int PERMISSION_READ = 1;
+    public static final int PERMISSION_WRITE = 1 << 1;
+
     @Column
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,9 +36,13 @@ public class SharedResourceVO {
     private boolean toPublic;
 
     @Column
+    private int permission = 1;
+
+    @Column
     private String resourceType;
 
     @Column
+    @ForeignKey(parentEntityClass = ResourceVO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String resourceUuid;
 
     @Column
@@ -41,6 +50,14 @@ public class SharedResourceVO {
 
     @Column
     private Timestamp createDate;
+
+    public int getPermission() {
+        return permission;
+    }
+
+    public void setPermission(int permission) {
+        this.permission = permission;
+    }
 
     @PreUpdate
     private void preUpdate() {
