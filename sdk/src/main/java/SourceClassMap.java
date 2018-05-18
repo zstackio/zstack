@@ -5,6 +5,13 @@ import java.util.HashMap;
 public class SourceClassMap {
     final static HashMap<String, String> srcToDstMapping = new HashMap() {
         {
+			put("org.zstack.aliyun.nas.filesystem.AliyunNasAccessGroupInventory", "org.zstack.sdk.AliyunNasAccessGroupInventory");
+			put("org.zstack.aliyun.nas.filesystem.AliyunNasAccessRuleInventory", "org.zstack.sdk.AliyunNasAccessRuleInventory");
+			put("org.zstack.aliyun.nas.filesystem.AliyunNasFileSystemInventory", "org.zstack.sdk.AliyunNasFileSystemInventory");
+			put("org.zstack.aliyun.nas.filesystem.AliyunNasMountTargetInventory", "org.zstack.sdk.AliyunNasMountTargetInventory");
+			put("org.zstack.aliyun.nas.message.AliyunNasAccessGroupProperty", "org.zstack.sdk.AliyunNasAccessGroupProperty");
+			put("org.zstack.aliyun.nas.message.AliyunNasFileSystemProperty", "org.zstack.sdk.AliyunNasFileSystemProperty");
+			put("org.zstack.aliyun.nas.message.AliyunNasMountTargetProperty", "org.zstack.sdk.AliyunNasMountTargetProperty");
 			put("org.zstack.appliancevm.ApplianceVmInventory", "org.zstack.sdk.ApplianceVmInventory");
 			put("org.zstack.billing.DataVolumeSpending", "org.zstack.sdk.DataVolumeSpending");
 			put("org.zstack.billing.DataVolumeSpendingInventory", "org.zstack.sdk.DataVolumeSpendingInventory");
@@ -27,6 +34,7 @@ public class SourceClassMap {
 			put("org.zstack.header.affinitygroup.AffinityGroupInventory", "org.zstack.sdk.AffinityGroupInventory");
 			put("org.zstack.header.affinitygroup.AffinityGroupUsageInventory", "org.zstack.sdk.AffinityGroupUsageInventory");
 			put("org.zstack.header.aliyun.AliyunOssException", "org.zstack.sdk.AliyunOssException");
+			put("org.zstack.header.aliyun.ebs.AliyunEbsPrimaryStorageInventory", "org.zstack.sdk.AliyunEbsPrimaryStorageInventory");
 			put("org.zstack.header.aliyun.ecs.EcsInstanceInventory", "org.zstack.sdk.EcsInstanceInventory");
 			put("org.zstack.header.aliyun.ecs.EcsInstanceType", "org.zstack.sdk.EcsInstanceType");
 			put("org.zstack.header.aliyun.errorCode.AliyunErrorCode", "org.zstack.sdk.AliyunErrorCode");
@@ -150,6 +158,9 @@ public class SourceClassMap {
 			put("org.zstack.monitoring.items.ItemInventory", "org.zstack.sdk.ItemInventory");
 			put("org.zstack.monitoring.media.EmailMediaInventory", "org.zstack.sdk.EmailMediaInventory");
 			put("org.zstack.monitoring.media.MediaInventory", "org.zstack.sdk.MediaInventory");
+			put("org.zstack.nas.NasFileSystemInventory", "org.zstack.sdk.NasFileSystemInventory");
+			put("org.zstack.nas.NasMountTargetInventory", "org.zstack.sdk.NasMountTargetInventory");
+			put("org.zstack.nas.NasProtocolType", "org.zstack.sdk.NasProtocolType");
 			put("org.zstack.network.l2.vxlan.vtep.VtepInventory", "org.zstack.sdk.VtepInventory");
 			put("org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory", "org.zstack.sdk.L2VxlanNetworkInventory");
 			put("org.zstack.network.l2.vxlan.vxlanNetworkPool.L2VxlanNetworkPoolInventory", "org.zstack.sdk.L2VxlanNetworkPoolInventory");
@@ -258,7 +269,15 @@ public class SourceClassMap {
 			put("org.zstack.sdk.AffinityGroupUsageInventory", "org.zstack.header.affinitygroup.AffinityGroupUsageInventory");
 			put("org.zstack.sdk.AlertInventory", "org.zstack.monitoring.AlertInventory");
 			put("org.zstack.sdk.AliyunDiskInventory", "org.zstack.header.aliyun.storage.disk.AliyunDiskInventory");
+			put("org.zstack.sdk.AliyunEbsPrimaryStorageInventory", "org.zstack.header.aliyun.ebs.AliyunEbsPrimaryStorageInventory");
 			put("org.zstack.sdk.AliyunErrorCode", "org.zstack.header.aliyun.errorCode.AliyunErrorCode");
+			put("org.zstack.sdk.AliyunNasAccessGroupInventory", "org.zstack.aliyun.nas.filesystem.AliyunNasAccessGroupInventory");
+			put("org.zstack.sdk.AliyunNasAccessGroupProperty", "org.zstack.aliyun.nas.message.AliyunNasAccessGroupProperty");
+			put("org.zstack.sdk.AliyunNasAccessRuleInventory", "org.zstack.aliyun.nas.filesystem.AliyunNasAccessRuleInventory");
+			put("org.zstack.sdk.AliyunNasFileSystemInventory", "org.zstack.aliyun.nas.filesystem.AliyunNasFileSystemInventory");
+			put("org.zstack.sdk.AliyunNasFileSystemProperty", "org.zstack.aliyun.nas.message.AliyunNasFileSystemProperty");
+			put("org.zstack.sdk.AliyunNasMountTargetInventory", "org.zstack.aliyun.nas.filesystem.AliyunNasMountTargetInventory");
+			put("org.zstack.sdk.AliyunNasMountTargetProperty", "org.zstack.aliyun.nas.message.AliyunNasMountTargetProperty");
 			put("org.zstack.sdk.AliyunOssException", "org.zstack.header.aliyun.AliyunOssException");
 			put("org.zstack.sdk.AliyunRouterInterfaceInventory", "org.zstack.header.aliyun.network.connection.AliyunRouterInterfaceInventory");
 			put("org.zstack.sdk.AliyunSnapshotInventory", "org.zstack.header.aliyun.storage.snapshot.AliyunSnapshotInventory");
@@ -359,6 +378,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.MediaInventory", "org.zstack.monitoring.media.MediaInventory");
 			put("org.zstack.sdk.MonitorTriggerActionInventory", "org.zstack.monitoring.actions.MonitorTriggerActionInventory");
 			put("org.zstack.sdk.MonitorTriggerInventory", "org.zstack.monitoring.MonitorTriggerInventory");
+			put("org.zstack.sdk.NasFileSystemInventory", "org.zstack.nas.NasFileSystemInventory");
+			put("org.zstack.sdk.NasMountTargetInventory", "org.zstack.nas.NasMountTargetInventory");
+			put("org.zstack.sdk.NasProtocolType", "org.zstack.nas.NasProtocolType");
 			put("org.zstack.sdk.NetworkServiceL3NetworkRefInventory", "org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory");
 			put("org.zstack.sdk.NetworkServiceProviderInventory", "org.zstack.header.network.service.NetworkServiceProviderInventory");
 			put("org.zstack.sdk.NotificationInventory", "org.zstack.core.notification.NotificationInventory");
