@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
 import org.zstack.core.db.*;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
@@ -19,9 +20,7 @@ import org.zstack.header.vm.VmNicInventory;
 import org.zstack.identity.Account;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.service.NetworkServiceManager;
-import org.zstack.network.service.vip.VipPeerL3NetworkRefVO;
-import org.zstack.network.service.vip.VipState;
-import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
@@ -119,10 +118,28 @@ public class VirtualRouterCreateVipForPublicIpFlow implements Flow {
 
     @Override
     public void rollback(FlowRollback chain, Map data) {
-        SQL.New(VirtualRouterVipVO.class).eq(VirtualRouterVipVO_.uuid, data.get(VirtualRouterConstant.Param.PUB_VIP_UUID.toString()))
-                .eq(VirtualRouterVipVO_.uuid, data.get(VirtualRouterConstant.Param.VR_UUID.toString()))
-                .hardDelete();
+        String vipUuid = (String) data.get(VirtualRouterConstant.Param.PUB_VIP_UUID.toString());
+        if (vipUuid == null) {
+            chain.rollback();
+            return;
+        }
 
-        chain.rollback();
+        SQL.New(VirtualRouterVipVO.class).eq(VirtualRouterVipVO_.uuid, vipUuid).hardDelete();
+
+        ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+        struct.setUseFor(NetworkServiceType.SNAT.toString());
+        Vip vip = new Vip(vipUuid);
+        vip.setStruct(struct);
+        vip.release(new Completion(chain) {
+            @Override
+            public void success() {
+                chain.rollback();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                chain.rollback();
+            }
+        });
     }
 }

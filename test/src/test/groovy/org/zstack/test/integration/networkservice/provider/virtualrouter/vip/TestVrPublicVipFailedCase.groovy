@@ -1,9 +1,12 @@
 package org.zstack.test.integration.networkservice.provider.virtualrouter.vip
 
+import org.zstack.core.db.Q
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.lb.LoadBalancerConstants
 import org.zstack.network.service.portforwarding.PortForwardingConstant
+import org.zstack.network.service.vip.VipVO
+import org.zstack.network.service.vip.VipVO_
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
@@ -12,6 +15,8 @@ import org.zstack.test.integration.networkservice.provider.NetworkServiceProvide
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
+
+import java.util.stream.Collectors
 
 /**
  * Created by shixin on 2018-03-13.
@@ -141,11 +146,12 @@ class TestVrPublicVipFailedCase extends SubCase{
         ImageInventory image = env.inventoryByName("image")
         InstanceOfferingInventory offer = env.inventoryByName("instanceOffering")
         L3NetworkInventory l3Inv = env.inventoryByName("l3")
+        L3NetworkInventory pubL3 = env.inventoryByName("pubL3")
 
-        env.simulator(VirtualRouterConstant.VR_SYNC_SNAT_PATH) {
-            VirtualRouterCommands.SyncSNATRsp rsp = new VirtualRouterCommands.SyncSNATRsp()
-            rsp.setError("No such file")
-            rsp.setSuccess(false)
+        env.simulator(VirtualRouterConstant.VR_CREATE_VIP) {
+            VirtualRouterCommands.CreateVipRsp rsp = new VirtualRouterCommands.CreateVipRsp()
+            rsp.success = false
+            rsp.setError("test")
             return rsp
         }
 
@@ -158,5 +164,55 @@ class TestVrPublicVipFailedCase extends SubCase{
             }
         }
 
+        assert Q.New(VipVO.class).count() == 0
+        env.simulator(VirtualRouterConstant.VR_CREATE_VIP) {
+            VirtualRouterCommands.CreateVipRsp rsp = new VirtualRouterCommands.CreateVipRsp()
+            return rsp
+        }
+
+        createVmInstance {
+            name = "test-vm"
+            instanceOfferingUuid = offer.uuid
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3Inv.uuid]
+        }
+
+        VirtualRouterVmInventory vr = queryVirtualRouterVm {}[0]
+        List<VmNicInventory> nics = vr.getVmNics()
+        VmNicInventory pubNic = nics.stream().filter({nic -> nic.l3NetworkUuid == pubL3.uuid}).collect(Collectors.toList())[0]
+        assert Q.New(VipVO.class).eq(VipVO_.ip, pubNic.ip).exists
+
+        env.simulator(VirtualRouterConstant.VR_CREATE_VIP) {
+            VirtualRouterCommands.CreateVipRsp rsp = new VirtualRouterCommands.CreateVipRsp()
+            rsp.success = false
+            rsp.setError("test")
+            return rsp
+        }
+
+        stopVmInstance {
+            uuid = vr.uuid
+        }
+        expect (AssertionError.class) {
+            startVmInstance {
+                uuid = vr.uuid
+            }
+        }
+        assert Q.New(VipVO.class).eq(VipVO_.ip, pubNic.ip).exists
+
+        env.simulator(VirtualRouterConstant.VR_CREATE_VIP) {
+            VirtualRouterCommands.CreateVipRsp rsp = new VirtualRouterCommands.CreateVipRsp()
+            return rsp
+        }
+        startVmInstance {
+            uuid = vr.uuid
+        }
+        assert Q.New(VipVO.class).eq(VipVO_.ip, pubNic.ip).exists
+        assert Q.New(VipVO.class).count() == 1
+
+        destroyVmInstance {
+            uuid = vr.uuid
+        }
+        assert !Q.New(VipVO.class).eq(VipVO_.ip, pubNic.ip).exists
+        assert Q.New(VipVO.class).count() == 0
     }
 }
