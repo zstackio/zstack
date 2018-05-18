@@ -435,7 +435,7 @@ abstract class Test implements ApiHelper, Retry {
 
         SubCaseCollectionStrategy strategy = getSubCaseCollectionStrategy()
         def caseTypes = strategy.collectSubCases(this)
-        caseTypes = caseTypes.findAll { !it.isAnnotationPresent(SkipTestSuite.class) }
+        caseTypes = caseTypes.findAll { !it.isAnnotationPresent(SkipTestSuite.class) && !it.isAnnotationPresent(Deprecated.class) }
 
         def cases = new File([dir.absolutePath, "cases"].join("/"))
         cases.write(caseTypes.collect {it.name}.join("\n"))

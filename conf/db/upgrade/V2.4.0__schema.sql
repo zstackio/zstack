@@ -323,6 +323,9 @@ ALTER TABLE IAM2VirtualIDRoleRefVO ADD CONSTRAINT fkIAM2VirtualIDRoleRefVORoleVO
 
 ALTER TABLE SharedResourceVO ADD CONSTRAINT fkSharedResourceVOResourceVO FOREIGN KEY (resourceUuid) REFERENCES ResourceVO (uuid) ON DELETE CASCADE;
 
+UPDATE SNSApplicationEndpointVO SET state = 'Enabled' WHERE state = '0';
+UPDATE SNSApplicationEndpointVO SET state = 'Disabled' WHERE state = '1';
+
 # Foreign keys for table RolePolicyRefVO
 
 ALTER TABLE RolePolicyRefVO ADD CONSTRAINT fkRolePolicyRefVOPolicyVO FOREIGN KEY (policyUuid) REFERENCES PolicyVO (uuid) ON DELETE CASCADE;
