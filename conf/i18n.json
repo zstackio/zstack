@@ -5511,6 +5511,42 @@
     "line": 948,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
+  { 
+    "raw": "networkInboundBandwidth format error %s",
+    "en_US": "networkInboundBandwidth format error {0}",
+    "zh_CN": "下行网络带宽格式错误{0}",
+    "arguments": [
+      "bandwidth"
+    ],
+    "line": 1792,
+    "fileName": "src/zstack/./premium/mevoco/src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
+  },
+  {
+    "raw": "networkInboundBandwidth execeds the max value 32G bps",
+    "en_US": "networkInboundBandwidth execeds the max value 32G bps",
+    "zh_CN": "超过下行网络带宽超过最大值32G bps",
+    "arguments": [],
+    "line": 1789,
+    "fileName": "src/zstack/./premium/mevoco/src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
+  },
+  {
+    "raw": "networkOutboundBandwidth format error %s",
+    "en_US": "networkOutboundBandwidth format error {0}",
+    "zh_CN": "上行网络带宽超格式错误{0}",
+    "arguments": [
+      "bandwidth"
+    ],
+    "line": 1804,
+    "fileName": "src/zstack/./premium/mevoco/src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
+  },
+  {
+    "raw": "networkOutboundBandwidth execeds the max value 32G bps",
+    "en_US": "networkOutboundBandwidth execeds the max value 32G bps",
+    "zh_CN": "超过上行网络带宽超过最大值32G bps",
+    "arguments": [],
+    "line": 1801,
+    "fileName": "src/zstack/./premium/mevoco/src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
+  },
   {
     "raw": "Shareable Volume[uuid:%s] has already been attached to VM[uuid:%s]",
     "en_US": "Shareable Volume[uuid:{0}] has already been attached to VM[uuid:{1}]",
