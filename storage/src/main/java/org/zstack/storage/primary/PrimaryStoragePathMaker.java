@@ -12,7 +12,7 @@ public class PrimaryStoragePathMaker {
 
     private static AccountManager acntMgr;
 
-    private static String getAccountUuidOfResource(String resourceUuid) {
+    protected static String getAccountUuidOfResource(String resourceUuid) {
         if (acntMgr == null) {
             acntMgr = Platform.getComponentLoader().getComponent(AccountManager.class);
         }

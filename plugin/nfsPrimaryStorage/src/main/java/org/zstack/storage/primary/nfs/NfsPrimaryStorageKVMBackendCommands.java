@@ -322,15 +322,15 @@ public class NfsPrimaryStorageKVMBackendCommands {
 
     @ApiTimeout(apiClasses = {APICreateDataVolumeFromVolumeSnapshotMsg.class, APIExpungeVmInstanceMsg.class})
     public static class DeleteCmd extends NfsPrimaryStorageAgentCommand {
-        private boolean isFolder;
+        private boolean folder;
         private String installPath;
 
         public boolean isFolder() {
-            return isFolder;
+            return folder;
         }
 
         public void setFolder(boolean isFolder) {
-            this.isFolder = isFolder;
+            this.folder = isFolder;
         }
 
         public String getInstallPath() {
