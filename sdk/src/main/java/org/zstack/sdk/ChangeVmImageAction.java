@@ -32,6 +32,9 @@ public class ChangeVmImageAction extends AbstractAction {
     public java.lang.String imageUuid;
 
     @Param(required = false)
+    public java.lang.String resourceUuid;
+
+    @Param(required = false)
     public java.util.List systemTags;
 
     @Param(required = false)
