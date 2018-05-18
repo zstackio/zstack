@@ -70,4 +70,8 @@ public class VmSystemTags {
 
     public static String PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN = "primaryStorageUuidForDataVolume";
     public static PatternedSystemTag PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME = new PatternedSystemTag(String.format("primaryStorageUuidForDataVolume::{%s}", PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN), VmInstanceVO.class);
+
+    public static String RELEASE_NIC_AFTER_DETACH_NIC_TOKEN = "releaseVmNicAfterDetachVmNic";
+    public static PatternedSystemTag RELEASE_NIC_AFTER_DETACH_NIC = new PatternedSystemTag(String.format("releaseVmNicAfterDetachVmNic::{%s}", RELEASE_NIC_AFTER_DETACH_NIC_TOKEN), VmInstanceVO.class);
+
 }

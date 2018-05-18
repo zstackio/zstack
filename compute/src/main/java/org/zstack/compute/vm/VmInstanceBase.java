@@ -1201,7 +1201,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        detachNic(msg.getVmNicUuid(), new Completion(trigger) {
+                        detachNic(msg.getVmNicUuid(), true, new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();
@@ -1651,6 +1651,163 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public String getName() {
                 return String.format("attachNic-vm-%s-l3-%s", self.getUuid(), l3Uuid);
+            }
+        });
+    }
+
+    private void attachNic(final APIAttachVmNicToVmMsg msg, final ReturnValueCompletion<VmNicInventory> completion) {
+        thdf.chainSubmit(new ChainTask(completion) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            @Deferred
+            public void run(final SyncTaskChain chain) {
+                refreshVO();
+                ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
+                if (allowed != null) {
+                    completion.fail(allowed);
+                    return;
+                }
+
+                String vmNicUuid = msg.getVmNicUuid();
+                VmNicVO vmNicVO = dbf.findByUuid(vmNicUuid, VmNicVO.class);
+                L3NetworkVO l3NetworkVO = dbf.findByUuid(vmNicVO.getL3NetworkUuid(), L3NetworkVO.class);
+                String l3Uuid = l3NetworkVO.getUuid();
+
+                class SetDefaultL3Network {
+                    private boolean isSet = false;
+
+                    void set() {
+                        if (self.getDefaultL3NetworkUuid() == null) {
+                            self.setDefaultL3NetworkUuid(l3Uuid);
+                            self = dbf.updateAndRefresh(self);
+                            isSet = true;
+                        }
+                    }
+
+                    void rollback() {
+                        if (isSet) {
+                            self.setDefaultL3NetworkUuid(null);
+                            dbf.update(self);
+                        }
+                    }
+                }
+
+                final SetDefaultL3Network setDefaultL3Network = new SetDefaultL3Network();
+                setDefaultL3Network.set();
+                Defer.guard(new Runnable() {
+                    @Override
+                    public void run() {
+                        setDefaultL3Network.rollback();
+                    }
+                });
+
+                final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.AttachNic);
+                spec.setVmInventory(VmInstanceInventory.valueOf(self));
+                L3NetworkVO l3vo = dbf.findByUuid(l3Uuid, L3NetworkVO.class);
+                final L3NetworkInventory l3 = L3NetworkInventory.valueOf(l3vo);
+                final VmInstanceInventory vm = getSelfInventory();
+                for (VmPreAttachL3NetworkExtensionPoint ext : pluginRgty.getExtensionList(VmPreAttachL3NetworkExtensionPoint.class)) {
+                    ext.vmPreAttachL3Network(vm, l3);
+                }
+
+                spec.setL3Networks(list(l3));
+
+                CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmBeforeAttachL3NetworkExtensionPoint.class),
+                        new ForEachFunction<VmBeforeAttachL3NetworkExtensionPoint>() {
+                            @Override
+                            public void run(VmBeforeAttachL3NetworkExtensionPoint arg) {
+                                arg.vmBeforeAttachL3Network(vm, l3);
+                            }
+                        });
+
+                FlowChain flowChain = FlowChainBuilder.newSimpleFlowChain();
+                setFlowMarshaller(flowChain);
+                flowChain.setName(String.format("attachNic-vm-%s-nic-%s", self.getUuid(), vmNicVO.getUuid()));
+                flowChain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
+
+                flowChain.then(new Flow() {
+                    String __name__ = "update-nic";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        final BitSet deviceIdBitmap = new BitSet(512);
+                        for (VmNicInventory nic : spec.getVmInventory().getVmNics()) {
+                            deviceIdBitmap.set(nic.getDeviceId());
+                        }
+                        int deviceId = deviceIdBitmap.nextClearBit(0);
+                        deviceIdBitmap.set(deviceId);
+                        String internalName = VmNicVO.generateNicInternalName(spec.getVmInventory().getInternalId(), deviceId);
+
+                        UpdateQuery.New(VmNicVO.class)
+                                .eq(VmNicVO_.uuid, vmNicUuid)
+                                .set(VmNicVO_.vmInstanceUuid, self.getUuid())
+                                .set(VmNicVO_.deviceId, deviceId)
+                                .set(VmNicVO_.internalName, internalName)
+                                .update();
+
+                        vmNicVO.setVmInstanceUuid(self.getUuid());
+                        vmNicVO.setDeviceId(deviceId);
+                        vmNicVO.setInternalName(internalName);
+                        spec.getDestNics().add(VmNicInventory.valueOf(vmNicVO));
+
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        UpdateQuery.New(VmNicVO.class)
+                                .eq(VmNicVO_.uuid, vmNicUuid)
+                                .set(VmNicVO_.vmInstanceUuid, null)
+                                .update();
+
+                        trigger.rollback();
+                    }
+                });
+
+                flowChain.then(new VmSetDefaultL3NetworkOnAttachingFlow());
+                if (self.getState() == VmInstanceState.Running) {
+                    flowChain.then(new VmInstantiateResourceOnAttachingNicFlow());
+                    flowChain.then(new VmAttachNicOnHypervisorFlow());
+                }
+
+                flowChain.done(new FlowDoneHandler(chain) {
+                    @Override
+                    public void handle(Map data) {
+                        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmAfterAttachL3NetworkExtensionPoint.class),
+                                new ForEachFunction<VmAfterAttachL3NetworkExtensionPoint>() {
+                                    @Override
+                                    public void run(VmAfterAttachL3NetworkExtensionPoint arg) {
+                                        arg.vmAfterAttachL3Network(vm, l3);
+                                    }
+                                });
+                        VmNicInventory nic = spec.getDestNics().get(0);
+                        completion.success(nic);
+                        chain.next();
+                    }
+                }).error(new FlowErrorHandler(chain) {
+                    @Override
+                    public void handle(final ErrorCode errCode, Map data) {
+                        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmFailToAttachL3NetworkExtensionPoint.class),
+                                new ForEachFunction<VmFailToAttachL3NetworkExtensionPoint>() {
+                                    @Override
+                                    public void run(VmFailToAttachL3NetworkExtensionPoint arg) {
+                                        arg.vmFailToAttachL3Network(vm, l3, errCode);
+                                    }
+                                });
+                        setDefaultL3Network.rollback();
+                        completion.fail(errCode);
+                        chain.next();
+                    }
+                }).start();
+            }
+
+            @Override
+            public String getName() {
+                return String.format("attachNic-vm-%s-nic-%s", self.getUuid(), msg.getVmNicUuid());
             }
         });
     }
@@ -2221,6 +2378,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APIMigrateVmMsg) msg);
         } else if (msg instanceof APIAttachL3NetworkToVmMsg) {
             handle((APIAttachL3NetworkToVmMsg) msg);
+        } else if(msg instanceof APIAttachVmNicToVmMsg) {
+            handle((APIAttachVmNicToVmMsg) msg);
         } else if (msg instanceof APIGetVmMigrationCandidateHostsMsg) {
             handle((APIGetVmMigrationCandidateHostsMsg) msg);
         } else if (msg instanceof APIGetVmAttachableDataVolumeMsg) {
@@ -3214,7 +3373,10 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        detachNic(msg.getVmNicUuid(), new Completion(trigger) {
+	                    String releaseNicFlag = msg.getSystemTags() == null ? null : SystemTagUtils.findTagValue(msg.getSystemTags(), VmSystemTags.RELEASE_NIC_AFTER_DETACH_NIC, VmSystemTags.RELEASE_NIC_AFTER_DETACH_NIC_TOKEN);
+                        boolean releaseNic = releaseNicFlag == null ? true : Boolean.valueOf(releaseNicFlag);
+
+                        detachNic(msg.getVmNicUuid(), releaseNic, new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();
@@ -3299,7 +3461,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         self = dbf.updateAndRefresh(self);
     }
 
-    private void detachNic(final String nicUuid, final Completion completion) {
+    private void detachNic(final String nicUuid, boolean releaseNic, final Completion completion) {
         VmNicVO vmNicVO = CollectionUtils.find(self.getVmNics(), new Function<VmNicVO, VmNicVO>() {
             @Override
             public VmNicVO call(VmNicVO arg) {
@@ -3340,6 +3502,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         flowChain.setName(String.format("detachNic-vm-%s-nic-%s", self.getUuid(), nicUuid));
         setFlowMarshaller(flowChain);
         flowChain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
+        flowChain.getData().put(Params.ReleaseNicAfterDetachNic.toString(), releaseNic);
         if (self.getState() == VmInstanceState.Running) {
             flowChain.then(new VmDetachNicOnHypervisorFlow());
         }
@@ -3998,6 +4161,63 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 attachNic(msg, msg.getL3NetworkUuid(), new ReturnValueCompletion<VmNicInventory>(msg) {
+                    @Override
+                    public void success(VmNicInventory returnValue) {
+                        data.put(vmNicInvKey, returnValue);
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "after-attach-nic";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                afterAttachNic((VmNicInventory) data.get(vmNicInvKey), new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).done(new FlowDoneHandler(msg) {
+            @Override
+            public void handle(Map data) {
+                self = dbf.reload(self);
+                evt.setInventory(VmInstanceInventory.valueOf(self));
+                bus.publish(evt);
+            }
+        }).error(new FlowErrorHandler(msg) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                evt.setError(errCode);
+                bus.publish(evt);
+            }
+        }).start();
+    }
+
+    private void handle(final APIAttachVmNicToVmMsg msg) {
+        final APIAttachVmNicToVmEvent evt = new APIAttachVmNicToVmEvent(msg.getId());
+        final String vmNicInvKey = "vmNicInventory";
+
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("attach-nic-to-vm-%s", msg.getVmInstanceUuid()));
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "attach-nic";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                attachNic(msg, new ReturnValueCompletion<VmNicInventory>(msg) {
                     @Override
                     public void success(VmNicInventory returnValue) {
                         data.put(vmNicInvKey, returnValue);
