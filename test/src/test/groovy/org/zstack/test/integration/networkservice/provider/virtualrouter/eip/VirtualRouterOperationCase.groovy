@@ -3,6 +3,7 @@ package org.zstack.test.integration.networkservice.provider.virtualrouter.eip
 import org.zstack.appliancevm.ApplianceVmVO
 import org.zstack.core.db.DatabaseFacade
 import org.springframework.http.HttpEntity
+import org.zstack.header.vm.VmNicVO
 import org.zstack.sdk.ApplianceVmInventory
 import org.zstack.core.db.Q
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands
@@ -42,6 +43,7 @@ class VirtualRouterOperationCase extends SubCase {
 
             testVirtualRouterReconnect()
             testUpdateGlobalConfigAndPingVirtualRouter()
+            testQueryVirtualRouterVm()
         }
     }
 
@@ -58,6 +60,15 @@ class VirtualRouterOperationCase extends SubCase {
     @Override
     void environment() {
         env = VirtualRouterNetworkServiceEnv.oneVmOneHostVyosOnEipEnv()
+    }
+
+    void testQueryVirtualRouterVm() {
+        ApplianceVmVO vo = Q.New(ApplianceVmVO.class).list()[0]
+        assert vo
+
+        VmNicVO nic = vo.getVmNics()[0]
+        List lst = queryApplianceVm { conditions=["vmNics.l3NetworkUuid=${nic.l3NetworkUuid}"] }
+        assert !lst.isEmpty()
     }
 
     void testVirtualRouterReconnect() {

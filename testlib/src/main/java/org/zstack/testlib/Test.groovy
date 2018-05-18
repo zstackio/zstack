@@ -446,8 +446,18 @@ abstract class Test implements ApiHelper, Retry {
             caseTypes = caseTypes.findAll { !skippedCases.contains(it.simpleName) }
         }
 
+        String caseListString = caseTypes.collect {it.name}.join("\n")
         def cases = new File([dir.absolutePath, "cases"].join("/"))
-        cases.write(caseTypes.collect {it.name}.join("\n"))
+        cases.write(caseListString)
+
+        File testSuiteBlackList = PathUtil.findFileOnClassPath("blackList.test")
+        if (testSuiteBlackList != null) {
+            List<String> skippedSuite = testSuiteBlackList.readLines().collect { it.trim() }
+            if (skippedSuite.contains(getClass().getSimpleName())) {
+                logger.warn("the test suite[${getClass().getSimpleName()}] is listed in blackList.test, cases will be skipped:\n${caseListString}")
+                return
+            }
+        }
 
         if (System.getProperty("list") != null) {
             return

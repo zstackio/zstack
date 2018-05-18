@@ -1,6 +1,5 @@
 package org.zstack.zql.ast;
 
-import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.zstack.header.core.StaticInit;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -322,11 +321,26 @@ public class ZQLMetadata {
 
         BeanUtils.reflections.getTypesAnnotatedWith(Inventory.class).stream().filter(i->i.isAnnotationPresent(Inventory.class))
                 .forEach(clz -> {
-                    ExpandedQueries queries = clz.getAnnotation(ExpandedQueries.class);
-                    ExpandedQueryAliases aliases = clz.getAnnotation(ExpandedQueryAliases.class);
+                    List<ExpandedQuery> expandedQueries = new ArrayList<>();
+                    List<ExpandedQueryAlias> expandedQueryAliases = new ArrayList<>();
+                    Class tmp = clz;
+                    while (tmp != Object.class) {
+                        ExpandedQueries queries = (ExpandedQueries) tmp.getAnnotation(ExpandedQueries.class);
+                        if (queries != null) {
+                            Collections.addAll(expandedQueries, queries.value());
+                        }
+
+                        ExpandedQueryAliases aliases = (ExpandedQueryAliases) tmp.getAnnotation(ExpandedQueryAliases.class);
+                        if (aliases != null) {
+                            Collections.addAll(expandedQueryAliases, aliases.value());
+                        }
+
+                        tmp = tmp.getSuperclass();
+                    }
+
                     fillInventoryMetadata(clz,
-                            queries != null ? asList(queries.value())  : null,
-                            aliases != null ? asList(aliases.value()) : null,
+                            !expandedQueries.isEmpty() ? expandedQueries  : null,
+                            !expandedQueryAliases.isEmpty() ? expandedQueryAliases : null,
                             queryForOther, aliasForOther);
                 });
 
