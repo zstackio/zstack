@@ -1,24 +1,32 @@
 package org.zstack.zql.sql;
 
+import org.apache.commons.lang.StringUtils;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.utils.FieldUtils;
 import org.zstack.zql.ast.ZQLMetadata;
 
+import java.lang.reflect.Field;
 import java.util.Iterator;
 import java.util.List;
 
 public class SQLConditionBuilder {
-    private List<String> conditionNames;
     private String template;
+    private Field conditionField;
 
+    private void setConditionField(Class clz, String fname) {
+        conditionField = FieldUtils.getField(fname, clz);
+        if (conditionField == null) {
+            throw new CloudRuntimeException(String.format("inventory class[%s] has no field[%s]", clz, fname));
+        }
+    }
 
     public SQLConditionBuilder(String queryTargetInventoryName, List<String> conditionNames) {
-        this.conditionNames = conditionNames;
-
         List<ZQLMetadata.ChainQueryStruct> chainQueries = ZQLMetadata.createChainQuery(queryTargetInventoryName, conditionNames);
         if (chainQueries.size() == 1) {
             ZQLMetadata.FieldChainQuery fc = (ZQLMetadata.FieldChainQuery) chainQueries.get(0);
             template = String.format("%s.%s %%s %%s",
                     fc.self.selfInventoryClass.getSimpleName(), fc.fieldName);
+            setConditionField(fc.self.selfInventoryClass, fc.fieldName);
         } else {
             ZQLMetadata.ExpandChainQuery first = (ZQLMetadata.ExpandChainQuery) chainQueries.get(0);
             template = String.format("%s.%s IN %s",
@@ -39,10 +47,13 @@ public class SQLConditionBuilder {
             ZQLMetadata.FieldChainQuery fc = (ZQLMetadata.FieldChainQuery) current;
             ZQLMetadata.ExpandQueryMetadata right = fc.right;
             String entityName = right.targetInventoryClass.getSimpleName();
+
+            setConditionField(right.targetInventoryClass, fc.fieldName);
+
             return String.format("(SELECT %s.%s FROM %s" +
                     " %s WHERE %s.%s %%s %%s)",
                     entityName, right.targetKeyName, right.targetVOClass.getSimpleName(), entityName, entityName,
-                    ((ZQLMetadata.FieldChainQuery) current).fieldName);
+                    fc.fieldName);
         }
 
         ZQLMetadata.ExpandChainQuery ec = (ZQLMetadata.ExpandChainQuery) current;
@@ -55,7 +66,15 @@ public class SQLConditionBuilder {
                 entityName, right.selfKeyName, value);
     }
 
+    private String normalizeValue(String value) {
+        if (Boolean.class.isAssignableFrom(conditionField.getType()) || boolean.class.isAssignableFrom(conditionField.getType())) {
+            return StringUtils.strip(value, "'");
+        } else {
+            return value;
+        }
+    }
+
     public String build(String operator, String value) {
-        return String.format(template, operator, value);
+        return String.format(template, operator, normalizeValue(value));
     }
 }

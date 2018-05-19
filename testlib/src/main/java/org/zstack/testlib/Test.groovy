@@ -670,6 +670,10 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
         }
     }
 
+    static void expect(Closure c) {
+        expect(AssertionError.class, c)
+    }
+
     static void expect(exceptions, Closure c) {
         List<Class> lst = []
         if (exceptions instanceof Collection) {

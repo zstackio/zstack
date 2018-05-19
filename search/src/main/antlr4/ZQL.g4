@@ -37,6 +37,7 @@ value
     : STRING
     | INT
     | FLOAT
+    | BOOLEAN
     | '(' value (',' value)* ')'
     ;
 
@@ -156,6 +157,11 @@ OR: 'or';
 ASC: 'asc';
 
 DESC: 'desc';
+
+BOOLEAN
+    : 'true'
+    | 'false'
+    ;
 
 INT : '-'? NUMBER;
 

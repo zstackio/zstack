@@ -37,6 +37,7 @@ class VirtualRouterNetworkServiceEnv {
                 image {
                     name = "vr"
                     url = "http://zstack.org/download/vr.qcow2"
+                    system = true
                 }
             }
 

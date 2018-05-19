@@ -11,6 +11,7 @@ import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO_
 import org.zstack.sdk.EipInventory
+import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VmNicInventory
@@ -44,7 +45,26 @@ class VirtualRouterOperationCase extends SubCase {
             testVirtualRouterReconnect()
             testUpdateGlobalConfigAndPingVirtualRouter()
             testQueryVirtualRouterVm()
+            testQueryVRImage()
         }
+    }
+
+    void testQueryVRImage() {
+        ImageInventory vr = env.inventoryByName("vr")
+
+        List<ImageInventory> images = queryImage {
+            conditions = ["system=true"]
+        }
+
+        assert images.size() == 1
+        assert images[0].uuid == vr.uuid
+        assert images[0].system
+
+        images = queryImage {
+            conditions = ["system=false"]
+        }
+
+        assert !images.any { it.system }
     }
 
     @Override
