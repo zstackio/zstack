@@ -3,10 +3,7 @@ package org.zstack.zql.ast;
 import org.apache.commons.lang.StringUtils;
 import org.zstack.header.core.StaticInit;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.query.ExpandedQueries;
-import org.zstack.header.query.ExpandedQuery;
-import org.zstack.header.query.ExpandedQueryAlias;
-import org.zstack.header.query.ExpandedQueryAliases;
+import org.zstack.header.query.*;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.search.Inventory;
 import org.zstack.utils.BeanUtils;
@@ -310,6 +307,10 @@ public class ZQLMetadata {
                 metadata.expandQueryAliases.put(it.alias(), e);
             });
         }
+
+        FieldUtils.getAllFields(clz).stream().filter(f->f.isAnnotationPresent(Queryable.class)).forEach(f-> {
+
+        });
 
         inventoryMetadata.put(clz.getName(), metadata);
     }
