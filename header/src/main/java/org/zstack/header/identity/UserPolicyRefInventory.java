@@ -22,7 +22,7 @@ public class UserPolicyRefInventory {
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
-    public UserPolicyRefInventory valueOf(UserPolicyRefVO vo) {
+    public static UserPolicyRefInventory valueOf(UserPolicyRefVO vo) {
         UserPolicyRefInventory inv = new UserPolicyRefInventory();
         inv.setUserUuid(vo.getUserUuid());
         inv.setPolicyUuid(vo.getPolicyUuid());
@@ -31,7 +31,7 @@ public class UserPolicyRefInventory {
         return inv;
     }
 
-    public List<UserPolicyRefInventory> valueOf(Collection<UserPolicyRefVO> vos) {
+    public static List<UserPolicyRefInventory> valueOf(Collection<UserPolicyRefVO> vos) {
         List<UserPolicyRefInventory> invs = new ArrayList<UserPolicyRefInventory>();
         for (UserPolicyRefVO vo : vos) {
             invs.add(valueOf(vo));

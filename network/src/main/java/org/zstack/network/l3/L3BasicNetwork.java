@@ -121,11 +121,10 @@ public class L3BasicNetwork implements L3Network {
                 vo.setNetmask(ipr.getNetmask());
                 vo.setStartIp(ipr.getStartIp());
                 vo.setNetworkCidr(ipr.getNetworkCidr());
+                vo.setAccountUuid(msg.getSession().getAccountUuid());
                 dbf.getEntityManager().persist(vo);
                 dbf.getEntityManager().flush();
                 dbf.getEntityManager().refresh(vo);
-
-                acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), IpRangeVO.class);
 
                 return vo;
             }

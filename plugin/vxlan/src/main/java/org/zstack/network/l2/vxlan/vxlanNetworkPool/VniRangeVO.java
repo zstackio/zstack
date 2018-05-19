@@ -2,6 +2,7 @@ package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 
 import org.zstack.header.network.l2.L2NetworkEO;
 import org.zstack.header.tag.AutoDeleteTag;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ResourceVO;
 
@@ -16,6 +17,11 @@ import java.sql.Timestamp;
  */
 @Entity
 @Table
+@EntityGraph(
+        parents = {
+                @EntityGraph.Neighbour(type = VxlanNetworkPoolVO.class, myField = "l2NetworkUuid", targetField = "uuid")
+        }
+)
 public class VniRangeVO extends ResourceVO {
     @Column
     private String name;

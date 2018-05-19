@@ -12,7 +12,6 @@ class BeanConstructor {
             "ThreadFacade.xml",
             "CloudBus.xml",
             "validation.xml",
-            "InventoryFacade.xml",
             "DatabaseFacade.xml",
             "JobQueueFacade.xml",
             "GlobalConfigFacade.xml",

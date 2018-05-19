@@ -19,6 +19,7 @@ import static java.util.Arrays.asList;
         responseClass = APIQueryNotificationReply.class
 )
 @AutoQuery(replyClass = APIQueryNotificationReply.class, inventoryClass = NotificationInventory.class)
+@Deprecated
 public class APIQueryNotificationMsg extends APIQueryMessage {
     public static List<String> __example__() {
         return asList();

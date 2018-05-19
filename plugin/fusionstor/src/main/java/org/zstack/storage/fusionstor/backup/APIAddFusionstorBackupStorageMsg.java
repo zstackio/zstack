@@ -24,6 +24,7 @@ import java.util.List;
         parameterName = "params",
         responseClass = APIAddBackupStorageEvent.class
 )
+@Deprecated
 public class APIAddFusionstorBackupStorageMsg extends APIAddBackupStorageMsg {
     @APIParam(nonempty = false, emptyString = false)
     private List<String> monUrls;

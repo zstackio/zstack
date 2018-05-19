@@ -1,5 +1,6 @@
 package org.zstack.testlib
 
+import groovy.transform.AutoClone
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.springframework.http.*
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
@@ -26,6 +27,8 @@ import org.zstack.header.vo.EO
 import org.zstack.header.volume.VolumeDeletionPolicyManager
 import org.zstack.image.ImageGlobalConfig
 import org.zstack.sdk.*
+import org.zstack.sdk.identity.role.api.CreateRoleAction
+import org.zstack.sdk.identity.role.api.DeleteRoleAction
 import org.zstack.sdk.sns.CreateSNSTopicAction
 import org.zstack.sdk.sns.DeleteSNSApplicationEndpointAction
 import org.zstack.sdk.sns.DeleteSNSApplicationPlatformAction
@@ -41,14 +44,16 @@ import org.zstack.sdk.zwatch.alarm.UnsubscribeEventAction
 import org.zstack.sdk.zwatch.alarm.sns.CreateSNSTextTemplateAction
 import org.zstack.sdk.zwatch.alarm.sns.DeleteSNSTextTemplateAction
 import org.zstack.storage.volume.VolumeGlobalConfig
+import org.zstack.testlib.identity.AccountSpec
+import org.zstack.testlib.identity.IdentitySpec
 import org.zstack.utils.BeanUtils
 import org.zstack.utils.DebugUtils
-import org.zstack.utils.FieldUtils
 import org.zstack.utils.data.Pair
 import org.zstack.utils.gson.JSONObjectUtil
 
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
+import java.lang.reflect.Modifier
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
@@ -57,7 +62,8 @@ import java.util.concurrent.TimeUnit
 /**
  * Created by xing5 on 2017/2/12.
  */
-class EnvSpec implements Node {
+@AutoClone(includeFields=true)
+class EnvSpec implements Node, ApiHelper {
     protected List<ZoneSpec> zones = []
     List<AccountSpec> accounts = []
 
@@ -74,7 +80,7 @@ class EnvSpec implements Node {
     protected ConcurrentHashMap<Class, List<Tuple>> messageHandlers = [:]
     private ConcurrentHashMap<Class, List<Tuple>> defaultMessageHandlers = [:]
     private static RestTemplate restTemplate
-    private static Set<Class> simulatorClasses = Platform.reflections.getSubTypesOf(Simulator.class)
+    protected static Set<Class> simulatorClasses = Platform.reflections.getSubTypesOf(Simulator.class)
 
     private Set<Closure> cleanupClosures = []
 
@@ -91,6 +97,7 @@ class EnvSpec implements Node {
             [CreatePolicyAction.metaClass, CreatePolicyAction.Result.metaClass, DeletePolicyAction.class],
             [CreateUserGroupAction.metaClass, CreateUserGroupAction.Result.metaClass, DeleteUserGroupAction.class],
             [CreateUserAction.metaClass, CreateUserAction.Result.metaClass, DeleteUserAction.class],
+            [CreateRoleAction.metaClass, CreateRoleAction.Result.metaClass, DeleteRoleAction.class],
             [AddImageAction.metaClass, AddImageAction.Result.metaClass, DeleteImageAction.class],
             [CreateDataVolumeTemplateFromVolumeAction.metaClass, CreateDataVolumeTemplateFromVolumeAction.Result.metaClass, DeleteImageAction.class],
             [CreateRootVolumeTemplateFromRootVolumeAction.metaClass, CreateRootVolumeTemplateFromRootVolumeAction.Result.metaClass, DeleteImageAction.class],
@@ -142,20 +149,19 @@ class EnvSpec implements Node {
     protected ConcurrentLinkedQueue resourcesNeedDeletion = new ConcurrentLinkedQueue()
 
     static {
-        BeanUtils.reflections.getSubTypesOf(DBRemaining.class).each {
-            def remaining = it.newInstance()
-            allowedDBRemainingList.add(remaining.reportRemaining())
+        BeanUtils.reflections.getSubTypesOf(AllowedDBRemaining.class).findAll { !Modifier.isAbstract(it.modifiers) }.each {
+            allowedDBRemainingList.add(it.getConstructor().newInstance())
         }
     }
 
-    private void installDeletionMethods() {
+    protected void installDeletionMethods() {
         deletionMethods.each { it ->
             def (actionMeta, resultMeta, deleteClass) = it
 
             actionMeta.call = {
                 ApiResult res = ZSClient.call(delegate)
                 def ret = delegate.makeResult(res)
-                resourcesNeedDeletion.add(ret)
+                Test.currentEnvSpec.resourcesNeedDeletion.add(ret)
                 return ret
             }
 
@@ -164,7 +170,8 @@ class EnvSpec implements Node {
                     return false
                 }
 
-                def action = (deleteClass as Class).newInstance()
+                def action = (deleteClass as Class).getConstructor().newInstance()
+                logger.debug("auto-deleting resource by ${deleteClass} uuid:${delegate.value.inventory.uuid}")
                 action.uuid = delegate.value.inventory.uuid
                 action.sessionId = session.uuid
                 def res = action.call()
@@ -173,13 +180,14 @@ class EnvSpec implements Node {
         }
     }
 
-    EnvSpec() {
-        installDeletionMethods()
-
+    static {
         HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory()
         factory.setReadTimeout(CoreGlobalProperty.REST_FACADE_READ_TIMEOUT)
         factory.setConnectTimeout(CoreGlobalProperty.REST_FACADE_CONNECT_TIMEOUT)
         restTemplate = new RestTemplate(factory)
+    }
+
+    EnvSpec() {
     }
 
     Closure getSimulator(String path) {
@@ -209,6 +217,14 @@ class EnvSpec implements Node {
         cleanSimulatorHandlers()
         cleanAfterSimulatorHandlers()
         cleanMessageHandlers()
+    }
+
+    void identities(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = IdentitySpec.class) Closure c) {
+        def ispec = new IdentitySpec(this)
+        c.delegate = ispec
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c()
+        addChild(ispec)
     }
 
     ZoneSpec zone(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = ZoneSpec.class) Closure c)  {
@@ -325,7 +341,10 @@ class EnvSpec implements Node {
             } else {
                 def n = it.parent
                 while (n != null) {
-                    if (!(n instanceof HasSession) || n.accountName == null) {
+                    if (n instanceof AccountSpec) {
+                        suuid = n.session.uuid
+                        break
+                    } else if (!(n instanceof HasSession) || n.accountName == null) {
                         n = n.parent
                     } else {
                         // one of the parent has the accountName set, use it
@@ -341,7 +360,7 @@ class EnvSpec implements Node {
         return suuid
     }
 
-    private void deploy() {
+    protected void deploy() {
         def allNodes = []
 
         walk {
@@ -373,13 +392,19 @@ class EnvSpec implements Node {
             def uuid = Platform.getUuid()
             specsByUuid[uuid] = it
 
-
-            def suuid = retrieveSessionUuid(it)
+            Spec s = it as Spec
+            def suuid = s.getSessionUuid == null ? retrieveSessionUuid(it) : s.getSessionUuid()
 
             try {
-                def id
                 logger.debug(String.format("create resource of class %s", it.getClass().getName()))
-                id = (it as CreateAction).create(uuid, suuid) as SpecID
+                def id = (it as CreateAction).create(uuid, suuid) as SpecID
+
+                if ((it as Spec).toPublic) {
+                    shareResource {
+                        resourceUuids = [id.uuid]
+                        toPublic = true
+                    }
+                }
 
                 if (id != null) {
                     specsByName[id.name] = it
@@ -474,6 +499,26 @@ class EnvSpec implements Node {
         return spec
     }
 
+    protected void installSimulatorHandlers() {
+        simulatorClasses.each { clz ->
+            def con = clz.getConstructors()[0]
+
+            Simulator sim
+            if (con.getParameterCount() == 0) {
+                sim = con.newInstance() as Simulator
+            } else {
+                Object[] params = new Objects[con.getParameterCount()]
+                for (int i=0; i<con.getParameterCount(); i++) {
+                    params[i] = null
+                }
+
+                sim = con.newInstance(params) as Simulator
+            }
+
+            sim.registerSimulators(this)
+        }
+    }
+
     EnvSpec create(Closure cl = null) {
         assert Test.currentEnvSpec == null: "There is another EnvSpec created but not deleted. There can be only one EnvSpec" +
                 " in used, you must delete the previous one"
@@ -484,11 +529,15 @@ class EnvSpec implements Node {
         adminLogin()
         resetAllGlobalConfig()
 
+        installSimulatorHandlers()
+        installDeletionMethods()
+
+        /*
         simulatorClasses.each {
             Simulator sim = it.newInstance() as Simulator
             sim.registerSimulators(this)
         }
-
+        */
 
         deploy()
 
@@ -518,7 +567,7 @@ class EnvSpec implements Node {
                               "NetworkServiceTypeVO", "VmInstanceSequenceNumberVO",
                               "GarbageCollectorVO",
                               "TaskProgressVO", "NotificationVO", "TaskStepVO",
-                              "DataVolumeUsageVO", "RootVolumeUsageVO", "VmUsageVO",
+                              "DataVolumeUsageVO", "RootVolumeUsageVO", "VmUsageVO", "GpuUsageVO",
                               "ResourceVO","SecurityGroupSequenceNumberVO","SnapShotUsageVO", "MediaVO"]) {
                 // those tables will continue having entries during running a test suite
                 return
@@ -533,6 +582,7 @@ class EnvSpec implements Node {
                 List vos = SQL.New("select a from ${type.name} a".toString(), voClz).list()
 
                 for (AllowedDBRemaining a : allowedDBRemainingList) {
+                    logger.debug("perform AllowedDBRemaining[${a.class}] check")
                     vos = a.check(type.name, vos)
                     if (vos.isEmpty()) {
                         // the remaining rows are allowed by test
@@ -540,8 +590,10 @@ class EnvSpec implements Node {
                     }
                 }
 
+                List lst = vos.collect { it.getProperties() }
+
                 def err = "[${Test.CURRENT_SUB_CASE != null ? Test.CURRENT_SUB_CASE.class : this.class}] EnvSpec.delete() didn't cleanup the environment, there are still ${vos.size()} records in the database" +
-                        " table ${type.name}, go fix it immediately!!! Abort the system"
+                        " table ${type.name}, go fix it immediately!!! Abort the system\n ${lst}"
                 logger.fatal(err)
 
                 // abort the test suite
@@ -636,6 +688,13 @@ class EnvSpec implements Node {
         new TraverseCleanEO(g.generateEORelations(), nodes, eoNameEOClassMap, eoNameVOClassMap).traverse()
     }
 
+    protected void callDeleteOnResourcesNeedDeletion() {
+        resourcesNeedDeletion.each {
+            logger.info("run delete() method on ${it.class}")
+            it.delete()
+        }
+    }
+
     void delete() {
         try {
             ImageGlobalConfig.DELETION_POLICY.updateValue(ImageDeletionPolicyManager.ImageDeletionPolicy.Direct.toString())
@@ -649,10 +708,7 @@ class EnvSpec implements Node {
                 destroy(session.uuid)
             }
 
-            resourcesNeedDeletion.each {
-                logger.info("run delete() method on ${it.class}")
-                it.delete()
-            }
+            callDeleteOnResourcesNeedDeletion()
 
             SQL.New(NotificationVO.class).hardDelete()
             SQL.New(TaskProgressVO.class).hardDelete()
@@ -805,5 +861,11 @@ class EnvSpec implements Node {
         if (ele != null) {
             lst.remove(ele)
         }
+    }
+
+    EnvSpec more(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = EnvSpec.class) Closure c) {
+        c.delegate = this
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c()
     }
 }

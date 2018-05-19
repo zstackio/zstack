@@ -39,12 +39,12 @@ class StartVmAfterImageDeleteCase extends SubCase {
     void test() {
         env.create {
             createVmWithNewImage()
-            deleteImage()
+            testDeleteImage()
             testStartVm()
             testMigrateVm()
             testCreateTemplateFromRootVolume()
             testGetCandidate()
-            deleteVm()
+            testDeleteVm()
         }
     }
 
@@ -75,7 +75,7 @@ class StartVmAfterImageDeleteCase extends SubCase {
         assert Q.New(VmInstanceVO.class).count() == 1
     }
 
-    void deleteImage() {
+    void testDeleteImage() {
         deleteImage {
             delegate.uuid = image.uuid
         }
@@ -132,7 +132,7 @@ class StartVmAfterImageDeleteCase extends SubCase {
         assert result.clusters.size() == 1
     }
 
-    void deleteVm() {
+    void testDeleteVm() {
         destroyVmInstance {
             delegate.uuid = vm.uuid
         }

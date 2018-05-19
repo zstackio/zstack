@@ -157,7 +157,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
             }
 
             private void parseGlobalConfigFields() {
-                List<Class> definitionClasses = BeanUtils.scanClass("org.zstack", GlobalConfigDefinition.class);
+                Set<Class<?>> definitionClasses = BeanUtils.reflections.getTypesAnnotatedWith(GlobalConfigDefinition.class);
                 for (Class def : definitionClasses) {
                     for (Field field : def.getDeclaredFields()) {
                         if (Modifier.isStatic(field.getModifiers()) && GlobalConfig.class.isAssignableFrom(field.getType())) {

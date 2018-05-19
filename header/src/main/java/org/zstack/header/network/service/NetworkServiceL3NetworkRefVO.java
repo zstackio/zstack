@@ -4,6 +4,7 @@ import org.zstack.header.network.l3.L3NetworkEO;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.search.SqlTrigger;
 import org.zstack.header.search.TriggerIndex;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.SoftDeletionCascade;
@@ -19,6 +20,12 @@ import javax.persistence.*;
         @SoftDeletionCascade(parent = L3NetworkVO.class, joinColumn = "l3NetworkUuid"),
         @SoftDeletionCascade(parent = NetworkServiceProviderVO.class, joinColumn = "networkServiceProviderUuid")
 })
+@EntityGraph(
+        friends = {
+                @EntityGraph.Neighbour(type = L3NetworkVO.class, myField = "l3NetworkUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = NetworkServiceProviderVO.class, myField = "networkServiceProviderUuid", targetField = "uuid")
+        }
+)
 public class NetworkServiceL3NetworkRefVO {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

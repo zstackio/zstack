@@ -20,9 +20,34 @@ class SecurityGroupSpec extends Spec implements HasSession {
 
     SecurityGroupSpec(EnvSpec envSpec) {
         super(envSpec)
+    }
 
-        preCreate {
-            setupSimulator()
+    class Simulators implements Simulator {
+        @Override
+        void registerSimulators(EnvSpec xspec) {
+            def simulator = { arg1, arg2 ->
+                xspec.simulator(arg1, arg2)
+            }
+
+            simulator(KVMSecurityGroupBackend.SECURITY_GROUP_APPLY_RULE_PATH) {
+                return new KVMAgentCommands.ApplySecurityGroupRuleResponse()
+            }
+
+            simulator(KVMSecurityGroupBackend.SECURITY_GROUP_REFRESH_RULE_ON_HOST_PATH) {
+                return new KVMAgentCommands.RefreshAllRulesOnHostResponse()
+            }
+
+            simulator(KVMSecurityGroupBackend.SECURITY_GROUP_CLEANUP_UNUSED_RULE_ON_HOST_PATH) {
+                return new KVMAgentCommands.CleanupUnusedRulesOnHostResponse()
+            }
+
+            simulator(KVMSecurityGroupBackend.SECURITY_GROUP_UPDATE_GROUP_MEMBER){
+                return new KVMAgentCommands.UpdateGroupMemberResponse()
+            }
+
+            simulator(KVMSecurityGroupBackend.SECURITY_GROUP_CHECK_DEFAULT_RULES_ON_HOST_PATH) {
+                return new KVMAgentCommands.CheckDefaultSecurityGroupResponse()
+            }
         }
     }
 
@@ -103,28 +128,6 @@ class SecurityGroupSpec extends Spec implements HasSession {
         c()
         addChild(spec)
         return spec
-    }
-
-    private void setupSimulator() {
-        simulator(KVMSecurityGroupBackend.SECURITY_GROUP_APPLY_RULE_PATH) {
-            return new KVMAgentCommands.ApplySecurityGroupRuleResponse()
-        }
-
-        simulator(KVMSecurityGroupBackend.SECURITY_GROUP_REFRESH_RULE_ON_HOST_PATH) {
-            return new KVMAgentCommands.RefreshAllRulesOnHostResponse()
-        }
-
-        simulator(KVMSecurityGroupBackend.SECURITY_GROUP_CLEANUP_UNUSED_RULE_ON_HOST_PATH) {
-            return new KVMAgentCommands.CleanupUnusedRulesOnHostResponse()
-        }
-
-        simulator(KVMSecurityGroupBackend.SECURITY_GROUP_UPDATE_GROUP_MEMBER){
-            return new KVMAgentCommands.UpdateGroupMemberResponse()
-        }
-
-        simulator(KVMSecurityGroupBackend.SECURITY_GROUP_CHECK_DEFAULT_RULES_ON_HOST_PATH) {
-            return new KVMAgentCommands.CheckDefaultSecurityGroupResponse()
-        }
     }
 
     @Override

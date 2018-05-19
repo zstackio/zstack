@@ -85,6 +85,7 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInsta
                 String uuid = msg.getResourceUuid() == null ? Platform.getUuid() : msg.getResourceUuid();
                 vo.setUuid(uuid);
                 vo.setVni(r.getVni());
+                vo.setAccountUuid(msg.getSession().getAccountUuid());
                 vo.setPoolUuid((amsg.getPoolUuid()));
                 if (vo.getPhysicalInterface() == null) {
                     vo.setPhysicalInterface("");
@@ -102,8 +103,6 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInsta
                     dbf.getEntityManager().flush();
                     dbf.getEntityManager().refresh(rvo);
                 }
-
-                acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), VxlanNetworkVO.class);
 
                 dbf.getEntityManager().flush();
                 dbf.getEntityManager().refresh(vo);

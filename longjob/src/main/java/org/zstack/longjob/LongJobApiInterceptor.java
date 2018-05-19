@@ -110,10 +110,10 @@ public class LongJobApiInterceptor implements ApiMessageInterceptor, Component {
         vo.setJobResult(LongJobState.Succeeded.toString());
         vo.setTargetResourceUuid(msg.getTargetResourceUuid());
         vo.setManagementNodeUuid(Platform.getManagementServerId());
+        vo.setAccountUuid(msg.getSession().getAccountUuid());
         vo = dbf.persistAndRefresh(vo);
         msg.setJobUuid(vo.getUuid());
         tagMgr.createTags(msg.getSystemTags(), msg.getUserTags(), vo.getUuid(), LongJobVO.class.getSimpleName());
-        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), LongJobVO.class);
 
         return vo;
     }
@@ -148,8 +148,8 @@ public class LongJobApiInterceptor implements ApiMessageInterceptor, Component {
 
     @Override
     public boolean start() {
-        Class<APIMessage> apiClass = null;
-        List<Class> longJobClasses = BeanUtils.scanClass("org.zstack", LongJobFor.class);
+        Class<APIMessage> apiClass;
+        Set<Class<?>> longJobClasses = BeanUtils.reflections.getTypesAnnotatedWith(LongJobFor.class);
         for (Class it : longJobClasses) {
             LongJobFor at = (LongJobFor) it.getAnnotation(LongJobFor.class);
             try {

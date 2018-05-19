@@ -16,6 +16,7 @@ import org.zstack.header.network.l3.IpRangeVO_;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.identity.Account;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.vip.VipPeerL3NetworkRefVO;
@@ -66,6 +67,7 @@ public class VirtualRouterCreateVipForPublicIpFlow implements Flow {
         }
 
         /* vip db */
+        String accountUuid = Account.getAccountUuidOfResource(vr.getUuid());
         VipVO vipvo = new VipVO();
         vipvo.setUuid(Platform.getUuid());
         vipvo.setName(String.format("vip-for-%s", vr.getName()));
@@ -78,6 +80,7 @@ public class VirtualRouterCreateVipForPublicIpFlow implements Flow {
         vipvo.setNetmask(nic.getNetmask());
         vipvo.setUsedIpUuid(nic.getUsedIpUuid());
         vipvo.setUseFor(VirtualRouterConstant.SNAT_NETWORK_SERVICE_TYPE);
+        vipvo.setAccountUuid(accountUuid);
         if(!vr.getGuestL3Networks().isEmpty()){
             String peerL3network = vr.getGuestL3Networks().get(0);
             try {
@@ -92,13 +95,11 @@ public class VirtualRouterCreateVipForPublicIpFlow implements Flow {
         VirtualRouterVipVO vrvip = new VirtualRouterVipVO();
         vrvip.setUuid(vipvo.getUuid());
         vrvip.setVirtualRouterVmUuid(vr.getUuid());
-        String vrAccount = acntMgr.getOwnerAccountUuidOfResource(vr.getUuid());
         new SQLBatch(){
             @Override
             protected void scripts() {
                 persist(vipvo);
                 persist(vrvip);
-                acntMgr.createAccountResourceRef(vrAccount, vipvo.getUuid(), VipVO.class);
                 tagMgr.copySystemTag(vr.getUuid(), VirtualRouterVmVO.class.getSimpleName(),
                         vipvo.getUuid(), VipVO.class.getSimpleName(), false);
             }
@@ -114,18 +115,14 @@ public class VirtualRouterCreateVipForPublicIpFlow implements Flow {
         /* use for rollback */
         data.put(VirtualRouterConstant.Param.PUB_VIP_UUID.toString(), vipvo.getUuid());
         chain.next();
-        return ;
     }
 
     @Override
     public void rollback(FlowRollback chain, Map data) {
-        String vipUuid = (String) data.get(VirtualRouterConstant.Param.PUB_VIP_UUID.toString());
-        if (vipUuid == null) {
-            chain.rollback();
-            return;
-        }
+        SQL.New(VirtualRouterVipVO.class).eq(VirtualRouterVipVO_.uuid, data.get(VirtualRouterConstant.Param.PUB_VIP_UUID.toString()))
+                .eq(VirtualRouterVipVO_.uuid, data.get(VirtualRouterConstant.Param.VR_UUID.toString()))
+                .hardDelete();
 
-        SQL.New(VirtualRouterVipVO.class).eq(VirtualRouterVipVO_.uuid, vipUuid).delete();
         chain.rollback();
     }
 }

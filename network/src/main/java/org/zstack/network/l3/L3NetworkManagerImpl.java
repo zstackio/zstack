@@ -316,8 +316,8 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         L3NetworkInventory inv = new SQLBatchWithReturn<L3NetworkInventory>() {
             @Override
             protected L3NetworkInventory scripts() {
+                vo.setAccountUuid(msg.getSession().getAccountUuid());
                 L3NetworkInventory inv = factory.createL3Network(vo, msg);
-                acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), L3NetworkVO.class);
                 tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), L3NetworkVO.class.getSimpleName());
                 return inv;
             }

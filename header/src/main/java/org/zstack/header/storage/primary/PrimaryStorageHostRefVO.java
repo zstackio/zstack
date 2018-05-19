@@ -2,6 +2,7 @@ package org.zstack.header.storage.primary;
 
 import org.zstack.header.host.HostEO;
 import org.zstack.header.host.HostVO;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.SoftDeletionCascade;
 import org.zstack.header.vo.SoftDeletionCascades;
@@ -21,6 +22,12 @@ import java.sql.Timestamp;
         @SoftDeletionCascade(parent = HostVO.class, joinColumn = "hostUuid")
 })
 @IdClass(CompositePrimaryKeyForPrimaryStorageHostRefVO.class)
+@EntityGraph(
+        friends = {
+                @EntityGraph.Neighbour(type = PrimaryStorageVO.class, myField = "primaryStorageUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = HostVO.class, myField = "hostUuid", targetField = "uuid"),
+        }
+)
 public class PrimaryStorageHostRefVO {
     @Column
     @Id

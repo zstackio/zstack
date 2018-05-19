@@ -1,6 +1,7 @@
 package org.zstack.network.service.vip;
 
 import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.SoftDeletionCascade;
 import org.zstack.header.vo.SoftDeletionCascades;
@@ -18,6 +19,12 @@ import java.sql.Timestamp;
         @SoftDeletionCascade(parent = L3NetworkVO.class, joinColumn = "l3NetworkUuid")
 })
 @IdClass(CompositePrimaryKeyForVipPeerL3NetworkRefVO.class)
+@EntityGraph(
+        friends = {
+                @EntityGraph.Neighbour(type = VipVO.class, myField = "vipUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = L3NetworkVO.class, myField = "l3NetworkUuid", targetField = "uuid"),
+        }
+)
 public class VipPeerL3NetworkRefVO {
     @Column
     @Id

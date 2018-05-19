@@ -58,7 +58,6 @@
     <import resource="springConfigXml/HostAllocatorManager.xml"/>
     <import resource="springConfigXml/HostManager.xml"/>
     <import resource="springConfigXml/ImageManager.xml"/>
-    <import resource="springConfigXml/InventoryFacade.xml"/>
     <import resource="springConfigXml/jmx.xml"/>
     <import resource="springConfigXml/JobQueueFacade.xml"/>
     <import resource="springConfigXml/jsonlabel.xml"/>

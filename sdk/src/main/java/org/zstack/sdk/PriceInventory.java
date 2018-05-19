@@ -68,4 +68,12 @@ public class PriceInventory  {
         return this.lastOpDate;
     }
 
+    public java.util.List pciDeviceOfferings;
+    public void setPciDeviceOfferings(java.util.List pciDeviceOfferings) {
+        this.pciDeviceOfferings = pciDeviceOfferings;
+    }
+    public java.util.List getPciDeviceOfferings() {
+        return this.pciDeviceOfferings;
+    }
+
 }

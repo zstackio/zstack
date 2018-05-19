@@ -13,8 +13,8 @@ doc {
         request {
 			url "POST /v1/load-balancers/listeners/{listenerUuid}/certificate"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header(Authorization: 'OAuth the-session-uuid')
 
             clz APIAddCertificateToLoadBalancerListenerMsg.class
 

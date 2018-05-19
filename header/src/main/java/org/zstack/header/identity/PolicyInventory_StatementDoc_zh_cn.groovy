@@ -1,7 +1,5 @@
 package org.zstack.header.identity
 
-import org.zstack.header.identity.AccountConstant.StatementEffect
-
 doc {
 
     title "策略声明清单"

@@ -13,8 +13,8 @@ doc {
         request {
 			url "POST /v1/l3-networks/{l3NetworkUuid}/hostroute"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header(Authorization: 'OAuth the-session-uuid')
 
             clz APIAddHostRouteToL3NetworkMsg.class
 

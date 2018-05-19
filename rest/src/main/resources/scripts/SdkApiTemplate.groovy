@@ -61,6 +61,14 @@ class SdkApiTemplate implements SdkTemplate {
         }
     }
 
+    static String getFieldType(Field field) {
+        if (!field.type.name.startsWith("org.zstack")) {
+            return field.type.name
+        }
+
+        return "${getPackageName(field.type)}.${field.type.simpleName}"
+    }
+
     static String getPackageName(Class clz) {
         String packageName = "org.zstack.sdk"
 
@@ -166,7 +174,7 @@ class SdkApiTemplate implements SdkTemplate {
 
             def fs = """\
     @Param(${annotationFields.join(", ")})
-    public ${f.getType().getName()} ${f.getName()}${{ ->
+    public ${getFieldType(f)} ${f.getName()}${{ ->
                 f.accessible = true
                 
                 Object val = f.get(msg)

@@ -13,8 +13,8 @@ doc {
         request {
 			url "PUT /v1/clusters/{uuid}/actions"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header(Authorization: 'OAuth the-session-uuid')
 
             clz APIUpdateClusterOSMsg.class
 
@@ -50,6 +50,26 @@ doc {
 					type "List"
 					optional true
 					since "2.3"
+					
+				}
+				column {
+					name "excludePackages"
+					enclosedIn "updateClusterOS"
+					desc ""
+					location "body"
+					type "List"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "resourceUuid"
+					enclosedIn "updateClusterOS"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "0.6"
 					
 				}
 			}

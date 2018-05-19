@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>rbac</id>
+    <interceptor>RBACApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.header.identity.role.api.APICreateRoleMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.identity.role.api.APIDeleteRoleMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.identity.role.api.APIQueryRoleMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.header.identity.role.api.APIChangeRoleStateMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.identity.role.api.APIAttachPolicyToRoleMsg</name>
+    </message>
+    
+    <message>
+        <name>org.zstack.header.identity.role.api.APIAttachRoleToAccountMsg</name>
+    </message>
+    
+    <message>
+        <name>org.zstack.header.identity.role.api.APIDetachPolicyFromRoleMsg</name>
+    </message>
+    
+    <message>
+        <name>org.zstack.header.identity.role.api.APIDetachRoleFromAccountMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.identity.role.api.APIAddPolicyStatementsToRoleMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.identity.role.api.APIRemovePolicyStatementsFromRoleMsg</name>
+    </message>
+</service>

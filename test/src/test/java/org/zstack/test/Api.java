@@ -38,7 +38,7 @@ import org.zstack.header.identity.*;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountResourceRefInventory;
 import org.zstack.header.identity.PolicyInventory;
-import org.zstack.header.identity.PolicyInventory.Statement;
+import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.QuotaInventory;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.identity.UserGroupInventory;
@@ -1964,7 +1964,7 @@ public class Api implements CloudBusEventListener {
         throwExceptionIfNeed(res.error);
     }
 
-    public PolicyInventory createPolicy(String name, List<Statement> s, SessionInventory session) throws ApiSenderException {
+    public PolicyInventory createPolicy(String name, List<PolicyStatement> s, SessionInventory session) throws ApiSenderException {
         CreatePolicyAction action = new CreatePolicyAction();
         action.name = name;
         action.statements = s;

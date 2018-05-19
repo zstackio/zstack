@@ -25,7 +25,7 @@ public class GetDataCenterFromRemoteAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, validValues = {"aliyun"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"aliyun","privateAliyun"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type;
 
     @Param(required = false)

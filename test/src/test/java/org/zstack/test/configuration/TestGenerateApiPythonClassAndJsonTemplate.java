@@ -31,8 +31,8 @@ public class TestGenerateApiPythonClassAndJsonTemplate {
         /* This loads spring application context */
         loader = con.addAllConfigInZstackXml().build();
 
-        mysqlQueryBuilderImpl3 = loader.getComponent(MysqlQueryBuilderImpl3.class);
-        mysqlQueryBuilderImpl3.start();
+        //mysqlQueryBuilderImpl3 = loader.getComponent(MysqlQueryBuilderImpl3.class);
+        //mysqlQueryBuilderImpl3.start();
 
         configurationManagerImpl = loader.getComponent(ConfigurationManagerImpl.class);
         configurationManagerImpl.start();

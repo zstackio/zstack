@@ -198,7 +198,9 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         vo.setParentUuid(null);
         vo.setLatest(true);
         vo.setFullSnapshot(fullsnapshot);
-        vo = dbf.getEntityManager().merge(vo);
+        dbf.getEntityManager().persist(vo);
+        dbf.getEntityManager().flush();
+        dbf.getEntityManager().refresh(vo);
 
         VolumeSnapshotStruct struct = new VolumeSnapshotStruct();
         struct.setCurrent(VolumeSnapshotInventory.valueOf(vo));
@@ -253,7 +255,9 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             vo.setLatest(true);
             vo.setParentUuid(latest.getUuid());
             vo.setDistance(latest.getDistance() + 1);
-            vo = dbf.getEntityManager().merge(vo);
+            dbf.getEntityManager().persist(vo);
+            dbf.getEntityManager().flush();
+            dbf.getEntityManager().refresh(vo);
 
             VolumeSnapshotStruct struct = new VolumeSnapshotStruct();
             struct.setParent(VolumeSnapshotInventory.valueOf(latest));
@@ -344,6 +348,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         vo.setState(VolumeSnapshotState.Enabled);
         vo.setStatus(VolumeSnapshotStatus.Creating);
         vo.setVolumeType(vol.getType().toString());
+        vo.setAccountUuid(msg.getAccountUuid());
 
         final VolumeSnapshotStruct struct = new SQLBatchWithReturn<VolumeSnapshotStruct>() {
             @Override
@@ -357,7 +362,6 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                     DebugUtils.Assert(false, "should not be here");
                 }
 
-                acntMgr.createAccountResourceRef(msg.getAccountUuid(), vo.getUuid(), VolumeSnapshotVO.class);
                 return s;
             }
         }.execute();
@@ -512,6 +516,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                         vo.setSize(vol.getSize());
                         vo.setState(VolumeSnapshotState.Enabled);
                         vo.setStatus(VolumeSnapshotStatus.Creating);
+                        vo.setAccountUuid(msg.getAccountUuid());
 
                         if (VolumeSnapshotArrangementType.CHAIN == capability.getArrangementType()) {
                             saveChainTypeSnapshot(vo);
@@ -521,7 +526,6 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                             DebugUtils.Assert(false, "should not be here");
                         }
 
-                        acntMgr.createAccountResourceRef(msg.getAccountUuid(), vo.getUuid(), VolumeSnapshotVO.class);
                         trigger.next();
                     }
                 });

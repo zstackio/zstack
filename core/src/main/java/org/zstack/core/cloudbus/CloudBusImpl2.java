@@ -1326,6 +1326,21 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         }
     }
 
+    @Override
+    public void send(APIMessage msg, java.util.function.Consumer<APIEvent> consumer) {
+        subscribeEvent((e) -> {
+            APIEvent ae = (APIEvent) e;
+            if (ae.getApiId().equals(msg.getId())) {
+                consumer.accept(ae);
+                return true;
+            }
+
+            return false;
+        }, new APIEvent());
+
+        send(msg);
+    }
+
     private void evaluateMessageTimeout(NeedReplyMessage msg) {
         Long timeout = timeoutMgr.getTimeout(msg.getClass());
 
@@ -2451,13 +2466,8 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     }
 
     private void prepareStatistics() {
-        List<Class> needReplyMsgs = BeanUtils.scanClassByType("org.zstack", NeedReplyMessage.class);
-        needReplyMsgs = CollectionUtils.transformToList(needReplyMsgs, new Function<Class, Class>() {
-            @Override
-            public Class call(Class arg) {
-                return !APIMessage.class.isAssignableFrom(arg) || APISyncCallMessage.class.isAssignableFrom(arg) ? arg : null;
-            }
-        });
+        List<Class> needReplyMsgs = new ArrayList<>(BeanUtils.reflections.getSubTypesOf(NeedReplyMessage.class));
+        needReplyMsgs = CollectionUtils.transformToList(needReplyMsgs, (Function<Class, Class>) arg -> !APIMessage.class.isAssignableFrom(arg) || APISyncCallMessage.class.isAssignableFrom(arg) ? arg : null);
 
         for (Class clz : needReplyMsgs) {
             MessageStatistic stat = new MessageStatistic();

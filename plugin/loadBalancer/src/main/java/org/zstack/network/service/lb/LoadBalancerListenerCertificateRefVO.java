@@ -1,5 +1,6 @@
 package org.zstack.network.service.lb;
 
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 
@@ -11,6 +12,15 @@ import java.sql.Timestamp;
  */
 @Entity
 @Table
+@EntityGraph(
+        parents = {
+                @EntityGraph.Neighbour(type = LoadBalancerListenerVO.class, myField = "listenerUuid", targetField = "uuid"),
+        },
+
+        friends = {
+                @EntityGraph.Neighbour(type = CertificateVO.class, myField = "certificateUuid", targetField = "uuid"),
+        }
+)
 public class LoadBalancerListenerCertificateRefVO {
     @Id
     @Column

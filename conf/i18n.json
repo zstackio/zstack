@@ -1328,6 +1328,24 @@
     "fileName": "src/main/java/org/zstack/billing/BillingApiInterceptor.java"
   },
   {
+    "raw": "gpu price must be bound to gpu uuid empty",
+    "en_US": "gpu price must be bound to gpu uuid empty",
+    "zh_CN": "GPU类型的价格必须绑定一个GPU设备",
+    "arguments": [],
+    "line": 117,
+    "fileName": "src/billing/zstack/./premium/mevoco/src/main/java/org/zstack/billing/BillingApiInterceptor.java"
+  },
+  {
+    "raw": "gpu price must be bound to gpu uuid %s",
+    "en_US": "gpu price must be bound to gpu uuid {0}",
+    "zh_CN": "GPU类型的价格必须绑定一个正确的GPU设备{0}",
+    "arguments": [
+      "msg.getSystemTags()"
+    ],
+    "line": 124,
+    "fileName": "src/billing/zstack/./premium/mevoco/src/main/java/org/zstack/billing/BillingApiInterceptor.java"
+  },
+  {
     "raw": "VM [uuid: %s] has already been added to affinityGroup [uuid: %s]",
     "en_US": "VM [uuid: {0}] has already been added to affinityGroup [uuid: {1}]",
     "zh_CN": "VM[uuid:{0}已经被添加到亲和组[uuid:{1}]中。]",
@@ -5492,6 +5510,42 @@
     ],
     "line": 948,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
+  },
+  { 
+    "raw": "networkInboundBandwidth format error %s",
+    "en_US": "networkInboundBandwidth format error {0}",
+    "zh_CN": "下行网络带宽格式错误{0}",
+    "arguments": [
+      "bandwidth"
+    ],
+    "line": 1792,
+    "fileName": "src/zstack/./premium/mevoco/src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
+  },
+  {
+    "raw": "networkInboundBandwidth execeds the max value 32G bps",
+    "en_US": "networkInboundBandwidth execeds the max value 32G bps",
+    "zh_CN": "超过下行网络带宽超过最大值32G bps",
+    "arguments": [],
+    "line": 1789,
+    "fileName": "src/zstack/./premium/mevoco/src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
+  },
+  {
+    "raw": "networkOutboundBandwidth format error %s",
+    "en_US": "networkOutboundBandwidth format error {0}",
+    "zh_CN": "上行网络带宽超格式错误{0}",
+    "arguments": [
+      "bandwidth"
+    ],
+    "line": 1804,
+    "fileName": "src/zstack/./premium/mevoco/src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
+  },
+  {
+    "raw": "networkOutboundBandwidth execeds the max value 32G bps",
+    "en_US": "networkOutboundBandwidth execeds the max value 32G bps",
+    "zh_CN": "超过上行网络带宽超过最大值32G bps",
+    "arguments": [],
+    "line": 1801,
+    "fileName": "src/zstack/./premium/mevoco/src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
     "raw": "Shareable Volume[uuid:%s] has already been attached to VM[uuid:%s]",

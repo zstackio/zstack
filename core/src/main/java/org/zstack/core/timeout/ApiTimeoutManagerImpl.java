@@ -11,6 +11,7 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Created by frank on 2/17/2016.
@@ -119,13 +120,16 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component {
 
     private void collectTimeout() {
         Map<Class, Set<Class>> m = new HashMap<Class, Set<Class>>();
-        List<Class> subs = BeanUtils.scanClass("org.zstack", org.zstack.header.core.ApiTimeout.class);
+        Set<Class<?>> subs = BeanUtils.reflections
+                .getTypesAnnotatedWith(org.zstack.header.core.ApiTimeout.class)
+                .stream().filter(i->i.isAnnotationPresent(org.zstack.header.core.ApiTimeout.class)).collect(Collectors.toSet());;
+
         for (Class sub : subs) {
             org.zstack.header.core.ApiTimeout at = (org.zstack.header.core.ApiTimeout) sub.getAnnotation(org.zstack.header.core.ApiTimeout.class);
             for (Class apiClz : at.apiClasses()) {
                 Set<Class> relatives = m.get(apiClz);
                 if (relatives == null) {
-                    relatives = new HashSet<Class>();
+                    relatives = new HashSet<>();
                     m.put(apiClz, relatives);
                 }
 
