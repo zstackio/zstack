@@ -534,7 +534,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     @ApiTimeout(apiClasses = {APIDeleteVolumeSnapshotMsg.class})
-    public static class OfflineMergeSnapshotCmd extends AgentCommand {
+    public static class OfflineMergeSnapshotCmd extends AgentCommand implements HasThreadContext {
         private String srcPath;
         private String destPath;
         private boolean fullRebase;

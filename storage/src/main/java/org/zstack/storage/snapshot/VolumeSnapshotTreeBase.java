@@ -62,6 +62,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.utils.CollectionDSL.e;
 
 /**
@@ -173,9 +174,64 @@ public class VolumeSnapshotTreeBase {
             handle((CreateDataVolumeFromVolumeSnapshotMsg) msg);
         } else if (msg instanceof VolumeSnapshotDeletionMsg) {
             handle((VolumeSnapshotDeletionMsg) msg);
+        } else if (msg instanceof DeleteVolumeSnapshotMsg) {
+            handle((DeleteVolumeSnapshotMsg) msg);
+        } else if (msg instanceof RevertVolumeSnapshotMsg) {
+            handle((RevertVolumeSnapshotMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(RevertVolumeSnapshotMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncSignature;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                RevertVolumeSnapshotReply reply = new RevertVolumeSnapshotReply();
+
+                revert(msg.getApiMessage(), new Completion(chain) {
+                    @Override
+                    public void success() {
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("revert-volume-%s-from-snapshot-%s", currentRoot.getVolumeUuid(), currentRoot.getUuid());
+            }
+        });
+    }
+
+    private void handle(DeleteVolumeSnapshotMsg msg) {
+        DeleteVolumeSnapshotReply reply = new DeleteVolumeSnapshotReply();
+
+        deleteVolumeSnapshot(msg.getApiMessage(), new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void handle(final VolumeSnapshotDeletionMsg msg) {
@@ -1147,9 +1203,19 @@ public class VolumeSnapshotTreeBase {
 
             @Override
             public void run(final SyncTaskChain chain) {
-                revert(msg, new NoErrorCompletion(chain) {
+                APIRevertVolumeFromSnapshotEvent evt = new APIRevertVolumeFromSnapshotEvent(msg.getId());
+
+                revert(msg, new Completion(chain) {
                     @Override
-                    public void done() {
+                    public void success() {
+                        bus.publish(evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setError(errorCode);
+                        bus.publish(evt);
                         chain.next();
                     }
                 });
@@ -1163,15 +1229,11 @@ public class VolumeSnapshotTreeBase {
     }
 
 
-    private void revert(final APIRevertVolumeFromSnapshotMsg msg, final NoErrorCompletion completion) {
-        final APIRevertVolumeFromSnapshotEvent evt = new APIRevertVolumeFromSnapshotEvent(msg.getId());
-
+    private void revert(final APIRevertVolumeFromSnapshotMsg msg, final Completion completion) {
         refreshVO();
         final ErrorCode err = isOperationAllowed(msg);
         if (err != null) {
-            evt.setError(err);
-            bus.publish(evt);
-            completion.done();
+            completion.fail(err);
             return;
         }
 
@@ -1190,6 +1252,7 @@ public class VolumeSnapshotTreeBase {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
+                        reportProgress("10");
                         RevertVolumeFromSnapshotOnPrimaryStorageMsg rmsg = new RevertVolumeFromSnapshotOnPrimaryStorageMsg();
                         rmsg.setSnapshot(getSelfInventory());
                         rmsg.setVolume(volumeInventory);
@@ -1214,6 +1277,7 @@ public class VolumeSnapshotTreeBase {
                             @Override
                             public void run(MessageReply reply) {
                                 if (reply.isSuccess()) {
+                                    reportProgress("80");
                                     RevertVolumeFromSnapshotOnPrimaryStorageReply re = (RevertVolumeFromSnapshotOnPrimaryStorageReply) reply;
                                     newVolumeInstallPath = re.getNewVolumeInstallPath();
                                     newSize = re.getSize();
@@ -1284,8 +1348,7 @@ public class VolumeSnapshotTreeBase {
 
                         dbf.update(volume);
                         updateLatest();
-                        bus.publish(evt);
-                        completion.done();
+                        completion.success();
                     }
                 });
 
@@ -1294,9 +1357,7 @@ public class VolumeSnapshotTreeBase {
                     public void handle(ErrorCode errCode, Map data) {
                         logger.warn(String.format("failed to restore volume[uuid:%s] to snapshot[uuid:%s, name:%s], %s",
                                 volumeInventory.getUuid(), currentRoot.getUuid(), currentRoot.getName(), errCode));
-                        evt.setError(errCode);
-                        bus.publish(evt);
-                        completion.done();
+                        completion.fail(errCode);
                     }
                 });
             }
@@ -1304,12 +1365,13 @@ public class VolumeSnapshotTreeBase {
 
     }
 
-    private void handle(final APIDeleteVolumeSnapshotMsg msg) {
-        final APIDeleteVolumeSnapshotEvent evt = new APIDeleteVolumeSnapshotEvent(msg.getId());
+    private void deleteVolumeSnapshot(final APIDeleteVolumeSnapshotMsg msg, Completion completion) {
         final String issuer = VolumeSnapshotVO.class.getSimpleName();
         final List<VolumeSnapshotInventory> ctx = Arrays.asList(getSelfInventory());
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("delete-snapshot-%s", msg.getUuid()));
+
+        reportProgress("20");
         if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
             chain.then(new NoRollbackFlow() {
                 @Override
@@ -1364,17 +1426,34 @@ public class VolumeSnapshotTreeBase {
         chain.done(new FlowDoneHandler(msg) {
             @Override
             public void handle(Map data) {
+                reportProgress("90");
                 casf.asyncCascadeFull(CascadeConstant.DELETION_CLEANUP_CODE, issuer, ctx, new NopeCompletion());
                 new FireSnapShotCanonicalEvent()
                         .fireSnapShotStatusChangedEvent(currentRoot.getStatus(), VolumeSnapshotInventory.valueOf(currentRoot));
-                bus.publish(evt);
+                completion.success();
             }
         }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                evt.setError(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, errCode));
-                bus.publish(evt);
+                completion.fail(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, errCode));
             }
         }).start();
+    }
+
+    private void handle(final APIDeleteVolumeSnapshotMsg msg) {
+        final APIDeleteVolumeSnapshotEvent evt = new APIDeleteVolumeSnapshotEvent(msg.getId());
+
+        deleteVolumeSnapshot(msg, new Completion(msg) {
+            @Override
+            public void success() {
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                evt.setError(errorCode);
+                bus.publish(evt);
+            }
+        });
     }
 }

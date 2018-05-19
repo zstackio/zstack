@@ -1,4 +1,4 @@
-package org.zstack.longjob;
+package org.zstack.header.longjob;
 
 import org.zstack.header.core.Completion;
 import org.zstack.header.longjob.LongJobVO;

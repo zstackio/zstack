@@ -629,7 +629,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     @ApiTimeout(apiClasses = {APIDeleteVolumeSnapshotMsg.class})
-    public static class OfflineMergeSnapshotCmd extends NfsPrimaryStorageAgentCommand {
+    public static class OfflineMergeSnapshotCmd extends NfsPrimaryStorageAgentCommand implements HasThreadContext {
         private String srcPath;
         private String destPath;
         private boolean fullRebase;
