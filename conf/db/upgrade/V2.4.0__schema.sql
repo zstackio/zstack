@@ -464,3 +464,17 @@ CREATE TABLE  `zstack`.`PciDeviceUsageVO` (
     `createDate` timestamp,
     PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+UPDATE PciDeviceVO SET state = 'Enabled' WHERE state = '0';
+UPDATE PciDeviceVO SET state = 'Disabled' WHERE state = '1';
+
+UPDATE PciDeviceVO SET status = 'Active' WHERE status = '0';
+UPDATE PciDeviceVO SET status = 'Inactive' WHERE status = '1';
+UPDATE PciDeviceVO SET status = 'Attached' WHERE status = '2';
+UPDATE PciDeviceVO SET status = 'System' WHERE status = '3';
+
+UPDATE PciDeviceVO SET type = 'GPU_Video_Controller' WHERE type = '0';
+UPDATE PciDeviceVO SET type = 'GPU_Audio_Controller' WHERE type = '1';
+UPDATE PciDeviceVO SET type = 'GPU_3D_Controller' WHERE type = '2';
+UPDATE PciDeviceVO SET type = 'Moxa_Device' WHERE type = '3';
+UPDATE PciDeviceVO SET type = 'Generic' WHERE type = '4';
