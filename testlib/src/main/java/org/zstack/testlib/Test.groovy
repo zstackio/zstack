@@ -670,7 +670,7 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
         }
     }
 
-    static void expect(Closure c) {
+    static void expectError(Closure c) {
         expect(AssertionError.class, c)
     }
 
