@@ -973,6 +973,14 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         if (dns == null) {
             dns = new ArrayList<String>();
         }
+
+        if (FlatNetwordProviderGlobalConfig.ALLOW_DEFAULT_DNS.value(Boolean.class)) {
+            UsedIpInventory dhcpIp = getDHCPServerIP(l3NetworkUuid);
+            if (dhcpIp != null) {
+                dns.add(dhcpIp.getIp());
+            }
+        }
+
         return dns;
     }
 

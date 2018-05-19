@@ -729,12 +729,9 @@ public class VmInstanceManagerImpl extends AbstractService implements
         vo = new SQLBatchWithReturn<VmInstanceVO>() {
             @Override
             protected VmInstanceVO scripts() {
+                finalVo.setAccountUuid(msg.getAccountUuid());
                 factory.createVmInstance(finalVo, msg);
-                dbf.getEntityManager().flush();
-                dbf.getEntityManager().refresh(finalVo);
-                acntMgr.createAccountResourceRef(msg.getAccountUuid(), finalVo.getUuid(), VmInstanceVO.class);
-
-                return finalVo;
+                return reload(finalVo);
             }
         }.execute();
 

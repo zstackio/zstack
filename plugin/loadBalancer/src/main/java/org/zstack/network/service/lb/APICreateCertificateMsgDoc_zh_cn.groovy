@@ -13,8 +13,8 @@ doc {
         request {
 			url "POST /v1/certificates"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header(Authorization: 'OAuth the-session-uuid')
 
             clz APICreateCertificateMsg.class
 

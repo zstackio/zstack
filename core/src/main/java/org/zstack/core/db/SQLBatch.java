@@ -4,6 +4,9 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.header.exception.CloudRuntimeException;
+
+import java.lang.reflect.Field;
 
 /**
  * Created by xing5 on 2017/3/4.
@@ -23,7 +26,14 @@ public abstract class SQLBatch {
     }
 
     protected void remove(Object k) {
-        databaseFacade.getEntityManager().remove(merge(k));
+        Field f = EntityMetadata.getPrimaryKeyField(k.getClass());
+        try {
+            f.setAccessible(true);
+            sql(String.format("DELETE FROM %s vo WHERE vo.%s = :value", k.getClass().getSimpleName(), f.getName()))
+                    .param("value", f.get(k)).execute();
+        } catch (IllegalAccessException e) {
+            throw new CloudRuntimeException(e);
+        }
     }
 
     protected void flush() {

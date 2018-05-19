@@ -13,8 +13,8 @@ doc {
         request {
 			url "PUT /v1/consoles/agents/{uuid}/actions"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header(Authorization: 'OAuth the-session-uuid')
 
             clz APIUpdateConsoleProxyAgentMsg.class
 

@@ -5,7 +5,6 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.debug.DebugManager;
-import org.zstack.core.debug.DebugSignal;
 import org.zstack.core.debug.DebugSignalHandler;
 import org.zstack.header.core.AsyncBackup;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -31,7 +30,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
     ThreadFacade _threadFacade;
 
     private final HashMap<String, SyncTaskQueueWrapper> syncTasks = new HashMap<String, SyncTaskQueueWrapper>();
-    private final HashMap<String, ChainTaskQueueWrapper> chainTasks = new HashMap<String, ChainTaskQueueWrapper>();
+    private final Map<String, ChainTaskQueueWrapper> chainTasks = Collections.synchronizedMap(new HashMap<>());
     private static final CLogger _logger = CLoggerImpl.getLogger(DispatchQueueImpl.class);
 
     public static final String DUMP_TASK_DEBUG_SINGAL = "DumpTaskQueue";

@@ -16,6 +16,7 @@ public class CreateVolumeMsg extends NeedReplyMessage {
     private String rootImageUuid;
     private String diskOfferingUuid;
     private String format;
+    private String resourceUuid;
 
     public String getFormat() {
         return format;
@@ -95,5 +96,13 @@ public class CreateVolumeMsg extends NeedReplyMessage {
 
     public void setRootImageUuid(String rootImageUuid) {
         this.rootImageUuid = rootImageUuid;
+    }
+
+    public String getResourceUuid() {
+        return resourceUuid;
+    }
+
+    public void setResourceUuid(String resourceUuid) {
+        this.resourceUuid = resourceUuid;
     }
 }

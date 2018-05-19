@@ -203,12 +203,16 @@ ${output.join("\n")}
     }
 
     def addToLaterResolvedClassesIfNeed(Class clz) {
+        if (clz.isAnnotationPresent(NoSDK.class)) {
+            return
+        }
+
         if (!sdkFileMap.containsKey(clz)) {
             laterResolvedClasses.add(clz)
         }
 
         Platform.reflections.getSubTypesOf(clz).forEach({ i ->
-            if (!sdkFileMap.containsKey(i)) {
+            if (!sdkFileMap.containsKey(i) && !i.isAnnotationPresent(NoSDK.class)) {
                 laterResolvedClasses.add(i)
             }
         })

@@ -7,9 +7,9 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.header.identity.AccountConstant.StatementEffect;
+import org.zstack.header.identity.StatementEffect;
 import org.zstack.header.identity.*;
-import org.zstack.header.identity.PolicyInventory.Statement;
+import org.zstack.header.identity.PolicyStatement;
 import org.zstack.test.*;
 
 /**
@@ -40,7 +40,7 @@ public class TestIdentity8 {
         creator.createUser("user", "password");
         creator.createGroup("group");
 
-        Statement s = new Statement();
+        PolicyStatement s = new PolicyStatement();
         s.addAction(".*");
         s.setName("test");
         s.setEffect(StatementEffect.Allow);

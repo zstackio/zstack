@@ -29,22 +29,21 @@ import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
 import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
-import org.zstack.network.service.vip.*;
+import org.zstack.network.service.vip.ModifyVipAttributesStruct;
+import org.zstack.network.service.vip.Vip;
 import org.zstack.tag.TagManager;
-
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.operr;
-
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created by frank on 8/8/2015.
@@ -257,7 +256,7 @@ public class LoadBalancerBase {
             @Override
             public void run(final SyncTaskChain chain) {
                 final LoadBalancerRemoveVmNicReply reply = new LoadBalancerRemoveVmNicReply();
-                removeNics(msg.getListenerUuid(), msg.getVmNicUuids(), new Completion(msg, chain) {
+                removeNics(msg.getListenerUuids(), msg.getVmNicUuids(), new Completion(msg, chain) {
                     @Override
                     public void success() {
                         bus.reply(msg, reply);
@@ -301,19 +300,17 @@ public class LoadBalancerBase {
     private void handle(final LoadBalancerDeactiveVmNicMsg msg) {
         checkIfNicIsAdded(msg.getVmNicUuids());
 
-        LoadBalancerListenerVO l = CollectionUtils.find(self.getListeners(), new Function<LoadBalancerListenerVO, LoadBalancerListenerVO>() {
+        List<LoadBalancerListenerVO> lbls = CollectionUtils.transformToList(self.getListeners(), new Function<LoadBalancerListenerVO, LoadBalancerListenerVO>() {
             @Override
             public LoadBalancerListenerVO call(LoadBalancerListenerVO arg) {
-                return arg.getUuid().equals(msg.getListenerUuid()) ? arg : null;
+                return msg.getListenerUuids().contains(arg.getUuid()) ? arg : null;
             }
         });
 
-        final List<LoadBalancerListenerVmNicRefVO> refs = CollectionUtils.transformToList(l.getVmNicRefs(), new Function<LoadBalancerListenerVmNicRefVO, LoadBalancerListenerVmNicRefVO>() {
-            @Override
-            public LoadBalancerListenerVmNicRefVO call(LoadBalancerListenerVmNicRefVO arg) {
-                return msg.getVmNicUuids().contains(arg.getVmNicUuid()) ? arg : null;
-            }
-        });
+        final List<LoadBalancerListenerVmNicRefVO> refs = new ArrayList<>();
+        for (LoadBalancerListenerVO lbl : lbls) {
+            refs.addAll(lbl.getVmNicRefs().stream().filter(ref -> msg.getVmNicUuids().contains(ref.getVmNicUuid())).collect(Collectors.toList()));
+        }
 
         final LoadBalancerDeactiveVmNicReply reply = new LoadBalancerDeactiveVmNicReply();
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
@@ -838,10 +835,10 @@ public class LoadBalancerBase {
         });
     }
 
-    private LoadBalancerStruct removeNicStruct(String listenerUuid, List<String> nicUuids) {
+    private LoadBalancerStruct removeNicStruct(List<String> listenerUuids, List<String> nicUuids) {
         LoadBalancerStruct s = makeStruct();
-        Optional<LoadBalancerListenerInventory> opt = s.getListeners().stream().filter(it -> it.getUuid().equals(listenerUuid)).findAny();
-        DebugUtils.Assert(opt.isPresent(), String.format("cannot find listener[uuid:%s]", listenerUuid));
+        Optional<LoadBalancerListenerInventory> opt = s.getListeners().stream().filter(it -> listenerUuids.contains(it.getUuid())).findAny();
+        DebugUtils.Assert(opt.isPresent(), String.format("cannot find listener[uuid:%s]", listenerUuids.get(0)));
 
         LoadBalancerListenerInventory l = opt.get();
         l.getVmNicRefs().removeIf(loadBalancerListenerVmNicRefInventory -> nicUuids.contains(loadBalancerListenerVmNicRefInventory.getVmNicUuid()));
@@ -849,19 +846,19 @@ public class LoadBalancerBase {
         return s;
     }
 
-    private void removeNics(String listenerUuid, final List<String> vmNicUuids, final Completion completion) {
+    private void removeNics(List<String> listenerUuids, final List<String> vmNicUuids, final Completion completion) {
         SimpleQuery<VmNicVO> q = dbf.createQuery(VmNicVO.class);
         q.add(VmNicVO_.uuid, Op.IN, vmNicUuids);
         List<VmNicVO> vos = q.list();
         List<VmNicInventory> nics = VmNicInventory.valueOf(vos);
 
         LoadBalancerBackend bkd = getBackend();
-        bkd.removeVmNics(removeNicStruct(listenerUuid, vmNicUuids), nics, new Completion(completion) {
+        bkd.removeVmNics(removeNicStruct(listenerUuids, vmNicUuids), nics, new Completion(completion) {
             @Override
             public void success() {
                 UpdateQuery.New(LoadBalancerListenerVmNicRefVO.class)
                         .condAnd(LoadBalancerListenerVmNicRefVO_.vmNicUuid, Op.IN, vmNicUuids)
-                        .condAnd(LoadBalancerListenerVmNicRefVO_.listenerUuid, Op.EQ, listenerUuid)
+                        .condAnd(LoadBalancerListenerVmNicRefVO_.listenerUuid, Op.IN, listenerUuids)
                         .delete();
 
                 completion.success();
@@ -877,7 +874,7 @@ public class LoadBalancerBase {
     private void removeNic(APIRemoveVmNicFromLoadBalancerMsg msg, final NoErrorCompletion completion) {
         final APIRemoveVmNicFromLoadBalancerEvent evt = new APIRemoveVmNicFromLoadBalancerEvent(msg.getId());
 
-        removeNics(msg.getListenerUuid(), msg.getVmNicUuids(), new Completion(msg, completion) {
+        removeNics(Arrays.asList(msg.getListenerUuid()), msg.getVmNicUuids(), new Completion(msg, completion) {
             @Override
             public void success() {
                 evt.setInventory(reloadAndGetInventory());
@@ -1161,6 +1158,7 @@ public class LoadBalancerBase {
         vo.setInstancePort(msg.getInstancePort());
         vo.setLoadBalancerPort(msg.getLoadBalancerPort());
         vo.setProtocol(msg.getProtocol());
+        vo.setAccountUuid(msg.getSession().getAccountUuid());
         vo = dbf.persistAndRefresh(vo);
         if (msg.getCertificateUuid() != null) {
             LoadBalancerListenerCertificateRefVO ref = new LoadBalancerListenerCertificateRefVO();
@@ -1169,7 +1167,6 @@ public class LoadBalancerBase {
             dbf.persist(ref);
         }
 
-        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), LoadBalancerListenerVO.class);
         tagMgr.createNonInherentSystemTags(msg.getSystemTags(), vo.getUuid(), LoadBalancerListenerVO.class.getSimpleName());
         vo = dbf.updateAndRefresh(vo);
         evt.setInventory(LoadBalancerListenerInventory.valueOf(vo));

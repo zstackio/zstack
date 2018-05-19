@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface AccountManager {
+    @Deprecated
     void createAccountResourceRef(String accountUuid, String resourceUuid, Class<?> resourceClass);
 
     String getOwnerAccountUuidOfResource(String resourceUuid);

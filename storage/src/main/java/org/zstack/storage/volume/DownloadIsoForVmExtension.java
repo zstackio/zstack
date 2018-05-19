@@ -144,6 +144,7 @@ public class DownloadIsoForVmExtension implements PreVmInstantiateResourceExtens
 
         if (isoSpecs.isEmpty()) {
             completion.success();
+            return;
         }
 
         List<DeleteIsoFromPrimaryStorageMsg> msgs = CollectionUtils.transformToList(isoSpecs,

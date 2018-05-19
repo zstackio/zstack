@@ -85,6 +85,7 @@ public class TestLocalStorage39 {
 
         config.backingFilePath = image.getBackupStorageRefs().get(0).getInstallPath();
         config.backingFileSize = image.getSize();
+        config.baseImageSize = image.getSize();
         config.checkMd5Success = false;
 
         boolean s = false;

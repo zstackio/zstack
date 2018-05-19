@@ -1,5 +1,6 @@
 package org.zstack.storage.primary.nfs;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.CoreGlobalProperty;
@@ -567,14 +568,18 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     @Override
     public void handle(PrimaryStorageInventory inv, GetVolumeRootImageUuidFromPrimaryStorageMsg msg, final ReturnValueCompletion<GetVolumeRootImageUuidFromPrimaryStorageReply> completion) {
         GetVolumeBaseImagePathCmd cmd = new GetVolumeBaseImagePathCmd();
-        cmd.volumeUUid = msg.getVolume().getUuid();
-        cmd.installPath = msg.getVolume().getInstallPath();
+        cmd.volumeUuid = msg.getVolume().getUuid();
+        cmd.volumeInstallDir = NfsPrimaryStorageKvmHelper.makeVolumeInstallDir(inv, msg.getVolume());
+        cmd.imageCacheDir = NfsPrimaryStorageKvmHelper.getCachedImageDir(inv);
 
         final HostInventory host = nfsFactory.getConnectedHostForOperation(inv).get(0);
         new KvmCommandSender(host.getUuid()).send(cmd, GET_VOLUME_BASE_IMAGE_PATH, new KvmCommandFailureChecker() {
             @Override
             public ErrorCode getError(KvmResponseWrapper wrapper) {
                 GetVolumeBaseImagePathRsp rsp = wrapper.getResponse(GetVolumeBaseImagePathRsp.class);
+                if (rsp.isSuccess() && StringUtils.isEmpty(rsp.path)) {
+                    return operr("cannot get root image of volume[uuid:%s], may be it create from iso", msg.getVolume().getUuid());
+                }
                 return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
             }
         }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {

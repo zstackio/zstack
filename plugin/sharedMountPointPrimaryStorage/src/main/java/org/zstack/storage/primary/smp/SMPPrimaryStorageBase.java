@@ -747,24 +747,6 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
         });
     }
 
-    @Transactional(readOnly = true)
-    private String getAvailableHostUuidForOperation() {
-        String sql = "select host.uuid from PrimaryStorageClusterRefVO ref, HostVO host where" +
-                " ref.clusterUuid = host.clusterUuid and ref.primaryStorageUuid = :psUuid and host.status = :hstatus" +
-                " and host.state = :hstate";
-        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-        q.setParameter("psUuid", self.getUuid());
-        q.setParameter("hstatus", HostStatus.Connected);
-        q.setParameter("hstate", HostState.Enabled);
-        List<String> hostUuids = q.getResultList();
-        if (hostUuids.isEmpty()) {
-            return null;
-        }
-
-        Collections.shuffle(hostUuids);
-        return hostUuids.get(0);
-    }
-
     protected HypervisorBackend getHypervisorBackendByVolumeUuid(String volUuid) {
         SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
         q.select(VolumeVO_.format);
@@ -796,5 +778,23 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    @Transactional(readOnly = true)
+    private String getAvailableHostUuidForOperation() {
+        String sql = "select host.uuid from PrimaryStorageClusterRefVO ref, HostVO host where" +
+                " ref.clusterUuid = host.clusterUuid and ref.primaryStorageUuid = :psUuid and host.status = :hstatus" +
+                " and host.state = :hstate";
+        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+        q.setParameter("psUuid", self.getUuid());
+        q.setParameter("hstatus", HostStatus.Connected);
+        q.setParameter("hstate", HostState.Enabled);
+        List<String> hostUuids = q.getResultList();
+        if (hostUuids.isEmpty()) {
+            return null;
+        }
+
+        Collections.shuffle(hostUuids);
+        return hostUuids.get(0);
     }
 }

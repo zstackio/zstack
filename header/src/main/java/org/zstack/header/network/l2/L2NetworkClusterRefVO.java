@@ -2,6 +2,7 @@ package org.zstack.header.network.l2;
 
 import org.zstack.header.cluster.ClusterEO;
 import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.search.SqlTrigger;
 import org.zstack.header.search.TriggerIndex;
 import org.zstack.header.vo.ForeignKey;
@@ -20,6 +21,12 @@ import java.sql.Timestamp;
         @SoftDeletionCascade(parent = L2NetworkVO.class, joinColumn = "l2NetworkUuid"),
         @SoftDeletionCascade(parent = ClusterVO.class, joinColumn = "clusterUuid")
 })
+@EntityGraph(
+        friends = {
+                @EntityGraph.Neighbour(type = L2NetworkVO.class, myField = "l2NetworkUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = ClusterVO.class, myField = "clusterUuid", targetField = "uuid"),
+        }
+)
 public class L2NetworkClusterRefVO {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

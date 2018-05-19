@@ -1,6 +1,5 @@
 package org.zstack.portal.apimediator;
 
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,11 +24,11 @@ import org.zstack.header.rest.RestRequest;
 import org.zstack.portal.apimediator.schema.Service;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.FieldUtils;
-import org.zstack.utils.TypeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.FunctionNoArg;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
+import static org.zstack.core.Platform.*;
 
 import javax.persistence.TypedQuery;
 import javax.xml.bind.JAXBContext;
@@ -37,12 +36,9 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import java.io.File;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static org.zstack.core.Platform.argerr;
 
 /**
  * Created with IntelliJ IDEA.
@@ -263,78 +259,16 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
 
     private void apiParamValidation(APIMessage msg) {
         try {
-            msg.validate((msg1, f, value, at) -> {
-                if (value != null && at.resourceType() != Object.class) {
-                    if (value instanceof Collection) {
-                        final Collection col = (Collection) value;
-                        if (!col.isEmpty()) {
-                            List<String> uuids = new FunctionNoArg<List<String>>() {
-                                @Override
-                                @Transactional(readOnly = true)
-                                public List<String> call() {
-                                    String sql = String.format("select e.uuid from %s e where e.uuid in (:uuids)", at.resourceType().getSimpleName());
-                                    TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-                                    q.setParameter("uuids", col);
-                                    return q.getResultList();
-                                }
-                            }.call();
-
-                            if (uuids.size() != col.size()) {
-                                List<String> invalids = new ArrayList<>();
-                                for (Object o : col) {
-                                    String uuid = (String) o;
-                                    if (!uuids.contains(uuid)) {
-                                        invalids.add(uuid);
-                                    }
-                                }
-
-                                if (!invalids.isEmpty()) {
-                                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND,
-                                            String.format("invalid field[%s], resource[uuids:%s, type:%s] not found", f.getName(), invalids, at.resourceType().getSimpleName())
-                                    ));
-                                }
-                            }
-                        }
-
-                    } else {
-                        DebugUtils.Assert(String.class.isAssignableFrom(f.getType()), String.format("field[%s] of message[%s] has APIParam.resourceType specified, then the field must be uuid which is a String, but actual is %s",
-                                f.getName(), msg.getClass().getName(), f.getType()));
-
-                        if (!dbf.isExist(value, at.resourceType())) {
-                            if (at.successIfResourceNotExisting()) {
-                                RestRequest rat = msg.getClass().getAnnotation(RestRequest.class);
-                                if (rat == null) {
-                                    throw new CloudRuntimeException(String.format("the API class[%s] does not have @RestRequest but it uses a successIfResourceNotExisting helper", msg.getClass()));
-                                }
-
-                                Pattern p = Pattern.compile("[0-9a-f]{8}[0-9a-f]{4}[1-5][0-9a-f]{3}[89ab][0-9a-f]{3}[0-9a-f]{12}");
-                                Matcher mt = p.matcher(value.toString());
-                                if (!mt.matches()){
-                                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND,
-                                            String.format("invalid value[%s] of field [%s]", value, f.getName())));
-                                }
-
-                                APIEvent evt;
-                                try {
-                                    evt = (APIEvent) rat.responseClass().getConstructor(String.class).newInstance(msg.getId());
-                                } catch (Exception e) {
-                                    throw new CloudRuntimeException(e);
-                                }
-
-                                bus.publish(evt);
-                                throw new StopRoutingException();
-                            } else {
-                                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND,
-                                        String.format("invalid field[%s], resource[uuid:%s, type:%s] not found", f.getName(), value, at.resourceType().getSimpleName())
-                                ));
-                            }
-                        }
-                    }
-                }
-            });
+            msg.validate(new PortApiValidator());
         } catch (ApiMessageInterceptionException | StopRoutingException ae) {
+            if (logger.isTraceEnabled()) {
+                logger.trace(ae.getMessage(), ae);
+            }
             throw ae;
         } catch (APIMessage.InvalidApiMessageException ie) {
+            if (logger.isTraceEnabled()) {
+                logger.trace(ie.getMessage(), ie);
+            }
             throw new ApiMessageInterceptionException(argerr(ie.getMessage(), ie.getArguments()));
         } catch (Exception e) {
             logger.warn(e.getMessage(), e);

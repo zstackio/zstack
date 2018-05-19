@@ -1,7 +1,6 @@
 package org.zstack.header.identity;
 
 import org.springframework.http.HttpMethod;
-import org.zstack.header.identity.PolicyInventory.Statement;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
@@ -27,13 +26,13 @@ public class APICreatePolicyMsg extends APICreateMessage implements AccountMessa
     @APIParam(maxLength = 2048, required = false)
     private String description;
     @APIParam(nonempty = true)
-    private List<Statement> statements;
+    private List<PolicyStatement> statements;
 
-    public List<Statement> getStatements() {
+    public List<PolicyStatement> getStatements() {
         return statements;
     }
 
-    public void setStatements(List<Statement> statements) {
+    public void setStatements(List<PolicyStatement> statements) {
         this.statements = statements;
     }
 
@@ -63,9 +62,9 @@ public class APICreatePolicyMsg extends APICreateMessage implements AccountMessa
 
         msg.setName("USER-RESET-PASSWORD");
 
-        Statement s = new Statement();
+        PolicyStatement s = new PolicyStatement();
         s.setName(String.format("user-reset-password-%s", uuid()));
-        s.setEffect(AccountConstant.StatementEffect.Allow);
+        s.setEffect(StatementEffect.Allow);
         s.addAction(String.format("%s:%s", AccountConstant.ACTION_CATEGORY, APIUpdateUserMsg.class.getSimpleName()));
         msg.setStatements(list(s));
 

@@ -97,6 +97,7 @@ public class TestLocalStorage35 {
 
         config.backingFilePath = null;
         config.backingFileSize = null;
+        config.baseImageSize = null;
         config.checkBitsSuccess = false;
 
         api.deleteImage(image.getUuid());

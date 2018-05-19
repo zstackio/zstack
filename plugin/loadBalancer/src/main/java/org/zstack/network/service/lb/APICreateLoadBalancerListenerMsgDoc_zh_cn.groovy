@@ -13,8 +13,8 @@ doc {
         request {
 			url "POST /v1/load-balancers/{loadBalancerUuid}/listeners"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header(Authorization: 'OAuth the-session-uuid')
 
             clz APICreateLoadBalancerListenerMsg.class
 
@@ -90,7 +90,7 @@ doc {
 					type "String"
 					optional true
 					since "2.3"
-
+					
 				}
 				column {
 					name "resourceUuid"

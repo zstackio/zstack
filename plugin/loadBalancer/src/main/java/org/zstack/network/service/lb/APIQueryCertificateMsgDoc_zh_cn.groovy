@@ -2,6 +2,7 @@ package org.zstack.network.service.lb
 
 import org.zstack.network.service.lb.APIQueryCertificateReply
 import org.zstack.header.query.APIQueryMessage
+import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QueryCertificate"
@@ -13,11 +14,10 @@ doc {
     rest {
         request {
 			url "GET /v1/certificates"
-
 			url "GET /v1/certificates/{uuid}"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header(Authorization: 'OAuth the-session-uuid')
 
             clz APIQueryCertificateMsg.class
 

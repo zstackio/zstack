@@ -45,6 +45,7 @@ public class LocalStorageSimulatorConfig {
     public List<GetBackingFileCmd> getBackingFileCmds = new ArrayList<>();
     public volatile String backingFilePath;
     public volatile Long backingFileSize;
+    public volatile Long baseImageSize;
     public volatile boolean checkMd5Success = true;
     public volatile boolean checkBitsSuccess = true;
     public volatile boolean copyBitsFromRemoteSuccess = true;

@@ -1,6 +1,7 @@
 package org.zstack.header.identity;
 
 import org.zstack.header.vo.BaseResource;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.ResourceVO;
@@ -11,7 +12,12 @@ import java.sql.Timestamp;
 @Entity
 @Table
 @BaseResource
-public class PolicyVO extends ResourceVO {
+@EntityGraph(
+        parents = {
+                @EntityGraph.Neighbour(type = AccountVO.class, myField = "accountUuid", targetField = "uuid")
+        }
+)
+public class PolicyVO extends ResourceVO implements OwnedByAccount {
     @Column
     private String name;
 
@@ -28,9 +34,21 @@ public class PolicyVO extends ResourceVO {
     @Column
     private Timestamp lastOpDate;
 
+    @Column
+    @Enumerated(EnumType.STRING)
+    private PolicyType type = PolicyType.Customized;
+
     @PreUpdate
     private void preUpdate() {
         lastOpDate = null;
+    }
+
+    public PolicyType getType() {
+        return type;
+    }
+
+    public void setType(PolicyType type) {
+        this.type = type;
     }
 
     public String getData() {

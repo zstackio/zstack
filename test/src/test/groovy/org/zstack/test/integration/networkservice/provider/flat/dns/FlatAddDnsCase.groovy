@@ -9,7 +9,6 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.L3NetworkSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.gson.JSONObjectUtil
-
 /**
  * Created by weiwang on 25/05/2017.
  */
@@ -21,7 +20,7 @@ class FlatAddDnsCase extends SubCase {
 
     @Override
     void clean() {
-        env.cleanSimulatorHandlers();
+        env.cleanSimulatorHandlers()
         env.delete()
     }
 

@@ -359,10 +359,15 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     rollbackMsg.setStatus(originStatus);
                     rollbackMsg.setVolumeUuid(msg.getVolumeUuid());
                     bus.makeTargetServiceIdByResourceUuid(rollbackMsg, VolumeConstant.SERVICE_ID, msg.getVolumeUuid());
-                    bus.send(rollbackMsg);
+                    bus.send(rollbackMsg, new CloudBusCallBack(trigger) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            trigger.rollback();
+                        }
+                    });
+                } else {
+                    trigger.rollback();
                 }
-
-                trigger.rollback();
             }
         }).then(new Flow() {
             @Override
@@ -409,10 +414,15 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     rollbackMsg.setStateEvent(struct.getVmOriginState());
                     rollbackMsg.setVmInstanceUuid(struct.getVmUuid());
                     bus.makeTargetServiceIdByResourceUuid(rollbackMsg, VmInstanceConstant.SERVICE_ID, struct.getVmUuid());
-                    bus.send(rollbackMsg);
+                    bus.send(rollbackMsg, new CloudBusCallBack(trigger) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            trigger.rollback();
+                        }
+                    });
+                } else {
+                    trigger.rollback();
                 }
-
-                trigger.rollback();
             }
         }).then(new NoRollbackFlow() {
             @Override

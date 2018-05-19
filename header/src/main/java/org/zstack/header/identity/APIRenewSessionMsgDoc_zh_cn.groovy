@@ -13,8 +13,8 @@ doc {
         request {
 			url "PUT /v1/accounts/sessions/{sessionUuid}/renew"
 
+			header (Authorization: 'OAuth the-session-uuid')
 
-            header(Authorization: 'OAuth the-session-uuid')
 
             clz APIRenewSessionMsg.class
 
