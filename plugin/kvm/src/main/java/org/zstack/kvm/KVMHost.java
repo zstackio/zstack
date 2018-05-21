@@ -25,7 +25,6 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
-import org.zstack.core.thread.SyncThread;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
@@ -264,7 +263,6 @@ public class KVMHost extends HostBase implements Host {
             call(null, completion);
         }
 
-        @SyncThread(signature = "kvm-agent-http-async-call", level = 50)
         void call(String resourceUuid, ReturnValueCompletion<T> completion)  {
             Map<String, String> header = new HashMap<>();
             header.put(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID, resourceUuid == null ? self.getUuid() : resourceUuid);
