@@ -376,6 +376,14 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                     bus.unregisterService(self);
                     trigger.rollback();
                 }
+            }).then(new NoRollbackFlow() {
+                String __name__ = "call-prepare-db-extension";
+
+                @Override
+                public void run(FlowTrigger trigger, Map data) {
+                    callPrepareDbExtensions();
+                    trigger.next();
+                }
             }).then(new Flow() {
                 String __name__ = "start-components";
 
@@ -389,14 +397,6 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 public void rollback(FlowRollback trigger, Map data) {
                     stopComponents();
                     trigger.rollback();
-                }
-            }).then(new NoRollbackFlow() {
-                String __name__ = "call-prepare-db-extension";
-
-                @Override
-                public void run(FlowTrigger trigger, Map data) {
-                    callPrepareDbExtensions();
-                    trigger.next();
                 }
             }).then(new Flow() {
                 String __name__ = "create-DB-record";

@@ -125,7 +125,6 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
                 List<Tuple> ts = q(AccountResourceRefVO.class).select(AccountResourceRefVO_.accountUuid, AccountResourceRefVO_.resourceUuid)
                         .in(AccountResourceRefVO_.resourceUuid, uuids)
                         .eq(AccountResourceRefVO_.resourceType, acntMgr.getBaseResourceType(resourceType).getSimpleName())
-                        .groupBy(AccountResourceRefVO_.accountUuid)
                         .listTuple();
 
                 ts.addAll(
