@@ -10,4 +10,5 @@ import java.lang.annotation.Target;
 public @interface PackageAPIInfo {
     String APICategoryName() default "";
     boolean communityAvailable() default true;
+    String productName() default "";
 }
