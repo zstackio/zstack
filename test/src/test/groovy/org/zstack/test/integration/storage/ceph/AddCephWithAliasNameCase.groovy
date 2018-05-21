@@ -3,8 +3,6 @@ package org.zstack.test.integration.storage.ceph
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
-import org.zstack.header.tag.SystemTagVO
-import org.zstack.header.tag.SystemTagVO_
 import org.zstack.sdk.AddCephPrimaryStorageAction
 import org.zstack.storage.ceph.CephSystemTags
 import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
@@ -14,9 +12,7 @@ import org.zstack.storage.ceph.primary.CephPrimaryStoragePoolVO_
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
-import org.zstack.testlib.Test
 import org.zstack.utils.data.SizeUnit
-
 /**
  * Created by AlanJager on 2017/9/1.
  */
@@ -35,7 +31,7 @@ class AddCephWithAliasNameCase extends SubCase {
 
     @Override
     void environment() {
-        env = Test.makeEnv {
+        env = makeEnv {
             zone {
                 name = "zone1"
                 cluster {
