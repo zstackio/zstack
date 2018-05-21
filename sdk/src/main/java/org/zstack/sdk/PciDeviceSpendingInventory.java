@@ -28,4 +28,12 @@ public class PciDeviceSpendingInventory  {
         return this.spending;
     }
 
+    public java.lang.String vmName;
+    public void setVmName(java.lang.String vmName) {
+        this.vmName = vmName;
+    }
+    public java.lang.String getVmName() {
+        return this.vmName;
+    }
+
 }

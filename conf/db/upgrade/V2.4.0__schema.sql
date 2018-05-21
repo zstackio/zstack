@@ -464,3 +464,20 @@ CREATE TABLE  `zstack`.`PciDeviceUsageVO` (
     `createDate` timestamp,
     PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `VpcRouterDnsVO` ( 
+      `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+      `vpcRouterUuid` varchar(32) NOT NULL,
+      `dns` varchar(255) NOT NULL,
+      `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+      `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+      PRIMARY KEY (`id`),
+      CONSTRAINT fkVpcRouterDnsVOVirtualRouterVmVO FOREIGN KEY (vpcRouterUuid) REFERENCES VirtualRouterVmVO (uuid) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+CREATE TABLE  `zstack`.`VpcRouterVmVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+

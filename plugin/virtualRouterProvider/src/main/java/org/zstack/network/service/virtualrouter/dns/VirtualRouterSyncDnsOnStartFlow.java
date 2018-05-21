@@ -24,6 +24,7 @@ import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.DnsInfo;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.SetDnsCmd;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.SetDnsRsp;
+import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -53,6 +54,11 @@ public class VirtualRouterSyncDnsOnStartFlow extends NoRollbackFlow {
     @Override
     public void run(final FlowTrigger chain, final Map data) {
         final VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
+
+        if (!VyosConstants.VYOS_VM_TYPE.equals(vr.getApplianceVmType()) && !VirtualRouterConstant.VIRTUAL_ROUTER_VM_TYPE.equals(vr.getApplianceVmType())) {
+            chain.next();
+            return;
+        }
 
         List<String> nwServed = vr.getGuestL3Networks();
         if (nwServed == null || nwServed.isEmpty()) {
