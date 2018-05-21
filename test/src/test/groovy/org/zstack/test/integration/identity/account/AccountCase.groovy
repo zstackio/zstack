@@ -5,6 +5,7 @@ import org.zstack.core.config.GlobalConfig
 import org.zstack.core.db.Q
 import org.zstack.header.apimediator.ApiMessageInterceptionException
 import org.zstack.header.identity.AccountConstant
+import org.zstack.header.identity.AccountType
 import org.zstack.header.identity.AccountVO
 import org.zstack.header.identity.QuotaVO
 import org.zstack.header.identity.QuotaVO_
@@ -59,6 +60,7 @@ class AccountCase extends SubCase {
             testLoginAsAdminAccountAndChangeSelfPassword()
             testLoginAsNormalAccountAndChangeSelfPassword()
             testNormalAccountCannotDeleteAnyAccount()
+            testAdminAccountDeleteSystemAdmin()
             testCreateAccount()
             testQuotaConfig()
         }
@@ -164,6 +166,27 @@ class AccountCase extends SubCase {
             deleteAccount {
                 uuid = AccountConstant.INITIAL_SYSTEM_ADMIN_UUID
                 sessionId = adminSessionInv.uuid
+            }
+        }
+    }
+
+    void testAdminAccountDeleteSystemAdmin() {
+        def userpass = "password"
+        def newAdmin = createAccount {
+            name = "testAdmAccount"
+            password = userpass
+            type = AccountType.SystemAdmin.toString()
+        } as AccountInventory
+
+        SessionInventory adminSessionInv = logInByAccount {
+            accountName = newAdmin.name
+            password = userpass
+        } as SessionInventory
+
+        expect([ApiMessageInterceptionException.class, AssertionError.class]) {
+            deleteAccount {
+                sessionId = adminSessionInv.uuid
+                uuid = AccountConstant.INITIAL_SYSTEM_ADMIN_UUID
             }
         }
     }

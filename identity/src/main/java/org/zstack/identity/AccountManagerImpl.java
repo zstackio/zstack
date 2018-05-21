@@ -25,10 +25,8 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
-import org.zstack.header.identity.StatementEffect;
 import org.zstack.header.identity.IdentityCanonicalEvents.AccountDeletedData;
 import org.zstack.header.identity.IdentityCanonicalEvents.UserDeletedData;
-import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.APIEvent;
@@ -47,7 +45,6 @@ import org.zstack.utils.*;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
-import static org.zstack.core.Platform.*;
 
 import javax.persistence.Query;
 import javax.persistence.Tuple;
@@ -62,6 +59,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.list;
 
 public class AccountManagerImpl extends AbstractService implements AccountManager, PrepareDbInitialValueExtensionPoint,
@@ -1714,6 +1712,12 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             if (msg.getAccountUuid().equals(msg.getSession().getAccountUuid())) {
                 throw new ApiMessageInterceptionException(argerr(
                         "account cannot delete itself"
+                ));
+            }
+
+            if (msg.getAccountUuid().equals(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID)) {
+                throw new ApiMessageInterceptionException(argerr(
+                        "cannot delete builtin admin account."
                 ));
             }
         }
