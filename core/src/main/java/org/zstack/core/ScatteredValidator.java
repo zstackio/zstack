@@ -1,6 +1,5 @@
 package org.zstack.core;
 
-import com.sun.org.apache.regexp.internal.RE;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.DebugUtils;

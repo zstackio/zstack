@@ -1,5 +1,6 @@
 package org.zstack.zql.ast.parser.visitors;
 
+import org.apache.commons.lang.StringUtils;
 import org.zstack.header.zql.ASTNode;
 import org.zstack.utils.DebugUtils;
 import org.zstack.zql.antlr4.ZQLBaseVisitor;
@@ -29,6 +30,9 @@ public class ValueVisitor extends ZQLBaseVisitor<ASTNode.Value> {
             v.setType(Double.class);
         } else if (ctx.STRING() != null) {
             v.setType(String.class);
+        } else if (ctx.BOOLEAN() != null) {
+            v.setType(Boolean.class);
+            v.setText(StringUtils.strip(v.getText(), "'"));
         } else {
             DebugUtils.Assert(false, "should not be here");
         }
