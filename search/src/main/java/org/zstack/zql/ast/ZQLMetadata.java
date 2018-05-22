@@ -1,6 +1,7 @@
 package org.zstack.zql.ast;
 
 import org.apache.commons.lang.StringUtils;
+import org.zstack.core.db.EntityMetadata;
 import org.zstack.header.core.StaticInit;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.query.*;
@@ -8,10 +9,7 @@ import org.zstack.header.rest.APINoSee;
 import org.zstack.header.search.Inventory;
 import org.zstack.header.search.Parent;
 import org.zstack.header.search.TypeField;
-import org.zstack.utils.BeanUtils;
-import org.zstack.utils.DebugUtils;
-import org.zstack.utils.FieldUtils;
-import org.zstack.utils.Utils;
+import org.zstack.utils.*;
 import org.zstack.utils.logging.CLogger;
 
 import java.lang.reflect.Field;
@@ -343,7 +341,41 @@ public class ZQLMetadata {
         }
 
         FieldUtils.getAllFields(clz).stream().filter(f->f.isAnnotationPresent(Queryable.class)).forEach(f-> {
+            if (TypeUtils.isPrimitiveOrWrapper(f.getType())) {
+                return;
+            }
 
+            if (!Collection.class.isAssignableFrom(f.getType())) {
+                return;
+            }
+
+            Class gtype =  FieldUtils.getGenericType(f);
+            if (gtype == null) {
+                return;
+            }
+
+            if (TypeUtils.isPrimitiveOrWrapper(gtype)) {
+                return;
+            }
+
+            Inventory targetInventoryAnnotation = (Inventory) gtype.getAnnotation(Inventory.class);
+            if (targetInventoryAnnotation == null) {
+                throw new CloudRuntimeException(String.format("field[%s] of inventory[%s] is annotated of @Queryable, however it's generic type[%s] is " +
+                        " not annotated by @Inventory", f.getName(), clz, gtype));
+            }
+
+            Queryable queryable = f.getAnnotation(Queryable.class);
+
+            // create a expanded query for Queryable field
+            ExpandQueryMetadata emetadata = new ExpandQueryMetadata();
+            emetadata.selfVOClass = inventory.mappingVOClass();
+            emetadata.targetVOClass = targetInventoryAnnotation.mappingVOClass();
+            emetadata.targetInventoryClass = gtype;
+            emetadata.selfKeyName = EntityMetadata.getPrimaryKeyField(emetadata.selfVOClass).getName();
+            emetadata.targetKeyName = queryable.joinColumn().name();
+            emetadata.name = f.getName();
+
+            metadata.expandQueries.put(emetadata.name, emetadata);
         });
 
         inventoryMetadata.put(clz.getName(), metadata);
