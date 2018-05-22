@@ -96,6 +96,7 @@ public class VmQuotaUtil {
                 " where vm.uuid = ref.resourceUuid" +
                 " and ref.accountUuid = :auuid" +
                 " and ref.resourceType = :rtype" +
+                " and not (vm.hostUuid is null and vm.lastHostUuid is null)" +
                 " and vm.state not in (:states)";
         TypedQuery<Long> q2 = dbf.getEntityManager().createQuery(sql2, Long.class);
         q2.setParameter("auuid", accountUUid);

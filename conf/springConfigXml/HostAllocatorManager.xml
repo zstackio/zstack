@@ -93,6 +93,7 @@
         <property name="allocatorFlowNames">
             <list>
                 <value>org.zstack.compute.allocator.AttachedL2NetworkAllocatorFlow</value>
+                <value>org.zstack.compute.allocator.QuotaAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.BackupStorageSelectPrimaryStorageAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.HostStateAndHypervisorAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.ImageBackupStorageAllocatorFlow</value>
@@ -123,6 +124,7 @@
         <property name="allocatorFlowNames">
             <list>
                 <value>org.zstack.compute.allocator.AttachedL2NetworkAllocatorFlow</value>
+                <value>org.zstack.compute.allocator.QuotaAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.BackupStorageSelectPrimaryStorageAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.HostStateAndHypervisorAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.ImageBackupStorageAllocatorFlow</value>
@@ -151,6 +153,7 @@
         <property name="allocatorFlowNames">
             <list>
                 <value>org.zstack.compute.allocator.AttachedL2NetworkAllocatorFlow</value>
+                <value>org.zstack.compute.allocator.QuotaAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.BackupStorageSelectPrimaryStorageAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.DesignatedHostAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.ImageBackupStorageAllocatorFlow</value>
@@ -175,6 +178,7 @@
         <property name="allocatorFlowNames">
             <list>
                 <value>org.zstack.compute.allocator.AttachedL2NetworkAllocatorFlow</value>
+                <value>org.zstack.compute.allocator.QuotaAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.BackupStorageSelectPrimaryStorageAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.HostStateAndHypervisorAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.HostCapacityAllocatorFlow</value>
