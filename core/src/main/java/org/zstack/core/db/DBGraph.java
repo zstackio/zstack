@@ -129,18 +129,37 @@ public class DBGraph {
         return smallest.vertex;
     }
 
+    private static class NoNodeException extends Exception {
+        public NoNodeException() {
+        }
+
+        public NoNodeException(String message) {
+            super(message);
+        }
+
+        public NoNodeException(String message, Throwable cause) {
+            super(message, cause);
+        }
+
+        public NoNodeException(Throwable cause) {
+            super(cause);
+        }
+
+        public NoNodeException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+            super(message, cause, enableSuppression, writableStackTrace);
+        }
+    }
 
     private static List<List<Node>> findPath(Class src, Class dst) {
-
         class PathFinder {
             List<List<Node>> paths = new ArrayList<>();
 
             Stack<Node> path = new Stack<>();
 
-            Node node(Class clz) {
+            Node node(Class clz) throws NoNodeException {
                 Node n = allNodes.get(clz);
                 if (n == null) {
-                    throw new CloudRuntimeException(String.format("cannot find node for class[%s]", clz));
+                    throw new NoNodeException(String.format("cannot find node for class[%s]", clz));
                 }
                 return n;
             }
@@ -168,13 +187,17 @@ public class DBGraph {
                 path.pop();
             }
 
-            List<List<Node>> find() {
+            List<List<Node>> find() throws NoNodeException {
                 find(node(src));
                 return paths;
             }
         }
 
-        return new PathFinder().find();
+        try {
+            return new PathFinder().find();
+        } catch (NoNodeException e) {
+            return new ArrayList<>();
+        }
     }
 
     @StaticInit

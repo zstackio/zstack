@@ -11,6 +11,7 @@ import org.zstack.header.zql.ASTVisitor;
 import org.zstack.header.zql.RestrictByExprExtensionPoint;
 import org.zstack.header.zql.ZQLExtensionContext;
 import org.zstack.zql.ZQLContext;
+import org.zstack.zql.ZQLGlobalProperty;
 import org.zstack.zql.ast.ZQLMetadata;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -43,8 +44,12 @@ public class RestrictExprVisitor implements ASTVisitor<String, ASTNode.RestrictE
 
         DBGraph.EntityVertex vertex = DBGraph.findVerticesWithSmallestWeight(src.inventoryAnnotation.mappingVOClass(), dst.inventoryAnnotation.mappingVOClass());
         if (vertex == null) {
-            throw new ZQLError(String.format("invalid restrict by clause, inventory[%s] has no restriction to inventory[%s]",
-                    node.getEntity(), src.simpleInventoryName()));
+            if (ZQLGlobalProperty.ERROR_IF_NO_DB_GRAPH_RELATION) {
+                throw new ZQLError(String.format("invalid restrict by clause, inventory[%s] has no restriction to inventory[%s]",
+                        node.getEntity(), src.simpleInventoryName()));
+            } else {
+                return null;
+            }
         }
 
         String template = makeQueryTemplate(vertex, node.getField());
