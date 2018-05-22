@@ -264,10 +264,10 @@ public class ZQLMetadata {
 
         Class child = m.get(type);
         if (child == null) {
-            throw new CloudRuntimeException(String.format("inventory class[%s] has no child inventory class with type[%s]", parentInventory, type));
+            return parentInventory;
+        } else {
+            return child;
         }
-
-        return child;
     }
 
     private static void fillInventoryMetadata(Class clz,
