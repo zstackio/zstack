@@ -478,3 +478,46 @@ UPDATE PciDeviceVO SET type = 'GPU_Audio_Controller' WHERE type = '1';
 UPDATE PciDeviceVO SET type = 'GPU_3D_Controller' WHERE type = '2';
 UPDATE PciDeviceVO SET type = 'Moxa_Device' WHERE type = '3';
 UPDATE PciDeviceVO SET type = 'Generic' WHERE type = '4';
+
+CREATE TABLE IF NOT EXISTS `VpcRouterDnsVO` ( 
+      `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+      `vpcRouterUuid` varchar(32) NOT NULL,
+      `dns` varchar(255) NOT NULL,
+      `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+      `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+      PRIMARY KEY (`id`),
+      CONSTRAINT fkVpcRouterDnsVOVirtualRouterVmVO FOREIGN KEY (vpcRouterUuid) REFERENCES VirtualRouterVmVO (uuid) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE  `zstack`.`VpcRouterVmVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# create VpcRouterVmVO from ApplianceVmVO
+DELIMITER $$
+CREATE PROCEDURE generateVpcRouterVmVO()
+    BEGIN
+        DECLARE vrUuid varchar(32);
+        DECLARE done INT DEFAULT FALSE;
+        DECLARE cur CURSOR FOR SELECT uuid FROM zstack.ApplianceVmVO where applianceVmType = 'vpcvrouter';
+        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+        OPEN cur;
+        read_loop: LOOP
+            FETCH cur INTO vrUuid;
+            IF done THEN
+                LEAVE read_loop;
+            END IF;
+
+            INSERT INTO zstack.VpcRouterVmVO (uuid) values (vrUuid);
+            UPDATE zstack.ResourceVO set resourceType='VpcRouterVmVO' where uuid= uuid;
+
+        END LOOP;
+        CLOSE cur;
+        # work around a bug of mysql : jira.mariadb.org/browse/MDEV-4602
+        SELECT CURTIME();
+    END $$
+DELIMITER ;
+
+CALL generateVpcRouterVmVO();
+DROP PROCEDURE IF EXISTS generateVpcRouterVmVO;

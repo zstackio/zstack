@@ -263,6 +263,8 @@ public class SourceClassMap {
 			put("org.zstack.vmware.VCenterDatacenterInventory", "org.zstack.sdk.VCenterDatacenterInventory");
 			put("org.zstack.vmware.VCenterInventory", "org.zstack.sdk.VCenterInventory");
 			put("org.zstack.vmware.VCenterPrimaryStorageInventory", "org.zstack.sdk.VCenterPrimaryStorageInventory");
+			put("org.zstack.vpc.VpcRouterDnsInventory", "org.zstack.sdk.VpcRouterDnsInventory");
+			put("org.zstack.vpc.VpcRouterVmInventory", "org.zstack.sdk.VpcRouterVmInventory");
 			put("org.zstack.vrouterRoute.VRouterRouteEntryAO", "org.zstack.sdk.VRouterRouteEntryAO");
 			put("org.zstack.vrouterRoute.VRouterRouteEntryInventory", "org.zstack.sdk.VRouterRouteEntryInventory");
 			put("org.zstack.vrouterRoute.VRouterRouteEntryType", "org.zstack.sdk.VRouterRouteEntryType");
@@ -506,6 +508,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VolumeSnapshotBackupStorageRefInventory", "org.zstack.header.storage.snapshot.VolumeSnapshotBackupStorageRefInventory");
 			put("org.zstack.sdk.VolumeSnapshotInventory", "org.zstack.header.storage.snapshot.VolumeSnapshotInventory");
 			put("org.zstack.sdk.VolumeSnapshotTreeInventory", "org.zstack.header.storage.snapshot.VolumeSnapshotTreeInventory");
+			put("org.zstack.sdk.VpcRouterDnsInventory", "org.zstack.vpc.VpcRouterDnsInventory");
+			put("org.zstack.sdk.VpcRouterVmInventory", "org.zstack.vpc.VpcRouterVmInventory");
 			put("org.zstack.sdk.VpcUserVpnGatewayInventory", "org.zstack.header.hybrid.network.vpn.VpcUserVpnGatewayInventory");
 			put("org.zstack.sdk.VpcVirtualRouteEntryInventory", "org.zstack.header.aliyun.network.vrouter.VpcVirtualRouteEntryInventory");
 			put("org.zstack.sdk.VpcVirtualRouterInventory", "org.zstack.header.aliyun.network.vrouter.VpcVirtualRouterInventory");

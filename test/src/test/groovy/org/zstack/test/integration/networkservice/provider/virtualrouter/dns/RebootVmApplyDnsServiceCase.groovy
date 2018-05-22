@@ -83,7 +83,7 @@ class RebootVmApplyDnsServiceCase extends SubCase {
     void test() {
         env.create {
             l3 = (env.specByName("l3") as L3NetworkSpec).inventory
-            testAddDns()
+           // testAddDns()
         }
     }
 }
