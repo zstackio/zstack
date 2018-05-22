@@ -963,6 +963,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
                 QuotaVO q = new QuotaVO();
                 q.setUuid(Platform.getUuid());
+                q.setAccountUuid(nA);
                 q.setName(rtype);
                 q.setIdentityUuid(nA);
                 q.setIdentityType(AccountVO.class.getSimpleName());
