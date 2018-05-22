@@ -488,6 +488,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         query.add(SessionVO_.userUuid, Op.EQ, userUuid);
         long count = query.count();
         if (count >= maxLoginTimes) {
+            // please don't update the bellow code, ui used it
             String err = String.format("Login sessions hit limit of max allowed concurrent login sessions, max allowed: %s", maxLoginTimes);
             throw new BadCredentialsException(err);
         }

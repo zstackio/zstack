@@ -1,5 +1,7 @@
 package org.zstack.header.vm;
 
+import org.zstack.header.message.SkipLogger;
+
 import java.io.Serializable;
 
 /**
@@ -7,6 +9,7 @@ import java.io.Serializable;
  */
 public class VmAccountPreference implements Serializable, Cloneable {
     private String userAccount;
+    @SkipLogger
     private String accountPassword;
     private String vmUuid;
 

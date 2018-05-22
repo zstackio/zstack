@@ -21,6 +21,11 @@ public class GsonUtil {
          _gsonBuilder.setExclusionStrategies(excludeStrateges);
          return this; 
     }
+
+    public GsonUtil setSerializationExclusionStrategy(ExclusionStrategy excludeStratege) {
+        _gsonBuilder.addSerializationExclusionStrategy(excludeStratege);
+        return this;
+    }
     
     public GsonUtil setInstanceCreator(Class<?> clazz, InstanceCreator<?> creator) {
         _gsonBuilder.registerTypeAdapter(clazz, creator);

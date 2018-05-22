@@ -1,5 +1,9 @@
 package org.zstack.identity.rbac;
 
+import com.google.gson.ExclusionStrategy;
+import com.google.gson.FieldAttributes;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.AccountConstant;
@@ -10,17 +14,17 @@ import org.zstack.header.identity.rbac.PolicyMatcher;
 import org.zstack.header.identity.rbac.RBAC;
 import org.zstack.header.identity.rbac.SuppressRBACCheck;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.SkipLogger;
 import org.zstack.identity.APIRequestChecker;
 import org.zstack.identity.rbac.datatype.Entity;
 import org.zstack.utils.Utils;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
-import static org.zstack.core.Platform.*;
 
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -29,6 +33,19 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
 
     protected APIMessage message;
     protected PolicyMatcher policyMatcher = new PolicyMatcher();
+
+    private static final Gson gson = new GsonBuilder().disableHtmlEscaping().
+            addSerializationExclusionStrategy(new ExclusionStrategy() {
+        @Override
+        public boolean shouldSkipField(FieldAttributes fieldAttributes) {
+            return fieldAttributes.getAnnotation(SkipLogger.class) != null;
+        }
+
+        @Override
+        public boolean shouldSkipClass(Class<?> aClass) {
+            return false;
+        }
+    }).create();
 
 
     public boolean bypass(APIMessage msg) {
@@ -72,7 +89,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
     }
 
     private String jsonMessage() {
-        return JSONObjectUtil.toJsonString(map(e(message.getClass().getName(), message)));
+        return gson.toJson(map(e(message.getClass().getName(), message)));
     }
 
     protected boolean evalAllowStatements(Map<PolicyInventory, List<PolicyStatement>> policies) {

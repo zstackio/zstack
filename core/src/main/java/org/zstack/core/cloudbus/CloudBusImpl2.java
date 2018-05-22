@@ -27,8 +27,6 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudConfigureFailException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.managementnode.IsManagementNodeReadyMsg;
-import org.zstack.header.managementnode.IsManagementNodeReadyReply;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
 import org.zstack.header.message.*;
 import org.zstack.header.search.APISearchMessage;
@@ -401,6 +399,18 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                 }
         }).create();
 
+        private final Gson gson1 = new GsonUtil().setSerializationExclusionStrategy(new ExclusionStrategy() {
+            @Override
+            public boolean shouldSkipField(FieldAttributes fieldAttributes) {
+                return fieldAttributes.getAnnotation(SkipLogger.class) != null;
+            }
+
+            @Override
+            public boolean shouldSkipClass(Class<?> aClass) {
+                return false;
+            }
+        }).create();
+
         private class RecoverableSend {
             Channel chan;
             byte[] data;
@@ -713,7 +723,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         }
 
         public String dumpMessage(Message msg) {
-            return gson.toJson(msg, Message.class);
+            return gson1.toJson(msg, Message.class);
         }
     }
 
