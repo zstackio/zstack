@@ -11,11 +11,9 @@ static void init() {
             adminOnlyAPIs("org.zstack.header.network.service.**")
         }
 
-        role {
-            contributeToRole {
-                roleName = "networks"
-                actions(APIQueryNetworkServiceProviderMsg.class.name)
-            }
+        contributeToRole {
+            roleName = "networks"
+            actions(APIQueryNetworkServiceProviderMsg.class.name)
         }
     }
 }

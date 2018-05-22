@@ -12,11 +12,9 @@ static void init() {
         }
 
 
-        role {
-            contributeToRole {
-                roleName = "other"
-                actions(APIQueryHostMsg.class.name)
-            }
+        contributeToRole {
+            roleName = "other"
+            actions(APIQueryHostMsg.class.name)
         }
     }
 }
