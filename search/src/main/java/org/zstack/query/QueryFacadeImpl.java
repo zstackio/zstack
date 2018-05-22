@@ -344,9 +344,8 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
     public ZQLQueryResult queryUseZQL(APIQueryMessage msg, Class inventoryClass) {
         List<String> sb = new ArrayList<>();
         sb.add(msg.isCount() ? "count" : "query");
-
         Class targetInventoryClass = getQueryTargetInventoryClass(msg, inventoryClass);
-        sb.add(msg.getFields() == null || msg.getFields().isEmpty() ? ZQL.queryTargetNameFromInventoryClass(targetInventoryClass) : ZQL.queryTargetNameFromInventoryClass(targetInventoryClass) + "." + msg.getFields().get(0));
+        sb.add(msg.getFields() == null || msg.getFields().isEmpty() ? ZQL.queryTargetNameFromInventoryClass(targetInventoryClass) : ZQL.queryTargetNameFromInventoryClass(targetInventoryClass) + "." + StringUtils.join(msg.getFields(), ","));
 
         List<QueryCondition> tagConditions = new ArrayList<>();
 

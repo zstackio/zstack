@@ -9,7 +9,7 @@ import java.util.function.Function;
 
 public class QueryResult {
     public String sql;
-    public String targetFieldName;
+    public List<String> targetFieldNames;
     public Function<EntityManager, Query> createJPAQuery;
     public Function<EntityManager, Query> createCountQuery;
     public ZQLMetadata.InventoryMetadata inventoryMetadata;

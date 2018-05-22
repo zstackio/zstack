@@ -18,6 +18,10 @@ field
     | ID ('.' ID)+
     ;
 
+multiFields
+    : ID (',' ID)+
+    ;
+
 operator
     : '='
     | '!='
@@ -62,7 +66,9 @@ condition
     ;
 
 queryTarget
-    : entity ('.' field)?
+    : entity #onlyEntity
+    | entity '.' field #withSingleField
+    | entity '.' multiFields #withMultiFields
     ;
 
 orderBy

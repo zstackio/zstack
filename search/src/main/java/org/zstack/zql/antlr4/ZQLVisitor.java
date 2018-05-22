@@ -39,6 +39,12 @@ public interface ZQLVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitField(ZQLParser.FieldContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link ZQLParser#multiFields}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitMultiFields(ZQLParser.MultiFieldsContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link ZQLParser#operator}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -98,11 +104,26 @@ public interface ZQLVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitParenthesisCondition(ZQLParser.ParenthesisConditionContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link ZQLParser#queryTarget}.
+	 * Visit a parse tree produced by the {@code onlyEntity}
+	 * labeled alternative in {@link ZQLParser#queryTarget}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitQueryTarget(ZQLParser.QueryTargetContext ctx);
+	T visitOnlyEntity(ZQLParser.OnlyEntityContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code withSingleField}
+	 * labeled alternative in {@link ZQLParser#queryTarget}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitWithSingleField(ZQLParser.WithSingleFieldContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code withMultiFields}
+	 * labeled alternative in {@link ZQLParser#queryTarget}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitWithMultiFields(ZQLParser.WithMultiFieldsContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link ZQLParser#orderBy}.
 	 * @param ctx the parse tree

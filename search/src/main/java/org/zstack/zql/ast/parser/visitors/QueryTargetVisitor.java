@@ -7,11 +7,29 @@ import org.zstack.zql.antlr4.ZQLParser;
 
 import java.util.stream.Collectors;
 
+import static org.zstack.utils.CollectionDSL.list;
+
 public class QueryTargetVisitor extends ZQLBaseVisitor<ASTNode.QueryTarget> {
-    public ASTNode.QueryTarget visitQueryTarget(ZQLParser.QueryTargetContext ctx) {
+    @Override
+    public ASTNode.QueryTarget visitOnlyEntity(ZQLParser.OnlyEntityContext ctx) {
         ASTNode.QueryTarget q = new ASTNode.QueryTarget();
         q.setEntity(ctx.entity().ID().getText());
-        q.setFields(ctx.field() == null ? null : ctx.field().ID().stream().map(ParseTree::getText).collect(Collectors.toList()));
+        return q;
+    }
+
+    @Override
+    public ASTNode.QueryTarget visitWithSingleField(ZQLParser.WithSingleFieldContext ctx) {
+        ASTNode.QueryTarget q = new ASTNode.QueryTarget();
+        q.setEntity(ctx.entity().ID().getText());
+        q.setFields(list(ctx.field().ID().get(0).getText()));
+        return q;
+    }
+
+    @Override
+    public ASTNode.QueryTarget visitWithMultiFields(ZQLParser.WithMultiFieldsContext ctx) {
+        ASTNode.QueryTarget q = new ASTNode.QueryTarget();
+        q.setEntity(ctx.entity().ID().getText());
+        q.setFields(ctx.multiFields().ID().stream().map(ParseTree::getText).collect(Collectors.toList()));
         return q;
     }
 }

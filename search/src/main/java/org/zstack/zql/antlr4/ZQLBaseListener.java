@@ -66,6 +66,18 @@ public class ZQLBaseListener implements ZQLListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterMultiFields(ZQLParser.MultiFieldsContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitMultiFields(ZQLParser.MultiFieldsContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterOperator(ZQLParser.OperatorContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -174,13 +186,37 @@ public class ZQLBaseListener implements ZQLListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterQueryTarget(ZQLParser.QueryTargetContext ctx) { }
+	@Override public void enterOnlyEntity(ZQLParser.OnlyEntityContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitQueryTarget(ZQLParser.QueryTargetContext ctx) { }
+	@Override public void exitOnlyEntity(ZQLParser.OnlyEntityContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterWithSingleField(ZQLParser.WithSingleFieldContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitWithSingleField(ZQLParser.WithSingleFieldContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterWithMultiFields(ZQLParser.WithMultiFieldsContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitWithMultiFields(ZQLParser.WithMultiFieldsContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

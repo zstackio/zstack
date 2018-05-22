@@ -77,11 +77,14 @@ public class ZQL {
 
     private List entityVOtoInventories(List vos) {
         List ret = new ArrayList();
-        if (astResult.targetFieldName != null) {
+        if (astResult.targetFieldNames != null && !astResult.targetFieldNames.isEmpty()) {
             vos.forEach(it -> {
                 try {
                     Object inv = astResult.inventoryMetadata.selfInventoryClass.getConstructor().newInstance();
-                    BeanUtils.setProperty(inv, astResult.targetFieldName, it);
+                    Object[] fieldValues = (Object[]) it;
+                    for (int i = 0; i < fieldValues.length; i++) {
+                        BeanUtils.setProperty(inv, astResult.targetFieldNames.get(i), fieldValues[i]);
+                    }
                     ret.add(inv);
                 } catch (Exception e) {
                     throw new CloudRuntimeException(e);
