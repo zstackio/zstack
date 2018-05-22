@@ -11,9 +11,15 @@ class RoleInfo {
     boolean adminOnly = false
     boolean predefine = true
     private List<String> normalActionsReferredRBACInfoNames = []
+    List<String> excludedActions =[]
 
     PolicyStatement toStatement() {
         RoleInfo self = this
+        if (!excludedActions.isEmpty()) {
+            RBAC.FlattenResult fr = RBAC.flatten(excludedActions as Set, allowedActions as Set)
+            self.allowedActions = fr.normal as List
+        }
+
         return new PolicyStatement(
                 name: self.name,
                 effect: self.effect,
