@@ -10,6 +10,12 @@ static void init() {
         permissions {
             adminOnlyAPIs("org.zstack.header.host.**")
         }
+
+
+        contributeToRole {
+            roleName = "other"
+            actions(APIQueryHostMsg.class.name)
+        }
     }
 }
 

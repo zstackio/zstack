@@ -10,5 +10,10 @@ static void init() {
         permissions {
             adminOnlyAPIs("org.zstack.header.network.service.**")
         }
+
+        contributeToRole {
+            roleName = "networks"
+            actions(APIQueryNetworkServiceProviderMsg.class.name)
+        }
     }
 }

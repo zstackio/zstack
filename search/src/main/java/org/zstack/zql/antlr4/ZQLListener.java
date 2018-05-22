@@ -54,6 +54,16 @@ public interface ZQLListener extends ParseTreeListener {
 	 */
 	void exitField(ZQLParser.FieldContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link ZQLParser#multiFields}.
+	 * @param ctx the parse tree
+	 */
+	void enterMultiFields(ZQLParser.MultiFieldsContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ZQLParser#multiFields}.
+	 * @param ctx the parse tree
+	 */
+	void exitMultiFields(ZQLParser.MultiFieldsContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link ZQLParser#operator}.
 	 * @param ctx the parse tree
 	 */
@@ -154,15 +164,41 @@ public interface ZQLListener extends ParseTreeListener {
 	 */
 	void exitParenthesisCondition(ZQLParser.ParenthesisConditionContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link ZQLParser#queryTarget}.
+	 * Enter a parse tree produced by the {@code onlyEntity}
+	 * labeled alternative in {@link ZQLParser#queryTarget}.
 	 * @param ctx the parse tree
 	 */
-	void enterQueryTarget(ZQLParser.QueryTargetContext ctx);
+	void enterOnlyEntity(ZQLParser.OnlyEntityContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link ZQLParser#queryTarget}.
+	 * Exit a parse tree produced by the {@code onlyEntity}
+	 * labeled alternative in {@link ZQLParser#queryTarget}.
 	 * @param ctx the parse tree
 	 */
-	void exitQueryTarget(ZQLParser.QueryTargetContext ctx);
+	void exitOnlyEntity(ZQLParser.OnlyEntityContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code withSingleField}
+	 * labeled alternative in {@link ZQLParser#queryTarget}.
+	 * @param ctx the parse tree
+	 */
+	void enterWithSingleField(ZQLParser.WithSingleFieldContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code withSingleField}
+	 * labeled alternative in {@link ZQLParser#queryTarget}.
+	 * @param ctx the parse tree
+	 */
+	void exitWithSingleField(ZQLParser.WithSingleFieldContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code withMultiFields}
+	 * labeled alternative in {@link ZQLParser#queryTarget}.
+	 * @param ctx the parse tree
+	 */
+	void enterWithMultiFields(ZQLParser.WithMultiFieldsContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code withMultiFields}
+	 * labeled alternative in {@link ZQLParser#queryTarget}.
+	 * @param ctx the parse tree
+	 */
+	void exitWithMultiFields(ZQLParser.WithMultiFieldsContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link ZQLParser#orderBy}.
 	 * @param ctx the parse tree

@@ -31,6 +31,7 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.zql.ZQL;
 import org.zstack.zql.ZQLContext;
 import org.zstack.zql.ZQLQueryResult;
+import org.zstack.zql.ast.ZQLMetadata;
 
 import static org.zstack.core.Platform.argerr;
 
@@ -325,10 +326,26 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
         }
     }
 
+    private Class getQueryTargetInventoryClass(APIQueryMessage msg, Class inventoryClass) {
+        Field tf = ZQLMetadata.getTypeFieldOfInventoryClass(inventoryClass);
+        if (tf == null) {
+            return inventoryClass;
+        }
+
+        Optional<QueryCondition> opt = msg.getConditions().stream().filter(c->c.getName().equals(tf.getName())).findFirst();
+        if (!opt.isPresent()) {
+            return inventoryClass;
+        }
+
+        QueryCondition condition = opt.get();
+        return ZQLMetadata.getChildInventoryClassByType(inventoryClass, condition.getValue());
+    }
+
     public ZQLQueryResult queryUseZQL(APIQueryMessage msg, Class inventoryClass) {
         List<String> sb = new ArrayList<>();
         sb.add(msg.isCount() ? "count" : "query");
-        sb.add(msg.getFields() == null || msg.getFields().isEmpty() ? ZQL.queryTargetNameFromInventoryClass(inventoryClass) : ZQL.queryTargetNameFromInventoryClass(inventoryClass) + "." + msg.getFields().get(0));
+        Class targetInventoryClass = getQueryTargetInventoryClass(msg, inventoryClass);
+        sb.add(msg.getFields() == null || msg.getFields().isEmpty() ? ZQL.queryTargetNameFromInventoryClass(targetInventoryClass) : ZQL.queryTargetNameFromInventoryClass(targetInventoryClass) + "." + StringUtils.join(msg.getFields(), ","));
 
         List<QueryCondition> tagConditions = new ArrayList<>();
 

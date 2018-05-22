@@ -6,6 +6,8 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.query.*;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.search.Inventory;
+import org.zstack.header.search.Parent;
+import org.zstack.header.search.TypeField;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.FieldUtils;
@@ -71,6 +73,18 @@ public class ZQLMetadata {
      * value: InventoryMetadata
      */
     public static Map<String, InventoryMetadata> inventoryMetadata = new HashMap<>();
+    /**
+     * key: parent inventory class
+     * value:
+     *      key: type
+     *      value: child inventory class
+     */
+    public static Map<Class, Map<String, Class>> typeFieldToParentInventory = new HashMap<>();
+    /**
+     * key: inventory class
+     * value: field annotated by @TypeField
+     */
+    public static Map<Class, Field> inventoryTypeFields = new HashMap<>();
 
     public interface ChainQueryStruct {
         default void verify() {
@@ -242,6 +256,20 @@ public class ZQLMetadata {
         }
     }
 
+    public static Class getChildInventoryClassByType(Class parentInventory, String type) {
+        Map<String, Class> m = typeFieldToParentInventory.get(parentInventory);
+        if (m == null) {
+            throw new CloudRuntimeException(String.format("inventory class[%s] has no children inventory classes", parentInventory));
+        }
+
+        Class child = m.get(type);
+        if (child == null) {
+            return parentInventory;
+        } else {
+            return child;
+        }
+    }
+
     private static void fillInventoryMetadata(Class clz,
                                               List<ExpandedQuery> queries, List<ExpandedQueryAlias> aliases,
                                               List<ExpandedQuery> queryForOther, List<ExpandedQueryAlias> aliasForOther) {
@@ -249,6 +277,12 @@ public class ZQLMetadata {
 
         if (inventory == null) {
             throw new CloudRuntimeException(String.format("class[%s] not annotated by @Inventory", clz));
+        }
+
+        for (Parent parent : inventory.parent()) {
+            Class parentInventory = parent.inventoryClass();
+            Map<String, Class> children = typeFieldToParentInventory.computeIfAbsent(parentInventory, x->new HashMap<>());
+            children.put(parent.type(), clz);
         }
 
         InventoryMetadata metadata = inventoryMetadata.computeIfAbsent(clz.getName(), x-> {
@@ -354,5 +388,18 @@ public class ZQLMetadata {
             Class clz = it.target();
             fillInventoryMetadata(clz, null, asList(it),  null, null);
         });
+
+        BeanUtils.reflections.getFieldsAnnotatedWith(TypeField.class).forEach(tf -> {
+            Field f = inventoryTypeFields.get(tf.getDeclaringClass());
+            if (f != null) {
+                throw new CloudRuntimeException(String.format("inventory class[%s] has two fields[%s,%s] annotated by @TypeField",
+                        f.getDeclaringClass(), tf.getName(), f.getName()));
+            }
+            inventoryTypeFields.put(tf.getDeclaringClass(), tf);
+        });
+    }
+
+    public static Field getTypeFieldOfInventoryClass(Class invClass) {
+        return inventoryTypeFields.get(invClass);
     }
 }

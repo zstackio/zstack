@@ -51,14 +51,19 @@ public class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
         ret.inventoryMetadata = inventory;
         ZQLContext.pushQueryTargetInventoryName(inventory.fullInventoryName());
 
-        String fieldName = node.getTarget().getFields() == null || node.getTarget().getFields().isEmpty() ? "" : node.getTarget().getFields().get(0);
-        if (!fieldName.equals("")) {
-            inventory.errorIfNoField(fieldName);
-            ret.targetFieldName = fieldName;
-        }
+        List<String> fieldNames = node.getTarget().getFields() == null ? new ArrayList<>() : node.getTarget().getFields();
+        fieldNames.forEach(inventory::errorIfNoField);
+        ret.targetFieldNames = fieldNames;
 
         String entityAlias = inventory.simpleInventoryName();
-        String queryTarget = fieldName.equals("") ? entityAlias : String.format("%s.%s", inventory.simpleInventoryName(), fieldName);
+        String queryTarget;
+        if (fieldNames.isEmpty()) {
+            queryTarget = entityAlias;
+        } else {
+            List<String> qt = fieldNames.stream().map(f->String.format("%s.%s", inventory.simpleInventoryName(), f)).collect(Collectors.toList());
+            queryTarget = StringUtils.join(qt, ",");
+        }
+
         String entityVOName = inventory.inventoryAnnotation.mappingVOClass().getSimpleName();
 
         List<String> sqlClauses = new ArrayList<>();
