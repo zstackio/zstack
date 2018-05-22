@@ -475,9 +475,35 @@ CREATE TABLE IF NOT EXISTS `VpcRouterDnsVO` (
       CONSTRAINT fkVpcRouterDnsVOVirtualRouterVmVO FOREIGN KEY (vpcRouterUuid) REFERENCES VirtualRouterVmVO (uuid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-
 CREATE TABLE  `zstack`.`VpcRouterVmVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+# create VpcRouterVmVO from ApplianceVmVO
+DELIMITER $$
+CREATE PROCEDURE generateVpcRouterVmVO()
+    BEGIN
+        DECLARE vrUuid varchar(32);
+        DECLARE done INT DEFAULT FALSE;
+        DECLARE cur CURSOR FOR SELECT uuid FROM zstack.ApplianceVmVO where applianceVmType = 'vpcvrouter';
+        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+        OPEN cur;
+        read_loop: LOOP
+            FETCH cur INTO vrUuid;
+            IF done THEN
+                LEAVE read_loop;
+            END IF;
+
+            INSERT INTO zstack.VpcRouterVmVO (uuid) values (vrUuid);
+            UPDATE zstack.ResourceVO set resourceType='VpcRouterVmVO' where uuid= uuid;
+
+        END LOOP;
+        CLOSE cur;
+        # work around a bug of mysql : jira.mariadb.org/browse/MDEV-4602
+        SELECT CURTIME();
+    END $$
+DELIMITER ;
+
+CALL generateVpcRouterVmVO();
+DROP PROCEDURE IF EXISTS generateVpcRouterVmVO;
