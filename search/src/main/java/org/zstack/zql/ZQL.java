@@ -81,9 +81,13 @@ public class ZQL {
             vos.forEach(it -> {
                 try {
                     Object inv = astResult.inventoryMetadata.selfInventoryClass.getConstructor().newInstance();
-                    Object[] fieldValues = (Object[]) it;
-                    for (int i = 0; i < fieldValues.length; i++) {
-                        BeanUtils.setProperty(inv, astResult.targetFieldNames.get(i), fieldValues[i]);
+                    if (it instanceof Object[]) {
+                        Object[] fieldValues = (Object[]) it;
+                        for (int i = 0; i < fieldValues.length; i++) {
+                            BeanUtils.setProperty(inv, astResult.targetFieldNames.get(i), fieldValues[i]);
+                        }
+                    } else {
+                        BeanUtils.setProperty(inv, astResult.targetFieldNames.get(0), it);
                     }
                     ret.add(inv);
                 } catch (Exception e) {
