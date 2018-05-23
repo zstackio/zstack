@@ -399,7 +399,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                 }
         }).create();
 
-        private final Gson gson1 = new GsonUtil().setSerializationExclusionStrategy(new ExclusionStrategy() {
+        private final Gson gson1 = new GsonUtil().setCoder(Message.class, this).setSerializationExclusionStrategy(new ExclusionStrategy() {
             @Override
             public boolean shouldSkipField(FieldAttributes fieldAttributes) {
                 return fieldAttributes.getAnnotation(SkipLogger.class) != null;

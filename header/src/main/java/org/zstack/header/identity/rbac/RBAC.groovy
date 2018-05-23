@@ -172,7 +172,7 @@ class RBAC {
         info2.adminOnlyAPIs = ret.adminOnly
     }
 
-    private static FlattenResult flatten(Set<String> adminInput, Set<String> normalInput) {
+    static FlattenResult flatten(Set<String> adminInput, Set<String> normalInput) {
         boolean is = adminInput.any { a -> normalInput.any { n-> matcher.match(a, n) || matcher.match(n, a) } }
 
         FlattenResult ret = new FlattenResult()

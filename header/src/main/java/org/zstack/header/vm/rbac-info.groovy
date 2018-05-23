@@ -19,6 +19,13 @@ static void init() {
             name = "vm"
             normalActionsFromRBAC("vm")
         }
+
+        role {
+            uuid = "d6b79564f9b641a4b8bb85ea249151c2"
+            name = "vm-operation-without-create-permission"
+            normalActionsFromRBAC("vm")
+            excludedActions = [APICreateVmInstanceMsg.class.name]
+        }
     }
 }
 
