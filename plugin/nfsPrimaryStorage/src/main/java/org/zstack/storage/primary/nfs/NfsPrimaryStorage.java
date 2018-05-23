@@ -224,7 +224,6 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         if (bkd == null) {
             throw new OperationFailureException(operr("cannot find usable backend"));
         }
-        PrimaryStorageVO ps = dbf.findByUuid(msg.getPrimaryStorageUuid(), PrimaryStorageVO.class);
         DeleteImageCacheOnPrimaryStorageReply sreply = new DeleteImageCacheOnPrimaryStorageReply();
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("delete-image-cache-on-nfs-primary-storage-%s", msg.getPrimaryStorageUuid()));

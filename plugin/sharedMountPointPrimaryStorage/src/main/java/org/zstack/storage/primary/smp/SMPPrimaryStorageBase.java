@@ -524,7 +524,6 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
 
     private void handle(final DeleteImageCacheOnPrimaryStorageMsg msg) {
         DeleteImageCacheOnPrimaryStorageReply sreply = new DeleteImageCacheOnPrimaryStorageReply();
-        PrimaryStorageVO ps = dbf.findByUuid(msg.getPrimaryStorageUuid(), PrimaryStorageVO.class);
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("delete-image-cache-on-smp-primary-storage-%s", msg.getPrimaryStorageUuid()));
