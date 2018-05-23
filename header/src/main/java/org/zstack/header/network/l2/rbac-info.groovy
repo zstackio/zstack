@@ -10,6 +10,8 @@ static void init() {
         permissions {
             name = "l2"
 
+            targetResources = [L2NetworkVO.class]
+
             adminOnlyAPIs("org.zstack.header.network.l2.**")
 
             normalAPIs(APIUpdateL2NetworkMsg.class.name)
