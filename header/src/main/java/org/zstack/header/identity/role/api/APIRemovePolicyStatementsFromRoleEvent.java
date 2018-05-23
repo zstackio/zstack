@@ -11,4 +11,9 @@ public class APIRemovePolicyStatementsFromRoleEvent extends APIEvent {
     public APIRemovePolicyStatementsFromRoleEvent(String apiId) {
         super(apiId);
     }
+
+    public static APIRemovePolicyStatementsFromRoleEvent __example__() {
+        APIRemovePolicyStatementsFromRoleEvent event = new APIRemovePolicyStatementsFromRoleEvent();
+        return event;
+    }
 }

@@ -29,4 +29,13 @@ public class APIAttachRoleToAccountMsg extends APIMessage implements RoleMessage
     public void setAccountUuid(String accountUuid) {
         this.accountUuid = accountUuid;
     }
+
+    public static APIAttachRoleToAccountMsg __example__() {
+        APIAttachRoleToAccountMsg msg = new APIAttachRoleToAccountMsg();
+
+        msg.setRoleUuid(uuid());
+        msg.setAccountUuid(uuid());
+
+        return msg;
+    }
 }

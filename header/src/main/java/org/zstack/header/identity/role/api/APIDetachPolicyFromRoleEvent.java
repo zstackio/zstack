@@ -11,4 +11,9 @@ public class APIDetachPolicyFromRoleEvent extends APIEvent {
     public APIDetachPolicyFromRoleEvent(String apiId) {
         super(apiId);
     }
+
+    public static APIDetachPolicyFromRoleEvent __example__() {
+        APIDetachPolicyFromRoleEvent event = new APIDetachPolicyFromRoleEvent();
+        return event;
+    }
 }
