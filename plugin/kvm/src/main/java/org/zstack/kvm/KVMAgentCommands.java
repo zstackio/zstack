@@ -241,6 +241,15 @@ public class KVMAgentCommands {
     }
 
     public static class HostFactCmd extends AgentCommand {
+        private boolean ignoreMsrs;
+
+        public boolean isIgnoreMsrs() {
+            return ignoreMsrs;
+        }
+
+        public void setIgnoreMsrs(boolean ignoreMsrs) {
+            this.ignoreMsrs = ignoreMsrs;
+        }
     }
 
     public static class HostFactResponse extends AgentResponse {
