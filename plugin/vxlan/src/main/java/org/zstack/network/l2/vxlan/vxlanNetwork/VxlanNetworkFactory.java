@@ -48,7 +48,7 @@ import static org.zstack.core.Platform.operr;
  */
 public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInstanceMigrateExtensionPoint, L2NetworkDefaultMtu, L2NetworkGetVniExtensionPoint {
     private static CLogger logger = Utils.getLogger(VxlanNetworkFactory.class);
-    static L2NetworkType type = new L2NetworkType(VxlanNetworkConstant.VXLAN_NETWORK_TYPE);
+    public static L2NetworkType type = new L2NetworkType(VxlanNetworkConstant.VXLAN_NETWORK_TYPE);
 
     @Autowired
     private DatabaseFacade dbf;

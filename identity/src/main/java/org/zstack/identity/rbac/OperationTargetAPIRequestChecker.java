@@ -24,11 +24,12 @@ import java.util.stream.Collectors;
 public class OperationTargetAPIRequestChecker implements APIRequestChecker {
     protected APIMessage message;
 
-    private static Map<Class, RBACInfo> rbacInfos = new HashMap<>();
+    private static Map<Class, RBACInfo> rbacInfos =  Collections.synchronizedMap(new HashMap<>());
     private static PolicyMatcher policyMatcher = new PolicyMatcher();
 
     @Autowired
     private AccountManager acntMgr;
+
 
     @Override
     public void check(APIMessage msg) {
@@ -45,6 +46,12 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
         return rbacInfos.computeIfAbsent(message.getClass(), x-> {
             for (RBACInfo rbacInfo : RBAC.getRbacInfos()) {
                 for (String s : rbacInfo.getNormalAPIs()) {
+                    if (isMatch(s)) {
+                        return rbacInfo;
+                    }
+                }
+
+                for (String s : rbacInfo.getAdminOnlyAPIs()) {
                     if (isMatch(s)) {
                         return rbacInfo;
                     }

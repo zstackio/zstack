@@ -91,8 +91,12 @@ abstract class Test implements ApiHelper, Retry {
     protected BeanConstructor beanConstructor
     protected SpringSpec _springSpec
 
-    Test() {
+    protected void setSpringSpec() {
         _springSpec = new SpringSpec()
+    }
+
+    Test() {
+        setSpringSpec()
         Logger.getLogger(OkHttpClient.class.getName()).setLevel(Level.FINE)
     }
 

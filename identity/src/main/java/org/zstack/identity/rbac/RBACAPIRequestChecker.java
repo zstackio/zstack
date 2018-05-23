@@ -117,7 +117,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
 
     protected boolean evalAllowStatement(String as) {
         String ap = PolicyUtils.apiNamePatternFromAction(as);
-        return policyMatcher.match(ap, message.getClass().getName()) && RBAC.checkAPIPermission(message);
+        return RBAC.checkAPIPermission(message, policyMatcher.match(ap, message.getClass().getName()));
     }
 
     protected boolean isPrincipalMatched(List<String> principals) {

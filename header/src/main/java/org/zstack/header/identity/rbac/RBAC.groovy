@@ -57,28 +57,57 @@ class RBAC {
         }
     }
 
-    static boolean checkAPIPermission(APIMessage msg) {
+    static boolean checkAPIPermission(APIMessage msg, boolean policyDecision) {
         List<APIPermissionChecker> checkers = apiPermissionCheckers[msg.class]
         if (checkers == null || checkers.isEmpty()) {
-            return true
+            return policyDecision
         }
 
         for (APIPermissionChecker checker : checkers) {
-            if (!checker.check(msg)) {
+            APIPermissionCheckerWrapper w = checker as APIPermissionCheckerWrapper
+            Boolean ret = checker.check(msg)
+            if (ret == null) {
+                continue
+            }
+
+            if (w.takeOver) {
+                return ret
+            }
+
+            if (!ret) {
                 return false
             }
         }
 
-        return true
+        return policyDecision
     }
 
-    static void registerAPIPermissionChecker(Class<? extends APIMessage> clz, APIPermissionChecker checker) {
+    static class APIPermissionCheckerWrapper implements APIPermissionChecker {
+        APIPermissionChecker checker
+        boolean takeOver
+
+        @Override
+        Boolean check(APIMessage msg) {
+            return checker.check(msg)
+        }
+    }
+
+    static void registerAPIPermissionChecker(Class<? extends APIMessage> clz, boolean takeOver,  APIPermissionChecker checker) {
         List all = [clz]
         all.addAll(BeanUtils.reflections.getSubTypesOf(clz))
         all.each {Class<? extends APIMessage>  apiClz ->
             def lst = apiPermissionCheckers.computeIfAbsent(apiClz, { return [] })
-            lst.add(checker)
+            APIPermissionCheckerWrapper wrapper = new APIPermissionCheckerWrapper(
+                    takeOver: takeOver,
+                    checker:  checker
+            )
+
+            lst.add(wrapper)
         }
+    }
+
+    static void registerAPIPermissionChecker(Class<? extends APIMessage> clz, APIPermissionChecker checker) {
+        registerAPIPermissionChecker(clz, false, checker)
     }
 
     static class PermissionCheckerWrapper {
