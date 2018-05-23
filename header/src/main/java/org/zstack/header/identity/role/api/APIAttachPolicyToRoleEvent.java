@@ -11,4 +11,10 @@ public class APIAttachPolicyToRoleEvent extends APIEvent {
     public APIAttachPolicyToRoleEvent(String apiId) {
         super(apiId);
     }
+
+    public static APIAttachPolicyToRoleEvent __example__() {
+        APIAttachPolicyToRoleEvent event = new APIAttachPolicyToRoleEvent();
+
+        return event;
+    }
 }

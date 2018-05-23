@@ -11,4 +11,10 @@ public class APIAttachRoleToAccountEvent extends APIEvent {
     public APIAttachRoleToAccountEvent(String apiId) {
         super(apiId);
     }
+
+    public static APIAttachRoleToAccountEvent __example__() {
+        APIAttachRoleToAccountEvent event = new APIAttachRoleToAccountEvent();
+
+        return event;
+    }
 }

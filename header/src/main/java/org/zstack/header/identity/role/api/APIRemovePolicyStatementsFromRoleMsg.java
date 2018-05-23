@@ -6,6 +6,8 @@ import org.zstack.header.rest.RestRequest;
 
 import java.util.List;
 
+import static org.codehaus.groovy.runtime.InvokerHelper.asList;
+
 @RestRequest(path = "/identities/roles/{uuid}/policy-statements", method = HttpMethod.DELETE, responseClass = APIRemovePolicyStatementsFromRoleEvent.class)
 public class APIRemovePolicyStatementsFromRoleMsg extends APIMessage implements RoleMessage {
     private String uuid;
@@ -30,5 +32,13 @@ public class APIRemovePolicyStatementsFromRoleMsg extends APIMessage implements 
     @Override
     public String getRoleUuid() {
         return uuid;
+    }
+
+    public static APIRemovePolicyStatementsFromRoleMsg __example__() {
+        APIRemovePolicyStatementsFromRoleMsg msg = new APIRemovePolicyStatementsFromRoleMsg();
+        msg.setUuid(uuid());
+        msg.setPolicyStatementUuids(asList(uuid()));
+
+        return msg;
     }
 }

@@ -29,4 +29,13 @@ public class APIAttachPolicyToRoleMsg extends APIMessage implements RoleMessage 
     public void setPolicyUuid(String policyUuid) {
         this.policyUuid = policyUuid;
     }
+
+    public static APIAttachPolicyToRoleMsg __example__() {
+        APIAttachPolicyToRoleMsg msg = new APIAttachPolicyToRoleMsg();
+
+        msg.setRoleUuid(uuid());
+        msg.setPolicyUuid(uuid());
+
+        return msg;
+    }
 }

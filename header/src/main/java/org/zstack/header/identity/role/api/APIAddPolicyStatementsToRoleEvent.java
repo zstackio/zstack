@@ -11,4 +11,10 @@ public class APIAddPolicyStatementsToRoleEvent extends APIEvent {
     public APIAddPolicyStatementsToRoleEvent(String apiId) {
         super(apiId);
     }
+
+    public static APIAddPolicyStatementsToRoleEvent __example__() {
+        APIAddPolicyStatementsToRoleEvent event = new APIAddPolicyStatementsToRoleEvent();
+
+        return event;
+    }
 }

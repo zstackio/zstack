@@ -10,6 +10,8 @@ import org.zstack.header.rest.RestRequest;
 
 import java.util.List;
 
+import static org.codehaus.groovy.runtime.InvokerHelper.asList;
+
 @RestRequest(path = "/identities/roles", method = HttpMethod.POST, responseClass = APICreateRoleEvent.class, parameterName = "params")
 public class APICreateRoleMsg extends APICreateMessage {
     @APIParam(maxLength = 255)
@@ -50,5 +52,15 @@ public class APICreateRoleMsg extends APICreateMessage {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public static APICreateRoleMsg __example__() {
+        APICreateRoleMsg msg = new APICreateRoleMsg();
+        msg.setName("role-1");
+        msg.setPolicyUuids(asList(uuid()));
+        msg.setStatements(asList("statement for test"));
+        msg.setDescription("role for test");
+
+        return msg;
     }
 }

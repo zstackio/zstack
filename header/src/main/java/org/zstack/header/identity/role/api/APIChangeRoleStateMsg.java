@@ -35,4 +35,13 @@ public class APIChangeRoleStateMsg extends APIMessage implements RoleMessage {
     public String getRoleUuid() {
         return uuid;
     }
+
+    public static APIChangeRoleStateMsg __example__() {
+        APIChangeRoleStateMsg msg = new APIChangeRoleStateMsg();
+
+        msg.setUuid(uuid());
+        msg.setStateEvent(RoleStateEvent.enable);
+
+        return msg;
+    }
 }

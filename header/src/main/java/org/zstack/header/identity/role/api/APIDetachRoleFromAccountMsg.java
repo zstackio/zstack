@@ -2,6 +2,7 @@ package org.zstack.header.identity.role.api;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.AccountVO;
+import org.zstack.header.identity.role.RoleStateEvent;
 import org.zstack.header.identity.role.RoleVO;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
@@ -29,5 +30,14 @@ public class APIDetachRoleFromAccountMsg extends APIDeleteMessage implements Rol
 
     public void setAccountUuid(String accountUuid) {
         this.accountUuid = accountUuid;
+    }
+
+    public static APIDetachRoleFromAccountMsg __example__() {
+        APIDetachRoleFromAccountMsg msg = new APIDetachRoleFromAccountMsg();
+
+        msg.setRoleUuid(uuid());
+        msg.setAccountUuid(uuid());
+
+        return msg;
     }
 }
