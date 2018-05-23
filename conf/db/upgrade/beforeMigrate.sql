@@ -46,3 +46,6 @@ BEGIN
     RETURN(vs_return);
 END$$
 DELIMITER  ;
+
+SET FOREIGN_KEY_CHECKS = 0;
+
