@@ -77,6 +77,14 @@ public class DBGraph {
     }
 
     public static EntityVertex findVerticesWithSmallestWeight(Class src, Class dst) {
+        if (src == dst) {
+            EntityVertex vertex = new EntityVertex();
+            vertex.entityClass = src;
+            vertex.srcKey = vertex.dstKey = EntityMetadata.getPrimaryKeyField(src).getName();
+            vertex.previous = vertex;
+            return vertex;
+        }
+
         List<List<Node>> all = findPath(src, dst);
         if (all.isEmpty()) {
             return null;
