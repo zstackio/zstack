@@ -1,7 +1,6 @@
 package org.zstack.header.identity;
 
 import org.zstack.header.configuration.PythonClass;
-import org.zstack.header.rest.SDK;
 
 @PythonClass
 public interface AccountConstant {
@@ -28,7 +27,11 @@ public interface AccountConstant {
     String PRINCIPAL_ACCOUNT = "account";
 
     static boolean isAdminPermission(SessionInventory session) {
-        return INITIAL_SYSTEM_ADMIN_UUID.equals(session.getAccountUuid());
+        return isAdminPermission(session.getAccountUuid());
+    }
+
+    static boolean isAdminPermission(String accountUuid) {
+        return INITIAL_SYSTEM_ADMIN_UUID.equals(accountUuid);
     }
 
     static boolean isAdmin(SessionInventory session) {
