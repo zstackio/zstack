@@ -338,6 +338,11 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
         }
 
         QueryCondition condition = opt.get();
+
+        if (!condition.getOp().equals(QueryOp.EQ.toString())) {
+            return inventoryClass;
+        }
+
         return ZQLMetadata.getChildInventoryClassByType(inventoryClass, condition.getValue());
     }
 

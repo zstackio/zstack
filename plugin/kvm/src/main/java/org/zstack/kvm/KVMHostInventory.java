@@ -38,6 +38,9 @@ public class KVMHostInventory extends HostInventory {
         this.setSshPort(vo.getPort());
     }
 
+    public KVMHostInventory() {
+    }
+
     public static KVMHostInventory valueOf(KVMHostVO vo) {
         return new KVMHostInventory(vo);
     }
