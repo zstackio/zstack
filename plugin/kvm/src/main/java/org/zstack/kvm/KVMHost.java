@@ -2743,6 +2743,7 @@ public class KVMHost extends HostBase implements Host {
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
                             HostFactCmd cmd = new HostFactCmd();
+                            cmd.setIgnoreMsrs(KVMGlobalConfig.KVM_IGNORE_MSRS.value(Boolean.class));
                             new Http<>(hostFactPath, cmd, HostFactResponse.class)
                                     .call(new ReturnValueCompletion<HostFactResponse>(trigger) {
                                 @Override
