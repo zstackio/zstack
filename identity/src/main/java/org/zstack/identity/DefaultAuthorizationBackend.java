@@ -38,6 +38,8 @@ public class DefaultAuthorizationBackend implements AuthorizationBackend {
             if (logger.isTraceEnabled()) {
                 logger.trace(String.format("%s, %s", e.getErrorCode(), CloudBusGson.toJson(msg)));
             }
+
+            throw e;
         }
 
         return msg;
