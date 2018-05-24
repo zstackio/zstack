@@ -37,5 +37,5 @@ public class KVMGlobalConfig {
     @GlobalConfigValidation
     public static GlobalConfig CHECK_HOST_CPU_MODEL_NAME = new GlobalConfig(CATEGORY, "checkHostCpuModelName");
     @GlobalConfigValidation
-    public static GlobalConfig KVM_IGNORE_MSRS = new GlobalConfig(CATEGORY, "kvm.ignoreMsrs");
+    public static GlobalConfig KVM_IGNORE_MSRS = new GlobalConfig(CATEGORY, "ignoreMsrs");
 }
