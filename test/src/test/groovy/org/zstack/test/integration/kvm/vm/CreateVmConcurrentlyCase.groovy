@@ -153,6 +153,12 @@ class CreateVmConcurrentlyCase extends SubCase {
             value = additional
         }
 
+        updateQuota {
+            identityUuid = newAccount.uuid
+            name = VmQuotaConstant.VM_RUNNING_NUM
+            value = additional
+        }
+
         def list = []
 
         SessionInventory userSessionInv = logInByAccount {
