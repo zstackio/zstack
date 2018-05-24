@@ -8,6 +8,11 @@ import org.zstack.header.rest.RestRequest;
 public class APIZQLQueryMsg extends APISyncCallMessage {
     private String zql;
 
+    public static APIZQLQueryMsg __example__() {
+        APIZQLQueryMsg ret = new APIZQLQueryMsg();
+        return ret;
+    }
+
     public String getZql() {
         return zql;
     }

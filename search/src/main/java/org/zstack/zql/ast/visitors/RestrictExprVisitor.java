@@ -70,7 +70,7 @@ public class RestrictExprVisitor implements ASTVisitor<String, ASTNode.RestrictE
         String value = makeQueryTemplate(vertex.next, field);
         String entity = String.format("%s_", vertex.entityClass.getSimpleName());
         String vo = vertex.entityClass.getSimpleName();
-        String primaryKey = EntityMetadata.getPrimaryKeyField(vertex.entityClass).getName();
+        String primaryKey = vertex.previous != null ? vertex.previous.dstKey : EntityMetadata.getPrimaryKeyField(vertex.entityClass).getName();
         return String.format("(SELECT %s.%s FROM %s %s WHERE %s.%s IN %s)",
                 entity, primaryKey, vo, entity, entity, vertex.srcKey, value);
     }
