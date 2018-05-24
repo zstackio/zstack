@@ -270,6 +270,7 @@ public class SourceClassMap {
 			put("org.zstack.vrouterRoute.VRouterRouteEntryType", "org.zstack.sdk.VRouterRouteEntryType");
 			put("org.zstack.vrouterRoute.VRouterRouteTableInventory", "org.zstack.sdk.VRouterRouteTableInventory");
 			put("org.zstack.vrouterRoute.VirtualRouterVRouterRouteTableRefInventory", "org.zstack.sdk.VirtualRouterVRouterRouteTableRefInventory");
+			put("org.zstack.zql.ZQLQueryResult", "org.zstack.sdk.ZQLQueryResult");
 			put("org.zstack.zwatch.alarm.APICreateAlarmMsg$ActionParam", "org.zstack.sdk.zwatch.alarm.ActionParam");
 			put("org.zstack.zwatch.alarm.AlarmActionInventory", "org.zstack.sdk.zwatch.alarm.AlarmActionInventory");
 			put("org.zstack.zwatch.alarm.AlarmInventory", "org.zstack.sdk.zwatch.alarm.AlarmInventory");
@@ -521,6 +522,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VpcVpnIpSecConfigStruct", "org.zstack.header.hybrid.network.vpn.VpcVpnIpSecConfigStruct");
 			put("org.zstack.sdk.VtepInventory", "org.zstack.network.l2.vxlan.vtep.VtepInventory");
 			put("org.zstack.sdk.WebhookInventory", "org.zstack.header.core.webhooks.WebhookInventory");
+			put("org.zstack.sdk.ZQLQueryResult", "org.zstack.zql.ZQLQueryResult");
 			put("org.zstack.sdk.ZoneInventory", "org.zstack.header.zone.ZoneInventory");
 			put("org.zstack.sdk.iam2.api.APIPermissionStruct", "org.zstack.iam2.api.APIGetIAM2VirtualIDAPIPermissionMsg$APIPermissionStruct");
 			put("org.zstack.sdk.iam2.api.Attribute", "org.zstack.iam2.api.Attribute");

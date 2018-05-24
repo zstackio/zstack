@@ -8,7 +8,6 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.SyncTask;
-import org.zstack.core.thread.SyncThread;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.thread.ThreadGlobalProperty;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -157,9 +156,41 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             handle((APIGenerateQueryableFieldsMsg) msg);
         } else if (msg instanceof APIBatchQueryMsg) {
             handle((APIBatchQueryMsg) msg);
+        } else if (msg instanceof APIZQLQueryMsg) {
+            handle((APIZQLQueryMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIZQLQueryMsg msg) {
+        thdf.syncSubmit(new SyncTask<Void>() {
+            @Override
+            public Void call() {
+                APIZQLQueryReply reply = new APIZQLQueryReply();
+                ZQLContext.putAPISession(msg.getSession());
+                ZQL zql = ZQL.fromString(msg.getZql());
+                reply.setResult(zql.execute());
+                ZQLContext.cleanAPISession();
+                bus.reply(msg, reply);
+                return null;
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
+            }
+
+            @Override
+            public String getSyncSignature() {
+                return "zql";
+            }
+
+            @Override
+            public int getSyncLevel() {
+                return ThreadGlobalProperty.MAX_THREAD_NUM / 2;
+            }
+        });
     }
 
     private void handle(APIBatchQueryMsg msg) {

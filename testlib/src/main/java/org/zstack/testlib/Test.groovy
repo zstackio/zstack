@@ -22,6 +22,7 @@ import org.zstack.utils.Utils
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.logging.CLogger
 import org.zstack.utils.path.PathUtil
+import org.zstack.zql.ZQL
 
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
@@ -43,6 +44,11 @@ abstract class Test implements ApiHelper, Retry {
     static Map<Class, Closure> functionForMockTestObjectFactory = new ConcurrentHashMap<>()
 
     protected List<Closure> methodsOnClean = []
+
+    protected List zqlQuery(String text) {
+        //return zQLQuery { zql = text }.inventories
+        return ZQL.fromString(text).execute().inventories
+    }
 
     static {
         Platform.functionForMockTestObject = { supplier ->

@@ -1,10 +1,10 @@
-package org.zstack.sdk.ticket.api;
+package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class ChangeTicketStatusAction extends AbstractAction {
+public class ZQLQueryAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class ChangeTicketStatusAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.ticket.api.ChangeTicketStatusResult value;
+        public org.zstack.sdk.ZQLQueryResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,14 +25,8 @@ public class ChangeTicketStatusAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = true, validValues = {"open","approve","cancel","reject","reopen"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public org.zstack.sdk.ticket.entity.TicketStatusEvent statusEvent;
-
-    @Param(required = false, maxLength = 65535, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String comment;
+    @Param(required = false)
+    public java.lang.String zql;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -43,12 +37,6 @@ public class ChangeTicketStatusAction extends AbstractAction {
     @Param(required = true)
     public String sessionId;
 
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -57,8 +45,8 @@ public class ChangeTicketStatusAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.ticket.api.ChangeTicketStatusResult value = res.getResult(org.zstack.sdk.ticket.api.ChangeTicketStatusResult.class);
-        ret.value = value == null ? new org.zstack.sdk.ticket.api.ChangeTicketStatusResult() : value; 
+        org.zstack.sdk.ZQLQueryResult value = res.getResult(org.zstack.sdk.ZQLQueryResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ZQLQueryResult() : value; 
 
         return ret;
     }
@@ -87,11 +75,11 @@ public class ChangeTicketStatusAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/tickets/{uuid}/actions";
+        info.httpMethod = "GET";
+        info.path = "/zql";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "changeTicketStatus";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 
