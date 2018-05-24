@@ -100,7 +100,7 @@
 
     <config>
         <category>kvm</category>
-        <name>kvm.ignoreMsrs</name>
+        <name>ignoreMsrs</name>
         <description>whether set ignore_msrs for kvm module</description>
         <type>java.lang.Boolean</type>
         <defaultValue>false</defaultValue>
