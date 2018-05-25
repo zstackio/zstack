@@ -131,7 +131,7 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
                 Class resourceType = param.param.resourceType();
                 List<Tuple> ts = q(AccountResourceRefVO.class).select(AccountResourceRefVO_.accountUuid, AccountResourceRefVO_.resourceUuid)
                         .in(AccountResourceRefVO_.resourceUuid, uuids)
-                        .eq(AccountResourceRefVO_.resourceType, acntMgr.getBaseResourceType(resourceType).getSimpleName())
+                        //.eq(AccountResourceRefVO_.resourceType, acntMgr.getBaseResourceType(resourceType).getSimpleName())
                         .listTuple();
 
                 ts.addAll(
@@ -139,7 +139,7 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
                                 .in(SharedResourceVO_.resourceUuid, uuids)
                                 .eq(SharedResourceVO_.permission, SharedResourceVO.PERMISSION_WRITE)
                                 .eq(SharedResourceVO_.receiverAccountUuid, message.getSession().getAccountUuid())
-                                .eq(SharedResourceVO_.resourceType, acntMgr.getBaseResourceType(resourceType).getSimpleName())
+                                //.eq(SharedResourceVO_.resourceType, acntMgr.getBaseResourceType(resourceType).getSimpleName())
                                 .listTuple()
                 );
 
