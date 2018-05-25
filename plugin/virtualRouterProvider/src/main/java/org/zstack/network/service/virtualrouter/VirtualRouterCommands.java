@@ -719,6 +719,7 @@ public class VirtualRouterCommands {
 
 	public static class PingRsp extends AgentResponse {
 		private String uuid;
+		private String version;
 
 		public String getUuid() {
 			return uuid;
@@ -727,5 +728,13 @@ public class VirtualRouterCommands {
 		public void setUuid(String uuid) {
 			this.uuid = uuid;
 		}
-	}
+
+        public String getVersion() {
+            return version;
+        }
+
+        public void setVersion(String version) {
+            this.version = version;
+        }
+    }
 }

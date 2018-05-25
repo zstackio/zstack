@@ -31,6 +31,7 @@ public class VyosVm extends VirtualRouter {
 
         flows.add(apvmf.createBootstrapFlow(hvType));
         if (!CoreGlobalProperty.UNIT_TEST_ON) {
+            flows.add(new VyosGetVersionFlow());
             flows.add(new VyosDeployAgentFlow());
         }
 
