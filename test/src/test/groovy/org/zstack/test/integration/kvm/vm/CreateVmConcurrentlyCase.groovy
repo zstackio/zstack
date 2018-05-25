@@ -138,6 +138,7 @@ class CreateVmConcurrentlyCase extends SubCase {
             type = AccountType.Normal.toString()
         } as AccountInventory
 
+        String vmName = "test-vm-quota"
         def instanceOffering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
         def image = env.inventoryByName("image") as ImageInventory
         def l3 = env.inventoryByName("l3") as L3NetworkInventory
@@ -150,7 +151,7 @@ class CreateVmConcurrentlyCase extends SubCase {
         updateQuota {
             identityUuid = newAccount.uuid
             name = VmQuotaConstant.VM_TOTAL_NUM
-            value = additional
+            value = additional + 1
         }
 
         updateQuota {
@@ -170,7 +171,7 @@ class CreateVmConcurrentlyCase extends SubCase {
             try {
                 def thread = Thread.start {
                     createVmInstance {
-                        name = "test-vm"
+                        name = vmName
                         instanceOfferingUuid = instanceOffering.uuid
                         imageUuid = image.uuid
                         l3NetworkUuids = [l3.uuid]
@@ -185,6 +186,31 @@ class CreateVmConcurrentlyCase extends SubCase {
         list.each { it.join() }
 
         assert Q.New(VmInstanceVO.class).count() == existingVM + additional
+        def vmUuid = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.name, vmName).limit(1).select(VmInstanceVO_.uuid).listValues().get(0) as String
+        stopVmInstance {
+            uuid = vmUuid
+            sessionId = userSessionInv.uuid
+        }
+
+        createVmInstance {
+            name = vmName
+            instanceOfferingUuid = instanceOffering.uuid
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3.uuid]
+            sessionId = userSessionInv.uuid
+        }
+
+        def hasError = false
+        try {
+            startVmInstance {
+                uuid = vmUuid
+            }
+        } catch (AssertionError ignored) {
+            assert ignored.toString().contains(VmQuotaConstant.VM_RUNNING_NUM)
+            hasError = true
+        }
+
+        assert hasError
     }
 
     // This case is for ZSTAC-8576
