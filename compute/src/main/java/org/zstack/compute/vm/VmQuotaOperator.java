@@ -143,22 +143,21 @@ public class VmQuotaOperator implements Quota.QuotaOperator {
             quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
             quotaCompareInfo.currentAccountUuid = currentAccountUuid;
             quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-            quotaCompareInfo.quotaName = VmQuotaConstant.VM_TOTAL_NUM;
-            quotaCompareInfo.quotaValue = totalVmNumQuota;
-            quotaCompareInfo.currentUsed = vmQuotaUsed.totalVmNum;
+            quotaCompareInfo.quotaName = VmQuotaConstant.VM_RUNNING_NUM;
+            quotaCompareInfo.quotaValue = vmNumQuota;
+            quotaCompareInfo.currentUsed = vmQuotaUsed.runningVmNum;
             quotaCompareInfo.request = 1;
             new QuotaUtil().CheckQuota(quotaCompareInfo);
         }
-
         //
         {
             QuotaUtil.QuotaCompareInfo quotaCompareInfo;
             quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
             quotaCompareInfo.currentAccountUuid = currentAccountUuid;
             quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-            quotaCompareInfo.quotaName = VmQuotaConstant.VM_RUNNING_NUM;
-            quotaCompareInfo.quotaValue = vmNumQuota;
-            quotaCompareInfo.currentUsed = vmQuotaUsed.runningVmNum;
+            quotaCompareInfo.quotaName = VmQuotaConstant.VM_TOTAL_NUM;
+            quotaCompareInfo.quotaValue = totalVmNumQuota;
+            quotaCompareInfo.currentUsed = vmQuotaUsed.totalVmNum;
             quotaCompareInfo.request = 1;
             new QuotaUtil().CheckQuota(quotaCompareInfo);
         }
