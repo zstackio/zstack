@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
@@ -126,12 +127,45 @@ public class VmQuotaOperator implements Quota.QuotaOperator {
         checkVmInstanceQuota(currentAccountUuid, resourceTargetOwnerAccountUuid, vmInstanceUuid, pairs);
     }
 
+    // It is a bad hack here for checking VmQuotaGlobalConfig.VM_TOTAL_NUM
+    //
+    // 'checkVmInstanceQuota' is now (temporary) a public method, but it has
+    // no context of what happened:
+    //  1. Are we creating new VM?
+    //  2. Are we recovering a deleted VM?
+    //  3. Are we starting an existing VM?
+    //
+    // We must differentiate creating new resources and operating on old resources
+    // when handling the quota for VM_TOTAL_NUM.
+    private void checkTotalVMQuota(String currentAccountUuid,
+                                   String resourceTargetOwnerAccountUuid,
+                                   String vmInstanceUuid,
+                                   long totalVmNumQuota,
+                                   long totalVmNum) {
+        if (Q.New(VmInstanceVO.class)
+                .eq(VmInstanceVO_.uuid, vmInstanceUuid)
+                .notNull(VmInstanceVO_.lastHostUuid)
+                .isExists()) {
+            // Dirty hack - VM with last host UUID means existing VM.
+            return;
+        }
+
+        QuotaUtil.QuotaCompareInfo quotaCompareInfo;
+        quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
+        quotaCompareInfo.currentAccountUuid = currentAccountUuid;
+        quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
+        quotaCompareInfo.quotaName = VmQuotaConstant.VM_TOTAL_NUM;
+        quotaCompareInfo.quotaValue = totalVmNumQuota;
+        quotaCompareInfo.currentUsed = totalVmNum;
+        quotaCompareInfo.request = 1;
+        new QuotaUtil().CheckQuota(quotaCompareInfo);
+    }
+
     @Transactional(readOnly = true)
     public void checkVmInstanceQuota(String currentAccountUuid,
                                       String resourceTargetOwnerAccountUuid,
                                       String vmInstanceUuid,
                                       Map<String, Quota.QuotaPair> pairs) {
-        long totalVmNumQuota = pairs.get(VmQuotaConstant.VM_TOTAL_NUM).getValue();
         long vmNumQuota = pairs.get(VmQuotaConstant.VM_RUNNING_NUM).getValue();
         long cpuNumQuota = pairs.get(VmQuotaConstant.VM_RUNNING_CPU_NUM).getValue();
         long memoryQuota = pairs.get(VmQuotaConstant.VM_RUNNING_MEMORY_SIZE).getValue();
@@ -150,17 +184,11 @@ public class VmQuotaOperator implements Quota.QuotaOperator {
             new QuotaUtil().CheckQuota(quotaCompareInfo);
         }
         //
-        {
-            QuotaUtil.QuotaCompareInfo quotaCompareInfo;
-            quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
-            quotaCompareInfo.currentAccountUuid = currentAccountUuid;
-            quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-            quotaCompareInfo.quotaName = VmQuotaConstant.VM_TOTAL_NUM;
-            quotaCompareInfo.quotaValue = totalVmNumQuota;
-            quotaCompareInfo.currentUsed = vmQuotaUsed.totalVmNum;
-            quotaCompareInfo.request = 1;
-            new QuotaUtil().CheckQuota(quotaCompareInfo);
-        }
+        checkTotalVMQuota(currentAccountUuid,
+                resourceTargetOwnerAccountUuid,
+                vmInstanceUuid,
+                pairs.get(VmQuotaConstant.VM_TOTAL_NUM).getValue(),
+                vmQuotaUsed.totalVmNum);
         //
         VmInstanceVO vm = dbf.getEntityManager().find(VmInstanceVO.class, vmInstanceUuid);
         {
