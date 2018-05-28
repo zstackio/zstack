@@ -6,11 +6,14 @@ import org.zstack.header.identity.AccountType
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmInstanceVO_
+import org.zstack.image.ImageQuotaConstant
 import org.zstack.sdk.*
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
+
+import java.util.concurrent.atomic.AtomicInteger
 ///**
 // * Created by kayo on 2018/3/20.
 // */
@@ -129,7 +132,8 @@ class CreateVmConcurrentlyCase extends SubCase {
 
     void testCreateVMWithQuota() {
         def existingVM = Q.New(VmInstanceVO.class).count()
-        def additional = 4
+        def runningVmQuota = 4
+        def imageNumQuota = 1
 
         def userpass = "password"
         def newAccount = createAccount {
@@ -151,13 +155,19 @@ class CreateVmConcurrentlyCase extends SubCase {
         updateQuota {
             identityUuid = newAccount.uuid
             name = VmQuotaConstant.VM_TOTAL_NUM
-            value = additional + 1
+            value = runningVmQuota + 1
         }
 
         updateQuota {
             identityUuid = newAccount.uuid
             name = VmQuotaConstant.VM_RUNNING_NUM
-            value = additional
+            value = runningVmQuota
+        }
+
+        updateQuota {
+            identityUuid = newAccount.uuid
+            name = ImageQuotaConstant.IMAGE_NUM
+            value = imageNumQuota
         }
 
         def list = []
@@ -167,9 +177,9 @@ class CreateVmConcurrentlyCase extends SubCase {
             password = userpass
         } as SessionInventory
 
-        for (int i = 0; i < additional+1; i++) {
-            try {
-                def thread = Thread.start {
+        for (int i = 0; i < runningVmQuota+1; i++) {
+            def thread = Thread.start {
+                try {
                     createVmInstance {
                         name = vmName
                         instanceOfferingUuid = instanceOffering.uuid
@@ -177,15 +187,16 @@ class CreateVmConcurrentlyCase extends SubCase {
                         l3NetworkUuids = [l3.uuid]
                         sessionId = userSessionInv.uuid
                     } as VmInstanceInventory
+                } catch (AssertionError ignored) {
                 }
-                list.add(thread)
-            } catch (AssertionError ignored) {
             }
+
+            list.add(thread)
         }
 
         list.each { it.join() }
 
-        assert Q.New(VmInstanceVO.class).count() == existingVM + additional
+        assert Q.New(VmInstanceVO.class).count() == existingVM + runningVmQuota
         def vmUuid = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.name, vmName).limit(1).select(VmInstanceVO_.uuid).listValues().get(0) as String
         stopVmInstance {
             uuid = vmUuid
@@ -211,6 +222,61 @@ class CreateVmConcurrentlyCase extends SubCase {
         }
 
         assert hasError
+
+        // stop all running VMs of normaluser1
+        List<VmInstanceInventory> vms = queryVmInstance {
+            sessionId = userSessionInv.uuid
+        } as List<VmInstanceInventory>
+
+        vms.each {
+            def curUuid = it.uuid
+            if (it.state == VmInstanceState.Running.toString()) {
+                stopVmInstance {
+                    uuid = curUuid
+                }
+            }
+        }
+
+        list.clear()
+        AtomicInteger successCount = new AtomicInteger()
+        vms.each {
+            def thisUuid = it.uuid
+            def thread = Thread.start {
+                try {
+                    startVmInstance {
+                        uuid = thisUuid
+                        sessionId = userSessionInv.uuid
+                    }
+
+                    successCount.incrementAndGet()
+                } catch (AssertionError ignored) {
+                }
+            }
+
+            list.add(thread)
+        }
+
+        list.each { it.join() }
+
+        assert successCount.get() == runningVmQuota
+
+        def cnt = 0
+        hasError = false
+        for (int i = 0; i < imageNumQuota+1; ++i) {
+            try {
+                createRootVolumeTemplateFromRootVolume {
+                    name = "vm-template"
+                    rootVolumeUuid = vms.get(0).getRootVolumeUuid()
+                    sessionId = userSessionInv.uuid
+                }
+                cnt += 1
+            } catch (AssertionError ignored) {
+                hasError = true
+            }
+        }
+
+        assert hasError
+        assert cnt == imageNumQuota
     }
 
     // This case is for ZSTAC-8576

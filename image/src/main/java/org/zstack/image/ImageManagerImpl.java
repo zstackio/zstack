@@ -54,7 +54,6 @@ import org.zstack.header.vm.CreateTemplateFromVmRootVolumeReply;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
-import org.zstack.identity.QuotaGlobalConfig;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
@@ -66,7 +65,8 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.net.*;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -542,6 +542,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                         check((APIRecoverImageMsg) msg, pairs);
                     } else if (msg instanceof APIChangeResourceOwnerMsg) {
                         check((APIChangeResourceOwnerMsg) msg, pairs);
+                    } else if (msg instanceof APICreateRootVolumeTemplateFromRootVolumeMsg) {
+                        check((APICreateRootVolumeTemplateFromRootVolumeMsg) msg, pairs);
                     }
                 } else {
                     if (msg instanceof APIChangeResourceOwnerMsg) {
@@ -684,12 +686,35 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 }
                 new ImageQuotaUtil().checkImageSizeQuotaUseHttpHead(msg, pairs);
             }
+
+            @Transactional(readOnly = true)
+            private void check(APICreateRootVolumeTemplateFromRootVolumeMsg msg, Map<String, Quota.QuotaPair> pairs) {
+                String currentAccountUuid = msg.getSession().getAccountUuid();
+                String resourceTargetOwnerAccountUuid = msg.getSession().getAccountUuid();
+                long imageNumQuota = pairs.get(ImageQuotaConstant.IMAGE_NUM).getValue();
+                long imageNumUsed = new ImageQuotaUtil().getUsedImageNum(resourceTargetOwnerAccountUuid);
+                long imageNumAsked = 1;
+
+                QuotaUtil.QuotaCompareInfo quotaCompareInfo;
+                {
+                    quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
+                    quotaCompareInfo.currentAccountUuid = currentAccountUuid;
+                    quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
+                    quotaCompareInfo.quotaName = ImageQuotaConstant.IMAGE_NUM;
+                    quotaCompareInfo.quotaValue = imageNumQuota;
+                    quotaCompareInfo.currentUsed = imageNumUsed;
+                    quotaCompareInfo.request = imageNumAsked;
+                    new QuotaUtil().CheckQuota(quotaCompareInfo);
+                }
+            }
         };
+
         Quota quota = new Quota();
         quota.setOperator(checker);
         quota.addMessageNeedValidation(APIAddImageMsg.class);
         quota.addMessageNeedValidation(APIRecoverImageMsg.class);
         quota.addMessageNeedValidation(APIChangeResourceOwnerMsg.class);
+        quota.addMessageNeedValidation(APICreateRootVolumeTemplateFromRootVolumeMsg.class);
 
         Quota.QuotaPair p = new Quota.QuotaPair();
         p.setName(ImageQuotaConstant.IMAGE_NUM);
