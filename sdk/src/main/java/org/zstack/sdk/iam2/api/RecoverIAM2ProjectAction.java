@@ -82,7 +82,7 @@ public class RecoverIAM2ProjectAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "iam2/projects/{uuid}/actions";
+        info.path = "/iam2/projects/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "recoverIAM2Project";
