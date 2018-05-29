@@ -140,10 +140,10 @@ class GetPortForwardingAttachableVmNicsCase extends SubCase{
                         name = "pubL3-1"
 
                         ip {
-                            startIp = "11.168.100.10"
-                            endIp = "11.168.100.100"
+                            startIp = "12.168.100.10"
+                            endIp = "12.168.100.100"
                             netmask = "255.255.255.0"
-                            gateway = "11.168.100.1"
+                            gateway = "12.168.100.1"
                         }
                     }
                 }
