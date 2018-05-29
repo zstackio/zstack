@@ -390,19 +390,11 @@ public class ZQLMetadata {
                 .forEach(clz -> {
                     List<ExpandedQuery> expandedQueries = new ArrayList<>();
                     List<ExpandedQueryAlias> expandedQueryAliases = new ArrayList<>();
-                    Class tmp = clz;
-                    while (tmp != Object.class) {
-                        ExpandedQueries queries = (ExpandedQueries) tmp.getAnnotation(ExpandedQueries.class);
-                        if (queries != null) {
-                            Collections.addAll(expandedQueries, queries.value());
-                        }
-
-                        ExpandedQueryAliases aliases = (ExpandedQueryAliases) tmp.getAnnotation(ExpandedQueryAliases.class);
-                        if (aliases != null) {
-                            Collections.addAll(expandedQueryAliases, aliases.value());
-                        }
-
-                        tmp = tmp.getSuperclass();
+                    if (clz.isAnnotationPresent(ExpandedQueries.class)) {
+                        Collections.addAll(expandedQueries, clz.getAnnotation(ExpandedQueries.class).value());
+                    }
+                    if (clz.isAnnotationPresent(ExpandedQueryAliases.class)) {
+                        Collections.addAll(expandedQueryAliases, clz.getAnnotation(ExpandedQueryAliases.class).value());
                     }
 
                     fillInventoryMetadata(clz,
@@ -420,6 +412,18 @@ public class ZQLMetadata {
             Class clz = it.target();
             fillInventoryMetadata(clz, null, asList(it),  null, null);
         });
+
+        inventoryMetadata.values().forEach(m -> inventoryMetadata.values().forEach(pm -> {
+            if (pm == m) {
+                return;
+            }
+
+            if (pm.selfInventoryClass.isAssignableFrom(m.selfInventoryClass)) {
+                m.expandQueries.putAll(pm.expandQueries);
+                m.expandQueryAliases.putAll(pm.expandQueryAliases);
+            }
+        }));
+
 
         BeanUtils.reflections.getFieldsAnnotatedWith(TypeField.class).forEach(tf -> {
             Field f = inventoryTypeFields.get(tf.getDeclaringClass());
