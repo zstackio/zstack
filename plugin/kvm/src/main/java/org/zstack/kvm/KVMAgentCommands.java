@@ -802,6 +802,15 @@ public class KVMAgentCommands {
         private boolean kvmHiddenState;
         private boolean vmPortOff;
         private String vmCpuModel;
+        private boolean isApplianceVm;
+
+        public boolean isApplianceVm() {
+            return isApplianceVm;
+        }
+
+        public void setApplianceVm(boolean applianceVm) {
+            isApplianceVm = applianceVm;
+        }
 
         public String getVmCpuModel() {
             return vmCpuModel;
