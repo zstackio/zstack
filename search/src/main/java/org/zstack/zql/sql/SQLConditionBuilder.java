@@ -5,8 +5,12 @@ import org.zstack.core.db.EntityMetadata;
 import org.zstack.header.core.StaticInit;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.query.Queryable;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.UserTagVO;
+import org.zstack.header.zql.ASTNode;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.FieldUtils;
+import org.zstack.zql.ZQL;
 import org.zstack.zql.ast.ZQLMetadata;
 
 import java.lang.reflect.Field;
@@ -18,6 +22,14 @@ import java.util.Map;
 public class SQLConditionBuilder {
     private String template;
     private Field conditionField;
+    private String operator;
+    private String value;
+
+    private enum ConditionType {
+        QueryableField,
+        Tag,
+        Normal
+    }
 
     private static class QueryableField {
         Queryable annotation;
@@ -43,6 +55,7 @@ public class SQLConditionBuilder {
     }
 
     private static Map<String, QueryableField> queryableFields = new HashMap<>();
+    private static Map<String, String> TAG_FALSE_OP = new HashMap();
 
     @StaticInit
     static void staticInit() {
@@ -53,6 +66,10 @@ public class SQLConditionBuilder {
             qf.inventoryClass = f.getDeclaringClass();
             queryableFields.put(String.format("%s.%s", qf.inventoryClass.getName(), f.getName()), qf);
         });
+
+        TAG_FALSE_OP.put("!=", "=");
+        TAG_FALSE_OP.put("not in", "in");
+        TAG_FALSE_OP.put("not like", "like");
     }
 
     private void setConditionField(Class clz, String fname) {
@@ -66,23 +83,91 @@ public class SQLConditionBuilder {
         return queryableFields.get(String.format("%s.%s", conditionField.getDeclaringClass().getName(), conditionField.getName()));
     }
 
-    public SQLConditionBuilder(String queryTargetInventoryName, List<String> conditionNames) {
+    private ConditionType getConditionType(Class invClass, String fname) {
+        if (fname.equals(ZQLMetadata.SYS_TAG_NAME) || fname.equals(ZQLMetadata.USER_TAG_NAME)) {
+            return ConditionType.Tag;
+        } else if (queryableFields.containsKey(String.format("%s.%s", invClass.getName(), fname))) {
+            return ConditionType.QueryableField;
+        } else {
+            return ConditionType.Normal;
+        }
+    }
+
+    public SQLConditionBuilder(String queryTargetInventoryName, List<String> conditionNames, String operator, String value) {
+        this.operator = operator;
+        this.value = value;
+
         List<ZQLMetadata.ChainQueryStruct> chainQueries = ZQLMetadata.createChainQuery(queryTargetInventoryName, conditionNames);
         if (chainQueries.size() == 1) {
             ZQLMetadata.FieldChainQuery fc = (ZQLMetadata.FieldChainQuery) chainQueries.get(0);
-            setConditionField(fc.self.selfInventoryClass, fc.fieldName);
-            QueryableField qf = getIfConditionFieldQueryableField();
 
-            if (qf == null) {
-                template = String.format("%s.%s %%s %%s", fc.self.selfInventoryClass.getSimpleName(), fc.fieldName);
+            ConditionType ctype = getConditionType(fc.self.selfInventoryClass, fc.fieldName);
+            if (ctype == ConditionType.Tag) {
+                template = createTagSQL(fc.self.selfInventoryClass, fc.fieldName, false);
             } else {
-                template = qf.toSQL();
+                setConditionField(fc.self.selfInventoryClass, fc.fieldName);
+                QueryableField qf = getIfConditionFieldQueryableField();
+
+                if (qf == null) {
+                    template = String.format("%s.%s %%s %%s", fc.self.selfInventoryClass.getSimpleName(), fc.fieldName);
+                } else {
+                    template = qf.toSQL();
+                }
             }
         } else {
             ZQLMetadata.ExpandChainQuery first = (ZQLMetadata.ExpandChainQuery) chainQueries.get(0);
             template = String.format("%s.%s IN %s",
                     first.self.simpleInventoryName(), first.right.selfKeyName, makeTemplate(chainQueries.subList(1, chainQueries.size()).iterator()));
         }
+
+        if (template.contains("%s")) {
+            // unresolved SQL, resolve it
+            template = String.format(template, operator, normalizeValue(value));
+        }
+    }
+
+    private String createTagSQL(Class invClz, String fieldName, boolean nestedQuery) {
+        class TagSQLMaker {
+            String make() {
+                ZQLMetadata.InventoryMetadata src = ZQLMetadata.getInventoryMetadataByName(invClz.getName());
+
+                String primaryKey = EntityMetadata.getPrimaryKeyField(src.inventoryAnnotation.mappingVOClass()).getName();
+                String tableName = fieldName.equals(ZQLMetadata.USER_TAG_NAME) ? UserTagVO.class.getSimpleName() : SystemTagVO.class.getSimpleName();
+
+                String subCondition;
+                if (TAG_FALSE_OP.containsKey(operator)) {
+                    String reserveOp = TAG_FALSE_OP.get(operator);
+                    subCondition = String.format("tagvo.uuid IN (SELECT tagvo_.uuid FROM %s tagvo_ WHERE tagvo_.tag %s %s)",
+                            tableName, reserveOp, value);
+
+                    if (nestedQuery) {
+                        return String.format("(SELECT %s.%s FROM %s %s WHERE %s.%s NOT IN (SELECT tagvo.resourceUuid FROM %s tagvo WHERE %s))",
+                                src.simpleInventoryName(), primaryKey, src.inventoryAnnotation.mappingVOClass().getSimpleName(),
+                                src.simpleInventoryName() , src.simpleInventoryName(), primaryKey, tableName, subCondition);
+                    } else {
+                        return String.format("(%s.%s NOT IN (SELECT tagvo.resourceUuid FROM %s tagvo WHERE %s))",
+                                src.simpleInventoryName(), primaryKey, tableName, subCondition);
+                    }
+                } else {
+                    if (value == null) {
+                        subCondition = String.format("tagvo.tag %s", operator);
+                    } else {
+                        subCondition = String.format("tagvo.tag %s %s", operator, value);
+                    }
+
+                    if (nestedQuery) {
+                        return String.format("(SELECT %s.%s FROM %s %s WHERE %s.%s IN (SELECT tagvo.resourceUuid FROM %s tagvo WHERE %s))",
+                                src.simpleInventoryName(), primaryKey, src.inventoryAnnotation.mappingVOClass().getSimpleName(), src.simpleInventoryName(),
+                                src.simpleInventoryName(), primaryKey, tableName, subCondition);
+                    } else {
+                        return String.format("(%s.%s IN (SELECT tagvo.resourceUuid FROM %s tagvo WHERE %s))",
+                                src.simpleInventoryName(), primaryKey, tableName, subCondition);
+                    }
+                }
+            }
+        }
+
+        return new TagSQLMaker().make();
     }
 
     private String makeTemplate(Iterator<ZQLMetadata.ChainQueryStruct> iterator) {
@@ -99,19 +184,23 @@ public class SQLConditionBuilder {
             ZQLMetadata.ExpandQueryMetadata right = fc.right;
             String entityName = right.targetInventoryClass.getSimpleName();
 
-            setConditionField(right.targetInventoryClass, fc.fieldName);
-
-            QueryableField qf = getIfConditionFieldQueryableField();
-
-            if (qf == null) {
-                return String.format("(SELECT %s.%s FROM %s" +
-                                " %s WHERE %s.%s %%s %%s)",
-                        entityName, right.targetKeyName, right.targetVOClass.getSimpleName(), entityName, entityName,
-                        fc.fieldName);
+            ConditionType ctype = getConditionType(right.targetInventoryClass, fc.fieldName);
+            if (ctype == ConditionType.Tag) {
+                return createTagSQL(right.targetInventoryClass, fc.fieldName, true);
             } else {
-                return String.format("(SELECT %s.%s FROM %s" +
-                                " %s WHERE %s)",
-                        entityName, right.targetKeyName, right.targetVOClass.getSimpleName(), entityName, qf.toSQL());
+                setConditionField(right.targetInventoryClass, fc.fieldName);
+                QueryableField qf = getIfConditionFieldQueryableField();
+
+                if (qf == null) {
+                    return String.format("(SELECT %s.%s FROM %s" +
+                                    " %s WHERE %s.%s %%s %%s)",
+                            entityName, right.targetKeyName, right.targetVOClass.getSimpleName(), entityName, entityName,
+                            fc.fieldName);
+                } else {
+                    return String.format("(SELECT %s.%s FROM %s" +
+                                    " %s WHERE %s)",
+                            entityName, right.targetKeyName, right.targetVOClass.getSimpleName(), entityName, qf.toSQL());
+                }
             }
         }
 
@@ -133,7 +222,7 @@ public class SQLConditionBuilder {
         }
     }
 
-    public String build(String operator, String value) {
-        return String.format(template, operator, normalizeValue(value));
+    public String build() {
+        return template;
     }
 }

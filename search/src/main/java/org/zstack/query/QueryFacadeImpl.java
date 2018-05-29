@@ -383,16 +383,9 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
         Class targetInventoryClass = getQueryTargetInventoryClass(msg, inventoryClass);
         sb.add(msg.getFields() == null || msg.getFields().isEmpty() ? ZQL.queryTargetNameFromInventoryClass(targetInventoryClass) : ZQL.queryTargetNameFromInventoryClass(targetInventoryClass) + "." + StringUtils.join(msg.getFields(), ","));
 
-        List<QueryCondition> tagConditions = new ArrayList<>();
-
         if (msg.getConditions() != null && !msg.getConditions().isEmpty()) {
             List<String> conds = new ArrayList<>();
             msg.getConditions().forEach(c -> {
-                if (c.getName().equals(SYSTEM_TAG) || c.getName().equals(USER_TAG)) {
-                    tagConditions.add(c);
-                    return;
-                }
-
                 conds.add(toZQLConditionString(c));
             });
 
@@ -400,12 +393,6 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
                 sb.add("where");
                 sb.add(StringUtils.join(conds, " and "));
             }
-        }
-
-        if (!tagConditions.isEmpty()) {
-            List<String> byConds = new ArrayList<>();
-            tagConditions.forEach(c -> byConds.add(toZQLConditionString(c)));
-            sb.add(String.format("restrict by (%s)", StringUtils.join(byConds, ",")));
         }
 
         if (!msg.isCount() && msg.isReplyWithCount()) {
