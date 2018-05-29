@@ -251,7 +251,7 @@ class AttachAndDeleteEipCase extends SubCase{
     }
 
     void testAttachAndDeleteEipWhenVmPausing(){
-        process = false
+        /*process = false
 
         env.simulator(KVMConstant.KVM_PAUSE_VM_PATH) {
             retryInSecs{
@@ -275,6 +275,10 @@ class AttachAndDeleteEipCase extends SubCase{
         process = true
         thread.join()
         env.cleanSimulatorHandlers()
+        */
+        pauseVmInstance {
+            uuid = vm.uuid
+        }
     }
 
     void testAttachAndDeleteEipWhenVmPaused(){
