@@ -1,5 +1,6 @@
 package org.zstack.network.service.virtualrouter;
 
+import org.zstack.appliancevm.ApplianceVmInventory;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.image.ImageInventory;
@@ -24,6 +25,8 @@ import java.util.List;
                 foreignKey = "zoneUuid", expandedInventoryKey = "uuid"),
         @ExpandedQuery(expandedField = "image", inventoryClass = ImageInventory.class,
                 foreignKey = "imageUuid", expandedInventoryKey = "uuid"),
+		@ExpandedQuery(target = ApplianceVmInventory.class, expandedField = "virtualRouterOffering", inventoryClass = VirtualRouterOfferingInventory.class,
+				foreignKey = "uuid", expandedInventoryKey = "instanceOfferingUuid")
 })
 public class VirtualRouterOfferingInventory extends InstanceOfferingInventory {
     private String managementNetworkUuid;
