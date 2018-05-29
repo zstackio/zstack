@@ -4,4 +4,5 @@ public enum ProjectState {
 	Enabled,
 	Disabled,
 	Retired,
+	Deleted,
 }

@@ -170,12 +170,22 @@ class EnvSpec implements Node, ApiHelper {
                     return false
                 }
 
-                def action = (deleteClass as Class).getConstructor().newInstance()
-                logger.debug("auto-deleting resource by ${deleteClass} uuid:${delegate.value.inventory.uuid}")
-                action.uuid = delegate.value.inventory.uuid
-                action.sessionId = session.uuid
-                def res = action.call()
-                assert res.error == null: "API failure: ${JSONObjectUtil.toJsonString(res.error)}"
+
+                List<Class> dclasses = []
+                if (deleteClass instanceof List) {
+                    dclasses.addAll(deleteClass)
+                } else {
+                    dclasses.add(deleteClass as Class)
+                }
+
+                dclasses.each {
+                    def action = it.getConstructor().newInstance()
+                    logger.debug("auto-deleting resource by ${it} uuid:${delegate.value.inventory.uuid}")
+                    action.uuid = delegate.value.inventory.uuid
+                    action.sessionId = session.uuid
+                    def res = action.call()
+                    assert res.error == null: "API failure: ${JSONObjectUtil.toJsonString(res.error)}"
+                }
             }
         }
     }
