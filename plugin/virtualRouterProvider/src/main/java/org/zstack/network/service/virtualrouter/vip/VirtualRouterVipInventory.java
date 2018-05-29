@@ -3,6 +3,8 @@ package org.zstack.network.service.virtualrouter.vip;
 import org.zstack.appliancevm.ApplianceVmInventory;
 import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
+import org.zstack.header.query.ExpandedQueryAlias;
+import org.zstack.header.query.ExpandedQueryAliases;
 import org.zstack.header.search.Inventory;
 import org.zstack.network.service.vip.VipInventory;
 
@@ -16,6 +18,11 @@ import java.util.List;
                 foreignKey = "uuid", expandedInventoryKey = "uuid"),
         @ExpandedQuery(expandedField = "applianceVm", inventoryClass = ApplianceVmInventory.class,
                 foreignKey = "virtualRouterVmUuid", expandedInventoryKey = "uuid"),
+        @ExpandedQuery(target = ApplianceVmInventory.class, expandedField = "virtualRouterVipRef", inventoryClass = VirtualRouterVipInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "virtualRouterVmUuid", hidden = true),
+})
+@ExpandedQueryAliases({
+        @ExpandedQueryAlias(target = ApplianceVmInventory.class, alias = "vip", expandedField = "virtualRouterVipRef.vip")
 })
 public class VirtualRouterVipInventory {
     private String uuid;

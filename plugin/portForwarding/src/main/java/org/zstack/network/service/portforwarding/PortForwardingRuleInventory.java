@@ -41,6 +41,10 @@ import java.util.List;
                 foreignKey = "vipUuid", expandedInventoryKey = "uuid"),
         @ExpandedQuery(expandedField = "vmNic", inventoryClass = VmNicInventory.class,
                 foreignKey = "vmNicUuid", expandedInventoryKey = "uuid"),
+        @ExpandedQuery(target = VmNicInventory.class, expandedField = "portForwarding", inventoryClass = PortForwardingRuleInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "vmNicUuid"),
+        @ExpandedQuery(target = VipInventory.class, expandedField = "portForwarding", inventoryClass = PortForwardingRuleInventory.class, foreignKey = "uuid",
+                expandedInventoryKey = "vipUuid")
 })
 public class PortForwardingRuleInventory implements Serializable {
     /**
