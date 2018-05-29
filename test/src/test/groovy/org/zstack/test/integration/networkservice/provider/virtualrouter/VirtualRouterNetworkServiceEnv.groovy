@@ -103,6 +103,11 @@ class VirtualRouterNetworkServiceEnv {
                     }
                 }
 
+                l2NoVlanNetwork {
+                    name = "l2-1"
+                    physicalInterface = "eth1"
+                }
+
                 attachBackupStorage("sftp")
 
                 eip {
