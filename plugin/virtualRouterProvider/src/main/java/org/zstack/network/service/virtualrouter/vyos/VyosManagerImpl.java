@@ -13,6 +13,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceState;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -89,6 +90,11 @@ public class VyosManagerImpl implements VyosManager, ManagementNodeReadyExtensio
         VirtualRouterCommands.PingCmd cmd = new VirtualRouterCommands.PingCmd();
         cmd.setUuid(vrUuid);
         VirtualRouterVmInventory vrinv = VirtualRouterVmInventory.valueOf(dbf.findByUuid(vrUuid, VirtualRouterVmVO.class));
+        if (!VmInstanceState.Running.equals(vrinv.getState())) {
+            completion.success();
+            return;
+        }
+
         restf.asyncJsonPost(vrMgr.buildUrl(vrinv.getManagementNic().getIp(), VirtualRouterConstant.VR_PING), cmd, null, new JsonAsyncRESTCallback<VirtualRouterCommands.PingRsp>(completion) {
             @Override
             public void fail(ErrorCode err) {

@@ -4,7 +4,10 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.appliancevm.ApplianceVmConstant;
+import org.zstack.appliancevm.ApplianceVmInventory;
 import org.zstack.appliancevm.ApplianceVmSpec;
+import org.zstack.appliancevm.ApplianceVmVO;
+import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
@@ -23,8 +26,10 @@ import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
 import org.zstack.network.service.virtualrouter.VirtualRouterGlobalConfig;
 import org.zstack.network.service.virtualrouter.VirtualRouterManager;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.HashMap;
@@ -45,21 +50,34 @@ public class VyosGetVersionFlow extends NoRollbackFlow {
     protected RESTFacade restf;
     @Autowired
     private VirtualRouterManager vrMgr;
+    @Autowired
+    private DatabaseFacade dbf;
 
     @Override
     public void run(FlowTrigger flowTrigger, Map flowData) {
         final VirtualRouterVmInventory vr = (VirtualRouterVmInventory) flowData.get(VirtualRouterConstant.Param.VR.toString());
         String vrUuid;
         VmNicInventory mgmtNic;
+
         if (vr != null) {
             mgmtNic = vr.getManagementNic();
             vrUuid = vr.getUuid();
         } else {
             final VmInstanceSpec spec = (VmInstanceSpec) flowData.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-            final ApplianceVmSpec aspec = spec.getExtensionData(ApplianceVmConstant.Params.applianceVmSpec.toString(), ApplianceVmSpec.class);
-            mgmtNic = spec.getDestNics().stream().filter(n->n.getL3NetworkUuid().equals(aspec.getManagementNic().getL3NetworkUuid())).findAny().get();
-            DebugUtils.Assert(mgmtNic!=null, String.format("cannot find management nic for virtual router[uuid:%s, name:%s]", spec.getVmInventory().getUuid(), spec.getVmInventory().getName()));
             vrUuid = spec.getVmInventory().getUuid();
+            if (spec.getCurrentVmOperation() == VmInstanceConstant.VmOperation.NewCreate) {
+                final ApplianceVmSpec aspec = spec.getExtensionData(ApplianceVmConstant.Params.applianceVmSpec.toString(), ApplianceVmSpec.class);
+                mgmtNic = CollectionUtils.find(spec.getDestNics(), new Function<VmNicInventory, VmNicInventory>() {
+                    @Override
+                    public VmNicInventory call(VmNicInventory arg) {
+                        return arg.getL3NetworkUuid().equals(aspec.getManagementNic().getL3NetworkUuid()) ? arg : null;
+                    }
+                });
+            } else {
+                ApplianceVmVO avo = dbf.findByUuid(vrUuid, ApplianceVmVO.class);
+                ApplianceVmInventory ainv = ApplianceVmInventory.valueOf(avo);
+                mgmtNic = ainv.getManagementNic();
+            }
         }
 
         final FlowChain chain = FlowChainBuilder.newShareFlowChain();
