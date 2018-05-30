@@ -1952,6 +1952,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setInstanceOfferingOnlineChange(VmSystemTags.INSTANCEOFFERING_ONLIECHANGE.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmSystemTags.INSTANCEOFFERING_ONLINECHANGE_TOKEN) != null);
         cmd.setKvmHiddenState(VmGlobalConfig.KVM_HIDDEN_STATE.value(Boolean.class));
         cmd.setSpiceStreamingMode(VmGlobalConfig.VM_SPICE_STREAMING_MODE.value(String.class));
+        cmd.setApplianceVm(spec.getVmInventory().getType().equals("ApplianceVm"));
 
         VolumeTO rootVolume = new VolumeTO();
         rootVolume.setInstallPath(spec.getDestRootVolume().getInstallPath());
