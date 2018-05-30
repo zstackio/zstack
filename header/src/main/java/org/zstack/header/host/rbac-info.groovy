@@ -9,6 +9,7 @@ static void init() {
     rbac {
         permissions {
             adminOnlyAPIs("org.zstack.header.host.**")
+            normalAPIs(APIQueryHostMsg.class.name)
         }
 
 
