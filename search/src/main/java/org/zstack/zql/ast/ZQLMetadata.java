@@ -20,6 +20,8 @@ import static org.codehaus.groovy.runtime.InvokerHelper.asList;
 
 public class ZQLMetadata {
     private static final CLogger logger = Utils.getLogger(ZQLMetadata.class);
+    public static final String USER_TAG_NAME = "__userTag__";
+    public static final String SYS_TAG_NAME = "__systemTag__";
 
     public static class ExpandQueryMetadata {
         public Class selfVOClass;
@@ -44,7 +46,11 @@ public class ZQLMetadata {
         public Set<String> selfInventoryFieldNames;
 
         public boolean hasInventoryField(String fname) {
-            return selfInventoryFieldNames.contains(fname);
+            if (fname.equals(SYS_TAG_NAME) || fname.equals(USER_TAG_NAME)) {
+                return true;
+            } else {
+                return selfInventoryFieldNames.contains(fname);
+            }
         }
 
         public void errorIfNoField(String fname) {

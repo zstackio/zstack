@@ -9,7 +9,7 @@ public class ExprVisitor implements ASTVisitor<String, ASTNode.Expr> {
     @Override
     public String visit(ASTNode.Expr node) {
         String inventoryTarget = ZQLContext.peekQueryTargetInventoryName();
-        return new SQLConditionBuilder(inventoryTarget, node.getLeft()).build(node.getOperator(),
-                node.getRight() == null ? "" : (String) ((ASTNode)node.getRight()).accept(new ValueVisitor()));
+        return new SQLConditionBuilder(inventoryTarget, node.getLeft(), node.getOperator(),
+                node.getRight() == null ? "" : (String) ((ASTNode)node.getRight()).accept(new ValueVisitor())).build();
     }
 }
