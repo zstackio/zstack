@@ -37,7 +37,9 @@ public aspect DbDeadlockAspect {
                         }
                     }.call();
                 } catch (RuntimeException re) {
-                    if (refCount.get() > 1) {
+                    int c = refCount.get();
+                    if (c > 1) {
+                        logger.warn(String.format("ref = %s, ask outer deadlock handler to handle it", c));
                         throw re;
                     }
 
