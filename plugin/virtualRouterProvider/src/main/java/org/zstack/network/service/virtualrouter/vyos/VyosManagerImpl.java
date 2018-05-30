@@ -1,19 +1,21 @@
 package org.zstack.network.service.virtualrouter.vyos;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceState;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -44,15 +46,16 @@ public class VyosManagerImpl implements VyosManager, ManagementNodeReadyExtensio
             return;
         }
 
+        NopeCompletion completion = new NopeCompletion();
         List<VirtualRouterVmVO> vrVos = Q.New(VirtualRouterVmVO.class).list();
-        for (VirtualRouterVmVO vo : vrVos) {
-
+        new While<>(vrVos).all((vo, noErrorCompletion) -> {
             VirtualRouterVmInventory inv = VirtualRouterVmInventory.valueOf(vo);
             if (VirtualRouterConstant.VIRTUAL_ROUTER_VM_TYPE.equals(inv.getApplianceVmType())) {
-                continue;
+                noErrorCompletion.done();
+                return;
             }
 
-            vyosRouterVersionCheck(inv.getUuid(), new Completion(null) {
+            vyosRouterVersionCheck(inv.getUuid(), new Completion(noErrorCompletion) {
                 @Override
                 public void success() {
                     logger.debug(String.format("virtual router[uuid: %s] has same version as management node", inv.getUuid()));
@@ -72,11 +75,16 @@ public class VyosManagerImpl implements VyosManager, ManagementNodeReadyExtensio
                             } else {
                                 logger.debug(String.format("virtual router[uuid:%s] reconnect successfully", inv.getUuid()));
                             }
+                            noErrorCompletion.done();
                         }
                     });
                 }
             });
-        }
+        }).run(new NoErrorCompletion(completion) {
+            @Override
+            public void done() {
+            }
+        });
     }
 
     @Override
@@ -90,11 +98,6 @@ public class VyosManagerImpl implements VyosManager, ManagementNodeReadyExtensio
         VirtualRouterCommands.PingCmd cmd = new VirtualRouterCommands.PingCmd();
         cmd.setUuid(vrUuid);
         VirtualRouterVmInventory vrinv = VirtualRouterVmInventory.valueOf(dbf.findByUuid(vrUuid, VirtualRouterVmVO.class));
-        if (!VmInstanceState.Running.equals(vrinv.getState())) {
-            completion.success();
-            return;
-        }
-
         restf.asyncJsonPost(vrMgr.buildUrl(vrinv.getManagementNic().getIp(), VirtualRouterConstant.VR_PING), cmd, null, new JsonAsyncRESTCallback<VirtualRouterCommands.PingRsp>(completion) {
             @Override
             public void fail(ErrorCode err) {
