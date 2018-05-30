@@ -159,23 +159,10 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
                 }
 
                 Class resourceType = param.param.resourceType();
-                String text = "select ref.resourceUuid from AccountResourceRefVO ref where" +
-                        " ref.ownerAccountUuid = :accountUuid" +
-                        " or ref.resourceUuid in" +
-                        " (select sh.resourceUuid from SharedResourceVO sh where sh.receiverAccountUuid = :accountUuid or sh.toPublic = 1)" +
-                        " and ref.resourceUuid in (:uuids)";
-                List<String> auuids = sql(text, String.class)
-                        .param("accountUuid", message.getSession().getAccountUuid())
-                        .param("uuids", uuids)
-                        .list();
-
-                if (auuids.size() != uuids.size()) {
-                    uuids.forEach(uuid -> {
-                        if (!auuids.contains(uuid)) {
-                            throw new OperationFailureException(operr("the account[uuid:%s] has no access to the resource[uuid:%s, type:%s]",
-                                    message.getSession().getAccountUuid(), uuid, resourceType.getSimpleName()));
-                        }
-                    });
+                List<String> resourceWithNoAccess = new CheckIfAccountCanAccessResource().check(uuids, message.getSession().getAccountUuid());
+                if (!resourceWithNoAccess.isEmpty()) {
+                    throw new OperationFailureException(operr("the account[uuid:%s] has no access to the resources[uuid:%s, type:%s]",
+                            message.getSession().getAccountUuid(), resourceWithNoAccess, resourceType.getSimpleName()));
                 }
             }
         }.execute();
