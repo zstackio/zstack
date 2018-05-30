@@ -34,6 +34,9 @@ public class CreateIAM2ProjectFromTemplateAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String templateUuid;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List roleUuids;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 
