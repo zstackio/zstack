@@ -15,9 +15,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
-import org.zstack.utils.network.NetworkUtils;
 
-import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 
 /**
@@ -61,14 +59,5 @@ public class ConsoleApiInterceptor implements ApiMessageInterceptor {
         if (msg.getConsoleProxyOverriddenIp().trim().equals("")) {
             msg.setConsoleProxyOverriddenIp("0.0.0.0");
         }
-
-        String proxyIp = msg.getConsoleProxyOverriddenIp();
-        if (!NetworkUtils.isIpv4Address(proxyIp)) {
-            throw new ApiMessageInterceptionException(
-                    argerr("invalid console proxy overridden IP[%s]", proxyIp)
-            );
-        }
-
-        // use old consoleProxyOverriddenIp is harmless
     }
 }
