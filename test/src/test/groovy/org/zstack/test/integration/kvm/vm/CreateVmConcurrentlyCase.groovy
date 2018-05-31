@@ -277,6 +277,19 @@ class CreateVmConcurrentlyCase extends SubCase {
 
         assert hasError
         assert cnt == imageNumQuota
+
+        hasError = false
+        try {
+            createDataVolumeTemplateFromVolume {
+                name = "data-template"
+                volumeUuid = vms.get(0).getRootVolumeUuid()
+                sessionId = userSessionInv.uuid
+            }
+        } catch (AssertionError ignored) {
+            hasError = true
+        }
+
+        assert hasError
     }
 
     // This case is for ZSTAC-8576

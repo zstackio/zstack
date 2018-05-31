@@ -544,6 +544,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                         check((APIChangeResourceOwnerMsg) msg, pairs);
                     } else if (msg instanceof APICreateRootVolumeTemplateFromRootVolumeMsg) {
                         check((APICreateRootVolumeTemplateFromRootVolumeMsg) msg, pairs);
+                    } else if (msg instanceof APICreateDataVolumeTemplateFromVolumeMsg) {
+                        check((APICreateDataVolumeTemplateFromVolumeMsg) msg, pairs);
                     }
                 } else {
                     if (msg instanceof APIChangeResourceOwnerMsg) {
@@ -669,28 +671,27 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             private void check(APIAddImageMsg msg, Map<String, Quota.QuotaPair> pairs) {
                 String currentAccountUuid = msg.getSession().getAccountUuid();
                 String resourceTargetOwnerAccountUuid = msg.getSession().getAccountUuid();
-                long imageNumQuota = pairs.get(ImageQuotaConstant.IMAGE_NUM).getValue();
-                long imageNumUsed = new ImageQuotaUtil().getUsedImageNum(resourceTargetOwnerAccountUuid);
-                long imageNumAsked = 1;
 
-                QuotaUtil.QuotaCompareInfo quotaCompareInfo;
-                {
-                    quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
-                    quotaCompareInfo.currentAccountUuid = currentAccountUuid;
-                    quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                    quotaCompareInfo.quotaName = ImageQuotaConstant.IMAGE_NUM;
-                    quotaCompareInfo.quotaValue = imageNumQuota;
-                    quotaCompareInfo.currentUsed = imageNumUsed;
-                    quotaCompareInfo.request = imageNumAsked;
-                    new QuotaUtil().CheckQuota(quotaCompareInfo);
-                }
+                checkImageNumQuota(currentAccountUuid, resourceTargetOwnerAccountUuid, pairs);
                 new ImageQuotaUtil().checkImageSizeQuotaUseHttpHead(msg, pairs);
             }
 
-            @Transactional(readOnly = true)
             private void check(APICreateRootVolumeTemplateFromRootVolumeMsg msg, Map<String, Quota.QuotaPair> pairs) {
-                String currentAccountUuid = msg.getSession().getAccountUuid();
-                String resourceTargetOwnerAccountUuid = msg.getSession().getAccountUuid();
+                checkImageNumQuota(msg.getSession().getAccountUuid(),
+                        msg.getSession().getAccountUuid(),
+                        pairs);
+            }
+
+            private void check(APICreateDataVolumeTemplateFromVolumeMsg msg, Map<String, Quota.QuotaPair> pairs) {
+                checkImageNumQuota(msg.getSession().getAccountUuid(),
+                        msg.getSession().getAccountUuid(),
+                        pairs);
+            }
+
+            @Transactional(readOnly = true)
+            private void checkImageNumQuota(String currentAccountUuid,
+                                            String resourceTargetOwnerAccountUuid,
+                                            Map<String, Quota.QuotaPair> pairs) {
                 long imageNumQuota = pairs.get(ImageQuotaConstant.IMAGE_NUM).getValue();
                 long imageNumUsed = new ImageQuotaUtil().getUsedImageNum(resourceTargetOwnerAccountUuid);
                 long imageNumAsked = 1;
@@ -715,6 +716,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         quota.addMessageNeedValidation(APIRecoverImageMsg.class);
         quota.addMessageNeedValidation(APIChangeResourceOwnerMsg.class);
         quota.addMessageNeedValidation(APICreateRootVolumeTemplateFromRootVolumeMsg.class);
+        quota.addMessageNeedValidation(APICreateDataVolumeTemplateFromVolumeMsg.class);
 
         Quota.QuotaPair p = new Quota.QuotaPair();
         p.setName(ImageQuotaConstant.IMAGE_NUM);
