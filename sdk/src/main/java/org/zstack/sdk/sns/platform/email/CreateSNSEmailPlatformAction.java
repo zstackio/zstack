@@ -37,6 +37,9 @@ public class CreateSNSEmailPlatformAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String password;
 
+    @Param(required = false, validValues = {"SSL","STARTTLS","NONE"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String encryptType = "NONE";
+
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
