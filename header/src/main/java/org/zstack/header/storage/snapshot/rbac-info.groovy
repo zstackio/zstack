@@ -1,6 +1,7 @@
 package org.zstack.header.storage.snapshot
 
 import org.zstack.header.core.StaticInit
+import org.zstack.header.volume.VolumeVO
 
 import static org.zstack.header.identity.rbac.RBAC.rbac
 
@@ -11,7 +12,7 @@ static void init() {
             name = "snapshot"
             normalAPIs("org.zstack.header.storage.snapshot.**")
 
-            targetResources = [VolumeSnapshotVO.class, VolumeSnapshotTreeVO.class]
+            targetResources = [VolumeSnapshotVO.class, VolumeSnapshotTreeVO.class, VolumeVO.class]
         }
 
         role {
