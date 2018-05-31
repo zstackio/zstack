@@ -270,6 +270,40 @@ CREATE TABLE `TicketVO` (
     PRIMARY KEY (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `ArchiveTicketVO` (
+    `uuid` VARCHAR(32) NOT NULL,
+    `ticketUuid` VARCHAR(32) NOT NULL,
+    `accountUuid` VARCHAR(32) NOT NULL,
+    `name` VARCHAR(255) DEFAULT NULL,
+    `description` text DEFAULT NULL,
+    `status` VARCHAR(255) NOT NULL,
+    `accountSystemType` VARCHAR(255) NOT NULL,
+    `accountSystemContext` text DEFAULT NULL,
+    `requests` text NOT NULL,
+    `flowCollectionUuid` VARCHAR(32) NOT NULL,
+    `currentFlowUuid` VARCHAR(32) DEFAULT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `ArchiveTicketStatusHistoryVO` (
+    `uuid` VARCHAR(32) NOT NULL,
+    `historyUuid` VARCHAR(32) NOT NULL,
+    `accountUuid` VARCHAR(32) NOT NULL,
+    `ticketUuid` VARCHAR(32) NOT NULL,
+    `fromStatus` VARCHAR(255) NOT NULL,
+    `toStatus` VARCHAR(255) NOT NULL,
+    `comment` text DEFAULT NULL,
+    `operatorUuid` VARCHAR(32) NOT NULL,
+    `operatorType` VARCHAR(255) NOT NULL,
+    `operationContext` text DEFAULT NULL,
+    `operationContextType` VARCHAR(255) DEFAULT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 # Foreign keys for table IAM2OrganizationAttributeVO
 
 ALTER TABLE IAM2OrganizationAttributeVO ADD CONSTRAINT fkIAM2OrganizationAttributeVOIAM2OrganizationVO FOREIGN KEY (organizationUuid) REFERENCES IAM2OrganizationVO (uuid) ;

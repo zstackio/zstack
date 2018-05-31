@@ -249,6 +249,8 @@ public class SourceClassMap {
 			put("org.zstack.storage.primary.sharedblock.SharedBlockState", "org.zstack.sdk.SharedBlockState");
 			put("org.zstack.storage.primary.sharedblock.SharedBlockStatus", "org.zstack.sdk.SharedBlockStatus");
 			put("org.zstack.storage.primary.sharedblock.SharedBlockType", "org.zstack.sdk.SharedBlockType");
+			put("org.zstack.ticket.entity.ArchiveTicketInventory", "org.zstack.sdk.ticket.entity.ArchiveTicketInventory");
+			put("org.zstack.ticket.entity.ArchiveTicketStatusHistoryInventory", "org.zstack.sdk.ticket.entity.ArchiveTicketStatusHistoryInventory");
 			put("org.zstack.ticket.entity.TicketFlowCollectionInventory", "org.zstack.sdk.ticket.entity.TicketFlowCollectionInventory");
 			put("org.zstack.ticket.entity.TicketFlowInventory", "org.zstack.sdk.ticket.entity.TicketFlowInventory");
 			put("org.zstack.ticket.entity.TicketInventory", "org.zstack.sdk.ticket.entity.TicketInventory");
@@ -559,6 +561,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.sns.platform.email.SNSEmailEndpointInventory", "org.zstack.sns.platform.email.SNSEmailEndpointInventory");
 			put("org.zstack.sdk.sns.platform.email.SNSEmailPlatformInventory", "org.zstack.sns.platform.email.SNSEmailPlatformInventory");
 			put("org.zstack.sdk.sns.platform.http.SNSHttpEndpointInventory", "org.zstack.sns.platform.http.SNSHttpEndpointInventory");
+			put("org.zstack.sdk.ticket.entity.ArchiveTicketInventory", "org.zstack.ticket.entity.ArchiveTicketInventory");
+			put("org.zstack.sdk.ticket.entity.ArchiveTicketStatusHistoryInventory", "org.zstack.ticket.entity.ArchiveTicketStatusHistoryInventory");
 			put("org.zstack.sdk.ticket.entity.TicketFlowCollectionInventory", "org.zstack.ticket.entity.TicketFlowCollectionInventory");
 			put("org.zstack.sdk.ticket.entity.TicketFlowInventory", "org.zstack.ticket.entity.TicketFlowInventory");
 			put("org.zstack.sdk.ticket.entity.TicketInventory", "org.zstack.ticket.entity.TicketInventory");
