@@ -29,6 +29,9 @@ public class DeletePciDeviceOfferingAction extends AbstractAction {
     public java.lang.String uuid;
 
     @Param(required = false)
+    public java.lang.String deleteMode = "Permissive";
+
+    @Param(required = false)
     public java.util.List systemTags;
 
     @Param(required = false)
@@ -81,11 +84,11 @@ public class DeletePciDeviceOfferingAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
+        info.httpMethod = "DELETE";
         info.path = "/pci-device/pci-device-offerings/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 
