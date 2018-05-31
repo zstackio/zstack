@@ -1,3 +1,4 @@
+SET FOREIGN_KEY_CHECKS = 0;
 CREATE TABLE `RoleAccountRefVO` (
     `roleUuid` VARCHAR(32) NOT NULL,
     `accountUuid` VARCHAR(32) NOT NULL,
@@ -555,3 +556,4 @@ DELIMITER ;
 
 CALL generateVpcRouterVmVO();
 DROP PROCEDURE IF EXISTS generateVpcRouterVmVO;
+SET FOREIGN_KEY_CHECKS = 1;
