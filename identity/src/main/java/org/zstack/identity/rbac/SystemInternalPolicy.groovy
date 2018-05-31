@@ -1,11 +1,9 @@
 package org.zstack.identity.rbac
 
-import org.zstack.header.identity.AccountConstant
 import org.zstack.header.identity.InternalPolicy
 import org.zstack.header.identity.PolicyInventory
 import org.zstack.header.identity.StatementEffect
 import org.zstack.header.identity.rbac.RBAC
-import org.zstack.header.identity.rbac.RBACInfo
 
 class SystemInternalPolicy implements InternalPolicy {
     @Override
@@ -28,8 +26,6 @@ class SystemInternalPolicy implements InternalPolicy {
                     effect = StatementEffect.Allow
 
                     action("**")
-
-                    principal("${AccountConstant.PRINCIPAL_ACCOUNT}:${AccountConstant.INITIAL_SYSTEM_ADMIN_UUID}")
                 }
             }
         }
