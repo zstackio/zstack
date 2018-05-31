@@ -1,13 +1,19 @@
 package org.zstack.core.debug;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.RestRequest;
 
 import java.util.List;
 
 /**
  * Created by xing5 on 2016/7/25.
  */
+@RestRequest(
+        path = "/debug",
+        method = HttpMethod.POST,
+        responseClass = APIDebugSignalEvent.class)
 public class APIDebugSignalMsg extends APIMessage {
     @APIParam
     private List<String> signals;
