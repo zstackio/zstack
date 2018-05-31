@@ -1,10 +1,10 @@
-package org.zstack.sdk.iam2.api;
+package org.zstack.sdk.ticket.api;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateIAM2ProjectAction extends AbstractAction {
+public class QueryArchiveTicketHistoryAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateIAM2ProjectAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.iam2.api.CreateIAM2ProjectResult value;
+        public org.zstack.sdk.ticket.api.QueryArchiveTicketHistoryResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,38 +25,6 @@ public class CreateIAM2ProjectAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false)
-    public java.util.List attributes;
-
-    @Param(required = false)
-    public java.util.Map quota;
-
-    @Param(required = false)
-    public java.util.List roleUuids;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = true)
-    public String sessionId;
-
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -66,8 +34,8 @@ public class CreateIAM2ProjectAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.iam2.api.CreateIAM2ProjectResult value = res.getResult(org.zstack.sdk.iam2.api.CreateIAM2ProjectResult.class);
-        ret.value = value == null ? new org.zstack.sdk.iam2.api.CreateIAM2ProjectResult() : value; 
+        org.zstack.sdk.ticket.api.QueryArchiveTicketHistoryResult value = res.getResult(org.zstack.sdk.ticket.api.QueryArchiveTicketHistoryResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ticket.api.QueryArchiveTicketHistoryResult() : value; 
 
         return ret;
     }
@@ -96,11 +64,11 @@ public class CreateIAM2ProjectAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/iam2/projects";
+        info.httpMethod = "GET";
+        info.path = "/tickets/histories/archives";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "params";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 
