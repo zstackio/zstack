@@ -26,6 +26,10 @@ public interface APIAuditor {
 
         public Result(String resourceUuid, Class resourceType) {
             this.resourceUuid = resourceUuid;
+            if (this.resourceUuid == null) {
+                this.resourceUuid = "";
+            }
+
             this.resourceType = resourceType;
         }
     }
