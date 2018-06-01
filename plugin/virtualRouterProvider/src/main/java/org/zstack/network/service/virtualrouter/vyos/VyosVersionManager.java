@@ -5,6 +5,6 @@ import org.zstack.header.core.Completion;
 /**
  * Created by shixin on 2018/05/22.
  */
-public interface VyosManager {
+public interface VyosVersionManager {
     void vyosRouterVersionCheck(String vrUuid, Completion completion);
 }

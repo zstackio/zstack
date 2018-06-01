@@ -1,33 +1,25 @@
 package org.zstack.network.service.virtualrouter.vyos;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
-import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
-import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
 import java.io.*;
-import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.operr;
 
-public class VyosManagerImpl implements VyosManager, ManagementNodeReadyExtensionPoint {
-    private final static CLogger logger = Utils.getLogger(VyosManagerImpl.class);
+public class VyosVersionVersionManagerImpl implements VyosVersionManager {
+    private final static CLogger logger = Utils.getLogger(VyosVersionVersionManagerImpl.class);
 
     @Autowired
     private ApiTimeoutManager apiTimeoutManager;
@@ -39,53 +31,6 @@ public class VyosManagerImpl implements VyosManager, ManagementNodeReadyExtensio
     private VirtualRouterManager vrMgr;
     @Autowired
     private DatabaseFacade dbf;
-
-    @Override
-    public void managementNodeReady() {
-        if (getManagementVersion() == null) {
-            return;
-        }
-
-        NopeCompletion completion = new NopeCompletion();
-        List<VirtualRouterVmVO> vrVos = Q.New(VirtualRouterVmVO.class).list();
-        new While<>(vrVos).all((vo, noErrorCompletion) -> {
-            VirtualRouterVmInventory inv = VirtualRouterVmInventory.valueOf(vo);
-            if (VirtualRouterConstant.VIRTUAL_ROUTER_VM_TYPE.equals(inv.getApplianceVmType())) {
-                noErrorCompletion.done();
-                return;
-            }
-
-            vyosRouterVersionCheck(inv.getUuid(), new Completion(noErrorCompletion) {
-                @Override
-                public void success() {
-                    logger.debug(String.format("virtual router[uuid: %s] has same version as management node", inv.getUuid()));
-                }
-
-                @Override
-                public void fail(ErrorCode errorCode) {
-                    logger.warn(String.format("virtual router[uuid: %s] need to be reconnected because %s", inv.getUuid(), errorCode.getDetails()));
-                    ReconnectVirtualRouterVmMsg msg = new ReconnectVirtualRouterVmMsg();
-                    msg.setVirtualRouterVmUuid(inv.getUuid());
-                    bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, inv.getUuid());
-                    bus.send(msg, new CloudBusCallBack(null) {
-                        @Override
-                        public void run(MessageReply reply) {
-                            if (!reply.isSuccess()) {
-                                logger.warn(String.format("virtual router[uuid:%s] reconnection failed, because %s", inv.getUuid(), reply.getError()));
-                            } else {
-                                logger.debug(String.format("virtual router[uuid:%s] reconnect successfully", inv.getUuid()));
-                            }
-                            noErrorCompletion.done();
-                        }
-                    });
-                }
-            });
-        }).run(new NoErrorCompletion(completion) {
-            @Override
-            public void done() {
-            }
-        });
-    }
 
     @Override
     public void vyosRouterVersionCheck(String vrUuid, Completion completion) {

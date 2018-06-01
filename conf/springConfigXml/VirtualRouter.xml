@@ -105,6 +105,7 @@
             <zstack:extension interface="org.zstack.network.service.eip.FilterVmNicsForEipInVirtualRouterExtensionPoint" />
             <zstack:extension interface="org.zstack.network.service.lb.GetCandidateVmNicsForLoadBalancerExtensionPoint"/>
             <zstack:extension interface="org.zstack.appliancevm.ApvmCascadeFilterExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
         </zstack:plugin>
     </bean>
 
