@@ -142,6 +142,11 @@ class VirtualRouterCreateNetworkSegmentOverlapsCase extends SubCase{
                             gateway = "11.168.100.1"
                         }
                     }
+                }
+
+                l2NoVlanNetwork {
+                    name = "l2-1"
+                    physicalInterface = "eth1"
 
                     l3Network {
                         name = "pubL3-2"
