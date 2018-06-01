@@ -52,6 +52,7 @@ class VirtualRouterAttachNetworkCase extends SubCase {
 
     void testAttachOneSystemNetwork() {
         def l2 = env.inventoryByName("l2") as L2NetworkInventory
+        def l2_1 = env.inventoryByName("l2-1") as L2NetworkInventory
 
         L3NetworkInventory l3_1 = createL3Network {
             delegate.category = "Public"
@@ -70,7 +71,7 @@ class VirtualRouterAttachNetworkCase extends SubCase {
 
         L3NetworkInventory l3_2 = createL3Network {
             delegate.category = "Public"
-            delegate.l2NetworkUuid = l2.uuid
+            delegate.l2NetworkUuid = l2_1.uuid
             delegate.name = "pubL3-3"
         }
 

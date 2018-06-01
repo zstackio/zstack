@@ -85,6 +85,7 @@ class OperateEipCase extends SubCase {
 
                     attachPrimaryStorage("local")
                     attachL2Network("l2")
+                    attachL2Network("l2-1")
                 }
 
                 cluster {
@@ -141,6 +142,11 @@ class OperateEipCase extends SubCase {
                             gateway = "11.168.0.1"
                         }
                     }
+                }
+
+                l2NoVlanNetwork {
+                    name = "l2-1"
+                    physicalInterface = "eth1"
 
                     l3Network {
                         name = "pubL3"
