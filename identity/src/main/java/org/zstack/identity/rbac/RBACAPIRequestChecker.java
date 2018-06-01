@@ -84,6 +84,10 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
             return;
         }
 
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("[RBAC]operation is denied by default, API:\n%s", jsonMessage()));
+        }
+
         // no polices applied to the operation, deny by default
         throw new OperationFailureException(operr("operation is denied by default"));
     }

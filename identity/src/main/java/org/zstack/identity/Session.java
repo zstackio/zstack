@@ -53,6 +53,34 @@ public class Session {
         }.execute();
     }
 
+    public static SessionInventory renewSession(String uuid, Long extendPeriod) {
+        errorOnTimeout(uuid);
+
+        if (extendPeriod == null) {
+            extendPeriod = IdentityGlobalConfig.SESSION_TIMEOUT.value(Long.class);
+        }
+
+        Long finalExtendPeriod = extendPeriod;
+        return new SQLBatchWithReturn<SessionInventory>() {
+            @Transactional(readOnly = true)
+            private Timestamp getCurrentSqlDate() {
+                Query query = databaseFacade.getEntityManager().createNativeQuery("select current_timestamp()");
+                return (Timestamp) query.getSingleResult();
+            }
+
+            @Override
+            protected SessionInventory scripts() {
+               Timestamp expiredDate = new Timestamp(finalExtendPeriod + getCurrentSqlDate().getTime());
+               SessionInventory s = getSession(uuid);
+               s.setExpiredDate(expiredDate);
+
+               sql(SessionVO.class).eq(SessionVO_.uuid, uuid).set(SessionVO_.expiredDate, expiredDate).update();
+
+               return s;
+            }
+        }.execute();
+    }
+
     public static void logout(String uuid) {
         new SQLBatch() {
             @Override
@@ -119,7 +147,7 @@ public class Session {
                     }
 
                     s = SessionInventory.valueOf(vo);
-                    sessions.put(s.getUserUuid(), s);
+                    sessions.put(s.getUuid(), s);
                 }
 
                 return s;
