@@ -154,6 +154,14 @@ public class AccountBase extends AbstractAccount {
                 done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
+                        dbf.remove(self);
+                        acntMgr.adminAdoptAllOrphanedResource();
+
+                        AccountDeletedData evtData = new AccountDeletedData();
+                        evtData.setAccountUuid(self.getUuid());
+                        evtData.setInventory(AccountInventory.valueOf(self));
+                        evtf.fire(IdentityCanonicalEvents.ACCOUNT_DELETED_PATH, evtData);
+
                         completion.success();
                     }
                 });
@@ -174,14 +182,7 @@ public class AccountBase extends AbstractAccount {
         deleteAccount(new Completion(msg) {
             @Override
             public void success() {
-                dbf.remove(self);
-                acntMgr.adminAdoptAllOrphanedResource();
                 bus.publish(evt);
-
-                AccountDeletedData evtData = new AccountDeletedData();
-                evtData.setAccountUuid(self.getUuid());
-                evtData.setInventory(AccountInventory.valueOf(self));
-                evtf.fire(IdentityCanonicalEvents.ACCOUNT_DELETED_PATH, evtData);
             }
 
             @Override
