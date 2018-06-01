@@ -133,6 +133,10 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
                     if (checkAccountPrincipal(uuidRegex)) {
                         return true;
                     }
+                } else if (AccountConstant.isAdminPermission(message.getSession())) {
+                    if (checkAccountPrincipal(uuidRegex)) {
+                        return true;
+                    }
                 } else if (message.getSession().isUserSession() && AccountConstant.PRINCIPAL_USER.equals(principal)) {
                     if (checkUserPrincipal(uuidRegex)) {
                         return true;
