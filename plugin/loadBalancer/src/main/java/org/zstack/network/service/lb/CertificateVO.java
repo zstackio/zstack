@@ -19,7 +19,7 @@ import java.util.Set;
 @BaseResource
 @EntityGraph(
         friends = {
-                @EntityGraph.Neighbour(type = LoadBalancerListenerCertificateRefVO.class, myField = "certificateUuid", targetField = "uuid")
+                @EntityGraph.Neighbour(type = LoadBalancerListenerCertificateRefVO.class, myField = "uuid", targetField = "certificateUuid")
         }
 )
 public class CertificateVO extends ResourceVO implements OwnedByAccount {
