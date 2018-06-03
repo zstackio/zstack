@@ -25,6 +25,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.IdentityCanonicalEvents.AccountDeletedData;
 import org.zstack.header.identity.IdentityCanonicalEvents.UserDeletedData;
+import org.zstack.header.identity.role.RoleVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.utils.CollectionUtils;
@@ -219,6 +220,20 @@ public class AccountBase extends AbstractAccount {
         sql = "delete from SharedResourceVO s where s.ownerAccountUuid = :uuid or s.receiverAccountUuid = :uuid";
         q = dbf.getEntityManager().createQuery(sql);
         q.setParameter("uuid", self.getUuid());
+        q.executeUpdate();
+
+        sql = "delete from RolePolicyStatementVO rp where rp.roleUuid in (select ar.resourceUuid from AccountResourceRefVO" +
+                " ar where ar.ownerAccountUuid = :acntUuid and ar.resourceType = :rtype)";
+        q = dbf.getEntityManager().createQuery(sql);
+        q.setParameter("acntUuid", self.getUuid());
+        q.setParameter("rtype", RoleVO.class.getSimpleName());
+        q.executeUpdate();
+
+        sql = "delete from RoleVO role where role.uuid in (select ar.resourceUuid from AccountResourceRefVO" +
+                " ar where ar.ownerAccountUuid = :acntUuid and ar.resourceType = :rtype)";
+        q = dbf.getEntityManager().createQuery(sql);
+        q.setParameter("acntUuid", self.getUuid());
+        q.setParameter("rtype", RoleVO.class.getSimpleName());
         q.executeUpdate();
     }
 
