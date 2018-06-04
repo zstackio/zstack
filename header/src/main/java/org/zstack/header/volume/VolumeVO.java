@@ -19,8 +19,11 @@ import javax.persistence.Transient;
 @BaseResource
 @EntityGraph(
         parents = {
-                @EntityGraph.Neighbour(type = VmInstanceVO.class, myField = "vmInstanceUuid", targetField = "uuid"),
                 @EntityGraph.Neighbour(type = PrimaryStorageVO.class, myField = "primaryStorageUuid", targetField = "uuid"),
+        },
+
+        friends = {
+                @EntityGraph.Neighbour(type = VmInstanceVO.class, myField = "vmInstanceUuid", targetField = "uuid"),
                 @EntityGraph.Neighbour(type = ImageVO.class, myField = "rootImageUuid", targetField = "uuid"),
                 @EntityGraph.Neighbour(type = DiskOfferingVO.class, myField = "diskOfferingUuid", targetField = "uuid"),
         }
