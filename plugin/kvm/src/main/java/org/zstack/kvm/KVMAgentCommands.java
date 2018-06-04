@@ -12,10 +12,7 @@ import org.zstack.header.volume.APICreateVolumeSnapshotMsg;
 import org.zstack.network.securitygroup.SecurityGroupMembersTO;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class KVMAgentCommands {
     public enum BootDev {
@@ -61,6 +58,7 @@ public class KVMAgentCommands {
     }
 
     public static class AgentCommand {
+        public LinkedHashMap kvmHostAddons;
     }
 
     public static class CheckVmStateCmd extends AgentCommand {
