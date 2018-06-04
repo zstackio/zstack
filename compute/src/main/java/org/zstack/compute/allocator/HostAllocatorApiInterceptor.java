@@ -80,6 +80,7 @@ public class HostAllocatorApiInterceptor implements ApiMessageInterceptor {
             q.select(ZoneVO_.uuid);
             List<String> zuuids = q.listValue();
             msg.setZoneUuids(zuuids);
+            msg.setHypervisorType(null);
 
             if (msg.getZoneUuids().isEmpty()) {
                 APIGetCpuMemoryCapacityReply reply = new APIGetCpuMemoryCapacityReply();
