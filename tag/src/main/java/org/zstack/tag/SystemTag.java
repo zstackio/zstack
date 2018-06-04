@@ -399,7 +399,7 @@ public class SystemTag {
         return tagMgr.updateSystemTag(tagUuid, newTag);
     }
 
-    void setTagMgr(TagManager tagMgr) {
+    public void setTagMgr(TagManager tagMgr) {
         this.tagMgr = (TagManagerImpl) tagMgr;
     }
 
