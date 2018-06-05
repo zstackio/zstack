@@ -23,6 +23,9 @@ import java.util.List;
         isAction = true
 )
 public class APIExpungeImageMsg extends APIMessage implements ImageMessage {
+    @APIParam(required = false, resourceType = ImageVO.class, checkAccount = true, operationTarget = true)
+    // used for cloudformation
+    private String uuid;
     @APIParam(resourceType = ImageVO.class, checkAccount = true, operationTarget = true)
     private String imageUuid;
     @APIParam(required = false, nonempty = true, resourceType = BackupStorageVO.class)
@@ -35,6 +38,15 @@ public class APIExpungeImageMsg extends APIMessage implements ImageMessage {
 
     public void setImageUuid(String imageUuid) {
         this.imageUuid = imageUuid;
+    }
+
+    public String getUuid() {
+        return imageUuid != null ? imageUuid : uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+        this.imageUuid = uuid;
     }
 
     public List<String> getBackupStorageUuids() {

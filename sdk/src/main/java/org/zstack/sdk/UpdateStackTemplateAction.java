@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class ExpungeImageAction extends AbstractAction {
+public class UpdateStackTemplateAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class ExpungeImageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.ExpungeImageResult value;
+        public org.zstack.sdk.UpdateStackTemplateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,14 +25,20 @@ public class ExpungeImageAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String imageUuid;
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
 
-    @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List backupStorageUuids;
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Boolean state;
+
+    @Param(required = false, maxLength = 4194304, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String templateContent;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -57,8 +63,8 @@ public class ExpungeImageAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.ExpungeImageResult value = res.getResult(org.zstack.sdk.ExpungeImageResult.class);
-        ret.value = value == null ? new org.zstack.sdk.ExpungeImageResult() : value; 
+        org.zstack.sdk.UpdateStackTemplateResult value = res.getResult(org.zstack.sdk.UpdateStackTemplateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateStackTemplateResult() : value; 
 
         return ret;
     }
@@ -88,10 +94,10 @@ public class ExpungeImageAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/images/{imageUuid}/actions";
+        info.path = "/cloudformation/template/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "expungeImage";
+        info.parameterName = "updateStackTemplate";
         return info;
     }
 

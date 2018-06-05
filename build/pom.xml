@@ -256,6 +256,11 @@
                 </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
+                    <artifactId>cloudformation</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
                     <artifactId>hybrid</artifactId>
                     <version>${project.version}</version>
                 </dependency>

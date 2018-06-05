@@ -1,0 +1,7 @@
+<error>
+    <prefix>CFM</prefix>
+    <code>
+        <id>1000</id>
+        <description>Unable to perform an operation on the host, however, the failure is eligible for garbage collector</description>
+    </code>
+</error>
