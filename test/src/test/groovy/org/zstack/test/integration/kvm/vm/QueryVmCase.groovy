@@ -157,6 +157,26 @@ class QueryVmCase extends SubCase {
         assert 2 == result.size()
         assert "vm2" == result[0].name
         assert "vm3" == result[1].name
+
+        result = queryVmInstance {
+            conditions = []
+            limit = 1
+            sortBy = "name"
+            sortDirection = "desc"
+        }
+
+        assert 1 == result.size()
+        assert "vm3" == result[0].name
+
+        result = queryVmInstance {
+            conditions = []
+            limit = 1
+            sortBy = "name"
+            sortDirection = "asc"
+        }
+
+        assert 1 == result.size()
+        assert "vm" == result[0].name
     }
 
     @Override
