@@ -84,7 +84,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     private PluginRegistry pluginRgty;
 
 
-    public static class AgentCommand {
+    public static class AgentCommand extends KVMAgentCommands.AgentCommand {
         public String uuid;
         public String storagePath;
     }

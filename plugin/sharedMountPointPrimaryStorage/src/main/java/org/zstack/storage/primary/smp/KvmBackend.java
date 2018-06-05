@@ -79,7 +79,7 @@ public class KvmBackend extends HypervisorBackend {
     public KvmBackend() {
     }
 
-    public static class AgentCmd {
+    public static class AgentCmd extends KVMAgentCommands.AgentCommand {
         public String mountPoint;
     }
 

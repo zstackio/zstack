@@ -19,6 +19,7 @@ import org.zstack.core.ansible.AnsibleGlobalProperty;
 import org.zstack.core.ansible.AnsibleRunner;
 import org.zstack.core.ansible.SshFileMd5Checker;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -60,6 +61,7 @@ import org.zstack.kvm.KVMConstant.KvmVmState;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.path.PathUtil;
@@ -92,6 +94,8 @@ public class KVMHost extends HostBase implements Host {
     private TagManager tagmgr;
     @Autowired
     private ApiTimeoutManager timeoutManager;
+    @Autowired
+    private PluginRegistry pluginRegistry;
 
     private KVMHostContext context;
 
@@ -266,6 +270,7 @@ public class KVMHost extends HostBase implements Host {
         void call(String resourceUuid, ReturnValueCompletion<T> completion)  {
             Map<String, String> header = new HashMap<>();
             header.put(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID, resourceUuid == null ? self.getUuid() : resourceUuid);
+            runBeforeAsyncJsonPostExts(header);
             if (commandStr != null) {
                 restf.asyncJsonPost(path, commandStr, header, new JsonAsyncRESTCallback<T>(completion) {
                     @Override
@@ -300,6 +305,39 @@ public class KVMHost extends HostBase implements Host {
                         return responseClass;
                     }
                 }); // DO NOT pass unit, timeout here, they are null
+            }
+        }
+
+        void runBeforeAsyncJsonPostExts(Map<String, String> header) {
+            if (commandStr == null) {
+                commandStr = JSONObjectUtil.toJsonString(cmd);
+            }
+
+            if (commandStr == null || commandStr.isEmpty()) {
+                logger.warn(String.format("commandStr is empty, path: %s, header: %s", path, header));
+                return;
+            }
+
+            LinkedHashMap commandMap = JSONObjectUtil.toObject(commandStr, LinkedHashMap.class);
+            LinkedHashMap kvmHostAddon = new LinkedHashMap();
+            for (KVMBeforeAsyncJsonPostExtensionPoint extp : pluginRegistry.getExtensionList(KVMBeforeAsyncJsonPostExtensionPoint.class)) {
+                LinkedHashMap tmpHashMap = extp.kvmBeforeAsyncJsonPostExtensionPoint(path, commandMap, header);
+
+                if (tmpHashMap != null && !tmpHashMap.isEmpty()) {
+                    tmpHashMap.keySet().stream().forEachOrdered((key -> {
+                        kvmHostAddon.put(key, tmpHashMap.get(key));
+                    }));
+                }
+            }
+
+            unit = unit == null ? TimeUnit.MILLISECONDS : unit;
+            timeout = timeout == null ? Integer.toUnsignedLong(CoreGlobalProperty.REST_FACADE_READ_TIMEOUT) : timeout;
+            if (commandStr.equals("{}")) {
+                commandStr = commandStr.replaceAll("\\}$",
+                        String.format("\"%s\":%s}", KVMConstant.KVM_HOST_ADDONS, JSONObjectUtil.toJsonString(kvmHostAddon)));
+            } else {
+                commandStr = commandStr.replaceAll("\\}$",
+                        String.format(",\"%s\":%s}", KVMConstant.KVM_HOST_ADDONS, JSONObjectUtil.toJsonString(kvmHostAddon)));
             }
         }
     }
