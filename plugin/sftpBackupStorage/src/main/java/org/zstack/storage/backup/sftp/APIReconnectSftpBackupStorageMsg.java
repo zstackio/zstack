@@ -1,11 +1,19 @@
 package org.zstack.storage.backup.sftp;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
+import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.backup.BackupStorageMessage;
 
+@RestRequest(
+        path = "/backup-storage/sftp/{uuid}/actions",
+        isAction = true,
+        responseClass = APIReconnectSftpBackupStorageEvent.class,
+        method = HttpMethod.PUT
+)
 public class APIReconnectSftpBackupStorageMsg extends APIMessage implements BackupStorageMessage {
     @APIParam(resourceType = SftpBackupStorageVO.class)
     private String uuid;
