@@ -1,8 +1,11 @@
 package org.zstack.header.host;
 
+import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.header.vm.APIMigrateVmMsg;
 import org.zstack.header.vm.VmInstanceInventory;
 
+@ApiTimeout(apiClasses = {APIMigrateVmMsg.class})
 public class MigrateVmOnHypervisorMsg extends NeedReplyMessage implements HostMessage {
     public static enum StorageMigrationPolicy {
         FullCopy,
