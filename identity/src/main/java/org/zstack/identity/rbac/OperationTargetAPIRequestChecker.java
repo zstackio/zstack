@@ -144,7 +144,7 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
                 );
 
                 uuids.forEach(uuid -> {
-                    Optional<Tuple> opt = ts.stream().filter(t -> t.get(1, String.class).equals(uuid)).findFirst();
+                    Optional<Tuple> opt = ts.stream().filter(t -> t.get(0, String.class).equals(message.getSession().getAccountUuid()) && t.get(1, String.class).equals(uuid)).findFirst();
                     if (!opt.isPresent()) {
                         throw new OperationFailureException(operr("permission denied, the account[uuid:%s] is not the owner of the resource[uuid:%s, type:%s]",
                                 message.getSession().getAccountUuid(), uuid, resourceType.getSimpleName()));

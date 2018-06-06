@@ -17,8 +17,11 @@ import java.sql.Timestamp;
 @Table
 @BaseResource
 @EntityGraph(
-        friends = {
+        parents = {
                 @EntityGraph.Neighbour(type = VipVO.class, myField = "vipUuid", targetField = "uuid"),
+        },
+
+        friends = {
                 @EntityGraph.Neighbour(type = VmNicVO.class, myField = "vmNicUuid", targetField = "uuid"),
         }
 )
