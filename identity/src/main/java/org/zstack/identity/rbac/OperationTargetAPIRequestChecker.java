@@ -12,6 +12,7 @@ import org.zstack.header.identity.rbac.PolicyMatcher;
 import org.zstack.header.identity.rbac.RBAC;
 import org.zstack.header.identity.rbac.RBACInfo;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.identity.APIRequestChecker;
 import org.zstack.identity.AccountManager;
 import static org.zstack.core.Platform.*;
@@ -85,8 +86,12 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
                     return;
                 }
 
-                //TODO: remove
                 if (info.getTargetResources().isEmpty()) {
+                    return;
+                }
+
+                if (message instanceof APISyncCallMessage) {
+                    // no check to read api
                     return;
                 }
 
