@@ -16,9 +16,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.util.UriUtils;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusEventListener;
+import org.zstack.core.cloudbus.CloudBusGlobalProperty;
 import org.zstack.core.retry.Retry;
 import org.zstack.core.retry.RetryCondition;
 import org.zstack.header.Component;
@@ -54,7 +56,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
-import java.net.URLDecoder;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -104,6 +105,7 @@ public class RestServer implements Component, CloudBusEventListener {
         transient HttpSession session;
         String remoteHost;
         String requestUrl;
+        final String method;
         HttpHeaders headers = new HttpHeaders();
 
         public RequestInfo(HttpServletRequest req) {
@@ -117,6 +119,7 @@ public class RestServer implements Component, CloudBusEventListener {
 
             try {
                 requestUrl = UriUtils.decode(req.getRequestURI(), "UTF-8");
+                method = req.getMethod();
             } catch (UnsupportedEncodingException e) {
                 throw new CloudRuntimeException(e);
             }
@@ -133,7 +136,11 @@ public class RestServer implements Component, CloudBusEventListener {
     public static void generateMarkdownDoc(String path) {
         System.setProperty(Constants.UUID_FOR_EXAMPLE, "true");
         DocumentGenerator rg =  GroovyUtils.newInstance("scripts/RestDocumentationGenerator.groovy");
-        rg.generateMarkDown(path, PathUtil.join(System.getProperty("user.home"), "zstack-markdown"));
+        try {
+            rg.generateMarkDown(path, PathUtil.join(System.getProperty("user.home"), "zstack-markdown"));
+        } catch (Exception e) {
+            logger.warn(e.getMessage(), e);
+        }
     }
 
     public static void generateJavaSdk() {
@@ -501,9 +508,8 @@ public class RestServer implements Component, CloudBusEventListener {
     }
 
     private void sendResponse(int statusCode, String body, HttpServletResponse rsp) throws IOException {
-        if (requestLogger.isTraceEnabled()) {
-            RequestInfo info = requestInfo.get();
-
+        RequestInfo info = requestInfo.get();
+        if (requestLogger.isTraceEnabled() && needLog(info)) {
             StringBuilder sb = new StringBuilder(String.format("[ID: %s] Response to %s (%s),", info.session.getId(),
                     info.remoteHost, info.requestUrl));
             sb.append(String.format(" Status Code: %s,", statusCode));
@@ -529,12 +535,13 @@ public class RestServer implements Component, CloudBusEventListener {
     }
 
     void handle(HttpServletRequest req, HttpServletResponse rsp) throws IOException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
-        requestInfo.set(new RequestInfo(req));
+        RequestInfo info = new RequestInfo(req);
+        requestInfo.set(info);
         rsp.setCharacterEncoding("utf-8");
         String path = getDecodedUrl(req);
         HttpEntity<String> entity = toHttpEntity(req);
 
-        if (requestLogger.isTraceEnabled()) {
+        if (requestLogger.isTraceEnabled() && needLog(info)) {
             StringBuilder sb = new StringBuilder(String.format("[ID: %s, Method: %s] Request from %s (to %s), ",
                     req.getSession().getId(), req.getMethod(),
                     req.getRemoteHost(), UriUtils.decode(req.getRequestURI(), "UTF-8")));
@@ -588,6 +595,18 @@ public class RestServer implements Component, CloudBusEventListener {
             logger.warn(String.format("failed to handle API to %s", path), e);
             sendResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), e.getMessage(), rsp);
         }
+    }
+
+    private boolean needLog(RequestInfo req){
+        if (CoreGlobalProperty.UNIT_TEST_ON) {
+            return true;
+        }
+
+        if (CloudBusGlobalProperty.READ_API_LOG_OFF && HttpMethod.GET.name().equals(req.method)) {
+            return false;
+        }
+
+        return true;
     }
 
     private void handleJobQuery(HttpServletRequest req, HttpServletResponse rsp) throws IOException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {

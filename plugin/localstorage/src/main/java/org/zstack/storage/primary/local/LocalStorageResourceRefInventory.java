@@ -23,6 +23,10 @@ import java.util.List;
                 foreignKey = "resourceUuid", expandedInventoryKey = "uuid"),
         @ExpandedQuery(expandedField = "snapshot", inventoryClass = VolumeSnapshotInventory.class,
                 foreignKey = "resourceUuid", expandedInventoryKey = "uuid"),
+        @ExpandedQuery(target = VolumeInventory.class, expandedField = "localStorageHostRef", inventoryClass = LocalStorageResourceRefInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "resourceUuid"),
+        @ExpandedQuery(target = VolumeSnapshotInventory.class, expandedField = "localStorageHostRef", inventoryClass = LocalStorageResourceRefInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "resourceUuid")
 })
 public class LocalStorageResourceRefInventory {
     private String resourceUuid;

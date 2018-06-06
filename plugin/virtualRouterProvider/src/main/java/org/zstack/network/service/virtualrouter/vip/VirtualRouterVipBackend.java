@@ -387,6 +387,7 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
             to.setOwnerEthernetMac(vr.getVmNics().stream()
                     .filter(n -> n.getL3NetworkUuid().equals(vip.getL3NetworkUuid()))
                     .findFirst().get().getMac());
+            to.setVipUuid(vip.getUuid());
             vipTOS.add(to);
 
             if (!Q.New(VirtualRouterVipVO.class)

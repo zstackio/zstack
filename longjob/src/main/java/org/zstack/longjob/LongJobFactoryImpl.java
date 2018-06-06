@@ -2,12 +2,14 @@ package org.zstack.longjob;
 
 import org.zstack.header.Component;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.longjob.LongJob;
 import org.zstack.header.longjob.LongJobFor;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.List;
+import java.util.Set;
 import java.util.TreeMap;
 
 import static org.zstack.core.Platform.operr;
@@ -34,7 +36,7 @@ public class LongJobFactoryImpl implements LongJobFactory, Component {
     @Override
     public boolean start() {
         LongJob job = null;
-        List<Class> longJobClasses = BeanUtils.scanClass("org.zstack", LongJobFor.class);
+        Set<Class<?>> longJobClasses = BeanUtils.reflections.getTypesAnnotatedWith(LongJobFor.class);
         for (Class it : longJobClasses) {
             LongJobFor at = (LongJobFor) it.getAnnotation(LongJobFor.class);
             try {

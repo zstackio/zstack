@@ -9,8 +9,8 @@ public class ConsistentHash<T> {
     private final CLogger logger = Utils.getLogger(ConsistentHash.class);
     private final HashFunction hashFunction;
     private final int numberOfReplicas;
-    private final SortedMap<Integer, T> circle = new TreeMap<Integer, T>();
-    private final Set<T> nodes = new HashSet<T>();
+    private final SortedMap<Integer, T> circle = Collections.synchronizedSortedMap(new TreeMap<Integer, T>());
+    private final Set<T> nodes = Collections.synchronizedSet(new HashSet<T>());
 
     public ConsistentHash(HashFunction hashFunction, int numberOfReplicas,
                           Collection<T> nodes) {

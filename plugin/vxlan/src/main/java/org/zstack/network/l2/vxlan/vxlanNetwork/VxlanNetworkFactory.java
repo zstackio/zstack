@@ -48,7 +48,7 @@ import static org.zstack.core.Platform.operr;
  */
 public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInstanceMigrateExtensionPoint, L2NetworkDefaultMtu, L2NetworkGetVniExtensionPoint {
     private static CLogger logger = Utils.getLogger(VxlanNetworkFactory.class);
-    static L2NetworkType type = new L2NetworkType(VxlanNetworkConstant.VXLAN_NETWORK_TYPE);
+    public static L2NetworkType type = new L2NetworkType(VxlanNetworkConstant.VXLAN_NETWORK_TYPE);
 
     @Autowired
     private DatabaseFacade dbf;
@@ -85,6 +85,7 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInsta
                 String uuid = msg.getResourceUuid() == null ? Platform.getUuid() : msg.getResourceUuid();
                 vo.setUuid(uuid);
                 vo.setVni(r.getVni());
+                vo.setAccountUuid(msg.getSession().getAccountUuid());
                 vo.setPoolUuid((amsg.getPoolUuid()));
                 if (vo.getPhysicalInterface() == null) {
                     vo.setPhysicalInterface("");
@@ -102,8 +103,6 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInsta
                     dbf.getEntityManager().flush();
                     dbf.getEntityManager().refresh(rvo);
                 }
-
-                acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), VxlanNetworkVO.class);
 
                 dbf.getEntityManager().flush();
                 dbf.getEntityManager().refresh(vo);

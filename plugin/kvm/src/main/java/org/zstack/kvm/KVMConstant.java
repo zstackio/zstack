@@ -66,6 +66,8 @@ public interface KVMConstant {
     String ALI_REPO = "ali";
     String NETEASE_REPO = "163";
 
+    String KVM_HOST_ADDONS = "kvmHostAddons";
+
     enum KvmVmState {
         NoState,
         Running,

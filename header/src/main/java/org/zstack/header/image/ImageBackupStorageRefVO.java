@@ -2,6 +2,7 @@ package org.zstack.header.image;
 
 import org.zstack.header.storage.backup.BackupStorageEO;
 import org.zstack.header.storage.backup.BackupStorageVO;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.SoftDeletionCascade;
@@ -19,6 +20,14 @@ import java.sql.Timestamp;
         @SoftDeletionCascade(parent = ImageVO.class, joinColumn = "imageUuid"),
         @SoftDeletionCascade(parent = BackupStorageVO.class, joinColumn = "backupStorageUuid")
 })
+@EntityGraph(
+        parents = {
+                @EntityGraph.Neighbour(type = ImageVO.class, myField = "imageUuid", targetField = "uuid")
+        },
+        friends = {
+                @EntityGraph.Neighbour(type = BackupStorageVO.class, myField = "backupStorageUuid", targetField = "uuid")
+        }
+)
 public class ImageBackupStorageRefVO implements Serializable {
     @Id
     @Column

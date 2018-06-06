@@ -4,7 +4,7 @@
     <parent>
         <artifactId>zstack</artifactId>
         <groupId>org.zstack</groupId>
-        <version>2.3.0</version>
+        <version>2.5.0</version>
         <relativePath>..</relativePath>
     </parent>
     <artifactId>build</artifactId>
@@ -31,6 +31,8 @@
                                 WEB-INF/lib/servlet-api*.jar,
                                 WEB-INF/lib/c3p0-0.9.1.1.jar,
                                 WEB-INF/lib/reflections-0.9.8.jar,
+                                WEB-INF/lib/groovy-2.4.7.jar,
+                                WEB-INF/lib/okhttp-2.7.5.jar,
                             </packagingExcludes>
                             <webResources>
                                 <resource>
@@ -259,6 +261,11 @@
                 </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
+                    <artifactId>daho</artifactId>
+		    <version>${project.version}</version>
+		</dependency>
+		<dependency>
+                    <groupId>org.zstack</groupId>
                     <artifactId>zwatch</artifactId>
                     <version>${project.version}</version>
                 </dependency>
@@ -270,6 +277,26 @@
                 <dependency>
                     <groupId>org.zstack</groupId>
                     <artifactId>premium-host-allocator</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>sharedblock</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>zstack-iam2</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>zstack-ticket</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>aliyun-storage</artifactId>
                     <version>${project.version}</version>
                 </dependency>
                 <dependency>
@@ -309,6 +336,8 @@
                         WEB-INF/lib/servlet-api*.jar,
                         WEB-INF/lib/c3p0-0.9.1.1.jar,
                         WEB-INF/lib/reflections-0.9.8.jar,
+                        WEB-INF/lib/groovy-2.4.7.jar,
+                        WEB-INF/lib/okhttp-2.7.5.jar,
                     </packagingExcludes>
                     <webResources>
                         <resource>

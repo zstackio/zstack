@@ -35,8 +35,8 @@ class AttachDataVolumeCase extends SubCase{
     @Override
     void test() {
         env.create {
-            createDataVolume()
-            attachDataVolume()
+            testCreateDataVolume()
+            testAttachDataVolume()
         }
     }
 
@@ -45,7 +45,7 @@ class AttachDataVolumeCase extends SubCase{
         env.delete()
     }
 
-    void createDataVolume(){
+    void testCreateDataVolume(){
         def diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory
         def ps = env.inventoryByName("ceph-pri") as PrimaryStorageInventory
         dataVolume = createDataVolume{
@@ -57,7 +57,7 @@ class AttachDataVolumeCase extends SubCase{
         assert dataVolume.format == ImageConstant.RAW_FORMAT_STRING
     }
 
-    void attachDataVolume(){
+    void testAttachDataVolume(){
         def vm = env.inventoryByName("test-vm") as VmInstanceInventory
         attachDataVolumeToVm {
             volumeUuid = dataVolume.uuid

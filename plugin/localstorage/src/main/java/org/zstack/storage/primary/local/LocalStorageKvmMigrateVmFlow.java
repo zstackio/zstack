@@ -7,10 +7,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SQLBatch;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
@@ -53,10 +51,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Callable;
 
 import static org.zstack.core.Platform.operr;
@@ -78,7 +73,11 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
     @Autowired
     private ThreadFacade thdf;
     @Autowired
+    private LocalStorageFactory localStorageFactory;
+    @Autowired
     private ApiTimeoutManager timeoutMgr;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     public static final String VERIFY_SNAPSHOT_CHAIN_PATH = "/localstorage/snapshot/verifychain";
     public static final String REBASE_SNAPSHOT_BACKING_FILES_PATH = "/localstorage/snapshot/rebasebackingfiles";
@@ -134,6 +133,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
         chain.setName(String.format("migrate-vm-%s-on-localstorage-%s", spec.getVmInventory().getUuid(), ref.getPrimaryStorageUuid()));
         chain.then(new ShareFlow() {
             long requiredSize = 0;
+            LocalStorageKvmBackend backend;
             StorageMigrationPolicy storageMigrationPolicy = StorageMigrationPolicy.FullCopy;
             BackingImage backingImage = new BackingImage();
             List<VolumeSnapshotTree> snapshotTrees = new ArrayList<VolumeSnapshotTree>();
@@ -142,7 +142,11 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
             boolean downloadImage;
             ImageVO image;
             VolumeInventory rootVolume;
-            KVMHostVO dstHost;
+
+            final String destIp;
+            final String username;
+            final String password;
+            final int port;
 
             {
                 for (VolumeInventory vol : volumesOnLocalStorage) {
@@ -156,14 +160,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
 
                         for (VolumeSnapshotVO vo : vos) {
                             requiredSize += vo.getSize();
-
-                            List<VolumeSnapshotVO> lst = m.get(vo.getTreeUuid());
-                            if (lst == null) {
-                                lst = new ArrayList<VolumeSnapshotVO>();
-                                m.put(vo.getTreeUuid(), lst);
-                            }
-
-                            lst.add(vo);
+                            m.computeIfAbsent(vo.getTreeUuid(), k -> new ArrayList<>()).add(vo);
                         }
 
                         for (List<VolumeSnapshotVO> l : m.values()) {
@@ -176,6 +173,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                 }
 
                 rootVolume = spec.getVmInventory().getRootVolume();
+                backend = new LocalStorageKvmBackend(dbf.findByUuid(rootVolume.getPrimaryStorageUuid(), PrimaryStorageVO.class));
                 String imageUuid = rootVolume.getRootImageUuid();
                 if (imageUuid == null) {
                     downloadImage = false;
@@ -185,7 +183,11 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                             || image.getStatus() == ImageStatus.Deleted);
                 }
 
-                dstHost = dbf.findByUuid(dstHostUuid, KVMHostVO.class);
+                KVMHostVO dstHost = dbf.findByUuid(dstHostUuid, KVMHostVO.class);
+                destIp = localStorageFactory.getDestMigrationAddress(srcHostUuid, dstHostUuid);
+                username = dstHost.getUsername();
+                password = dstHost.getPassword();
+                port = dstHost.getPort();
             }
 
             @Override
@@ -220,38 +222,42 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                     });
                 } else {
                     flow(new NoRollbackFlow() {
-                        String __name__ = "get-backing-file-of-root-volume";
+                        String __name__ = "get-base-image-cache-of-root-volume";
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
-                            GetBackingFileCmd cmd = new GetBackingFileCmd();
-                            cmd.path = rootVolume.getInstallPath();
+                            GetVolumeBaseImagePathCmd cmd = new GetVolumeBaseImagePathCmd();
+                            cmd.volumeInstallDir = backend.makeVolumeInstallDir(rootVolume);
+                            cmd.imageCacheDir = backend.getCachedImageDir();
                             cmd.volumeUuid = rootVolume.getUuid();
-                            callKvmHost(srcHostUuid, ref.getPrimaryStorageUuid(), LocalStorageKvmBackend.GET_BACKING_FILE_PATH, cmd, GetBackingFileRsp.class, new ReturnValueCompletion<GetBackingFileRsp>(trigger) {
+                            callKvmHost(srcHostUuid, ref.getPrimaryStorageUuid(), LocalStorageKvmBackend.GET_BASE_IMAGE_PATH, cmd, GetVolumeBaseImagePathRsp.class, new ReturnValueCompletion<GetVolumeBaseImagePathRsp>(trigger) {
                                 @Override
-                                public void success(GetBackingFileRsp rsp) {
-                                    backingImage.path = rsp.backingFilePath;
-                                    backingImage.size = rsp.size;
+                                public void success(GetVolumeBaseImagePathRsp rsp) {
+                                    if (rsp.path != null && backend.isCachedImageUrl(rsp.path)) {
+                                        backingImage.path = rsp.path;
+                                        backingImage.size = rsp.size;
+                                    }
                                     trigger.next();
                                 }
 
                                 @Override
                                 public void fail(ErrorCode errorCode) {
-                                    trigger.fail(errorCode);
+                                    logger.error(String.format("cannot get volume base image %s, skip and continue", errorCode.getDetails()));
+                                    trigger.next();
                                 }
                             });
                         }
                     });
 
                     flow(new Flow() {
-                        String __name__ = "reserve-capacity-for-backing-file-on-dst-host";
+                        String __name__ = "reserve-capacity-for-base-image-cache-on-dst-host";
 
                         boolean s = false;
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
                             if (backingImage.path == null) {
-                                logger.debug("no backing file, skip this flow");
+                                logger.debug("no base image cache, skip this flow");
                                 trigger.next();
                                 return;
                             }
@@ -281,12 +287,12 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                     });
 
                     flow(new NoRollbackFlow() {
-                        String __name__ = "get-md5-of-backing-file";
+                        String __name__ = "get-md5-of-base-image-cache";
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
                             if (backingImage.path == null) {
-                                logger.debug("no backing file, skip this flow");
+                                logger.debug("no base image cache, skip this flow");
                                 trigger.next();
                                 return;
                             }
@@ -314,7 +320,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                     });
 
                     flow(new Flow() {
-                        String __name__ = "migrate-backing-file";
+                        String __name__ = "migrate-base-image-cache";
 
                         boolean s = false;
 
@@ -323,16 +329,16 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                             thdf.chainSubmit(new ChainTask(trigger) {
                                 @Override
                                 public String getSyncSignature() {
-                                    return String.format("migrate-backing-file-%s-to-host-%s", backingImage.path, dstHostUuid);
+                                    return String.format("migrate-base-image-cache-%s-to-host-%s", backingImage.path, dstHostUuid);
                                 }
 
                                 @Override
                                 public void run(final SyncTaskChain chain) {
                                     final CopyBitsFromRemoteCmd cmd = new CopyBitsFromRemoteCmd();
-                                    cmd.dstIp = dstHost.getManagementIp();
-                                    cmd.dstUsername = dstHost.getUsername();
-                                    cmd.dstPassword = dstHost.getPassword();
-                                    cmd.dstPort = dstHost.getPort();
+                                    cmd.dstIp = destIp;
+                                    cmd.dstUsername = username;
+                                    cmd.dstPassword = password;
+                                    cmd.dstPort = port;
                                     cmd.paths = list(backingImage.path);
                                     cmd.uuid = rootVolume.getUuid();
 
@@ -363,7 +369,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
                             if (backingImage.path == null) {
-                                logger.debug("no backing file, skip this flow");
+                                logger.debug("no base image cache, skip this flow");
                                 trigger.next();
                                 return;
                             }
@@ -433,12 +439,12 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                     });
 
                     flow(new NoRollbackFlow() {
-                        String __name__ = "check-md5-of-backing-file-on-dst-host";
+                        String __name__ = "check-md5-of-base-image-cache-on-dst-host";
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
                             if (backingImage.path == null) {
-                                logger.debug("no backing file, skip this flow");
+                                logger.debug("no base image cache, skip this flow");
                                 trigger.next();
                                 return;
                             }
@@ -463,6 +469,65 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                                     trigger.fail(errorCode);
                                 }
                             });
+                        }
+                    });
+
+                    flow(new Flow() {
+                        String __name__ = "build-base-image-cache-record-if-need";
+
+                        boolean s;
+                        ImageCacheVO vo;
+                        ImageCacheShadowVO shadow;
+
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            if (backingImage.path == null) {
+                                logger.debug("no base image cache, skip this flow");
+                                trigger.next();
+                                return;
+                            }
+
+                            CacheInstallPath path = new CacheInstallPath();
+                            path.installPath = backingImage.path;
+                            path.hostUuid = dstHostUuid;
+                            String fullPath = path.makeFullPath();
+
+                            new SQLBatch(){
+                                @Override
+                                protected void scripts() {
+                                    if (!q(ImageCacheVO.class).eq(ImageCacheVO_.installUrl, fullPath).isExists()) {
+                                        s = true;
+                                        vo = new ImageCacheVO();
+                                        vo.setState(ImageCacheState.ready);
+                                        vo.setMediaType(ImageMediaType.RootVolumeTemplate);
+                                        vo.setImageUuid(rootVolume.getRootImageUuid());
+                                        vo.setPrimaryStorageUuid(rootVolume.getPrimaryStorageUuid());
+                                        vo.setSize(backingImage.size);
+                                        vo.setMd5sum(backingImage.md5);
+                                        vo.setInstallUrl(fullPath);
+                                        vo = persist(vo);
+                                        shadow = q(ImageCacheShadowVO.class).eq(ImageCacheShadowVO_.installUrl, fullPath).find();
+                                        Optional.ofNullable(shadow).ifPresent(this::remove);
+                                    }
+                                }
+                            }.execute();
+
+                            trigger.next();
+                        }
+
+                        @Override
+                        public void rollback(FlowRollback trigger, Map data) {
+                            if (s) {
+                                new SQLBatch() {
+                                    @Override
+                                    protected void scripts() {
+                                        Optional.ofNullable(vo).ifPresent(this::remove);
+                                        Optional.ofNullable(shadow).ifPresent(it -> {it.setId(0); persist(it);});
+                                    }
+                                }.execute();
+                            }
+
+                            trigger.rollback();
                         }
                     });
                 }
@@ -881,6 +946,12 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
         List<VSPair> volumeHasSnapshots = new ArrayList<VSPair>();
         List<VolumeInventory> volumeNoSnapshots = new ArrayList<VolumeInventory>();
 
+        KVMHostVO dstHost = dbf.findByUuid(dstHostUuid, KVMHostVO.class);
+        final String destIp = localStorageFactory.getDestMigrationAddress(srcHostUuid, dstHostUuid);
+        final String username = dstHost.getUsername();
+        final String password = dstHost.getPassword();
+        final int port = dstHost.getPort();
+
         for (final VolumeInventory vol : volumesOnLocalStorage) {
             final List<VolumeSnapshotTree> trees = CollectionUtils.transformToList(snapshotTrees, new Function<VolumeSnapshotTree, VolumeSnapshotTree>() {
                 @Override
@@ -1007,8 +1078,6 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                 String __name__ = String.format("copy-snapshots-for-volume-%s-on-dst-host", p.volume.getUuid());
 
                 List<VolumeSnapshotInventory> success = new ArrayList<VolumeSnapshotInventory>();
-                KVMHostVO dstHost = dbf.findByUuid(dstHostUuid, KVMHostVO.class);
-
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
                     CopyBitsFromRemoteCmd cmd = new CopyBitsFromRemoteCmd();
@@ -1018,10 +1087,10 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                             return arg.getPrimaryStorageInstallPath();
                         }
                     });
-                    cmd.dstIp = dstHost.getManagementIp();
-                    cmd.dstPassword = dstHost.getPassword();
-                    cmd.dstUsername = dstHost.getUsername();
-                    cmd.dstPort = dstHost.getPort();
+                    cmd.dstIp = destIp;
+                    cmd.dstPassword = password;
+                    cmd.dstUsername = username;
+                    cmd.dstPort = port;
                     cmd.uuid = p.volume.getUuid();
                     callKvmHost(srcHostUuid, p.volume.getPrimaryStorageUuid(), COPY_TO_REMOTE_BITS_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
                         @Override
@@ -1106,7 +1175,8 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                     cmd.setVolumeUuid(p.volume.getUuid());
 
                     if (p.latest == null){
-                         cmd.setBackingFile(image.path);
+                        // volume has been reimage
+                        cmd.setBackingFile(image.path);
                     } else {
                         cmd.setBackingFile(p.latest.getPrimaryStorageInstallPath());
                     }
@@ -1183,6 +1253,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                     SnapshotTO to = new SnapshotTO();
 
                     if (p.latest == null){
+                        // volume has been reimage
                         to.parentPath = image.path;
                     } else {
                         to.parentPath = p.latest.getPrimaryStorageInstallPath();

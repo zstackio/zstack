@@ -7,6 +7,8 @@ import org.zstack.utils.Utils
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.logging.CLogger
 
+import java.lang.reflect.Modifier
+
 /**
  * Created by lining on 2017/7/19.
  */
@@ -50,7 +52,7 @@ class NearestSubCaseCollectionStrategy implements SubCaseCollectionStrategy{
         assert 1 == testSuites.findAll{ it.name == test.class.name}.size() : "Can not find current testsuite class"
 
         // collect case
-        def cases = Platform.reflections.getSubTypesOf(Case.class)
+        def cases = Platform.reflections.getSubTypesOf(Case.class).findAll { !Modifier.isAbstract(it.modifiers) }
         cases = cases.findAll { it.package.name.startsWith(test.class.package.name) }
         cases = cases.sort{ a, b ->
             return a.name.compareTo(b.name)

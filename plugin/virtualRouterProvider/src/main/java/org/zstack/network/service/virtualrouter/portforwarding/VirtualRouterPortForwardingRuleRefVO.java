@@ -1,6 +1,8 @@
 package org.zstack.network.service.virtualrouter.portforwarding;
 
 import org.zstack.header.vm.VmInstanceEO;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.SoftDeletionCascade;
@@ -20,6 +22,12 @@ import javax.persistence.Table;
         @SoftDeletionCascade(parent = VirtualRouterVmVO.class, joinColumn = "virtualRouterVmUuid"),
         @SoftDeletionCascade(parent = PortForwardingRuleVO.class, joinColumn = "uuid")
 })
+@EntityGraph(
+        friends = {
+                @EntityGraph.Neighbour(type = VipVO.class, myField = "vipUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = VmInstanceVO.class, myField = "virtualRouterVmUuid", targetField = "uuid"),
+        }
+)
 public class VirtualRouterPortForwardingRuleRefVO {
     @Id
     @Column

@@ -60,12 +60,10 @@ class SMPGCCase extends SubCase {
         destroyVmInstance {
             uuid = vmInstanceInventory.uuid
         }
-        TimeUnit.SECONDS.sleep(2)
 
         expungeVmInstance {
             uuid = vmInstanceInventory.uuid
         }
-        TimeUnit.SECONDS.sleep(2)
 
         GarbageCollectorInventory inv = queryGCJob {
             conditions = ["context~=%${smp.uuid}%".toString()]
@@ -83,12 +81,12 @@ class SMPGCCase extends SubCase {
             uuid = inv.uuid
         }
 
-        TimeUnit.SECONDS.sleep(3)
-        assert called
-
-        inv = queryGCJob {
-            conditions = ["context~=%${smp.uuid}%".toString()]
-        }[0]
-        assert inv.status == GCStatus.Done.toString()
+        retryInSecs {
+            assert called
+            inv = queryGCJob {
+                conditions = ["context~=%${smp.uuid}%".toString()]
+            }[0]
+            assert inv.status == GCStatus.Done.toString()
+        }
     }
 }

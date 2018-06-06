@@ -1,9 +1,11 @@
 package org.zstack.test.integration.identity.account
 
+import org.zstack.compute.vm.VmQuotaGlobalConfig
 import org.zstack.core.config.GlobalConfig
 import org.zstack.core.db.Q
 import org.zstack.header.apimediator.ApiMessageInterceptionException
 import org.zstack.header.identity.AccountConstant
+import org.zstack.header.identity.AccountType
 import org.zstack.header.identity.AccountVO
 import org.zstack.header.identity.QuotaVO
 import org.zstack.header.identity.QuotaVO_
@@ -55,11 +57,36 @@ class AccountCase extends SubCase {
                 password = "password"
             } as AccountInventory
 
+            testAdminUser()
             testLoginAsAdminAccountAndChangeSelfPassword()
             testLoginAsNormalAccountAndChangeSelfPassword()
             testNormalAccountCannotDeleteAnyAccount()
+            testAdminAccountDeleteSystemAdmin()
             testCreateAccount()
             testQuotaConfig()
+        }
+    }
+
+    void testAdminUser() {
+        createUser {
+            name = "admin2"
+            password = "password"
+        }
+
+        SessionInventory s = logInByUser {
+            accountName = "admin"
+            userName = "admin2"
+            password = "password"
+        }
+
+        queryZone {
+            conditions = []
+            sessionId = s.uuid
+        }
+
+        queryGlobalConfig {
+            conditions = []
+            sessionId = s.uuid
         }
     }
 
@@ -167,13 +194,34 @@ class AccountCase extends SubCase {
         }
     }
 
+    void testAdminAccountDeleteSystemAdmin() {
+        def userpass = "password"
+        def newAdmin = createAccount {
+            name = "testAdmAccount"
+            password = userpass
+            type = AccountType.SystemAdmin.toString()
+        } as AccountInventory
+
+        SessionInventory adminSessionInv = logInByAccount {
+            accountName = newAdmin.name
+            password = userpass
+        } as SessionInventory
+
+        expect([ApiMessageInterceptionException.class, AssertionError.class]) {
+            deleteAccount {
+                sessionId = adminSessionInv.uuid
+                uuid = AccountConstant.INITIAL_SYSTEM_ADMIN_UUID
+            }
+        }
+    }
+
     void testCreateAccount(){
         def acount1 = createAccount {
             name = "testAccount1"
             password = "password"
         } as AccountInventory
 
-        testUpdateQuotaGlobalConfig(QuotaGlobalConfig.VM_TOTAL_NUM.getName())
+        testUpdateQuotaGlobalConfig(VmQuotaGlobalConfig.VM_TOTAL_NUM.getName())
 
         def acount2 = createAccount {
             name = "testAccount2"
@@ -181,10 +229,10 @@ class AccountCase extends SubCase {
         } as AccountInventory
 
         assert Q.New(QuotaVO.class).select(QuotaVO_.value)
-                .eq(QuotaVO_.identityUuid, acount1.uuid).eq(QuotaVO_.name, QuotaGlobalConfig.VM_TOTAL_NUM.name)
-                .findValue() == QuotaGlobalConfig.VM_TOTAL_NUM.defaultValue(Long.class)
+                .eq(QuotaVO_.identityUuid, acount1.uuid).eq(QuotaVO_.name, VmQuotaGlobalConfig.VM_TOTAL_NUM.name)
+                .findValue() == VmQuotaGlobalConfig.VM_TOTAL_NUM.defaultValue(Long.class)
         assert Q.New(QuotaVO.class).select(QuotaVO_.value)
-                .eq(QuotaVO_.identityUuid, acount2.uuid).eq(QuotaVO_.name, QuotaGlobalConfig.VM_TOTAL_NUM.name)
+                .eq(QuotaVO_.identityUuid, acount2.uuid).eq(QuotaVO_.name, VmQuotaGlobalConfig.VM_TOTAL_NUM.name)
                 .findValue() == 1
     }
 

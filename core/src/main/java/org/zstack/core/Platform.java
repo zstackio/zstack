@@ -17,6 +17,7 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.statemachine.StateMachine;
 import org.zstack.core.statemachine.StateMachineImpl;
 import org.zstack.header.Component;
+import org.zstack.header.core.StaticInit;
 import org.zstack.header.core.encrypt.ENCRYPT;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
@@ -26,7 +27,6 @@ import org.zstack.utils.*;
 import org.zstack.utils.data.StringTemplate;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
-import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.path.PathUtil;
 
 import java.io.File;
@@ -55,13 +55,11 @@ public class Platform {
 
     private static ComponentLoader loader;
     private static String msId;
-    private static String codeVersion;
     private static String managementServerIp;
-    private static String managementCidr;
     private static MessageSource messageSource;
 
     public static final String COMPONENT_CLASSPATH_HOME = "componentsHome";
-    public static final String FAKE_UUID = "THIS_IS_IS_A_FAKE_UUID";
+    public static final String FAKE_UUID = "THIS_IS_A_FAKE_UUID";
 
     private static final Map<String, String> globalProperties = new HashMap<String, String>();
 
@@ -344,16 +342,6 @@ public class Platform {
         try {
             msId = getUuid();
 
-            /*
-            reflections = new Reflections(ClasspathHelper.forPackage("org.zstack"),
-                    new SubTypesScanner(), new MethodAnnotationsScanner(), new FieldAnnotationsScanner(),
-                    new MemberUsageScanner(), new MethodParameterNamesScanner(), new ResourcesScanner(),
-                    new TypeAnnotationsScanner(), new TypeElementsScanner(), new MethodParameterScanner());
-                    */
-
-            // TODO: get code version from MANIFEST file
-            codeVersion = "0.1.0";
-
             Set<Class> baseResourceClasses = reflections.getTypesAnnotatedWith(BaseResource.class).stream()
                     .filter(clz -> clz.isAnnotationPresent(BaseResource.class)).collect(Collectors.toSet());
             for (Class clz : baseResourceClasses) {
@@ -410,7 +398,7 @@ public class Platform {
     public static String getBaseResourceType(String childResourceType) {
         String type = childResourceToBaseResourceMap.get(childResourceType);
         if (type == null) {
-            throw new CloudRuntimeException(String.format("cannot find base resource type for the child resource type[%s]", childResourceType));
+            type = childResourceType;
         }
         return type;
     }
@@ -432,7 +420,13 @@ public class Platform {
     }
 
     private static void callStaticInitMethods() throws InvocationTargetException, IllegalAccessException {
-        Set<Method> inits = reflections.getMethodsAnnotatedWith(StaticInit.class);
+        List<Method> inits = new ArrayList<>(reflections.getMethodsAnnotatedWith(StaticInit.class));
+        inits.sort((o1, o2) -> {
+            StaticInit a1 = o1.getAnnotation(StaticInit.class);
+            StaticInit a2 = o2.getAnnotation(StaticInit.class);
+            return a2.order() - a1.order();
+        });
+
         for (Method init : inits)  {
             if (!Modifier.isStatic(init.getModifiers())) {
                 throw new CloudRuntimeException(String.format("the method[%s:%s] annotated by @StaticInit is not a static method", init.getDeclaringClass(), init.getName()));
@@ -481,15 +475,6 @@ public class Platform {
         return System.getProperty(name);
     }
 
-    public static String getGlobalPropertyExceptionOnNull(String name) {
-        String ret = System.getProperty(name);
-        if (ret == null) {
-            throw new IllegalArgumentException(String.format("unable to find global properties[%s], check global.properties", name));
-        }
-
-        return ret;
-    }
-
     public static Map<String, String> getGlobalPropertiesStartWith(String prefix) {
         Properties props = System.getProperties();
         Enumeration e = props.propertyNames();
@@ -500,29 +485,6 @@ public class Platform {
             if (key.startsWith(prefix)) {
                 ret.put(key, System.getProperty(key));
             }
-        }
-
-        return ret;
-    }
-
-    public static <T> T getGlobalProperty(String name, Class<T> clazz) {
-        String ret = System.getProperty(name);
-        return TypeUtils.stringToValue(ret, clazz);
-    }
-
-    public static <T> T getGlobalProperty(String name, Class<T> clazz, T defaultValue) {
-        String ret = System.getProperty(name);
-        if (ret == null) {
-            return defaultValue;
-        } else {
-            return TypeUtils.stringToValue(ret, clazz);
-        }
-    }
-
-    public static <T> T getGlobalPropertyExceptionOnNull(String name, Class<T> clazz) {
-        T ret = getGlobalProperty(name, clazz);
-        if (ret == null) {
-            throw new IllegalArgumentException(String.format("unable to find global properties[%s], check global.properties", name));
         }
 
         return ret;
@@ -578,26 +540,8 @@ public class Platform {
         return new StateMachineImpl<K, T>();
     }
 
-    public static String getCodeVersion() {
-        return codeVersion;
-    }
-
     public static String getUuid() {
         return UUID.randomUUID().toString().replace("-", "");
-    }
-
-    public static String getManagementCidr() {
-        if (managementCidr != null) {
-            return managementCidr;
-        }
-
-        String mgmtIp = getManagementServerIp();
-        managementCidr = ShellUtils.run(String.format("ip addr | grep -w %s | awk '{print $2}'", mgmtIp));
-        managementCidr = StringDSL.stripEnd(managementCidr, "\n");
-        if (!NetworkUtils.isCidr(managementCidr)) {
-            throw new CloudRuntimeException(String.format("got an invalid management CIDR[%s]", managementCidr));
-        }
-        return managementCidr;
     }
 
     public static String getManagementServerIp() {
@@ -750,41 +694,6 @@ public class Platform {
 
     public static ErrorCode httperr(String fmt, Object...args) {
         return err(SysErrors.HTTP_ERROR, fmt, args);
-    }
-
-    public static List<Method> collectStaticMethodsByAnnotation(Class annotationClass, Class...argTypes) {
-        if (argTypes == null) {
-            argTypes = new Class[]{};
-        }
-
-        List<Method> methods = new ArrayList<>();
-        Set<Method> ms = reflections.getMethodsAnnotatedWith(annotationClass);
-        for (Method m : ms) {
-            if (!Modifier.isStatic(m.getModifiers())) {
-                throw new CloudRuntimeException(String.format("@%s %s.%s must be defined as static method", annotationClass, m.getDeclaringClass(), m.getName()));
-            }
-
-            if (m.getParameterCount() != argTypes.length) {
-                throw new CloudRuntimeException(String.format("wrong argument list of the @%s %s.%s, %s arguments required" +
-                                " but the method has %s arguments", annotationClass, m.getDeclaringClass(), m.getName(), argTypes.length,
-                        m.getParameterCount()));
-            }
-
-            for (int i=0; i<argTypes.length; i++) {
-                Class expectedType = argTypes[i];
-                Class actualType = m.getParameterTypes()[i];
-
-                if (expectedType != actualType) {
-                    throw new CloudRuntimeException(String.format("wrong argument list of the @%s %s.%s. The argument[%s] is expected of type %s" +
-                            " but got type %s", annotationClass, m.getDeclaringClass(), m.getName(), i, expectedType, actualType));
-                }
-            }
-
-            m.setAccessible(true);
-            methods.add(m);
-        }
-
-        return methods;
     }
 
     public static Function<Supplier, Object> functionForMockTestObject = (Supplier t) -> t.get();

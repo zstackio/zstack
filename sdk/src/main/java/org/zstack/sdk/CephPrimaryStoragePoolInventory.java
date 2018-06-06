@@ -68,4 +68,28 @@ public class CephPrimaryStoragePoolInventory  {
         return this.type;
     }
 
+    public java.lang.Long availableCapacity;
+    public void setAvailableCapacity(java.lang.Long availableCapacity) {
+        this.availableCapacity = availableCapacity;
+    }
+    public java.lang.Long getAvailableCapacity() {
+        return this.availableCapacity;
+    }
+
+    public java.lang.Long usedCapacity;
+    public void setUsedCapacity(java.lang.Long usedCapacity) {
+        this.usedCapacity = usedCapacity;
+    }
+    public java.lang.Long getUsedCapacity() {
+        return this.usedCapacity;
+    }
+
+    public java.lang.Integer replicatedSize;
+    public void setReplicatedSize(java.lang.Integer replicatedSize) {
+        this.replicatedSize = replicatedSize;
+    }
+    public java.lang.Integer getReplicatedSize() {
+        return this.replicatedSize;
+    }
+
 }

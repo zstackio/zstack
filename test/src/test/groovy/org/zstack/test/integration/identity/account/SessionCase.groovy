@@ -37,6 +37,8 @@ class SessionCase extends SubCase {
             } as AccountInventory
 
             testSession()
+            testRenewSession()
+            testRenewSessionFail()
         }
     }
 
@@ -54,6 +56,49 @@ class SessionCase extends SubCase {
 
         retryInSecs(2){
             assert acntMgr.getSessionsCopy().get(sessionInventory.uuid) == null
+        }
+    }
+
+    void testRenewSession() {
+        accountInventory = createAccount {
+            name = "test1"
+            password = "password1"
+        } as AccountInventory
+
+        SessionInventory sess1 = logInByAccount {
+            accountName = "test1"
+            password = "password1"
+        } as SessionInventory
+
+        assert acntMgr.getSessionsCopy().get(sess1.uuid) != null
+
+        SessionInventory sess2 = renewSession {
+            sessionUuid = sess1.uuid
+            duration = 31536000L
+        }
+
+        assert sess2.uuid == sess1.uuid
+        assert sess2.accountUuid == sess1.accountUuid
+        assert sess2.userUuid == sess1.userUuid
+    }
+
+    void testRenewSessionFail() {
+        SessionInventory sess1 = logInByAccount {
+            accountName = "test1"
+            password = "password1"
+        } as SessionInventory
+
+        assert acntMgr.getSessionsCopy().get(sess1.uuid) != null
+
+        logOut {
+            sessionUuid = sess1.uuid
+        }
+
+        expect (AssertionError.class) {
+            renewSession {
+                sessionUuid = sess1.uuid
+                duration = 31536000L
+            }
         }
     }
 }

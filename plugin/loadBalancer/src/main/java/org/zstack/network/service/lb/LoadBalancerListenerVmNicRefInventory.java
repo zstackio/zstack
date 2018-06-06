@@ -2,8 +2,11 @@ package org.zstack.network.service.lb;
 
 import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
+import org.zstack.header.query.ExpandedQueryAlias;
+import org.zstack.header.query.ExpandedQueryAliases;
 import org.zstack.header.search.Inventory;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.network.service.vip.VipInventory;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -18,7 +21,13 @@ import java.util.List;
         @ExpandedQuery(expandedField = "vmNic", inventoryClass = VmNicInventory.class,
                 foreignKey = "vmNicUuid", expandedInventoryKey = "uuid"),
         @ExpandedQuery(expandedField = "listener", inventoryClass = LoadBalancerListenerInventory.class,
-                foreignKey = "listenerUuid", expandedInventoryKey = "uuid")
+                foreignKey = "listenerUuid", expandedInventoryKey = "uuid"),
+        @ExpandedQuery(target = VmNicInventory.class, expandedField = "loadBalancerListenerRef",
+                inventoryClass = LoadBalancerListenerVmNicRefInventory.class, foreignKey = "uuid", expandedInventoryKey = "vmNicUuid", hidden = true),
+        @ExpandedQuery(target = VipInventory.class, expandedField = "loadBalancer", inventoryClass = LoadBalancerListenerVmNicRefInventory.class, foreignKey = "uuid", expandedInventoryKey = "vipUuid")
+})
+@ExpandedQueryAliases({
+        @ExpandedQueryAlias(target = VmNicInventory.class, alias = "loadBalancerListener", expandedField = "loadBalancerListenerRef.listener")
 })
 public class LoadBalancerListenerVmNicRefInventory {
     private Long id;

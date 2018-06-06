@@ -48,7 +48,9 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
             "https://",
             "file:///",
             "upload://",
-            "zstore://"
+            "zstore://",
+            "ftp://",
+            "sftp://"
     };
 
     private void setServiceId(APIMessage msg) {
@@ -192,7 +194,7 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
         if (msg.getUrl().startsWith("/")) {
             msg.setUrl(String.format("file://%s", msg.getUrl()));
         } else if (!isValidProtocol(msg.getUrl())) {
-            throw new ApiMessageInterceptionException(argerr("url must starts with 'file:///', 'http://', 'https://' or '/'"));
+            throw new ApiMessageInterceptionException(argerr("url must starts with 'file:///', 'http://', 'https://'， 'ftp://', 'sftp://' or '/'"));
         }
     }
 

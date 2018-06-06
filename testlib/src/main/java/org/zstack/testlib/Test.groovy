@@ -21,6 +21,9 @@ import org.zstack.utils.ShellUtils
 import org.zstack.utils.Utils
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.logging.CLogger
+import org.zstack.utils.path.PathUtil
+import org.zstack.zql.ZQL
+
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 import java.util.concurrent.ConcurrentHashMap
@@ -41,6 +44,11 @@ abstract class Test implements ApiHelper, Retry {
     static Map<Class, Closure> functionForMockTestObjectFactory = new ConcurrentHashMap<>()
 
     protected List<Closure> methodsOnClean = []
+
+    protected List zqlQuery(String text) {
+        //return zQLQuery { zql = text }.inventories
+        return ZQL.fromString(text).execute().inventories
+    }
 
     static {
         Platform.functionForMockTestObject = { supplier ->
@@ -89,8 +97,12 @@ abstract class Test implements ApiHelper, Retry {
     protected BeanConstructor beanConstructor
     protected SpringSpec _springSpec
 
-    Test() {
+    protected void setSpringSpec() {
         _springSpec = new SpringSpec()
+    }
+
+    Test() {
+        setSpringSpec()
         Logger.getLogger(OkHttpClient.class.getName()).setLevel(Level.FINE)
     }
 
@@ -110,12 +122,28 @@ abstract class Test implements ApiHelper, Retry {
         return spec
     }
 
+    protected void withSession(SessionInventory s, Closure c)  {
+        SessionInventory backup = currentEnvSpec.session
+        currentEnvSpec.session = s
+        c()
+        currentEnvSpec.session = backup
+        logOut { sessionUuid = s.uuid }
+    }
+
     protected void onCleanExecute(Closure c) {
         methodsOnClean.add(c)
     }
 
     protected EnvSpec env(@DelegatesTo(strategy=Closure.DELEGATE_FIRST, value=EnvSpec.class) Closure c) {
         def spec = new EnvSpec()
+        c.delegate = spec
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c()
+        return spec
+    }
+
+    protected SimpleEnvSpec senv(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = SimpleEnvSpec.class) Closure c) {
+        def spec = new SimpleEnvSpec()
         c.delegate = spec
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()
@@ -419,10 +447,27 @@ abstract class Test implements ApiHelper, Retry {
 
         SubCaseCollectionStrategy strategy = getSubCaseCollectionStrategy()
         def caseTypes = strategy.collectSubCases(this)
-        caseTypes = caseTypes.findAll { !it.isAnnotationPresent(SkipTestSuite.class) }
+        caseTypes = caseTypes.findAll { !it.isAnnotationPresent(SkipTestSuite.class) && !it.isAnnotationPresent(Deprecated.class) }
 
+        File blackList = PathUtil.findFileOnClassPath("blackList.ut")
+        if (blackList != null) {
+            List<String> skippedCases = blackList.readLines().collect { it.trim() }
+            logger.warn("cases listed in blackList.ut will be skipped:\n${skippedCases.join("\n")}")
+            caseTypes = caseTypes.findAll { !skippedCases.contains(it.simpleName) }
+        }
+
+        String caseListString = caseTypes.collect {it.name}.join("\n")
         def cases = new File([dir.absolutePath, "cases"].join("/"))
-        cases.write(caseTypes.collect {it.name}.join("\n"))
+        cases.write(caseListString)
+
+        File testSuiteBlackList = PathUtil.findFileOnClassPath("blackList.test")
+        if (testSuiteBlackList != null) {
+            List<String> skippedSuite = testSuiteBlackList.readLines().collect { it.trim() }
+            if (skippedSuite.contains(getClass().getSimpleName())) {
+                logger.warn("the test suite[${getClass().getSimpleName()}] is listed in blackList.test, cases will be skipped:\n${caseListString}")
+                return
+            }
+        }
 
         if (System.getProperty("list") != null) {
             return
@@ -442,7 +487,8 @@ abstract class Test implements ApiHelper, Retry {
         boolean hasFailure = false
 
         for (SubCaseResult r in allCases) {
-            def c = r.caseType.newInstance() as Case
+            logger.debug("creating sub-case ${r.caseType}")
+            def c = r.caseType.getConstructor().newInstance() as Case
 
             String caseLogStartLine = "case log of ${c.class} starts here"
             String caseLogEndLine = "case log of ${c.class} ends here"
@@ -632,6 +678,10 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
         ExpectedException(String var1, Throwable var2, boolean var3, boolean var4) {
             super(var1, var2, var3, var4)
         }
+    }
+
+    static void expectError(Closure c) {
+        expect(AssertionError.class, c)
     }
 
     static void expect(exceptions, Closure c) {

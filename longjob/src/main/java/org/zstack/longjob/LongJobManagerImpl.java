@@ -6,9 +6,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
-import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigException;
-import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
@@ -19,7 +17,6 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.timeout.ApiTimeoutExtensionPoint;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Constants;
-import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.identity.APIDeleteAccountEvent;
@@ -36,9 +33,9 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
 
 /**
@@ -68,7 +65,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
     private List<String> longJobClasses = new ArrayList<String>();
 
     private void collectLongJobs() {
-        List<Class> subs = BeanUtils.scanClass("org.zstack", LongJobFor.class);
+        Set<Class<?>> subs = BeanUtils.reflections.getTypesAnnotatedWith(LongJobFor.class);
         for (Class sub : subs) {
             longJobClasses.add(sub.toString());
         }
@@ -193,10 +190,10 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         vo.setState(LongJobState.Waiting);
         vo.setTargetResourceUuid(msg.getTargetResourceUuid());
         vo.setManagementNodeUuid(Platform.getManagementServerId());
+        vo.setAccountUuid(msg.getAccountUuid());
         vo = dbf.persistAndRefresh(vo);
         msg.setJobUuid(vo.getUuid());
         tagMgr.createTags(msg.getSystemTags(), msg.getUserTags(), vo.getUuid(), LongJobVO.class.getSimpleName());
-        acntMgr.createAccountResourceRef(msg.getAccountUuid(), vo.getUuid(), LongJobVO.class);
         logger.info(String.format("new longjob [uuid:%s, name:%s] has been created", vo.getUuid(), vo.getName()));
 
         // wait in line
@@ -325,7 +322,8 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         }
     }
 
-    private void loadLongJob() {
+    @Override
+    public void loadLongJob() {
         new SQLBatch() {
             @Override
             protected void scripts() {

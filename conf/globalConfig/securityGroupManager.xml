@@ -38,4 +38,12 @@
         <defaultValue>accept</defaultValue>
         <category>securityGroup</category>
     </config>
+
+    <config>
+        <name>securityGroup.num</name>
+        <description>default quota for securityGroup.num</description>
+        <defaultValue>20</defaultValue>
+        <category>quota</category>
+        <type>java.lang.Long</type>
+    </config>
 </globalConfig>

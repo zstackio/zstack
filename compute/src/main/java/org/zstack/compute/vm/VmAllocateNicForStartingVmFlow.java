@@ -15,12 +15,15 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.vm.*;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmAllocateNicForStartingVmFlow implements Flow {
@@ -30,6 +33,7 @@ public class VmAllocateNicForStartingVmFlow implements Flow {
     protected CloudBus bus;
     @Autowired
     protected ErrorFacade errf;
+    private static CLogger logger = Utils.getLogger(VmAllocateNicForStartingVmFlow.class);
 
     @Override
     public void run(final FlowTrigger trigger, Map data) {
@@ -42,12 +46,12 @@ public class VmAllocateNicForStartingVmFlow implements Flow {
         }
 
         final List<VmNicInventory> nicsNeedNewIp = new ArrayList<VmNicInventory>(vm.getVmNics().size());
-        List<String> usedIpUuids = new ArrayList<String>();
+        final List<VmNicInventory> usedIpNics = new ArrayList<VmNicInventory>();
         for (VmNicInventory nic : vm.getVmNics()) {
             if (nic.getUsedIpUuid() == null) {
                 nicsNeedNewIp.add(nic);
             } else {
-                usedIpUuids.add(nic.getUsedIpUuid());
+                usedIpNics.add(nic);
             }
         }
 
@@ -55,8 +59,8 @@ public class VmAllocateNicForStartingVmFlow implements Flow {
         // however, ill database foreign keys (developers' fault) may cause usedIpUuid not to
         // be cleaned; so in addition to check NULL usedIpUuid, we double check if IP range for every
         // nic is still alive.
-        if (!usedIpUuids.isEmpty()) {
-            nicsNeedNewIp.addAll(findNicsNeedNewIps(usedIpUuids, vm.getVmNics()));
+        if (!usedIpNics.isEmpty()) {
+            nicsNeedNewIp.addAll(findNicsNeedNewIps(usedIpNics));
         }
 
         if (nicsNeedNewIp.isEmpty()) {
@@ -123,7 +127,9 @@ public class VmAllocateNicForStartingVmFlow implements Flow {
     }
 
     @Transactional(readOnly = true)
-    private List<VmNicInventory> findNicsNeedNewIps(List<String> usedIpUuids, List<VmNicInventory> nics) {
+    private List<VmNicInventory> findNicsNeedNewIps(List<VmNicInventory> nics) {
+        List<String> usedIpUuids = nics.stream().map(VmNicInventory::getUsedIpUuid).collect(Collectors.toList());
+
         String sql = "select nic.uuid from VmNicVO nic, UsedIpVO ip, IpRangeVO r where nic.usedIpUuid = ip.uuid and ip.ipRangeUuid = r.uuid and ip.uuid in (:uuids)";
         TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("uuids", usedIpUuids);

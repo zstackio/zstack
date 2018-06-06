@@ -121,6 +121,9 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
                 ).scp(
                         PathUtil.findFileOnClassPath("ansible/zvr/zvrboot.bin", true).getAbsolutePath(),
                         "/home/vyos/zvrboot.bin"
+                ).scp(
+                        PathUtil.findFileOnClassPath("ansible/zvr/version", true).getAbsolutePath(),
+                        "/home/vyos/zvr/version"
                 ).setPrivateKey(asf.getPrivateKey()).setUsername("vyos").setHostname(mgmtNicIp).setPort(22).runErrorByExceptionAndClose();
 
                 new Ssh().shell("sudo bash /home/vyos/zvrboot.bin\n" +

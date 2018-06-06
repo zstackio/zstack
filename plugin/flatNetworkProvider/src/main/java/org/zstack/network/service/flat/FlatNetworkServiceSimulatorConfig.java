@@ -1,7 +1,6 @@
 package org.zstack.network.service.flat;
 
 import org.zstack.network.service.flat.FlatDhcpBackend.*;
-import org.zstack.network.service.flat.FlatDnsBackend.SetDnsCmd;
 import org.zstack.network.service.flat.FlatEipBackend.ApplyEipCmd;
 import org.zstack.network.service.flat.FlatEipBackend.BatchApplyEipCmd;
 import org.zstack.network.service.flat.FlatEipBackend.BatchDeleteEipCmd;
@@ -19,7 +18,6 @@ import java.util.List;
 public class FlatNetworkServiceSimulatorConfig {
     public List<ApplyDhcpCmd> applyDhcpCmdList = new ArrayList<ApplyDhcpCmd>();
     public List<ReleaseDhcpCmd> releaseDhcpCmds = new ArrayList<ReleaseDhcpCmd>();
-    public List<SetDnsCmd> setDnsCmds = new ArrayList<SetDnsCmd>();
     public List<PrepareDhcpCmd> prepareDhcpCmdList = new ArrayList<PrepareDhcpCmd>();
     public List<ApplyUserdataCmd> applyUserdataCmds = new ArrayList<ApplyUserdataCmd>();
     public List<ReleaseUserdataCmd> releaseUserdataCmds = new ArrayList<ReleaseUserdataCmd>();

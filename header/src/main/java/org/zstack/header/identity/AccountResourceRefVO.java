@@ -1,14 +1,22 @@
 package org.zstack.header.identity;
 
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.Index;
+import org.zstack.header.vo.ResourceVO;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
 
 @Entity
 @Table
+@EntityGraph(
+        friends = {
+                @EntityGraph.Neighbour(type = AccountVO.class, myField = "accountUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = ResourceVO.class, myField = "resourceUuid", targetField = "uuid")
+        }
+)
 public class AccountResourceRefVO {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

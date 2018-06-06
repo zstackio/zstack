@@ -1,13 +1,22 @@
 package org.zstack.longjob;
 
+import org.apache.logging.log4j.ThreadContext;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.Platform;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.header.Component;
+import org.zstack.header.Constants;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
+import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.longjob.*;
 import org.zstack.header.message.APIMessage;
+import org.zstack.identity.AccountManager;
 import org.zstack.portal.apimediator.ApiMessageProcessor;
 import org.zstack.portal.apimediator.ApiMessageProcessorImpl;
+import org.zstack.tag.TagManager;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -22,6 +31,15 @@ import static org.zstack.core.Platform.argerr;
  */
 public class LongJobApiInterceptor implements ApiMessageInterceptor, Component {
     private static final CLogger logger = Utils.getLogger(LongJobApiInterceptor.class);
+
+    @Autowired
+    private TagManager tagMgr;
+    @Autowired
+    private AccountManager acntMgr;
+    @Autowired
+    private DatabaseFacade dbf;
+    @Autowired
+    private CloudBus bus;
 
     /**
      * Key:LongJobName
@@ -54,8 +72,50 @@ public class LongJobApiInterceptor implements ApiMessageInterceptor, Component {
         ApiMessageProcessor processor = new ApiMessageProcessorImpl(config);
         APIMessage jobMsg = JSONObjectUtil.toObject(msg.getJobData(), apiClass);
         jobMsg.setSession(msg.getSession());
-        jobMsg = processor.process(jobMsg);                     // may throw ApiMessageInterceptionException
+
+        try {
+            jobMsg = processor.process(jobMsg);                     // may throw ApiMessageInterceptionException
+        } catch (StopRoutingException e) {
+            // if got stop routing exception persist a success long job and return event success
+            LongJobVO vo = createSuccessLongJob(msg);
+
+            APISubmitLongJobEvent evt = new APISubmitLongJobEvent(msg.getId());
+            evt.setInventory(LongJobInventory.valueOf(vo));
+            bus.publish(evt);
+
+            throw e;
+        }
+
         msg.setJobData(JSONObjectUtil.toJsonString(jobMsg));    // msg may be changed during validation
+    }
+
+    private LongJobVO createSuccessLongJob(APISubmitLongJobMsg msg) {
+        // create LongJobVO
+        LongJobVO vo = new LongJobVO();
+        if (msg.getResourceUuid() != null) {
+            vo.setUuid(msg.getResourceUuid());
+        } else {
+            vo.setUuid(Platform.getUuid());
+        }
+        if (msg.getName() != null) {
+            vo.setName(msg.getName());
+        } else {
+            vo.setName(msg.getJobName());
+        }
+        vo.setDescription(msg.getDescription());
+        vo.setApiId(ThreadContext.getImmutableContext().get(Constants.THREAD_CONTEXT_API));
+        vo.setJobName(msg.getJobName());
+        vo.setJobData(msg.getJobData());
+        vo.setState(LongJobState.Succeeded);
+        vo.setJobResult(LongJobState.Succeeded.toString());
+        vo.setTargetResourceUuid(msg.getTargetResourceUuid());
+        vo.setManagementNodeUuid(Platform.getManagementServerId());
+        vo.setAccountUuid(msg.getSession().getAccountUuid());
+        vo = dbf.persistAndRefresh(vo);
+        msg.setJobUuid(vo.getUuid());
+        tagMgr.createTags(msg.getSystemTags(), msg.getUserTags(), vo.getUuid(), LongJobVO.class.getSimpleName());
+
+        return vo;
     }
 
     private void validate(APICancelLongJobMsg msg) {
@@ -88,8 +148,8 @@ public class LongJobApiInterceptor implements ApiMessageInterceptor, Component {
 
     @Override
     public boolean start() {
-        Class<APIMessage> apiClass = null;
-        List<Class> longJobClasses = BeanUtils.scanClass("org.zstack", LongJobFor.class);
+        Class<APIMessage> apiClass;
+        Set<Class<?>> longJobClasses = BeanUtils.reflections.getTypesAnnotatedWith(LongJobFor.class);
         for (Class it : longJobClasses) {
             LongJobFor at = (LongJobFor) it.getAnnotation(LongJobFor.class);
             try {

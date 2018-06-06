@@ -15,8 +15,8 @@ import org.zstack.header.identity.Quota;
 import org.zstack.header.identity.QuotaInventory;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
-import org.zstack.header.quota.QuotaConstant;
 import org.zstack.header.storage.backup.BackupStorageInventory;
+import org.zstack.image.ImageQuotaConstant;
 import org.zstack.storage.ceph.backup.CephBackupStorageSimulatorConfig;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
@@ -73,7 +73,7 @@ public class TestQuotaUsageForImageOnCephBackupStorage {
         AccountInventory test = identityCreator.useAccount("test");
 
         //some image set in xml,some below,the amount should one more than the quota to get expected exceeding exception.
-        api.updateQuota(test.getUuid(), QuotaConstant.IMAGE_NUM, 2);
+        api.updateQuota(test.getUuid(), ImageQuotaConstant.IMAGE_NUM, 2);
 
         BackupStorageInventory cephBackupStorageInv = deployer.backupStorages.get("TestCephBackupStorage");
 
@@ -104,7 +104,7 @@ public class TestQuotaUsageForImageOnCephBackupStorage {
 
         thrown.expect(ApiSenderException.class);
         thrown.expectMessage("The user exceeds a quota of a resource");
-        thrown.expectMessage(QuotaConstant.IMAGE_NUM);
+        thrown.expectMessage(ImageQuotaConstant.IMAGE_NUM);
 
         cephConfig.getImageSizeCmdSize.put(iinv.getUuid(), SizeUnit.MEGABYTE.toByte(233));
         iinv = api.addImage(iinv, identityCreator.getAccountSession(), cephBackupStorageInv.getUuid());
@@ -114,22 +114,22 @@ public class TestQuotaUsageForImageOnCephBackupStorage {
         Quota.QuotaUsage imageNum = CollectionUtils.find(usages, new Function<Quota.QuotaUsage, Quota.QuotaUsage>() {
             @Override
             public Quota.QuotaUsage call(Quota.QuotaUsage arg) {
-                return QuotaConstant.IMAGE_NUM.equals(arg.getName()) ? arg : null;
+                return ImageQuotaConstant.IMAGE_NUM.equals(arg.getName()) ? arg : null;
             }
         });
         Assert.assertNotNull(imageNum);
-        QuotaInventory qvm = api.getQuota(QuotaConstant.IMAGE_NUM, test.getUuid(), identityCreator.getAccountSession());
+        QuotaInventory qvm = api.getQuota(ImageQuotaConstant.IMAGE_NUM, test.getUuid(), identityCreator.getAccountSession());
         Assert.assertEquals(qvm.getValue(), imageNum.getTotal().longValue());
         Assert.assertEquals(2, imageNum.getUsed().longValue());
         //
         Quota.QuotaUsage imageSize = CollectionUtils.find(usages, new Function<Quota.QuotaUsage, Quota.QuotaUsage>() {
             @Override
             public Quota.QuotaUsage call(Quota.QuotaUsage arg) {
-                return QuotaConstant.IMAGE_SIZE.equals(arg.getName()) ? arg : null;
+                return ImageQuotaConstant.IMAGE_SIZE.equals(arg.getName()) ? arg : null;
             }
         });
         Assert.assertNotNull(imageSize);
-        qvm = api.getQuota(QuotaConstant.IMAGE_SIZE, test.getUuid(), identityCreator.getAccountSession());
+        qvm = api.getQuota(ImageQuotaConstant.IMAGE_SIZE, test.getUuid(), identityCreator.getAccountSession());
         Assert.assertEquals(qvm.getValue(), imageSize.getTotal().longValue());
         Assert.assertTrue(imageSize.getUsed().longValue() <= imageSize.getTotal().longValue());
 

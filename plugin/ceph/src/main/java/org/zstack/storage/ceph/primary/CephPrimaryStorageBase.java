@@ -138,6 +138,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         boolean success = true;
         Long totalCapacity;
         Long availableCapacity;
+        List<CephPoolCapacity> poolCapacities;
 
         public String getError() {
             return error;
@@ -169,6 +170,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         public void setAvailableCapacity(Long availableCapacity) {
             this.availableCapacity = availableCapacity;
+        }
+
+        public List<CephPoolCapacity> getPoolCapacities() {
+            return poolCapacities;
+        }
+
+        public void setPoolCapacities(List<CephPoolCapacity> poolCapacities) {
+            this.poolCapacities = poolCapacities;
         }
     }
 
@@ -625,7 +634,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     @ApiTimeout(apiClasses = {APIRevertVolumeFromSnapshotMsg.class})
-    public static class RollbackSnapshotCmd extends AgentCommand {
+    public static class RollbackSnapshotCmd extends AgentCommand implements HasThreadContext {
         String snapshotPath;
 
         public String getSnapshotPath() {
@@ -2229,7 +2238,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     private void updateCapacityIfNeeded(AgentResponse rsp) {
         if (rsp.totalCapacity != null && rsp.availableCapacity != null) {
-            new CephCapacityUpdater().update(getSelf().getFsid(), rsp.totalCapacity, rsp.availableCapacity);
+            new CephCapacityUpdater().update(getSelf().getFsid(), rsp.totalCapacity, rsp.availableCapacity, rsp.getPoolCapacities());
         }
     }
 
@@ -2487,7 +2496,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 self = dbf.updateAndRefresh(self);
 
                                 CephCapacityUpdater updater = new CephCapacityUpdater();
-                                updater.update(ret.fsid, ret.totalCapacity, ret.availableCapacity, true);
+                                updater.update(ret.fsid, ret.totalCapacity, ret.availableCapacity, ret.getPoolCapacities(), true);
                                 trigger.next();
                             }
                         });
@@ -3270,6 +3279,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     protected void handle(final RevertVolumeFromSnapshotOnPrimaryStorageMsg msg) {
         final RevertVolumeFromSnapshotOnPrimaryStorageReply reply = new RevertVolumeFromSnapshotOnPrimaryStorageReply();
 
+        final TaskProgressRange parentStage = getTaskStage();
+        final TaskProgressRange ROLLBACK_SNAPSHOT_STAGE = new TaskProgressRange(0, 70);
+        final TaskProgressRange DELETE_ORIGINAL_SNAPSHOT_STAGE = new TaskProgressRange(30, 100);
+
         final FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("revert-volume-[uuid:%s]-from-snapshot-[uuid:%s]-on-ceph-primary-storage",
                 msg.getVolume().getUuid(), msg.getSnapshot().getUuid()));
@@ -3283,12 +3296,15 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 flow(new NoRollbackFlow() {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
+                        TaskProgressRange stage = markTaskStage(parentStage, ROLLBACK_SNAPSHOT_STAGE);
+
                         RollbackSnapshotCmd cmd = new RollbackSnapshotCmd();
                         cmd.snapshotPath = msg.getSnapshot().getPrimaryStorageInstallPath();
                         httpCall(ROLLBACK_SNAPSHOT_PATH, cmd, RollbackSnapshotRsp.class, new ReturnValueCompletion<RollbackSnapshotRsp>(msg) {
                             @Override
                             public void success(RollbackSnapshotRsp returnValue) {
                                 reply.setSize(returnValue.getSize());
+                                reportProgress(stage.getEnd().toString());
                                 trigger.next();
                             }
 
@@ -3296,7 +3312,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             public void fail(ErrorCode errorCode) {
                                 trigger.fail(errorCode);
                             }
-                        });
+                        }, TimeUnit.MILLISECONDS, msg.getTimeout());
                     }
                 });
 
@@ -3305,6 +3321,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
+                        TaskProgressRange stage = markTaskStage(parentStage, DELETE_ORIGINAL_SNAPSHOT_STAGE);
+
                         SimpleQuery<VolumeSnapshotVO> sq = dbf.createQuery(VolumeSnapshotVO.class);
                         sq.add(VolumeSnapshotVO_.primaryStorageInstallPath, Op.LIKE,
                                 String.format("%s%%", originalVolumePath));
@@ -3315,6 +3333,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             httpCall(DELETE_PATH, cmd, DeleteRsp.class, new ReturnValueCompletion<DeleteRsp>(null) {
                                 @Override
                                 public void success(DeleteRsp returnValue) {
+                                    reportProgress(stage.getEnd().toString());
                                     logger.debug(String.format("successfully deleted %s", originalVolumePath));
                                 }
 
@@ -3455,7 +3474,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }
-        });
+        }, TimeUnit.MILLISECONDS, msg.getTimeout());
     }
 
     protected void handle(final PurgeSnapshotOnPrimaryStorageMsg msg) {

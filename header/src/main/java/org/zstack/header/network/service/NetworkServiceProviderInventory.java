@@ -22,6 +22,9 @@ public class NetworkServiceProviderInventory {
             joinColumn = @JoinColumn(name = "networkServiceProviderUuid", referencedColumnName = "l2NetworkUuid"))
     private Set<String> attachedL2NetworkUuids;
 
+    public NetworkServiceProviderInventory() {
+    }
+
     protected NetworkServiceProviderInventory(NetworkServiceProviderVO vo) {
         this.setUuid(vo.getUuid());
         this.setName(vo.getName());

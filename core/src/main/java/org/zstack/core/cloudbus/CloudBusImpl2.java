@@ -7,6 +7,7 @@ import com.rabbitmq.client.impl.recovery.RecoveryAwareAMQConnection;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -398,6 +399,18 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                 }
         }).create();
 
+        private final Gson gson1 = new GsonUtil().setCoder(Message.class, this).setSerializationExclusionStrategy(new ExclusionStrategy() {
+            @Override
+            public boolean shouldSkipField(FieldAttributes fieldAttributes) {
+                return fieldAttributes.getAnnotation(SkipLogger.class) != null;
+            }
+
+            @Override
+            public boolean shouldSkipClass(Class<?> aClass) {
+                return false;
+            }
+        }).create();
+
         private class RecoverableSend {
             Channel chan;
             byte[] data;
@@ -533,6 +546,10 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         }
 
         public boolean logMessage(Message msg) {
+            if (CoreGlobalProperty.UNIT_TEST_ON) {
+                return true;
+            }
+
             if (CloudBusGlobalProperty.READ_API_LOG_OFF &&
                     (msg instanceof APISyncCallMessage || msg instanceof APIReply)) {
                 return false;
@@ -706,7 +723,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         }
 
         public String dumpMessage(Message msg) {
-            return gson.toJson(msg, Message.class);
+            return gson1.toJson(msg, Message.class);
         }
     }
 
@@ -1317,6 +1334,21 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         for (Message msg : msgs) {
             send(msg, true);
         }
+    }
+
+    @Override
+    public void send(APIMessage msg, java.util.function.Consumer<APIEvent> consumer) {
+        subscribeEvent((e) -> {
+            APIEvent ae = (APIEvent) e;
+            if (ae.getApiId().equals(msg.getId())) {
+                consumer.accept(ae);
+                return true;
+            }
+
+            return false;
+        }, new APIEvent());
+
+        send(msg);
     }
 
     private void evaluateMessageTimeout(NeedReplyMessage msg) {
@@ -2073,6 +2105,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
             public void inactive() {
                 try {
                     echan.queueUnbind(baseName, BusExchange.P2P.toString(), baseName);
+                    // consumer will not be removed
                     for (String aliasName: aliasNames) {
                         echan.queueUnbind(aliasName, BusExchange.P2P.toString(), aliasName);
                     }
@@ -2443,13 +2476,8 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     }
 
     private void prepareStatistics() {
-        List<Class> needReplyMsgs = BeanUtils.scanClassByType("org.zstack", NeedReplyMessage.class);
-        needReplyMsgs = CollectionUtils.transformToList(needReplyMsgs, new Function<Class, Class>() {
-            @Override
-            public Class call(Class arg) {
-                return !APIMessage.class.isAssignableFrom(arg) || APISyncCallMessage.class.isAssignableFrom(arg) ? arg : null;
-            }
-        });
+        List<Class> needReplyMsgs = new ArrayList<>(BeanUtils.reflections.getSubTypesOf(NeedReplyMessage.class));
+        needReplyMsgs = CollectionUtils.transformToList(needReplyMsgs, (Function<Class, Class>) arg -> !APIMessage.class.isAssignableFrom(arg) || APISyncCallMessage.class.isAssignableFrom(arg) ? arg : null);
 
         for (Class clz : needReplyMsgs) {
             MessageStatistic stat = new MessageStatistic();

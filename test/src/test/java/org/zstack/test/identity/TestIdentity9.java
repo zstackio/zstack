@@ -7,9 +7,9 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.header.identity.AccountConstant.StatementEffect;
+import org.zstack.header.identity.StatementEffect;
 import org.zstack.header.identity.PolicyInventory;
-import org.zstack.header.identity.PolicyInventory.Statement;
+import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.UserInventory;
 import org.zstack.header.identity.UserPolicyRefVO;
 import org.zstack.header.identity.UserPolicyRefVO_;
@@ -48,7 +48,7 @@ public class TestIdentity9 {
         int num = 10;
         List<String> policyUuids = new ArrayList<String>();
         for (int i = 0; i < num; i++) {
-            Statement s = new Statement();
+            PolicyStatement s = new PolicyStatement();
             s.addAction(".*");
             s.setEffect(StatementEffect.Allow);
             PolicyInventory p = creator.createPolicy(String.format("test%s", i), s);

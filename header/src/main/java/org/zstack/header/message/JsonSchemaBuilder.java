@@ -5,6 +5,9 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.GsonTransient;
 import org.zstack.header.message.NoJsonSchema;
 import org.zstack.utils.FieldUtils;
+import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
+import org.zstack.utils.logging.CLogger;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -16,6 +19,8 @@ import static java.util.Arrays.asList;
  * Created by xing5 on 2016/12/12.
  */
 public class JsonSchemaBuilder {
+    private static final CLogger logger = Utils.getLogger(JsonSchemaBuilder.class);
+
     Object object;
 
     private LinkedHashMap<String, String> schema = new LinkedHashMap<>();
@@ -33,52 +38,57 @@ public class JsonSchemaBuilder {
         List<Field> fields = FieldUtils.getAllFields(o.getClass());
 
         for (Field f : fields) {
-            if (isSkip(f)) {
-                continue;
-            }
-
-            f.setAccessible(true);
-            Object value = f.get(o);
-            if (value == null) {
-                // null value
-                continue;
-            }
-
-            if (value.getClass().getCanonicalName().startsWith("java.")) {
-                // for JRE classes, only deal with Collection and Map
-                if (value instanceof Collection) {
-                    Collection c = (Collection) value;
-
-                    Class gtype = FieldUtils.getGenericType(f);
-
-                    if (gtype != null && !gtype.getName().startsWith("java.")) {
-                        int i = 0;
-                        for (Object co : c) {
-                            paths.push(String.format("%s[%s]", f.getName(), i++));
-                            build(co, paths);
-                            paths.pop();
-                        }
-                    }
-
-                } else if (value instanceof Map) {
-                    Class gtype = FieldUtils.getGenericType(f);
-
-                    if (gtype != null && !gtype.getName().startsWith("java.")) {
-                        for (Object me : ((Map) value).entrySet()) {
-                            Map.Entry e = (Map.Entry) me;
-                            paths.push(String.format("%s.%s", f.getName(), e.getKey().toString()));
-                            build(e.getValue(), paths);
-                            paths.pop();
-                        }
-                    }
+            try {
+                if (isSkip(f)) {
+                    continue;
                 }
 
-                // don't record standard JRE classes
+                f.setAccessible(true);
+                Object value = f.get(o);
+                if (value == null) {
+                    // null value
+                    continue;
+                }
 
-            } else if (value.getClass().getCanonicalName().startsWith("org.zstack")) {
-                paths.push(f.getName());
-                build(value, paths);
-                paths.pop();
+                if (value.getClass().getCanonicalName().startsWith("java.")) {
+                    // for JRE classes, only deal with Collection and Map
+                    if (value instanceof Collection) {
+                        Collection c = (Collection) value;
+
+                        Class gtype = FieldUtils.getGenericType(f);
+
+                        if (gtype != null && !gtype.getName().startsWith("java.")) {
+                            int i = 0;
+                            for (Object co : c) {
+                                paths.push(String.format("%s[%s]", f.getName(), i++));
+                                build(co, paths);
+                                paths.pop();
+                            }
+                        }
+
+                    } else if (value instanceof Map) {
+                        Class gtype = FieldUtils.getGenericType(f);
+
+                        if (gtype != null && !gtype.getName().startsWith("java.")) {
+                            for (Object me : ((Map) value).entrySet()) {
+                                Map.Entry e = (Map.Entry) me;
+                                paths.push(String.format("%s.%s", f.getName(), e.getKey().toString()));
+                                build(e.getValue(), paths);
+                                paths.pop();
+                            }
+                        }
+                    }
+
+                    // don't record standard JRE classes
+
+                } else if (value.getClass().getCanonicalName().startsWith("org.zstack")) {
+                    paths.push(f.getName());
+                    build(value, paths);
+                    paths.pop();
+                }
+            } catch (StackOverflowError e) {
+                throw new CloudRuntimeException(String.format("StackOverflowError at object: %s, o: %s, field[name:%s, type: %s], paths: %s",
+                        object.getClass(), o.getClass(), f.getName(), f.getType(), paths));
             }
         }
 
@@ -135,7 +145,10 @@ public class JsonSchemaBuilder {
             }
 
             return ret;
-        } catch (IllegalAccessException e) {
+        } catch (CloudRuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            logger.warn(String.format("failed to build schema of %s, %s", object.getClass(), JSONObjectUtil.toJsonString(object)));
             throw new CloudRuntimeException(e);
         }
     }

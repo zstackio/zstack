@@ -222,9 +222,10 @@ class VirtualRouterOfferingCase extends SubCase {
 
         result1 = queryVirtualRouterOffering { sessionId = test1AccountSession.uuid }
 
+        assert result1.size() == 1
+
         List<VirtualRouterOfferingInventory> result2 = queryVirtualRouterOffering { sessionId = test2AccountSession.uuid }
 
-        assert result1.size() == 1
         assert result2.size() == 0
     }
 }

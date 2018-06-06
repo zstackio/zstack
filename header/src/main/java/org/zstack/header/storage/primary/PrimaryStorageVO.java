@@ -1,8 +1,8 @@
 package org.zstack.header.storage.primary;
 
-import org.zstack.header.vo.BaseResource;
-import org.zstack.header.vo.EO;
-import org.zstack.header.vo.NoView;
+import org.zstack.header.vo.*;
+import org.zstack.header.vo.EntityGraph;
+import org.zstack.header.zone.ZoneVO;
 
 import javax.persistence.*;
 import java.util.HashSet;
@@ -12,11 +12,19 @@ import java.util.Set;
 @Table
 @EO(EOClazz = PrimaryStorageEO.class)
 @BaseResource
-public class PrimaryStorageVO extends PrimaryStorageAO {
+@EntityGraph(
+        parents = {
+                @EntityGraph.Neighbour(type = ZoneVO.class, myField = "zoneUuid", targetField = "uuid")
+        },
+        friends = {
+                @EntityGraph.Neighbour(type = PrimaryStorageClusterRefVO.class, myField = "uuid", targetField = "primaryStorageUuid")
+        }
+)
+public class PrimaryStorageVO extends PrimaryStorageAO implements ToInventory {
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "primaryStorageUuid", insertable = false, updatable = false)
     @NoView
-    private Set<PrimaryStorageClusterRefVO> attachedClusterRefs = new HashSet<PrimaryStorageClusterRefVO>();
+    private Set<PrimaryStorageClusterRefVO> attachedClusterRefs = new HashSet<>();
 
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "uuid")

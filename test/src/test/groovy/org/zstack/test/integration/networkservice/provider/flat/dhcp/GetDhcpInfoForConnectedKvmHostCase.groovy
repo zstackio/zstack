@@ -11,7 +11,8 @@ import org.zstack.sdk.HostInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
-import org.zstack.testlib.*
+import org.zstack.testlib.EnvSpec
+import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 
@@ -128,8 +129,7 @@ class GetDhcpInfoForConnectedKvmHostCase extends SubCase {
             cmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.ApplyDhcpCmd.class)
 
             assert 1 == cmd.dhcp.size()
-            assert cmd.dhcp.get(0).hostname == VmSystemTags.HOSTNAME.getTag(vm.uuid)
-
+            assert cmd.dhcp.get(0).hostname == VmSystemTags.HOSTNAME.getTokenByResourceUuid(vm.uuid, VmSystemTags.HOSTNAME_TOKEN)
             return rsp
         }
 

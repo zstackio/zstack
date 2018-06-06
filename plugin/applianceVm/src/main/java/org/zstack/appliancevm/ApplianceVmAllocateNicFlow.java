@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.TransactionalCallback;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowException;
@@ -18,6 +19,7 @@ import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.vm.VmNicVO;
+import org.zstack.identity.Account;
 import org.zstack.identity.AccountManager;
 import org.zstack.utils.network.NetworkUtils;
 
@@ -38,8 +40,6 @@ public class ApplianceVmAllocateNicFlow implements Flow {
     private CloudBus bus;
     @Autowired
     private DatabaseFacade dbf;
-    @Autowired
-    private AccountManager acntMgr;
 
     private UsedIpInventory acquireIp(String l3NetworkUuid, String stratgey) {
         AllocateIpMsg msg = new AllocateIpMsg();
@@ -87,27 +87,6 @@ public class ApplianceVmAllocateNicFlow implements Flow {
     }
 
     @Transactional
-    private void persistNicInDb(List<VmNicInventory> nics) {
-        dbf.entityForTranscationCallback(TransactionalCallback.Operation.PERSIST, VmNicVO.class);
-        for (VmNicInventory nic : nics) {
-            VmNicVO nvo = new VmNicVO();
-            nvo.setUuid(nic.getUuid());
-            nvo.setDeviceId(nic.getDeviceId());
-            nvo.setIp(nic.getIp());
-            nvo.setL3NetworkUuid(nic.getL3NetworkUuid());
-            nvo.setMac(nic.getMac());
-            nvo.setUsedIpUuid(nic.getUsedIpUuid());
-            nvo.setGateway(nic.getGateway());
-            nvo.setNetmask(nic.getNetmask());
-            nvo.setVmInstanceUuid(nic.getVmInstanceUuid());
-            nvo.setMetaData(nic.getMetaData());
-            nvo.setInternalName(nic.getInternalName());
-            dbf.getEntityManager().persist(nvo);
-        }
-    }
-
-
-    @Transactional
     private void removeNicFromDb(List<VmNicInventory> nics) {
         dbf.entityForTranscationCallback(TransactionalCallback.Operation.REMOVE, VmNicVO.class);
         List<String> uuids = new ArrayList<String>(nics.size());
@@ -120,8 +99,6 @@ public class ApplianceVmAllocateNicFlow implements Flow {
         q.setParameter("uuids", uuids);
         q.executeUpdate();
     }
-
-
 
     @Override
     public void run(FlowTrigger chain, Map data) {
@@ -136,15 +113,33 @@ public class ApplianceVmAllocateNicFlow implements Flow {
             spec.getDestNics().add(makeNicInventory(spec, nicSpec, deviceId));
         }
 
-        persistNicInDb(spec.getDestNics());
-        String acntUuid = acntMgr.getOwnerAccountUuidOfResource(spec.getVmInventory().getUuid());
-        for (VmNicInventory nic : spec.getDestNics()) {
-            acntMgr.createAccountResourceRef(acntUuid, nic.getUuid(), VmNicVO.class);
-        }
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                String acntUuid = Account.getAccountUuidOfResource(spec.getVmInventory().getUuid());
+                spec.getDestNics().forEach(nic -> {
+                    VmNicVO nvo = new VmNicVO();
+                    nvo.setUuid(nic.getUuid());
+                    nvo.setDeviceId(nic.getDeviceId());
+                    nvo.setIp(nic.getIp());
+                    nvo.setL3NetworkUuid(nic.getL3NetworkUuid());
+                    nvo.setMac(nic.getMac());
+                    nvo.setUsedIpUuid(nic.getUsedIpUuid());
+                    nvo.setGateway(nic.getGateway());
+                    nvo.setNetmask(nic.getNetmask());
+                    nvo.setVmInstanceUuid(nic.getVmInstanceUuid());
+                    nvo.setMetaData(nic.getMetaData());
+                    nvo.setInternalName(nic.getInternalName());
+                    nvo.setAccountUuid(acntUuid);
+                    persist(nvo);
+                });
 
-        ApplianceVmVO apvm = dbf.findByUuid(spec.getVmInventory().getUuid(), ApplianceVmVO.class);
-        apvm.setManagementNetworkUuid(mgmtNic.getL3NetworkUuid());
-        dbf.update(apvm);
+                ApplianceVmVO apvm = findByUuid(spec.getVmInventory().getUuid(), ApplianceVmVO.class);
+                apvm.setManagementNetworkUuid(mgmtNic.getL3NetworkUuid());
+                merge(apvm);
+            }
+        }.execute();
+
         chain.next();
     }
 

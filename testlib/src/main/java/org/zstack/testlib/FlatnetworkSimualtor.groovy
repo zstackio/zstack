@@ -29,10 +29,6 @@ class FlatnetworkSimualtor implements Simulator {
             return new FlatDhcpBackend.ReleaseDhcpRsp()
         }
 
-        spec.simulator(FlatDnsBackend.SET_DNS_PATH) {
-            return new FlatDnsBackend.SetDnsRsp()
-        }
-
         spec.simulator(FlatDhcpBackend.DHCP_DELETE_NAMESPACE_PATH) {
             return new FlatDhcpBackend.DeleteNamespaceRsp()
         }

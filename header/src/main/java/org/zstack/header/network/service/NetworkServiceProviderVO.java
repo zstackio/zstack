@@ -1,5 +1,6 @@
 package org.zstack.header.network.service;
 
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.Index;
 
 import javax.persistence.*;
@@ -10,6 +11,12 @@ import java.util.Set;
 @Entity
 @Table
 @Inheritance(strategy = InheritanceType.JOINED)
+@EntityGraph(
+        friends = {
+                @EntityGraph.Neighbour(type = NetworkServiceProviderL2NetworkRefVO.class, myField = "uuid", targetField = "networkServiceProviderUuid"),
+                @EntityGraph.Neighbour(type = NetworkServiceTypeVO.class, myField = "uuid", targetField = "networkServiceProviderUuid")
+        }
+)
 public class NetworkServiceProviderVO {
     @Id
     @Column

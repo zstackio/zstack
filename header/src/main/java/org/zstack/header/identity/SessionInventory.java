@@ -1,9 +1,12 @@
 package org.zstack.header.identity;
 
 import org.zstack.header.configuration.PythonClassInventory;
+import org.zstack.header.rest.APINoSee;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
+import java.util.HashMap;
+import java.util.Map;
 
 @PythonClassInventory
 public class SessionInventory implements Serializable {

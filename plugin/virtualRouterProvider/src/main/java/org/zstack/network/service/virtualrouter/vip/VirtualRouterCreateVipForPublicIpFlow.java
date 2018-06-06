@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
 import org.zstack.core.db.*;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
@@ -16,11 +17,10 @@ import org.zstack.header.network.l3.IpRangeVO_;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.identity.Account;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.service.NetworkServiceManager;
-import org.zstack.network.service.vip.VipPeerL3NetworkRefVO;
-import org.zstack.network.service.vip.VipState;
-import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
@@ -66,6 +66,7 @@ public class VirtualRouterCreateVipForPublicIpFlow implements Flow {
         }
 
         /* vip db */
+        String accountUuid = Account.getAccountUuidOfResource(vr.getUuid());
         VipVO vipvo = new VipVO();
         vipvo.setUuid(Platform.getUuid());
         vipvo.setName(String.format("vip-for-%s", vr.getName()));
@@ -76,8 +77,9 @@ public class VirtualRouterCreateVipForPublicIpFlow implements Flow {
         vipvo.setIpRangeUuid(ips.getUuid());
         vipvo.setL3NetworkUuid(nic.getL3NetworkUuid());
         vipvo.setNetmask(nic.getNetmask());
-        vipvo.setUsedIpUuid(nic.getUuid());
+        vipvo.setUsedIpUuid(nic.getUsedIpUuid());
         vipvo.setUseFor(VirtualRouterConstant.SNAT_NETWORK_SERVICE_TYPE);
+        vipvo.setAccountUuid(accountUuid);
         if(!vr.getGuestL3Networks().isEmpty()){
             String peerL3network = vr.getGuestL3Networks().get(0);
             try {
@@ -92,13 +94,11 @@ public class VirtualRouterCreateVipForPublicIpFlow implements Flow {
         VirtualRouterVipVO vrvip = new VirtualRouterVipVO();
         vrvip.setUuid(vipvo.getUuid());
         vrvip.setVirtualRouterVmUuid(vr.getUuid());
-        String vrAccount = acntMgr.getOwnerAccountUuidOfResource(vr.getUuid());
         new SQLBatch(){
             @Override
             protected void scripts() {
                 persist(vipvo);
                 persist(vrvip);
-                acntMgr.createAccountResourceRef(vrAccount, vipvo.getUuid(), VipVO.class);
                 tagMgr.copySystemTag(vr.getUuid(), VirtualRouterVmVO.class.getSimpleName(),
                         vipvo.getUuid(), VipVO.class.getSimpleName(), false);
             }
@@ -114,17 +114,32 @@ public class VirtualRouterCreateVipForPublicIpFlow implements Flow {
         /* use for rollback */
         data.put(VirtualRouterConstant.Param.PUB_VIP_UUID.toString(), vipvo.getUuid());
         chain.next();
-        return ;
     }
 
     @Override
     public void rollback(FlowRollback chain, Map data) {
+        String vipUuid = (String) data.get(VirtualRouterConstant.Param.PUB_VIP_UUID.toString());
+        if (vipUuid == null) {
+            chain.rollback();
+            return;
+        }
 
-        VirtualRouterVipVO vrVip = new VirtualRouterVipVO();
-        vrVip.setUuid((String) data.get(VirtualRouterConstant.Param.PUB_VIP_UUID.toString()));
-        vrVip.setVirtualRouterVmUuid((String) data.get(VirtualRouterConstant.Param.VR_UUID.toString()));
-        dbf.remove(vrVip);
+        SQL.New(VirtualRouterVipVO.class).eq(VirtualRouterVipVO_.uuid, vipUuid).hardDelete();
 
-        chain.rollback();
+        ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+        struct.setUseFor(NetworkServiceType.SNAT.toString());
+        Vip vip = new Vip(vipUuid);
+        vip.setStruct(struct);
+        vip.release(new Completion(chain) {
+            @Override
+            public void success() {
+                chain.rollback();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                chain.rollback();
+            }
+        });
     }
 }

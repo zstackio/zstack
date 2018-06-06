@@ -38,4 +38,20 @@
         <type>java.lang.Boolean</type>
         <category>image</category>
     </config>
+
+	<config>
+		<name>image.num</name>
+		<description>default quota for image.num</description>
+		<defaultValue>20</defaultValue>
+		<category>quota</category>
+		<type>java.lang.Long</type>
+	</config>
+
+	<config>
+		<name>image.size</name>
+		<description>default quota for image.size</description>
+		<defaultValue>10995116277760</defaultValue>
+		<category>quota</category>
+		<type>java.lang.Long</type>
+	</config>
 </globalConfig>

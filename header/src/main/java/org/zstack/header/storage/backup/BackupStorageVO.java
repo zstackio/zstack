@@ -1,7 +1,9 @@
 package org.zstack.header.storage.backup;
 
+import org.zstack.header.image.ImageBackupStorageRefVO;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EO;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.NoView;
 
 import javax.persistence.*;
@@ -12,6 +14,12 @@ import java.util.Set;
 @Table
 @EO(EOClazz = BackupStorageEO.class)
 @BaseResource
+@EntityGraph(
+        friends = {
+                @EntityGraph.Neighbour(type = BackupStorageZoneRefVO.class, myField = "uuid", targetField = "backupStorageUuid"),
+                @EntityGraph.Neighbour(type = ImageBackupStorageRefVO.class, myField = "uuid", targetField = "backupStorageUuid")
+        }
+)
 public class BackupStorageVO extends BackupStorageAO {
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "backupStorageUuid", insertable = false, updatable = false)

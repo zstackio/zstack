@@ -113,7 +113,7 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
                     if (!s) {
                         LoadBalancerDeactiveVmNicMsg dmsg = new LoadBalancerDeactiveVmNicMsg();
                         dmsg.setLoadBalancerUuid(msg.getLoadBalancerUuid());
-                        dmsg.setListenerUuid(msg.getListenerUuid());
+                        dmsg.setListenerUuids(Arrays.asList(msg.getListenerUuid()));
                         dmsg.setVmNicUuids(msg.getVmNicUuids());
                         bus.makeTargetServiceIdByResourceUuid(dmsg, LoadBalancerConstants.SERVICE_ID, msg.getLoadBalancerUuid());
                         bus.send(dmsg, new CloudBusCallBack(trigger) {
@@ -155,8 +155,8 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
 
         class Triplet {
             String lbUuid;
-            String listenerUuid;
-            List<String> vmNicUuids;
+            Set<String> listenerUuids;
+            Set<String> vmNicUuids;
         }
 
         Map<String, Triplet> mt = new HashMap<String, Triplet>();
@@ -165,12 +165,13 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
             Triplet tr = mt.get(listenerUuid);
             if (tr == null) {
                 tr = new Triplet();
-                tr.listenerUuid = listenerUuid;
+                tr.listenerUuids = new HashSet<>();
                 tr.lbUuid = t.get(1, String.class);
-                tr.vmNicUuids = new ArrayList<String>();
-                mt.put(listenerUuid, tr);
+                tr.vmNicUuids = new HashSet<>();
+                mt.put(tr.lbUuid, tr);
             }
             tr.vmNicUuids.add(t.get(2, String.class));
+            tr.listenerUuids.add(t.get(0, String.class));
         }
 
         List<NeedReplyMessage> msgs = new ArrayList<NeedReplyMessage>();
@@ -179,8 +180,8 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
                 @Override
                 public NeedReplyMessage call(Entry<String, Triplet> arg) {
                     LoadBalancerRemoveVmNicMsg msg = new LoadBalancerRemoveVmNicMsg();
-                    msg.setVmNicUuids(arg.getValue().vmNicUuids);
-                    msg.setListenerUuid(arg.getValue().listenerUuid);
+                    msg.setVmNicUuids(new ArrayList<>(arg.getValue().vmNicUuids));
+                    msg.setListenerUuids(new ArrayList<>(arg.getValue().listenerUuids));
                     msg.setLoadBalancerUuid(arg.getValue().lbUuid);
                     bus.makeTargetServiceIdByResourceUuid(msg, LoadBalancerConstants.SERVICE_ID, arg.getKey());
                     return msg;
@@ -191,8 +192,8 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
                 @Override
                 public LoadBalancerDeactiveVmNicMsg call(Entry<String, Triplet> arg) {
                     LoadBalancerDeactiveVmNicMsg msg = new LoadBalancerDeactiveVmNicMsg();
-                    msg.setVmNicUuids(arg.getValue().vmNicUuids);
-                    msg.setListenerUuid(arg.getValue().listenerUuid);
+                    msg.setVmNicUuids(new ArrayList<>(arg.getValue().vmNicUuids));
+                    msg.setListenerUuids(new ArrayList<>(arg.getValue().listenerUuids));
                     msg.setLoadBalancerUuid(arg.getValue().lbUuid);
                     bus.makeTargetServiceIdByResourceUuid(msg, LoadBalancerConstants.SERVICE_ID, arg.getKey());
                     return msg;

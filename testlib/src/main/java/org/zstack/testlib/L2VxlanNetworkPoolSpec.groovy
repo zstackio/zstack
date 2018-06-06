@@ -9,7 +9,6 @@ import org.zstack.sdk.L2NetworkInventory
  * Created by weiwang on 15/03/2017.
  */
 class L2VxlanNetworkPoolSpec extends L2NetworkSpec implements Simulator {
-
     L2VxlanNetworkPoolSpec(EnvSpec envSpec) {
         super(envSpec)
     }

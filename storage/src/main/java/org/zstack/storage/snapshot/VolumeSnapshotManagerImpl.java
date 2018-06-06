@@ -2,6 +2,7 @@ package org.zstack.storage.snapshot;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -23,14 +24,12 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.identity.*;
 import org.zstack.header.message.*;
-import org.zstack.header.quota.QuotaConstant;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
-import org.zstack.identity.QuotaGlobalConfig;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.volume.FireSnapShotCanonicalEvent;
@@ -199,7 +198,9 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         vo.setParentUuid(null);
         vo.setLatest(true);
         vo.setFullSnapshot(fullsnapshot);
-        vo = dbf.getEntityManager().merge(vo);
+        dbf.getEntityManager().persist(vo);
+        dbf.getEntityManager().flush();
+        dbf.getEntityManager().refresh(vo);
 
         VolumeSnapshotStruct struct = new VolumeSnapshotStruct();
         struct.setCurrent(VolumeSnapshotInventory.valueOf(vo));
@@ -219,6 +220,15 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         DebugUtils.Assert(rets.size() < 2, "can not have more than one VolumeSnapshotTreeVO with current=1");
         VolumeSnapshotTreeVO chain = rets.isEmpty() ? null : rets.get(0);
         final Integer maxIncrementalSnapshotNum = getMaxIncrementalSnapshotNum(vo.getVolumeUuid());
+        if (!CoreGlobalProperty.UNIT_TEST_ON) {
+            if (maxIncrementalSnapshotNum <= 1) {
+                throw new OperationFailureException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
+                        String.format("Unsupported maximum snapshot number (%d) for volume [uuid:%s]",
+                                maxIncrementalSnapshotNum, vo.getVolumeUuid())
+                ));
+            }
+        }
+
         if (chain == null) {
             return newChain(vo, maxIncrementalSnapshotNum == 0);
         } else {
@@ -245,7 +255,9 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             vo.setLatest(true);
             vo.setParentUuid(latest.getUuid());
             vo.setDistance(latest.getDistance() + 1);
-            vo = dbf.getEntityManager().merge(vo);
+            dbf.getEntityManager().persist(vo);
+            dbf.getEntityManager().flush();
+            dbf.getEntityManager().refresh(vo);
 
             VolumeSnapshotStruct struct = new VolumeSnapshotStruct();
             struct.setParent(VolumeSnapshotInventory.valueOf(latest));
@@ -336,6 +348,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         vo.setState(VolumeSnapshotState.Enabled);
         vo.setStatus(VolumeSnapshotStatus.Creating);
         vo.setVolumeType(vol.getType().toString());
+        vo.setAccountUuid(msg.getAccountUuid());
 
         final VolumeSnapshotStruct struct = new SQLBatchWithReturn<VolumeSnapshotStruct>() {
             @Override
@@ -349,7 +362,6 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                     DebugUtils.Assert(false, "should not be here");
                 }
 
-                acntMgr.createAccountResourceRef(msg.getAccountUuid(), vo.getUuid(), VolumeSnapshotVO.class);
                 return s;
             }
         }.execute();
@@ -504,6 +516,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                         vo.setSize(vol.getSize());
                         vo.setState(VolumeSnapshotState.Enabled);
                         vo.setStatus(VolumeSnapshotStatus.Creating);
+                        vo.setAccountUuid(msg.getAccountUuid());
 
                         if (VolumeSnapshotArrangementType.CHAIN == capability.getArrangementType()) {
                             saveChainTypeSnapshot(vo);
@@ -513,7 +526,6 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                             DebugUtils.Assert(false, "should not be here");
                         }
 
-                        acntMgr.createAccountResourceRef(msg.getAccountUuid(), vo.getUuid(), VolumeSnapshotVO.class);
                         trigger.next();
                     }
                 });
@@ -772,7 +784,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 Quota.QuotaUsage usage;
 
                 usage = new Quota.QuotaUsage();
-                usage.setName(QuotaConstant.VOLUME_SNAPSHOT_NUM);
+                usage.setName(VolumeSnapshotQuotaConstant.VOLUME_SNAPSHOT_NUM);
                 usage.setUsed(getUsedVolumeSnapshotNum(accountUuid));
                 usages.add(usage);
 
@@ -835,14 +847,14 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                                                      String resourceTargetOwnerAccountUuid,
                                                      long volumeSnapshotNumAsked,
                                                      Map<String, Quota.QuotaPair> pairs) {
-                long volumeSnapshotNumQuota = pairs.get(QuotaConstant.VOLUME_SNAPSHOT_NUM).getValue();
+                long volumeSnapshotNumQuota = pairs.get(VolumeSnapshotQuotaConstant.VOLUME_SNAPSHOT_NUM).getValue();
                 long volumeSnapshotNumUsed = getUsedVolumeSnapshotNum(resourceTargetOwnerAccountUuid);
                 {
                     QuotaUtil.QuotaCompareInfo quotaCompareInfo;
                     quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
                     quotaCompareInfo.currentAccountUuid = currentAccountUuid;
                     quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
-                    quotaCompareInfo.quotaName = QuotaConstant.VOLUME_SNAPSHOT_NUM;
+                    quotaCompareInfo.quotaName = VolumeSnapshotQuotaConstant.VOLUME_SNAPSHOT_NUM;
                     quotaCompareInfo.quotaValue = volumeSnapshotNumQuota;
                     quotaCompareInfo.currentUsed = volumeSnapshotNumUsed;
                     quotaCompareInfo.request = volumeSnapshotNumAsked;
@@ -856,8 +868,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         Quota.QuotaPair p;
 
         p = new Quota.QuotaPair();
-        p.setName(QuotaConstant.VOLUME_SNAPSHOT_NUM);
-        p.setValue(QuotaGlobalConfig.VOLUME_SNAPSHOT_NUM.defaultValue(Long.class));
+        p.setName(VolumeSnapshotQuotaConstant.VOLUME_SNAPSHOT_NUM);
+        p.setValue(VolumeSnapshotQuotaGlobalConfig.VOLUME_SNAPSHOT_NUM.defaultValue(Long.class));
         quota.addPair(p);
 
         quota.addMessageNeedValidation(APICreateVolumeSnapshotMsg.class);

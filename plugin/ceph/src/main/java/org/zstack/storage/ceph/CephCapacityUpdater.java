@@ -7,8 +7,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.GLock;
-
 import javax.persistence.LockModeType;
+import java.util.List;
 
 /**
  * Created by frank on 7/28/2015.
@@ -20,12 +20,12 @@ public class CephCapacityUpdater {
     @Autowired
     private PluginRegistry pluginRgty;
 
-    public void update(String fsid, long total, long avail) {
-        update(fsid, total, avail, true);
+    public void update(String fsid, long total, long avail, List<CephPoolCapacity> poolCapacities) {
+        update(fsid, total, avail, poolCapacities, true);
     }
 
     @Transactional
-    public void update(String fsid, long total, long avail, boolean updatedAnyway) {
+    public void update(String fsid, long total, long avail, List<CephPoolCapacity> poolCapacities, boolean updatedAnyway) {
         CephCapacityVO vo = dbf.getEntityManager().find(CephCapacityVO.class, fsid, LockModeType.PESSIMISTIC_WRITE);
         boolean updated = false;
 
@@ -63,7 +63,7 @@ public class CephCapacityUpdater {
 
         if (updatedAnyway || updated) {
             for (CephCapacityUpdateExtensionPoint ext : pluginRgty.getExtensionList(CephCapacityUpdateExtensionPoint.class)) {
-                ext.update(fsid, total, avail);
+                ext.update(fsid, total, avail, poolCapacities);
             }
         }
     }

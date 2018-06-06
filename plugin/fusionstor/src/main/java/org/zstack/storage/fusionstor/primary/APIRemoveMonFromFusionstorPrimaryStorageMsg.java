@@ -19,6 +19,7 @@ import static org.codehaus.groovy.runtime.InvokerHelper.asList;
         method = HttpMethod.DELETE,
         responseClass = APIRemoveMonFromFusionstorPrimaryStorageEvent.class
 )
+@Deprecated
 public class APIRemoveMonFromFusionstorPrimaryStorageMsg extends APIMessage implements PrimaryStorageMessage {
     @APIParam(resourceType = PrimaryStorageVO.class)
     private String uuid;

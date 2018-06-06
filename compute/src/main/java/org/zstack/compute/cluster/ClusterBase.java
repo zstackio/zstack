@@ -107,9 +107,18 @@ public class ClusterBase extends AbstractCluster {
     private void handle(APIUpdateClusterOSMsg msg) {
         APIUpdateClusterOSEvent evt = new APIUpdateClusterOSEvent(msg.getId());
 
+        // assemble jobData
+        String jobData;
+        if (msg.getExcludePackages() == null) {
+            jobData = String.format("{'uuid':'%s', 'excludePackages':''}", msg.getUuid());
+        } else {
+            jobData = String.format("{'uuid':'%s', 'excludePackages':'%s'}",
+                    msg.getUuid(), String.join(",", msg.getExcludePackages()));
+        }
+
         SubmitLongJobMsg smsg = new SubmitLongJobMsg();
         smsg.setJobName(APIUpdateClusterOSMsg.class.getSimpleName());
-        smsg.setJobData(String.format("{'uuid':'%s'}", msg.getUuid()));
+        smsg.setJobData(jobData);
         smsg.setResourceUuid(msg.getResourceUuid());
         smsg.setSystemTags(msg.getSystemTags());
         smsg.setUserTags(msg.getUserTags());
@@ -312,6 +321,7 @@ public class ClusterBase extends AbstractCluster {
                     UpdateHostOSMsg umsg = new UpdateHostOSMsg();
                     umsg.setUuid(hostUuid);
                     umsg.setClusterUuid(msg.getUuid());
+                    umsg.setExcludePackages(msg.getExcludePackages());
                     bus.makeTargetServiceIdByResourceUuid(umsg, HostConstant.SERVICE_ID, hostUuid);
                     bus.send(umsg, new CloudBusCallBack(completion) {
                         @Override

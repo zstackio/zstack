@@ -13,4 +13,9 @@ public interface L3NetworkConstant {
     public static final String FIRST_AVAILABLE_IP_ALLOCATOR_STRATEGY = "FirstAvailableIpAllocatorStrategy";
     @PythonClass
     public static final String RANDOM_IP_ALLOCATOR_STRATEGY = "RandomIpAllocatorStrategy";
+
+    enum Param {
+        L3_HOSTROUTE_VO,
+        L3_HOSTROUTE_SUCCESS,
+    }
 }

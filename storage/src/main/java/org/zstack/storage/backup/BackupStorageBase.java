@@ -38,9 +38,7 @@ import org.zstack.header.storage.backup.BackupStorageCanonicalEvents.BackupStora
 import org.zstack.header.storage.backup.BackupStorageErrors.Opaque;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
-
-import static org.zstack.core.Platform.childResourceToBaseResourceMap;
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 
 import javax.persistence.LockModeType;
 import javax.persistence.Query;
@@ -658,11 +656,14 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
     }
 
     protected void updateCapacity(Long totalCapacity, Long availableCapacity) {
-        if (totalCapacity != null && availableCapacity != null) {
-            self.setTotalCapacity(totalCapacity);
-            self.setAvailableCapacity(availableCapacity);
-            dbf.update(self);
+        if (totalCapacity == null || availableCapacity == null) {
+            return;
         }
+
+        BackupStorageVO vo = dbf.findByUuid(self.getUuid(), BackupStorageVO.class);
+        vo.setTotalCapacity(totalCapacity);
+        vo.setAvailableCapacity(availableCapacity);
+        dbf.update(vo);
     }
 
     protected void fireDisconnectedCanonicalEvent(ErrorCode reason) {

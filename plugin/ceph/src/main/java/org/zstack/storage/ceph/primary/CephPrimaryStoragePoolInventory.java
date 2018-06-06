@@ -1,7 +1,6 @@
 package org.zstack.storage.ceph.primary;
 
 import org.zstack.header.search.Inventory;
-
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -20,6 +19,9 @@ public class CephPrimaryStoragePoolInventory {
     private Timestamp createDate;
     private Timestamp lastOpDate;
     private String type;
+    private Long availableCapacity;
+    private Long usedCapacity;
+    private Integer replicatedSize;
 
     public static CephPrimaryStoragePoolInventory valueOf(CephPrimaryStoragePoolVO vo) {
         CephPrimaryStoragePoolInventory inv = new CephPrimaryStoragePoolInventory();
@@ -31,6 +33,9 @@ public class CephPrimaryStoragePoolInventory {
         inv.lastOpDate = vo.getLastOpDate();
         inv.aliasName = vo.getAliasName();
         inv.type = vo.getType();
+        inv.availableCapacity = vo.getAvailableCapacity();
+        inv.usedCapacity = vo.getUsedCapacity();
+        inv.replicatedSize = vo.getReplicatedSize();
         return inv;
     }
 
@@ -104,5 +109,29 @@ public class CephPrimaryStoragePoolInventory {
 
     public void setAliasName(String aliasName) {
         this.aliasName = aliasName;
+    }
+
+    public Long getAvailableCapacity() {
+        return availableCapacity;
+    }
+
+    public void setAvailableCapacity(Long availableCapacity) {
+        this.availableCapacity = availableCapacity;
+    }
+
+    public Long getUsedCapacity() {
+        return usedCapacity;
+    }
+
+    public void setUsedCapacity(Long usedCapacity) {
+        this.usedCapacity = usedCapacity;
+    }
+
+    public Integer getReplicatedSize() {
+        return replicatedSize;
+    }
+
+    public void setReplicatedSize(Integer replicatedSize) {
+        this.replicatedSize = replicatedSize;
     }
 }

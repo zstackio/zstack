@@ -5,6 +5,8 @@ import org.zstack.test.integration.stabilisation.StabilityTestCase
 import org.zstack.testlib.SubCase
 import org.zstack.testlib.Test
 
+import java.lang.reflect.Modifier
+
 /**
  * Created by lining on 2017/7/21.
  */
@@ -33,7 +35,7 @@ class CaseNameCheckCase extends SubCase {
     void checkTestSuiteName(){
         List<String> invalidNameList = []
 
-        def tests = Platform.reflections.getSubTypesOf(Test.class)
+        def tests = Platform.reflections.getSubTypesOf(Test.class).findAll { !Modifier.isAbstract(it.modifiers) }
         tests.forEach{ it ->
             Class caseClass = it
             boolean result = it.package != null && !it.name.endsWith("Test") && !SubCase.isAssignableFrom(it) && ignoreCheckListForTestSuite.find{ caseClass.name == it } == null
@@ -49,7 +51,7 @@ class CaseNameCheckCase extends SubCase {
     void checkTestCaseName(){
         List<String> invalidNameList = []
 
-        def tests = Platform.reflections.getSubTypesOf(SubCase.class)
+        def tests = Platform.reflections.getSubTypesOf(SubCase.class).findAll { !Modifier.isAbstract(it.modifiers) }
         tests.forEach{ it ->
             boolean result = it.package != null && !it.name.endsWith("Case")
 

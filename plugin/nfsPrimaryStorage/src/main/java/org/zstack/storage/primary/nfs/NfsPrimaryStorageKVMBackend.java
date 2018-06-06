@@ -1,5 +1,6 @@
 package org.zstack.storage.primary.nfs;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.CoreGlobalProperty;
@@ -94,6 +95,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     public static final String MERGE_SNAPSHOT_PATH = "/nfsprimarystorage/mergesnapshot";
     public static final String REBASE_MERGE_SNAPSHOT_PATH = "/nfsprimarystorage/rebaseandmergesnapshot";
     public static final String REVERT_VOLUME_FROM_SNAPSHOT_PATH = "/nfsprimarystorage/revertvolumefromsnapshot";
+    public static final String REINIT_IMAGE_PATH = "/nfsprimarystorage/reinitimage";
     public static final String CREATE_TEMPLATE_FROM_VOLUME_PATH = "/nfsprimarystorage/sftp/createtemplatefromvolume";
     public static final String OFFLINE_SNAPSHOT_MERGE = "/nfsprimarystorage/offlinesnapshotmerge";
     public static final String REMOUNT_PATH = "/nfsprimarystorage/remount";
@@ -566,14 +568,18 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     @Override
     public void handle(PrimaryStorageInventory inv, GetVolumeRootImageUuidFromPrimaryStorageMsg msg, final ReturnValueCompletion<GetVolumeRootImageUuidFromPrimaryStorageReply> completion) {
         GetVolumeBaseImagePathCmd cmd = new GetVolumeBaseImagePathCmd();
-        cmd.volumeUUid = msg.getVolume().getUuid();
-        cmd.installPath = msg.getVolume().getInstallPath();
+        cmd.volumeUuid = msg.getVolume().getUuid();
+        cmd.volumeInstallDir = NfsPrimaryStorageKvmHelper.makeVolumeInstallDir(inv, msg.getVolume());
+        cmd.imageCacheDir = NfsPrimaryStorageKvmHelper.getCachedImageDir(inv);
 
         final HostInventory host = nfsFactory.getConnectedHostForOperation(inv).get(0);
         new KvmCommandSender(host.getUuid()).send(cmd, GET_VOLUME_BASE_IMAGE_PATH, new KvmCommandFailureChecker() {
             @Override
             public ErrorCode getError(KvmResponseWrapper wrapper) {
                 GetVolumeBaseImagePathRsp rsp = wrapper.getResponse(GetVolumeBaseImagePathRsp.class);
+                if (rsp.isSuccess() && StringUtils.isEmpty(rsp.path)) {
+                    return operr("cannot get root image of volume[uuid:%s], may be it create from iso", msg.getVolume().getUuid());
+                }
                 return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
             }
         }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
@@ -1066,14 +1072,15 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
     @Override
     public void resetRootVolumeFromImage(final VolumeInventory vol, final HostInventory host, final ReturnValueCompletion<String> completion) {
-        RevertVolumeFromSnapshotCmd cmd = new RevertVolumeFromSnapshotCmd();
+        ReInitImageCmd cmd = new ReInitImageCmd();
         PrimaryStorageInventory psInv = PrimaryStorageInventory.valueOf(dbf.findByUuid(vol.getPrimaryStorageUuid(), PrimaryStorageVO.class));
-        cmd.setSnapshotInstallPath(NfsPrimaryStorageKvmHelper.makeCachedImageInstallUrlFromImageUuidForTemplate(psInv, vol.getRootImageUuid()));
+        cmd.setImagePath(NfsPrimaryStorageKvmHelper.makeCachedImageInstallUrlFromImageUuidForTemplate(psInv, vol.getRootImageUuid()));
+        cmd.setVolumePath(NfsPrimaryStorageKvmHelper.makeRootVolumeInstallUrl(psInv, vol));
         cmd.setUuid(vol.getPrimaryStorageUuid());
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
-        msg.setPath(REVERT_VOLUME_FROM_SNAPSHOT_PATH);
+        msg.setPath(REINIT_IMAGE_PATH);
         msg.setHostUuid(host.getUuid());
         msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
@@ -1085,7 +1092,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                     return;
                 }
 
-                RevertVolumeFromSnapshotResponse rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(RevertVolumeFromSnapshotResponse.class);
+                ReInitImageRsp rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(ReInitImageRsp.class);
                 if (!rsp.isSuccess()) {
                     completion.fail(operr("failed to revert volume[uuid:%s] to image[uuid:%s] on kvm host[uuid:%s, ip:%s], %s",
                                     vol.getUuid(), vol.getRootImageUuid(), host.getUuid(), host.getManagementIp(), rsp.getError()));

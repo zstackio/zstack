@@ -9,16 +9,12 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.componentloader.PluginDSL;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.inventory.InventoryFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
-import org.zstack.header.apimediator.ApiMessageInterceptionException;
-import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
@@ -31,7 +27,6 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
-import org.zstack.header.network.l3.APICreateL3NetworkMsg;
 import org.zstack.network.l2.L2NetworkExtensionPointEmitter;
 import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.network.l2.L2NoVlanNetwork;
@@ -67,8 +62,6 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
     protected DatabaseFacade dbf;
     @Autowired
     protected L2NetworkManager l2Mgr;
-    @Autowired
-    protected InventoryFacade inventoryMgr;
     @Autowired
     protected CascadeFacade casf;
     @Autowired
@@ -318,7 +311,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
             @Override
             public void handle(Map data) {
                 self = dbf.findByUuid(self.getUuid(), L2NetworkVO.class);
-                evt.setInventory((L2NetworkInventory) inventoryMgr.valueOf(self));
+                evt.setInventory(self.toInventory());
                 bus.publish(evt);
             }
         }).error(new FlowErrorHandler(msg) {
@@ -359,7 +352,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         rq.add(L2NetworkClusterRefVO_.l2NetworkUuid, SimpleQuery.Op.EQ, msg.getL2NetworkUuid());
         long count = rq.count();
         if (count != 0) {
-            evt.setInventory((L2NetworkInventory) inventoryMgr.valueOf(self));
+            evt.setInventory(self.toInventory());
             bus.publish(evt);
             return;
         }
@@ -395,7 +388,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
 
                 logger.debug(String.format("successfully attached L2VxlanNetworkPool[uuid:%s] to cluster [uuid:%s]", self.getUuid(), msg.getClusterUuid()));
                 self = dbf.findByUuid(self.getUuid(), L2NetworkVO.class);
-                evt.setInventory((L2NetworkInventory) inventoryMgr.valueOf(self));
+                evt.setInventory(self.toInventory());
                 bus.publish(evt);
             }
 

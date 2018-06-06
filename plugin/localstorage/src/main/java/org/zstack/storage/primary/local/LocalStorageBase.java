@@ -359,10 +359,15 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     rollbackMsg.setStatus(originStatus);
                     rollbackMsg.setVolumeUuid(msg.getVolumeUuid());
                     bus.makeTargetServiceIdByResourceUuid(rollbackMsg, VolumeConstant.SERVICE_ID, msg.getVolumeUuid());
-                    bus.send(rollbackMsg);
+                    bus.send(rollbackMsg, new CloudBusCallBack(trigger) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            trigger.rollback();
+                        }
+                    });
+                } else {
+                    trigger.rollback();
                 }
-
-                trigger.rollback();
             }
         }).then(new Flow() {
             @Override
@@ -409,10 +414,15 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     rollbackMsg.setStateEvent(struct.getVmOriginState());
                     rollbackMsg.setVmInstanceUuid(struct.getVmUuid());
                     bus.makeTargetServiceIdByResourceUuid(rollbackMsg, VmInstanceConstant.SERVICE_ID, struct.getVmUuid());
-                    bus.send(rollbackMsg);
+                    bus.send(rollbackMsg, new CloudBusCallBack(trigger) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            trigger.rollback();
+                        }
+                    });
+                } else {
+                    trigger.rollback();
                 }
-
-                trigger.rollback();
             }
         }).then(new NoRollbackFlow() {
             @Override
@@ -1445,6 +1455,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 .eq(LocalStorageHostRefVO_.hostUuid, msg.getHostUuid())
                 .eq(LocalStorageHostRefVO_.primaryStorageUuid, msg.getPrimaryStorageUuid())
                 .find();
+        // jira: http://jira.zstack.io/browse/ZSTAC-9635
+        deleteResourceRef(msg.getHostUuid());
         if (ref != null) {
             dbf.remove(ref);
             decreaseCapacity(ref.getTotalCapacity(),
@@ -1453,8 +1465,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     ref.getAvailablePhysicalCapacity(),
                     ref.getSystemUsedCapacity());
         }
-        
-        deleteResourceRef(msg.getHostUuid());
+
         bus.reply(msg, new RemoveHostFromLocalStorageReply());
     }
 

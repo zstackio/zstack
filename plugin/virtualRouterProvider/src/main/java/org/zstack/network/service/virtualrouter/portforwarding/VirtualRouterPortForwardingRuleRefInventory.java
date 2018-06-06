@@ -3,6 +3,8 @@ package org.zstack.network.service.virtualrouter.portforwarding;
 import org.zstack.appliancevm.ApplianceVmInventory;
 import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
+import org.zstack.header.query.ExpandedQueryAlias;
+import org.zstack.header.query.ExpandedQueryAliases;
 import org.zstack.header.search.Inventory;
 import org.zstack.network.service.portforwarding.PortForwardingRuleInventory;
 import org.zstack.network.service.vip.VipInventory;
@@ -20,14 +22,19 @@ import java.util.List;
         @ExpandedQuery(expandedField = "vip", inventoryClass = VipInventory.class,
                 foreignKey = "vipUuid", expandedInventoryKey = "uuid"),
         @ExpandedQuery(expandedField = "applianceVm", inventoryClass = ApplianceVmInventory.class,
-                foreignKey = "virtualRouterVmUuid", expandedInventoryKey = "uuid")
+                foreignKey = "virtualRouterVmUuid", expandedInventoryKey = "uuid"),
+        @ExpandedQuery(target = ApplianceVmInventory.class, expandedField = "virtualRouterPortforwardingRef", inventoryClass = VirtualRouterPortForwardingRuleRefInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "virtualRouterVmUuid", hidden = true)
+})
+@ExpandedQueryAliases({
+        @ExpandedQueryAlias(target = ApplianceVmInventory.class, alias = "portForwarding", expandedField = "virtualRouterPortforwardingRef.portForwarding")
 })
 public class VirtualRouterPortForwardingRuleRefInventory {
     private String uuid;
     private String vipUuid;
     private String virtualRouterVmUuid;
 
-    public VirtualRouterPortForwardingRuleRefInventory valueOf(VirtualRouterPortForwardingRuleRefVO vo) {
+    public static VirtualRouterPortForwardingRuleRefInventory valueOf(VirtualRouterPortForwardingRuleRefVO vo) {
         VirtualRouterPortForwardingRuleRefInventory inv = new VirtualRouterPortForwardingRuleRefInventory();
         inv.setVirtualRouterVmUuid(vo.getVirtualRouterVmUuid());
         inv.setUuid(vo.getUuid());
@@ -35,7 +42,7 @@ public class VirtualRouterPortForwardingRuleRefInventory {
         return inv;
     }
 
-    public List<VirtualRouterPortForwardingRuleRefInventory> valueOf(Collection<VirtualRouterPortForwardingRuleRefVO> vos) {
+    public static List<VirtualRouterPortForwardingRuleRefInventory> valueOf(Collection<VirtualRouterPortForwardingRuleRefVO> vos) {
         List<VirtualRouterPortForwardingRuleRefInventory> invs = new ArrayList<VirtualRouterPortForwardingRuleRefInventory>();
         for (VirtualRouterPortForwardingRuleRefVO vo : vos) {
             invs.add(valueOf(vo));

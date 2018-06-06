@@ -46,8 +46,6 @@ public class CreateApplianceVmJob implements Job {
     @Autowired
     protected CloudBus bus;
     @Autowired
-    private AccountManager acntMgr;
-    @Autowired
     private ApplianceVmFactory apvmFactory;
     @Autowired
     private TagManager tagMgr;
@@ -113,13 +111,9 @@ public class CreateApplianceVmJob implements Job {
         avo = new SQLBatchWithReturn<ApplianceVmVO>() {
             @Override
             protected ApplianceVmVO scripts() {
+                finalAvo1.setAccountUuid(spec.getAccountUuid());
                 ApplianceVmVO vo = factory.persistApplianceVm(spec, finalAvo1);
-                dbf.getEntityManager().flush();
-                dbf.getEntityManager().refresh(vo);
-
-                acntMgr.createAccountResourceRef(spec.getAccountUuid(), vo.getUuid(), VmInstanceVO.class);
-
-                return vo;
+                return reload(vo);
             }
         }.execute();
 

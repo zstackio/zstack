@@ -5,4 +5,8 @@
     <message>
         <name>org.zstack.query.APIBatchQueryMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.query.APIZQLQueryMsg</name>
+    </message>
 </service>

@@ -3,7 +3,6 @@ package scripts
 import com.google.common.io.Resources
 import groovy.json.JsonBuilder
 import org.apache.commons.io.Charsets
-import org.apache.commons.io.FileUtils
 import org.apache.commons.lang.StringUtils
 import org.springframework.http.HttpMethod
 import org.zstack.core.Platform
@@ -14,9 +13,7 @@ import org.zstack.header.message.APIMessage
 import org.zstack.header.message.APIMessage.InvalidApiMessageException
 import org.zstack.header.message.APIParam
 import org.zstack.header.message.DocUtils
-import org.zstack.header.message.OverriddenApiParams
 import org.zstack.header.query.APIQueryMessage
-import org.zstack.header.query.AutoQuery
 import org.zstack.header.rest.APINoSee
 import org.zstack.header.rest.RestRequest
 import org.zstack.header.rest.RestResponse
@@ -27,7 +24,6 @@ import org.zstack.utils.DebugUtils
 import org.zstack.utils.FieldUtils
 import org.zstack.utils.ShellResult
 import org.zstack.utils.ShellUtils
-import org.zstack.utils.TypeUtils
 import org.zstack.utils.Utils
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.logging.CLogger
@@ -36,9 +32,9 @@ import org.zstack.utils.path.PathUtil
 import java.lang.reflect.Field
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
-import java.util.concurrent.TimeUnit
 import java.util.regex.Matcher
 import java.util.regex.Pattern
+import java.util.stream.Collectors
 
 /**
  * Created by xing5 on 2016/12/21.
@@ -80,7 +76,9 @@ class RestDocumentationGenerator implements DocumentGenerator {
             "securityGroupUuid": "安全组UUID",
             "eipUuid": "弹性IP UUID",
             "loadBalancerUuid": "负载均衡器UUID",
-            "rootVolumeUuid": "根云盘UUID"
+            "rootVolumeUuid": "根云盘UUID",
+            "userTag": "用户标签",
+            "systemTag": "系统标签"
     ]
 
     String CHINESE_CN = "zh_cn"
@@ -159,7 +157,7 @@ class RestDocumentationGenerator implements DocumentGenerator {
                 return classes.contains(it.simpleName)
             }
         }
-
+        def errInfo = []
         apiClasses.each {
             def docPath = getDocTemplatePathFromClass(it)
             System.out.println("processing ${docPath}")
@@ -176,10 +174,17 @@ class RestDocumentationGenerator implements DocumentGenerator {
                 if (ignoreError()) {
                     System.out.println("failed to process ${docPath}, ${e.message}")
                     logger.warn(e.message, e)
+                } else if (e instanceof FileNotFoundException) {
+                    errInfo.add(e.message)
                 } else {
                     throw e
                 }
             }
+        }
+
+        if (!errInfo.isEmpty()) {
+            logger.warn(String.format("there are %d errors found:", errInfo.size()))
+            throw new FileNotFoundException(errInfo.stream().collect(Collectors.joining("\n")))
         }
 
         URL url = Resources.getResource("doc/RestIntroduction_zh_cn.md")
@@ -570,7 +575,8 @@ class RestDocumentationGenerator implements DocumentGenerator {
 
                 return m.invoke(null) as List<String>
             } catch (NoSuchMethodException e) {
-                throw new CloudRuntimeException("class[${clz.name}] doesn't have static __example__ method", e)
+                //throw new CloudRuntimeException("class[${clz.name}] doesn't have static __example__ method", e)
+                logger.warn("class[${clz.name}] doesn't have static __example__ method")
             }
         }
 
@@ -844,7 +850,8 @@ ${table.join("\n")}
             } catch (InvalidApiMessageException ie) {
                 throw new CloudRuntimeException("cannot generate the markdown document for the class[${clz.name}], the __example__() method has an error: ${String.format(ie.getMessage(), ie.getArguments())}")
             } catch (NoSuchMethodException e) {
-                throw new CloudRuntimeException("class[${clz.name}] doesn't have static __example__ method", e)
+                //throw new CloudRuntimeException("class[${clz.name}] doesn't have static __example__ method", e)
+                logger.warn("class[${clz.name}] doesn't have static __example__ method")
             }
         }
 
@@ -1129,7 +1136,8 @@ ${cols.join("\n")}
         }
 
         String generate() {
-            return  """\
+            try {
+                return """\
 ## ${doc._category} - ${doc._title}
 
 ${doc._desc}
@@ -1162,6 +1170,9 @@ ${javaSdk()}
 
 ${pythonSdk()}
 """
+            } catch (Exception e) {
+                logger.warn(e.message, e)
+            }
         }
     }
 

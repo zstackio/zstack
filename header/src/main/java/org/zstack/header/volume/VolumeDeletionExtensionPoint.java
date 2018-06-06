@@ -1,5 +1,6 @@
 package org.zstack.header.volume;
 
+import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 
 /**
@@ -10,7 +11,7 @@ public interface VolumeDeletionExtensionPoint {
 
     void beforeDeleteVolume(VolumeInventory volume);
 
-    void afterDeleteVolume(VolumeInventory volume);
+    void afterDeleteVolume(VolumeInventory volume, Completion completion);
 
     void failedToDeleteVolume(VolumeInventory volume, ErrorCode errorCode);
 }

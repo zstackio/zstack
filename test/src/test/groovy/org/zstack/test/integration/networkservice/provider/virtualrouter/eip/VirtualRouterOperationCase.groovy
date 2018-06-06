@@ -3,6 +3,7 @@ package org.zstack.test.integration.networkservice.provider.virtualrouter.eip
 import org.zstack.appliancevm.ApplianceVmVO
 import org.zstack.core.db.DatabaseFacade
 import org.springframework.http.HttpEntity
+import org.zstack.header.vm.VmNicVO
 import org.zstack.sdk.ApplianceVmInventory
 import org.zstack.core.db.Q
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands
@@ -10,8 +11,10 @@ import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO_
 import org.zstack.sdk.EipInventory
+import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.VmInstanceInventory
+import org.zstack.sdk.VmNicInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.test.integration.networkservice.provider.virtualrouter.VirtualRouterNetworkServiceEnv
 import org.zstack.testlib.EipSpec
@@ -41,7 +44,27 @@ class VirtualRouterOperationCase extends SubCase {
 
             testVirtualRouterReconnect()
             testUpdateGlobalConfigAndPingVirtualRouter()
+            testQueryVirtualRouterVm()
+            testQueryVRImage()
         }
+    }
+
+    void testQueryVRImage() {
+        ImageInventory vr = env.inventoryByName("vr")
+
+        List<ImageInventory> images = queryImage {
+            conditions = ["system=true"]
+        }
+
+        assert images.size() == 1
+        assert images[0].uuid == vr.uuid
+        assert images[0].system
+
+        images = queryImage {
+            conditions = ["system=false"]
+        }
+
+        assert !images.any { it.system }
     }
 
     @Override
@@ -59,9 +82,35 @@ class VirtualRouterOperationCase extends SubCase {
         env = VirtualRouterNetworkServiceEnv.oneVmOneHostVyosOnEipEnv()
     }
 
+    void testQueryVirtualRouterVm() {
+        ApplianceVmVO vo = Q.New(ApplianceVmVO.class).list()[0]
+        assert vo
+
+        VmNicVO nic = vo.getVmNics()[0]
+        List lst = queryApplianceVm { conditions=["vmNics.l3NetworkUuid=${nic.l3NetworkUuid}"] }
+        assert !lst.isEmpty()
+    }
+
     void testVirtualRouterReconnect() {
         DatabaseFacade dbf = bean(DatabaseFacade.class)
         ApplianceVmVO vr = dbf.listAll(ApplianceVmVO.class).get(0)
+        VmInstanceInventory vm = env.inventoryByName("vm")
+        EipInventory eip = env.inventoryByName("eip")
+
+        VmNicInventory nic1 = vm.getVmNics().get(0)
+        attachEip {
+            eipUuid = eip.uuid
+            vmNicUuid = nic1.uuid
+        }
+
+        VirtualRouterCommands.CreateVipCmd vipCmd = null
+        env.afterSimulator(VirtualRouterConstant.VR_CREATE_VIP) { rsp, HttpEntity<String> entity ->
+            vipCmd = JSONObjectUtil.toObject(entity.body, VirtualRouterCommands.CreateVipCmd.class)
+            assert vipCmd.vips.size() == 2
+            assert vipCmd.vips.get(0).vipUuid == eip.vipUuid || vipCmd.vips.get(1).vipUuid
+            return rsp
+        }
+
         ApplianceVmInventory inv = reconnectVirtualRouter {
             vmInstanceUuid = vr.uuid
             sessionId = adminSession()

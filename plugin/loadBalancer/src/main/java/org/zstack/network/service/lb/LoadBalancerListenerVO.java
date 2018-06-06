@@ -1,6 +1,8 @@
 package org.zstack.network.service.lb;
 
+import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.vo.BaseResource;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.NoView;
@@ -17,7 +19,14 @@ import java.util.Set;
 @Entity
 @Table
 @BaseResource
-public class LoadBalancerListenerVO extends ResourceVO {
+@EntityGraph(
+        parents = {
+                @EntityGraph.Neighbour(type = LoadBalancerVO.class, myField = "loadBalancerUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = LoadBalancerListenerVmNicRefVO.class, myField = "uuid", targetField = "listenerUuid"),
+                @EntityGraph.Neighbour(type = LoadBalancerListenerCertificateRefVO.class, myField = "uuid", targetField = "listenerUuid")
+        }
+)
+public class LoadBalancerListenerVO extends ResourceVO implements OwnedByAccount {
     @Column
     @ForeignKey(parentEntityClass = LoadBalancerVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.RESTRICT)
     private String loadBalancerUuid;
@@ -42,11 +51,30 @@ public class LoadBalancerListenerVO extends ResourceVO {
     @NoView
     private Set<LoadBalancerListenerVmNicRefVO> vmNicRefs = new HashSet<LoadBalancerListenerVmNicRefVO>();
 
+    @OneToMany(fetch=FetchType.EAGER)
+    @JoinColumn(name="listenerUuid", insertable=false, updatable=false)
+    @NoView
+    private Set<LoadBalancerListenerCertificateRefVO> certificateRefs;
+
     @Column
     private Timestamp createDate;
 
     @Column
     private Timestamp lastOpDate;
+
+    @Transient
+    private String accountUuid;
+
+    @Override
+    public String getAccountUuid() {
+        return accountUuid;
+    }
+
+    @Override
+    public void setAccountUuid(String accountUuid) {
+        this.accountUuid = accountUuid;
+    }
+
 
     @PreUpdate
     private void preUpdate() {
@@ -123,5 +151,13 @@ public class LoadBalancerListenerVO extends ResourceVO {
 
     public void setLoadBalancerUuid(String loadBalancerUuid) {
         this.loadBalancerUuid = loadBalancerUuid;
+    }
+
+    public Set<LoadBalancerListenerCertificateRefVO> getCertificateRefs() {
+        return certificateRefs;
+    }
+
+    public void setCertificateRefs(Set<LoadBalancerListenerCertificateRefVO> certificateRefs) {
+        this.certificateRefs = certificateRefs;
     }
 }

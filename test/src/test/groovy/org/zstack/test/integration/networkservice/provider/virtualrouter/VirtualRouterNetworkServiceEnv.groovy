@@ -37,6 +37,7 @@ class VirtualRouterNetworkServiceEnv {
                 image {
                     name = "vr"
                     url = "http://zstack.org/download/vr.qcow2"
+                    system = true
                 }
             }
 
@@ -100,6 +101,11 @@ class VirtualRouterNetworkServiceEnv {
                             gateway = "11.168.100.1"
                         }
                     }
+                }
+
+                l2NoVlanNetwork {
+                    name = "l2-1"
+                    physicalInterface = "eth1"
                 }
 
                 attachBackupStorage("sftp")

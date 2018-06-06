@@ -9,6 +9,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -224,7 +225,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     }
 
     @Override
-    public void update(String fsid, final long total, final long avail) {
+    public void update(String fsid, final long total, final long avail, List<CephPoolCapacity> poolCapacities) {
         String sql = "select cap from PrimaryStorageCapacityVO cap, CephPrimaryStorageVO pri where pri.uuid = cap.uuid and pri.fsid = :fsid";
         TypedQuery<PrimaryStorageCapacityVO> q = dbf.getEntityManager().createQuery(sql, PrimaryStorageCapacityVO.class);
         q.setParameter("fsid", fsid);
@@ -244,6 +245,39 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
                 return cap;
             }
         });
+
+        if (poolCapacities == null || poolCapacities.isEmpty()) {
+            return;
+        }
+
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                List<CephPrimaryStoragePoolVO> pools = sql("select pool from CephPrimaryStoragePoolVO pool, CephPrimaryStorageVO ps" +
+                        " where pool.primaryStorageUuid = ps.uuid and ps.fsid = :fsid", CephPrimaryStoragePoolVO.class)
+                        .param("fsid", fsid)
+                        .list();
+                if (pools == null || pools.isEmpty()) {
+                    return;
+                }
+
+                for (CephPrimaryStoragePoolVO poolVO : pools) {
+
+                    if (!poolCapacities.stream().anyMatch((e) -> e.getName().equals(poolVO.getPoolName()))) {
+                        continue;
+                    }
+
+                    CephPoolCapacity poolCapacity = poolCapacities.stream()
+                            .filter(e -> e.getName().equals(poolVO.getPoolName()))
+                            .findAny().get();
+
+                    poolVO.setAvailableCapacity(poolCapacity.getAvailableCapacity());
+                    poolVO.setReplicatedSize(poolCapacity.getReplicatedSize());
+                    poolVO.setUsedCapacity(poolCapacity.getUsedCapacity());
+                    dbf.getEntityManager().merge(poolVO);
+                }
+            }
+        }.execute();
     }
 
     private IsoTO convertIsoToCephIfNeeded(final IsoTO to) {
