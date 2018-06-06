@@ -70,7 +70,7 @@ public class Session {
 
             @Override
             protected SessionInventory scripts() {
-               Timestamp expiredDate = new Timestamp(finalExtendPeriod + getCurrentSqlDate().getTime());
+               Timestamp expiredDate = new Timestamp(TimeUnit.SECONDS.toMillis(finalExtendPeriod) + getCurrentSqlDate().getTime());
                SessionInventory s = getSession(uuid);
                s.setExpiredDate(expiredDate);
 
