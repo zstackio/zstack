@@ -1,7 +1,9 @@
 package org.zstack.storage.backup.sftp;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.RestResponse;
 
+@RestResponse(allTo = "inventory")
 public class APIReconnectSftpBackupStorageEvent extends APIEvent {
     private SftpBackupStorageInventory inventory;
     
