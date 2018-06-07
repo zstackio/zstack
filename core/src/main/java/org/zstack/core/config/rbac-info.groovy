@@ -10,6 +10,8 @@ static void init() {
         permissions {
             name = "global-config"
             adminOnlyAPIs("org.zstack.core.config.**")
+            normalAPIs(APIQueryGlobalConfigMsg.class)
+
 
             contributeToRole {
                 roleName = "other"
