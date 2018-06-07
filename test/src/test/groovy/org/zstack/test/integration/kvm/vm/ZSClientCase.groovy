@@ -68,21 +68,34 @@ class ZSClientCase extends SubCase {
         ImageInventory image = env.inventoryByName("image1") as ImageInventory
         L3NetworkInventory l3 = env.inventoryByName("l3") as L3NetworkInventory
 
+        long acceptTime = 1000
+        long breakTime = 2000
+        
         CreateVmInstanceAction action = new CreateVmInstanceAction()
         action.name = "test"
         action.instanceOfferingUuid = instanceOffering.uuid
         action.imageUuid = image.uuid
         action.l3NetworkUuids = [l3.uuid]
         action.sessionId = adminSession()
-        action.timeout = 1000
+        action.timeout = acceptTime
 
         env.afterSimulator(KVMConstant.KVM_START_VM_PATH) { rsp, HttpEntity<String> e ->
-            TimeUnit.SECONDS.sleep(2)
+            TimeUnit.MILLISECONDS.sleep(breakTime)
             return rsp
         }
 
+        // CreateVmInstanceAction.Result result = action.call()
+        // assert null != result.error
+
+        long startTime = System.currentTimeMillis()
         CreateVmInstanceAction.Result result = action.call()
-        assert null != result.error
+        long endTime = System.currentTimeMillis()
+
+        long time = endTime - startTime
+        assert time >= acceptTime
+        if (time <= breakTime) {
+            assert null != result.error
+        }
     }
 
     void testAsyncTimeout(){

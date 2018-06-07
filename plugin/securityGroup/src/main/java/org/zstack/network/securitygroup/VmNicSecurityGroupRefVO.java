@@ -1,7 +1,9 @@
 package org.zstack.network.securitygroup;
 
 import org.zstack.header.vm.VmInstanceEO;
+import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 
@@ -9,6 +11,13 @@ import javax.persistence.*;
 import java.sql.Timestamp;
 @Entity
 @Table
+@EntityGraph(
+        friends = {
+                @EntityGraph.Neighbour(type = VmNicVO.class, myField = "vmNicUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = VmInstanceVO.class, myField = "vmInstanceUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = SecurityGroupVO.class, myField = "securityGroupUuid", targetField = "uuid"),
+        }
+)
 public class VmNicSecurityGroupRefVO {
     @Id
     @Column

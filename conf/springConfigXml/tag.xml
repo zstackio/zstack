@@ -22,9 +22,9 @@
         </zstack:plugin>
     </bean>
 
-    <bean id="TagSubQueryExtension" class="org.zstack.tag.TagSubQueryExtension">
+    <bean id="TagZQLExtension" class="org.zstack.tag.TagZQLExtension">
         <zstack:plugin>
-            <zstack:extension interface="org.zstack.query.MysqlQuerySubQueryExtension" />
+            <zstack:extension interface="org.zstack.header.zql.RestrictByExprExtensionPoint" />
         </zstack:plugin>
     </bean>
 

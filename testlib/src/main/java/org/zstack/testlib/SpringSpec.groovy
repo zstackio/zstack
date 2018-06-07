@@ -97,4 +97,8 @@ class SpringSpec {
     void securityGroup() {
         include("SecurityGroupManager.xml")
     }
+
+    void console() {
+        include("ConsoleManager.xml")
+    }
 }

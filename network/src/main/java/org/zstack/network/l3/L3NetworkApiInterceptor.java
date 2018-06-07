@@ -19,6 +19,8 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
 import static org.zstack.core.Platform.argerr;
@@ -40,6 +42,8 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
     private DatabaseFacade dbf;
     @Autowired
     private ErrorFacade errf;
+
+    private final static CLogger logger = Utils.getLogger(L3NetworkApiInterceptor.class);
 
     private void setServiceId(APIMessage msg) {
         if (msg instanceof IpRangeMessage) {
@@ -80,6 +84,10 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             validate((APISetL3NetworkRouterInterfaceIpMsg) msg);
         } else if (msg instanceof APIUpdateL3NetworkMsg) {
             validate((APIUpdateL3NetworkMsg) msg);
+        } else if (msg instanceof APIAddHostRouteToL3NetworkMsg) {
+            validate((APIAddHostRouteToL3NetworkMsg) msg);
+        } else if (msg instanceof APIRemoveHostRouteFromL3NetworkMsg) {
+            validate((APIRemoveHostRouteFromL3NetworkMsg) msg);
         }
 
         setServiceId(msg);
@@ -334,6 +342,24 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
                         r.getUuid(), rcidr, cidr));
             }
         }
+
+        /* get all l3 network uuid of same l2 network */
+        L3NetworkVO l3Vo = dbf.findByUuid(ipr.getL3NetworkUuid(), L3NetworkVO.class);
+        List<String> l3Uuids = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.l2NetworkUuid, l3Vo.getL2NetworkUuid()).select(L3NetworkVO_.uuid).listValues();
+        String iprCidr = ipr.getNetworkCidr();
+        q = dbf.createQuery(IpRangeVO.class);
+        q.add(IpRangeVO_.l3NetworkUuid, Op.IN, l3Uuids);
+        ranges = q.list();
+        for (IpRangeVO r : ranges) {
+            if (r.getL3NetworkUuid().equals(ipr.getL3NetworkUuid())) {
+                continue;
+            }
+
+            String rcidr = r.getNetworkCidr();
+            if (NetworkUtils.isCidrOverlap(iprCidr, rcidr)) {
+                throw new ApiMessageInterceptionException(argerr("overlap with ip range[uuid:%s, start ip:%s, end ip: %s]", r.getUuid(), r.getStartIp(), r.getEndIp()));
+            }
+        }
     }
 
     private void validate(APIAddIpRangeMsg msg) {
@@ -351,6 +377,36 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
         q.add(L3NetworkDnsVO_.dns, Op.EQ, msg.getDns());
         if (q.isExists()) {
             throw new ApiMessageInterceptionException(operr("there has been a DNS[%s] on L3 network[uuid:%s]", msg.getDns(), msg.getL3NetworkUuid()));
+        }
+    }
+
+    private void validate(APIAddHostRouteToL3NetworkMsg msg) {
+        if (!NetworkUtils.isCidr(msg.getPrefix())) {
+            throw new ApiMessageInterceptionException(argerr("prefix [%s] is not a IPv4 network cidr", msg.getL3NetworkUuid()));
+        }
+
+        if (!NetworkUtils.isIpv4Address(msg.getNexthop())) {
+            throw new ApiMessageInterceptionException(argerr("nexthop[%s] is not a IPv4 address", msg.getNexthop()));
+        }
+
+        SimpleQuery<L3NetworkHostRouteVO> q = dbf.createQuery(L3NetworkHostRouteVO.class);
+        q.add(L3NetworkHostRouteVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
+        q.add(L3NetworkHostRouteVO_.prefix, Op.EQ, msg.getPrefix());
+        if (q.isExists()) {
+            throw new ApiMessageInterceptionException(operr("there has been a hostroute for prefix[%s] on L3 network[uuid:%s]", msg.getPrefix(), msg.getL3NetworkUuid()));
+        }
+    }
+
+    private void validate(APIRemoveHostRouteFromL3NetworkMsg msg) {
+        if (!NetworkUtils.isCidr(msg.getPrefix())) {
+            throw new ApiMessageInterceptionException(argerr("prefix [%s] is not a IPv4 network cidr", msg.getL3NetworkUuid()));
+        }
+
+        SimpleQuery<L3NetworkHostRouteVO> q = dbf.createQuery(L3NetworkHostRouteVO.class);
+        q.add(L3NetworkHostRouteVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
+        q.add(L3NetworkHostRouteVO_.prefix, Op.EQ, msg.getPrefix());
+        if (!q.isExists()) {
+            throw new ApiMessageInterceptionException(operr("there is no hostroute for prefix[%s] on L3 network[uuid:%s]", msg.getPrefix(), msg.getL3NetworkUuid()));
         }
     }
 }

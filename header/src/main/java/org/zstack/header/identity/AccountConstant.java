@@ -1,7 +1,6 @@
 package org.zstack.header.identity;
 
 import org.zstack.header.configuration.PythonClass;
-import org.zstack.header.rest.SDK;
 
 @PythonClass
 public interface AccountConstant {
@@ -24,17 +23,19 @@ public interface AccountConstant {
 
     String QUOTA_GLOBAL_CONFIG_CATETORY = "quota";
 
-    enum RoleDecision {
-        EXPLICIT_DENY,
-        DEFAULT_DENY,
-        DENY,
-        ALLOW,
+    String PRINCIPAL_USER = "user";
+    String PRINCIPAL_ACCOUNT = "account";
+
+    static boolean isAdminPermission(SessionInventory session) {
+        return isAdminPermission(session.getAccountUuid());
     }
 
-    @SDK(sdkClassName = "PolicyStatementEffect")
-    enum StatementEffect {
-        Allow,
-        Deny,
+    static boolean isAdminPermission(String accountUuid) {
+        return INITIAL_SYSTEM_ADMIN_UUID.equals(accountUuid);
+    }
+
+    static boolean isAdmin(SessionInventory session) {
+        return INITIAL_SYSTEM_ADMIN_UUID.equals(session.getAccountUuid()) && INITIAL_SYSTEM_ADMIN_UUID.equals(session.getUserUuid());
     }
 
     enum Principal {

@@ -129,7 +129,8 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
 
     @Override
     public void rollback(final FlowRollback chain, Map data) {
-        releaseSnatServiceOnVip(chain, data);
+        /* no need to release vip here, because when delete router, it will delete vip*/
+        chain.rollback();
     }
 
     Vip getVipWithSnatService(Map data){
@@ -155,29 +156,5 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
         }
         vip.setStruct(struct);
         return vip;
-    }
-
-    void releaseSnatServiceOnVip(final FlowRollback chain, Map data){
-        String vipUuid = (String)data.get(VirtualRouterConstant.Param.PUB_VIP_UUID.toString());
-        if (vipUuid == null){
-            chain.rollback();
-            return;
-        }
-
-        ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
-        struct.setUseFor(NetworkServiceType.SNAT.toString());
-        Vip vip = new Vip(vipUuid);
-        vip.setStruct(struct);
-        vip.release(new Completion(chain) {
-            @Override
-            public void success() {
-                chain.rollback();
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                chain.rollback();
-            }
-        });
     }
 }

@@ -173,4 +173,14 @@ public class PathUtil {
             throw new RuntimeException(String.format("Unable to locate service portal configure files"), e);
         }
     }
+
+    public static void forceRemoveFile(String path) {
+        try {
+            File f = new File(path);
+            boolean success = f.delete();
+            logger.warn(String.format("Delete %s status: %s", path, success));
+        } catch (Exception e) {
+            logger.warn(String.format("Failed to delete file[path:%s]", path));
+        }
+    }
 }

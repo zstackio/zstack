@@ -19,6 +19,10 @@ import java.util.List;
                 foreignKey = "vipUuid", expandedInventoryKey = "uuid"),
         @ExpandedQuery(expandedField = "vmNic", inventoryClass = VmNicInventory.class,
                 foreignKey = "vmNicUuid", expandedInventoryKey = "uuid"),
+        @ExpandedQuery(target = VmNicInventory.class, expandedField = "eip", inventoryClass = EipInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "vmNicUuid"),
+        @ExpandedQuery(target = VipInventory.class, expandedField = "eip", inventoryClass = EipInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "vipUuid")
 })
 public class EipInventory {
     private String uuid;

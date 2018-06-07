@@ -6,9 +6,9 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.identity.AccountConstant.StatementEffect;
+import org.zstack.header.identity.StatementEffect;
 import org.zstack.header.identity.IdentityErrors;
-import org.zstack.header.identity.PolicyInventory.Statement;
+import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l2.APIQueryL2NetworkMsg;
 import org.zstack.header.network.l2.APIQueryL2NetworkReply;
@@ -66,7 +66,7 @@ public class TestPolicyForL3Network {
         identityCreator.useAccount("test");
         identityCreator.createUser("user1", "password");
 
-        Statement s = new Statement();
+        PolicyStatement s = new PolicyStatement();
         s.setName("allow");
         s.setEffect(StatementEffect.Allow);
         s.addAction(String.format("%s:%s", L3NetworkConstant.ACTION_CATEGORY, APICreateL3NetworkMsg.class.getSimpleName()));
@@ -100,7 +100,7 @@ public class TestPolicyForL3Network {
         api.changeL3NetworkState(l3.getUuid(), L3NetworkStateEvent.disable, session);
         api.deleteL3Network(l3.getUuid(), session);
 
-        s = new Statement();
+        s = new PolicyStatement();
         s.setName("deny");
         s.setEffect(StatementEffect.Deny);
         s.addAction(String.format("%s:%s", L3NetworkConstant.ACTION_CATEGORY, APICreateL3NetworkMsg.class.getSimpleName()));

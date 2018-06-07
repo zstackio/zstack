@@ -353,6 +353,9 @@ class VxlanApiInterceptorCase extends SubCase {
             sessionId = session1.uuid
         } as L2VxlanNetworkInventory
 
+        /*
+        // IAM2 allow normal account to update L2
+        // TODO: restrict fields that normal accounts can update
         expect(AssertionError) {
             updateL2Network {
                 uuid = vxlan1.uuid
@@ -360,6 +363,7 @@ class VxlanApiInterceptorCase extends SubCase {
                 sessionId = session1.uuid
             }
         }
+        */
 
         updateL2Network {
             uuid = vxlan101.uuid

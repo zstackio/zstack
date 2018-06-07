@@ -1,12 +1,9 @@
 package org.zstack.test.integration.storage.ceph
 
-import org.zstack.sdk.AddCephBackupStorageAction
-import org.zstack.sdk.AddCephPrimaryStorageAction
-import org.zstack.sdk.AddMonToCephBackupStorageAction
-import org.zstack.sdk.AddMonToCephPrimaryStorageAction
-import org.zstack.sdk.BackupStorageInventory
-import org.zstack.sdk.PrimaryStorageInventory
-import org.zstack.sdk.ZoneInventory
+import org.zstack.core.db.Q
+import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO
+import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO_
+import org.zstack.sdk.*
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -26,7 +23,7 @@ class CephOperationCase extends SubCase {
 
     @Override
     void environment() {
-        env = env {
+        env = makeEnv {
             instanceOffering {
                 name = "instanceOffering"
                 memory = SizeUnit.GIGABYTE.toByte(8)
@@ -123,6 +120,8 @@ class CephOperationCase extends SubCase {
 
             testAddBackupReplaceMon()
             testAddBackupSameMon()
+
+            testCephSnapshotTree()
         }
     }
 
@@ -176,6 +175,25 @@ class CephOperationCase extends SubCase {
         assert action.call().error.code == "SYS.1007"
         
         // assert action.call().error.details == "Cannot add same host[127.0.0.2] in mons"
+    }
+
+    // for verify JIRA #7853
+    void testCephSnapshotTree() {
+        def vm = env.inventoryByName("test-vm") as VmInstanceInventory
+
+        createVolumeSnapshot {
+            volumeUuid = vm.rootVolumeUuid
+            name = "s1"
+        }
+        assert Q.New(VolumeSnapshotTreeVO.class).count() == 1
+        assert Q.New(VolumeSnapshotTreeVO.class).eq(VolumeSnapshotTreeVO_.current, true).count() == 1
+
+        createVolumeSnapshot {
+            volumeUuid = vm.rootVolumeUuid
+            name = "s1"
+        }
+        assert Q.New(VolumeSnapshotTreeVO.class).count() == 2
+        assert Q.New(VolumeSnapshotTreeVO.class).eq(VolumeSnapshotTreeVO_.current, true).count() == 1
     }
 
     @Override

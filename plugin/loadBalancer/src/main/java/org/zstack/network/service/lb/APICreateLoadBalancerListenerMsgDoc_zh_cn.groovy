@@ -79,8 +79,18 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "0.6"
-					values ("tcp","http")
+					since "2.3"
+					values ("tcp","http","https")
+				}
+				column {
+					name "certificateUuid"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "2.3"
+					
 				}
 				column {
 					name "resourceUuid"

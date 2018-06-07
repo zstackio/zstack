@@ -6,8 +6,6 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
-import org.zstack.header.identity.AccountResourceRefVO;
-import org.zstack.header.identity.AccountResourceRefVO_;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.volume.VolumeStatus;
@@ -79,10 +77,12 @@ public class VmQuotaUtil {
                 " where vm.uuid = ref.resourceUuid" +
                 " and ref.accountUuid = :auuid" +
                 " and ref.resourceType = :rtype" +
+                " and not (vm.state = :starting and vm.hostUuid is null)" +
                 " and vm.state not in (:states)";
         TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
         q.setParameter("auuid", accountUUid);
         q.setParameter("rtype", VmInstanceVO.class.getSimpleName());
+        q.setParameter("starting", VmInstanceState.Starting);
         q.setParameter("states", list(VmInstanceState.Stopped, VmInstanceState.Destroying,
                 VmInstanceState.Destroyed, VmInstanceState.Created));
         Tuple t = q.getSingleResult();
@@ -98,6 +98,7 @@ public class VmQuotaUtil {
                 " where vm.uuid = ref.resourceUuid" +
                 " and ref.accountUuid = :auuid" +
                 " and ref.resourceType = :rtype" +
+                " and not (vm.hostUuid is null and vm.lastHostUuid is null)" +
                 " and vm.state not in (:states)";
         TypedQuery<Long> q2 = dbf.getEntityManager().createQuery(sql2, Long.class);
         q2.setParameter("auuid", accountUUid);

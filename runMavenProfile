@@ -78,7 +78,7 @@ docpremium() {
     else
         cd test
     fi
-    mvn test -Dtest=TestGenerateDocTemplate
+    mvn test -Dtest=TestGenerateDocTemplate -Drepair=true
     cd - > /dev/null
 }
 
@@ -160,6 +160,19 @@ triggerexpression() {
    cd - > /dev/null
 }
 
+zql() {
+   cd search
+   mvn -P zql generate-sources
+   if [ $? -ne 0 ]; then
+	exit 1
+   fi
+   mkdir -p src/main/java/org/zstack/zql/antlr4/
+   yes | cp target/generated-sources/antlr4/* src/main/java/org/zstack/zql/antlr4/
+   rm -f target/generated-sources/antlr4/*
+   mvn -Dmaven.test.skip=true clean install
+   cd - > /dev/null
+}
+
 cloudwatchfunction() {
    if [ ! -d premium/zwatch ]; then
 	echo "this command needs premium source code"
@@ -230,8 +243,10 @@ run_profile() {
 	notificationapi
     elif test x$1 = x'triggerexpression'; then
 	triggerexpression
+    elif test x$1 = x'zql'; then
+        zql
     elif test x$1 = x'cloudwatchfunction'; then
-	cloudwatchfunction
+	    cloudwatchfunction
     elif test x$1 = x'openapi'; then
         openapi
     else

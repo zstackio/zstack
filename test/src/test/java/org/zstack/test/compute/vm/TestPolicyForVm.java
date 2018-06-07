@@ -8,9 +8,9 @@ import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.host.HostInventory;
-import org.zstack.header.identity.AccountConstant.StatementEffect;
+import org.zstack.header.identity.StatementEffect;
 import org.zstack.header.identity.IdentityErrors;
-import org.zstack.header.identity.PolicyInventory.Statement;
+import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.identity.UserInventory;
 import org.zstack.header.image.ImageInventory;
@@ -81,7 +81,7 @@ public class TestPolicyForVm {
         IdentityCreator identityCreator = new IdentityCreator(api);
         identityCreator.useAccount("test");
         UserInventory user = identityCreator.createUser("user", "password");
-        Statement s = new Statement();
+        PolicyStatement s = new PolicyStatement();
         s.setName("allow");
         s.setEffect(StatementEffect.Allow);
         s.addAction(String.format("%s:%s", VmInstanceConstant.ACTION_CATEGORY, APICreateVmInstanceMsg.class.getSimpleName()));
@@ -111,7 +111,7 @@ public class TestPolicyForVm {
 
         identityCreator.detachPolicyFromUser("user", "allow");
 
-        s = new Statement();
+        s = new PolicyStatement();
         s.setName("deny");
         s.setEffect(StatementEffect.Deny);
         s.addAction(String.format("%s:%s", VmInstanceConstant.ACTION_CATEGORY, APIDestroyVmInstanceMsg.class.getSimpleName()));
@@ -122,7 +122,7 @@ public class TestPolicyForVm {
         identityCreator.createPolicy("deny", s);
         identityCreator.attachPolicyToUser("user", "deny");
 
-        s = new Statement();
+        s = new PolicyStatement();
         s.setName("allowcreate");
         s.setEffect(StatementEffect.Allow);
         s.addAction(String.format("%s:%s", VmInstanceConstant.ACTION_CATEGORY, APICreateVmInstanceMsg.class.getSimpleName()));
@@ -173,7 +173,7 @@ public class TestPolicyForVm {
 
         identityCreator.detachPolicyFromUser("user", "allowcreate");
 
-        s = new Statement();
+        s = new PolicyStatement();
         s.setName("denycreate");
         s.setEffect(StatementEffect.Deny);
         s.addAction(String.format("%s:%s", VmInstanceConstant.ACTION_CATEGORY, APICreateVmInstanceMsg.class.getSimpleName()));
@@ -193,7 +193,7 @@ public class TestPolicyForVm {
         identityCreator.detachPolicyFromUser("user", "denycreate");
         identityCreator.detachPolicyFromUser("user", "deny");
 
-        s = new Statement();
+        s = new PolicyStatement();
         s.setName("allowall");
         s.setEffect(StatementEffect.Allow);
         s.addAction(String.format("%s:.*", VmInstanceConstant.ACTION_CATEGORY));

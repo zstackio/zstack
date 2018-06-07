@@ -1,6 +1,7 @@
 package org.zstack.network.service.virtualrouter.vyos;
 
 import org.zstack.header.network.service.NetworkServiceProviderType;
+import org.zstack.utils.path.PathUtil;
 
 /**
  * Created by xing5 on 2016/10/31.
@@ -19,4 +20,7 @@ public interface VyosConstants {
     enum BootstrapInfoKey {
         vyosPassword
     }
+
+    String VYOS_VERSION_PATH = "ansible/zvr/version";
+    int VYOS_VERSION_LENGTH = 4;
 }

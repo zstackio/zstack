@@ -60,7 +60,6 @@ import org.zstack.utils.path.PathUtil;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.io.File;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -225,7 +224,6 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         if (bkd == null) {
             throw new OperationFailureException(operr("cannot find usable backend"));
         }
-        PrimaryStorageVO ps = dbf.findByUuid(msg.getPrimaryStorageUuid(), PrimaryStorageVO.class);
         DeleteImageCacheOnPrimaryStorageReply sreply = new DeleteImageCacheOnPrimaryStorageReply();
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("delete-image-cache-on-nfs-primary-storage-%s", msg.getPrimaryStorageUuid()));
@@ -1019,15 +1017,6 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         }
     }
 
-    private String getAvailableHostUuidForOperation() {
-        List<String> hostUuids = Q.New(PrimaryStorageHostRefVO.class).
-                eq(PrimaryStorageHostRefVO_.primaryStorageUuid, self.getUuid()).select(PrimaryStorageHostRefVO_.hostUuid).listValues();
-        if (hostUuids == null || hostUuids.size() == 0) {
-            return null;
-        }
-        return hostUuids.get(0);
-    }
-
     @Override
     protected void handle(final DeleteBitsOnPrimaryStorageMsg msg) {
         final DeleteVolumeBitsOnPrimaryStorageReply reply = new DeleteVolumeBitsOnPrimaryStorageReply();
@@ -1308,5 +1297,14 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         } else {
             backend.getPhysicalCapacity(getSelfInventory(), completion);
         }
+    }
+
+    private String getAvailableHostUuidForOperation() {
+        List<String> hostUuids = Q.New(PrimaryStorageHostRefVO.class).
+                eq(PrimaryStorageHostRefVO_.primaryStorageUuid, self.getUuid()).select(PrimaryStorageHostRefVO_.hostUuid).listValues();
+        if (hostUuids == null || hostUuids.size() == 0) {
+            return null;
+        }
+        return hostUuids.get(0);
     }
 }

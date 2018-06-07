@@ -23,6 +23,10 @@ public class NfsPrimaryStorageKvmHelper {
         return PathUtil.join(pinv.getMountPath(), PrimaryStoragePathMaker.makeCachedImageInstallPath(iminv));
     }
 
+    public static String getCachedImageDir(PrimaryStorageInventory pinv){
+        return PathUtil.join(pinv.getMountPath(), PrimaryStoragePathMaker.getCachedImageInstallDir());
+    }
+
     public static String makeCachedImageInstallUrlFromImageUuidForTemplate(PrimaryStorageInventory pinv, String imageUuid) {
         return PathUtil.join(pinv.getMountPath(), PrimaryStoragePathMaker.makeCachedImageInstallPathFromImageUuidForTemplate(imageUuid));
     }
@@ -31,15 +35,19 @@ public class NfsPrimaryStorageKvmHelper {
         return PathUtil.join(pinv.getMountPath(), "templateWorkspace", String.format("image-%s", imageUuid), String.format("%s.qcow2", imageUuid));
     }
 
-    public static String makeKvmSnapshotInstallPath(PrimaryStorageInventory pinv, VolumeInventory vol, VolumeSnapshotInventory snapshot) {
+    public static String makeVolumeInstallDir(PrimaryStorageInventory pinv, VolumeInventory vol) {
         String volPath;
         if (VolumeType.Data.toString().equals(vol.getType())) {
             volPath = makeDataVolumeInstallUrl(pinv, vol.getUuid());
         } else {
             volPath = makeRootVolumeInstallUrl(pinv, vol);
         }
-        File volDir = new File(volPath).getParentFile();
-        return PathUtil.join(volDir.getAbsolutePath(), "snapshots", String.format("%s.qcow2", snapshot.getUuid()));
+        return new File(volPath).getParentFile().getAbsolutePath();
+    }
+
+    public static String makeKvmSnapshotInstallPath(PrimaryStorageInventory pinv, VolumeInventory vol, VolumeSnapshotInventory snapshot) {
+        String volDir = makeVolumeInstallDir(pinv, vol);
+        return PathUtil.join(volDir, "snapshots", String.format("%s.qcow2", snapshot.getUuid()));
     }
 
     public static String makeSnapshotWorkspacePath(PrimaryStorageInventory pinv, String imageUuid) {

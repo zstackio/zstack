@@ -7,4 +7,12 @@
         <defaultValue>false</defaultValue>
         <type>java.lang.Boolean</type>
     </config>
+
+    <config>
+        <name>eip.num</name>
+        <description>default quota for eip.num</description>
+        <defaultValue>20</defaultValue>
+        <category>quota</category>
+        <type>java.lang.Long</type>
+    </config>
 </globalConfig>

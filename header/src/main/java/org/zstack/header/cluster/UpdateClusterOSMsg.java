@@ -9,6 +9,7 @@ import org.zstack.header.message.NeedReplyMessage;
 @ApiTimeout(apiClasses = {APIUpdateClusterOSMsg.class})
 public class UpdateClusterOSMsg extends NeedReplyMessage implements ClusterMessage {
     private String uuid;
+    private String excludePackages;
 
     public String getUuid() {
         return uuid;
@@ -16,6 +17,14 @@ public class UpdateClusterOSMsg extends NeedReplyMessage implements ClusterMessa
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    public String getExcludePackages() {
+        return excludePackages;
+    }
+
+    public void setExcludePackages(String excludePackages) {
+        this.excludePackages = excludePackages;
     }
 
     @Override

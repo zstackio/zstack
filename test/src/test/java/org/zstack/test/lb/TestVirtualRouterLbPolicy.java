@@ -7,12 +7,11 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.identity.AccountConstant.StatementEffect;
+import org.zstack.header.identity.StatementEffect;
 import org.zstack.header.identity.*;
-import org.zstack.header.identity.PolicyInventory.Statement;
+import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.query.QueryCondition;
-import org.zstack.header.quota.QuotaConstant;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.lb.*;
@@ -82,16 +81,16 @@ public class TestVirtualRouterLbPolicy {
         Quota.QuotaUsage u = CollectionUtils.find(usages, new Function<Quota.QuotaUsage, Quota.QuotaUsage>() {
             @Override
             public Quota.QuotaUsage call(Quota.QuotaUsage arg) {
-                return arg.getName().equals(QuotaConstant.LOAD_BALANCER_NUM) ? arg : null;
+                return arg.getName().equals(LoadBalanceQuotaConstant.LOAD_BALANCER_NUM) ? arg : null;
             }
         });
         Assert.assertNotNull(u);
-        QuotaInventory lbquota = api.getQuota(QuotaConstant.LOAD_BALANCER_NUM, test.getUuid(), session);
+        QuotaInventory lbquota = api.getQuota(LoadBalanceQuotaConstant.LOAD_BALANCER_NUM, test.getUuid(), session);
         Assert.assertEquals(lbquota.getValue(), u.getTotal().longValue());
         Assert.assertEquals(1, u.getUsed().longValue());
 
         identityCreator.createUser("user1", "password");
-        Statement s = new Statement();
+        PolicyStatement s = new PolicyStatement();
         s.setName("allow");
         s.setEffect(StatementEffect.Allow);
         s.addAction(String.format("%s:%s", LoadBalancerConstants.ACTION_CATEGORY, APICreateLoadBalancerMsg.class.getSimpleName()));
@@ -190,7 +189,7 @@ public class TestVirtualRouterLbPolicy {
 
         // test quota
         api.deleteLoadBalancer(lb.getUuid(), session);
-        api.updateQuota(test.getUuid(), QuotaConstant.LOAD_BALANCER_NUM, 0);
+        api.updateQuota(test.getUuid(), LoadBalanceQuotaConstant.LOAD_BALANCER_NUM, 0);
         ss = false;
         try {
             api.createLoadBalancer("lb", vip.getUuid(), null, session);
@@ -201,7 +200,7 @@ public class TestVirtualRouterLbPolicy {
         }
         Assert.assertTrue(ss);
 
-        api.updateQuota(test.getUuid(), QuotaConstant.LOAD_BALANCER_NUM, 5);
+        api.updateQuota(test.getUuid(), LoadBalanceQuotaConstant.LOAD_BALANCER_NUM, 5);
         api.createLoadBalancer("lb", vip.getUuid(), null, session);
 
         // test query

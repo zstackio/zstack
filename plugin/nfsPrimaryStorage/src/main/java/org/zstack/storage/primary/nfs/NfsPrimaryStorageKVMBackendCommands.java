@@ -322,15 +322,15 @@ public class NfsPrimaryStorageKVMBackendCommands {
 
     @ApiTimeout(apiClasses = {APICreateDataVolumeFromVolumeSnapshotMsg.class, APIExpungeVmInstanceMsg.class})
     public static class DeleteCmd extends NfsPrimaryStorageAgentCommand {
-        private boolean isFolder;
+        private boolean folder;
         private String installPath;
 
         public boolean isFolder() {
-            return isFolder;
+            return folder;
         }
 
         public void setFolder(boolean isFolder) {
-            this.isFolder = isFolder;
+            this.folder = isFolder;
         }
 
         public String getInstallPath() {
@@ -402,6 +402,40 @@ public class NfsPrimaryStorageKVMBackendCommands {
 
         public void setSize(long size) {
             this.size = size;
+        }
+    }
+
+    public static class ReInitImageCmd extends NfsPrimaryStorageAgentCommand {
+        private String imagePath;
+        private String volumePath;
+
+        public String getImagePath() {
+            return imagePath;
+        }
+
+        public void setImagePath(String imagePath) {
+            this.imagePath = imagePath;
+        }
+
+        public String getVolumePath() {
+            return volumePath;
+        }
+
+        public void setVolumePath(String volumePath) {
+            this.volumePath = volumePath;
+        }
+    }
+
+    public static class ReInitImageRsp extends NfsPrimaryStorageAgentResponse {
+        @Validation
+        private String newVolumeInstallPath;
+
+        public String getNewVolumeInstallPath() {
+            return newVolumeInstallPath;
+        }
+
+        public void setNewVolumeInstallPath(String newVolumeInstallPath) {
+            this.newVolumeInstallPath = newVolumeInstallPath;
         }
     }
 
@@ -595,7 +629,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
     }
 
     @ApiTimeout(apiClasses = {APIDeleteVolumeSnapshotMsg.class})
-    public static class OfflineMergeSnapshotCmd extends NfsPrimaryStorageAgentCommand {
+    public static class OfflineMergeSnapshotCmd extends NfsPrimaryStorageAgentCommand implements HasThreadContext {
         private String srcPath;
         private String destPath;
         private boolean fullRebase;
@@ -649,9 +683,15 @@ public class NfsPrimaryStorageKVMBackendCommands {
         public String url;
     }
 
+    /**
+     * volumeInstallDir contains all snapshots and base volume file,
+     * their backing file in imageCacheDir will be identified as the base image.
+     * This takes into consideration multiple snapshot chains and chain-based image.
+     */
     public static class GetVolumeBaseImagePathCmd extends NfsPrimaryStorageAgentCommand {
-        public String volumeUUid;
-        public String installPath;
+        public String volumeUuid;
+        public String volumeInstallDir;
+        public String imageCacheDir;
     }
 
     public static class GetVolumeBaseImagePathRsp extends NfsPrimaryStorageAgentResponse {

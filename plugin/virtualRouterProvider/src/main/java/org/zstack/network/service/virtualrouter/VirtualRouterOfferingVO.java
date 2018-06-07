@@ -2,9 +2,7 @@ package org.zstack.network.service.virtualrouter;
 
 import org.zstack.header.configuration.InstanceOfferingEO;
 import org.zstack.header.configuration.InstanceOfferingVO;
-import org.zstack.header.identity.HasAccountResourceRef;
 import org.zstack.header.image.ImageEO;
-import org.zstack.header.network.l3.L3Network;
 import org.zstack.header.network.l3.L3NetworkEO;
 import org.zstack.header.tag.AutoDeleteTag;
 import org.zstack.header.vo.EO;
@@ -20,7 +18,6 @@ import javax.persistence.Table;
 @Table
 @EO(EOClazz = InstanceOfferingEO.class, needView = false)
 @AutoDeleteTag
-@HasAccountResourceRef
 public class VirtualRouterOfferingVO extends InstanceOfferingVO {
     @Column
     @ForeignKey(parentEntityClass = L3NetworkEO.class, onDeleteAction = ReferenceOption.CASCADE)

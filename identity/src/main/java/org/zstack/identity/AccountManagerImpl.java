@@ -1,7 +1,5 @@
 package org.zstack.identity;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,37 +21,34 @@ import org.zstack.header.APIIsOpensourceVersionReply;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
-import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
-import org.zstack.header.identity.AccountConstant.StatementEffect;
 import org.zstack.header.identity.IdentityCanonicalEvents.AccountDeletedData;
 import org.zstack.header.identity.IdentityCanonicalEvents.UserDeletedData;
-import org.zstack.header.identity.PolicyInventory.Statement;
 import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
-import org.zstack.header.message.*;
+import org.zstack.header.message.APIEvent;
+import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.APIParam;
+import org.zstack.header.message.Message;
 import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.notification.ApiNotificationFactory;
 import org.zstack.header.notification.ApiNotificationFactoryExtensionPoint;
-import org.zstack.header.search.APIGetMessage;
-import org.zstack.header.search.APISearchMessage;
 import org.zstack.header.vo.APIGetResourceNamesMsg;
 import org.zstack.header.vo.APIGetResourceNamesReply;
 import org.zstack.header.vo.ResourceInventory;
 import org.zstack.header.vo.ResourceVO;
+import org.zstack.identity.rbac.PolicyUtils;
 import org.zstack.utils.*;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.utils.path.PathUtil;
 
 import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.io.File;
 import java.lang.reflect.Field;
 import java.sql.Timestamp;
 import java.util.*;
@@ -64,14 +59,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.getUuid;
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.list;
 
 public class AccountManagerImpl extends AbstractService implements AccountManager, PrepareDbInitialValueExtensionPoint,
         SoftDeleteEntityExtensionPoint, HardDeleteEntityExtensionPoint,
-        GlobalApiMessageInterceptor, ApiMessageInterceptor, ApiNotificationFactoryExtensionPoint {
+        ApiMessageInterceptor, ApiNotificationFactoryExtensionPoint {
     private static final CLogger logger = Utils.getLogger(AccountManagerImpl.class);
 
     @Autowired
@@ -91,7 +84,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     @Autowired
     private GlobalConfigFacade gcf;
 
-    private List<String> resourceTypeForAccountRef;
+    private List<String> resourceTypeForAccountRef = new ArrayList<>();
     private Map<String, Class> resourceTypeClassMap = new HashMap<>();
     private Map<String, Class> childrenResourceTypeClassMap = new HashMap<>();
     private List<Class> resourceTypes;
@@ -190,11 +183,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     }
 
     private void handleLocalMessage(Message msg) {
-        if (msg instanceof GenerateMessageIdentityCategoryMsg) {
-            handle((GenerateMessageIdentityCategoryMsg) msg);
-        } else {
-            bus.dealWithUnknownMessage(msg);
-        }
+        bus.dealWithUnknownMessage(msg);
     }
 
     @Override
@@ -251,71 +240,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         return AccountConstant.INITIAL_SYSTEM_ADMIN_UUID.equals(session.getAccountUuid());
     }
 
-    private void handle(GenerateMessageIdentityCategoryMsg msg) {
-        List<String> adminMsgs = new ArrayList<>();
-        List<String> userMsgs = new ArrayList<>();
-
-        List<Class> apiMsgClasses = BeanUtils.scanClassByType("org.zstack", APIMessage.class);
-        for (Class clz : apiMsgClasses) {
-            if (APISearchMessage.class.isAssignableFrom(clz) || APIGetMessage.class.isAssignableFrom(clz)
-                    || APIListMessage.class.isAssignableFrom(clz)) {
-                continue;
-            }
-
-            String name = clz.getSimpleName().replaceAll("API", "").replaceAll("Msg", "");
-
-            if (clz.isAnnotationPresent(Action.class)) {
-                userMsgs.add(name);
-            } else {
-                adminMsgs.add(name);
-            }
-        }
-
-        List<String> quotas = new ArrayList<>();
-        for (List<Quota> quotaList : messageQuotaMap.values()) {
-            for (Quota q : quotaList) {
-                for (QuotaPair p : q.getQuotaPairs()) {
-                    quotas.add(String.format("%s        %s", p.getName(), p.getValue()));
-                }
-            }
-        }
-
-        List<String> as = new ArrayList<>();
-        for (Map.Entry<Class, MessageAction> e : actions.entrySet()) {
-            Class api = e.getKey();
-            MessageAction a = e.getValue();
-            if (a.adminOnly || a.accountOnly) {
-                continue;
-            }
-
-            String name = api.getSimpleName().replaceAll("API", "").replaceAll("Msg", "");
-            StringBuilder sb = new StringBuilder();
-            sb.append(String.format("%s: ", name));
-            sb.append(StringUtils.join(a.actions, ", "));
-            sb.append("\n");
-            as.add(sb.toString());
-        }
-
-        try {
-            String folder = PathUtil.join(System.getProperty("user.home"), "zstack-identity");
-            FileUtils.deleteDirectory(new File(folder));
-
-            new File(folder).mkdirs();
-
-            String userMsgsPath = PathUtil.join(folder, "non-admin-api.txt");
-            FileUtils.writeStringToFile(new File(userMsgsPath), StringUtils.join(userMsgs, "\n"));
-            String adminMsgsPath = PathUtil.join(folder, "admin-api.txt");
-            FileUtils.writeStringToFile(new File(adminMsgsPath), StringUtils.join(adminMsgs, "\n"));
-            String quotaPath = PathUtil.join(folder, "quota.txt");
-            FileUtils.writeStringToFile(new File(quotaPath), StringUtils.join(quotas, "\n"));
-            String apiIdentityPath = PathUtil.join(folder, "api-identity.txt");
-            FileUtils.writeStringToFile(new File(apiIdentityPath), StringUtils.join(as, "\n"));
-            bus.reply(msg, new GenerateMessageIdentityCategoryReply());
-        } catch (Exception e) {
-            throw new CloudRuntimeException(e);
-        }
-    }
-
     private void passThrough(AccountMessage msg) {
         AccountVO vo = dbf.findByUuid(msg.getAccountUuid(), AccountVO.class);
         if (vo == null) {
@@ -355,6 +279,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             handle((APIGetResourceNamesMsg) msg);
         } else if (msg instanceof APIIsOpensourceVersionMsg) {
             handle((APIIsOpensourceVersionMsg) msg);
+        } else if (msg instanceof APIRenewSessionMsg) {
+            handle((APIRenewSessionMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -504,6 +430,11 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         bus.reply(msg, reply);
     }
 
+    private void handle(APIRenewSessionMsg msg) {
+        APIRenewSessionEvent evt = new APIRenewSessionEvent(msg.getId());
+        evt.setInventory(Session.renewSession(msg.getSessionUuid(), msg.getDuration()));
+        bus.publish(evt);
+    }
 
     private void handle(APILogOutMsg msg) {
         APILogOutReply reply = new APILogOutReply();
@@ -518,6 +449,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         query.add(SessionVO_.userUuid, Op.EQ, userUuid);
         long count = query.count();
         if (count >= maxLoginTimes) {
+            // please don't update the bellow code, ui used it
             String err = String.format("Login sessions hit limit of max allowed concurrent login sessions, max allowed: %s", maxLoginTimes);
             throw new BadCredentialsException(err);
         }
@@ -632,27 +564,26 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 p.setUuid(Platform.getUuid());
                 p.setAccountUuid(vo.getUuid());
                 p.setName("DEFAULT-READ");
-                Statement s = new Statement();
+                PolicyStatement s = new PolicyStatement();
                 s.setName(String.format("read-permission-for-account-%s", vo.getUuid()));
                 s.setEffect(StatementEffect.Allow);
                 s.addAction(".*:read");
                 p.setData(JSONObjectUtil.toJsonString(list(s)));
                 persist(p);
                 reload(p);
-                persist(AccountResourceRefVO.newOwn(vo.getUuid(), p.getUuid(), PolicyVO.class));
 
                 p = new PolicyVO();
                 p.setUuid(Platform.getUuid());
                 p.setAccountUuid(vo.getUuid());
                 p.setName("USER-RESET-PASSWORD");
-                s = new Statement();
+                s = new PolicyStatement();
                 s.setName(String.format("user-reset-password-%s", vo.getUuid()));
                 s.setEffect(StatementEffect.Allow);
                 s.addAction(String.format("%s:%s", AccountConstant.ACTION_CATEGORY, APIUpdateUserMsg.class.getSimpleName()));
                 p.setData(JSONObjectUtil.toJsonString(list(s)));
+                p.setAccountUuid(vo.getUuid());
                 persist(p);
                 reload(p);
-                persist(AccountResourceRefVO.newOwn(vo.getUuid(), p.getUuid(), PolicyVO.class));
 
                 List<Tuple> ts = Q.New(GlobalConfigVO.class).select(GlobalConfigVO_.name, GlobalConfigVO_.value)
                         .eq(GlobalConfigVO_.category, AccountConstant.QUOTA_GLOBAL_CONFIG_CATETORY).listTuple();
@@ -667,9 +598,9 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                     qvo.setIdentityUuid(vo.getUuid());
                     qvo.setName(rtype);
                     qvo.setValue(quota);
+                    qvo.setAccountUuid(vo.getUuid());
                     persist(qvo);
                     reload(qvo);
-                    persist(AccountResourceRefVO.newOwn(vo.getUuid(), qvo.getUuid(), QuotaVO.class));
                 }
 
                 reload(vo);
@@ -710,8 +641,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             }
         }
 
-        Platform.getReflections().getTypesAnnotatedWith(HasAccountResourceRef.class)
-                .stream().filter(clz -> clz.isAnnotationPresent(HasAccountResourceRef.class))
+        Platform.getReflections().getSubTypesOf(OwnedByAccount.class)
                 .forEach(clz -> resourceTypeForAccountRef.add(clz.getName()));
     }
 
@@ -995,6 +925,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
                 QuotaVO q = new QuotaVO();
                 q.setUuid(Platform.getUuid());
+                q.setAccountUuid(nA);
                 q.setName(rtype);
                 q.setIdentityUuid(nA);
                 q.setIdentityType(AccountVO.class.getSimpleName());
@@ -1109,9 +1040,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     }
 
     private void buildActions() {
-        List<Class> apiMsgClasses = BeanUtils.scanClassByType("org.zstack", APIMessage.class);
-        for (Class clz : apiMsgClasses) {
-            Action a = (Action) clz.getAnnotation(Action.class);
+        BeanUtils.reflections.getSubTypesOf(APIMessage.class).forEach(clz -> {
+            Action a = clz.getAnnotation(Action.class);
             if (a == null) {
                 logger.debug(String.format("API message[%s] doesn't have annotation @Action, assume it's an admin only API", clz));
                 MessageAction ma = new MessageAction();
@@ -1119,7 +1049,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 ma.accountOnly = true;
                 ma.accountControl = false;
                 actions.put(clz, ma);
-                continue;
+                return;
             }
 
             MessageAction ma = new MessageAction();
@@ -1157,7 +1087,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             ma.actions.add(String.format("%s:%s", ma.category, clz.getName()));
             ma.actions.add(String.format("%s:%s", ma.category, clz.getSimpleName()));
             actions.put(clz, ma);
-        }
+        });
     }
 
     @Override
@@ -1285,16 +1215,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         if (resourceTypes.contains(entityClass)) {
             postSoftDelete(entityIds, entityClass);
         }
-    }
-
-    @Override
-    public List<Class> getMessageClassToIntercept() {
-        return null;
-    }
-
-    @Override
-    public InterceptorPosition getPosition() {
-        return InterceptorPosition.FRONT;
     }
 
     private void logOutSession(String sessionUuid) {
@@ -1553,7 +1473,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         class Decision {
             PolicyInventory policy;
             String action;
-            Statement statement;
+            PolicyStatement statement;
             String actionRule;
             StatementEffect effect;
         }
@@ -1561,7 +1481,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         private Decision decide(List<PolicyInventory> userPolicies) {
             for (String a : action.actions) {
                 for (PolicyInventory p : userPolicies) {
-                    for (Statement s : p.getStatements()) {
+                    for (PolicyStatement s : p.getStatements()) {
                         for (String ac : s.getActions()) {
                             Pattern pattern = Pattern.compile(ac);
                             Matcher m = pattern.matcher(a);
@@ -1633,7 +1553,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
-        new Auth().validate(msg);
+        //new Auth().validate(msg);
 
         if (msg instanceof APIUpdateAccountMsg) {
             validate((APIUpdateAccountMsg) msg);
@@ -1757,6 +1677,12 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                         "account cannot delete itself"
                 ));
             }
+
+            if (msg.getAccountUuid().equals(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID)) {
+                throw new ApiMessageInterceptionException(argerr(
+                        "cannot delete builtin admin account."
+                ));
+            }
         }
         if(!new QuotaUtil().isAdminAccount(msg.getSession().getAccountUuid())){
             throw new ApiMessageInterceptionException(argerr(
@@ -1867,7 +1793,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     }
 
     private void validate(APICreatePolicyMsg msg) {
-        for (Statement s : msg.getStatements()) {
+        for (PolicyStatement s : msg.getStatements()) {
             if (s.getEffect() == null) {
                 throw new ApiMessageInterceptionException(argerr("a statement must have effect field. Invalid statement[%s]", JSONObjectUtil.toJsonString(s)));
             }
@@ -1877,6 +1803,16 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             if (s.getActions().isEmpty()) {
                 throw new ApiMessageInterceptionException(argerr("a statement must have a non-empty action field. Invalid statement[%s]",
                                 JSONObjectUtil.toJsonString(s)));
+            }
+
+            if (!isAdmin(msg.getSession())) {
+                if (s.getActions() != null) {
+                    s.getActions().forEach(as -> {
+                        if (PolicyUtils.isAdminOnlyAction(as)) {
+                            throw new OperationFailureException(err(IdentityErrors.PERMISSION_DENIED, "normal accounts can't create admin-only action polices[%s]", as));
+                        }
+                    });
+                }
             }
         }
     }
@@ -1893,6 +1829,10 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 throw new OperationFailureException(operr(
                         "the name of admin account cannot be updated"
                 ));
+            }
+
+            if (msg.getPassword() != null && (!AccountConstant.isAdminPermission(msg.getSession()))) {
+                throw new OperationFailureException(operr("only admin account can update it's password"));
             }
 
             return;

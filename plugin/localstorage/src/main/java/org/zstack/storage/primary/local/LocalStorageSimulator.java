@@ -77,6 +77,7 @@ public class LocalStorageSimulator {
         GetVolumeBaseImagePathCmd cmd = JSONObjectUtil.toObject(entity.getBody(), GetVolumeBaseImagePathCmd.class);
         GetVolumeBaseImagePathRsp rsp = new GetVolumeBaseImagePathRsp();
         rsp.path = config.getVolumeBaseImagePaths.get(cmd.volumeUuid);
+        rsp.size = config.baseImageSize;
         reply(entity, rsp);
         return null;
     }

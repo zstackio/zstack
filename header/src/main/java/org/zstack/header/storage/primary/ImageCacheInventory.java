@@ -1,12 +1,20 @@
 package org.zstack.header.storage.primary;
 
-import java.sql.Timestamp;
+import org.zstack.header.configuration.PythonClassInventory;
+import org.zstack.header.search.Inventory;
 
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
+
+@Inventory(mappingVOClass = ImageCacheVO.class)
+@PythonClassInventory
 public class ImageCacheInventory {
     private long id;
     private String primaryStorageUuid;
     private String imageUuid;
     private String installUrl;
+    private String mediaType;
     private long size;
     private String md5sum;
     private String state;
@@ -21,10 +29,19 @@ public class ImageCacheInventory {
         inv.setInstallUrl(vo.getInstallUrl());
         inv.setLastOpDate(vo.getLastOpDate());
         inv.setMd5sum(vo.getMd5sum());
+        inv.setMediaType(vo.getMediaType().toString());
         inv.setPrimaryStorageUuid(vo.getPrimaryStorageUuid());
         inv.setSize(vo.getSize());
         inv.setState(vo.getState().toString());
         return inv;
+    }
+
+    public static List<ImageCacheInventory> valueOf(List<ImageCacheVO> vos) {
+        List<ImageCacheInventory> invs = new ArrayList<>(vos.size());
+        for (ImageCacheVO vo : vos) {
+            invs.add(ImageCacheInventory.valueOf(vo));
+        }
+        return invs;
     }
 
     public long getId() {
@@ -49,6 +66,14 @@ public class ImageCacheInventory {
 
     public void setImageUuid(String imageUuid) {
         this.imageUuid = imageUuid;
+    }
+
+    public String getMediaType() {
+        return mediaType;
+    }
+
+    public void setMediaType(String mediaType) {
+        this.mediaType = mediaType;
     }
 
     public String getInstallUrl() {

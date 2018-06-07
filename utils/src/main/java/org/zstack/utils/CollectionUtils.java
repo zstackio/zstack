@@ -6,6 +6,8 @@ import org.zstack.utils.function.ListFunction;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 
 /**
  */
@@ -93,5 +95,10 @@ public class CollectionUtils {
 
     public static <K> List<K> removeDuplicateFromList(List<K> lst) {
         return new ArrayList<K>(new LinkedHashSet<K>(lst));
+    }
+
+    public static <T> Predicate<T> distinctByKey(java.util.function.Function<? super T,Object> keyExtractor) {
+        Map<Object,Boolean> seen = new ConcurrentHashMap<>();
+        return t -> seen.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
     }
 }

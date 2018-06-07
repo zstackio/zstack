@@ -55,4 +55,22 @@ doc {
 		type "String"
 		since "0.6"
 	}
+	field {
+		name "availableCapacity"
+		desc ""
+		type "Long"
+		since "2.3.2"
+	}
+	field {
+		name "usedCapacity"
+		desc ""
+		type "Long"
+		since "2.3.2"
+	}
+	field {
+		name "replicatedSize"
+		desc ""
+		type "Integer"
+		since "2.3.2"
+	}
 }

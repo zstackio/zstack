@@ -141,4 +141,16 @@ public abstract class Message implements Serializable, AsyncBackup, Cloneable {
             throw new CloudRuntimeException(e);
         }
     }
+
+    public MessageProperties getProps() {
+        return props;
+    }
+
+    public void setProps(MessageProperties props) {
+        this.props = props;
+    }
+
+    public void setCreatedTime(long createdTime) {
+        this.createdTime = createdTime;
+    }
 }

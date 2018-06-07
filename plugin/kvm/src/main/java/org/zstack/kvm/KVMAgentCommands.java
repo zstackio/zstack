@@ -12,10 +12,7 @@ import org.zstack.header.volume.APICreateVolumeSnapshotMsg;
 import org.zstack.network.securitygroup.SecurityGroupMembersTO;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class KVMAgentCommands {
     public enum BootDev {
@@ -61,6 +58,7 @@ public class KVMAgentCommands {
     }
 
     public static class AgentCommand {
+        public LinkedHashMap kvmHostAddons;
     }
 
     public static class CheckVmStateCmd extends AgentCommand {
@@ -241,6 +239,15 @@ public class KVMAgentCommands {
     }
 
     public static class HostFactCmd extends AgentCommand {
+        private boolean ignoreMsrs;
+
+        public boolean isIgnoreMsrs() {
+            return ignoreMsrs;
+        }
+
+        public void setIgnoreMsrs(boolean ignoreMsrs) {
+            this.ignoreMsrs = ignoreMsrs;
+        }
     }
 
     public static class HostFactResponse extends AgentResponse {
@@ -548,6 +555,7 @@ public class KVMAgentCommands {
         public static final String ISCSI = "iscsi";
         public static final String CEPH = "ceph";
         public static final String FUSIONSTOR = "fusionstor";
+        public static final String SHAREDBLOCK = "sharedblock";
 
         private String installPath;
         private int deviceId;
@@ -790,6 +798,25 @@ public class KVMAgentCommands {
         private Integer VDIMonitorNumber;
         private boolean useBootMenu;
         private boolean kvmHiddenState;
+        private boolean vmPortOff;
+        private String vmCpuModel;
+        private boolean isApplianceVm;
+
+        public boolean isApplianceVm() {
+            return isApplianceVm;
+        }
+
+        public void setApplianceVm(boolean applianceVm) {
+            isApplianceVm = applianceVm;
+        }
+
+        public String getVmCpuModel() {
+            return vmCpuModel;
+        }
+
+        public void setVmCpuModel(String vmCpuModel) {
+            this.vmCpuModel = vmCpuModel;
+        }
 
         public String getSpiceStreamingMode() {
             return spiceStreamingMode;
@@ -813,6 +840,14 @@ public class KVMAgentCommands {
 
         public void setKvmHiddenState(boolean kvmHiddenState) {
             this.kvmHiddenState = kvmHiddenState;
+        }
+
+        public void setVmPortOff(boolean vmPortOff){
+            this.vmPortOff = vmPortOff;
+        }
+
+        public boolean isVmPortOff() {
+            return vmPortOff;
         }
 
         public void setUseBootMenu(boolean useBootMenu) {
@@ -1344,6 +1379,13 @@ public class KVMAgentCommands {
     public static class RefreshAllRulesOnHostResponse extends AgentResponse {
     }
 
+    public static class CheckDefaultSecurityGroupCmd extends AgentCommand {
+    }
+
+    public static class CheckDefaultSecurityGroupResponse extends AgentResponse {
+
+    }
+
     public static class UpdateGroupMemberCmd extends AgentCommand {
         private List<SecurityGroupMembersTO> updateGroupTOs;
 
@@ -1502,6 +1544,8 @@ public class KVMAgentCommands {
         private String installPath;
         private boolean fullSnapshot;
         private String volumeInstallPath;
+        private String newVolumeUuid;
+        private String newVolumeInstallPath;
 
         public String getVolumeUuid() {
             return volumeUuid;
@@ -1549,6 +1593,22 @@ public class KVMAgentCommands {
 
         public void setInstallPath(String installPath) {
             this.installPath = installPath;
+        }
+
+        public String getNewVolumeInstallPath() {
+            return newVolumeInstallPath;
+        }
+
+        public void setNewVolumeInstallPath(String newVolumeInstallPath) {
+            this.newVolumeInstallPath = newVolumeInstallPath;
+        }
+
+        public String getNewVolumeUuid() {
+            return newVolumeUuid;
+        }
+
+        public void setNewVolumeUuid(String newVolumeUuid) {
+            this.newVolumeUuid = newVolumeUuid;
         }
     }
 
@@ -1690,6 +1750,7 @@ public class KVMAgentCommands {
     @ApiTimeout(apiClasses = APIUpdateClusterOSMsg.class)
     public static class UpdateHostOSCmd extends AgentCommand {
         public String hostUuid;
+        public String excludePackages;
     }
 
     public static class UpdateHostOSRsp extends AgentResponse {

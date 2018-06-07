@@ -5,9 +5,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.identity.AccountConstant.StatementEffect;
+import org.zstack.header.identity.StatementEffect;
 import org.zstack.header.identity.IdentityErrors;
-import org.zstack.header.identity.PolicyInventory.Statement;
+import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.query.QueryCondition;
@@ -55,7 +55,7 @@ public class TestPolicyForSecurityGroup {
         IdentityCreator identityCreator = new IdentityCreator(api);
         identityCreator.useAccount("test");
         identityCreator.createUser("user1", "password");
-        Statement s = new Statement();
+        PolicyStatement s = new PolicyStatement();
         s.setName("allow");
         s.setEffect(StatementEffect.Allow);
         s.addAction(String.format("%s:%s", SecurityGroupConstant.ACTION_CATEGORY, APICreateSecurityGroupMsg.class.getSimpleName()));
@@ -89,7 +89,7 @@ public class TestPolicyForSecurityGroup {
         api.changeSecurityGroupState(sg.getUuid(), SecurityGroupStateEvent.disable, session);
         api.deleteSecurityGroup(sg.getUuid(), session);
 
-        s = new Statement();
+        s = new PolicyStatement();
         s.setName("deny");
         s.setEffect(StatementEffect.Deny);
         s.addAction(String.format("%s:%s", SecurityGroupConstant.ACTION_CATEGORY, APICreateSecurityGroupMsg.class.getSimpleName()));

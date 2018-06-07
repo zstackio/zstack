@@ -102,4 +102,22 @@ doc {
 		type "List"
 		since "0.6"
 	}
+	field {
+		name "poolAvailableCapacity"
+		desc ""
+		type "Long"
+		since "2.3.2"
+	}
+	field {
+		name "poolUsedCapacity"
+		desc ""
+		type "Long"
+		since "2.3.2"
+	}
+	field {
+		name "poolReplicatedSize"
+		desc ""
+		type "Integer"
+		since "2.3.2"
+	}
 }

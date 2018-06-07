@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -23,28 +24,26 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
 import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
-import org.zstack.network.service.vip.*;
+import org.zstack.network.service.vip.ModifyVipAttributesStruct;
+import org.zstack.network.service.vip.Vip;
 import org.zstack.tag.TagManager;
-
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.operr;
-
-import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created by frank on 8/8/2015.
@@ -111,6 +110,8 @@ public class LoadBalancerBase {
             handle((DeleteLoadBalancerMsg) msg);
         } else if (msg instanceof DeleteLoadBalancerOnlyMsg) {
             handle((DeleteLoadBalancerOnlyMsg) msg);
+        } else if (msg instanceof LoadBalancerChangeCertificateMsg) {
+            handle((LoadBalancerChangeCertificateMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -255,7 +256,7 @@ public class LoadBalancerBase {
             @Override
             public void run(final SyncTaskChain chain) {
                 final LoadBalancerRemoveVmNicReply reply = new LoadBalancerRemoveVmNicReply();
-                removeNics(msg.getListenerUuid(), msg.getVmNicUuids(), new Completion(msg, chain) {
+                removeNics(msg.getListenerUuids(), msg.getVmNicUuids(), new Completion(msg, chain) {
                     @Override
                     public void success() {
                         bus.reply(msg, reply);
@@ -299,19 +300,17 @@ public class LoadBalancerBase {
     private void handle(final LoadBalancerDeactiveVmNicMsg msg) {
         checkIfNicIsAdded(msg.getVmNicUuids());
 
-        LoadBalancerListenerVO l = CollectionUtils.find(self.getListeners(), new Function<LoadBalancerListenerVO, LoadBalancerListenerVO>() {
+        List<LoadBalancerListenerVO> lbls = CollectionUtils.transformToList(self.getListeners(), new Function<LoadBalancerListenerVO, LoadBalancerListenerVO>() {
             @Override
             public LoadBalancerListenerVO call(LoadBalancerListenerVO arg) {
-                return arg.getUuid().equals(msg.getListenerUuid()) ? arg : null;
+                return msg.getListenerUuids().contains(arg.getUuid()) ? arg : null;
             }
         });
 
-        final List<LoadBalancerListenerVmNicRefVO> refs = CollectionUtils.transformToList(l.getVmNicRefs(), new Function<LoadBalancerListenerVmNicRefVO, LoadBalancerListenerVmNicRefVO>() {
-            @Override
-            public LoadBalancerListenerVmNicRefVO call(LoadBalancerListenerVmNicRefVO arg) {
-                return msg.getVmNicUuids().contains(arg.getVmNicUuid()) ? arg : null;
-            }
-        });
+        final List<LoadBalancerListenerVmNicRefVO> refs = new ArrayList<>();
+        for (LoadBalancerListenerVO lbl : lbls) {
+            refs.addAll(lbl.getVmNicRefs().stream().filter(ref -> msg.getVmNicUuids().contains(ref.getVmNicUuid())).collect(Collectors.toList()));
+        }
 
         final LoadBalancerDeactiveVmNicReply reply = new LoadBalancerDeactiveVmNicReply();
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
@@ -530,6 +529,10 @@ public class LoadBalancerBase {
             handle((APIUpdateLoadBalancerMsg) msg);
         } else if (msg instanceof APIUpdateLoadBalancerListenerMsg) {
             handle((APIUpdateLoadBalancerListenerMsg) msg);
+        } else if (msg instanceof APIAddCertificateToLoadBalancerListenerMsg) {
+            handle((APIAddCertificateToLoadBalancerListenerMsg) msg);
+        } else if (msg instanceof APIRemoveCertificateFromLoadBalancerListenerMsg) {
+            handle((APIRemoveCertificateFromLoadBalancerListenerMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -832,10 +835,10 @@ public class LoadBalancerBase {
         });
     }
 
-    private LoadBalancerStruct removeNicStruct(String listenerUuid, List<String> nicUuids) {
+    private LoadBalancerStruct removeNicStruct(List<String> listenerUuids, List<String> nicUuids) {
         LoadBalancerStruct s = makeStruct();
-        Optional<LoadBalancerListenerInventory> opt = s.getListeners().stream().filter(it -> it.getUuid().equals(listenerUuid)).findAny();
-        DebugUtils.Assert(opt.isPresent(), String.format("cannot find listener[uuid:%s]", listenerUuid));
+        Optional<LoadBalancerListenerInventory> opt = s.getListeners().stream().filter(it -> listenerUuids.contains(it.getUuid())).findAny();
+        DebugUtils.Assert(opt.isPresent(), String.format("cannot find listener[uuid:%s]", listenerUuids.get(0)));
 
         LoadBalancerListenerInventory l = opt.get();
         l.getVmNicRefs().removeIf(loadBalancerListenerVmNicRefInventory -> nicUuids.contains(loadBalancerListenerVmNicRefInventory.getVmNicUuid()));
@@ -843,19 +846,19 @@ public class LoadBalancerBase {
         return s;
     }
 
-    private void removeNics(String listenerUuid, final List<String> vmNicUuids, final Completion completion) {
+    private void removeNics(List<String> listenerUuids, final List<String> vmNicUuids, final Completion completion) {
         SimpleQuery<VmNicVO> q = dbf.createQuery(VmNicVO.class);
         q.add(VmNicVO_.uuid, Op.IN, vmNicUuids);
         List<VmNicVO> vos = q.list();
         List<VmNicInventory> nics = VmNicInventory.valueOf(vos);
 
         LoadBalancerBackend bkd = getBackend();
-        bkd.removeVmNics(removeNicStruct(listenerUuid, vmNicUuids), nics, new Completion(completion) {
+        bkd.removeVmNics(removeNicStruct(listenerUuids, vmNicUuids), nics, new Completion(completion) {
             @Override
             public void success() {
                 UpdateQuery.New(LoadBalancerListenerVmNicRefVO.class)
                         .condAnd(LoadBalancerListenerVmNicRefVO_.vmNicUuid, Op.IN, vmNicUuids)
-                        .condAnd(LoadBalancerListenerVmNicRefVO_.listenerUuid, Op.EQ, listenerUuid)
+                        .condAnd(LoadBalancerListenerVmNicRefVO_.listenerUuid, Op.IN, listenerUuids)
                         .delete();
 
                 completion.success();
@@ -871,7 +874,7 @@ public class LoadBalancerBase {
     private void removeNic(APIRemoveVmNicFromLoadBalancerMsg msg, final NoErrorCompletion completion) {
         final APIRemoveVmNicFromLoadBalancerEvent evt = new APIRemoveVmNicFromLoadBalancerEvent(msg.getId());
 
-        removeNics(msg.getListenerUuid(), msg.getVmNicUuids(), new Completion(msg, completion) {
+        removeNics(Arrays.asList(msg.getListenerUuid()), msg.getVmNicUuids(), new Completion(msg, completion) {
             @Override
             public void success() {
                 evt.setInventory(reloadAndGetInventory());
@@ -1155,9 +1158,17 @@ public class LoadBalancerBase {
         vo.setInstancePort(msg.getInstancePort());
         vo.setLoadBalancerPort(msg.getLoadBalancerPort());
         vo.setProtocol(msg.getProtocol());
+        vo.setAccountUuid(msg.getSession().getAccountUuid());
         vo = dbf.persistAndRefresh(vo);
-        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), LoadBalancerListenerVO.class);
+        if (msg.getCertificateUuid() != null) {
+            LoadBalancerListenerCertificateRefVO ref = new LoadBalancerListenerCertificateRefVO();
+            ref.setListenerUuid(vo.getUuid());
+            ref.setCertificateUuid(msg.getCertificateUuid());
+            dbf.persist(ref);
+        }
+
         tagMgr.createNonInherentSystemTags(msg.getSystemTags(), vo.getUuid(), LoadBalancerListenerVO.class.getSimpleName());
+        vo = dbf.updateAndRefresh(vo);
         evt.setInventory(LoadBalancerListenerInventory.valueOf(vo));
         bus.publish(evt);
         completion.done();
@@ -1234,6 +1245,128 @@ public class LoadBalancerBase {
             @Override
             public String getName() {
                 return "update-lb-listener";
+            }
+        });
+    }
+
+    private void handle(APIAddCertificateToLoadBalancerListenerMsg msg) {
+        APIAddCertificateToLoadBalancerListenerEvent evt = new APIAddCertificateToLoadBalancerListenerEvent(msg.getId());
+
+        LoadBalancerListenerCertificateRefVO ref = Q.New(LoadBalancerListenerCertificateRefVO.class)
+                .eq(LoadBalancerListenerCertificateRefVO_.listenerUuid, msg.getListenerUuid())
+                .eq(LoadBalancerListenerCertificateRefVO_.certificateUuid, msg.getCertificateUuid()).limit(1).find();
+        if (ref != null) {
+            LoadBalancerListenerInventory inv = LoadBalancerListenerInventory.valueOf(dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class));
+            evt.setInventory(inv);
+            bus.publish(evt);
+            return;
+        } else {
+            ref = new LoadBalancerListenerCertificateRefVO();
+            ref.setListenerUuid(msg.getListenerUuid());
+            ref.setCertificateUuid(msg.getCertificateUuid());
+            dbf.persist(ref);
+        }
+
+        final LoadBalancerListenerCertificateRefVO original_ref = ref;
+        LoadBalancerChangeCertificateMsg cmsg = new LoadBalancerChangeCertificateMsg();
+        cmsg.setListenerUuid(msg.getListenerUuid());
+        cmsg.setLoadBalancerUuid(msg.getLoadBalancerUuid());
+        cmsg.setCertificateUuid(msg.getCertificateUuid());
+        bus.makeLocalServiceId(cmsg, LoadBalancerConstants.SERVICE_ID);
+        bus.send(cmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()){
+                    LoadBalancerListenerInventory inv = LoadBalancerListenerInventory.valueOf(dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class));
+                    evt.setInventory(inv);
+                    bus.publish(evt);
+                } else {
+                    dbf.remove(original_ref);
+                    evt.setError(reply.getError());
+                    bus.publish(evt);
+                }
+            }
+        });
+    }
+
+    private void handle(APIRemoveCertificateFromLoadBalancerListenerMsg msg) {
+        APIRemoveCertificateFromLoadBalancerListenerEvent evt = new APIRemoveCertificateFromLoadBalancerListenerEvent(msg.getId());
+
+        LoadBalancerListenerCertificateRefVO ref = Q.New(LoadBalancerListenerCertificateRefVO.class)
+                .eq(LoadBalancerListenerCertificateRefVO_.listenerUuid, msg.getListenerUuid())
+                .eq(LoadBalancerListenerCertificateRefVO_.certificateUuid, msg.getCertificateUuid()).limit(1).find();
+        final LoadBalancerListenerCertificateRefVO original_ref = ref;
+        if (ref == null) {
+            LoadBalancerListenerInventory inv = LoadBalancerListenerInventory.valueOf(dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class));
+            evt.setInventory(inv);
+            bus.publish(evt);
+            return;
+        } else {
+            dbf.remove(ref);
+        }
+
+        LoadBalancerChangeCertificateMsg cmsg = new LoadBalancerChangeCertificateMsg();
+        cmsg.setListenerUuid(msg.getListenerUuid());
+        cmsg.setLoadBalancerUuid(msg.getLoadBalancerUuid());
+        cmsg.setCertificateUuid(msg.getCertificateUuid());
+        bus.makeLocalServiceId(cmsg, LoadBalancerConstants.SERVICE_ID);
+        bus.send(cmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()){
+                    LoadBalancerListenerInventory inv = LoadBalancerListenerInventory.valueOf(dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class));
+                    evt.setInventory(inv);
+                    bus.publish(evt);
+                } else {
+                    dbf.persist(original_ref);
+                    evt.setError(reply.getError());
+                    bus.publish(evt);
+                }
+            }
+        });
+    }
+
+    private void handle(LoadBalancerChangeCertificateMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSyncId();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                LoadBalancerChangeCertificateReply reply = new LoadBalancerChangeCertificateReply();
+
+                /* there is no vm nic, can not installed to backend
+                 * it will be installed to backend when binding vm nic */
+                if (self.getProviderType() == null) {
+                    bus.reply(msg, reply);
+                    chain.next();
+                    return;
+                }
+
+                LoadBalancerBackend bkd = getBackend();
+                LoadBalancerStruct s = makeStruct();
+                s.setInit(false);
+                bkd.refresh(s, new Completion(msg) {
+                    @Override
+                    public void success() {
+                        bus.reply(msg, reply);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                    }
+                });
+
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return "change-lb-listener-certificate";
             }
         });
     }

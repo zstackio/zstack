@@ -27,6 +27,7 @@ public class VirtualRouterOfferingFactory implements InstanceOfferingFactory {
 				rvo.setPublicNetworkUuid(amsg.getPublicNetworkUuid());
 				rvo.setZoneUuid(amsg.getZoneUuid());
 				rvo.setImageUuid(amsg.getImageUuid());
+				rvo.setAccountUuid(msg.getSession().getAccountUuid());
 				rvo.setDefault(amsg.isDefault() != null ? amsg.isDefault() : false);
 				dbf.getEntityManager().persist(rvo);
 				dbf.getEntityManager().flush();

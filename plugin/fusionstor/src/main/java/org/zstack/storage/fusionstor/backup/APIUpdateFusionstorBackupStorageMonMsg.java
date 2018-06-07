@@ -20,6 +20,7 @@ import java.util.List;
         isAction = true,
         responseClass = APIUpdateMonToFusionstorBackupStorageEvent.class
 )
+@Deprecated
 public class APIUpdateFusionstorBackupStorageMonMsg extends APIMessage implements BackupStorageMessage {
     @APINoSee
     private String backupStorageUuid;

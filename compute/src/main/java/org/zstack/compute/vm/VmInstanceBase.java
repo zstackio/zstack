@@ -2881,8 +2881,10 @@ public class VmInstanceBase extends AbstractVmInstance {
                         " and l2ref.l2NetworkUuid = l2.uuid" +
                         " and l2.uuid = l3.l2NetworkUuid" +
                         " and l3.state = :l3State" +
+                        " and l3.category != :l3Category" +
                         " group by l3.uuid";
                 q = dbf.getEntityManager().createQuery(sql, L3NetworkVO.class);
+                q.setParameter("l3Category", L3NetworkCategory.System);
             } else {
                 // accessed by a normal account
                 sql = "select l3" +
@@ -2893,9 +2895,11 @@ public class VmInstanceBase extends AbstractVmInstance {
                         " and l2.uuid = l3.l2NetworkUuid" +
                         " and l3.state = :l3State" +
                         " and l3.uuid in (:l3uuids)" +
+                        " and l3.category != :l3Category" +
                         " group by l3.uuid";
                 q = dbf.getEntityManager().createQuery(sql, L3NetworkVO.class);
                 q.setParameter("l3uuids", l3Uuids);
+                q.setParameter("l3Category", L3NetworkCategory.System);
             }
         } else {
             if (l3Uuids == null) {
@@ -2909,8 +2913,10 @@ public class VmInstanceBase extends AbstractVmInstance {
                         " and l2ref.l2NetworkUuid = l2.uuid" +
                         " and l2.uuid = l3.l2NetworkUuid" +
                         " and l3.state = :l3State" +
+                        " and l3.category != :l3Category" +
                         " group by l3.uuid";
                 q = dbf.getEntityManager().createQuery(sql, L3NetworkVO.class);
+                q.setParameter("l3Category", L3NetworkCategory.System);
             } else {
                 // accessed by a normal account
                 sql = "select l3" +
@@ -2922,10 +2928,12 @@ public class VmInstanceBase extends AbstractVmInstance {
                         " and l2ref.l2NetworkUuid = l2.uuid" +
                         " and l2.uuid = l3.l2NetworkUuid" +
                         " and l3.state = :l3State" +
+                        " and l3.category != :l3Category" +
                         " and l3.uuid in (:l3uuids)" +
                         " group by l3.uuid";
                 q = dbf.getEntityManager().createQuery(sql, L3NetworkVO.class);
                 q.setParameter("l3uuids", l3Uuids);
+                q.setParameter("l3Category", L3NetworkCategory.System);
             }
         }
 
@@ -2967,8 +2975,10 @@ public class VmInstanceBase extends AbstractVmInstance {
                         " and l2.uuid = l2ref.l2NetworkUuid " +
                         " and l2ref.clusterUuid in (:Uuids)" +
                         " and l3.state = :l3State " +
+                        " and l3.category != :l3Category" +
                         " group by l3.uuid")
                         .param("Uuids", clusterUuids)
+                        .param("l3Category", L3NetworkCategory.System)
                         .param("l3State", L3NetworkState.Enabled).list();
 
                if (l3s.isEmpty()){
@@ -2998,9 +3008,11 @@ public class VmInstanceBase extends AbstractVmInstance {
                         " where l3.uuid = :l3Uuid " +
                         " and l3.l2NetworkUuid = l2.uuid " +
                         " and l2.uuid = l2ref.l2NetworkUuid" +
+                        " and l3.category != :l3Category" +
                         " and l2ref.clusterUuid in (:uuids) " +
                         " group by l2ref.clusterUuid", String.class)
                         .param("l3Uuid", l3Uuid)
+                        .param("l3Category", L3NetworkCategory.System)
                         .param("uuids", clusterUuids).list();
             }
         }.execute();
@@ -3378,18 +3390,18 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void run(SyncTaskChain chain) {
                 APIChangeInstanceOfferingEvent evt = new APIChangeInstanceOfferingEvent(msg.getId());
-
                 refreshVO();
                 ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
                 if (allowed != null) {
-                    throw new OperationFailureException(operr("operation is not allowed to vm[uuid:%s] which is in the state of state:%s", self.getUuid(), self.getState()));
+                    evt.setError(allowed);
+                    bus.publish(evt);
+                    chain.next();
+                    return;
                 }
 
                 changeOffering(msg, new Completion(msg, chain) {
                     @Override
                     public void success() {
-                        self.setInstanceOfferingUuid(msg.getInstanceOfferingUuid());
-                        dbf.updateAndRefresh(self);
                         refreshVO();
                         evt.setInventory(getSelfInventory());
                         bus.publish(evt);
@@ -3419,40 +3431,35 @@ public class VmInstanceBase extends AbstractVmInstance {
         final VmInstanceInventory vm = getSelfInventory();
 
         List<ChangeInstanceOfferingExtensionPoint> exts = pluginRgty.getExtensionList(ChangeInstanceOfferingExtensionPoint.class);
-        for (ChangeInstanceOfferingExtensionPoint ext : exts) {
-            ext.preChangeInstanceOffering(vm, inv);
-        }
+        exts.forEach(ext -> ext.preChangeInstanceOffering(vm, inv));
+        CollectionUtils.safeForEach(exts, ext -> ext.beforeChangeInstanceOffering(vm, inv));
 
-        CollectionUtils.safeForEach(exts, new ForEachFunction<ChangeInstanceOfferingExtensionPoint>() {
+        changeCpuAndMemory(inv.getCpuNum(), inv.getMemorySize(), new Completion(completion) {
             @Override
-            public void run(ChangeInstanceOfferingExtensionPoint arg) {
-                arg.beforeChangeInstanceOffering(vm, inv);
+            public void success() {
+                self.setAllocatorStrategy(inv.getAllocatorStrategy());
+                self.setInstanceOfferingUuid(msg.getInstanceOfferingUuid());
+                self = dbf.updateAndRefresh(self);
+                CollectionUtils.safeForEach(exts, ext -> ext.afterChangeInstanceOffering(vm, inv));
+                completion.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
             }
         });
+    }
 
-
+    private void changeCpuAndMemory(final int cpuNum, final long memorySize, final Completion completion) {
         if (self.getState() == VmInstanceState.Stopped) {
-            changeCpuAndMemoryForStoppedVm(newOfferingVO.getCpuNum(), newOfferingVO.getMemorySize());
+            self.setCpuNum(cpuNum);
+            self.setMemorySize(memorySize);
+            self = dbf.updateAndRefresh(self);
             completion.success();
-        } else if (self.getState() == VmInstanceState.Running) {
-            changeCpuAndMemoryForRunningVm(newOfferingVO.getCpuNum(), newOfferingVO.getMemorySize(), completion);
+            return;
         }
 
-        CollectionUtils.safeForEach(exts, new ForEachFunction<ChangeInstanceOfferingExtensionPoint>() {
-            @Override
-            public void run(ChangeInstanceOfferingExtensionPoint arg) {
-                arg.afterChangeInstanceOffering(vm, inv);
-            }
-        });
-    }
-
-    private void changeCpuAndMemoryForStoppedVm(final int cpuNum, final long memorySize) {
-        self.setCpuNum(cpuNum);
-        self.setMemorySize(memorySize);
-        self = dbf.updateAndRefresh(self);
-    }
-
-    private void changeCpuAndMemoryForRunningVm(final int cpuNum, final long memorySize, final Completion completion) {
         final int oldCpuNum = self.getCpuNum();
         final long oldMemorySize = self.getMemorySize();
 
@@ -3689,7 +3696,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                 });
 
                 if (msg.getCpuNum() != null || msg.getMemorySize() != null) {
-                    changeCpuAndMemory(msg, new Completion(msg, chain) {
+                    int cpuNum = msg.getCpuNum() == null ? self.getCpuNum() : msg.getCpuNum();
+                    long memory = msg.getMemorySize() == null ? self.getMemorySize() : msg.getMemorySize();
+                    changeCpuAndMemory(cpuNum, memory, new Completion(msg, chain) {
                         @Override
                         public void success() {
                             refreshVO();
@@ -3952,19 +3961,6 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         return vos;
-    }
-
-    private void changeCpuAndMemory(APIUpdateVmInstanceMsg msg, Completion completion) {
-        // add some systemTag and can be appliance for the next start
-        int cpuNum = msg.getCpuNum() == null ? self.getCpuNum() : msg.getCpuNum();
-        long memory = msg.getMemorySize() == null ? self.getMemorySize() : msg.getMemorySize();
-
-        if (self.getState().equals(VmInstanceState.Running)) {
-            changeCpuAndMemoryForRunningVm(cpuNum, memory, completion);
-        } else if (self.getState().equals(VmInstanceState.Stopped)) {
-            changeCpuAndMemoryForStoppedVm(cpuNum, memory);
-            completion.success();
-        }
     }
 
     private void handle(APIGetVmAttachableDataVolumeMsg msg) {

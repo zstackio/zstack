@@ -1,6 +1,8 @@
 package org.zstack.header.allocator;
 
 import org.zstack.header.host.HostEO;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.Index;
@@ -12,6 +14,11 @@ import javax.persistence.Table;
 
 @Entity
 @Table
+@EntityGraph(
+        parents = {
+                @EntityGraph.Neighbour(type = HostVO.class, myField = "uuid", targetField = "uuid")
+        }
+)
 public class HostCapacityVO {
     @Id
     @Column

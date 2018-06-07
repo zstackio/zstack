@@ -11,7 +11,7 @@ import java.sql.Timestamp;
 @Entity
 @Table
 @BaseResource
-public class UserGroupVO extends ResourceVO {
+public class UserGroupVO extends ResourceVO implements OwnedByAccount {
     @Column
     @ForeignKey(parentEntityClass = AccountVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
     private String accountUuid;

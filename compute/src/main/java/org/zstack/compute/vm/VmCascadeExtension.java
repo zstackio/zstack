@@ -96,7 +96,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
 
         if (IpRangeVO.class.getSimpleName().equals(action.getParentIssuer()) &&
                 IpRangeVO.class.getSimpleName().equals(action.getRootIssuer())) {
-            return OP_STOP;
+            return OP_DETACH_NIC;
         }
 
         if (VmInstanceVO.class.getSimpleName().equals(action.getParentIssuer())) {
@@ -381,7 +381,20 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
             });
         } else if (op == OP_DETACH_NIC) {
             final List<DetachNicFromVmMsg> msgs = new ArrayList<>();
-            List<L3NetworkInventory> l3s = action.getParentIssuerContext();
+            List<L3NetworkInventory> l3s = new ArrayList<>();
+            if (IpRangeVO.class.getSimpleName().equals(action.getParentIssuer()) &&
+                    IpRangeVO.class.getSimpleName().equals(action.getRootIssuer())) {
+                l3s = CollectionUtils.transformToList(action.getParentIssuerContext(), new Function<L3NetworkInventory, IpRangeInventory>() {
+                    @Override
+                    public L3NetworkInventory call(IpRangeInventory arg) {
+                        L3NetworkVO vo = dbf.findByUuid(arg.getL3NetworkUuid(), L3NetworkVO.class);
+                        return L3NetworkInventory.valueOf(vo);
+                    }
+                });
+            } else {
+                l3s = action.getParentIssuerContext();
+            }
+
             for (VmDeletionStruct vm : vminvs) {
                 for (L3NetworkInventory l3 : l3s) {
                     VmNicInventory nic = vm.getInventory().findNic(l3.getUuid());
@@ -594,9 +607,8 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                     TypedQuery<VmInstanceVO> q = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
                     q.setParameter("vmType", VmInstanceConstant.USER_VM_TYPE);
                     q.setParameter("vmStates", Arrays.asList(
-                            VmInstanceState.Stopped,
-                            VmInstanceState.Running,
-                            VmInstanceState.Destroyed));
+                            VmInstanceState.Stopped, VmInstanceState.Paused,
+                            VmInstanceState.Running, VmInstanceState.Destroyed));
                     q.setParameter("uuids", l3uuids);
                     return q.getResultList();
                 }
@@ -622,14 +634,16 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                     String sql = "select vm from VmInstanceVO vm, VmNicVO nic, UsedIpVO ip, IpRangeVO ipr" +
                             " where vm.type = :vmType" +
                             " and vm.uuid = nic.vmInstanceUuid" +
-                            " and vm.state not in (:vmStates)" +
+                            " and vm.state in (:vmStates)" +
                             " and nic.usedIpUuid = ip.uuid" +
                             " and ip.ipRangeUuid = ipr.uuid" +
                             " and ipr.uuid in (:uuids)" +
                             " group by vm.uuid";
                     TypedQuery<VmInstanceVO> q = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
                     q.setParameter("vmType", VmInstanceConstant.USER_VM_TYPE);
-                    q.setParameter("vmStates", Arrays.asList(VmInstanceState.Stopped, VmInstanceState.Stopping));
+                    q.setParameter("vmStates", Arrays.asList(
+                            VmInstanceState.Stopped, VmInstanceState.Paused,
+                            VmInstanceState.Running, VmInstanceState.Destroyed));
                     q.setParameter("uuids", ipruuids);
                     return q.getResultList();
                 }

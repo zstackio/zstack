@@ -87,11 +87,13 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component"/>
             <zstack:extension interface="org.zstack.header.allocator.HostAllocatorStrategyFactory"/>
+            <zstack:extension interface="org.zstack.header.host.HostAllocateExtensionPoint"/>
         </zstack:plugin>
 
         <property name="allocatorFlowNames">
             <list>
                 <value>org.zstack.compute.allocator.AttachedL2NetworkAllocatorFlow</value>
+                <value>org.zstack.compute.allocator.QuotaAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.BackupStorageSelectPrimaryStorageAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.HostStateAndHypervisorAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.ImageBackupStorageAllocatorFlow</value>
@@ -122,6 +124,7 @@
         <property name="allocatorFlowNames">
             <list>
                 <value>org.zstack.compute.allocator.AttachedL2NetworkAllocatorFlow</value>
+                <value>org.zstack.compute.allocator.QuotaAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.BackupStorageSelectPrimaryStorageAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.HostStateAndHypervisorAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.ImageBackupStorageAllocatorFlow</value>
@@ -150,6 +153,7 @@
         <property name="allocatorFlowNames">
             <list>
                 <value>org.zstack.compute.allocator.AttachedL2NetworkAllocatorFlow</value>
+                <value>org.zstack.compute.allocator.QuotaAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.BackupStorageSelectPrimaryStorageAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.DesignatedHostAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.ImageBackupStorageAllocatorFlow</value>
@@ -174,6 +178,7 @@
         <property name="allocatorFlowNames">
             <list>
                 <value>org.zstack.compute.allocator.AttachedL2NetworkAllocatorFlow</value>
+                <value>org.zstack.compute.allocator.QuotaAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.BackupStorageSelectPrimaryStorageAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.HostStateAndHypervisorAllocatorFlow</value>
                 <value>org.zstack.compute.allocator.HostCapacityAllocatorFlow</value>

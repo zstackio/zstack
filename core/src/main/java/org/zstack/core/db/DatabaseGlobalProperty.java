@@ -7,7 +7,7 @@ import org.zstack.core.GlobalPropertyDefinition;
  */
 @GlobalPropertyDefinition
 public class DatabaseGlobalProperty {
-    @GlobalProperty(name="DatabaseFacade.deadlockRetryTimes", defaultValue = "10")
+    @GlobalProperty(name="DatabaseFacade.deadlockRetryTimes", defaultValue = "20")
     public static int retryTimes;
     @GlobalProperty(name="DB.url")
     public static String DbUrl;

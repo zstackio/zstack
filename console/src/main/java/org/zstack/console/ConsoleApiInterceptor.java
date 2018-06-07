@@ -9,11 +9,13 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.console.APIRequestConsoleAccessMsg;
+import org.zstack.header.console.APIUpdateConsoleProxyAgentMsg;
 import org.zstack.header.console.ConsoleConstants;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
+
 import static org.zstack.core.Platform.operr;
 
 /**
@@ -34,6 +36,8 @@ public class ConsoleApiInterceptor implements ApiMessageInterceptor {
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         if (msg instanceof APIRequestConsoleAccessMsg) {
             validate((APIRequestConsoleAccessMsg) msg);
+        } else if (msg instanceof APIUpdateConsoleProxyAgentMsg) {
+            validate((APIUpdateConsoleProxyAgentMsg) msg);
         }
 
         return msg;
@@ -48,5 +52,12 @@ public class ConsoleApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(operr("Console is only available when the VM[uuid:%s] is Running, but the current state is %s", msg.getVmInstanceUuid(), state));
         }
         bus.makeTargetServiceIdByResourceUuid(msg, ConsoleConstants.SERVICE_ID, msg.getVmInstanceUuid());
+    }
+
+    private void validate(APIUpdateConsoleProxyAgentMsg msg) {
+        // consoleProxyOverriddenIp default value is 0.0.0.0
+        if (msg.getConsoleProxyOverriddenIp().trim().equals("")) {
+            msg.setConsoleProxyOverriddenIp("0.0.0.0");
+        }
     }
 }

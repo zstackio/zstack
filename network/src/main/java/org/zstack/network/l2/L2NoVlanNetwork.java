@@ -13,28 +13,30 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
-import org.zstack.core.inventory.InventoryFacade;
-import org.zstack.core.workflow.*;
-import org.zstack.header.core.Completion;
-import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.*;
 import org.zstack.header.identity.SharedResourceVO;
 import org.zstack.header.identity.SharedResourceVO_;
-import org.zstack.header.message.*;
+import org.zstack.header.message.APIDeleteMessage;
+import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
-import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import static org.zstack.core.Platform.*;
 
 import java.util.*;
+
 import static java.util.Arrays.asList;
-import static org.zstack.core.Platform.argerr;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class L2NoVlanNetwork implements L2Network {
@@ -48,8 +50,6 @@ public class L2NoVlanNetwork implements L2Network {
     protected DatabaseFacade dbf;
     @Autowired
     protected L2NetworkManager l2Mgr;
-    @Autowired
-    protected InventoryFacade inventoryMgr;
     @Autowired
     protected CascadeFacade casf;
     @Autowired
@@ -309,7 +309,7 @@ public class L2NoVlanNetwork implements L2Network {
             public void success() {
                 logger.debug(String.format("successfully detached L2Network[uuid:%s] to cluster [uuid:%s]", self.getUuid(), msg.getClusterUuid()));
                 self = dbf.reload(self);
-                evt.setInventory((L2NetworkInventory) inventoryMgr.valueOf(self));
+                evt.setInventory(self.toInventory());
                 bus.publish(evt);
             }
 
@@ -504,7 +504,7 @@ public class L2NoVlanNetwork implements L2Network {
         long count = Q.New(L2NetworkClusterRefVO.class).eq(L2NetworkClusterRefVO_.clusterUuid, msg.getClusterUuid())
                 .eq(L2NetworkClusterRefVO_.l2NetworkUuid, msg.getL2NetworkUuid()).count();
         if (count != 0) {
-            evt.setInventory((L2NetworkInventory) inventoryMgr.valueOf(self));
+            evt.setInventory(self.toInventory());
             bus.publish(evt);
             completion.done();
             return;
@@ -574,7 +574,7 @@ public class L2NoVlanNetwork implements L2Network {
                 dbf.persist(rvo);
                 logger.debug(String.format("successfully attached L2Network[uuid:%s] to cluster [uuid:%s]", self.getUuid(), msg.getClusterUuid()));
                 self = dbf.findByUuid(self.getUuid(), L2NetworkVO.class);
-                evt.setInventory((L2NetworkInventory) inventoryMgr.valueOf(self));
+                evt.setInventory(self.toInventory());
                 bus.publish(evt);
                 completion.done();
             }

@@ -7,9 +7,9 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.configuration.DiskOfferingInventory;
-import org.zstack.header.identity.AccountConstant.StatementEffect;
+import org.zstack.header.identity.StatementEffect;
 import org.zstack.header.identity.IdentityErrors;
-import org.zstack.header.identity.PolicyInventory.Statement;
+import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeMsg;
 import org.zstack.header.image.APICreateRootVolumeTemplateFromRootVolumeMsg;
@@ -82,7 +82,7 @@ public class TestPolicyForVolume {
         IdentityCreator identityCreator = new IdentityCreator(api);
         identityCreator.useAccount("test");
         identityCreator.createUser("user1", "password");
-        Statement s = new Statement();
+        PolicyStatement s = new PolicyStatement();
         s.setName("allow");
         s.setEffect(StatementEffect.Allow);
         s.addAction(String.format("%s:%s", VolumeConstant.ACTION_CATEGORY, APICreateDataVolumeMsg.class.getSimpleName()));
@@ -112,7 +112,7 @@ public class TestPolicyForVolume {
         vol = api.createDataVolume("data", dov.getUuid(), session);
         identityCreator.detachPolicyFromUser("user1", "allow");
 
-        s = new Statement();
+        s = new PolicyStatement();
         s.setName("deny");
         s.setEffect(StatementEffect.Deny);
         s.addAction(String.format("%s:%s", VolumeConstant.ACTION_CATEGORY, APICreateDataVolumeMsg.class.getSimpleName()));

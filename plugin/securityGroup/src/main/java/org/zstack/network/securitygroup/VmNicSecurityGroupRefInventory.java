@@ -3,6 +3,8 @@ package org.zstack.network.securitygroup;
 import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
+import org.zstack.header.query.ExpandedQueryAlias;
+import org.zstack.header.query.ExpandedQueryAliases;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.search.Inventory;
 import org.zstack.header.vm.VmNicInventory;
@@ -18,7 +20,12 @@ import java.util.List;
         @ExpandedQuery(expandedField = "vmNic", inventoryClass = VmNicInventory.class,
                 foreignKey = "vmNicUuid", expandedInventoryKey = "uuid"),
         @ExpandedQuery(expandedField = "securityGroup", inventoryClass = SecurityGroupInventory.class,
-                foreignKey = "securityGroupUuid", expandedInventoryKey = "uuid")
+                foreignKey = "securityGroupUuid", expandedInventoryKey = "uuid"),
+        @ExpandedQuery(target = VmNicInventory.class, expandedField = "securityGroupRef", inventoryClass = VmNicSecurityGroupRefInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "vmNicUuid", hidden = true)
+})
+@ExpandedQueryAliases({
+        @ExpandedQueryAlias(target = VmNicInventory.class, alias = "securityGroup", expandedField = "securityGroupRef.securityGroup")
 })
 public class VmNicSecurityGroupRefInventory {
     @APINoSee

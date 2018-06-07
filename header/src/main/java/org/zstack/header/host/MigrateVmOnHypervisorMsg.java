@@ -41,11 +41,7 @@ public class MigrateVmOnHypervisorMsg extends NeedReplyMessage implements HostMe
 
     @Override
     public String getHostUuid() {
-        if (!isMigrateFromDestination()) {
-            return getSrcHostUuid();
-        } else {
-            return getDestHostInventory().getUuid();
-        }
+        return getSrcHostUuid();
     }
 
     public String getSrcHostUuid() {

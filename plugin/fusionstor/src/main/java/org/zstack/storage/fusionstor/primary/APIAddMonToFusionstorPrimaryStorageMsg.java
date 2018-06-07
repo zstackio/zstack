@@ -19,6 +19,7 @@ import static java.util.Arrays.asList;
         responseClass = APIAddMonToFusionstorPrimaryStorageEvent.class,
         parameterName = "params"
 )
+@Deprecated
 public class APIAddMonToFusionstorPrimaryStorageMsg extends APIMessage implements PrimaryStorageMessage {
     @APIParam(resourceType = FusionstorPrimaryStorageVO.class)
     private String uuid;

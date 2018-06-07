@@ -1,6 +1,8 @@
 package org.zstack.network.securitygroup;
 
+import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.vo.BaseResource;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.Index;
 import org.zstack.header.vo.ResourceVO;
 
@@ -12,7 +14,7 @@ import java.util.Set;
 @Entity
 @Table
 @BaseResource
-public class SecurityGroupVO extends ResourceVO {
+public class SecurityGroupVO extends ResourceVO implements OwnedByAccount {
     @Column
     @Index
     private String name;
@@ -40,6 +42,19 @@ public class SecurityGroupVO extends ResourceVO {
     @OneToMany(fetch=FetchType.EAGER)
     @JoinColumn(name="securityGroupUuid", insertable=false, updatable=false)
     private Set<SecurityGroupL3NetworkRefVO> attachedL3NetworkRefs = new HashSet<SecurityGroupL3NetworkRefVO>();
+
+    @Transient
+    private String accountUuid;
+
+    @Override
+    public String getAccountUuid() {
+        return accountUuid;
+    }
+
+    @Override
+    public void setAccountUuid(String accountUuid) {
+        this.accountUuid = accountUuid;
+    }
 
     @PreUpdate
     private void preUpdate() {

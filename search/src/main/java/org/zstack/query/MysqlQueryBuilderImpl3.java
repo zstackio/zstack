@@ -199,7 +199,8 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
             ExpandedQueries expandedQueries = (ExpandedQueries) invClass.getAnnotation(ExpandedQueries.class);
             if (expandedQueries != null) {
                 for (ExpandedQuery e : expandedQueries.value()) {
-                    ExpandedQueryStruct s = ExpandedQueryStruct.fromExpandedQueryAnnotation(inventoryClass, e);
+                    Class iclass = e.target() == Object.class ? inventoryClass : e.target();
+                    ExpandedQueryStruct s = ExpandedQueryStruct.fromExpandedQueryAnnotation(iclass, e);
                     s.check();
                     this.expandedQueries.put(s.getExpandedField(), s);
                 }
@@ -305,13 +306,13 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
     }
 
     private void populateEntityInfo() throws NoSuchMethodException {
-        List<Class> metaClasses = BeanUtils.scanClass("org.zstack", StaticMetamodel.class);
+        Set<Class<?>> metaClasses = BeanUtils.reflections.getTypesAnnotatedWith(StaticMetamodel.class);
         for (Class it : metaClasses) {
             StaticMetamodel at = (StaticMetamodel) it.getAnnotation(StaticMetamodel.class);
             metaModelClasses.put(at.value(), it);
         }
 
-        List<Class> invClasses = BeanUtils.scanClass("org.zstack", Inventory.class);
+        Set<Class<?>> invClasses = BeanUtils.reflections.getTypesAnnotatedWith(Inventory.class);
 
         for (Class invClass : invClasses) {
             EntityInfo info = buildEntityInfo(invClass);
@@ -1133,7 +1134,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
     }
 
     private void buildExpandedQueryAliasInfo() {
-        List<Class> invClasses = BeanUtils.scanClass("org.zstack", Inventory.class);
+        Set<Class<?>> invClasses = BeanUtils.reflections.getTypesAnnotatedWith(Inventory.class);
 
         for (Class invClass : invClasses) {
             ExpandedQueryAliases aliases = (ExpandedQueryAliases) invClass.getAnnotation(ExpandedQueryAliases.class);
@@ -1142,6 +1143,8 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
             }
 
             for (ExpandedQueryAlias alias : aliases.value()) {
+                invClass = alias.target() == Object.class ? invClass : alias.target();
+
                 ExpandedQueryAliasInfo info = new ExpandedQueryAliasInfo();
                 info.alias = alias.alias();
                 info.expandField = alias.expandedField();
@@ -1153,11 +1156,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
                             invClass.getName()));
                 }
 
-                List<ExpandedQueryAliasInfo> lst = aliasInfos.get(info.queryMessageClass);
-                if (lst == null) {
-                    lst = new ArrayList<ExpandedQueryAliasInfo>();
-                    aliasInfos.put(info.queryMessageClass, lst);
-                }
+                List<ExpandedQueryAliasInfo> lst = aliasInfos.computeIfAbsent(info.queryMessageClass, k -> new ArrayList<>());
                 lst.add(info);
             }
         }
@@ -1166,16 +1165,15 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
     @Override
     public boolean start() {
         try {
-            List<Class> queryMessageClasses = BeanUtils.scanClassByType("org.zstack", APIQueryMessage.class);
-
-            for (Class msgClass : queryMessageClasses) {
-                AutoQuery at = (AutoQuery) msgClass.getAnnotation(AutoQuery.class);
+            BeanUtils.reflections.getSubTypesOf(APIQueryMessage.class).forEach(msgClass -> {
+                AutoQuery at = msgClass.getAnnotation(AutoQuery.class);
                 if (at == null) {
                     logger.warn(String.format("query message[%s] doesn't have AutoQuery annotation, expanded query alias would not take effect", msgClass.getName()));
-                    continue;
+                    return;
                 }
+
                 inventoryQueryMessageMap.put(at.inventoryClass(), msgClass);
-            }
+            });
 
             // NOTE: don't change the order
             populateExtensions();

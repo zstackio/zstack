@@ -31,13 +31,11 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.network.l3.*;
-import org.zstack.header.quota.QuotaConstant;
 import org.zstack.header.vm.ReleaseNetworkServiceOnDetachingNicExtensionPoint;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.identity.AccountManager;
-import org.zstack.identity.QuotaGlobalConfig;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.DebugUtils;
@@ -253,6 +251,7 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
                         vipvo.setL3NetworkUuid(ip.getL3NetworkUuid());
                         vipvo.setNetmask(ip.getNetmask());
                         vipvo.setUsedIpUuid(ip.getUuid());
+                        vipvo.setAccountUuid(msg.getSession().getAccountUuid());
 
                         VipVO finalVipvo = vipvo;
                         vipvo = new SQLBatchWithReturn<VipVO>() {
@@ -260,7 +259,6 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
                             protected VipVO scripts() {
                                 persist(finalVipvo);
                                 reload(finalVipvo);
-                                acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), finalVipvo.getUuid(), VipVO.class);
                                 tagMgr.createTagsFromAPICreateMessage(msg, finalVipvo.getUuid(), VipVO.class.getSimpleName());
                                 return finalVipvo;
                             }
@@ -337,7 +335,7 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
             public List<Quota.QuotaUsage> getQuotaUsageByAccount(String accountUuid) {
                 Quota.QuotaUsage usage = new Quota.QuotaUsage();
                 usage.setUsed(getUsedVip(accountUuid));
-                usage.setName(QuotaConstant.VIP_NUM);
+                usage.setName(VipQuotaConstant.VIP_NUM);
                 return list(usage);
             }
 
@@ -354,14 +352,12 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
             }
 
             private void check(APICreateVipMsg msg, Map<String, QuotaPair> pairs) {
-                long vipNum = pairs.get(QuotaConstant.VIP_NUM).getValue();
+                long vipNum = pairs.get(VipQuotaConstant.VIP_NUM).getValue();
                 long vn = getUsedVip(msg.getSession().getAccountUuid());
 
                 if (vn + 1 > vipNum) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                            String.format("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]",
-                                    msg.getSession().getAccountUuid(), QuotaConstant.VIP_NUM, vipNum)
-                    ));
+                    throw new ApiMessageInterceptionException(new QuotaUtil().buildQuataExceedError(
+                                    msg.getSession().getAccountUuid(), VipQuotaConstant.VIP_NUM, vipNum));
                 }
             }
         };
@@ -371,8 +367,8 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
         quota.setOperator(checker);
 
         QuotaPair p = new QuotaPair();
-        p.setName(QuotaConstant.VIP_NUM);
-        p.setValue(QuotaGlobalConfig.VIP_NUM.defaultValue(Long.class));
+        p.setName(VipQuotaConstant.VIP_NUM);
+        p.setValue(VipQuotaGlobalConfig.VIP_NUM.defaultValue(Long.class));
         quota.addPair(p);
 
         return list(quota);

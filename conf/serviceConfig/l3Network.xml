@@ -115,4 +115,12 @@
     <message>
         <name>org.zstack.header.network.l3.APIGetL3NetworkRouterInterfaceIpMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.network.l3.APIAddHostRouteToL3NetworkMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.network.l3.APIRemoveHostRouteFromL3NetworkMsg</name>
+    </message>
 </service>

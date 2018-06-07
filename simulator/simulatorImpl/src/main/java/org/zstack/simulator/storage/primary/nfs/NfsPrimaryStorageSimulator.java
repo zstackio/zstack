@@ -2,7 +2,6 @@ package org.zstack.simulator.storage.primary.nfs;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -65,7 +64,7 @@ public class NfsPrimaryStorageSimulator {
         HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
         GetVolumeBaseImagePathCmd cmd = JSONObjectUtil.toObject(entity.getBody(), GetVolumeBaseImagePathCmd.class);
         GetVolumeBaseImagePathRsp rsp = new GetVolumeBaseImagePathRsp();
-        rsp.path = config.getVolumeBaseImagePaths.get(cmd.volumeUUid);
+        rsp.path = config.getVolumeBaseImagePaths.get(cmd.volumeUuid);
         reply(entity, rsp);
         return null;
     }

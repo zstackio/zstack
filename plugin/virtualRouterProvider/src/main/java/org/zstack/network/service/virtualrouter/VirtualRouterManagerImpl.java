@@ -26,6 +26,7 @@ import org.zstack.header.configuration.APIUpdateInstanceOfferingEvent;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.configuration.InstanceOfferingState;
 import org.zstack.header.configuration.InstanceOfferingVO;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -39,6 +40,7 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
+import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -71,6 +73,7 @@ import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipInventory;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipVO;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipVO_;
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
+import org.zstack.network.service.virtualrouter.vyos.VyosVersionManager;
 import org.zstack.search.GetQuery;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.SystemTagCreator;
@@ -102,7 +105,8 @@ import static org.zstack.utils.VipUseForList.SNAT_NETWORK_SERVICE_TYPE;
 
 public class VirtualRouterManagerImpl extends AbstractService implements VirtualRouterManager,
         PrepareDbInitialValueExtensionPoint, L2NetworkCreateExtensionPoint,
-        GlobalApiMessageInterceptor, AddExpandedQueryExtensionPoint, GetCandidateVmNicsForLoadBalancerExtensionPoint, FilterVmNicsForEipInVirtualRouterExtensionPoint, ApvmCascadeFilterExtensionPoint {
+        GlobalApiMessageInterceptor, AddExpandedQueryExtensionPoint, GetCandidateVmNicsForLoadBalancerExtensionPoint,
+        FilterVmNicsForEipInVirtualRouterExtensionPoint, ApvmCascadeFilterExtensionPoint, ManagementNodeReadyExtensionPoint {
 	private final static CLogger logger = Utils.getLogger(VirtualRouterManagerImpl.class);
 	
 	private final static List<String> supportedL2NetworkTypes = new ArrayList<String>();
@@ -155,6 +159,8 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     private TagManager tagMgr;
     @Autowired
     private NetworkServiceManager nwServiceMgr;
+    @Autowired
+    private VyosVersionManager vyosVersionManager;
     
 
 	@Override
@@ -170,6 +176,8 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 	private void handleLocalMessage(Message msg) {
         if (msg instanceof CreateVirtualRouterVmMsg) {
             handle((CreateVirtualRouterVmMsg) msg);
+        } else if (msg instanceof CheckVirtualRouterVmVersionMsg) {
+            handle((CheckVirtualRouterVmVersionMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -1540,6 +1548,64 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             return vos;
         } else {
             return applianceVmVOS;
+        }
+    }
+
+    private void handle(CheckVirtualRouterVmVersionMsg cmsg) {
+        CheckVirtualRouterVmVersionReply reply = new CheckVirtualRouterVmVersionReply();
+
+        /* reply message back asap to avoid blocking mn node startup */
+        bus.reply(cmsg, reply);
+
+        VirtualRouterVmVO vrVo = dbf.findByUuid(cmsg.getVirtualRouterVmUuid(), VirtualRouterVmVO.class);
+        VirtualRouterVmInventory inv = VirtualRouterVmInventory.valueOf(vrVo);
+        if (VirtualRouterConstant.VIRTUAL_ROUTER_VM_TYPE.equals(inv.getApplianceVmType())) {
+            return;
+        }
+
+        vyosVersionManager.vyosRouterVersionCheck(inv.getUuid(), new Completion(cmsg) {
+            @Override
+            public void success() {
+                logger.debug(String.format("virtual router[uuid: %s] has same version as management node", inv.getUuid()));
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.warn(String.format("virtual router[uuid: %s] need to be reconnected because %s", inv.getUuid(), errorCode.getDetails()));
+                ReconnectVirtualRouterVmMsg msg = new ReconnectVirtualRouterVmMsg();
+                msg.setVirtualRouterVmUuid(inv.getUuid());
+                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, inv.getUuid());
+                bus.send(msg, new CloudBusCallBack(msg) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            logger.warn(String.format("virtual router[uuid:%s] reconnection failed, because %s", inv.getUuid(), reply.getError()));
+                        } else {
+                            logger.debug(String.format("virtual router[uuid:%s] reconnect successfully", inv.getUuid()));
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    @Override
+    public void managementNodeReady() {
+        List<VirtualRouterVmVO> vrVos = Q.New(VirtualRouterVmVO.class).list();
+        for (VirtualRouterVmVO vrVo : vrVos) {
+            CheckVirtualRouterVmVersionMsg msg = new CheckVirtualRouterVmVersionMsg();
+            msg.setVirtualRouterVmUuid(vrVo.getUuid());
+            bus.makeTargetServiceIdByResourceUuid(msg, VirtualRouterConstant.SERVICE_ID, vrVo.getUuid());
+            bus.send(msg, new CloudBusCallBack(msg) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        logger.warn(String.format("virtual router[uuid:%s] check version message failed, because %s", vrVo.getUuid(), reply.getError()));
+                    } else {
+                        logger.debug(String.format("virtual router[uuid:%s] check version message successfully", vrVo.getUuid()));
+                    }
+                }
+            });
         }
     }
 }

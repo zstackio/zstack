@@ -3,6 +3,7 @@ package org.zstack.storage.primary.local;
 import com.google.common.collect.Lists;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.compute.host.MigrateNetworkExtensionPoint;
 import org.zstack.compute.vm.VmAllocatePrimaryStorageFlow;
 import org.zstack.compute.vm.VmAllocatePrimaryStorageForAttachingDiskFlow;
 import org.zstack.compute.vm.VmMigrateOnHypervisorFlow;
@@ -14,6 +15,7 @@ import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.Component;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
@@ -51,7 +53,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
-import static org.zstack.utils.CollectionDSL.*;
+import static org.zstack.utils.CollectionDSL.list;
 
 /**
  * Created by frank on 6/30/2015.
@@ -589,6 +591,11 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     }
 
     @Override
+    public void afterInstantiateVolume(VmInstanceInventory vm, VolumeInventory volume) {
+
+    }
+
+    @Override
     public void failedToAttachVolume(VmInstanceInventory vm, VolumeInventory volume, ErrorCode errorCode) {
 
     }
@@ -784,8 +791,8 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     }
 
     @Override
-    public void beforeRecoverDataVolume(VolumeInventory vol) {
-
+    public void beforeRecoverDataVolume(VolumeInventory vol, Completion completion) {
+        completion.success();
     }
 
     @Override
@@ -1033,5 +1040,20 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             }
         }.execute();
 
+    }
+
+    protected String getDestMigrationAddress(String srcHostUuid, String dstHostUuid){
+        MigrateNetworkExtensionPoint.MigrateInfo migrateIpInfo = null;
+        for (MigrateNetworkExtensionPoint ext: pluginRgty.getExtensionList(MigrateNetworkExtensionPoint.class)) {
+            MigrateNetworkExtensionPoint.MigrateInfo r = ext.getMigrationAddressForVM(srcHostUuid, dstHostUuid);
+            if (r == null) {
+                continue;
+            }
+
+            migrateIpInfo = r;
+        }
+
+        return migrateIpInfo != null ? migrateIpInfo.dstMigrationAddress :
+                Q.New(HostVO.class).eq(HostVO_.uuid, dstHostUuid).select(HostVO_.managementIp).findValue();
     }
 }

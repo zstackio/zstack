@@ -124,4 +124,12 @@ public class L3NetworkInventory  {
         return this.networkServices;
     }
 
+    public java.util.List hostRoute;
+    public void setHostRoute(java.util.List hostRoute) {
+        this.hostRoute = hostRoute;
+    }
+    public java.util.List getHostRoute() {
+        return this.hostRoute;
+    }
+
 }

@@ -170,4 +170,10 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="VyosVersionManager" class="org.zstack.network.service.virtualrouter.vyos.VyosVersionVersionManagerImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.network.service.virtualrouter.vyos.VyosVersionManager" />
+        </zstack:plugin>
+    </bean>
+
 </beans>

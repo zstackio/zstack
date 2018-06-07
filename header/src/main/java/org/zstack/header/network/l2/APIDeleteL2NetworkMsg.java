@@ -48,7 +48,7 @@ public class APIDeleteL2NetworkMsg extends APIDeleteMessage implements L2Network
     /**
      * @desc l2Network uuid
      */
-    @APIParam(checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = L2NetworkVO.class, successIfResourceNotExisting = true)
     private String uuid;
 
     public String getUuid() {

@@ -8,6 +8,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.allocator.*;
 import org.zstack.header.configuration.DiskOfferingInventory;
@@ -17,6 +18,7 @@ import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostVO;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.MessageReply;
@@ -26,6 +28,7 @@ import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
@@ -150,13 +153,15 @@ public class VmAllocateHostFlow implements Flow {
 
                     // update the vm's host uuid and hypervisor type so even if the management node died later and the vm's state
                     // is stuck in Starting, we know which host it's created on and can check its state on the host
-                    VmInstanceVO vmvo = dbf.findByUuid(spec.getVmInventory().getUuid(), VmInstanceVO.class);
-                    vmvo.setClusterUuid(spec.getDestHost().getClusterUuid());
-                    vmvo.setLastHostUuid(vmvo.getHostUuid());
-                    vmvo.setHostUuid(spec.getDestHost().getUuid());
-                    vmvo.setHypervisorType(spec.getDestHost().getHypervisorType());
-                    dbf.update(vmvo);
-
+                    String oldHostUuid = spec.getVmInventory().getHostUuid() != null ?
+                            spec.getVmInventory().getHostUuid() : spec.getVmInventory().getLastHostUuid();
+                    oldHostUuid = dbf.isExist(oldHostUuid, HostVO.class) ? oldHostUuid : null;
+                    SQL.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, spec.getVmInventory().getUuid())
+                            .set(VmInstanceVO_.clusterUuid, spec.getDestHost().getClusterUuid())
+                            .set(VmInstanceVO_.lastHostUuid, oldHostUuid)
+                            .set(VmInstanceVO_.hostUuid, spec.getDestHost().getUuid())
+                            .set(VmInstanceVO_.hypervisorType, spec.getDestHost().getHypervisorType())
+                            .update();
                     chain.next();
                 } else {
                     chain.fail(reply.getError());

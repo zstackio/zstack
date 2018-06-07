@@ -1,5 +1,6 @@
 package org.zstack.utils;
 
+import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
 public class URLBuilder {
@@ -26,5 +27,15 @@ public class URLBuilder {
             ub.path(p);
         }
         return ub.build().toString();
+    }
+
+    public static String hideUrlPassword(String url){
+        UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(url);
+        UriComponents u = builder.build();
+        if (u.getUserInfo() == null) {
+            return url;
+        } else {
+            return builder.userInfo(u.getUserInfo().split(":")[0]).build().toUriString();
+        }
     }
 }

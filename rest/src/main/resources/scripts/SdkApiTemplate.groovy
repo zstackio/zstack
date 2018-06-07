@@ -61,6 +61,14 @@ class SdkApiTemplate implements SdkTemplate {
         }
     }
 
+    static String getFieldType(Field field) {
+        if (!field.type.name.startsWith("org.zstack")) {
+            return field.type.name
+        }
+
+        return "${getPackageName(field.type)}.${field.type.simpleName}"
+    }
+
     static String getPackageName(Class clz) {
         String packageName = "org.zstack.sdk"
 
@@ -166,7 +174,7 @@ class SdkApiTemplate implements SdkTemplate {
 
             def fs = """\
     @Param(${annotationFields.join(", ")})
-    public ${f.getType().getName()} ${f.getName()}${{ ->
+    public ${getFieldType(f)} ${f.getName()}${{ ->
                 f.accessible = true
                 
                 Object val = f.get(msg)
@@ -331,8 +339,18 @@ ${generateMethods(path)}
 
             return ret
         } else {
-            if (requestAnnotation.path() == "null") {
+            def requestPath = requestAnnotation.path()
+            if (requestPath == "null") {
                 throw new CloudRuntimeException("'path' is set to 'null' but no @SDK found on the class[${apiMessageClass.name}]")
+            }
+
+            if (requestPath.contains("{") || requestPath.contains("}")) {
+                def pattern = ~/\{([^}]*)}/
+                requestPath = requestPath.replaceAll(pattern, "")
+
+                if (requestPath.contains("{") || requestPath.contains("}")) {
+                    throw new CloudRuntimeException("'path' value format is missing please check '{' and '}' in path on the class[${apiMessageClass.name}]")
+                }
             }
 
             return [generateAction(generateClassName(), requestAnnotation.path())]
