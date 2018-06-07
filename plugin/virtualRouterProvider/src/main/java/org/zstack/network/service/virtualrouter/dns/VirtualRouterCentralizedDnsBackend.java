@@ -10,27 +10,32 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.service.*;
 import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.kvm.KVMSystemTags;
-import org.zstack.network.service.virtualrouter.AbstractVirtualRouterBackend;
-import org.zstack.network.service.virtualrouter.VirtualRouterCommands;
-import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
-import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
+import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
+import org.zstack.network.service.virtualrouter.vyos.VyosOfferingSelector;
 import org.zstack.utils.TagUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.Iterator;
 import java.util.List;
+
+import static java.util.Arrays.asList;
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created by AlanJager on 2017/7/8.
@@ -91,47 +96,62 @@ public class VirtualRouterCentralizedDnsBackend extends AbstractVirtualRouterBac
         }
 
         new While<>(forwardDnsStructs).each((forwardDnsStruct, whileComplection) -> {
-            VirtualRouterVmInventory vr = vrMgr.getVirtualRouterVm(forwardDnsStruct.getL3Network());
-            VirtualRouterCommands.SetForwardDnsCmd cmd = new VirtualRouterCommands.SetForwardDnsCmd();
-            cmd.setMac(forwardDnsStruct.getMac());
-            String bridgeName = SQL.New("select t.tag from SystemTagVO t, L3NetworkVO l3 where t.resourceType = :ttype and t.tag like :tag" +
-                    " and t.resourceUuid = l3.l2NetworkUuid and l3.uuid = :l3Uuid", String.class)
-                    .param("tag", TagUtils.tagPatternToSqlPattern(KVMSystemTags.L2_BRIDGE_NAME.getTagFormat()))
-                    .param("l3Uuid", forwardDnsStruct.getL3Network().getUuid())
-                    .param("ttype", L2NetworkVO.class.getSimpleName())
-                    .find();
-            cmd.setBridgeName(KVMSystemTags.L2_BRIDGE_NAME.getTokenByTag(bridgeName, KVMSystemTags.L2_BRIDGE_NAME_TOKEN));
-            cmd.setNameSpace(makeNamespaceName(
-                    cmd.getBridgeName(),
-                    forwardDnsStruct.getL3Network().getUuid()
-            ));
-            for (VmNicInventory nic : vr.getVmNics()) {
-                if (nic.getL3NetworkUuid().equals(forwardDnsStruct.getL3Network().getUuid())) {
-                    cmd.setDns(nic.getIp());
-                }
-            }
-            cmd.setWrongDns(forwardDnsStruct.getL3Network().getDns());
+            VirtualRouterStruct s = new VirtualRouterStruct();
+            s.setL3Network(forwardDnsStruct.getL3Network());
+            s.setApplianceVmType(VyosConstants.VYOS_VM_TYPE);
+            s.setProviderType(VyosConstants.VYOS_ROUTER_PROVIDER_TYPE);
+            s.setVirtualRouterOfferingSelector(new VyosOfferingSelector());
+            s.setApplianceVmAgentPort(VirtualRouterGlobalProperty.AGENT_PORT);
 
-            KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
-            kmsg.setCommand(cmd);
-            kmsg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "5m"));
-            kmsg.setPath(SET_DNS_FORWARD_PATH);
-            kmsg.setHostUuid(spec.getDestHost().getUuid());
-            bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, spec.getDestHost().getUuid());
-            bus.send(kmsg, new CloudBusCallBack(completion) {
+            vrMgr.acquireVirtualRouterVm(s, new ReturnValueCompletion<VirtualRouterVmInventory>(whileComplection) {
                 @Override
-                public void run(MessageReply reply) {
-                    VirtualRouterCommands.SetForwardDnsRsp rsp = !reply.isSuccess() ? null :
-                            ((KVMHostAsyncHttpCallReply) reply).toResponse(VirtualRouterCommands.SetForwardDnsRsp.class);
-                    if (!reply.isSuccess() || !rsp.isSuccess()) {
-                        logger.warn(String.format("set forwarding error on host[uuid:%s]", spec.getVmInventory().getHostUuid()));
+                public void success(VirtualRouterVmInventory vr) {
+                    VirtualRouterCommands.SetForwardDnsCmd cmd = new VirtualRouterCommands.SetForwardDnsCmd();
+                    cmd.setMac(forwardDnsStruct.getMac());
+                    String bridgeName = SQL.New("select t.tag from SystemTagVO t, L3NetworkVO l3 where t.resourceType = :ttype and t.tag like :tag" +
+                            " and t.resourceUuid = l3.l2NetworkUuid and l3.uuid = :l3Uuid", String.class)
+                            .param("tag", TagUtils.tagPatternToSqlPattern(KVMSystemTags.L2_BRIDGE_NAME.getTagFormat()))
+                            .param("l3Uuid", forwardDnsStruct.getL3Network().getUuid())
+                            .param("ttype", L2NetworkVO.class.getSimpleName())
+                            .find();
+                    cmd.setBridgeName(KVMSystemTags.L2_BRIDGE_NAME.getTokenByTag(bridgeName, KVMSystemTags.L2_BRIDGE_NAME_TOKEN));
+                    cmd.setNameSpace(makeNamespaceName(
+                            cmd.getBridgeName(),
+                            forwardDnsStruct.getL3Network().getUuid()
+                    ));
+                    for (VmNicInventory nic : vr.getVmNics()) {
+                        if (nic.getL3NetworkUuid().equals(forwardDnsStruct.getL3Network().getUuid())) {
+                            cmd.setDns(nic.getIp());
+                        }
                     }
+                    cmd.setWrongDns(forwardDnsStruct.getL3Network().getDns());
 
+                    KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
+                    kmsg.setCommand(cmd);
+                    kmsg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "5m"));
+                    kmsg.setPath(SET_DNS_FORWARD_PATH);
+                    kmsg.setHostUuid(spec.getDestHost().getUuid());
+                    bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, spec.getDestHost().getUuid());
+                    bus.send(kmsg, new CloudBusCallBack(completion) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            VirtualRouterCommands.SetForwardDnsRsp rsp = !reply.isSuccess() ? null :
+                                    ((KVMHostAsyncHttpCallReply) reply).toResponse(VirtualRouterCommands.SetForwardDnsRsp.class);
+                            if (!reply.isSuccess() || !rsp.isSuccess()) {
+                                logger.warn(String.format("set forwarding error on host[uuid:%s]", spec.getVmInventory().getHostUuid()));
+                            }
+
+                            whileComplection.done();
+
+                        }
+                    });
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
                     whileComplection.done();
-
                 }
             });
-
         }).run(new NoErrorCompletion() {
             @Override
             public void done() {
