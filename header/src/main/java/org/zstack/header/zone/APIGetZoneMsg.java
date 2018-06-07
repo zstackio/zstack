@@ -1,9 +1,16 @@
 package org.zstack.header.zone;
 
+import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APISyncCallMessage;
+import org.zstack.header.rest.RestRequest;
 
 @Action(category = ZoneConstant.ACTION_CATEGORY, names = {"read"})
+@RestRequest(
+        path = "/zones/{uuid}/info",
+        method = HttpMethod.GET,
+        responseClass = APIGetZoneReply.class
+)
 public class APIGetZoneMsg extends APISyncCallMessage {
     private String uuid;
 
@@ -14,7 +21,7 @@ public class APIGetZoneMsg extends APISyncCallMessage {
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
- 
+
     public static APIGetZoneMsg __example__() {
         APIGetZoneMsg msg = new APIGetZoneMsg();
         msg.setUuid(uuid());
