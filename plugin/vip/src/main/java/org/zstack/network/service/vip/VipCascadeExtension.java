@@ -1,6 +1,7 @@
 package org.zstack.network.service.vip;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cascade.AbstractAsyncCascadeExtension;
 import org.zstack.core.cascade.CascadeAction;
 import org.zstack.core.cascade.CascadeConstant;
@@ -10,6 +11,8 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.core.Completion;
+import org.zstack.header.identity.AccountInventory;
+import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.IpRangeInventory;
 import org.zstack.header.network.l3.IpRangeVO;
@@ -20,8 +23,10 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.TypedQuery;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 /**
  */
@@ -92,7 +97,7 @@ public class VipCascadeExtension extends AbstractAsyncCascadeExtension {
 
     @Override
     public List<String> getEdgeNames() {
-        return Arrays.asList(L3NetworkVO.class.getSimpleName(), IpRangeVO.class.getSimpleName());
+        return Arrays.asList(L3NetworkVO.class.getSimpleName(), IpRangeVO.class.getSimpleName(), AccountVO.class.getSimpleName());
     }
 
     @Override
@@ -143,6 +148,30 @@ public class VipCascadeExtension extends AbstractAsyncCascadeExtension {
             return VipInventory.valueOf(vipVOs);
         } else if (VipVO.class.getSimpleName().equals(action.getParentIssuer())) {
             return action.getParentIssuerContext();
+        } else if (AccountVO.class.getSimpleName().equals(action.getParentIssuer())) {
+            final List<String> auuids = CollectionUtils.transformToList((List<AccountInventory>) action.getParentIssuerContext(), new Function<String, AccountInventory>() {
+                @Override
+                public String call(AccountInventory arg) {
+                    return arg.getUuid();
+                }
+            });
+
+            List<VipVO> vos = new Callable<List<VipVO>>() {
+                @Override
+                @Transactional(readOnly = true)
+                public List<VipVO> call() {
+                    String sql = "select d from VipVO d, AccountResourceRefVO r where d.uuid = r.resourceUuid and" +
+                            " r.resourceType = :rtype and r.accountUuid in (:auuids)";
+                    TypedQuery<VipVO> q = dbf.getEntityManager().createQuery(sql, VipVO.class);
+                    q.setParameter("auuids", auuids);
+                    q.setParameter("rtype", VipVO.class.getSimpleName());
+                    return q.getResultList();
+                }
+            }.call();
+
+            if (!vos.isEmpty()) {
+                return VipInventory.valueOf(vos);
+            }
         }
         return null;
     }
