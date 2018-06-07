@@ -20,8 +20,11 @@ import java.util.Set;
 @Table
 @BaseResource
 @EntityGraph(
-        friends = {
+        parents = {
                 @EntityGraph.Neighbour(type = VipVO.class, myField = "vipUuid", targetField = "uuid"),
+        },
+
+        friends = {
                 @EntityGraph.Neighbour(type = LoadBalancerListenerVO.class, myField = "loadBalancerUuid", targetField = "uuid"),
         }
 )
