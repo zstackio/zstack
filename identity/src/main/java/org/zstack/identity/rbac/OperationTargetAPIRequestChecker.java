@@ -12,6 +12,7 @@ import org.zstack.header.identity.rbac.PolicyMatcher;
 import org.zstack.header.identity.rbac.RBAC;
 import org.zstack.header.identity.rbac.RBACInfo;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.identity.APIRequestChecker;
 import org.zstack.identity.AccountManager;
 import static org.zstack.core.Platform.*;
@@ -85,8 +86,12 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
                     return;
                 }
 
-                //TODO: remove
                 if (info.getTargetResources().isEmpty()) {
+                    return;
+                }
+
+                if (message instanceof APISyncCallMessage) {
+                    // no check to read api
                     return;
                 }
 
@@ -106,7 +111,9 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
 
             private List<String> getResourceUuids(APIMessage.FieldParam param) throws IllegalAccessException {
                 List<String> uuids = new ArrayList<>();
-                if (String.class.isAssignableFrom(param.field.getType())) {
+                if (param.param.noOwnerCheck()) {
+                    // do nothing
+                } else if (String.class.isAssignableFrom(param.field.getType())) {
                     String uuid = (String) param.field.get(message);
                     if (uuid != null) {
                         uuids.add(uuid);
@@ -119,6 +126,7 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
                 } else {
                     throw new CloudRuntimeException(String.format("not supported field type[%s] for %s#%s", param.field.getType(), message.getClass(), param.field.getName()));
                 }
+
                 return uuids;
             }
 
@@ -144,7 +152,7 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
                 );
 
                 uuids.forEach(uuid -> {
-                    Optional<Tuple> opt = ts.stream().filter(t -> t.get(1, String.class).equals(uuid)).findFirst();
+                    Optional<Tuple> opt = ts.stream().filter(t -> t.get(0, String.class).equals(message.getSession().getAccountUuid()) && t.get(1, String.class).equals(uuid)).findFirst();
                     if (!opt.isPresent()) {
                         throw new OperationFailureException(operr("permission denied, the account[uuid:%s] is not the owner of the resource[uuid:%s, type:%s]",
                                 message.getSession().getAccountUuid(), uuid, resourceType.getSimpleName()));

@@ -57,6 +57,7 @@ class AccountCase extends SubCase {
                 password = "password"
             } as AccountInventory
 
+            testNormalAccountQueryGlobalConfig()
             testAdminUser()
             testLoginAsAdminAccountAndChangeSelfPassword()
             testLoginAsNormalAccountAndChangeSelfPassword()
@@ -64,6 +65,23 @@ class AccountCase extends SubCase {
             testAdminAccountDeleteSystemAdmin()
             testCreateAccount()
             testQuotaConfig()
+        }
+    }
+
+    void testNormalAccountQueryGlobalConfig() {
+        createAccount {
+            name = "accountQueryGlobalConfig"
+            password = "password"
+        }
+
+        SessionInventory s = logInByAccount {
+            accountName = "accountQueryGlobalConfig"
+            password = "password"
+        }
+
+        queryGlobalConfig {
+            conditions = []
+            sessionId = s.uuid
         }
     }
 

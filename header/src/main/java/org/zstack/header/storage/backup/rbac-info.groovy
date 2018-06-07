@@ -11,14 +11,23 @@ static void init() {
         permissions {
             adminOnlyAPIs("org.zstack.header.storage.backup.**")
 
-            normalAPIs(APIQueryBackupStorageMsg.class.name, APIExportImageFromBackupStorageMsg.class.name)
+            normalAPIs(
+                    APIQueryBackupStorageMsg.class.name,
+                    APIExportImageFromBackupStorageMsg.class.name,
+                    APIDeleteExportedImageFromBackupStorageMsg.class.name
+            )
 
             targetResources = [ImageVO.class]
         }
 
         contributeToRole {
+            roleName = "image"
+            actions(APIDeleteExportedImageFromBackupStorageMsg.class.name, APIExportImageFromBackupStorageMsg.class.name)
+        }
+
+        contributeToRole {
             roleName = "other"
-            actions(APIQueryBackupStorageMsg.class.name, APIExportImageFromBackupStorageMsg.class.name)
+            actions(APIQueryBackupStorageMsg.class.name)
         }
     }
 }
