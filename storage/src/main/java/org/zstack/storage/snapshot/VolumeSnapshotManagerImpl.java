@@ -647,7 +647,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                     }
                 }
             }
-        }, VolumeCreateSnapshotMsg.class);
+        }, VolumeCreateSnapshotMsg.class, CreateVolumeSnapshotMsg.class);
         return true;
     }
 
