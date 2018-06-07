@@ -106,7 +106,9 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
 
             private List<String> getResourceUuids(APIMessage.FieldParam param) throws IllegalAccessException {
                 List<String> uuids = new ArrayList<>();
-                if (String.class.isAssignableFrom(param.field.getType())) {
+                if (param.param.noOwnerCheck()) {
+                    // do nothing
+                } else if (String.class.isAssignableFrom(param.field.getType())) {
                     String uuid = (String) param.field.get(message);
                     if (uuid != null) {
                         uuids.add(uuid);
@@ -119,6 +121,7 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
                 } else {
                     throw new CloudRuntimeException(String.format("not supported field type[%s] for %s#%s", param.field.getType(), message.getClass(), param.field.getName()));
                 }
+
                 return uuids;
             }
 
