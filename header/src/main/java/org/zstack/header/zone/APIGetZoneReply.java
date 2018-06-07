@@ -1,12 +1,14 @@
 package org.zstack.header.zone;
 
 import org.zstack.header.message.APIReply;
+import org.zstack.header.rest.RestResponse;
 
 import java.sql.Timestamp;
 import java.util.List;
 
 import static java.util.Arrays.asList;
 
+@RestResponse(allTo = "inventories")
 public class APIGetZoneReply extends APIReply {
     private List<ZoneInventory> inventories;
 
