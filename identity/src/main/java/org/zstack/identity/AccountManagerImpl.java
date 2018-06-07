@@ -1703,6 +1703,10 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             return;
         }
 
+        if (AccountConstant.isAdminPermission(msg.getSession())) {
+            return;
+        }
+
         if (msg.getUuid() != null && !msg.getSession().getUserUuid().equals(msg.getUuid())) {
             throw new ApiMessageInterceptionException(argerr("your are login as a user, you cannot another user[uuid:%s]", msg.getUuid()));
         }
