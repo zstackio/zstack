@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
+import org.zstack.core.cascade.CascadeConstant;
+import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -18,10 +20,13 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -31,6 +36,8 @@ import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.service.vip.ModifyVipAttributesStruct;
 import org.zstack.network.service.vip.Vip;
+import org.zstack.network.service.vip.VipInventory;
+import org.zstack.network.service.vip.VipVO;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
@@ -66,6 +73,8 @@ public class LoadBalancerBase {
     private AccountManager acntMgr;
     @Autowired
     private TagManager tagMgr;
+    @Autowired
+    protected CascadeFacade casf;
 
     @Autowired
     private PluginRegistry pluginRgty;
@@ -622,35 +631,89 @@ public class LoadBalancerBase {
     private void handle(final APIDeleteLoadBalancerMsg msg) {
         final APIDeleteLoadBalancerEvent evt = new APIDeleteLoadBalancerEvent(msg.getId());
 
-        thdf.chainSubmit(new ChainTask(msg) {
+        final String issuer = LoadBalancerVO.class.getSimpleName();
+        final List<LoadBalancerInventory> ctx = Arrays.asList(LoadBalancerInventory.valueOf(self));
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("delete-loadBalancer-%s", self.getUuid()));
+        chain.then(new ShareFlow() {
             @Override
-            public String getSyncSignature() {
-                return getSyncId();
-            }
+            public void setup() {
+                if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "delete-loadBalancer-permissive-check";
 
-            @Override
-            public void run(final SyncTaskChain chain) {
-                delete(new Completion(msg, chain) {
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            casf.asyncCascade(CascadeConstant.DELETION_CHECK_CODE, issuer, ctx, new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+                    });
+
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "delete-loadBalancer-permissive-delete";
+
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            casf.asyncCascade(CascadeConstant.DELETION_DELETE_CODE, issuer, ctx, new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+                    });
+                } else {
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "delete-loadBalancer-force-delete";
+
+                        @Override
+                        public void run(final FlowTrigger trigger, Map data) {
+                            casf.asyncCascade(CascadeConstant.DELETION_FORCE_DELETE_CODE, issuer, ctx, new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+                    });
+                }
+
+                done(new FlowDoneHandler(msg) {
                     @Override
-                    public void success() {
+                    public void handle(Map data) {
+                        casf.asyncCascadeFull(CascadeConstant.DELETION_CLEANUP_CODE, issuer, ctx, new NopeCompletion());
                         bus.publish(evt);
-                        chain.next();
                     }
+                });
 
+                error(new FlowErrorHandler(msg) {
                     @Override
-                    public void fail(ErrorCode errorCode) {
-                        evt.setError(errorCode);
+                    public void handle(ErrorCode errCode, Map data) {
+                        evt.setError(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, errCode));
                         bus.publish(evt);
-                        chain.next();
                     }
                 });
             }
-
-            @Override
-            public String getName() {
-                return "delete-lb";
-            }
-        });
+        }).start();
     }
 
     private void delete(final Completion completion) {
