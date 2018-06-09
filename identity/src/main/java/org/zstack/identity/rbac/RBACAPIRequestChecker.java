@@ -58,6 +58,10 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
             return;
         }
 
+        if (AccountConstant.isAdmin(msg.getSession())) {
+            return;
+        }
+
         message = msg;
         check();
     }
