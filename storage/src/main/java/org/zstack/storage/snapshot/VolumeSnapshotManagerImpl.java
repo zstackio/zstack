@@ -647,7 +647,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                     }
                 }
             }
-        }, VolumeCreateSnapshotMsg.class);
+        }, VolumeCreateSnapshotMsg.class, CreateVolumeSnapshotMsg.class);
         return true;
     }
 
@@ -773,6 +773,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 if (!new QuotaUtil().isAdminAccount(msg.getAccountUuid())) {
                     if (msg instanceof VolumeCreateSnapshotMsg) {
                         check((VolumeCreateSnapshotMsg) msg, pairs);
+                    } else if (msg instanceof CreateVolumeSnapshotMsg) {
+                        check((CreateVolumeSnapshotMsg) msg, pairs);
                     }
                 }
             }
@@ -838,6 +840,10 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 checkVolumeSnapshotNumQuota(msg.getAccountUuid(), msg.getAccountUuid(), 1, pairs);
             }
 
+            private void check(CreateVolumeSnapshotMsg msg, Map<String, Quota.QuotaPair> pairs) {
+                checkVolumeSnapshotNumQuota(msg.getAccountUuid(), msg.getAccountUuid(), 1, pairs);
+            }
+
             private void check(APICreateVolumeSnapshotMsg msg, Map<String, Quota.QuotaPair> pairs) {
                 String resourceTargetOwnerUuid = new QuotaUtil().getResourceOwnerAccountUuid(msg.getVolumeUuid());
                 checkVolumeSnapshotNumQuota(msg.getSession().getAccountUuid(), resourceTargetOwnerUuid, 1, pairs);
@@ -875,6 +881,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         quota.addMessageNeedValidation(APICreateVolumeSnapshotMsg.class);
         quota.addMessageNeedValidation(APIChangeResourceOwnerMsg.class);
         quota.addMessageNeedValidation(VolumeCreateSnapshotMsg.class);
+        quota.addMessageNeedValidation(CreateVolumeSnapshotMsg.class);
         quota.setOperator(checker);
 
         return list(quota);
