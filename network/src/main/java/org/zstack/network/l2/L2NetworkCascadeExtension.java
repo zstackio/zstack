@@ -1,6 +1,7 @@
 package org.zstack.network.l2;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cascade.AbstractAsyncCascadeExtension;
 import org.zstack.core.cascade.CascadeAction;
 import org.zstack.core.cascade.CascadeConstant;
@@ -10,6 +11,8 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.Completion;
+import org.zstack.header.identity.AccountInventory;
+import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.zone.ZoneInventory;
@@ -19,9 +22,11 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 /**
  */
@@ -148,7 +153,7 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
 
     @Override
     public List<String> getEdgeNames() {
-        return Arrays.asList(ZoneVO.class.getSimpleName());
+        return Arrays.asList(ZoneVO.class.getSimpleName(), AccountVO.class.getSimpleName());
     }
 
     @Override
@@ -174,6 +179,30 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
             }
         } else if (NAME.equals(action.getParentIssuer())) {
             ret = action.getParentIssuerContext();
+        } else if (AccountVO.class.getSimpleName().equals(action.getParentIssuer())) {
+            final List<String> auuids = CollectionUtils.transformToList((List<AccountInventory>) action.getParentIssuerContext(), new Function<String, AccountInventory>() {
+                @Override
+                public String call(AccountInventory arg) {
+                    return arg.getUuid();
+                }
+            });
+
+            List<L2NetworkVO> vos = new Callable<List<L2NetworkVO>>() {
+                @Override
+                @Transactional(readOnly = true)
+                public List<L2NetworkVO> call() {
+                    String sql = "select d from L2NetworkVO d, AccountResourceRefVO r where d.uuid = r.resourceUuid and" +
+                            " r.resourceType = :rtype and r.accountUuid in (:auuids)";
+                    TypedQuery<L2NetworkVO> q = dbf.getEntityManager().createQuery(sql, L2NetworkVO.class);
+                    q.setParameter("auuids", auuids);
+                    q.setParameter("rtype", "VxlanNetworkVO");
+                    return q.getResultList();
+                }
+            }.call();
+
+            if (!vos.isEmpty()) {
+                ret = L2NetworkInventory.valueOf(vos);
+            }
         }
 
         return ret;
