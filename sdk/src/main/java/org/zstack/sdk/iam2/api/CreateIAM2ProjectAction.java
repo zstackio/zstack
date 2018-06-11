@@ -37,7 +37,7 @@ public class CreateIAM2ProjectAction extends AbstractAction {
     @Param(required = false)
     public java.util.Map quota;
 
-    @Param(required = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List roleUuids;
 
     @Param(required = false)
