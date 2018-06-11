@@ -291,6 +291,11 @@
                 </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
+                    <artifactId>volumebackup</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
                     <artifactId>zstack-iam2</artifactId>
                     <version>${project.version}</version>
                 </dependency>
