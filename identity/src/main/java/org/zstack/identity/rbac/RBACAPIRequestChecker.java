@@ -17,6 +17,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.SkipLogger;
 import org.zstack.identity.APIRequestChecker;
 import org.zstack.identity.rbac.datatype.Entity;
+import org.zstack.identity.rbac.datatype.RBACEntity;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -31,7 +32,7 @@ import static org.zstack.utils.CollectionDSL.map;
 public class RBACAPIRequestChecker implements APIRequestChecker {
     protected static final CLogger logger = Utils.getLogger(RBACAPIRequestChecker.class);
 
-    protected APIMessage message;
+    protected RBACEntity rbacEntity;
     protected PolicyMatcher policyMatcher = new PolicyMatcher();
 
     private static final Gson gson = new GsonBuilder().disableHtmlEscaping().
@@ -53,21 +54,21 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
     }
 
     @Override
-    public void check(APIMessage msg) {
-        if (msg.getClass().isAnnotationPresent(SuppressRBACCheck.class)) {
+    public void check(RBACEntity entity) {
+        rbacEntity = entity;
+        if (rbacEntity.getApiMessage().getClass().isAnnotationPresent(SuppressRBACCheck.class)) {
             return;
         }
 
-        if (AccountConstant.isAdmin(msg.getSession())) {
+        if (AccountConstant.isAdmin(rbacEntity.getApiMessage().getSession())) {
             return;
         }
 
-        message = msg;
         check();
     }
 
     protected List<PolicyInventory> getPoliciesForAPI() {
-        return RBACManager.getPoliciesByAPI(message);
+        return RBACManager.getPoliciesByAPI(rbacEntity.getApiMessage());
     }
 
     /**
@@ -97,7 +98,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
     }
 
     private String jsonMessage() {
-        return gson.toJson(map(e(message.getClass().getName(), message)));
+        return gson.toJson(map(e(rbacEntity.getApiMessage().getClass().getName(), rbacEntity.getApiMessage())));
     }
 
     protected boolean evalAllowStatements(Map<PolicyInventory, List<PolicyStatement>> policies) {
@@ -125,7 +126,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
 
     protected boolean evalAllowStatement(String as) {
         String ap = PolicyUtils.apiNamePatternFromAction(as);
-        return RBAC.checkAPIPermission(message, policyMatcher.match(ap, message.getClass().getName()));
+        return RBAC.checkAPIPermission(rbacEntity.getApiMessage(), policyMatcher.match(ap, rbacEntity.getApiMessage().getClass().getName()));
     }
 
     protected boolean isPrincipalMatched(List<String> principals) {
@@ -137,15 +138,15 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
                 String principal = ss[0];
                 String uuidRegex = ss[1];
 
-                if (message.getSession().isAccountSession() && AccountConstant.PRINCIPAL_ACCOUNT.equals(principal)) {
+                if (rbacEntity.getApiMessage().getSession().isAccountSession() && AccountConstant.PRINCIPAL_ACCOUNT.equals(principal)) {
                     if (checkAccountPrincipal(uuidRegex)) {
                         return true;
                     }
-                } else if (AccountConstant.isAdminPermission(message.getSession())) {
+                } else if (AccountConstant.isAdminPermission(rbacEntity.getApiMessage().getSession())) {
                     if (checkAccountPrincipal(uuidRegex)) {
                         return true;
                     }
-                } else if (message.getSession().isUserSession() && AccountConstant.PRINCIPAL_USER.equals(principal)) {
+                } else if (rbacEntity.getApiMessage().getSession().isUserSession() && AccountConstant.PRINCIPAL_USER.equals(principal)) {
                     if (checkUserPrincipal(uuidRegex)) {
                         return true;
                     }
@@ -176,7 +177,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
                     apiFields = ss[1];
                 }
 
-                if (!policyMatcher.match(apiName, message.getClass().getName())) {
+                if (!policyMatcher.match(apiName, rbacEntity.getApiMessage().getClass().getName())) {
                     // the statement not matching this API
                     return;
                 }
@@ -193,12 +194,12 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
                     throw new OperationFailureException(operr("the operation is denied by the policy[uuid:%s]", p.getUuid()));
                 }
 
-                Entity entity = Entity.getEntity(message.getClass());
+                Entity entity = Entity.getEntity(rbacEntity.getApiMessage().getClass());
 
                 for (String fname : apiFields.split(",")) {
                     Field field = entity.getFields().get(fname);
                     try {
-                        if (field != null && field.get(message) != null) {
+                        if (field != null && field.get(rbacEntity.getApiMessage()) != null) {
                             if (logger.isTraceEnabled()) {
                                 logger.trace(String.format("[RBAC] policy[name:%s, uuid:%s]'s statement[%s] denies the API:\n%s", p.getName(),
                                         p.getUuid(), statement, jsonMessage()));
@@ -214,10 +215,10 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
     }
 
     protected boolean checkUserPrincipal(String uuidRegex) {
-        return policyMatcher.match(uuidRegex, message.getSession().getUserUuid());
+        return policyMatcher.match(uuidRegex, rbacEntity.getApiMessage().getSession().getUserUuid());
     }
 
     protected boolean checkAccountPrincipal(String uuidRegex) {
-        return policyMatcher.match(uuidRegex, message.getSession().getAccountUuid());
+        return policyMatcher.match(uuidRegex, rbacEntity.getApiMessage().getSession().getAccountUuid());
     }
 }

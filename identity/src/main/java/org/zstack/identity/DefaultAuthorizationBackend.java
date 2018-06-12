@@ -7,6 +7,7 @@ import org.zstack.header.identity.extension.AuthorizationBackend;
 import org.zstack.header.message.APIMessage;
 import org.zstack.identity.rbac.OperationTargetAPIRequestChecker;
 import org.zstack.identity.rbac.RBACAPIRequestChecker;
+import org.zstack.identity.rbac.datatype.RBACEntity;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -29,9 +30,10 @@ public class DefaultAuthorizationBackend implements AuthorizationBackend {
         checkers.add(new QuotaAPIRequestChecker());
 
         try {
+            RBACEntity entity = new RBACEntity(msg);
             checkers.forEach(c -> {
-                if (!c.bypass(msg)) {
-                    c.check(msg);
+                if (!c.bypass(entity)) {
+                    c.check(entity);
                 }
             });
         } catch (OperationFailureException e) {
