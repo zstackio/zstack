@@ -5,24 +5,33 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
+import org.zstack.header.core.StaticInit;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.identity.*;
+import org.zstack.header.identity.AccountConstant;
+import org.zstack.header.identity.InternalPolicy;
+import org.zstack.header.identity.SharedResourceVO;
 import org.zstack.header.identity.rbac.RBAC;
-import org.zstack.header.identity.rbac.RBACInfo;
 import org.zstack.header.identity.rbac.RoleInfo;
 import org.zstack.header.identity.role.*;
-import org.zstack.header.identity.role.api.*;
+import org.zstack.header.identity.role.api.APICreateRoleEvent;
+import org.zstack.header.identity.role.api.APICreateRoleMsg;
+import org.zstack.header.identity.role.api.RoleMessage;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.identity.rbac.datatype.RBACEntity;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class RBACManagerImpl extends AbstractService implements RBACManager, Component, PrepareDbInitialValueExtensionPoint {
     private static final CLogger logger = Utils.getLogger(RBACManagerImpl.class);
@@ -31,6 +40,29 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
     private CloudBus bus;
     @Autowired
     private DatabaseFacade dbf;
+
+    private static Map<Class, List<RBACEntityFormatter>> rbacEntityFormatters = new HashMap<>();
+
+    @StaticInit
+    static void staticInit() {
+        BeanUtils.reflections.getSubTypesOf(RBACEntityFormatter.class).forEach(clz -> {
+            try {
+                RBACEntityFormatter formatter = clz.getConstructor().newInstance();
+
+                for (Class aClass : formatter.getAPIClasses()) {
+                    List<Class> clzs = new ArrayList<>();
+                    clzs.add(aClass);
+                    clzs.addAll(BeanUtils.reflections.getSubTypesOf(aClass));
+                    clzs.forEach(apiClz-> {
+                        List<RBACEntityFormatter> formatters = rbacEntityFormatters.computeIfAbsent(apiClz, x->new ArrayList<>());
+                        formatters.add(formatter);
+                    });
+                }
+            } catch (Exception e) {
+                throw new CloudRuntimeException(e);
+            }
+        });
+    }
 
     @Override
     public boolean start() {
@@ -172,5 +204,24 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
                 });
             }
         }.execute();
+    }
+
+    @Override
+    public RBACEntity formatRBACEntity(RBACEntity entity) {
+        Class apiClass = entity.getApiMessage().getClass();
+        List<RBACEntityFormatter> formatters = rbacEntityFormatters.get(apiClass);
+        if (formatters == null) {
+            return entity;
+        }
+
+        RBACEntity e;
+        for (RBACEntityFormatter formatter : formatters) {
+            e = formatter.format(entity);
+            if (e != null) {
+                return e;
+            }
+        }
+
+        return entity;
     }
 }
