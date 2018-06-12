@@ -614,20 +614,29 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         if (volUuids.isEmpty()) {
             return candidates;
         }
-        
+
+        List<String> vmAllVolumeUuids = CollectionUtils.transformToList(vm.getAllVolumes(), new Function<String, VolumeInventory>() {
+            @Override
+            public String call(VolumeInventory arg) {
+                return arg.getUuid();
+            }
+        });
+
+        // root volume could be located at a shared storage
         String sql = "select ref.hostUuid" +
                 " from LocalStorageResourceRefVO ref" +
-                " where ref.resourceUuid = :volUuid" +
+                " where ref.resourceUuid in (:volUuids)" +
                 " and ref.resourceType = :rtype";
         TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-        q.setParameter("volUuid", vm.getRootVolumeUuid());
+        q.setParameter("volUuids", vmAllVolumeUuids);
         q.setParameter("rtype", VolumeVO.class.getSimpleName());
         List<String> ret = q.getResultList();
-        if (ret.isEmpty()) {
-            return candidates;
+
+        String hostUuid = vm.getHostUuid();
+        if (!ret.isEmpty()) {
+            hostUuid = ret.get(0);
         }
 
-        String hostUuid = ret.get(0);
         sql = "select ref.resourceUuid" +
                 " from LocalStorageResourceRefVO ref" +
                 " where ref.resourceUuid in (:uuids)" +
