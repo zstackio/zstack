@@ -17,7 +17,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.SkipLogger;
 import org.zstack.identity.APIRequestChecker;
 import org.zstack.identity.rbac.datatype.Entity;
-import org.zstack.identity.rbac.datatype.RBACEntity;
+import org.zstack.header.identity.rbac.RBACEntity;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -57,10 +57,6 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
     public void check(RBACEntity entity) {
         rbacEntity = entity;
         if (rbacEntity.getApiMessage().getClass().isAnnotationPresent(SuppressRBACCheck.class)) {
-            return;
-        }
-
-        if (AccountConstant.isAdmin(rbacEntity.getApiMessage().getSession())) {
             return;
         }
 
@@ -126,7 +122,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
 
     protected boolean evalAllowStatement(String as) {
         String ap = PolicyUtils.apiNamePatternFromAction(as);
-        return RBAC.checkAPIPermission(rbacEntity.getApiMessage(), policyMatcher.match(ap, rbacEntity.getApiMessage().getClass().getName()));
+        return RBAC.checkAPIPermission(rbacEntity.getApiMessage(), policyMatcher.match(ap, rbacEntity.getApiName()));
     }
 
     protected boolean isPrincipalMatched(List<String> principals) {
@@ -177,7 +173,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
                     apiFields = ss[1];
                 }
 
-                if (!policyMatcher.match(apiName, rbacEntity.getApiMessage().getClass().getName())) {
+                if (!policyMatcher.match(apiName, rbacEntity.getApiName())) {
                     // the statement not matching this API
                     return;
                 }

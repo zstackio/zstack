@@ -1,6 +1,6 @@
 package org.zstack.identity;
 
-import org.zstack.identity.rbac.datatype.RBACEntity;
+import org.zstack.header.identity.rbac.RBACEntity;
 
 public interface APIRequestChecker {
     void check(RBACEntity msg);

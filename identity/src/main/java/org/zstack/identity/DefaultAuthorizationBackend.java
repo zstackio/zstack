@@ -9,7 +9,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.identity.rbac.OperationTargetAPIRequestChecker;
 import org.zstack.identity.rbac.RBACAPIRequestChecker;
 import org.zstack.identity.rbac.RBACManager;
-import org.zstack.identity.rbac.datatype.RBACEntity;
+import org.zstack.header.identity.rbac.RBACEntity;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 

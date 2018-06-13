@@ -11,7 +11,7 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.identity.SharedResourceVO;
 import org.zstack.header.identity.SharedResourceVO_;
 import org.zstack.header.message.APIMessage;
-import org.zstack.identity.rbac.datatype.RBACEntity;
+import org.zstack.header.identity.rbac.RBACEntity;
 import static org.zstack.core.Platform.*;
 
 import javax.persistence.Tuple;

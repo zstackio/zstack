@@ -387,7 +387,7 @@ public class ZQLMetadata {
         inventoryMetadata.put(clz.getName(), metadata);
     }
 
-    @StaticInit
+    @StaticInit(order = -999)
     static void staticInit() {
         List<ExpandedQuery> queryForOther = new ArrayList<>();
         List<ExpandedQueryAlias> aliasForOther = new ArrayList<>();

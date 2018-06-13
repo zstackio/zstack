@@ -167,7 +167,7 @@ class RBAC {
         c()
 
         info = _flatten(info)
-        rbacInfos.each { interFlatten(info, it) }
+        //rbacInfos.each { interFlatten(info, it) }
         rbacInfos.add(info)
     }
 

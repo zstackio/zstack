@@ -19,6 +19,7 @@ public class AccountResourceRefInventory {
     private String ownerAccountUuid;
     private String resourceUuid;
     private String resourceType;
+    private String concreteResourceType;
     @APINoSee
     private Integer permission;
     @APINoSee
@@ -37,6 +38,7 @@ public class AccountResourceRefInventory {
         inv.setResourceType(vo.getResourceType());
         inv.setResourceUuid(vo.getResourceUuid());
         inv.setShared(vo.isShared());
+        inv.setConcreteResourceType(vo.getConcreteResourceType());
         return inv;
     }
 
@@ -47,6 +49,14 @@ public class AccountResourceRefInventory {
         }
 
         return invs;
+    }
+
+    public String getConcreteResourceType() {
+        return concreteResourceType;
+    }
+
+    public void setConcreteResourceType(String concreteResourceType) {
+        this.concreteResourceType = concreteResourceType;
     }
 
     public long getId() {

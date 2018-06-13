@@ -2,8 +2,7 @@ package org.zstack.identity;
 
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.identity.IdentityErrors;
-import org.zstack.header.message.APIMessage;
-import org.zstack.identity.rbac.datatype.RBACEntity;
+import org.zstack.header.identity.rbac.RBACEntity;
 import static org.zstack.core.Platform.*;
 
 public class SessionAPIRequestChecker implements APIRequestChecker {
