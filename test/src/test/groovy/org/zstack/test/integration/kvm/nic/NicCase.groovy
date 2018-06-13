@@ -11,6 +11,8 @@ import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.kvm.Env
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
+import org.zstack.testlib.ImageSpec
+import org.zstack.testlib.InstanceOfferingSpec
 import org.zstack.testlib.SubCase
 
 import java.util.concurrent.CountDownLatch
@@ -41,6 +43,7 @@ class NicCase extends SubCase {
     void test() {
         env.create {
             testDetachNicConcurrently()
+            testDetachNicOfNotParaVirtualizationVm()
         }
     }
 
@@ -114,5 +117,26 @@ class NicCase extends SubCase {
         }
 
         assert result.availableCapacity == result2.availableCapacity
+    }
+
+    void testDetachNicOfNotParaVirtualizationVm() {
+        L3NetworkInventory l3 = env.inventoryByName("l3")
+        ImageSpec image = env.specByName("image1")
+        InstanceOfferingSpec instanceOffering = env.specByName("instanceOffering")
+
+        image.platform = "Other"
+
+        VmInstanceInventory vm = createVmInstance {
+            name = "vm"
+            imageUuid = image.inventory.uuid
+            l3NetworkUuids = [l3.uuid]
+            instanceOfferingUuid = instanceOffering.inventory.uuid
+        }
+
+        expect(AssertionError.class) {
+            detachL3NetworkFromVm {
+                vmNicUuid = vm.getVmNics().get(0)
+            }
+        }
     }
 }
