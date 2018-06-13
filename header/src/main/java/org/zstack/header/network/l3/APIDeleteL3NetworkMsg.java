@@ -6,6 +6,7 @@ import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 
@@ -47,7 +48,7 @@ public class APIDeleteL3NetworkMsg extends APIDeleteMessage implements L3Network
     /**
      * @desc l3NetworkUuid
      */
-    @APIParam(checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = L3NetworkVO.class, successIfResourceNotExisting = true)
     private String uuid;
 
     public APIDeleteL3NetworkMsg() {

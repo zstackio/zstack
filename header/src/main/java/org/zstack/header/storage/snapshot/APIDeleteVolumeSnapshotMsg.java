@@ -48,7 +48,7 @@ public class APIDeleteVolumeSnapshotMsg extends APIDeleteMessage implements Volu
     /**
      * @desc volume snapshot uuid
      */
-    @APIParam(checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = VolumeSnapshotVO.class, successIfResourceNotExisting = true)
     private String uuid;
 
     /**
