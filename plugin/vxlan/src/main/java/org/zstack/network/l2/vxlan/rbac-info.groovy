@@ -20,7 +20,7 @@ static void init() {
             normalAPIs("org.zstack.network.l2.vxlan.vxlanNetwork.**")
             normalAPIs(
                     APIQueryVniRangeMsg.class.name,
-                    APIQueryL2VxlanNetworkPoolMsg.class.name
+                    APIQueryL2VxlanNetworkPoolMsg.class.name,
             )
 
             targetResources = [VxlanNetworkVO.class]
@@ -37,7 +37,9 @@ static void init() {
                                 .eq(L2NetworkVO_.uuid, msg.getUuid())
                                 .findValue() == VxlanNetworkConstant.VXLAN_NETWORK_TYPE
 
-                        return isVxlan ? true : null
+                        //FIXME: hack to fix http://jira.zstack.io/browse/ZSTAC-12946
+                        // return isVxlan ? true : null
+                        return isVxlan
                     }
                 }.execute()
             }
@@ -46,6 +48,8 @@ static void init() {
         contributeToRole {
             roleName = "networks"
             normalActionsFromRBAC("vxlan")
+            //FIXME: hack to fix http://jira.zstack.io/browse/ZSTAC-12946
+            actions(APIDeleteL2NetworkMsg.class.name)
         }
     }
 }
