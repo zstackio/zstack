@@ -1,6 +1,6 @@
 package org.zstack.compute.allocator;
 
-import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.allocator.HostAllocatorSpec;
 import org.zstack.header.allocator.HostAllocatorStrategyType;
@@ -23,9 +23,14 @@ public class LeastVmPreferredHostAllocatorStrategyFactory extends AbstractHostAl
 		}
 
 		String vmInstanceUuid = spec.getVmInstance().getUuid();
-		SQL.New(VmInstanceVO.class)
-				.set(VmInstanceVO_.hostUuid, replyHostUuid)
-				.eq(VmInstanceVO_.uuid, vmInstanceUuid)
-				.update();
+		new SQLBatch() {
+			@Override
+			protected void scripts() {
+				sql(VmInstanceVO.class)
+						.eq(VmInstanceVO_.uuid, vmInstanceUuid)
+						.set(VmInstanceVO_.hostUuid, replyHostUuid)
+						.update();
+			}
+		}.execute();
 	}
 }
