@@ -45,7 +45,7 @@ STRING=38
 '<'=7
 '<='=8
 'is null'=9
-'not null'=10
+'is not null'=10
 'in'=11
 'not in'=12
 'like'=13
