@@ -42,7 +42,7 @@ public class ZQLParser extends Parser {
 
 	private static final String[] _LITERAL_NAMES = {
 		null, "'.'", "','", "'='", "'!='", "'>'", "'>='", "'<'", "'<='", "'is null'", 
-		"'not null'", "'in'", "'not in'", "'like'", "'not like'", "'('", "')'", 
+		"'is not null'", "'in'", "'not in'", "'like'", "'not like'", "'('", "')'", 
 		"'{'", "'}'", "'filter by'", "'offset'", "'limit'", "'query'", "'count'", 
 		"'order by'", null, "'restrict by'", "'return with'", "'where'", "'and'", 
 		"'or'", "'asc'", "'desc'"
