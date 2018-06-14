@@ -27,9 +27,6 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
     private static Map<Class, RBACInfo> rbacInfos =  Collections.synchronizedMap(new HashMap<>());
     private static PolicyMatcher policyMatcher = new PolicyMatcher();
 
-    @Autowired
-    private AccountManager acntMgr;
-
 
     @Override
     public void check(RBACEntity entity) {
@@ -78,10 +75,6 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
             private void checkOperationTarget(APIMessage.FieldParam param) {
                 Class resourceType = param.param.resourceType();
                 if (resourceType == Object.class)  {
-                    return;
-                }
-
-                if (!acntMgr.isResourceHavingAccountReference(resourceType)) {
                     return;
                 }
 
