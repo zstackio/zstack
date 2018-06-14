@@ -76,7 +76,7 @@ public class ResourceVO {
 
     @PrePersist
     private void prePersist() {
-        resourceType = ResourceTypeMetadata.getBaseResourceType(getClass()).getSimpleName();
+        resourceType = ResourceTypeMetadata.getBaseResourceTypeFromConcreteType(getClass()).getSimpleName();
         concreteResourceType = getClass().getName();
         resourceName = getValueOfNameField();
     }

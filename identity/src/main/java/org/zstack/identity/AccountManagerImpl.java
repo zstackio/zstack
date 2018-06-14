@@ -947,17 +947,22 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 // use native SQL instead of JPQL here,
                 // JPQL will join all sub-tables of ResourceVO, which
                 // exceeds the limit of max tables MySQL can join
-                List<ResourceVO> rvos = databaseFacade.getEntityManager().createNativeQuery("select * from ResourceVO rvo where rvo.uuid not in (select ar.resourceUuid from AccountResourceRefVO ar)" +
-                        " and rvo.resourceType in (:rtypes)", ResourceVO.class)
+                List rvos = databaseFacade.getEntityManager().createNativeQuery("select uuid, resourceType, concreteResourceType from ResourceVO where uuid not in (select resourceUuid from AccountResourceRefVO)" +
+                        " and resourceType in (:rtypes)")
                         .setParameter("rtypes", ResourceTypeMetadata.getAllBaseTypes().stream().map(Class::getSimpleName).collect(Collectors.toList()))
                         .getResultList();
 
-                rvos.forEach(rvo -> {
+                rvos.forEach(obj -> {
+                    Object[] values = (Object[]) obj;
+                    String ruuid = values[0].toString();
+                    String rtype = values[1].toString();
+                    String crtype = values[2].toString();
+
                     AccountResourceRefVO ref = new AccountResourceRefVO();
                     ref.setAccountUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
-                    ref.setResourceType(rvo.getResourceType());
-                    ref.setConcreteResourceType(rvo.getConcreteResourceType());
-                    ref.setResourceUuid(rvo.getUuid());
+                    ref.setResourceType(rtype);
+                    ref.setConcreteResourceType(crtype);
+                    ref.setResourceUuid(ruuid);
                     ref.setPermission(AccountConstant.RESOURCE_PERMISSION_WRITE);
                     ref.setOwnerAccountUuid(ref.getAccountUuid());
                     ref.setShared(false);

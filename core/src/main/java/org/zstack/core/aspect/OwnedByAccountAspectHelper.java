@@ -11,7 +11,7 @@ public class OwnedByAccountAspectHelper {
     public static void createAccountResourceRefVO(OwnedByAccount oa, EntityManager entityManager, Object entity) {
         AccountResourceRefVO ref = new AccountResourceRefVO();
         ref.setAccountUuid(oa.getAccountUuid());
-        ref.setResourceType(ResourceTypeMetadata.getBaseResourceType(entity.getClass()).getSimpleName());
+        ref.setResourceType(ResourceTypeMetadata.getBaseResourceTypeFromConcreteType(entity.getClass()).getSimpleName());
         ref.setConcreteResourceType(entity.getClass().getName());
         ref.setResourceUuid(OwnedByAccount.getResourceUuid(entity));
         ref.setPermission(AccountConstant.RESOURCE_PERMISSION_WRITE);
