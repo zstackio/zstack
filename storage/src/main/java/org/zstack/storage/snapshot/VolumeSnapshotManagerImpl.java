@@ -10,6 +10,7 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.cloudbus.ReplyMessagePreSendingExtensionPoint;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -27,7 +28,8 @@ import org.zstack.header.message.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.*;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.AfterReimageVmInstanceExtensionPoint;
+import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
@@ -760,6 +762,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                         check((APICreateVolumeSnapshotMsg) msg, pairs);
                     } else if (msg instanceof APIChangeResourceOwnerMsg) {
                         check((APIChangeResourceOwnerMsg) msg, pairs);
+                    } else if (msg instanceof APIRecoverDataVolumeMsg) {
+                        check((APIRecoverDataVolumeMsg) msg, pairs);
                     }
                 } else {
                     if (msg instanceof APIChangeResourceOwnerMsg) {
@@ -849,6 +853,12 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 checkVolumeSnapshotNumQuota(msg.getSession().getAccountUuid(), resourceTargetOwnerUuid, 1, pairs);
             }
 
+            private void check(APIRecoverDataVolumeMsg msg, Map<String, Quota.QuotaPair> pairs) {
+                String resourceTargetOwnerUuid = new QuotaUtil().getResourceOwnerAccountUuid(msg.getVolumeUuid());
+                long cnt = Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.volumeUuid, msg.getVolumeUuid()).count();
+                checkVolumeSnapshotNumQuota(msg.getSession().getAccountUuid(), resourceTargetOwnerUuid, cnt, pairs);
+            }
+
             private void checkVolumeSnapshotNumQuota(String currentAccountUuid,
                                                      String resourceTargetOwnerAccountUuid,
                                                      long volumeSnapshotNumAsked,
@@ -880,6 +890,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
 
         quota.addMessageNeedValidation(APICreateVolumeSnapshotMsg.class);
         quota.addMessageNeedValidation(APIChangeResourceOwnerMsg.class);
+        quota.addMessageNeedValidation(APIRecoverDataVolumeMsg.class);
         quota.addMessageNeedValidation(VolumeCreateSnapshotMsg.class);
         quota.addMessageNeedValidation(CreateVolumeSnapshotMsg.class);
         quota.setOperator(checker);
