@@ -34,6 +34,9 @@ public class GetCpuMemoryCapacityAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List hostUuids;
 
+    @Param(required = false, validValues = {"KVM","ESX"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String hypervisorType;
+
     @Param(required = false)
     public boolean all = false;
 

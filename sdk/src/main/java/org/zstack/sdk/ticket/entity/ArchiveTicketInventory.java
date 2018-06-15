@@ -12,6 +12,14 @@ public class ArchiveTicketInventory  {
         return this.uuid;
     }
 
+    public java.lang.String ticketUuid;
+    public void setTicketUuid(java.lang.String ticketUuid) {
+        this.ticketUuid = ticketUuid;
+    }
+    public java.lang.String getTicketUuid() {
+        return this.ticketUuid;
+    }
+
     public java.lang.String name;
     public void setName(java.lang.String name) {
         this.name = name;
@@ -26,6 +34,14 @@ public class ArchiveTicketInventory  {
     }
     public java.lang.String getDescription() {
         return this.description;
+    }
+
+    public java.lang.String accountUuid;
+    public void setAccountUuid(java.lang.String accountUuid) {
+        this.accountUuid = accountUuid;
+    }
+    public java.lang.String getAccountUuid() {
+        return this.accountUuid;
     }
 
     public TicketStatus status;
