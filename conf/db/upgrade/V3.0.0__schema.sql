@@ -125,3 +125,4 @@ ALTER TABLE DatabaseBackupStorageRefVO ADD CONSTRAINT fkDatabaseBackupStorageRef
 
 ALTER TABLE EcsImageVO ADD COLUMN `osName` varchar(256) DEFAULT NULL;
 
+ALTER TABLE EventSubscriptionVO ADD COLUMN name varchar(255) DEFAULT NULL;
