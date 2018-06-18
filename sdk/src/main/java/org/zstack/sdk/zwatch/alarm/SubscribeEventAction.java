@@ -25,6 +25,9 @@ public class SubscribeEventAction extends AbstractAction {
         }
     }
 
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
+
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String namespace;
 
