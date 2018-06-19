@@ -16,7 +16,7 @@ class RoleInfo {
     PolicyStatement toStatement() {
         RoleInfo self = this
         if (!excludedActions.isEmpty()) {
-            RBAC.FlattenResult fr = RBAC.flatten(excludedActions as Set, allowedActions as Set)
+            RBACGroovy.FlattenResult fr = RBACGroovy.flatten(excludedActions as Set, allowedActions as Set)
             self.allowedActions = fr.normal as List
         }
 

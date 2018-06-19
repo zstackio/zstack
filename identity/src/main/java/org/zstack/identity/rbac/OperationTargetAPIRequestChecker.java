@@ -1,19 +1,17 @@
 package org.zstack.identity.rbac;
 
 import org.springframework.beans.factory.annotation.Autowire;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.rbac.PolicyMatcher;
-import org.zstack.header.identity.rbac.RBAC;
+import org.zstack.header.identity.rbac.RBACGroovy;
 import org.zstack.header.identity.rbac.RBACInfo;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.identity.APIRequestChecker;
-import org.zstack.identity.AccountManager;
 import org.zstack.header.identity.rbac.RBACEntity;
 import static org.zstack.core.Platform.*;
 
@@ -41,7 +39,7 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
 
     private RBACInfo getRBACInfo() {
         return rbacInfos.computeIfAbsent(rbacEntity.getApiMessage().getClass(), x-> {
-            for (RBACInfo rbacInfo : RBAC.getRbacInfos()) {
+            for (RBACInfo rbacInfo : RBACGroovy.getRbacInfos()) {
                 for (String s : rbacInfo.getNormalAPIs()) {
                     if (isMatch(s)) {
                         return rbacInfo;

@@ -5,7 +5,7 @@ import org.zstack.header.identity.role.RoleVO
 import org.zstack.header.identity.role.api.APIAttachRoleToAccountMsg
 import org.zstack.header.identity.role.api.APIDetachRoleFromAccountMsg
 
-import static org.zstack.header.identity.rbac.RBAC.rbac
+import static org.zstack.header.identity.rbac.RBACGroovy.rbac
 
 @StaticInit
 static void init() {

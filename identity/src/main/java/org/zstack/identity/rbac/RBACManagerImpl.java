@@ -13,7 +13,7 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.InternalPolicy;
 import org.zstack.header.identity.SharedResourceVO;
-import org.zstack.header.identity.rbac.RBAC;
+import org.zstack.header.identity.rbac.RBACGroovy;
 import org.zstack.header.identity.rbac.RBACEntityFormatter;
 import org.zstack.header.identity.rbac.RoleInfo;
 import org.zstack.header.identity.role.*;
@@ -177,7 +177,7 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
         new SQLBatch() {
             @Override
             protected void scripts() {
-                RBAC.getRoleInfos().stream().filter(RoleInfo::isPredefine).forEach(role -> {
+                RBACGroovy.getRoleInfos().stream().filter(RoleInfo::isPredefine).forEach(role -> {
                     if (!q(SystemRoleVO.class).eq(SystemRoleVO_.uuid, role.getUuid()).isExists()) {
                         SystemRoleVO rvo = new SystemRoleVO();
                         rvo.setUuid(role.getUuid());
