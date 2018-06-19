@@ -1,5 +1,7 @@
 package org.zstack.header.identity.rbac;
 
+import org.zstack.header.message.APIMessage;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,12 +23,20 @@ public interface RBACDescription {
     }
 
     default void registerAPIPermissionChecker(Class aClz, boolean takeOver, APIPermissionChecker checker) {
+        List<Class> clzs = new ArrayList<>();
+        if (aClz == null) {
+            clzs.addAll(APIMessage.apiMessageClasses);
+        } else {
+            clzs.add(aClz);
+        }
 
-        List<RBAC.APIPermissionCheckerWrapper> ws = RBAC.permssionCheckers.computeIfAbsent(apiClz, x->new ArrayList<>());
-        RBAC.APIPermissionCheckerWrapper w = new RBAC.APIPermissionCheckerWrapper();
-        w.takeOver = takeOver;
-        w.checker = checker;
-        ws.add(w);
+        clzs.forEach(apiClz-> {
+            List<RBAC.APIPermissionCheckerWrapper> ws = RBAC.permssionCheckers.computeIfAbsent(apiClz, x->new ArrayList<>());
+            RBAC.APIPermissionCheckerWrapper w = new RBAC.APIPermissionCheckerWrapper();
+            w.takeOver = takeOver;
+            w.checker = checker;
+            ws.add(w);
+        });
     }
 
     default void registerAPIPermissionChecker(Class apiClz, APIPermissionChecker checker) {

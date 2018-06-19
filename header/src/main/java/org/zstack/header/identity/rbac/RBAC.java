@@ -26,6 +26,10 @@ public class RBAC {
         private Role role = new Role();
         private List<String> permissionsByNames = new ArrayList<>();
 
+        {
+            role.setPredefine(true);
+        }
+
         public RoleBuilder uuid(String v) {
             role.uuid = v;
             return this;
@@ -38,6 +42,13 @@ public class RBAC {
 
         public RoleBuilder actions(String...vs) {
             role.allowedActions.addAll(Arrays.asList(vs));
+            return this;
+        }
+
+        public RoleBuilder actions(Class...clzs) {
+            for (Class clz : clzs) {
+                role.allowedActions.add(clz.getName());
+            }
             return this;
         }
 
@@ -58,6 +69,11 @@ public class RBAC {
 
         public RoleBuilder predefined() {
             role.predefine = true;
+            return this;
+        }
+
+        public RoleBuilder notPredefined() {
+            role.predefine = false;
             return this;
         }
 
