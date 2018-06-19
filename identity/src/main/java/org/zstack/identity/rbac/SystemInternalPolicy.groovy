@@ -4,7 +4,7 @@ import org.zstack.header.identity.AccountConstant
 import org.zstack.header.identity.InternalPolicy
 import org.zstack.header.identity.PolicyInventory
 import org.zstack.header.identity.StatementEffect
-import org.zstack.header.identity.rbac.RBACGroovy
+import org.zstack.header.identity.rbac.RBAC
 
 class SystemInternalPolicy implements InternalPolicy {
     @Override
@@ -17,7 +17,7 @@ class SystemInternalPolicy implements InternalPolicy {
                     name = "normal-account-allowed-apis"
                     effect = StatementEffect.Allow
 
-                    RBACGroovy.rbacInfos.each { info ->
+                    RBAC.permissions.each { info ->
                         info.normalAPIs.each { action(it) }
                     }
                 }

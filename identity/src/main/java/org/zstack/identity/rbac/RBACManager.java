@@ -68,6 +68,4 @@ public interface RBACManager {
 
         return ret;
     }
-
-    RBACEntity formatRBACEntity(RBACEntity entity);
 }

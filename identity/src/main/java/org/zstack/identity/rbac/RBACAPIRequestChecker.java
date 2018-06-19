@@ -10,14 +10,11 @@ import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.IdentityByPassCheck;
 import org.zstack.header.identity.PolicyInventory;
 import org.zstack.header.identity.PolicyStatement;
-import org.zstack.header.identity.rbac.PolicyMatcher;
-import org.zstack.header.identity.rbac.RBACGroovy;
-import org.zstack.header.identity.rbac.SuppressRBACCheck;
+import org.zstack.header.identity.rbac.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.SkipLogger;
 import org.zstack.identity.APIRequestChecker;
 import org.zstack.identity.rbac.datatype.Entity;
-import org.zstack.header.identity.rbac.RBACEntity;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -122,7 +119,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
 
     protected boolean evalAllowStatement(String as) {
         String ap = PolicyUtils.apiNamePatternFromAction(as);
-        return RBACGroovy.checkAPIPermission(rbacEntity.getApiMessage(), policyMatcher.match(ap, rbacEntity.getApiName()));
+        return RBAC.checkAPIPermission(rbacEntity.getApiMessage(), policyMatcher.match(ap, rbacEntity.getApiName()));
     }
 
     protected boolean isPrincipalMatched(List<String> principals) {

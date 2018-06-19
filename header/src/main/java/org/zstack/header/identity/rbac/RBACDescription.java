@@ -31,7 +31,7 @@ public interface RBACDescription {
         }
 
         clzs.forEach(apiClz-> {
-            List<RBAC.APIPermissionCheckerWrapper> ws = RBAC.permssionCheckers.computeIfAbsent(apiClz, x->new ArrayList<>());
+            List<RBAC.APIPermissionCheckerWrapper> ws = RBAC.permissionCheckers.computeIfAbsent(apiClz, x->new ArrayList<>());
             RBAC.APIPermissionCheckerWrapper w = new RBAC.APIPermissionCheckerWrapper();
             w.takeOver = takeOver;
             w.checker = checker;

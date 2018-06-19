@@ -12,7 +12,8 @@ public class RBAC {
     public static List<Permission> permissions = new ArrayList<>();
     public static List<Role> roles = new ArrayList<>();
     public static List<GlobalReadableResource> readableResources = new ArrayList<>();
-    public static Map<Class, List<APIPermissionCheckerWrapper>> permssionCheckers = new HashMap<>();
+    public static Map<Class, List<APIPermissionCheckerWrapper>> permissionCheckers = new HashMap<>();
+    private static Map<Class, List<RBACEntityFormatter>> entityFormatters = new HashMap<>();
 
     private static List<RoleContributor> roleContributors = new ArrayList<>();
     private static List<RoleBuilder> roleBuilders = new ArrayList<>();
@@ -305,7 +306,7 @@ public class RBAC {
     }
 
     public static class RoleContributorBuilder {
-        private RoleContributor contributor;
+        private RoleContributor contributor = new RoleContributor();
 
         public RoleContributorBuilder actionsByPermissionName(String v) {
             contributor.normalActionsByPermissionName.add(v);
@@ -336,7 +337,7 @@ public class RBAC {
     }
 
     public static class GlobalReadableResourceBuilder {
-        private GlobalReadableResource readableResource;
+        private GlobalReadableResource readableResource = new GlobalReadableResource();
 
         public GlobalReadableResourceBuilder resources(Class...clzs) {
             for (Class clz : clzs) {
@@ -352,7 +353,7 @@ public class RBAC {
     }
 
     public static class GlobalReadableResource {
-        private List<Class> resources;
+        private List<Class> resources = new ArrayList<>();
 
         public List<Class> getResources() {
             return resources;
@@ -364,7 +365,7 @@ public class RBAC {
     }
 
     private static Permission findPermissionByName(String name) {
-        Optional<Permission> opt = permissions.stream().filter(p->p.name.equals(name)).findFirst();
+        Optional<Permission> opt = permissions.stream().filter(p-> p.name != null && p.name.equals(name)).findFirst();
         if (!opt.isPresent()) {
             throw new CloudRuntimeException(String.format("cannot find permission[name:%s]", name));
         }
@@ -393,6 +394,18 @@ public class RBAC {
             rd.roles();
             rd.contributeToRoles();
             rd.globalReadableResources();
+            RBACEntityFormatter formatter =  rd.entityFormatter();
+            if (formatter != null) {
+                for (Class aClass : formatter.getAPIClasses()) {
+                    List<Class> clzs = new ArrayList<>();
+                    clzs.add(aClass);
+                    clzs.addAll(BeanUtils.reflections.getSubTypesOf(aClass));
+                    clzs.forEach(apiClz-> {
+                        List<RBACEntityFormatter> formatters = entityFormatters.computeIfAbsent(apiClz, x->new ArrayList<>());
+                        formatters.add(formatter);
+                    });
+                }
+            }
         });
 
         roleBuilders.forEach(rb -> {
@@ -415,7 +428,7 @@ public class RBAC {
     }
 
     public static boolean checkAPIPermission(APIMessage msg, boolean policyDecision) {
-        List<APIPermissionCheckerWrapper> checkers = permssionCheckers.get(msg.getClass());
+        List<APIPermissionCheckerWrapper> checkers = permissionCheckers.get(msg.getClass());
         if (checkers == null || checkers.isEmpty()) {
             return policyDecision;
         }
@@ -436,5 +449,23 @@ public class RBAC {
         }
 
         return policyDecision;
+    }
+
+    public static RBACEntity formatRBACEntity(RBACEntity entity) {
+        Class apiClass = entity.getApiMessage().getClass();
+        List<RBACEntityFormatter> formatters = entityFormatters.get(apiClass);
+        if (formatters == null) {
+            return entity;
+        }
+
+        RBACEntity e;
+        for (RBACEntityFormatter formatter : formatters) {
+            e = formatter.format(entity);
+            if (e != null) {
+                return e;
+            }
+        }
+
+        return entity;
     }
 }

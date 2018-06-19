@@ -42,29 +42,6 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
     @Autowired
     private DatabaseFacade dbf;
 
-    private static Map<Class, List<RBACEntityFormatter>> rbacEntityFormatters = new HashMap<>();
-
-    @StaticInit
-    static void staticInit() {
-        BeanUtils.reflections.getSubTypesOf(RBACEntityFormatter.class).forEach(clz -> {
-            try {
-                RBACEntityFormatter formatter = clz.getConstructor().newInstance();
-
-                for (Class aClass : formatter.getAPIClasses()) {
-                    List<Class> clzs = new ArrayList<>();
-                    clzs.add(aClass);
-                    clzs.addAll(BeanUtils.reflections.getSubTypesOf(aClass));
-                    clzs.forEach(apiClz-> {
-                        List<RBACEntityFormatter> formatters = rbacEntityFormatters.computeIfAbsent(apiClz, x->new ArrayList<>());
-                        formatters.add(formatter);
-                    });
-                }
-            } catch (Exception e) {
-                throw new CloudRuntimeException(e);
-            }
-        });
-    }
-
     @Override
     public boolean start() {
         return true;
@@ -205,24 +182,5 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
                 });
             }
         }.execute();
-    }
-
-    @Override
-    public RBACEntity formatRBACEntity(RBACEntity entity) {
-        Class apiClass = entity.getApiMessage().getClass();
-        List<RBACEntityFormatter> formatters = rbacEntityFormatters.get(apiClass);
-        if (formatters == null) {
-            return entity;
-        }
-
-        RBACEntity e;
-        for (RBACEntityFormatter formatter : formatters) {
-            e = formatter.format(entity);
-            if (e != null) {
-                return e;
-            }
-        }
-
-        return entity;
     }
 }
