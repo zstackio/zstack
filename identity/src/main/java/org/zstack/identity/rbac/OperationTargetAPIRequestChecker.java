@@ -57,6 +57,35 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
         });
     }
 
+    private static class AccountResourceBundle {
+        String accountUuid;
+        String resourceUuid;
+    }
+
+    private Collection<AccountResourceBundle> toAccountResourceBundles(List<String> resourceUuids, List<Tuple> tss) {
+        Map<String, AccountResourceBundle> m = new HashMap<>();
+
+        tss.forEach(ts -> {
+            String accountUuid = ts.get(0, String.class);
+            String resUuid = ts.get(1, String.class);
+            AccountResourceBundle b = new AccountResourceBundle();
+            b.accountUuid = accountUuid;
+            b.resourceUuid = resUuid;
+            m.put(resUuid, b);
+        });
+
+        resourceUuids.forEach(ruuid -> {
+            if (!m.containsKey(ruuid)) {
+                AccountResourceBundle b = new AccountResourceBundle();
+                b.accountUuid = AccountConstant.INITIAL_SYSTEM_ADMIN_UUID;
+                b.resourceUuid = ruuid;
+                m.put(ruuid, b);
+            }
+        });
+
+        return m.values();
+    }
+
     private void check() {
         if (AccountConstant.INITIAL_SYSTEM_ADMIN_UUID.equals(rbacEntity.getApiMessage().getSession().getAccountUuid())) {
             return;
@@ -141,8 +170,9 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
                                 .listTuple()
                 );
 
+                Collection<AccountResourceBundle> bundles = toAccountResourceBundles(uuids, ts);
                 uuids.forEach(uuid -> {
-                    Optional<Tuple> opt = ts.stream().filter(t -> t.get(0, String.class).equals(rbacEntity.getApiMessage().getSession().getAccountUuid()) && t.get(1, String.class).equals(uuid)).findFirst();
+                    Optional<AccountResourceBundle> opt = bundles.stream().filter(b -> b.accountUuid.equals(rbacEntity.getApiMessage().getSession().getAccountUuid()) && b.resourceUuid.equals(uuid)).findFirst();
                     if (!opt.isPresent()) {
                         throw new OperationFailureException(operr("permission denied, the account[uuid:%s] is not the owner of the resource[uuid:%s, type:%s]",
                                 rbacEntity.getApiMessage().getSession().getAccountUuid(), uuid, resourceType.getSimpleName()));
