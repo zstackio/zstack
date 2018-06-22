@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class ExpungeImageAction extends AbstractAction {
+public class GetResourceFromResourceStackAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class ExpungeImageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.ExpungeImageResult value;
+        public org.zstack.sdk.GetResourceFromResourceStackResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,14 +25,8 @@ public class ExpungeImageAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String imageUuid;
-
-    @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List backupStorageUuids;
+    public java.lang.String uuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -43,12 +37,6 @@ public class ExpungeImageAction extends AbstractAction {
     @Param(required = true)
     public String sessionId;
 
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -57,8 +45,8 @@ public class ExpungeImageAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.ExpungeImageResult value = res.getResult(org.zstack.sdk.ExpungeImageResult.class);
-        ret.value = value == null ? new org.zstack.sdk.ExpungeImageResult() : value; 
+        org.zstack.sdk.GetResourceFromResourceStackResult value = res.getResult(org.zstack.sdk.GetResourceFromResourceStackResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetResourceFromResourceStackResult() : value; 
 
         return ret;
     }
@@ -87,11 +75,11 @@ public class ExpungeImageAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/images/{imageUuid}/actions";
+        info.httpMethod = "GET";
+        info.path = "/cloudformation/stack/resources";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "expungeImage";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 

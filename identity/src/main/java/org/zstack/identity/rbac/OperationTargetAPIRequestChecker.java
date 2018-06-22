@@ -3,7 +3,6 @@ package org.zstack.identity.rbac;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.core.Platform;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -15,11 +14,11 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.identity.APIRequestChecker;
 import org.zstack.identity.AccountManager;
-import static org.zstack.core.Platform.*;
 
 import javax.persistence.Tuple;
 import java.util.*;
-import java.util.stream.Collectors;
+
+import static org.zstack.core.Platform.operr;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class OperationTargetAPIRequestChecker implements APIRequestChecker {
