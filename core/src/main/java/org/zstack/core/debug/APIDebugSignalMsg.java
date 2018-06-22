@@ -5,6 +5,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -28,7 +29,7 @@ public class APIDebugSignalMsg extends APIMessage {
  
     public static APIDebugSignalMsg __example__() {
         APIDebugSignalMsg msg = new APIDebugSignalMsg();
-
+        msg.signals = Arrays.asList();
 
         return msg;
     }

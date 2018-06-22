@@ -28,10 +28,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.HostInventory;
-import org.zstack.header.host.HostStatus;
-import org.zstack.header.host.HostVO;
-import org.zstack.header.host.HostVO_;
+import org.zstack.header.host.*;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIMessage;
@@ -2558,5 +2555,30 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     String.format("cannot attach ISO to a primary storage[uuid:%s] which is disabled",
                             self.getUuid())));
         }
+    }
+
+    @Override
+    public void handle(AskInstallPathForNewSnapshotMsg msg) {
+        String hvType = Q.New(HostVO.class)
+                .select(HostVO_.hypervisorType)
+                .eq(HostVO_.uuid, msg.getHostUuid())
+                .findValue();
+
+        LocalStorageHypervisorFactory f = getHypervisorBackendFactory(hvType);
+        final LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handle(msg, new ReturnValueCompletion<AskInstallPathForNewSnapshotReply>(msg) {
+            @Override
+            public void success(AskInstallPathForNewSnapshotReply returnValue) {
+                bus.reply(msg, returnValue);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                AskInstallPathForNewSnapshotReply reply = new AskInstallPathForNewSnapshotReply();
+                reply.setSuccess(false);
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 }

@@ -6,6 +6,7 @@ import org.apache.commons.io.Charsets
 import org.apache.commons.lang.StringUtils
 import org.springframework.http.HttpMethod
 import org.zstack.core.Platform
+import org.zstack.header.core.NoDoc
 import org.zstack.header.errorcode.ErrorCode
 import org.zstack.header.exception.CloudRuntimeException
 import org.zstack.header.identity.SuppressCredentialCheck
@@ -149,6 +150,10 @@ class RestDocumentationGenerator implements DocumentGenerator {
         }
 
         Set<Class> apiClasses = Platform.getReflections().getTypesAnnotatedWith(RestRequest.class).findAll { it.isAnnotationPresent(RestRequest.class) }
+        Set<String> noDocClasses = Platform.getReflections().getTypesAnnotatedWith(NoDoc.class)
+                .stream().map{ c -> c.getSimpleName() }.collect(Collectors.toSet())
+        System.out.println("no doc classes: ${noDocClasses}".toString())
+
         String specifiedClasses = System.getProperty("classes")
 
         if (specifiedClasses != null) {
@@ -157,6 +162,13 @@ class RestDocumentationGenerator implements DocumentGenerator {
                 return classes.contains(it.simpleName)
             }
         }
+
+        if (noDocClasses != null) {
+            apiClasses = apiClasses.findAll {
+                return !noDocClasses.contains(it.getSimpleName())
+            }
+        }
+
         def errInfo = []
         apiClasses.each {
             def docPath = getDocTemplatePathFromClass(it)

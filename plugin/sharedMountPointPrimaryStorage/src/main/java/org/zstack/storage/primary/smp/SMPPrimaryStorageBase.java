@@ -796,4 +796,24 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
         Collections.shuffle(hostUuids);
         return hostUuids.get(0);
     }
+
+    @Override
+    public void handle(AskInstallPathForNewSnapshotMsg msg) {
+        HypervisorBackend bkd = getHypervisorBackendByVolumeUuid(msg.getVolumeInventory().getUuid());
+
+        bkd.handle(msg, new ReturnValueCompletion<AskInstallPathForNewSnapshotReply>(msg) {
+            @Override
+            public void success(AskInstallPathForNewSnapshotReply returnValue) {
+                bus.reply(msg, returnValue);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                AskInstallPathForNewSnapshotReply reply = new AskInstallPathForNewSnapshotReply();
+                reply.setSuccess(false);
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
 }

@@ -733,6 +733,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         return PathUtil.join(volDir, "snapshots", String.format("%s.qcow2", snapshot.getUuid()));
     }
 
+    public String makeSnapshotInstallPath(VolumeInventory vol, String snapshotUuid) {
+        String volDir = makeVolumeInstallDir(vol);
+        return PathUtil.join(volDir, "snapshots", String.format("%s.qcow2", snapshotUuid));
+    }
+
     public String makeSnapshotWorkspacePath(String imageUuid) {
         return PathUtil.join(
                 self.getUrl(),
@@ -2818,5 +2823,12 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 });
             }
         }).start();
+    }
+
+    @Override
+    public void handle(AskInstallPathForNewSnapshotMsg msg, ReturnValueCompletion<AskInstallPathForNewSnapshotReply> completion) {
+        AskInstallPathForNewSnapshotReply reply = new AskInstallPathForNewSnapshotReply();
+        reply.setSnapshotInstallPath(makeSnapshotInstallPath(msg.getVolumeInventory(), msg.getSnapshotUuid()));
+        completion.success(reply);
     }
 }

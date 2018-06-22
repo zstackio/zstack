@@ -126,178 +126,15 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             handle((CreateVolumeMsg) msg);
         } else if (msg instanceof VolumeReportPrimaryStorageCapacityUsageMsg) {
             handle((VolumeReportPrimaryStorageCapacityUsageMsg) msg);
+        } else if (msg instanceof CreateDataVolumeFromVolumeTemplateMsg) {
+            handle((CreateDataVolumeFromVolumeTemplateMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
     }
 
-    @Transactional(readOnly = true)
-    private void handle(VolumeReportPrimaryStorageCapacityUsageMsg msg) {
-        String sql = "select sum(vol.size) from VolumeVO vol where vol.primaryStorageUuid = :prUuid and vol.status = :status";
-        TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
-        q.setParameter("prUuid", msg.getPrimaryStorageUuid());
-        q.setParameter("status", VolumeStatus.Ready);
-        Long size = q.getSingleResult();
-
-        VolumeReportPrimaryStorageCapacityUsageReply reply = new VolumeReportPrimaryStorageCapacityUsageReply();
-        reply.setUsedCapacity(size == null ? 0 : size);
-        bus.reply(msg, reply);
-    }
-
-    private VolumeInventory createVolume(CreateVolumeMsg msg) {
-        VolumeVO vo = new VolumeVO();
-        if (msg.getResourceUuid() != null) {
-            vo.setUuid(msg.getResourceUuid());
-        } else {
-            vo.setUuid(Platform.getUuid());
-        }
-        vo.setRootImageUuid(msg.getRootImageUuid());
-        vo.setDescription(msg.getDescription());
-        vo.setName(msg.getName());
-        vo.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
-        vo.setSize(msg.getSize());
-        vo.setVmInstanceUuid(msg.getVmInstanceUuid());
-        vo.setFormat(msg.getFormat());
-        vo.setStatus(VolumeStatus.NotInstantiated);
-        vo.setType(VolumeType.valueOf(msg.getVolumeType()));
-        vo.setDiskOfferingUuid(msg.getDiskOfferingUuid());
-        if (vo.getType() == VolumeType.Root) {
-            vo.setDeviceId(0);
-        }
-        vo.setAccountUuid(msg.getAccountUuid());
-
-        VolumeVO finalVo = vo;
-        vo = new SQLBatchWithReturn<VolumeVO>() {
-            @Override
-            protected VolumeVO scripts() {
-                dbf.getEntityManager().persist(finalVo);
-                dbf.getEntityManager().flush();
-                dbf.getEntityManager().refresh(finalVo);
-                return finalVo;
-            }
-        }.execute();
-
-        List<CreateDataVolumeExtensionPoint> exts = pluginRgty.getExtensionList(CreateDataVolumeExtensionPoint.class);
-        for (CreateDataVolumeExtensionPoint ext : exts) {
-            ext.afterCreateVolume(VolumeInventory.valueOf(dbf.findByUuid(vo.getUuid(), VolumeVO.class)));
-        }
-
-        new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(null, VolumeInventory.valueOf(vo));
-
-        VolumeInventory inv = VolumeInventory.valueOf(vo);
-        logger.debug(String.format("successfully created volume[uuid:%s, name:%s, type:%s, vm uuid:%s",
-                inv.getUuid(), inv.getName(), inv.getType(), inv.getVmInstanceUuid()));
-        return inv;
-    }
-
-    private void handle(CreateVolumeMsg msg) {
-        VolumeInventory inv = createVolume(msg);
-        CreateVolumeReply reply = new CreateVolumeReply();
-        reply.setInventory(inv);
-        bus.reply(msg, reply);
-    }
-
-    private void handle(APICreateDataVolumeFromVolumeSnapshotMsg msg) {
-        final APICreateDataVolumeFromVolumeSnapshotEvent evt = new APICreateDataVolumeFromVolumeSnapshotEvent(msg.getId());
-        final VolumeVO vo = new VolumeVO();
-        if (msg.getResourceUuid() != null) {
-            vo.setUuid(msg.getResourceUuid());
-        } else {
-            vo.setUuid(Platform.getUuid());
-        }
-        vo.setName(msg.getName());
-        vo.setDescription(msg.getDescription());
-        vo.setState(VolumeState.Enabled);
-        vo.setStatus(VolumeStatus.Creating);
-        vo.setType(VolumeType.Data);
-        vo.setSize(0);
-        vo.setAccountUuid(msg.getSession().getAccountUuid());
-        VolumeVO vvo = new SQLBatchWithReturn<VolumeVO>() {
-            @Override
-            protected VolumeVO scripts() {
-                persist(vo);
-                reload(vo);
-                tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), VolumeVO.class.getSimpleName());
-                return vo;
-            }
-        }.execute();
-
-        new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(null, VolumeInventory.valueOf(vvo));
-
-        SimpleQuery<VolumeSnapshotVO> sq = dbf.createQuery(VolumeSnapshotVO.class);
-        sq.select(VolumeSnapshotVO_.volumeUuid, VolumeSnapshotVO_.treeUuid);
-        sq.add(VolumeSnapshotVO_.uuid, Op.EQ, msg.getVolumeSnapshotUuid());
-        Tuple t = sq.findTuple();
-        String volumeUuid = t.get(0, String.class);
-        String treeUuid = t.get(1, String.class);
-
-        CreateDataVolumeFromVolumeSnapshotMsg cmsg = new CreateDataVolumeFromVolumeSnapshotMsg();
-        cmsg.setVolumeUuid(volumeUuid);
-        cmsg.setTreeUuid(treeUuid);
-        cmsg.setUuid(msg.getVolumeSnapshotUuid());
-        cmsg.setVolume(VolumeInventory.valueOf(vo));
-        cmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
-        String resourceUuid = volumeUuid != null ? volumeUuid : treeUuid;
-        bus.makeTargetServiceIdByResourceUuid(cmsg, VolumeSnapshotConstant.SERVICE_ID, resourceUuid);
-        bus.send(cmsg, new CloudBusCallBack(msg) {
-            @Override
-            public void run(MessageReply reply) {
-                if (reply.isSuccess()) {
-                    CreateDataVolumeFromVolumeSnapshotReply cr = reply.castReply();
-                    VolumeInventory inv = cr.getInventory();
-                    vo.setSize(inv.getSize());
-                    vo.setActualSize(cr.getActualSize());
-                    vo.setInstallPath(inv.getInstallPath());
-                    vo.setStatus(VolumeStatus.Ready);
-                    vo.setPrimaryStorageUuid(inv.getPrimaryStorageUuid());
-                    vo.setFormat(inv.getFormat());
-                    VolumeVO vvo = dbf.updateAndRefresh(vo);
-
-                    new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(VolumeStatus.Creating, VolumeInventory.valueOf(vvo));
-
-                    evt.setInventory(VolumeInventory.valueOf(vvo));
-                } else {
-                    evt.setError(reply.getError());
-                }
-
-                bus.publish(evt);
-            }
-        });
-    }
-
-    private void handleApiMessage(APIMessage msg) {
-        if (msg instanceof APICreateDataVolumeMsg) {
-            handle((APICreateDataVolumeMsg) msg);
-        } else if (msg instanceof APIListVolumeMsg) {
-            handle((APIListVolumeMsg) msg);
-        } else if (msg instanceof APISearchVolumeMsg) {
-            handle((APISearchVolumeMsg) msg);
-        } else if (msg instanceof APIGetVolumeMsg) {
-            handle((APIGetVolumeMsg) msg);
-        } else if (msg instanceof APICreateDataVolumeFromVolumeSnapshotMsg) {
-            handle((APICreateDataVolumeFromVolumeSnapshotMsg) msg);
-        } else if (msg instanceof APICreateDataVolumeFromVolumeTemplateMsg) {
-            handle((APICreateDataVolumeFromVolumeTemplateMsg) msg);
-        } else if (msg instanceof APIGetVolumeFormatMsg) {
-            handle((APIGetVolumeFormatMsg) msg);
-        } else {
-            bus.dealWithUnknownMessage(msg);
-        }
-    }
-
-    private void handle(APIGetVolumeFormatMsg msg) {
-        List<VolumeFormatReplyStruct> structs = new ArrayList<VolumeFormatReplyStruct>();
-        for (VolumeFormat format : VolumeFormat.getAllFormats()) {
-            structs.add(new VolumeFormatReplyStruct(format));
-        }
-
-        APIGetVolumeFormatReply reply = new APIGetVolumeFormatReply();
-        reply.setFormats(structs);
-        bus.reply(msg, reply);
-    }
-
-    private void handle(final APICreateDataVolumeFromVolumeTemplateMsg msg) {
-        final APICreateDataVolumeFromVolumeTemplateEvent evt = new APICreateDataVolumeFromVolumeTemplateEvent(msg.getId());
+    private void handle(CreateDataVolumeFromVolumeTemplateMsg msg) {
+        CreateDataVolumeFromVolumeTemplateReply reply = new CreateDataVolumeFromVolumeTemplateReply();
 
         final ImageVO template = dbf.findByUuid(msg.getImageUuid(), ImageVO.class);
         final VolumeVO vol = new VolumeVO();
@@ -318,7 +155,9 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             protected VolumeVO scripts() {
                 persist(vol);
                 reload(vol);
-                tagMgr.createTagsFromAPICreateMessage(msg, vol.getUuid(), VolumeVO.class.getSimpleName());
+                if (msg.getApiMsg() != null) {
+                    tagMgr.createTagsFromAPICreateMessage(msg.getApiMsg(), vol.getUuid(), VolumeVO.class.getSimpleName());
+                }
                 return vol;
             }
         }.execute();
@@ -515,21 +354,214 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
 
                         new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(VolumeStatus.Creating, VolumeInventory.valueOf(vo));
 
-                        evt.setInventory(VolumeInventory.valueOf(vo));
-                        bus.publish(evt);
+                        reply.setInventory(VolumeInventory.valueOf(vo));
+                        bus.reply(msg, reply);
                     }
                 });
 
                 error(new FlowErrorHandler(msg) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        evt.setError(errCode);
+                        reply.setError(errCode);
+                        reply.setSuccess(false);
                         dbf.removeByPrimaryKey(vol.getUuid(), vol.getClass());
-                        bus.publish(evt);
+                        bus.reply(msg, reply);
                     }
                 });
             }
         }).start();
+    }
+
+    @Transactional(readOnly = true)
+    private void handle(VolumeReportPrimaryStorageCapacityUsageMsg msg) {
+        String sql = "select sum(vol.size) from VolumeVO vol where vol.primaryStorageUuid = :prUuid and vol.status = :status";
+        TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+        q.setParameter("prUuid", msg.getPrimaryStorageUuid());
+        q.setParameter("status", VolumeStatus.Ready);
+        Long size = q.getSingleResult();
+
+        VolumeReportPrimaryStorageCapacityUsageReply reply = new VolumeReportPrimaryStorageCapacityUsageReply();
+        reply.setUsedCapacity(size == null ? 0 : size);
+        bus.reply(msg, reply);
+    }
+
+    private VolumeInventory createVolume(CreateVolumeMsg msg) {
+        VolumeVO vo = new VolumeVO();
+        if (msg.getResourceUuid() != null) {
+            vo.setUuid(msg.getResourceUuid());
+        } else {
+            vo.setUuid(Platform.getUuid());
+        }
+        vo.setRootImageUuid(msg.getRootImageUuid());
+        vo.setDescription(msg.getDescription());
+        vo.setName(msg.getName());
+        vo.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+        vo.setSize(msg.getSize());
+        vo.setVmInstanceUuid(msg.getVmInstanceUuid());
+        vo.setFormat(msg.getFormat());
+        vo.setStatus(VolumeStatus.NotInstantiated);
+        vo.setType(VolumeType.valueOf(msg.getVolumeType()));
+        vo.setDiskOfferingUuid(msg.getDiskOfferingUuid());
+        if (vo.getType() == VolumeType.Root) {
+            vo.setDeviceId(0);
+        }
+        vo.setAccountUuid(msg.getAccountUuid());
+
+        VolumeVO finalVo = vo;
+        vo = new SQLBatchWithReturn<VolumeVO>() {
+            @Override
+            protected VolumeVO scripts() {
+                dbf.getEntityManager().persist(finalVo);
+                dbf.getEntityManager().flush();
+                dbf.getEntityManager().refresh(finalVo);
+                return finalVo;
+            }
+        }.execute();
+
+        List<CreateDataVolumeExtensionPoint> exts = pluginRgty.getExtensionList(CreateDataVolumeExtensionPoint.class);
+        for (CreateDataVolumeExtensionPoint ext : exts) {
+            ext.afterCreateVolume(VolumeInventory.valueOf(dbf.findByUuid(vo.getUuid(), VolumeVO.class)));
+        }
+
+        new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(null, VolumeInventory.valueOf(vo));
+
+        VolumeInventory inv = VolumeInventory.valueOf(vo);
+        logger.debug(String.format("successfully created volume[uuid:%s, name:%s, type:%s, vm uuid:%s",
+                inv.getUuid(), inv.getName(), inv.getType(), inv.getVmInstanceUuid()));
+        return inv;
+    }
+
+    private void handle(CreateVolumeMsg msg) {
+        VolumeInventory inv = createVolume(msg);
+        CreateVolumeReply reply = new CreateVolumeReply();
+        reply.setInventory(inv);
+        bus.reply(msg, reply);
+    }
+
+    private void handle(APICreateDataVolumeFromVolumeSnapshotMsg msg) {
+        final APICreateDataVolumeFromVolumeSnapshotEvent evt = new APICreateDataVolumeFromVolumeSnapshotEvent(msg.getId());
+        final VolumeVO vo = new VolumeVO();
+        if (msg.getResourceUuid() != null) {
+            vo.setUuid(msg.getResourceUuid());
+        } else {
+            vo.setUuid(Platform.getUuid());
+        }
+        vo.setName(msg.getName());
+        vo.setDescription(msg.getDescription());
+        vo.setState(VolumeState.Enabled);
+        vo.setStatus(VolumeStatus.Creating);
+        vo.setType(VolumeType.Data);
+        vo.setSize(0);
+        vo.setAccountUuid(msg.getSession().getAccountUuid());
+        VolumeVO vvo = new SQLBatchWithReturn<VolumeVO>() {
+            @Override
+            protected VolumeVO scripts() {
+                persist(vo);
+                reload(vo);
+                tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), VolumeVO.class.getSimpleName());
+                return vo;
+            }
+        }.execute();
+
+        new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(null, VolumeInventory.valueOf(vvo));
+
+        SimpleQuery<VolumeSnapshotVO> sq = dbf.createQuery(VolumeSnapshotVO.class);
+        sq.select(VolumeSnapshotVO_.volumeUuid, VolumeSnapshotVO_.treeUuid);
+        sq.add(VolumeSnapshotVO_.uuid, Op.EQ, msg.getVolumeSnapshotUuid());
+        Tuple t = sq.findTuple();
+        String volumeUuid = t.get(0, String.class);
+        String treeUuid = t.get(1, String.class);
+
+        CreateDataVolumeFromVolumeSnapshotMsg cmsg = new CreateDataVolumeFromVolumeSnapshotMsg();
+        cmsg.setVolumeUuid(volumeUuid);
+        cmsg.setTreeUuid(treeUuid);
+        cmsg.setUuid(msg.getVolumeSnapshotUuid());
+        cmsg.setVolume(VolumeInventory.valueOf(vo));
+        cmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+        String resourceUuid = volumeUuid != null ? volumeUuid : treeUuid;
+        bus.makeTargetServiceIdByResourceUuid(cmsg, VolumeSnapshotConstant.SERVICE_ID, resourceUuid);
+        bus.send(cmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    CreateDataVolumeFromVolumeSnapshotReply cr = reply.castReply();
+                    VolumeInventory inv = cr.getInventory();
+                    vo.setSize(inv.getSize());
+                    vo.setActualSize(cr.getActualSize());
+                    vo.setInstallPath(inv.getInstallPath());
+                    vo.setStatus(VolumeStatus.Ready);
+                    vo.setPrimaryStorageUuid(inv.getPrimaryStorageUuid());
+                    vo.setFormat(inv.getFormat());
+                    VolumeVO vvo = dbf.updateAndRefresh(vo);
+
+                    new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(VolumeStatus.Creating, VolumeInventory.valueOf(vvo));
+
+                    evt.setInventory(VolumeInventory.valueOf(vvo));
+                } else {
+                    evt.setError(reply.getError());
+                }
+
+                bus.publish(evt);
+            }
+        });
+    }
+
+    private void handleApiMessage(APIMessage msg) {
+        if (msg instanceof APICreateDataVolumeMsg) {
+            handle((APICreateDataVolumeMsg) msg);
+        } else if (msg instanceof APIListVolumeMsg) {
+            handle((APIListVolumeMsg) msg);
+        } else if (msg instanceof APISearchVolumeMsg) {
+            handle((APISearchVolumeMsg) msg);
+        } else if (msg instanceof APIGetVolumeMsg) {
+            handle((APIGetVolumeMsg) msg);
+        } else if (msg instanceof APICreateDataVolumeFromVolumeSnapshotMsg) {
+            handle((APICreateDataVolumeFromVolumeSnapshotMsg) msg);
+        } else if (msg instanceof APICreateDataVolumeFromVolumeTemplateMsg) {
+            handle((APICreateDataVolumeFromVolumeTemplateMsg) msg);
+        } else if (msg instanceof APIGetVolumeFormatMsg) {
+            handle((APIGetVolumeFormatMsg) msg);
+        } else {
+            bus.dealWithUnknownMessage(msg);
+        }
+    }
+
+    private void handle(APIGetVolumeFormatMsg msg) {
+        List<VolumeFormatReplyStruct> structs = new ArrayList<VolumeFormatReplyStruct>();
+        for (VolumeFormat format : VolumeFormat.getAllFormats()) {
+            structs.add(new VolumeFormatReplyStruct(format));
+        }
+
+        APIGetVolumeFormatReply reply = new APIGetVolumeFormatReply();
+        reply.setFormats(structs);
+        bus.reply(msg, reply);
+    }
+
+    private void handle(final APICreateDataVolumeFromVolumeTemplateMsg msg) {
+        final APICreateDataVolumeFromVolumeTemplateEvent evt = new APICreateDataVolumeFromVolumeTemplateEvent(msg.getId());
+        CreateDataVolumeFromVolumeTemplateMsg cmsg = new CreateDataVolumeFromVolumeTemplateMsg(msg);
+        bus.makeLocalServiceId(cmsg, VolumeConstant.SERVICE_ID);
+        bus.send(cmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    evt.setSuccess(false);
+                    evt.setError(reply.getError());
+                    bus.publish(evt);
+                    return;
+                }
+                CreateDataVolumeFromVolumeTemplateReply reply1 = reply.castReply();
+                if (!reply1.isSuccess()) {
+                    evt.setSuccess(false);
+                    evt.setError(reply1.getError());
+                    bus.publish(evt);
+                    return;
+                }
+
+                evt.setInventory(reply1.getInventory());
+                bus.publish(evt);
+            }
+        });
     }
 
     private void handle(APIGetVolumeMsg msg) {

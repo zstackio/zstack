@@ -1307,4 +1307,23 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         }
         return hostUuids.get(0);
     }
+
+    @Override
+    public void handle(AskInstallPathForNewSnapshotMsg msg) {
+        NfsPrimaryStorageBackend bkd = getUsableBackend();
+        bkd.handle(getSelfInventory(), msg, new ReturnValueCompletion<AskInstallPathForNewSnapshotReply>(msg) {
+            @Override
+            public void success(AskInstallPathForNewSnapshotReply returnValue) {
+                bus.reply(msg, returnValue);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                AskInstallPathForNewSnapshotReply reply = new AskInstallPathForNewSnapshotReply();
+                reply.setSuccess(false);
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
 }

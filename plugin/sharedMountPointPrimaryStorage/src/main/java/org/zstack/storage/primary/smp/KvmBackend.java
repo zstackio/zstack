@@ -377,6 +377,17 @@ public class KvmBackend extends HypervisorBackend {
         return PathUtil.join(volDir.getAbsolutePath(), "snapshots", String.format("%s.qcow2", snapshot.getUuid()));
     }
 
+    public String makeSnapshotInstallPath(VolumeInventory vol, String snapshotUuid) {
+        String volPath;
+        if (VolumeType.Data.toString().equals(vol.getType())) {
+            volPath = makeDataVolumeInstallUrl(vol.getUuid());
+        } else {
+            volPath = makeRootVolumeInstallUrl(vol);
+        }
+        File volDir = new File(volPath).getParentFile();
+        return PathUtil.join(volDir.getAbsolutePath(), "snapshots", String.format("%s.qcow2", snapshotUuid));
+    }
+
     public String makeSnapshotWorkspacePath(String imageUuid) {
         return PathUtil.join(
                 self.getMountPath(),
@@ -1660,5 +1671,12 @@ public class KvmBackend extends HypervisorBackend {
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    @Override
+    public void handle(AskInstallPathForNewSnapshotMsg msg, ReturnValueCompletion<AskInstallPathForNewSnapshotReply> completion) {
+        AskInstallPathForNewSnapshotReply reply = new AskInstallPathForNewSnapshotReply();
+        reply.setSnapshotInstallPath(makeSnapshotInstallPath(msg.getVolumeInventory(), msg.getSnapshotUuid()));
+        completion.success(reply);
     }
 }

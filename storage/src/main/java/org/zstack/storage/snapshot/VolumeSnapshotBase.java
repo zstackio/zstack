@@ -39,14 +39,14 @@ public class VolumeSnapshotBase implements VolumeSnapshot {
     @Autowired
     private PluginRegistry pluginRgty;
 
+    public VolumeSnapshotBase(VolumeSnapshotVO self) {
+        this.self = self;
+    }
+
     protected VolumeSnapshotVO self;
 
     protected VolumeSnapshotInventory getSelfInventory() {
         return VolumeSnapshotInventory.valueOf(self);
-    }
-
-    public VolumeSnapshotBase(VolumeSnapshotVO self) {
-        this.self = self;
     }
 
     @Override
