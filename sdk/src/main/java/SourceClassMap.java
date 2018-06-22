@@ -299,7 +299,7 @@ public class SourceClassMap {
         }
     };
 
-	public final static HashMap<String, String> dstToSrcMapping = new HashMap() {
+    public final static HashMap<String, String> dstToSrcMapping = new HashMap() {
         {
 			put("org.zstack.sdk.AccountInventory", "org.zstack.header.identity.AccountInventory");
 			put("org.zstack.sdk.AccountResourceRefInventory", "org.zstack.header.identity.AccountResourceRefInventory");

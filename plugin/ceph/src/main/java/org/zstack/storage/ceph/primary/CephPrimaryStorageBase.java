@@ -3713,4 +3713,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             }
         });
     }
+
+    @Override
+    public void handle(AskInstallPathForNewSnapshotMsg msg) {
+        AskInstallPathForNewSnapshotReply reply = new AskInstallPathForNewSnapshotReply();
+        bus.reply(msg, reply);
+    }
 }

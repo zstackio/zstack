@@ -1472,4 +1472,11 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         }
     }
 
+    @Override
+    public void handle(PrimaryStorageInventory psInventory, AskInstallPathForNewSnapshotMsg msg, ReturnValueCompletion<AskInstallPathForNewSnapshotReply> completion) {
+        AskInstallPathForNewSnapshotReply reply = new AskInstallPathForNewSnapshotReply();
+
+        reply.setSnapshotInstallPath(NfsPrimaryStorageKvmHelper.makeKvmSnapshotInstallPath(psInventory, msg.getVolumeInventory(), msg.getSnapshotUuid()));
+        completion.success(reply);
+    }
 }
