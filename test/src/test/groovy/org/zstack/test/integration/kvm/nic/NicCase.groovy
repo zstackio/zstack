@@ -1,7 +1,11 @@
 package org.zstack.test.integration.kvm.nic
 
+import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
 import org.zstack.core.thread.AsyncThread
+import org.zstack.header.image.ImagePlatform
 import org.zstack.header.vm.VmInstanceVO
+import org.zstack.header.vm.VmInstanceVO_
 import org.zstack.header.vm.VmNicVO
 import org.zstack.sdk.AttachL3NetworkToVmAction
 import org.zstack.sdk.DetachL3NetworkFromVmAction
@@ -124,8 +128,6 @@ class NicCase extends SubCase {
         ImageSpec image = env.specByName("image1")
         InstanceOfferingSpec instanceOffering = env.specByName("instanceOffering")
 
-        image.platform = "Other"
-
         VmInstanceInventory vm = createVmInstance {
             name = "vm"
             imageUuid = image.inventory.uuid
@@ -133,9 +135,11 @@ class NicCase extends SubCase {
             instanceOfferingUuid = instanceOffering.inventory.uuid
         }
 
+        SQL.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm.uuid).set(VmInstanceVO_.platform, ImagePlatform.Other.toString()).update()
+
         expect(AssertionError.class) {
             detachL3NetworkFromVm {
-                vmNicUuid = vm.getVmNics().get(0)
+                vmNicUuid = vm.getVmNics().get(0).uuid
             }
         }
     }
