@@ -28,6 +28,8 @@ public class RBACInfo implements RBACDescription {
 
     @Override
     public void globalReadableResources() {
-
+        globalReadableResourceBuilder()
+                .resources(L2NetworkVO.class)
+                .build();
     }
 }

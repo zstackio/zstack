@@ -1,4 +1,4 @@
-package org.zstack.header.zone;
+package org.zstack.header.cluster;
 
 import org.zstack.header.identity.rbac.RBACDescription;
 
@@ -6,18 +6,12 @@ public class RBACInfo implements RBACDescription {
     @Override
     public void permissions() {
         permissionBuilder()
-                .name("zone")
-                .adminOnlyAPIs("org.zstack.header.zone.**")
-                .normalAPIs(APIQueryZoneMsg.class)
+                .adminOnlyAPIs("org.zstack.header.cluster.**")
                 .build();
     }
 
     @Override
     public void contributeToRoles() {
-        roleContributorBuilder()
-                .roleName("other")
-                .actionsByPermissionName("zone")
-                .build();
     }
 
     @Override
@@ -28,7 +22,7 @@ public class RBACInfo implements RBACDescription {
     @Override
     public void globalReadableResources() {
         globalReadableResourceBuilder()
-                .resources(ZoneVO.class)
+                .resources(ClusterVO.class)
                 .build();
     }
 }

@@ -427,6 +427,10 @@ public class RBAC {
         });
     }
 
+    public static boolean isResourceGlobalReadable(Class clz) {
+        return readableResources.stream().anyMatch(r->r.resources.contains(clz));
+    }
+
     public static boolean checkAPIPermission(APIMessage msg, boolean policyDecision) {
         List<APIPermissionCheckerWrapper> checkers = permissionCheckers.get(msg.getClass());
         if (checkers == null || checkers.isEmpty()) {

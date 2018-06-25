@@ -26,6 +26,8 @@ public class RBACInfo implements RBACDescription {
 
     @Override
     public void globalReadableResources() {
-
+        globalReadableResourceBuilder()
+                .resources(PrimaryStorageVO.class)
+                .build();
     }
 }
