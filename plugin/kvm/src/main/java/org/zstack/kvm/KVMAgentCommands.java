@@ -860,7 +860,16 @@ public class KVMAgentCommands {
         private boolean kvmHiddenState;
         private boolean vmPortOff;
         private String vmCpuModel;
+        private boolean emulateHyperV;
         private boolean isApplianceVm;
+
+        public boolean isEmulateHyperV() {
+            return emulateHyperV;
+        }
+
+        public void setEmulateHyperV(boolean emulateHyperV) {
+            this.emulateHyperV = emulateHyperV;
+        }
 
         public boolean isApplianceVm() {
             return isApplianceVm;

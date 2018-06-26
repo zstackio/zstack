@@ -88,6 +88,14 @@
 	</config>
 
 	<config>
+		<name>emulateHyperV</name>
+		<description>whether to emulate hyper-v</description>
+		<category>vm</category>
+		<defaultValue>false</defaultValue>
+		<type>java.lang.Boolean</type>
+	</config>
+
+	<config>
 		<category>vm</category>
 		<name>vmPortOff</name>
 		<description>Disable VMWare io port emulation</description>
