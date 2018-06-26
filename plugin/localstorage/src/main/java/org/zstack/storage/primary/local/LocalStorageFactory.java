@@ -724,7 +724,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         List<VmInstanceVO> candidatesCopy = Lists.newArrayList(candidates);
         for (VmInstanceVO vo : candidates) {
             PrimaryStorageVO psVo = dbf.findByUuid(vo.getRootVolume().getPrimaryStorageUuid(), PrimaryStorageVO.class);
-            if (LocalStorageConstants.LOCAL_STORAGE_TYPE.equals(psVo.getType())) {
+            if (LocalStorageConstants.LOCAL_STORAGE_TYPE.equals(psVo.getType()) && VolumeStatus.NotInstantiated.equals(vol.getStatus())) {
                 String volumeUuid = vo.getRootVolumeUuid();
                 VolumeVO rootVolumeVO = dbf.findByUuid(volumeUuid, VolumeVO.class);
                 boolean avaliableHost = Q.New(LocalStorageHostRefVO.class)
@@ -735,6 +735,10 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                     candidatesCopy.remove(vo);
                 }
             }
+        }
+
+        if (candidatesCopy.isEmpty()){
+            return candidatesCopy;
         }
 
         String hostUuid = ret.get(0);
