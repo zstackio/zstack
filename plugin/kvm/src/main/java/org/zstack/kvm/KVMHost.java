@@ -30,8 +30,6 @@ import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Constants;
-import org.zstack.header.apimediator.ApiMessageInterceptionException;
-import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.core.AsyncLatch;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -80,7 +78,7 @@ import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
-public class KVMHost extends HostBase implements Host, GlobalApiMessageInterceptor {
+public class KVMHost extends HostBase implements Host {
     private static final CLogger logger = Utils.getLogger(KVMHost.class);
 
     @Autowired
@@ -3186,35 +3184,5 @@ public class KVMHost extends HostBase implements Host, GlobalApiMessageIntercept
         }
 
         return vo;
-    }
-
-    @Override
-    public List<Class> getMessageClassToIntercept() {
-        List<Class> ret = new ArrayList<>();
-        ret.add(APIDetachL3NetworkFromVmMsg.class);
-
-        return ret;
-    }
-
-    @Override
-    public InterceptorPosition getPosition() {
-        return InterceptorPosition.END;
-    }
-
-    @Override
-    public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
-        if (msg instanceof APIDetachL3NetworkFromVmMsg) {
-            validate((APIDetachL3NetworkFromVmMsg) msg);
-        }
-
-        return msg;
-    }
-
-    private void validate(APIDetachL3NetworkFromVmMsg msg) {
-        VmInstanceVO vo = dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
-        if (KVMConstant.KVM_HYPERVISOR_TYPE.equals(vo.getHypervisorType()) && !ImagePlatform.valueOf(vo.getPlatform()).isParaVirtualization()) {
-            throw new ApiMessageInterceptionException(operr("unable to detach a L3 network on kvm host because platform of vm[uuid: %s] is %s",
-                    msg.getVmInstanceUuid(), vo.getPlatform()));
-        }
     }
 }
