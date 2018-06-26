@@ -57,3 +57,51 @@ CREATE TABLE IF NOT EXISTS `CloudFormationStackEventVO` (
     CONSTRAINT `fkCloudFormationStackEventVOResourceStackVO` FOREIGN KEY (`stackUuid`) REFERENCES ResourceStackVO (`uuid`) ON DELETE CASCADE,
     PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# create AccountResourceRefVO for PciDeviceVO
+DELIMITER $$
+CREATE PROCEDURE getAdminAccountUUid(OUT adminAccountUuid VARCHAR(32))
+    BEGIN
+        SELECT uuid INTO adminAccountUuid from zstack.AccountVO account where account.name="admin";
+    END $$
+DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE getMaxAccountResourceRefVO(OUT refId bigint(20) unsigned)
+    BEGIN
+        SELECT max(id) INTO refId from zstack.AccountResourceRefVO;
+    END $$
+DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE generatePciDeviceVOAccountRef()
+    BEGIN
+        DECLARE pciDeviceUuid VARCHAR(32);
+        DECLARE adminAccountUuid VARCHAR(32);
+        DECLARE refId bigint(20) unsigned;
+        DECLARE done INT DEFAULT FALSE;
+        DECLARE cur CURSOR FOR SELECT uuid FROM zstack.PciDeviceVO where uuid not in (SELECT DISTINCT resourceUuid from zstack.AccountResourceRefVO where resourceType="PciDeviceVO");
+        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+        OPEN cur;
+        read_loop: LOOP
+            FETCH cur INTO pciDeviceUuid;
+            IF done THEN
+                LEAVE read_loop;
+            END IF;
+
+            CALL getAdminAccountUUid(adminAccountUuid);
+            CALL getMaxAccountResourceRefVO(refId);
+            INSERT INTO zstack.AccountResourceRefVO (id, accountUuid, ownerAccountUuid, resourceUuid, resourceType, permission, isShared, lastOpDate, createDate)
+                                     values(refId + 1, adminAccountUuid, adminAccountUuid, pciDeviceUuid, 'PciDeviceVO', 2, 0, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
+
+        END LOOP;
+        CLOSE cur;
+        # work around a bug of mysql : jira.mariadb.org/browse/MDEV-4602
+        SELECT CURTIME();
+    END $$
+DELIMITER ;
+
+CALL generatePciDeviceVOAccountRef();
+DROP PROCEDURE IF EXISTS generatePciDeviceVOAccountRef;
+DROP PROCEDURE IF EXISTS getAdminAccountUUid;
+DROP PROCEDURE IF EXISTS getMaxAccountResourceRefVO;
