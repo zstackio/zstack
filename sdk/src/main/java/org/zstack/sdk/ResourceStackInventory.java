@@ -76,11 +76,11 @@ public class ResourceStackInventory  {
         return this.reason;
     }
 
-    public boolean enableRollback;
-    public void setEnableRollback(boolean enableRollback) {
+    public java.lang.Boolean enableRollback;
+    public void setEnableRollback(java.lang.Boolean enableRollback) {
         this.enableRollback = enableRollback;
     }
-    public boolean getEnableRollback() {
+    public java.lang.Boolean getEnableRollback() {
         return this.enableRollback;
     }
 
