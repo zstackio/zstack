@@ -702,6 +702,21 @@ public class VirtualRouter extends ApplianceVmBase {
     protected void beforeDetachNic(VmNicInventory nicInventory, Completion completion) {
         Map data = new HashMap();
         data.put(Param.VR_NIC, nicInventory);
+        ApplianceVmVO appvm = Q.New(ApplianceVmVO.class)
+                .eq(ApplianceVmVO_.uuid, nicInventory.getVmInstanceUuid()).find();
+        if (appvm.getStatus().equals(ApplianceVmStatus.Disconnected)) {
+            logger.debug(String.format("appliance vm[uuid: %s] current status is [%s], skip before detach nic",
+                    appvm.getUuid(), appvm.getStatus()));
+            completion.success();
+            return;
+        }
+
+        if (appvm.getState().equals(VmInstanceState.Stopped)) {
+            logger.debug(String.format("appliance vm[uuid: %s] current state is [%s], skip before detach nic",
+                    appvm.getUuid(), appvm.getStatus()));
+            completion.success();
+            return;
+        }
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("release-services-before-detach-nic-%s-from-virtualrouter-%s", nicInventory.getUuid(), nicInventory.getVmInstanceUuid()));
