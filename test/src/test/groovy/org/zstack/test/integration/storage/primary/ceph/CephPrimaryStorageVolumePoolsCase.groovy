@@ -240,6 +240,22 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
         assert ret.error != null
     }
 
+    void testAddCephPoolWithChinese(){
+        expect(AssertionError.class){
+            addCephPrimaryStoragePool {
+                poolName = "中文"
+                primaryStorageUuid = primaryStorage.uuid
+            }
+        }
+
+        expect(AssertionError.class){
+            addCephPrimaryStoragePool {
+                poolName = "zhong中文"
+                primaryStorageUuid = primaryStorage.uuid
+            }
+        }
+    }
+
     @Override
     void test() {
         env.create {
@@ -254,6 +270,7 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
             testAddPoolWithCheckExistenceFailure()
             testQueryPool()
             testAddSameCephPool()
+            testAddCephPoolWithChinese()
         }
     }
 
