@@ -1227,17 +1227,9 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         if (session == null) {
             return;
         }
-
-        final SessionInventory finalSession = session;
-        CollectionUtils.safeForEach(pluginRgty.getExtensionList(SessionLogoutExtensionPoint.class),
-                new ForEachFunction<SessionLogoutExtensionPoint>() {
-                    @Override
-                    public void run(SessionLogoutExtensionPoint ext) {
-                        ext.sessionLogout(finalSession);
-                    }
-                });
-
+        
         sessions.remove(sessionUuid);
+        Session.logout(sessionUuid);
         dbf.removeByPrimaryKey(sessionUuid, SessionVO.class);
     }
 

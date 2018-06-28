@@ -2,6 +2,7 @@ package org.zstack.test.integration.identity.account
 
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.DatabaseFacadeImpl
+import org.zstack.header.identity.AccountConstant
 import org.zstack.identity.AccountManagerImpl
 import org.zstack.sdk.AccountInventory
 import org.zstack.sdk.SessionInventory
@@ -47,6 +48,7 @@ class SessionCase extends SubCase {
             testSession()
             testRenewSession()
             testRenewSessionFail()
+            testInvalidSession()
         }
     }
 
@@ -111,6 +113,33 @@ class SessionCase extends SubCase {
             renewSession {
                 sessionUuid = sess1.uuid
                 duration = 31536000L
+            }
+        }
+    }
+
+    void testInvalidSession() {
+        SessionInventory sess1 = logInByAccount {
+            accountName = "test1"
+            password = "password1"
+        } as SessionInventory
+
+        assert acntMgr.getSessionsCopy().get(sess1.uuid) != null
+
+        logOut {
+            sessionUuid = sess1.uuid
+        }
+
+        expect (AssertionError.class) {
+            updateAccount {
+                uuid = sess1.accountUuid
+                password = "new"
+                sessionId = sess1.uuid
+            }
+        }
+
+        expect (AssertionError.class) {
+            queryVmInstance {
+                sessionId = sess1.uuid
             }
         }
     }
