@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS `StackTemplateVO` (
     `version` VARCHAR(32) NOT NULL,
     `state` tinyint(1) unsigned DEFAULT 1,
     `content` text NOT NULL,
+    `md5sum` varchar(255) DEFAULT NULL,
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY (`uuid`),
