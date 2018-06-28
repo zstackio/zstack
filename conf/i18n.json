@@ -10577,7 +10577,7 @@
   {
     "raw": "operation failure, because the poolName[poolName:%s] can not include unprintable ascii characters.",
     "en_US": "operation failure, because the poolName[poolName:{0}] can not include unprintable ascii characters.",
-    "zh_CN": "操作失败，因为pool名称[poolName:{0}]不能包含不可打印的ASCII字符",
+    "zh_CN": "操作失败，因为pool名称[poolName:{0}]不能包含中文和特殊字符",
     "arguments": [
       "msg.getPoolName()"
     ],
