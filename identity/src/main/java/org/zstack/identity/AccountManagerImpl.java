@@ -511,6 +511,14 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             return;
         }
 
+        for (AdditionalLoginExtensionPoint exp : pluginRgty.getExtensionList(AdditionalLoginExtensionPoint.class)){
+            if (!exp.authenticate(msg, vo.getUuid(), AccountVO.class.getSimpleName())) {
+                reply.setError(errf.instantiateErrorCode(IdentityErrors.AUTHENTICATION_ERROR, "additional authentication failed"));
+                bus.reply(msg, reply);
+                return;
+            }
+        }
+
         reply.setInventory(getSession(vo.getUuid(), vo.getUuid()));
         bus.reply(msg, reply);
     }
