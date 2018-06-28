@@ -17,8 +17,8 @@ import org.zstack.core.retry.RetryCondition;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
-import org.zstack.core.workflow.*;
-import org.zstack.header.allocator.HostAllocatorConstant;
+import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
@@ -165,6 +165,8 @@ public class L3BasicNetwork implements L3Network {
             handle((IpRangeDeletionMsg) msg);
         } else if (msg instanceof CheckIpAvailabilityMsg) {
             handle((CheckIpAvailabilityMsg) msg);
+        } else if (msg instanceof AttachNetworkServiceToL3Msg) {
+            handle((AttachNetworkServiceToL3Msg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -678,22 +680,41 @@ public class L3BasicNetwork implements L3Network {
         }).start();
 	}
 
-	private void handle(APIAttachNetworkServiceToL3NetworkMsg msg) {
-    	for (Map.Entry<String, List<String>> e : msg.getNetworkServices().entrySet()) {
-    	    for (String nsType : e.getValue()) {
-    	        NetworkServiceL3NetworkRefVO ref = new NetworkServiceL3NetworkRefVO();
-    	        ref.setL3NetworkUuid(self.getUuid());
-    	        ref.setNetworkServiceProviderUuid(e.getKey());
-    	        ref.setNetworkServiceType(nsType);
-    	        dbf.persist(ref);
-    	    }
-    		logger.debug(String.format("successfully attached network service provider[uuid:%s] to l3network[uuid:%s, name:%s] with services%s", e.getKey(), self.getUuid(), self.getName(), e.getValue()));
-    	}
+	private void handle(final AttachNetworkServiceToL3Msg msg) {
+        MessageReply reply = new MessageReply();
+        for (Map.Entry<String, List<String>> e : msg.getNetworkServices().entrySet()) {
+            for (String nsType : e.getValue()) {
+                NetworkServiceL3NetworkRefVO ref = new NetworkServiceL3NetworkRefVO();
+                ref.setL3NetworkUuid(self.getUuid());
+                ref.setNetworkServiceProviderUuid(e.getKey());
+                ref.setNetworkServiceType(nsType);
+                dbf.persist(ref);
+            }
+            logger.debug(String.format("successfully attached network service provider[uuid:%s] to l3network[uuid:%s, name:%s] with services%s", e.getKey(), self.getUuid(), self.getName(), e.getValue()));
+        }
+        bus.reply(msg, reply);
+    }
 
-    	self = dbf.reload(self);
-    	APIAttachNetworkServiceToL3NetworkEvent evt = new APIAttachNetworkServiceToL3NetworkEvent(msg.getId());
-    	evt.setInventory(L3NetworkInventory.valueOf(self));
-    	bus.publish(evt);
+	private void handle(APIAttachNetworkServiceToL3NetworkMsg msg) {
+        APIAttachNetworkServiceToL3NetworkEvent evt = new APIAttachNetworkServiceToL3NetworkEvent(msg.getId());
+        AttachNetworkServiceToL3Msg amsg = new AttachNetworkServiceToL3Msg();
+        amsg.setL3NetworkUuid(msg.getL3NetworkUuid());
+        amsg.setNetworkServices(msg.getNetworkServices());
+
+        bus.makeTargetServiceIdByResourceUuid(amsg, L3NetworkConstant.SERVICE_ID, msg.getL3NetworkUuid());
+        bus.send(amsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    self = dbf.reload(self);
+                    evt.setInventory(L3NetworkInventory.valueOf(self));
+                    bus.publish(evt);
+                } else {
+                    evt.setError(reply.getError());
+                    bus.publish(evt);
+                }
+            }
+        });
 	}
 
 
