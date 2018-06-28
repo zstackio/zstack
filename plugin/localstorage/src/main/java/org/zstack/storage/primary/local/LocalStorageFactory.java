@@ -1080,6 +1080,11 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 
     @Override
     public void afterTakeLiveSnapshotsOnVolumes(CreateVolumesSnapshotOverlayInnerMsg msg, TakeVolumesSnapshotOnKvmReply treply, Completion completion) {
+        if (treply != null && !treply.isSuccess()) {
+            completion.success();
+            return;
+        }
+
         for (CreateVolumesSnapshotsJobStruct job : msg.getVolumeSnapshotJobs()) {
             if (!isLocalStorage(job.getPrimaryStorageUuid())) {
                 continue;
