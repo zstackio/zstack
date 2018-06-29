@@ -30,24 +30,18 @@ public class TimeoutRestTemplate extends RestTemplate {
         this.setRequestConfig(connectTimeout, readTimeout);
 
         long startTime = System.currentTimeMillis();
-        ResponseEntity<T> rsp = null;
         try {
-            rsp = this.exchange(url, method, requestEntity, responseType);
-        }catch (Throwable t){
+            return this.exchange(url, method, requestEntity, responseType);
+        } catch (Throwable t){
             long endTime = System.currentTimeMillis();
             logger.warn(String.format("TimeoutRestTemplate exchange fail, requestId=%s, connectTimeout=%s, readTimeout=%s, spendTime=%s", requestId, connectTimeout, readTimeout, endTime - startTime), t);
             throw t;
-        }finally {
-            // liningTODO
-            // clean info log
+        } finally {
             long endTime = System.currentTimeMillis();
-            logger.info(String.format("TimeoutRestTemplate timeout info, requestId=%s, connectTimeout=%s, readTimeout=%s, spendTime=%s", requestId, connectTimeout, readTimeout, endTime - startTime));
             if(endTime - startTime > (connectTimeout + 3000) || endTime - startTime > (readTimeout + 3000) ){
                 logger.error(String.format("TimeoutRestTemplate timeout error, requestId=%s, connectTimeout=%s, readTimeout=%s, spendTime=%s", requestId, connectTimeout, readTimeout, endTime - startTime));
             }
         }
-
-        return rsp;
     }
 
     private void setRequestConfig(long connectTimeout, long readTimeout){
@@ -56,8 +50,7 @@ public class TimeoutRestTemplate extends RestTemplate {
 
 
     private TimeoutHttpComponentsClientHttpRequestFactory getMyRequestFactory(){
-        TimeoutHttpComponentsClientHttpRequestFactory rf = (TimeoutHttpComponentsClientHttpRequestFactory) this.getRequestFactory();
-        return rf;
+        return (TimeoutHttpComponentsClientHttpRequestFactory) this.getRequestFactory();
     }
 
 }
