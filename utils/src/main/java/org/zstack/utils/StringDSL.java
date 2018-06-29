@@ -1,7 +1,10 @@
 package org.zstack.utils;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.HashMap;
@@ -117,6 +120,17 @@ public class StringDSL {
             return writer.toString();
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public static String getMd5Sum(String content) {
+        if (content == null) {
+            throw new RuntimeException("cannot get md5sum from null");
+        }
+        try {
+            return DigestUtils.md5Hex(new ByteArrayInputStream(content.getBytes()));
+        } catch (IOException e) {
+            throw new RuntimeException(String.format("read input stream err: %s", e.getMessage()));
         }
     }
 
