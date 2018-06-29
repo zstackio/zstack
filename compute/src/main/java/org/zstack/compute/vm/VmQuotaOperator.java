@@ -26,6 +26,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.zstack.core.Platform.argerr;
+
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmQuotaOperator implements Quota.QuotaOperator {
     @Autowired
@@ -493,6 +495,9 @@ public class VmQuotaOperator implements Quota.QuotaOperator {
         if (imgType == ImageConstant.ImageMediaType.RootVolumeTemplate) {
             allVolumeSizeAsked += imgSize;
         } else if (imgType == ImageConstant.ImageMediaType.ISO) {
+            if (msg.getRootDiskOfferingUuid() == null){
+                throw new ApiMessageInterceptionException(argerr("rootDiskOfferingUuid cannot be null when image mediaType is ISO"));
+            }
             diskOfferingUuids.add(msg.getRootDiskOfferingUuid());
         }
 
