@@ -7,6 +7,6 @@ import org.zstack.core.GlobalPropertyDefinition;
  */
 @GlobalPropertyDefinition
 public class ThreadGlobalProperty {
-    @GlobalProperty(name="ThreadFacade.maxThreadNum", defaultValue = "100")
+    @GlobalProperty(name="ThreadFacade.maxThreadNum", defaultValue = "150")
     public static int MAX_THREAD_NUM;
 }

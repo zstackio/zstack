@@ -10,10 +10,10 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.thread.ThreadGlobalProperty;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -32,11 +32,11 @@ import org.zstack.zql.ZQLContext;
 import org.zstack.zql.ZQLQueryResult;
 import org.zstack.zql.ast.ZQLMetadata;
 
-import static org.zstack.core.Platform.argerr;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.*;
+
+import static org.zstack.core.Platform.argerr;
 
 public class QueryFacadeImpl extends AbstractService implements QueryFacade, GlobalApiMessageInterceptor {
     private static CLogger logger = Utils.getLogger(QueryFacadeImpl.class);
@@ -188,7 +188,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
 
             @Override
             public int getSyncLevel() {
-                return ThreadGlobalProperty.MAX_THREAD_NUM / 2;
+                return ThreadGlobalProperty.MAX_THREAD_NUM / 3;
             }
         });
     }
@@ -215,7 +215,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
 
             @Override
             public int getSyncLevel() {
-                return ThreadGlobalProperty.MAX_THREAD_NUM / 2;
+                return ThreadGlobalProperty.MAX_THREAD_NUM / 3;
             }
         });
     }
