@@ -16,7 +16,7 @@ public class UserdataBuilder {
     private DatabaseFacade dbf;
 
     private String sshkeyRootPassword(String sshKey, String rootPassword) {
-        StringBuilder sb = new StringBuilder("#cloud-config");
+        StringBuilder sb = new StringBuilder();
         if (sshKey != null) {
             sb.append("\nssh_authorized_keys:");
             sb.append(String.format("\n  - %s", sshKey));
@@ -36,16 +36,19 @@ public class UserdataBuilder {
         String userdata = VmSystemTags.USERDATA.getTokenByResourceUuid(vmUuid, VmSystemTags.USERDATA_TOKEN);
         if (userdata != null) {
             userdata = new String(Base64.getDecoder().decode(userdata.getBytes()));
-            return userdata;
         }
 
         String sshKey = VmSystemTags.SSHKEY.getTokenByResourceUuid(vmUuid, VmSystemTags.SSHKEY_TOKEN);
         String rootPassword = VmSystemTags.ROOT_PASSWORD.getTokenByResourceUuid(vmUuid, VmSystemTags.ROOT_PASSWORD_TOKEN);
-        if (sshKey == null && rootPassword == null) {
+        if (sshKey == null && rootPassword == null && userdata == null) {
             return null;
         }
 
-        return sshkeyRootPassword(sshKey, rootPassword);
+        if (userdata == null){
+            return String.format("#cloud-config%s", sshkeyRootPassword(sshKey, rootPassword));
+        }
+
+        return String.format("%s%s",userdata, sshkeyRootPassword(sshKey, rootPassword));
     }
 
     public Map<String, String> buildByVmUuids(List<String> vmUuids) {
