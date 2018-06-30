@@ -44,12 +44,12 @@ public class StackParameters  {
         return this.noEcho;
     }
 
-    public java.lang.String lable;
-    public void setLable(java.lang.String lable) {
-        this.lable = lable;
+    public java.lang.String label;
+    public void setLabel(java.lang.String label) {
+        this.label = label;
     }
-    public java.lang.String getLable() {
-        return this.lable;
+    public java.lang.String getLabel() {
+        return this.label;
     }
 
     public java.lang.String constraintDescription;
