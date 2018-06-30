@@ -17,6 +17,7 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
@@ -667,6 +668,8 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
             }
         }.execute();
 
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName("create-portforwading");
         VipInventory vipInventory = VipInventory.valueOf(vip);
         if (msg.getVmNicUuid() == null) {
             ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
@@ -682,6 +685,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
                 @Override
                 public void fail(ErrorCode errorCode) {
+                    dbf.remove(vo);
                     evt.setError(errorCode);
                     bus.publish(evt);
                 }
@@ -709,6 +713,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
                 @Override
                 public void fail(ErrorCode errorCode) {
+                    dbf.remove(vo);
                     evt.setError(errorCode);
                     bus.publish(evt);
                 }
@@ -717,75 +722,104 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
             return;
         }
 
-        final NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(vmNic.getL3NetworkUuid(),
-                NetworkServiceType.PortForwarding);
-
-        vo.setVmNicUuid(vmNic.getUuid());
-        vo.setGuestIp(vmNic.getIp());
-        PortForwardingRuleVO pvo = dbf.updateAndRefresh(vo);
-
-        final PortForwardingRuleInventory ruleInv = PortForwardingRuleInventory.valueOf(pvo);
-        for (AttachPortForwardingRuleExtensionPoint extp : attachRuleExts) {
-            try {
-                extp.preAttachPortForwardingRule(ruleInv, providerType);
-            } catch (PortForwardingException e) {
-                String err = String.format("unable to create port forwarding rule, extension[%s] refused it because %s", extp.getClass().getName(), e.getMessage());
-                logger.warn(err, e);
-                evt.setError(errf.instantiateErrorCode(SysErrors.CREATE_RESOURCE_ERROR, err));
-                bus.publish(evt);
-                return;
-            }
-        }
-
-        CollectionUtils.safeForEach(attachRuleExts, new ForEachFunction<AttachPortForwardingRuleExtensionPoint>() {
+        chain.then(new ShareFlow() {
             @Override
-            public void run(AttachPortForwardingRuleExtensionPoint extp) {
-                extp.beforeAttachPortForwardingRule(ruleInv, providerType);
-            }
-        });
+            public void setup() {
+                final PortForwardingRuleVO pvo = dbf.updateAndRefresh(vo);
+                final PortForwardingRuleInventory ruleInv = PortForwardingRuleInventory.valueOf(pvo);
 
-        final PortForwardingStruct struct = makePortForwardingStruct(ruleInv);
-        attachPortForwardingRule(struct, providerType.toString(), new Completion(msg) {
-            @Override
-            public void success() {
-                CollectionUtils.safeForEach(attachRuleExts, new ForEachFunction<AttachPortForwardingRuleExtensionPoint>() {
+                flow(new NoRollbackFlow() {
                     @Override
-                    public void run(AttachPortForwardingRuleExtensionPoint extp) {
-                        extp.afterAttachPortForwardingRule(ruleInv, providerType);
+                    public void run(FlowTrigger trigger, Map data) {
+                        final NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(vmNic.getL3NetworkUuid(),
+                                NetworkServiceType.PortForwarding);
+
+                        vo.setVmNicUuid(vmNic.getUuid());
+                        vo.setGuestIp(vmNic.getIp());
+
+
+
+                        for (AttachPortForwardingRuleExtensionPoint extp : attachRuleExts) {
+                            try {
+                                extp.preAttachPortForwardingRule(ruleInv, providerType);
+                            } catch (PortForwardingException e) {
+                                String err = String.format("unable to create port forwarding rule, extension[%s] refused it because %s", extp.getClass().getName(), e.getMessage());
+                                logger.warn(err, e);
+                                trigger.fail(errf.instantiateErrorCode(SysErrors.CREATE_RESOURCE_ERROR, err));
+                                return;
+                            }
+                        }
+                        data.put("providerType", providerType);
+                        trigger.next();
                     }
                 });
 
-                evt.setInventory(ruleInv);
-                bus.publish(evt);
-            }
+                flow(new NoRollbackFlow() {
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        NetworkServiceProviderType providerType = (NetworkServiceProviderType)data.get("providerType");
+                        CollectionUtils.safeForEach(attachRuleExts, new ForEachFunction<AttachPortForwardingRuleExtensionPoint>() {
+                            @Override
+                            public void run(AttachPortForwardingRuleExtensionPoint extp) {
+                                extp.beforeAttachPortForwardingRule(ruleInv, providerType);
+                            }
+                        });
+                        trigger.next();
+                    }
+                });
 
-            @Override
-            public void fail(ErrorCode errorCode) {
-                CollectionUtils.safeForEach(attachRuleExts, extp -> extp.failToAttachPortForwardingRule(ruleInv, providerType));
+                flow(new NoRollbackFlow() {
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        NetworkServiceProviderType providerType = (NetworkServiceProviderType)data.get("providerType");
+                        final PortForwardingStruct struct = makePortForwardingStruct(ruleInv);
+                        attachPortForwardingRule(struct, providerType.toString(), new Completion(msg) {
+                            @Override
+                            public void success() {
+                                CollectionUtils.safeForEach(attachRuleExts, new ForEachFunction<AttachPortForwardingRuleExtensionPoint>() {
+                                    @Override
+                                    public void run(AttachPortForwardingRuleExtensionPoint extp) {
+                                        extp.afterAttachPortForwardingRule(ruleInv, providerType);
+                                    }
+                                });
+                                trigger.next();
+                            }
 
-                logger.debug(String.format("failed to create port forwarding rule %s, because %s", JSONObjectUtil.toJsonString(ruleInv), errorCode));
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                CollectionUtils.safeForEach(attachRuleExts, extp -> extp.failToAttachPortForwardingRule(ruleInv, providerType));
 
-                dbf.remove(vo);
+                                logger.debug(String.format("failed to create port forwarding rule %s, because %s", JSONObjectUtil.toJsonString(ruleInv), errorCode));
 
                 /* pf is deleted, then release vip */
-                ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
-                vipStruct.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
-                Vip v = new Vip(struct.getVip().getUuid());
-                v.setStruct(vipStruct);
-                v.release(new Completion(msg) {
-                    @Override
-                    public void success() {
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
+                                ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
+                                vipStruct.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
+                                Vip v = new Vip(struct.getVip().getUuid());
+                                v.setStruct(vipStruct);
+                                v.release(new NopeCompletion());
+                                trigger.fail(errf.instantiateErrorCode(SysErrors.CREATE_RESOURCE_ERROR, errorCode));
+                            }
+                        });
                     }
                 });
-
-                evt.setError(errf.instantiateErrorCode(SysErrors.CREATE_RESOURCE_ERROR, errorCode));
-                bus.publish(evt);
             }
         });
+
+
+        chain.done(new FlowDoneHandler(msg) {
+            @Override
+            public void handle(Map data) {
+                evt.setInventory(PortForwardingRuleInventory.valueOf(dbf.reload(vo)));
+                bus.publish(evt);
+            }
+        }).error(new FlowErrorHandler(msg) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                dbf.remove(vo);
+                evt.setError(errCode);
+                bus.publish(evt);
+            }
+        }).start();
     }
 
     private void populateExtensions() {
