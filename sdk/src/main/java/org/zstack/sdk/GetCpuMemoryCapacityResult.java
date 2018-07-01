@@ -35,4 +35,12 @@ public class GetCpuMemoryCapacityResult {
         return this.availableMemory;
     }
 
+    public long managedCpuNum;
+    public void setManagedCpuNum(long managedCpuNum) {
+        this.managedCpuNum = managedCpuNum;
+    }
+    public long getManagedCpuNum() {
+        return this.managedCpuNum;
+    }
+
 }

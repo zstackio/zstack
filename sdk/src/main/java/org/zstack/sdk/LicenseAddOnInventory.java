@@ -20,6 +20,22 @@ public class LicenseAddOnInventory  {
         return this.name;
     }
 
+    public java.lang.Integer cpuNum;
+    public void setCpuNum(java.lang.Integer cpuNum) {
+        this.cpuNum = cpuNum;
+    }
+    public java.lang.Integer getCpuNum() {
+        return this.cpuNum;
+    }
+
+    public java.lang.Integer hostNum;
+    public void setHostNum(java.lang.Integer hostNum) {
+        this.hostNum = hostNum;
+    }
+    public java.lang.Integer getHostNum() {
+        return this.hostNum;
+    }
+
     public java.lang.String licenseType;
     public void setLicenseType(java.lang.String licenseType) {
         this.licenseType = licenseType;

@@ -8,7 +8,10 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.DbEntityLister;
+import org.zstack.core.db.SQLBatchWithReturn;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.AbstractService;
@@ -16,9 +19,12 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.identity.*;
+import org.zstack.header.identity.AccountResourceRefInventory;
+import org.zstack.header.identity.Quota;
 import org.zstack.header.identity.Quota.QuotaOperator;
 import org.zstack.header.identity.Quota.QuotaPair;
+import org.zstack.header.identity.ReportQuotaExtensionPoint;
+import org.zstack.header.identity.ResourceOwnerPreChangeExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.NeedQuotaCheckMessage;
@@ -43,9 +49,7 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
 
-import static org.zstack.utils.CollectionDSL.list;
-import static org.zstack.utils.CollectionDSL.map;
-import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.*;
 
 public class L3NetworkManagerImpl extends AbstractService implements L3NetworkManager, ReportQuotaExtensionPoint,
         ResourceOwnerPreChangeExtensionPoint {
@@ -501,5 +505,4 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     @Transactional(readOnly = true)
     public void resourceOwnerPreChange(AccountResourceRefInventory ref, String newOwnerUuid) {
     }
-
 }

@@ -52,7 +52,7 @@ public class ShellResult {
             sb.append(String.format("\nret code: %s", retCode));
             sb.append(String.format("\nstderr: %s", stderr));
             sb.append(String.format("\nstdout: %s", stdout));
-            throw new RuntimeException(sb.toString());
+            throw new ShellUtils.ShellException(sb.toString());
         }
     }
 

@@ -550,6 +550,66 @@ public class KVMAgentCommands {
 
     }
 
+    public static class VolumeSnapshotJobTO {
+        public String vmInstanceUuid;
+        public String installPath;
+        public String previousInstallPath;
+        public String newVolumeInstallPath;
+        public String live;
+        public String full;
+
+        public VolumeSnapshotJobTO() {
+        }
+
+        public String getVmInstanceUuid() {
+            return vmInstanceUuid;
+        }
+
+        public void setVmInstanceUuid(String vmInstanceUuid) {
+            this.vmInstanceUuid = vmInstanceUuid;
+        }
+
+        public String getInstallPath() {
+            return installPath;
+        }
+
+        public void setInstallPath(String installPath) {
+            this.installPath = installPath;
+        }
+
+        public String getPreviousInstallPath() {
+            return previousInstallPath;
+        }
+
+        public void setPreviousInstallPath(String previousInstallPath) {
+            this.previousInstallPath = previousInstallPath;
+        }
+
+        public String getNewVolumeInstallPath() {
+            return newVolumeInstallPath;
+        }
+
+        public void setNewVolumeInstallPath(String newVolumeInstallPath) {
+            this.newVolumeInstallPath = newVolumeInstallPath;
+        }
+
+        public String getLive() {
+            return live;
+        }
+
+        public void setLive(String live) {
+            this.live = live;
+        }
+
+        public String getFull() {
+            return full;
+        }
+
+        public void setFull(String full) {
+            this.full = full;
+        }
+    }
+
     public static class VolumeTO {
         public static final String FILE = "file";
         public static final String ISCSI = "iscsi";
@@ -800,7 +860,16 @@ public class KVMAgentCommands {
         private boolean kvmHiddenState;
         private boolean vmPortOff;
         private String vmCpuModel;
+        private boolean emulateHyperV;
         private boolean isApplianceVm;
+
+        public boolean isEmulateHyperV() {
+            return emulateHyperV;
+        }
+
+        public void setEmulateHyperV(boolean emulateHyperV) {
+            this.emulateHyperV = emulateHyperV;
+        }
 
         public boolean isApplianceVm() {
             return isApplianceVm;

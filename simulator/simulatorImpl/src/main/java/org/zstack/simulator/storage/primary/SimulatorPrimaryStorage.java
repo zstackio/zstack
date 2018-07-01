@@ -196,4 +196,10 @@ public class SimulatorPrimaryStorage extends PrimaryStorageBase {
         usage.totalPhysicalSize = self.getCapacity().getTotalPhysicalCapacity();
         completion.success(usage);
     }
+
+    @Override
+    public void handle(AskInstallPathForNewSnapshotMsg msg) {
+        AskInstallPathForNewSnapshotReply reply = new AskInstallPathForNewSnapshotReply();
+        bus.reply(msg, reply);
+    }
 }

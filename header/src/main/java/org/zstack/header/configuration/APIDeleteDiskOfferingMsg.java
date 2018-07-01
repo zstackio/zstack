@@ -16,7 +16,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIDeleteDiskOfferingEvent.class
 )
 public class APIDeleteDiskOfferingMsg extends APIDeleteMessage implements DiskOfferingMessage {
-    @APIParam(checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = DiskOfferingVO.class, successIfResourceNotExisting = true)
     private String uuid;
 
     public APIDeleteDiskOfferingMsg() {

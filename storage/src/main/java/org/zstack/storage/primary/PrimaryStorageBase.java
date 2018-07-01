@@ -135,6 +135,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     protected abstract void handle(ReInitRootVolumeFromTemplateOnPrimaryStorageMsg msg);
 
+    protected abstract void handle(AskInstallPathForNewSnapshotMsg msg);
+
     protected abstract void connectHook(ConnectParam param, Completion completion);
 
     protected abstract void pingHook(Completion completion);
@@ -323,6 +325,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((GetInstallPathForDataVolumeDownloadMsg) msg);
         } else if (msg instanceof GetPrimaryStorageFolderListMsg) {
             handle((GetPrimaryStorageFolderListMsg) msg);
+        } else if (msg instanceof AskInstallPathForNewSnapshotMsg) {
+            handle((AskInstallPathForNewSnapshotMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }

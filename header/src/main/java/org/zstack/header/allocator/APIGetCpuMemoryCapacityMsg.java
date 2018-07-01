@@ -24,6 +24,9 @@ public class APIGetCpuMemoryCapacityMsg extends APISyncCallMessage {
     private List<String> clusterUuids;
     @APIParam(required = false, resourceType = HostVO.class)
     private List<String> hostUuids;
+    @APIParam(required = false, validValues = {"KVM", "ESX"})
+    private String hypervisorType = null;
+
     private boolean all;
 
     public boolean isAll() {
@@ -58,12 +61,21 @@ public class APIGetCpuMemoryCapacityMsg extends APISyncCallMessage {
         this.hostUuids = hostUuids;
     }
 
+    public String getHypervisorType() {
+        return hypervisorType;
+    }
+
+    public void setHypervisorType(String hypervisorType) {
+        this.hypervisorType = hypervisorType;
+    }
+
     public static APIGetCpuMemoryCapacityMsg __example__() {
         APIGetCpuMemoryCapacityMsg msg = new APIGetCpuMemoryCapacityMsg();
         msg.setAll(true);
         msg.setZoneUuids(list(uuid(),uuid()));
         msg.setClusterUuids(list(uuid(),uuid()));
         msg.setHostUuids(list(uuid(),uuid()));
+        msg.setHypervisorType("KVM");
         return msg;
     }
 

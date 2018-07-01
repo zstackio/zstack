@@ -327,37 +327,26 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
         }
 
         String cidr = ipr.toSubnetUtils().getInfo().getCidrSignature();
+        L3NetworkVO l3Vo = dbf.findByUuid(ipr.getL3NetworkUuid(), L3NetworkVO.class);
+        List<String> l3Uuids = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.l2NetworkUuid, l3Vo.getL2NetworkUuid()).select(L3NetworkVO_.uuid).listValues();
         SimpleQuery<IpRangeVO> q = dbf.createQuery(IpRangeVO.class);
-        q.add(IpRangeVO_.l3NetworkUuid, Op.EQ, ipr.getL3NetworkUuid());
+        q.add(IpRangeVO_.l3NetworkUuid, Op.IN, l3Uuids);
         List<IpRangeVO> ranges = q.list();
         for (IpRangeVO r : ranges) {
             if (NetworkUtils.isIpv4RangeOverlap(ipr.getStartIp(), ipr.getEndIp(), r.getStartIp(), r.getEndIp())) {
                 throw new ApiMessageInterceptionException(argerr("overlap with ip range[uuid:%s, start ip:%s, end ip: %s]", r.getUuid(), r.getStartIp(), r.getEndIp()));
             }
 
+            if (!r.getL3NetworkUuid().equals(ipr.getL3NetworkUuid())) {
+                continue;
+            }
+
+            /* same l3 network can have only 1 cidr */
             String rcidr = IpRangeInventory.valueOf(r).toSubnetUtils().getInfo().getCidrSignature();
             if (!cidr.equals(rcidr)) {
                 throw new ApiMessageInterceptionException(argerr("multiple CIDR on the same L3 network is not allowed. There has been a IP" +
                                 " range[uuid:%s, CIDR:%s], the new IP range[CIDR:%s] is not in the CIDR with the existing one",
                         r.getUuid(), rcidr, cidr));
-            }
-        }
-
-        /* get all l3 network uuid of same l2 network */
-        L3NetworkVO l3Vo = dbf.findByUuid(ipr.getL3NetworkUuid(), L3NetworkVO.class);
-        List<String> l3Uuids = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.l2NetworkUuid, l3Vo.getL2NetworkUuid()).select(L3NetworkVO_.uuid).listValues();
-        String iprCidr = ipr.getNetworkCidr();
-        q = dbf.createQuery(IpRangeVO.class);
-        q.add(IpRangeVO_.l3NetworkUuid, Op.IN, l3Uuids);
-        ranges = q.list();
-        for (IpRangeVO r : ranges) {
-            if (r.getL3NetworkUuid().equals(ipr.getL3NetworkUuid())) {
-                continue;
-            }
-
-            String rcidr = r.getNetworkCidr();
-            if (NetworkUtils.isCidrOverlap(iprCidr, rcidr)) {
-                throw new ApiMessageInterceptionException(argerr("overlap with ip range[uuid:%s, start ip:%s, end ip: %s]", r.getUuid(), r.getStartIp(), r.getEndIp()));
             }
         }
     }

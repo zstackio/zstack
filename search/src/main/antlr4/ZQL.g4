@@ -30,7 +30,7 @@ operator
     | '<'
     | '<='
     | 'is null'
-    | 'not null'
+    | 'is not null'
     | 'in'
     | 'not in'
     | 'like'

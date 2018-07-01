@@ -32,4 +32,6 @@ public class VmGlobalConfig {
     public static GlobalConfig KVM_HIDDEN_STATE = new GlobalConfig(CATEGORY, "kvmHiddenState");
     @GlobalConfigValidation(validValues = {"true", "false"})
     public static GlobalConfig VM_PORT_OFF = new GlobalConfig(CATEGORY, "vmPortOff");
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    public static GlobalConfig EMULATE_HYPERV = new GlobalConfig(CATEGORY, "emulateHyperV");
 }

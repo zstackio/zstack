@@ -82,6 +82,16 @@ doc {
 					since "0.6"
 					
 				}
+				column {
+					name "hypervisorType"
+					enclosedIn ""
+					desc ""
+					location "query"
+					type "String"
+					optional true
+					since "0.6"
+					values ("KVM","ESX")
+				}
 			}
         }
 

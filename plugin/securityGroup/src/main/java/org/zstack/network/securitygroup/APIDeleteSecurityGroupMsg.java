@@ -57,7 +57,7 @@ public class APIDeleteSecurityGroupMsg extends APIDeleteMessage {
     /**
      * @desc security group uuid
      */
-    @APIParam(checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = SecurityGroupVO.class, successIfResourceNotExisting = true)
     private String uuid;
 
     public String getUuid() {

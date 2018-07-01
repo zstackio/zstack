@@ -21,6 +21,14 @@ public class ArchiveTicketStatusHistoryInventory  {
         return this.ticketUuid;
     }
 
+    public java.lang.String historyUuid;
+    public void setHistoryUuid(java.lang.String historyUuid) {
+        this.historyUuid = historyUuid;
+    }
+    public java.lang.String getHistoryUuid() {
+        return this.historyUuid;
+    }
+
     public TicketStatus fromStatus;
     public void setFromStatus(TicketStatus fromStatus) {
         this.fromStatus = fromStatus;
@@ -43,6 +51,14 @@ public class ArchiveTicketStatusHistoryInventory  {
     }
     public java.lang.String getComment() {
         return this.comment;
+    }
+
+    public java.lang.String accountUuid;
+    public void setAccountUuid(java.lang.String accountUuid) {
+        this.accountUuid = accountUuid;
+    }
+    public java.lang.String getAccountUuid() {
+        return this.accountUuid;
     }
 
     public java.lang.String operationContextType;

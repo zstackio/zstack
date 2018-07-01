@@ -213,6 +213,15 @@ public class VolumeBase implements Volume {
     private void doInstantiateVolume(InstantiateVolumeMsg msg, NoErrorCompletion completion) {
         InstantiateVolumeReply reply = new InstantiateVolumeReply();
 
+        // InstantiateVolumeMsg is queued, but we need to check whether the volume has been instantiated
+        self = dbf.reload(self);
+        if (self.getStatus() == VolumeStatus.Ready) {
+            reply.setVolume(getSelfInventory());
+            bus.reply(msg, reply);
+            completion.done();
+            return;
+        }
+
         List<PreInstantiateVolumeExtensionPoint> exts = pluginRgty.getExtensionList(PreInstantiateVolumeExtensionPoint.class);
         for (PreInstantiateVolumeExtensionPoint ext : exts) {
             ext.preInstantiateVolume(msg);

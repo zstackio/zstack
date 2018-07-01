@@ -12,6 +12,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.storage.ceph.backup.*;
 import org.zstack.storage.ceph.primary.*;
+import org.zstack.utils.CharacterUtils;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -72,6 +73,10 @@ public class CephApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIAddCephPrimaryStoragePoolMsg msg) {
+        if (!CharacterUtils.checkCharacter(msg.getPoolName())){
+            throw new ApiMessageInterceptionException(argerr("operation failure, because the poolName[poolName:%s] can not include unprintable ascii characters.", msg.getPoolName()));
+        }
+
         String duplicatePoolUuid = Q.New(CephPrimaryStoragePoolVO.class)
                 .eq(CephPrimaryStoragePoolVO_.primaryStorageUuid, msg.getPrimaryStorageUuid())
                 .eq(CephPrimaryStoragePoolVO_.poolName, msg.getPoolName())

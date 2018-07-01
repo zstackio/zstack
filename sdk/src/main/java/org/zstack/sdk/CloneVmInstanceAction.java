@@ -35,6 +35,9 @@ public class CloneVmInstanceAction extends AbstractAction {
     public java.util.List names;
 
     @Param(required = false)
+    public java.lang.Boolean full = false;
+
+    @Param(required = false)
     public java.util.List systemTags;
 
     @Param(required = false)

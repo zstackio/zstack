@@ -18,7 +18,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIDeletePolicyEvent.class
 )
 public class APIDeletePolicyMsg extends APIDeleteMessage implements AccountMessage {
-    @APIParam(checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = PolicyVO.class, successIfResourceNotExisting = true)
     private String uuid;
 
     @Override

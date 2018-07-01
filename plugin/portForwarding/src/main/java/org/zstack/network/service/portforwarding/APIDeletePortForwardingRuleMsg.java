@@ -60,7 +60,7 @@ public class APIDeletePortForwardingRuleMsg extends APIDeleteMessage {
      * @desc
      * rule uuid
      */
-    @APIParam(checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = PortForwardingRuleVO.class, successIfResourceNotExisting = true)
     private String uuid;
 
     public String getUuid() {

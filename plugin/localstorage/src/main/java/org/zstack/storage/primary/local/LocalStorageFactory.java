@@ -33,9 +33,7 @@ import org.zstack.header.storage.backup.BackupStorageAskInstallPathReply;
 import org.zstack.header.storage.backup.BackupStorageConstant;
 import org.zstack.header.storage.backup.DeleteBitsOnBackupStorageMsg;
 import org.zstack.header.storage.primary.*;
-import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint;
-import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
-import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.volume.*;
@@ -45,8 +43,10 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.path.PathUtil;
 
 import javax.persistence.TypedQuery;
+import java.io.File;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -63,7 +63,8 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         GetAttachableVolumeExtensionPoint, RecalculatePrimaryStorageCapacityExtensionPoint, HostMaintenancePolicyExtensionPoint,
         AddExpandedQueryExtensionPoint, VolumeGetAttachableVmExtensionPoint, RecoverDataVolumeExtensionPoint,
         RecoverVmExtensionPoint, VmPreMigrationExtensionPoint, CreateTemplateFromVolumeSnapshotExtensionPoint, HostAfterConnectedExtensionPoint,
-        InstantiateDataVolumeOnCreationExtensionPoint, PrimaryStorageAttachExtensionPoint, PostMarkRootVolumeAsSnapshotExtension {
+        InstantiateDataVolumeOnCreationExtensionPoint, PrimaryStorageAttachExtensionPoint, PostMarkRootVolumeAsSnapshotExtension,
+        AfterTakeLiveSnapshotsOnVolumes {
     private final static CLogger logger = Utils.getLogger(LocalStorageFactory.class);
     public static PrimaryStorageType type = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE) {
         @Override
@@ -614,20 +615,29 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         if (volUuids.isEmpty()) {
             return candidates;
         }
-        
+
+        List<String> vmAllVolumeUuids = CollectionUtils.transformToList(vm.getAllVolumes(), new Function<String, VolumeInventory>() {
+            @Override
+            public String call(VolumeInventory arg) {
+                return arg.getUuid();
+            }
+        });
+
+        // root volume could be located at a shared storage
         String sql = "select ref.hostUuid" +
                 " from LocalStorageResourceRefVO ref" +
-                " where ref.resourceUuid = :volUuid" +
+                " where ref.resourceUuid in (:volUuids)" +
                 " and ref.resourceType = :rtype";
         TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-        q.setParameter("volUuid", vm.getRootVolumeUuid());
+        q.setParameter("volUuids", vmAllVolumeUuids);
         q.setParameter("rtype", VolumeVO.class.getSimpleName());
         List<String> ret = q.getResultList();
-        if (ret.isEmpty()) {
-            return candidates;
+
+        String hostUuid = vm.getHostUuid();
+        if (!ret.isEmpty()) {
+            hostUuid = ret.get(0);
         }
 
-        String hostUuid = ret.get(0);
         sql = "select ref.resourceUuid" +
                 " from LocalStorageResourceRefVO ref" +
                 " where ref.resourceUuid in (:uuids)" +
@@ -714,7 +724,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         List<VmInstanceVO> candidatesCopy = Lists.newArrayList(candidates);
         for (VmInstanceVO vo : candidates) {
             PrimaryStorageVO psVo = dbf.findByUuid(vo.getRootVolume().getPrimaryStorageUuid(), PrimaryStorageVO.class);
-            if (LocalStorageConstants.LOCAL_STORAGE_TYPE.equals(psVo.getType())) {
+            if (LocalStorageConstants.LOCAL_STORAGE_TYPE.equals(psVo.getType()) && VolumeStatus.NotInstantiated.equals(vol.getStatus())) {
                 String volumeUuid = vo.getRootVolumeUuid();
                 VolumeVO rootVolumeVO = dbf.findByUuid(volumeUuid, VolumeVO.class);
                 boolean avaliableHost = Q.New(LocalStorageHostRefVO.class)
@@ -725,6 +735,10 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                     candidatesCopy.remove(vo);
                 }
             }
+        }
+
+        if (candidatesCopy.isEmpty()){
+            return candidatesCopy;
         }
 
         String hostUuid = ret.get(0);
@@ -1055,5 +1069,40 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 
         return migrateIpInfo != null ? migrateIpInfo.dstMigrationAddress :
                 Q.New(HostVO.class).eq(HostVO_.uuid, dstHostUuid).select(HostVO_.managementIp).findValue();
+    }
+
+    private Boolean isLocalStorage(String psUuid) {
+        return Q.New(PrimaryStorageVO.class)
+                .eq(PrimaryStorageVO_.type, type.toString())
+                .eq(PrimaryStorageVO_.uuid, psUuid)
+                .isExists();
+    }
+
+    @Override
+    public void afterTakeLiveSnapshotsOnVolumes(CreateVolumesSnapshotOverlayInnerMsg msg, TakeVolumesSnapshotOnKvmReply treply, Completion completion) {
+        if (treply != null && !treply.isSuccess()) {
+            completion.success();
+            return;
+        }
+
+        for (CreateVolumesSnapshotsJobStruct job : msg.getVolumeSnapshotJobs()) {
+            if (!isLocalStorage(job.getPrimaryStorageUuid())) {
+                continue;
+            }
+
+            LocalStorageResourceRefVO ref = new LocalStorageResourceRefVO();
+            ref.setPrimaryStorageUuid(job.getPrimaryStorageUuid());
+            ref.setResourceType(VolumeSnapshotVO.class.getSimpleName());
+            VmInstanceVO vmInstanceVO = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, msg.getLockedVmInstanceUuids().get(0)).find();
+            ref.setHostUuid(vmInstanceVO.getHostUuid() != null ? vmInstanceVO.getHostUuid() : vmInstanceVO.getLastHostUuid());
+            ref.setCreateDate(job.getVolumeSnapshotStruct().getCurrent().getCreateDate());
+            ref.setLastOpDate(job.getVolumeSnapshotStruct().getCurrent().getLastOpDate());
+            ref.setResourceUuid(job.getVolumeSnapshotStruct().getCurrent().getUuid());
+            ref.setSize(treply.getSnapshotsResults().stream()
+                    .filter(r -> r.getVolumeUuid().equals(job.getVolumeUuid()))
+                    .findFirst().get().getSize());
+            dbf.persistAndRefresh(ref);
+        }
+        completion.success();
     }
 }

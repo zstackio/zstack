@@ -21,4 +21,12 @@ public class CloneVmInstanceInventory  {
         return this.inventory;
     }
 
+    public boolean started;
+    public void setStarted(boolean started) {
+        this.started = started;
+    }
+    public boolean getStarted() {
+        return this.started;
+    }
+
 }

@@ -2763,4 +2763,10 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
         }
         dbf.removeCollection(getSelf().getMons(), FusionstorPrimaryStorageMonVO.class);
     }
+
+    @Override
+    public void handle(AskInstallPathForNewSnapshotMsg msg) {
+        AskInstallPathForNewSnapshotReply reply = new AskInstallPathForNewSnapshotReply();
+        bus.reply(msg, reply);
+    }
 }

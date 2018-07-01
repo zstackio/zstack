@@ -1,6 +1,10 @@
 package org.zstack.testlib
 
+import org.zstack.sdk.HostInventory
+import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.sdk.VolumeInventory
+import org.zstack.storage.primary.local.LocalStorageConstants
+
 /**
  * Created by mingjian.deng on 2018/1/3.
  */
@@ -11,6 +15,7 @@ class DataVolumeSpec extends Spec implements HasSession {
     String description
     private Closure diskOfferings = {}
     private Closure primaryStorage = {}
+    private Closure host = {}
 
     VolumeInventory inventory
 
@@ -25,6 +30,7 @@ class DataVolumeSpec extends Spec implements HasSession {
             delegate.primaryStorageUuid = primaryStorage()
             delegate.diskOfferingUuid = diskOfferings()
             delegate.description = description
+            delegate.systemTags = host() ? ["localStorage::hostUuid::${host()}".toString()] : null
             delegate.sessionId = sessionId
         }
 
@@ -60,6 +66,27 @@ class DataVolumeSpec extends Spec implements HasSession {
             PrimaryStorageSpec spec = findSpec(name, PrimaryStorageSpec.class)
             assert spec != null: "cannot find usePrimaryStorage[$name], check the primaryStorage block of environment"
             return spec.inventory.uuid
+        }
+    }
+
+    @SpecMethod
+    void useHost(String name){
+        preCreate {
+            addDependency(name, HostSpec.class)
+        }
+
+        host = {
+            HostSpec spec = findSpec(name, HostSpec.class)
+            assert spec != null: "cannot find useHost[$name], check the host block of environment"
+            assert primaryStorage() != null
+
+            HostInventory hostInventory = spec.inventory
+            List primaryStorageInventories = queryPrimaryStorage {
+                conditions = ["attachedClusterUuids=${hostInventory.clusterUuid}", "type=${LocalStorageConstants.LOCAL_STORAGE_TYPE}".toString(), "uuid=${primaryStorage()}".toString()]
+            }
+            assert primaryStorageInventories.size() > 0: "cannot find useHost[$name], check whether the host and the localPrimaryStorage blocks of environment are in the same cluster"
+
+            return hostInventory.uuid
         }
     }
 

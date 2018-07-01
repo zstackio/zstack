@@ -77,13 +77,13 @@ class SdkDataStructureGenerator implements SdkTemplate {
 import java.util.HashMap;
 
 public class SourceClassMap {
-    final static HashMap<String, String> srcToDstMapping = new HashMap() {
+    public final static HashMap<String, String> srcToDstMapping = new HashMap() {
         {
 ${srcToDst.join("\n")}
         }
     };
 
-    final static HashMap<String, String> dstToSrcMapping = new HashMap() {
+    public final static HashMap<String, String> dstToSrcMapping = new HashMap() {
         {
 ${dstToSrc.join("\n")}
         }

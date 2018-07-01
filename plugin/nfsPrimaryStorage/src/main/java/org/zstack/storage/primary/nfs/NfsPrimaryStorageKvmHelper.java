@@ -50,6 +50,11 @@ public class NfsPrimaryStorageKvmHelper {
         return PathUtil.join(volDir, "snapshots", String.format("%s.qcow2", snapshot.getUuid()));
     }
 
+    public static String makeKvmSnapshotInstallPath(PrimaryStorageInventory pinv, VolumeInventory vol, String snapshotUuid) {
+        String volDir = makeVolumeInstallDir(pinv, vol);
+        return PathUtil.join(volDir, "snapshots", String.format("%s.qcow2", snapshotUuid));
+    }
+
     public static String makeSnapshotWorkspacePath(PrimaryStorageInventory pinv, String imageUuid) {
         return PathUtil.join(
                 pinv.getMountPath(),

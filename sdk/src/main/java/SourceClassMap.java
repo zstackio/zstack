@@ -3,7 +3,7 @@ package org.zstack.sdk;
 import java.util.HashMap;
 
 public class SourceClassMap {
-    final static HashMap<String, String> srcToDstMapping = new HashMap() {
+    public final static HashMap<String, String> srcToDstMapping = new HashMap() {
         {
 			put("org.zstack.aliyun.nas.filesystem.AliyunNasAccessGroupInventory", "org.zstack.sdk.AliyunNasAccessGroupInventory");
 			put("org.zstack.aliyun.nas.filesystem.AliyunNasAccessRuleInventory", "org.zstack.sdk.AliyunNasAccessRuleInventory");
@@ -299,7 +299,7 @@ public class SourceClassMap {
         }
     };
 
-    final static HashMap<String, String> dstToSrcMapping = new HashMap() {
+    public final static HashMap<String, String> dstToSrcMapping = new HashMap() {
         {
 			put("org.zstack.sdk.AccountInventory", "org.zstack.header.identity.AccountInventory");
 			put("org.zstack.sdk.AccountResourceRefInventory", "org.zstack.header.identity.AccountResourceRefInventory");

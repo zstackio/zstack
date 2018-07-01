@@ -1,7 +1,11 @@
 package org.zstack.test.integration.kvm.nic
 
+import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
 import org.zstack.core.thread.AsyncThread
+import org.zstack.header.image.ImagePlatform
 import org.zstack.header.vm.VmInstanceVO
+import org.zstack.header.vm.VmInstanceVO_
 import org.zstack.header.vm.VmNicVO
 import org.zstack.sdk.AttachL3NetworkToVmAction
 import org.zstack.sdk.DetachL3NetworkFromVmAction
@@ -11,6 +15,8 @@ import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.kvm.Env
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
+import org.zstack.testlib.ImageSpec
+import org.zstack.testlib.InstanceOfferingSpec
 import org.zstack.testlib.SubCase
 
 import java.util.concurrent.CountDownLatch
@@ -41,6 +47,7 @@ class NicCase extends SubCase {
     void test() {
         env.create {
             testDetachNicConcurrently()
+            testDetachNicOfNotParaVirtualizationVm()
         }
     }
 
@@ -114,5 +121,26 @@ class NicCase extends SubCase {
         }
 
         assert result.availableCapacity == result2.availableCapacity
+    }
+
+    void testDetachNicOfNotParaVirtualizationVm() {
+        L3NetworkInventory l3 = env.inventoryByName("l3")
+        ImageSpec image = env.specByName("image1")
+        InstanceOfferingSpec instanceOffering = env.specByName("instanceOffering")
+
+        VmInstanceInventory vm = createVmInstance {
+            name = "vm"
+            imageUuid = image.inventory.uuid
+            l3NetworkUuids = [l3.uuid]
+            instanceOfferingUuid = instanceOffering.inventory.uuid
+        }
+
+        SQL.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm.uuid).set(VmInstanceVO_.platform, ImagePlatform.Other.toString()).update()
+
+        expect(AssertionError.class) {
+            detachL3NetworkFromVm {
+                vmNicUuid = vm.getVmNics().get(0).uuid
+            }
+        }
     }
 }
