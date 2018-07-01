@@ -725,6 +725,9 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+
+                vo.setVmNicUuid(vmNic.getUuid());
+                vo.setGuestIp(vmNic.getIp());
                 final PortForwardingRuleVO pvo = dbf.updateAndRefresh(vo);
                 final PortForwardingRuleInventory ruleInv = PortForwardingRuleInventory.valueOf(pvo);
 
@@ -733,11 +736,6 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                     public void run(FlowTrigger trigger, Map data) {
                         final NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(vmNic.getL3NetworkUuid(),
                                 NetworkServiceType.PortForwarding);
-
-                        vo.setVmNicUuid(vmNic.getUuid());
-                        vo.setGuestIp(vmNic.getIp());
-
-
 
                         for (AttachPortForwardingRuleExtensionPoint extp : attachRuleExts) {
                             try {
