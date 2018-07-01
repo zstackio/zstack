@@ -1,5 +1,6 @@
 package org.zstack.header.identity.rbac;
 
+import org.apache.commons.lang.StringUtils;
 import org.zstack.header.core.StaticInit;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.StatementEffect;
@@ -21,6 +22,29 @@ public class RBAC {
     static class APIPermissionCheckerWrapper {
         boolean takeOver;
         APIPermissionChecker checker;
+    }
+
+    public static void checkMissingRBACInfo() {
+        PolicyMatcher matcher = new PolicyMatcher();
+
+        List<String> missing = new ArrayList<>();
+        APIMessage.apiMessageClasses.forEach(clz -> {
+            if (clz.isAnnotationPresent(Deprecated.class)) {
+                return;
+            }
+
+            boolean has = permissions.stream()
+                    .anyMatch(p -> p.adminOnlyAPIs.stream().anyMatch(s -> matcher.match(s, clz.getName())) || p.normalAPIs.stream().anyMatch(s -> matcher.match(s, clz.getName())));
+
+            if (!has) {
+                missing.add(clz.getName());
+            }
+        });
+
+        Collections.sort(missing);
+        if (!missing.isEmpty()) {
+            throw new CloudRuntimeException(String.format("no RBACInfo.java describes below APIs:\n %s", StringUtils.join(missing, "\n")));
+        }
     }
 
     public static class RoleBuilder {
@@ -246,7 +270,7 @@ public class RBAC {
 
         public PermissionBuilder normalAPIs(Class...clzs) {
             for (Class clz : clzs) {
-                permission.getNormalAPIs().add(clz.getName());
+                permission.get_normalAPIs().add(clz.getName());
             }
 
             return this;
