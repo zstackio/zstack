@@ -125,7 +125,7 @@ public class ZQL {
         };
     }
 
-    public ZQLQueryResult execute() {
+    public ZQLQueryReturn execute() {
         class Ret {
             Long count;
             List vos;
@@ -191,7 +191,7 @@ public class ZQL {
             throw new CloudRuntimeException(String.format("should not be here, %s", ctx));
         }
 
-        ZQLQueryResult qr = new ZQLQueryResult();
+        ZQLQueryReturn qr = new ZQLQueryReturn();
         qr.inventories = ret.vos != null ? entityVOtoInventories(ret.vos) : null;
         qr.total = ret.count;
 

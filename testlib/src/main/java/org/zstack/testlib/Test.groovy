@@ -13,6 +13,7 @@ import org.zstack.header.message.AbstractBeforeSendMessageInterceptor
 import org.zstack.header.message.Event
 import org.zstack.header.message.Message
 import org.zstack.sdk.SessionInventory
+import org.zstack.sdk.ZQLQueryAction
 import org.zstack.sdk.ZSClient
 import org.zstack.testlib.collectstrategy.SubCaseCollectionStrategyFactory
 import org.zstack.testlib.collectstrategy.SubCaseCollectionStrategy
@@ -46,8 +47,7 @@ abstract class Test implements ApiHelper, Retry {
     protected List<Closure> methodsOnClean = []
 
     protected List zqlQuery(String text) {
-        //return zQLQuery { zql = text }.inventories
-        return ZQL.fromString(text).execute().inventories
+        return zQLQuery { zql = text }.result.inventories
     }
 
     static {

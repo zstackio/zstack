@@ -2,7 +2,7 @@ package org.zstack.zql;
 
 import java.util.List;
 
-public class ZQLQueryResult {
+public class ZQLQueryReturn {
     public List inventories;
     public Long total;
 }

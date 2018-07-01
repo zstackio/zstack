@@ -3,23 +3,23 @@ package org.zstack.query;
 import org.zstack.header.message.APIReply;
 import org.zstack.header.message.NoJsonSchema;
 import org.zstack.header.rest.RestResponse;
-import org.zstack.zql.ZQLQueryResult;
+import org.zstack.zql.ZQLQueryReturn;
 
 @RestResponse(allTo = "result")
 public class APIZQLQueryReply extends APIReply {
     @NoJsonSchema
-    private ZQLQueryResult result;
+    private ZQLQueryReturn result;
 
     public static APIZQLQueryReply __example__() {
         APIZQLQueryReply ret = new APIZQLQueryReply();
         return ret;
     }
 
-    public ZQLQueryResult getResult() {
+    public ZQLQueryReturn getResult() {
         return result;
     }
 
-    public void setResult(ZQLQueryResult result) {
+    public void setResult(ZQLQueryReturn result) {
         this.result = result;
     }
 }

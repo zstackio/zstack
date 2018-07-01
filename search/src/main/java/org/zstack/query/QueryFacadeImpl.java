@@ -29,7 +29,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.zql.ZQL;
 import org.zstack.zql.ZQLContext;
-import org.zstack.zql.ZQLQueryResult;
+import org.zstack.zql.ZQLQueryReturn;
 import org.zstack.zql.ast.ZQLMetadata;
 
 import java.lang.reflect.Field;
@@ -65,14 +65,14 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
     @Override
     public <T> List<T> query(APIQueryMessage msg, Class<T> inventoryClass) {
         validateConditions(msg.getConditions());
-        ZQLQueryResult result = queryUseZQL(msg, inventoryClass);
+        ZQLQueryReturn result = queryUseZQL(msg, inventoryClass);
         return result.inventories;
     }
 
     @Override
     public long count(APIQueryMessage msg, Class inventoryClass) {
         validateConditions(msg.getConditions());
-        ZQLQueryResult result = queryUseZQL(msg, inventoryClass);
+        ZQLQueryReturn result = queryUseZQL(msg, inventoryClass);
         return result.total;
     }
 
@@ -282,7 +282,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
         try {
             APIQueryReply reply = (APIQueryReply) replyClass.getConstructor().newInstance();
             Method replySetter = getReplySetter(at);
-            ZQLQueryResult result = queryUseZQL(msg, inventoryClass);
+            ZQLQueryReturn result = queryUseZQL(msg, inventoryClass);
             if (result.total != null) {
                 reply.setTotal(result.total);
             }
@@ -377,7 +377,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
         return ZQLMetadata.getChildInventoryClassByType(inventoryClass, condition.getValue());
     }
 
-    public ZQLQueryResult queryUseZQL(APIQueryMessage msg, Class inventoryClass) {
+    public ZQLQueryReturn queryUseZQL(APIQueryMessage msg, Class inventoryClass) {
         List<String> sb = new ArrayList<>();
         sb.add(msg.isCount() ? "count" : "query");
         Class targetInventoryClass = getQueryTargetInventoryClass(msg, inventoryClass);
@@ -417,7 +417,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             logger.trace(text);
         }
         ZQL zql = ZQL.fromString(text);
-        ZQLQueryResult result = zql.execute();
+        ZQLQueryReturn result = zql.execute();
         ZQLContext.cleanAPISession();
         return result;
     }

@@ -1,23 +1,14 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.ZQLQueryReturn;
 
-
-public class ZQLQueryResult  {
-
-    public java.util.List inventories;
-    public void setInventories(java.util.List inventories) {
-        this.inventories = inventories;
+public class ZQLQueryResult {
+    public ZQLQueryReturn result;
+    public void setResult(ZQLQueryReturn result) {
+        this.result = result;
     }
-    public java.util.List getInventories() {
-        return this.inventories;
-    }
-
-    public java.lang.Long total;
-    public void setTotal(java.lang.Long total) {
-        this.total = total;
-    }
-    public java.lang.Long getTotal() {
-        return this.total;
+    public ZQLQueryReturn getResult() {
+        return this.result;
     }
 
 }
