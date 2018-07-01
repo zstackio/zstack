@@ -6,13 +6,11 @@ import org.zstack.core.db.SQLBatch;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
-import org.zstack.header.identity.rbac.PolicyMatcher;
-import org.zstack.header.identity.rbac.RBACGroovy;
+import org.zstack.header.identity.rbac.*;
 import org.zstack.header.identity.rbac.RBACInfo;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.identity.APIRequestChecker;
-import org.zstack.header.identity.rbac.RBACEntity;
 import static org.zstack.core.Platform.*;
 
 import javax.persistence.Tuple;
@@ -181,12 +179,16 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
             }
 
             private void checkIfTheAccountCanAccessTheResource(APIMessage.FieldParam param) throws IllegalAccessException {
+                Class resourceType = param.param.resourceType();
+                if (RBAC.isResourceGlobalReadable(resourceType)) {
+                    return;
+                }
+
                 List<String> uuids = getResourceUuids(param);
                 if (uuids.isEmpty()) {
                     return;
                 }
 
-                Class resourceType = param.param.resourceType();
                 List<String> resourceWithNoAccess = new CheckIfAccountCanAccessResource().check(uuids, rbacEntity.getApiMessage().getSession().getAccountUuid());
                 if (!resourceWithNoAccess.isEmpty()) {
                     throw new OperationFailureException(operr("the account[uuid:%s] has no access to the resources[uuid:%s, type:%s]",
