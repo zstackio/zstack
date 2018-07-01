@@ -1558,6 +1558,23 @@ public class KVMHost extends HostBase implements Host {
         return wwn;
     }
 
+    private String makeAndSaveVmSystemSerialNumber(String vmUuid) {
+        String serialNumber;
+        String tag = VmSystemTags.VM_SYSTEM_SERIAL_NUMBER.getTag(vmUuid);
+        if (tag != null) {
+            serialNumber = VmSystemTags.VM_SYSTEM_SERIAL_NUMBER.getTokenByTag(tag, VmSystemTags.VM_SYSTEM_SERIAL_NUMBER_TOKEN);
+        } else {
+            SystemTagCreator creator = VmSystemTags.VM_SYSTEM_SERIAL_NUMBER.newSystemTagCreator(vmUuid);
+            creator.ignoreIfExisting = true;
+            creator.inherent = true;
+            creator.setTagByTokens(map(e(VmSystemTags.VM_SYSTEM_SERIAL_NUMBER_TOKEN, UUID.randomUUID().toString())));
+            SystemTagInventory inv = creator.create();
+            serialNumber = VmSystemTags.VM_SYSTEM_SERIAL_NUMBER.getTokenByTag(inv.getTag(), VmSystemTags.VM_SYSTEM_SERIAL_NUMBER_TOKEN);
+        }
+
+        return serialNumber;
+    }
+
     private void attachVolume(final AttachVolumeToVmOnHypervisorMsg msg, final NoErrorCompletion completion) {
         checkStateAndStatus();
 
@@ -1993,6 +2010,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setSpiceStreamingMode(VmGlobalConfig.VM_SPICE_STREAMING_MODE.value(String.class));
         cmd.setEmulateHyperV(VmGlobalConfig.EMULATE_HYPERV.value(Boolean.class));
         cmd.setApplianceVm(spec.getVmInventory().getType().equals("ApplianceVm"));
+        cmd.setSystemSerialNumber(makeAndSaveVmSystemSerialNumber(spec.getVmInventory().getUuid()));
 
         VolumeTO rootVolume = new VolumeTO();
         rootVolume.setInstallPath(spec.getDestRootVolume().getInstallPath());

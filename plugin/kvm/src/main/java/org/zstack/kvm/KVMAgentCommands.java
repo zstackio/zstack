@@ -862,6 +862,7 @@ public class KVMAgentCommands {
         private String vmCpuModel;
         private boolean emulateHyperV;
         private boolean isApplianceVm;
+        private String systemSerialNumber;
 
         public boolean isEmulateHyperV() {
             return emulateHyperV;
@@ -877,6 +878,14 @@ public class KVMAgentCommands {
 
         public void setApplianceVm(boolean applianceVm) {
             isApplianceVm = applianceVm;
+        }
+
+        public String getSystemSerialNumber() {
+            return systemSerialNumber;
+        }
+
+        public void setSystemSerialNumber(String systemSerialNumber) {
+            this.systemSerialNumber = systemSerialNumber;
         }
 
         public String getVmCpuModel() {
