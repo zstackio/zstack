@@ -745,6 +745,26 @@ ${pythonSdk()}
                 return it.comment == null ? it.url : "${it.url} #${it.comment}"
             }
 
+            Class clz = doc._rest._request._clz
+            RestRequest at = clz.getAnnotation(RestRequest.class)
+            List<String> urlVars = getVarNamesFromUrl(at.path())
+
+            List<String> otherVars = doc._rest._request._params._cloumns.findAll {
+                return it._location == LOCATION_URL && !urlVars.contains(it._name)
+            }.collect {
+                return it._name
+            }
+
+            List params = []
+            otherVars.each {
+                params.add("$it={$it}")
+            }
+            if (params.size() > 0) {
+                txts = txts.collect {
+                    "${it}?${params.join("&")}"
+                }
+            }
+
             return """\
 ### URLs
 
@@ -902,8 +922,10 @@ ${table.join("\n")}
                     }
                     curl.add("${CURL_URL_BASE}${urlPath}")
                 } else {
+                    List<String> urlVars = getVarNamesFromUrl(at.path())
+
                     List<String> queryVars = doc._rest._request._params._cloumns.findAll {
-                        return it._location == LOCATION_QUERY
+                        return it._location == LOCATION_QUERY || (it._location == LOCATION_URL && !urlVars.contains(it._name))
                     }.collect {
                         return it._name
                     }
@@ -1496,7 +1518,7 @@ ${fieldStr}
                 }
 
                 def location
-                if (urlVars.contains(af.name)) {
+                if (urlVars.contains(af.name) || (at.method() == HttpMethod.DELETE && af.name != "systemTags" && af.name != "userTags")) {
                     location = LOCATION_URL
                 } else if (at.method() == HttpMethod.GET) {
                     location = LOCATION_QUERY

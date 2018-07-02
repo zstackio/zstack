@@ -89,7 +89,7 @@ public class APIDeleteVmNicFromSecurityGroupMsg extends APIMessage {
     public static APIDeleteVmNicFromSecurityGroupMsg __example__() {
         APIDeleteVmNicFromSecurityGroupMsg msg = new APIDeleteVmNicFromSecurityGroupMsg();
         msg.setSecurityGroupUuid(uuid());
-        msg.setVmNicUuids(asList(uuid()));
+        msg.setVmNicUuids(asList(uuid(), uuid()));
         return msg;
     }
 
