@@ -803,6 +803,7 @@ public class KVMAgentCommands {
         private boolean vmPortOff;
         private String vmCpuModel;
         private boolean isApplianceVm;
+        private String systemSerialNumber;
 
         public boolean isApplianceVm() {
             return isApplianceVm;
@@ -810,6 +811,14 @@ public class KVMAgentCommands {
 
         public void setApplianceVm(boolean applianceVm) {
             isApplianceVm = applianceVm;
+        }
+
+        public String getSystemSerialNumber() {
+            return systemSerialNumber;
+        }
+
+        public void setSystemSerialNumber(String systemSerialNumber) {
+            this.systemSerialNumber = systemSerialNumber;
         }
 
         public String getVmCpuModel() {
