@@ -13,6 +13,7 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.vo.ToInventory;
 import org.zstack.header.zql.ASTNode;
 import org.zstack.header.zql.MarshalZQLASTTreeExtensionPoint;
+import org.zstack.header.zql.ReturnWithExtensionPoint;
 import org.zstack.header.zql.ZQLCustomizeContextExtensionPoint;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
@@ -25,8 +26,8 @@ import org.zstack.zql.ast.visitors.QueryVisitor;
 import org.zstack.zql.ast.visitors.result.QueryResult;
 
 import javax.persistence.Query;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class ZQL {
@@ -126,6 +127,9 @@ public class ZQL {
     }
 
     public ZQLQueryReturn execute() {
+        ZQLQueryReturn qr = new ZQLQueryReturn();
+        qr.returnWith = new HashMap();
+
         class Ret {
             Long count;
             List vos;
@@ -186,16 +190,35 @@ public class ZQL {
                 }
             }.execute();
 
+            callReturnWithExtensions(astResult, ret.vos, qr.returnWith);
+
             clean.run();
         } else {
             throw new CloudRuntimeException(String.format("should not be here, %s", ctx));
         }
 
-        ZQLQueryReturn qr = new ZQLQueryReturn();
         qr.inventories = ret.vos != null ? entityVOtoInventories(ret.vos) : null;
         qr.total = ret.count;
+        qr.returnWith = qr.returnWith.isEmpty() ? null : qr.returnWith;
 
         return qr;
+    }
+
+    private void callReturnWithExtensions(QueryResult astResult, List vos, Map returnWith) {
+        if (astResult.returnWith == null || astResult.returnWith.isEmpty()) {
+            return;
+        }
+
+        astResult.returnWith.forEach(r -> {
+            Optional<ReturnWithExtensionPoint> opt = pluginRgty.getExtensionList(ReturnWithExtensionPoint.class)
+                    .stream().filter(ext->r.name.equals(ext.getReturnWithName())).findAny();
+            if (!opt.isPresent()) {
+                throw new CloudRuntimeException(String.format("cannot find any ReturnWithExtensionPoint dealing with %s", rname));
+            }
+
+            ReturnWithExtensionPoint ext = opt.get();
+            ext.returnWith(vos, r.expr, returnWith);
+        });
     }
 
     @Override

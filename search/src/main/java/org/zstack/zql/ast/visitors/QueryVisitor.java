@@ -147,6 +147,11 @@ public class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
             };
         }
 
+        if (ret.returnWith != null) {
+            // total has handled above
+            ret.returnWith.removeIf(it -> it.name.equals("total"));
+        }
+
         return ret;
     }
 }
