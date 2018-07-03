@@ -3125,9 +3125,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         cmd.maxAttempts = param.getMaxAttempts();
         cmd.storageCheckerTimeout = param.getStorageCheckerTimeout();
         cmd.userKey = getSelf().getUserKey();
-        cmd.heartbeatImagePath = String.format("%s/ceph-primary-storage-%s-heartbeat-file",
+        cmd.heartbeatImagePath = String.format("%s/ceph-ps-%s-host-hb-%s",
                 getDefaultRootVolumePoolName(),
-                self.getUuid());
+                self.getUuid(),
+                param.getHostUuid());
         cmd.monUrls = CollectionUtils.transformToList(getSelf().getMons(), new Function<String, CephPrimaryStorageMonVO>() {
             @Override
             public String call(CephPrimaryStorageMonVO arg) {
@@ -3140,7 +3141,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             @Override
             public ErrorCode getError(KvmResponseWrapper wrapper) {
                 AgentResponse rsp = wrapper.getResponse(AgentResponse.class);
-                return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
+                return rsp.isSuccess() ? null : operr(rsp.getError());
             }
         }, new ReturnValueCompletion<KvmResponseWrapper>(msg) {
             @Override
