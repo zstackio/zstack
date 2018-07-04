@@ -128,7 +128,6 @@ public class ZQL {
 
     public ZQLQueryReturn execute() {
         ZQLQueryReturn qr = new ZQLQueryReturn();
-        qr.returnWith = new HashMap();
 
         class Ret {
             Long count;
@@ -190,7 +189,7 @@ public class ZQL {
                 }
             }.execute();
 
-            callReturnWithExtensions(astResult, ret.vos, qr.returnWith);
+            qr.returnWith = callReturnWithExtensions(astResult, ret.vos);
 
             clean.run();
         } else {
@@ -199,26 +198,28 @@ public class ZQL {
 
         qr.inventories = ret.vos != null ? entityVOtoInventories(ret.vos) : null;
         qr.total = ret.count;
-        qr.returnWith = qr.returnWith.isEmpty() ? null : qr.returnWith;
 
         return qr;
     }
 
-    private void callReturnWithExtensions(QueryResult astResult, List vos, Map returnWith) {
+    private Map callReturnWithExtensions(QueryResult astResult, List vos) {
         if (astResult.returnWith == null || astResult.returnWith.isEmpty()) {
-            return;
+            return null;
         }
 
+        Map ret = new HashMap();
         astResult.returnWith.forEach(r -> {
             Optional<ReturnWithExtensionPoint> opt = pluginRgty.getExtensionList(ReturnWithExtensionPoint.class)
                     .stream().filter(ext->r.name.equals(ext.getReturnWithName())).findAny();
             if (!opt.isPresent()) {
-                throw new CloudRuntimeException(String.format("cannot find any ReturnWithExtensionPoint dealing with %s", rname));
+                throw new CloudRuntimeException(String.format("cannot find any ReturnWithExtensionPoint dealing with %s", r.name));
             }
 
             ReturnWithExtensionPoint ext = opt.get();
-            ext.returnWith(vos, r.expr, returnWith);
+            ext.returnWith(vos, r.expr, ret);
         });
+
+        return ret;
     }
 
     @Override

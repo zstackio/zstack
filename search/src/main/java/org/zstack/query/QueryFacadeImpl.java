@@ -13,6 +13,9 @@ import org.zstack.core.thread.ThreadGlobalProperty;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIMessage;
@@ -169,11 +172,29 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             public Void call() {
                 APIZQLQueryReply reply = new APIZQLQueryReply();
                 ZQLContext.putAPISession(msg.getSession());
-                ZQL zql = ZQL.fromString(msg.getZql());
-                reply.setResult(zql.execute());
-                ZQLContext.cleanAPISession();
-                bus.reply(msg, reply);
+
+                // use doCall to make message exception safe
+                doCall(new ReturnValueCompletion<ZQLQueryReturn>(msg) {
+                    @Override
+                    public void success(ZQLQueryReturn returnValue) {
+                        ZQLContext.cleanAPISession();
+                        reply.setResult(returnValue);
+                        bus.reply(msg, reply);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        ZQLContext.cleanAPISession();
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                    }
+                });
+
                 return null;
+            }
+
+            private void doCall(ReturnValueCompletion<ZQLQueryReturn> completion) {
+                completion.success(ZQL.fromString(msg.getZql()).execute());
             }
 
             @Override
@@ -198,9 +219,25 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             @Override
             public Void call() {
                 APIBatchQueryReply reply = new APIBatchQueryReply();
-                reply.setResult(new BatchQuery().query(msg));
-                bus.reply(msg, reply);
+                doCall(new ReturnValueCompletion<Map<String, Object>>(msg) {
+                    @Override
+                    public void success(Map<String, Object> returnValue) {
+                        reply.setResult(returnValue);
+                        bus.reply(msg, reply);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                    }
+                });
                 return null;
+            }
+
+            // use doCall to make message exception safe
+            private void doCall(ReturnValueCompletion<Map<String,Object>> completion) {
+                completion.success(new BatchQuery().query(msg));
             }
 
             @Override

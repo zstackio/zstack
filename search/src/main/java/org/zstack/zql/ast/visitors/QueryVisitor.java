@@ -1,6 +1,7 @@
 package org.zstack.zql.ast.visitors;
 
 import org.apache.commons.lang.StringUtils;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.zql.ASTNode;
 import org.zstack.header.zql.ASTVisitor;
 import org.zstack.utils.Utils;
@@ -9,6 +10,8 @@ import org.zstack.zql.ZQLContext;
 import org.zstack.zql.ast.ZQLMetadata;
 import org.zstack.zql.ast.visitors.result.QueryResult;
 import org.zstack.zql.ast.visitors.result.ReturnWithResult;
+
+import static org.zstack.core.Platform.argerr;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
@@ -150,6 +153,10 @@ public class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
         if (ret.returnWith != null) {
             // total has handled above
             ret.returnWith.removeIf(it -> it.name.equals("total"));
+        }
+
+        if (ret.returnWith != null && !ret.returnWith.isEmpty() && node.getTarget().getFields() != null && !node.getTarget().getFields().isEmpty()) {
+            throw new OperationFailureException(argerr("return with clauses only work with non-fields query"));
         }
 
         return ret;

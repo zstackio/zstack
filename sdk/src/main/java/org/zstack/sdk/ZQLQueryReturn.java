@@ -20,4 +20,12 @@ public class ZQLQueryReturn  {
         return this.total;
     }
 
+    public java.util.Map returnWith;
+    public void setReturnWith(java.util.Map returnWith) {
+        this.returnWith = returnWith;
+    }
+    public java.util.Map getReturnWith() {
+        return this.returnWith;
+    }
+
 }
