@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.db.EntityMetadata;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.vo.ToInventory;
@@ -23,11 +24,13 @@ import org.zstack.zql.antlr4.ZQLParser;
 import org.zstack.zql.ast.ZQLMetadata;
 import org.zstack.zql.ast.parser.visitors.CountVisitor;
 import org.zstack.zql.ast.visitors.QueryVisitor;
+import org.zstack.zql.ast.visitors.ReturnWithVisitor;
 import org.zstack.zql.ast.visitors.result.QueryResult;
+import org.zstack.zql.ast.visitors.result.ReturnWithResult;
 
 import javax.persistence.Query;
+import java.lang.reflect.Field;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class ZQL {
@@ -84,7 +87,7 @@ public class ZQL {
                     Object inv = astResult.inventoryMetadata.selfInventoryClass.getConstructor().newInstance();
                     if (it instanceof Object[]) {
                         Object[] fieldValues = (Object[]) it;
-                        for (int i = 0; i < fieldValues.length; i++) {
+                        for (int i = 0; i < astResult.targetFieldNames.size(); i++) {
                             BeanUtils.setProperty(inv, astResult.targetFieldNames.get(i), fieldValues[i]);
                         }
                     } else {
@@ -124,6 +127,58 @@ public class ZQL {
             cleanUps.forEach(Runnable::run);
             ZQLContext.cleanQueryTargetInventoryName();
         };
+    }
+
+    class ReturnWithQueryNodeWrapper {
+        ASTNode.Query node;
+        boolean primaryKeyAdded;
+        String voPrimaryKeyName;
+
+        public ReturnWithQueryNodeWrapper(ASTNode.Query node) {
+            this.node = node;
+        }
+
+        public boolean isReturnWithEnabled() {
+            if (node.getReturnWith() == null) {
+                return false;
+            }
+
+            List<ReturnWithResult> rwr = (List<ReturnWithResult>) node.getReturnWith().accept(new ReturnWithVisitor());
+            return rwr.stream().anyMatch(r->!r.name.equals("total"));
+        }
+
+        public boolean isFieldsQuery() {
+            return node.getTarget().getFields() != null && !node.getTarget().getFields().isEmpty();
+        }
+
+        public void addPrimaryKeyFieldToTargetFieldNamesWhenReturnWithEnabledAndIsFieldQuery() {
+            if (!isReturnWithEnabled()) {
+                return;
+            }
+
+            if (!isFieldsQuery()) {
+                return;
+            }
+
+
+            ZQLMetadata.InventoryMetadata inventoryMetadata = ZQLMetadata.findInventoryMetadata(node.getTarget().getEntity());
+            Field priKey = EntityMetadata.getPrimaryKeyField(inventoryMetadata.inventoryAnnotation.mappingVOClass());
+            voPrimaryKeyName = priKey.getName();
+            if (!node.getTarget().getFields().contains(voPrimaryKeyName)) {
+                primaryKeyAdded = true;
+                node.getTarget().getFields().add(voPrimaryKeyName);
+            }
+        }
+
+        public void removePrimaryKeyFieldFromTargetFieldNamesWhenReturnWithEnabledAndIsFieldQuery(QueryResult astResult) {
+            if (primaryKeyAdded) {
+                astResult.targetFieldNames.remove(voPrimaryKeyName);
+            }
+        }
+
+        public Integer primaryKeyFieldIndex() {
+            return node.getTarget().getFields().indexOf(voPrimaryKeyName);
+        }
     }
 
     public ZQLQueryReturn execute() {
@@ -166,6 +221,9 @@ public class ZQL {
             clean.run();
         } else if (ctx instanceof ZQLParser.QueryGrammarContext) {
             ASTNode.Query query = (( ZQLParser.QueryGrammarContext)ctx).query().accept(new org.zstack.zql.ast.parser.visitors.QueryVisitor());
+            ReturnWithQueryNodeWrapper wrapper = new ReturnWithQueryNodeWrapper(query);
+
+            wrapper.addPrimaryKeyFieldToTargetFieldNamesWhenReturnWithEnabledAndIsFieldQuery();
 
             Runnable clean = prepareZQLContext(query);
 
@@ -189,7 +247,9 @@ public class ZQL {
                 }
             }.execute();
 
-            qr.returnWith = callReturnWithExtensions(astResult, ret.vos);
+            qr.returnWith = callReturnWithExtensions(astResult, wrapper, ret.vos);
+
+            wrapper.removePrimaryKeyFieldFromTargetFieldNamesWhenReturnWithEnabledAndIsFieldQuery(astResult);
 
             clean.run();
         } else {
@@ -202,7 +262,7 @@ public class ZQL {
         return qr;
     }
 
-    private Map callReturnWithExtensions(QueryResult astResult, List vos) {
+    private Map callReturnWithExtensions(QueryResult astResult, ReturnWithQueryNodeWrapper wrapper, List vos) {
         if (astResult.returnWith == null || astResult.returnWith.isEmpty()) {
             return null;
         }
@@ -216,7 +276,20 @@ public class ZQL {
             }
 
             ReturnWithExtensionPoint ext = opt.get();
-            ext.returnWith(vos, r.expr, ret);
+
+            ReturnWithExtensionPoint.ReturnWithExtensionParam param = new ReturnWithExtensionPoint.ReturnWithExtensionParam();
+            param.expression = r.expr;
+            param.isFieldsQuery = wrapper.isFieldsQuery();
+            if (param.isFieldsQuery) {
+                param.primaryKeyIndexInVOs = wrapper.primaryKeyFieldIndex();
+            }
+            param.vos = vos;
+            param.voClass = astResult.inventoryMetadata.inventoryAnnotation.mappingVOClass();
+
+            Map m = ext.returnWith(param);
+            if (m != null) {
+                ret.putAll(m);
+            }
         });
 
         return ret;

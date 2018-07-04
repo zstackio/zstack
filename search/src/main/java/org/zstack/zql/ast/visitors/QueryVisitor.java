@@ -155,10 +155,6 @@ public class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
             ret.returnWith.removeIf(it -> it.name.equals("total"));
         }
 
-        if (ret.returnWith != null && !ret.returnWith.isEmpty() && node.getTarget().getFields() != null && !node.getTarget().getFields().isEmpty()) {
-            throw new OperationFailureException(argerr("return with clauses only work with non-fields query"));
-        }
-
         return ret;
     }
 }
