@@ -81,11 +81,11 @@ public class CheckStackTemplateParametersAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
+        info.httpMethod = "POST";
         info.path = "/cloudformation/stack/check";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

@@ -1,6 +1,7 @@
 package org.zstack.test.integration.kvm.vm
 
 import org.springframework.http.HttpEntity
+import org.zstack.compute.vm.VmSystemTags
 import org.zstack.header.vm.VmCreationStrategy
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
@@ -136,6 +137,11 @@ test a VM's start/stop/reboot/destroy/recover operations
         assert cmd.vmName == vmvo.name
         assert cmd.memory == vmvo.memorySize
         assert cmd.cpuNum == vmvo.cpuNum
+
+        String tag = VmSystemTags.VM_SYSTEM_SERIAL_NUMBER.getTag(spec.inventory.uuid)
+        assert tag != null
+
+
         //TODO: test socketNum, cpuOnSocket
         assert cmd.rootVolume.installPath == vmvo.rootVolume.installPath
         assert cmd.useVirtio
