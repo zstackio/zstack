@@ -1,7 +1,7 @@
 package org.zstack.query;
 
 import org.zstack.header.query.APIQueryMessage;
-import org.zstack.zql.ZQLQueryResult;
+import org.zstack.zql.ZQLQueryReturn;
 
 import java.util.List;
 
@@ -10,5 +10,5 @@ public interface QueryFacade {
 
     long count(APIQueryMessage msg, Class inventoryClass);
 
-    ZQLQueryResult queryUseZQL(APIQueryMessage msg, Class inventoryClass);
+    ZQLQueryReturn queryUseZQL(APIQueryMessage msg, Class inventoryClass);
 }

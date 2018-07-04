@@ -187,6 +187,20 @@ cloudwatchfunction() {
    cd - > /dev/null
 }
 
+zwatchzql() {
+   if [ ! -d premium/zwatch ]; then
+	echo "this command needs premium source code"
+        exit 1
+   fi
+
+   cd premium/zwatch
+   mvn -P function generate-sources
+   mkdir -p src/main/java/org/zstack/zwatch/returnwith/antlr4/
+   yes | cp target/generated-sources/antlr4/ReturnWith* src/main/java/org/zstack/zwatch/returnwith/antlr4/
+   rm -f target/generated-sources/antlr4/ReturnWith*
+   cd - > /dev/null
+}
+
 sdk() {
     set -u
     rm -rf ~/zstack-sdk/java
@@ -247,6 +261,8 @@ run_profile() {
         zql
     elif test x$1 = x'cloudwatchfunction'; then
 	    cloudwatchfunction
+    elif test x$1 = x'zwatchzql'; then
+	    zwatchzql
     elif test x$1 = x'openapi'; then
         openapi
     else
