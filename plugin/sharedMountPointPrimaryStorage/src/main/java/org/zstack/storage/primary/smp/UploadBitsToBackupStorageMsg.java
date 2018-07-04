@@ -13,11 +13,20 @@ import org.zstack.header.volume.APICreateDataVolumeFromVolumeSnapshotMsg;
 @ApiTimeout(apiClasses = {APICreateDataVolumeTemplateFromVolumeMsg.class, APICreateRootVolumeTemplateFromRootVolumeMsg.class,
         APICreateDataVolumeFromVolumeSnapshotMsg.class})
 public class UploadBitsToBackupStorageMsg extends NeedReplyMessage implements PrimaryStorageMessage {
+    private String imageUuid;
     private String primaryStorageUuid;
     private String primaryStorageInstallPath;
     private String backupStorageUuid;
     private String backupStorageInstallPath;
     private String hypervisorType;
+
+    public String getImageUuid() {
+        return imageUuid;
+    }
+
+    public void setImageUuid(String imageUuid) {
+        this.imageUuid = imageUuid;
+    }
 
     public String getHypervisorType() {
         return hypervisorType;
