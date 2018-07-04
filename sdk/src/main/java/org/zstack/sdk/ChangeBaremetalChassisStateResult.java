@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 import org.zstack.sdk.BaremetalChassisInventory;
 
-public class ProvisionBaremetalHostResult {
+public class ChangeBaremetalChassisStateResult {
     public BaremetalChassisInventory inventory;
     public void setInventory(BaremetalChassisInventory inventory) {
         this.inventory = inventory;

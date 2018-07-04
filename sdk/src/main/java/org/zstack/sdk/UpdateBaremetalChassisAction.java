@@ -46,9 +46,6 @@ public class UpdateBaremetalChassisAction extends AbstractAction {
     @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String ipmiPassword;
 
-    @Param(required = false, validValues = {"Unprovisioned","Provisioning","Provisioned"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String status;
-
     @Param(required = false)
     public java.util.List systemTags;
 

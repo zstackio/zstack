@@ -80,6 +80,8 @@ public class ClusterInventory implements Serializable {
      * @desc hypervisor type of hosts in cluster. All hosts in the same cluster must have the same hypervisor type.
      * Now only kvm has been supported
      * @choices KVM
+     * - Simulator
+     * - baremetal
      */
     private String hypervisorType;
     /**
@@ -95,7 +97,7 @@ public class ClusterInventory implements Serializable {
      */
     private String zoneUuid;
     /**
-     * @desc for now, the only type is 'zstack'. This field is reserved for future extension
+     * @desc for now, the only types are 'zstack' and 'baremetal'. This field is reserved for future extension
      */
     private String type;
 
