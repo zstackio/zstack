@@ -180,6 +180,7 @@ public class VmInstanceSpec implements Serializable {
     private String requiredPrimaryStorageUuidForDataVolume;
 
     private List<HostName> hostnames = new ArrayList<>();
+    private HostInventory srcHost;
     private HostInventory destHost;
     private List<VmNicInventory> destNics = new ArrayList<>();
     private List<VolumeInventory> destDataVolumes = new ArrayList<>();
@@ -468,5 +469,13 @@ public class VmInstanceSpec implements Serializable {
 
     public void setRequiredPrimaryStorageUuidForDataVolume(String requiredPrimaryStorageUuidForDataVolume) {
         this.requiredPrimaryStorageUuidForDataVolume = requiredPrimaryStorageUuidForDataVolume;
+    }
+
+    public HostInventory getSrcHost() {
+        return srcHost;
+    }
+
+    public void setSrcHost(HostInventory srcHost) {
+        this.srcHost = srcHost;
     }
 }
