@@ -32,6 +32,9 @@ public class CreateBaremetalChassisAction extends AbstractAction {
     public java.lang.String description;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String clusterUuid;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String ipmiAddress;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)

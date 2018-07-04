@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateClusterAction extends AbstractAction {
+public class RebootBaremetalInstanceAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateClusterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateClusterResult value;
+        public org.zstack.sdk.RebootBaremetalInstanceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,22 +26,10 @@ public class CreateClusterAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String zoneUuid;
+    public java.lang.String uuid;
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = true, validValues = {"KVM","Simulator","baremetal"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String hypervisorType;
-
-    @Param(required = false, validValues = {"zstack","baremetal"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Boolean pxeBoot = false;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -66,8 +54,8 @@ public class CreateClusterAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateClusterResult value = res.getResult(org.zstack.sdk.CreateClusterResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateClusterResult() : value; 
+        org.zstack.sdk.RebootBaremetalInstanceResult value = res.getResult(org.zstack.sdk.RebootBaremetalInstanceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.RebootBaremetalInstanceResult() : value; 
 
         return ret;
     }
@@ -96,11 +84,11 @@ public class CreateClusterAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/clusters";
+        info.httpMethod = "PUT";
+        info.path = "/baremetal/instances/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "rebootBaremetalInstance";
         return info;
     }
 

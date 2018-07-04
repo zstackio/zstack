@@ -97,7 +97,7 @@ public class CreateBaremetalPxeServerAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/baremetal/pxeserver";
+        info.path = "/baremetal/pxeservers";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

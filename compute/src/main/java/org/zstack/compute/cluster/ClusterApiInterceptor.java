@@ -38,13 +38,24 @@ public class ClusterApiInterceptor implements ApiMessageInterceptor {
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         setServiceId(msg);
 
-        if (msg instanceof APIDeleteClusterMsg) {
+        if (msg instanceof APICreateClusterMsg) {
+            validate((APICreateClusterMsg) msg);
+        } else if (msg instanceof APIDeleteClusterMsg) {
             validate((APIDeleteClusterMsg) msg);
         } else if (msg instanceof APIUpdateClusterOSMsg) {
             validate((APIUpdateClusterOSMsg) msg);
         }
 
         return msg;
+    }
+
+    private void validate(APICreateClusterMsg msg) {
+        if ((msg.getType() != null && msg.getType().equals("baremetal") && !msg.getHypervisorType().equals("baremetal")) ||
+                (msg.getHypervisorType().equals("baremetal") && msg.getType() != null && !msg.getType().equals("baremetal"))) {
+            throw new ApiMessageInterceptionException(Platform.argerr(
+                    "if cluster type is baremetal, then hypervisorType must be baremetal too, or vice versa"
+            ));
+        }
     }
 
     private void validate(APIUpdateClusterOSMsg msg) {
