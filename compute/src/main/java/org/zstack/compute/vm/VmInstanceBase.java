@@ -4105,11 +4105,13 @@ public class VmInstanceBase extends AbstractVmInstance {
             throw new OperationFailureException(err);
         }
 
+        Map data = new HashMap();
+
         final VolumeInventory volume = msg.getVolume();
 
         new VmAttachVolumeValidator().validate(msg.getVmInstanceUuid(), volume.getUuid());
         extEmitter.preAttachVolume(getSelfInventory(), volume);
-        extEmitter.beforeAttachVolume(getSelfInventory(), volume);
+        extEmitter.beforeAttachVolume(getSelfInventory(), volume, data);
 
         VmInstanceSpec spec = new VmInstanceSpec();
         spec.setMessage(msg);
@@ -4141,7 +4143,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }).error(new FlowErrorHandler(msg, completion) {
             @Override
             public void handle(final ErrorCode errCode, Map data) {
-                extEmitter.failedToAttachVolume(getSelfInventory(), volume, errCode);
+                extEmitter.failedToAttachVolume(getSelfInventory(), volume, errCode, data);
                 reply.setError(errf.instantiateErrorCode(VmErrors.ATTACH_VOLUME_ERROR, errCode));
                 bus.reply(msg, reply);
                 completion.done();

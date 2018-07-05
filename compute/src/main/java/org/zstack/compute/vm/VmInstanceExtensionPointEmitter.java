@@ -12,9 +12,10 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.operr;
-
 import java.util.List;
+import java.util.Map;
+
+import static org.zstack.core.Platform.operr;
 
 public class VmInstanceExtensionPointEmitter implements Component {
     private static final CLogger logger = Utils.getLogger(VmInstanceExtensionPointEmitter.class);
@@ -277,11 +278,11 @@ public class VmInstanceExtensionPointEmitter implements Component {
         }
     }
 
-    public void beforeAttachVolume(final VmInstanceInventory vm, final VolumeInventory volume) {
+    public void beforeAttachVolume(final VmInstanceInventory vm, final VolumeInventory volume, Map data) {
         CollectionUtils.safeForEach(attachVolumeExtensions, new ForEachFunction<VmAttachVolumeExtensionPoint>() {
             @Override
             public void run(VmAttachVolumeExtensionPoint arg) {
-                arg.beforeAttachVolume(vm, volume);
+                arg.beforeAttachVolume(vm, volume, data);
             }
         });
     }
@@ -295,11 +296,11 @@ public class VmInstanceExtensionPointEmitter implements Component {
         });
     }
 
-    public void failedToAttachVolume(final VmInstanceInventory vm, final VolumeInventory volume, final ErrorCode errorCode) {
+    public void failedToAttachVolume(final VmInstanceInventory vm, final VolumeInventory volume, final ErrorCode errorCode, Map data) {
         CollectionUtils.safeForEach(attachVolumeExtensions, new ForEachFunction<VmAttachVolumeExtensionPoint>() {
             @Override
             public void run(VmAttachVolumeExtensionPoint arg) {
-                arg.failedToAttachVolume(vm, volume, errorCode);
+                arg.failedToAttachVolume(vm, volume, errorCode, data);
             }
         });
     }
