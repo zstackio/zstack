@@ -4,6 +4,7 @@ import org.zstack.compute.host.HostGlobalConfig
 import org.zstack.core.config.GlobalConfigFacadeImpl
 import org.zstack.core.config.GlobalConfigVO
 import org.zstack.core.db.DatabaseFacade
+import org.zstack.image.ImageGlobalConfig
 import org.zstack.kvm.KVMGlobalConfig
 import org.zstack.sdk.GlobalConfigInventory
 import org.zstack.sdk.UpdateGlobalConfigAction
@@ -44,6 +45,7 @@ class GlobalConfigCase extends SubCase {
             testFloatPointNumberTolerance()
             testBooleanValidator()
             testBorderValue()
+            testImageGlobalConfig()
         }
     }
 
@@ -114,4 +116,19 @@ class GlobalConfigCase extends SubCase {
         assert result2.error == null
     }
 
+    void testImageGlobalConfig(){
+        updateGlobalConfig {
+            category = ImageGlobalConfig.CATEGORY
+            name = ImageGlobalConfig.EXPUNGE_INTERVAL.name
+            value = 1800
+        }
+
+        expect(AssertionError.class) {
+            updateGlobalConfig {
+                category = ImageGlobalConfig.CATEGORY
+                name = ImageGlobalConfig.EXPUNGE_INTERVAL.name
+                value = 0
+            }
+        }
+    }
 }

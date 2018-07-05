@@ -14,7 +14,7 @@ public class ImageGlobalConfig {
     @GlobalConfigValidation(validValues = {"Direct", "Delay", "Never"})
     public static GlobalConfig DELETION_POLICY = new GlobalConfig(CATEGORY, "deletionPolicy");
 
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(numberGreaterThan = 1)
     public static GlobalConfig EXPUNGE_INTERVAL = new GlobalConfig(CATEGORY, "expungeInterval");
 
     @GlobalConfigValidation(numberGreaterThan = 0)
