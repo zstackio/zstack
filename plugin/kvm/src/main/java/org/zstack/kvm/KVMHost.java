@@ -20,7 +20,6 @@ import org.zstack.core.ansible.AnsibleRunner;
 import org.zstack.core.ansible.SshFileMd5Checker;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -1598,7 +1597,9 @@ public class KVMHost extends HostBase implements Host {
         final AttachDataVolumeCmd cmd = new AttachDataVolumeCmd();
         cmd.setVolume(to);
         cmd.setVmUuid(msg.getVmInventory().getUuid());
-        extEmitter.beforeAttachVolume((KVMHostInventory) getSelfInventory(), vm, vol, cmd);
+
+        Map data = new HashMap();
+        extEmitter.beforeAttachVolume((KVMHostInventory) getSelfInventory(), vm, vol, cmd, data);
         new Http<>(attachDataVolumePath, cmd, AttachDataVolumeResponse.class).call(new ReturnValueCompletion<AttachDataVolumeResponse>(msg, completion) {
             @Override
             public void success(AttachDataVolumeResponse ret) {
@@ -1606,7 +1607,7 @@ public class KVMHost extends HostBase implements Host {
                     reply.setError(operr("failed to attach data volume[uuid:%s, installPath:%s] to vm[uuid:%s, name:%s]" +
                                     " on kvm host[uuid:%s, ip:%s], because %s", vol.getUuid(), vol.getInstallPath(), vm.getUuid(), vm.getName(),
                             getSelf().getUuid(), getSelf().getManagementIp(), ret.getError()));
-                    extEmitter.attachVolumeFailed((KVMHostInventory) getSelfInventory(), vm, vol, cmd, reply.getError());
+                    extEmitter.attachVolumeFailed((KVMHostInventory) getSelfInventory(), vm, vol, cmd, reply.getError(), data);
                 } else {
                     extEmitter.afterAttachVolume((KVMHostInventory) getSelfInventory(), vm, vol, cmd);
                 }
@@ -1616,7 +1617,7 @@ public class KVMHost extends HostBase implements Host {
 
             @Override
             public void fail(ErrorCode err) {
-                extEmitter.attachVolumeFailed((KVMHostInventory) getSelfInventory(), vm, vol, cmd, err);
+                extEmitter.attachVolumeFailed((KVMHostInventory) getSelfInventory(), vm, vol, cmd, err, data);
                 reply.setError(err);
                 bus.reply(msg, reply);
                 completion.done();
