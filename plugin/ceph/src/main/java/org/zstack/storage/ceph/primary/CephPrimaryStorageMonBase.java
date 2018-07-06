@@ -354,7 +354,7 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
                 .findValue();
 
         PingCmd cmd = new PingCmd();
-        cmd.testImagePath = String.format("%s/%s-this-is-a-test-image-with-long-name", poolName, self.getUuid());
+        cmd.testImagePath = String.format("%s/zshb.ps.%s.%s", poolName, self.getUuid(), self.getMonAddr());
         cmd.monUuid = getSelf().getUuid();
         cmd.primaryStorageUuid = getSelf().getPrimaryStorageUuid();
         cmd.monAddr = String.format("%s:%s", getSelf().getMonAddr(), getSelf().getMonPort());
