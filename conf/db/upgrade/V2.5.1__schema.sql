@@ -1,0 +1,2 @@
+ALTER TABLE StackTemplateVO DROP INDEX name;
+ALTER TABLE ResourceStackVO DROP INDEX name;
