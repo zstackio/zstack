@@ -84,14 +84,17 @@ public class ZQL {
         if (astResult.targetFieldNames != null && !astResult.targetFieldNames.isEmpty()) {
             vos.forEach(it -> {
                 try {
-                    Object inv = astResult.inventoryMetadata.selfInventoryClass.getConstructor().newInstance();
+                    ZQLMetadata.InventoryMetadata inventoryMetadata = astResult.inventoryMetadata;
+                    Object inv = inventoryMetadata.selfInventoryClass.getConstructor().newInstance();
                     if (it instanceof Object[]) {
                         Object[] fieldValues = (Object[]) it;
                         for (int i = 0; i < astResult.targetFieldNames.size(); i++) {
-                            BeanUtils.setProperty(inv, astResult.targetFieldNames.get(i), fieldValues[i]);
+                            String fieldName = astResult.targetFieldNames.get(i);
+                            BeanUtils.setProperty(inv, fieldName, inventoryMetadata.toInventoryFieldObject(fieldName, fieldValues[i]));
                         }
                     } else {
-                        BeanUtils.setProperty(inv, astResult.targetFieldNames.get(0), it);
+                        String fieldName =  astResult.targetFieldNames.get(0);
+                        BeanUtils.setProperty(inv, fieldName, astResult.inventoryMetadata.toInventoryFieldObject(fieldName, it));
                     }
                     ret.add(inv);
                 } catch (Exception e) {
