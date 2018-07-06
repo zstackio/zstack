@@ -14,6 +14,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.service.DhcpStruct;
 import org.zstack.header.network.service.NetworkServiceDhcpBackend;
 import org.zstack.header.network.service.NetworkServiceProviderType;
+import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
@@ -90,7 +91,12 @@ public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend imple
                 });
                 e.setVrNicMac(vrNic.getMac());
                 if (struct.isDefaultL3Network()) {
-                    e.setDns(CollectionDSL.list(vrNic.getIp()));
+                    /*if there is no DNS service, the DHCP uses the external DNS service. ZSTAC-13262 by miaozhanyong*/
+                    if (spec.getRequiredNetworkServiceTypes().contains(NetworkServiceType.DNS.toString())) {
+                        e.setDns(CollectionDSL.list(vrNic.getIp()));
+                    } else {
+                        e.setDns(struct.getL3Network().getDns());
+                    }
                 }
 
                 VirtualRouterCommands.AddDhcpEntryCmd cmd = new VirtualRouterCommands.AddDhcpEntryCmd();
