@@ -24,6 +24,7 @@
     <bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
        <property name="mappings">
     	 <props>
+             <prop key="/cloudbus">cloudBusController</prop>
     	   <prop key="/asyncrest/callback">restFacadeController</prop>
     	   <prop key="/asyncrest/sendcommand">restFacadeController</prop>
     	   <prop key="/v1/**">restServerController</prop>
@@ -32,6 +33,7 @@
        </property>
     </bean>
 
+    <bean name="cloudBusController" class="org.zstack.core.cloudbus.CloudBusController" />
     <bean name="restServerController" class="org.zstack.rest.RestServerController" />
     <bean name="testlibController" class="org.zstack.testlib.TestLibController" />
     <bean name="restFacadeController" class="org.zstack.core.rest.AsyncRESTCallController"/>
