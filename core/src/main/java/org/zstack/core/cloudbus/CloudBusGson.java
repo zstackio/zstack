@@ -53,4 +53,12 @@ public class CloudBusGson {
     public static String toJson(Message msg) {
         return gson.toJson(msg, Message.class);
     }
+
+    public static String toJson(Object obj) {
+        if (obj instanceof Message) {
+            return gson.toJson(obj, Message.class);
+        } else {
+            return gson.toJson(obj);
+        }
+    }
 }

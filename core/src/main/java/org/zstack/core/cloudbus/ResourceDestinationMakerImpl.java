@@ -3,18 +3,14 @@ package org.zstack.core.cloudbus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.Q;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
 import org.zstack.header.managementnode.ManagementNodeVO;
-import org.zstack.header.managementnode.ManagementNodeVO_;
 import org.zstack.utils.hash.ApacheHash;
 import org.zstack.utils.hash.ConsistentHash;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -23,40 +19,38 @@ import java.util.concurrent.atomic.AtomicInteger;
  * To change this template use File | Settings | File Templates.
  */
 public class ResourceDestinationMakerImpl implements ManagementNodeChangeListener, ResourceDestinationMaker {
-    private ConsistentHash<String> nodeHash = new ConsistentHash<String>(new ApacheHash(), 500, new ArrayList<String>()) ;
-    private AtomicInteger nodeCount = new AtomicInteger(0);
+    private ConsistentHash<String> nodeHash = new ConsistentHash<>(new ApacheHash(), 500, new ArrayList<String>()) ;
+    private Map<String, NodeInfo> nodes = new HashMap<>();
 
     @Autowired
     private DatabaseFacade dbf;
 
     @Override
     public void nodeJoin(String nodeId) {
+        ManagementNodeVO vo = dbf.findByUuid(nodeId, ManagementNodeVO.class);
         nodeHash.add(nodeId);
-        nodeCount.incrementAndGet();
+        nodes.put(vo.getUuid(), new NodeInfo(vo));
     }
 
     @Override
     public void nodeLeft(String nodeId) {
         nodeHash.remove(nodeId);
-        nodeCount.decrementAndGet();
+        nodes.remove(nodeId);
     }
 
     @Override
     public void iAmDead(String nodeId) {
         nodeHash.remove(nodeId);
-        nodeCount.decrementAndGet();
+        nodes.remove(nodeId);
     }
 
     @Override
     public void iJoin(String nodeId) {
-        SimpleQuery<ManagementNodeVO> q = dbf.createQuery(ManagementNodeVO.class);
-        q.select(ManagementNodeVO_.uuid);
-        List<String> nodeIds = q.listValue();
-        for (String id : nodeIds) {
-            nodeHash.add(id);
-        }
-
-        nodeCount.set(nodeIds.size());
+        List<ManagementNodeVO> lst = Q.New(ManagementNodeVO.class).list();
+        lst.forEach((ManagementNodeVO node) -> {
+            nodeHash.add(node.getUuid());
+            nodes.put(node.getUuid(), new NodeInfo(node));
+        });
     }
 
     @Override
@@ -81,9 +75,31 @@ public class ResourceDestinationMakerImpl implements ManagementNodeChangeListene
     }
 
     @Override
-    public int getManagementNodeCount() {
-        return nodeCount.intValue();
+    public NodeInfo getNodeInfo(String nodeUuid) {
+        NodeInfo info = nodes.get(nodeUuid);
+        if (info == null) {
+            ManagementNodeVO vo = dbf.findByUuid(nodeUuid, ManagementNodeVO.class);
+            if (vo == null) {
+                throw new CloudRuntimeException(String.format("cannot find management node[uuid:%s]", nodeUuid));
+            }
+
+            nodeHash.add(nodeUuid);
+            info = nodes.put(nodeUuid, new NodeInfo(vo));
+        }
+
+        return info;
     }
+
+    @Override
+    public Collection<NodeInfo> getAllNodeInfo() {
+        return nodes.values();
+    }
+
+    @Override
+    public int getManagementNodeCount() {
+        return nodes.values().size();
+    }
+
 
     public boolean isNodeInCircle(String nodeId) {
         return nodeHash.hasNode(nodeId);
