@@ -26,7 +26,7 @@ import org.zstack.header.query.QueryOp
 import org.zstack.utils.Utils
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.logging.CLogger
-import org.zstack.zql.ZQLQueryResult
+import org.zstack.zql.ZQLQueryReturn
 
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
@@ -377,7 +377,7 @@ class BatchQuery {
             msg.setReplyWithCount(true)
         }
 
-        ZQLQueryResult ret = queryf.queryUseZQL(msg, inventoryClass)
+        ZQLQueryReturn ret = queryf.queryUseZQL(msg, inventoryClass)
 
         def res = ["total": ret.total, "result": ret.inventories == null ? null : JSONObjectUtil.rehashObject(ret.inventories, ArrayList.class)]
 

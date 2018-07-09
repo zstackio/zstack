@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CheckStackTemplateParametersAction extends AbstractAction {
+public class PrimaryStorageMigrateVmAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CheckStackTemplateParametersAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CheckStackTemplateParametersResult value;
+        public org.zstack.sdk.PrimaryStorageMigrateVmResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,14 +25,17 @@ public class CheckStackTemplateParametersAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, validValues = {"zstack"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type = "zstack";
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String vmInstanceUuid;
 
-    @Param(required = false, maxLength = 4194304, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String templateContent;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String dstPrimaryStorageUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    public boolean withDataVolumes = true;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public boolean withSnapshots = false;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -43,6 +46,12 @@ public class CheckStackTemplateParametersAction extends AbstractAction {
     @Param(required = true)
     public String sessionId;
 
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
+
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -51,8 +60,8 @@ public class CheckStackTemplateParametersAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CheckStackTemplateParametersResult value = res.getResult(org.zstack.sdk.CheckStackTemplateParametersResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CheckStackTemplateParametersResult() : value; 
+        org.zstack.sdk.PrimaryStorageMigrateVmResult value = res.getResult(org.zstack.sdk.PrimaryStorageMigrateVmResult.class);
+        ret.value = value == null ? new org.zstack.sdk.PrimaryStorageMigrateVmResult() : value; 
 
         return ret;
     }
@@ -81,11 +90,11 @@ public class CheckStackTemplateParametersAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/cloudformation/stack/check";
+        info.httpMethod = "PUT";
+        info.path = "/vm-instances/{vmInstanceUuid}/actions";
         info.needSession = true;
-        info.needPoll = false;
-        info.parameterName = "params";
+        info.needPoll = true;
+        info.parameterName = "primaryStorageMigrateVm";
         return info;
     }
 

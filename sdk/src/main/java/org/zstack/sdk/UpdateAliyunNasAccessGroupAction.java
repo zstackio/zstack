@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CheckStackTemplateParametersAction extends AbstractAction {
+public class UpdateAliyunNasAccessGroupAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CheckStackTemplateParametersAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CheckStackTemplateParametersResult value;
+        public org.zstack.sdk.UpdateAliyunNasAccessGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,14 +25,11 @@ public class CheckStackTemplateParametersAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, validValues = {"zstack"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type = "zstack";
-
-    @Param(required = false, maxLength = 4194304, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String templateContent;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
+
+    @Param(required = false, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -43,6 +40,12 @@ public class CheckStackTemplateParametersAction extends AbstractAction {
     @Param(required = true)
     public String sessionId;
 
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
+
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -51,8 +54,8 @@ public class CheckStackTemplateParametersAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CheckStackTemplateParametersResult value = res.getResult(org.zstack.sdk.CheckStackTemplateParametersResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CheckStackTemplateParametersResult() : value; 
+        org.zstack.sdk.UpdateAliyunNasAccessGroupResult value = res.getResult(org.zstack.sdk.UpdateAliyunNasAccessGroupResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateAliyunNasAccessGroupResult() : value; 
 
         return ret;
     }
@@ -81,11 +84,11 @@ public class CheckStackTemplateParametersAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/cloudformation/stack/check";
+        info.httpMethod = "PUT";
+        info.path = "/nas/aliyun/access";
         info.needSession = true;
-        info.needPoll = false;
-        info.parameterName = "params";
+        info.needPoll = true;
+        info.parameterName = "updateAliyunNasAccessGroup";
         return info;
     }
 

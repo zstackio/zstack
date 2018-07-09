@@ -10491,6 +10491,33 @@ trait ApiHelper {
     }
 
 
+    def getPrimaryStorageCandidatesForVmMigration(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetPrimaryStorageCandidatesForVmMigrationAction.class) Closure c) {
+        def a = new org.zstack.sdk.GetPrimaryStorageCandidatesForVmMigrationAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def getPrimaryStorageCandidatesForVolumeMigration(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetPrimaryStorageCandidatesForVolumeMigrationAction.class) Closure c) {
         def a = new org.zstack.sdk.GetPrimaryStorageCandidatesForVolumeMigrationAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -11816,6 +11843,33 @@ trait ApiHelper {
 
     def previewResourceStack(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.PreviewResourceStackAction.class) Closure c) {
         def a = new org.zstack.sdk.PreviewResourceStackAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def primaryStorageMigrateVm(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.PrimaryStorageMigrateVmAction.class) Closure c) {
+        def a = new org.zstack.sdk.PrimaryStorageMigrateVmAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -18475,6 +18529,33 @@ trait ApiHelper {
 
     def updateAliyunMountTarget(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateAliyunMountTargetAction.class) Closure c) {
         def a = new org.zstack.sdk.UpdateAliyunMountTargetAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def updateAliyunNasAccessGroup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateAliyunNasAccessGroupAction.class) Closure c) {
+        def a = new org.zstack.sdk.UpdateAliyunNasAccessGroupAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a

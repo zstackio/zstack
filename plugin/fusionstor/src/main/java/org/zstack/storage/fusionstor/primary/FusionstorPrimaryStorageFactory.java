@@ -13,9 +13,9 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.notification.N;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
-import org.zstack.core.notification.N;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.*;
@@ -30,8 +30,6 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
-import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.volume.SyncVolumeSizeMsg;
 import org.zstack.header.volume.SyncVolumeSizeReply;
 import org.zstack.header.volume.VolumeConstant;
@@ -45,12 +43,14 @@ import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
-import org.zstack.utils.function.ListFunction;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -269,7 +269,7 @@ public class FusionstorPrimaryStorageFactory implements PrimaryStorageFactory, F
     }
 
     @Override
-    public void beforeAttachVolume(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory volume, AttachDataVolumeCmd cmd) {
+    public void beforeAttachVolume(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory volume, AttachDataVolumeCmd cmd, Map data) {
         cmd.setVolume(convertVolumeToFusionstorIfNeeded(volume, cmd.getVolume()));
     }
 
@@ -279,7 +279,7 @@ public class FusionstorPrimaryStorageFactory implements PrimaryStorageFactory, F
     }
 
     @Override
-    public void attachVolumeFailed(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory volume, AttachDataVolumeCmd cmd, ErrorCode err) {
+    public void attachVolumeFailed(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory volume, AttachDataVolumeCmd cmd, ErrorCode err, Map data) {
 
     }
 

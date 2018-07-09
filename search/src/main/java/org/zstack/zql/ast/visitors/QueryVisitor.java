@@ -1,6 +1,7 @@
 package org.zstack.zql.ast.visitors;
 
 import org.apache.commons.lang.StringUtils;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.zql.ASTNode;
 import org.zstack.header.zql.ASTVisitor;
 import org.zstack.utils.Utils;
@@ -9,6 +10,8 @@ import org.zstack.zql.ZQLContext;
 import org.zstack.zql.ast.ZQLMetadata;
 import org.zstack.zql.ast.visitors.result.QueryResult;
 import org.zstack.zql.ast.visitors.result.ReturnWithResult;
+
+import static org.zstack.core.Platform.argerr;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
@@ -145,6 +148,11 @@ public class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
                 SQLText cst = makeSQL(node, true);
                 return emgr.createQuery(cst.jpql);
             };
+        }
+
+        if (ret.returnWith != null) {
+            // total has handled above
+            ret.returnWith.removeIf(it -> it.name.equals("total"));
         }
 
         return ret;

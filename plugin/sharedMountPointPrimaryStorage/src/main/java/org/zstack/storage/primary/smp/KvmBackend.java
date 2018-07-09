@@ -1309,7 +1309,7 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     @Override
-    void handle(UploadBitsToBackupStorageMsg msg, final ReturnValueCompletion<UploadBitsToBackupStorageReply> completion) {
+    public void handle(UploadBitsToBackupStorageMsg msg, final ReturnValueCompletion<UploadBitsToBackupStorageReply> completion) {
         SftpBackupStorageKvmUploader uploader = new SftpBackupStorageKvmUploader(msg.getBackupStorageUuid());
         uploader.uploadBits(null, msg.getBackupStorageInstallPath(), msg.getPrimaryStorageInstallPath(), new ReturnValueCompletion<String>(completion) {
             @Override

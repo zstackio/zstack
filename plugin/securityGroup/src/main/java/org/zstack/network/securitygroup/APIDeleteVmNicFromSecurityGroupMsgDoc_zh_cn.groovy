@@ -13,8 +13,8 @@ doc {
         request {
 			url "DELETE /v1/security-groups/{securityGroupUuid}/vm-instances/nics"
 
-			header (Authorization: 'OAuth the-session-uuid')
 
+            header(Authorization: 'OAuth the-session-uuid')
 
             clz APIDeleteVmNicFromSecurityGroupMsg.class
 
@@ -36,7 +36,7 @@ doc {
 					name "vmNicUuids"
 					enclosedIn ""
 					desc "网卡的uuid列表"
-					location "body"
+					location "url"
 					type "List"
 					optional false
 					since "0.6"

@@ -20,6 +20,7 @@ import org.zstack.utils.logging.CLogger;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 public class KVMExtensionEmitter implements Component {
     private static final CLogger logger = Utils.getLogger(KVMExtensionEmitter.class);
@@ -212,9 +213,9 @@ public class KVMExtensionEmitter implements Component {
         }
     }
 
-    public void beforeAttachVolume(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory vol, AttachDataVolumeCmd cmd) {
+    public void beforeAttachVolume(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory vol, AttachDataVolumeCmd cmd, Map data) {
         for (KVMAttachVolumeExtensionPoint ext : attachVolumeExts) {
-            ext.beforeAttachVolume(host, vm, vol, cmd);
+            ext.beforeAttachVolume(host, vm, vol, cmd, data);
         }
     }
 
@@ -224,9 +225,9 @@ public class KVMExtensionEmitter implements Component {
         }
     }
 
-    public void attachVolumeFailed(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory vol, AttachDataVolumeCmd cmd, ErrorCode err) {
+    public void attachVolumeFailed(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory vol, AttachDataVolumeCmd cmd, ErrorCode err, Map data) {
         for (KVMAttachVolumeExtensionPoint ext : attachVolumeExts) {
-            ext.attachVolumeFailed(host, vm, vol, cmd, err);
+            ext.attachVolumeFailed(host, vm, vol, cmd, err, data);
         }
     }
 

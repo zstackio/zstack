@@ -582,7 +582,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     }
 
     @Override
-    public void beforeAttachVolume(VmInstanceInventory vm, VolumeInventory volume) {
+    public void beforeAttachVolume(VmInstanceInventory vm, VolumeInventory volume, Map data) {
 
     }
 
@@ -597,7 +597,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     }
 
     @Override
-    public void failedToAttachVolume(VmInstanceInventory vm, VolumeInventory volume, ErrorCode errorCode) {
+    public void failedToAttachVolume(VmInstanceInventory vm, VolumeInventory volume, ErrorCode errorCode, Map data) {
 
     }
 

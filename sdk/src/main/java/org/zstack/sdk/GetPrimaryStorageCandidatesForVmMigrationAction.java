@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CheckStackTemplateParametersAction extends AbstractAction {
+public class GetPrimaryStorageCandidatesForVmMigrationAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CheckStackTemplateParametersAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CheckStackTemplateParametersResult value;
+        public org.zstack.sdk.GetPrimaryStorageCandidatesForVmMigrationResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,14 +25,8 @@ public class CheckStackTemplateParametersAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, validValues = {"zstack"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type = "zstack";
-
-    @Param(required = false, maxLength = 4194304, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String templateContent;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String vmInstanceUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -51,8 +45,8 @@ public class CheckStackTemplateParametersAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CheckStackTemplateParametersResult value = res.getResult(org.zstack.sdk.CheckStackTemplateParametersResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CheckStackTemplateParametersResult() : value; 
+        org.zstack.sdk.GetPrimaryStorageCandidatesForVmMigrationResult value = res.getResult(org.zstack.sdk.GetPrimaryStorageCandidatesForVmMigrationResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetPrimaryStorageCandidatesForVmMigrationResult() : value; 
 
         return ret;
     }
@@ -81,11 +75,11 @@ public class CheckStackTemplateParametersAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/cloudformation/stack/check";
+        info.httpMethod = "GET";
+        info.path = "/vm-instances/{vmInstanceUuid}/storage-migration-candidates";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

@@ -1,7 +1,7 @@
 package org.zstack.query
 
 import org.zstack.header.errorcode.ErrorCode
-import org.zstack.zql.ZQLQueryResult
+import org.zstack.zql.ZQLQueryReturn
 
 doc {
 
@@ -21,6 +21,6 @@ doc {
 		desc "null"
 		type "ZQLQueryResult"
 		since "0.6"
-		clz ZQLQueryResult.class
+		clz ZQLQueryReturn.class
 	}
 }
