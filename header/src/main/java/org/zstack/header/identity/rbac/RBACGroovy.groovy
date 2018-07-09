@@ -5,7 +5,7 @@ import org.zstack.header.exception.CloudRuntimeException
 import org.zstack.header.message.APIMessage
 import org.zstack.utils.BeanUtils
 
-class RBAC {
+class RBACGroovy {
     static List<RBACInfo> rbacInfos = []
     static List<RoleInfo> roleInfos = []
     static Map<Class, List<APIPermissionChecker>> apiPermissionCheckers = [:]
@@ -113,11 +113,11 @@ class RBAC {
     static class PermissionCheckerWrapper {
         static void check(Class<? extends APIMessage> apiClz, Closure<Boolean> closure) {
             if (apiClz != null) {
-                RBAC.registerAPIPermissionChecker(apiClz, [check: closure] as APIPermissionChecker)
+                RBACGroovy.registerAPIPermissionChecker(apiClz, [check: closure] as APIPermissionChecker)
             } else {
                 def checker = [check: closure] as APIPermissionChecker
                 APIMessage.apiMessageClasses.each {
-                    RBAC.registerAPIPermissionChecker(it, checker)
+                    RBACGroovy.registerAPIPermissionChecker(it, checker)
                 }
             }
         }
@@ -167,12 +167,12 @@ class RBAC {
         c()
 
         info = _flatten(info)
-        rbacInfos.each { interFlatten(info, it) }
+        //rbacInfos.each { interFlatten(info, it) }
         rbacInfos.add(info)
     }
 
-    static void rbac(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = RBAC.class) Closure c) {
-        c.delegate = RBAC.class
+    static void rbac(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = RBACGroovy.class) Closure c) {
+        c.delegate = RBACGroovy.class
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()
     }

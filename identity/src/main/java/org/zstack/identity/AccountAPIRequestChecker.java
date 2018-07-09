@@ -11,6 +11,7 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.identity.SharedResourceVO;
 import org.zstack.header.identity.SharedResourceVO_;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.identity.rbac.RBACEntity;
 import static org.zstack.core.Platform.*;
 
 import javax.persistence.Tuple;
@@ -22,7 +23,7 @@ public class AccountAPIRequestChecker implements APIRequestChecker {
     @Autowired
     private AccountManager acntMgr;
 
-    private APIMessage message;
+    private RBACEntity rbacEntity;
 
     private static class CheckAccountAPIField {
         Field field;
@@ -64,12 +65,13 @@ public class AccountAPIRequestChecker implements APIRequestChecker {
     }
 
     @Override
-    public void check(APIMessage msg) {
-        if (acntMgr.isAdmin(msg.getSession())) {
+    public void check(RBACEntity entity) {
+        rbacEntity = entity;
+
+        if (acntMgr.isAdmin(rbacEntity.getApiMessage().getSession())) {
             return;
         }
 
-        message = msg;
 
         try {
             check();
@@ -79,18 +81,18 @@ public class AccountAPIRequestChecker implements APIRequestChecker {
     }
 
     private void check() throws IllegalAccessException {
-        List<CheckAccountAPIField> fields = checkAccountFields.get(message.getClass());
+        List<CheckAccountAPIField> fields = checkAccountFields.get(rbacEntity.getApiMessage().getClass());
         if (fields == null || fields.isEmpty()) {
             return;
         }
 
-        SessionInventory session = message.getSession();
+        SessionInventory session = rbacEntity.getApiMessage().getSession();
 
         Set checkAccountResourceUuids = new HashSet();
         Set operationTargetResourceUuids = new HashSet();
 
         for (CheckAccountAPIField cf : fields) {
-            Object value = cf.field.get(message);
+            Object value = cf.field.get(rbacEntity.getApiMessage());
             if (value == null) {
                 continue;
             }

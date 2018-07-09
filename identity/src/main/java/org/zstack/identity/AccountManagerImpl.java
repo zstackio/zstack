@@ -36,10 +36,7 @@ import org.zstack.header.message.Message;
 import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.notification.ApiNotificationFactory;
 import org.zstack.header.notification.ApiNotificationFactoryExtensionPoint;
-import org.zstack.header.vo.APIGetResourceNamesMsg;
-import org.zstack.header.vo.APIGetResourceNamesReply;
-import org.zstack.header.vo.ResourceInventory;
-import org.zstack.header.vo.ResourceVO;
+import org.zstack.header.vo.*;
 import org.zstack.identity.rbac.PolicyUtils;
 import org.zstack.utils.*;
 import org.zstack.utils.function.ForEachFunction;
@@ -943,20 +940,36 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         }
     }
 
-    @Transactional
     private void doAdminAdoptResource() {
-        Query q = dbf.getEntityManager().createNativeQuery(
-                "select uuid, resourceType" +
-                        " from ResourceVO rvo" +
-                        " where rvo.uuid not in ( select resourceUuid from AccountResourceRefVO )" +
-                        " and rvo.resourceType in (:rTypes)");
-        q.setParameter("rTypes", childrenResourceTypeClassMap.keySet());
-        List<Object[]> objs = q.getResultList();
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                // use native SQL instead of JPQL here,
+                // JPQL will join all sub-tables of ResourceVO, which
+                // exceeds the limit of max tables MySQL can join
+                List rvos = databaseFacade.getEntityManager().createNativeQuery("select uuid, resourceType, concreteResourceType from ResourceVO where uuid not in (select resourceUuid from AccountResourceRefVO)" +
+                        " and resourceType in (:rtypes)")
+                        .setParameter("rtypes", ResourceTypeMetadata.getAllBaseTypes().stream().map(Class::getSimpleName).collect(Collectors.toList()))
+                        .getResultList();
 
-        objs.forEach(it -> dbf.getEntityManager().persist(AccountResourceRefVO.newOwn(
-                AccountConstant.INITIAL_SYSTEM_ADMIN_UUID,
-                it[0].toString(),
-                childrenResourceTypeClassMap.get(it[1].toString()))));
+                rvos.forEach(obj -> {
+                    Object[] values = (Object[]) obj;
+                    String ruuid = values[0].toString();
+                    String rtype = values[1].toString();
+                    String crtype = values[2].toString();
+
+                    AccountResourceRefVO ref = new AccountResourceRefVO();
+                    ref.setAccountUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
+                    ref.setResourceType(rtype);
+                    ref.setConcreteResourceType(crtype);
+                    ref.setResourceUuid(ruuid);
+                    ref.setPermission(AccountConstant.RESOURCE_PERMISSION_WRITE);
+                    ref.setOwnerAccountUuid(ref.getAccountUuid());
+                    ref.setShared(false);
+                    persist(ref);
+                });
+            }
+        }.execute();
     }
 
     public void adminAdoptAllOrphanedResource(){
@@ -1116,17 +1129,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         } catch (Exception e) {
             throw new CloudRuntimeException("Unable to create default system admin account", e);
         }
-    }
-
-    @Override
-    @Transactional
-    public void createAccountResourceRef(String accountUuid, String resourceUuid, Class<?> resourceClass) {
-        if (!resourceTypes.contains(resourceClass)) {
-            throw new CloudRuntimeException(String.format("%s is not listed in resourceTypeForAccountRef of AccountManager.xml that is spring configuration. you forgot it???", resourceClass.getName()));
-        }
-
-        AccountResourceRefVO ref = AccountResourceRefVO.newOwn(accountUuid, resourceUuid, resourceClass);
-        dbf.getEntityManager().persist(ref);
     }
 
     @Override
