@@ -53,14 +53,10 @@ class FlatAddHostRouteForMetaDataCase extends SubCase {
             l3NetworkUuid = l3.uuid
         }
 
-        assert l3.hostRoute.size() == 2
+        assert l3.hostRoute.size() == 1
         for (L3NetworkHostRouteInventory route: l3.hostRoute) {
-            assert route.prefix == NetworkServiceConstants.METADATA_HOST_PREFIX || route.prefix == NetworkServiceConstants.DEFAULT_ROUTE_HOST_PREFIX
-            if (route.prefix == NetworkServiceConstants.METADATA_HOST_PREFIX) {
-                assert route.nexthop == dhcpIp.ip
-            } else {
-                assert route.nexthop == "192.168.100.1"
-            }
+            assert route.prefix == NetworkServiceConstants.METADATA_HOST_PREFIX
+            assert route.nexthop == dhcpIp.ip
         }
     }
 

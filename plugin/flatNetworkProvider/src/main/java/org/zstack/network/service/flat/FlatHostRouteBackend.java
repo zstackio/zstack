@@ -88,7 +88,6 @@ public class FlatHostRouteBackend implements NetworkServiceHostRouteBackend, Dhc
         }
 
         updateMetadataRoute(L3NetworkUuid, dhcpSererIp.getIp());
-        updateDefaultRoute(L3NetworkUuid, rangeVO.getGateway());
     }
 
     private void updateMetadataRoute(String L3NetworkUuid, String dhcpSererIp) {
@@ -107,25 +106,6 @@ public class FlatHostRouteBackend implements NetworkServiceHostRouteBackend, Dhc
         vo.setL3NetworkUuid(L3NetworkUuid);
         vo.setPrefix(NetworkServiceConstants.METADATA_HOST_PREFIX);
         vo.setNexthop(dhcpSererIp);
-        dbf.persist(vo);
-    }
-
-    private void updateDefaultRoute(String L3NetworkUuid, String gwIp) {
-        L3NetworkHostRouteVO vo = Q.New(L3NetworkHostRouteVO.class).eq(L3NetworkHostRouteVO_.l3NetworkUuid, L3NetworkUuid)
-                .eq(L3NetworkHostRouteVO_.prefix, NetworkServiceConstants.DEFAULT_ROUTE_HOST_PREFIX).find();
-        if (vo != null) {
-            if (vo.getNexthop().equals(gwIp)) {
-                return;
-            }
-            vo.setNexthop(gwIp);
-            dbf.update(vo);
-            return;
-        }
-
-        vo = new L3NetworkHostRouteVO();
-        vo.setL3NetworkUuid(L3NetworkUuid);
-        vo.setPrefix(NetworkServiceConstants.DEFAULT_ROUTE_HOST_PREFIX);
-        vo.setNexthop(gwIp);
         dbf.persist(vo);
     }
 
