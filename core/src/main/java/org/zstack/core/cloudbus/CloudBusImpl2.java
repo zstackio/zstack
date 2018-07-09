@@ -1241,11 +1241,6 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     }
 
     @Override
-    public Connection getConnection() {
-        return null;
-    }
-
-    @Override
     public void activeService(Service serv) {
         activeService(serv.getId());
     }

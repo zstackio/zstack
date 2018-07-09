@@ -200,7 +200,7 @@ public class VmInstanceSpec implements Serializable {
     private VmAccountPreference accountPerference;
 
     public String getVDIMonitorNumber() {
-        return VDIMonitorNumber;
+        return VDIMonitorNumber == null ? "1" : VDIMonitorNumber;
     }
 
     public void setVDIMonitorNumber(String VDIMonitorNumber) {

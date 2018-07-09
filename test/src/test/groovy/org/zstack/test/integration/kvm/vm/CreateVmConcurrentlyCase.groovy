@@ -1,6 +1,7 @@
 package org.zstack.test.integration.kvm.vm
 
 import org.zstack.compute.vm.VmQuotaConstant
+import org.zstack.core.cloudbus.CloudBusGlobalProperty
 import org.zstack.core.db.Q
 import org.zstack.header.identity.AccountType
 import org.zstack.header.vm.VmInstanceState
@@ -32,6 +33,8 @@ class CreateVmConcurrentlyCase extends SubCase {
 
     @Override
     void environment() {
+        //CloudBusGlobalProperty.HTTP_ALWAYS = true
+
         env = makeEnv {
             instanceOffering {
                 name = "instanceOffering"

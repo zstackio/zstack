@@ -78,14 +78,14 @@ public class TestRetry {
 
         Assert.assertEquals("hello", ret);
 
-        List<Integer> times = new ArrayList();
+        List<Integer> ctimes = new ArrayList();
         try {
             successAfter = 3;
             Retry testStopRetry = new Retry() {
                 @Override
                 @RetryCondition()
                 protected Object call() {
-                    times.add(1);
+                    ctimes.add(1);
                     stop();
                     return sayHello();
                 }
@@ -93,7 +93,7 @@ public class TestRetry {
             testStopRetry.run();
             assert false;
         }catch (Exception e){
-            assert 1 == times.size();
+            assert 1 == ctimes.size();
             assert true;
         }
 

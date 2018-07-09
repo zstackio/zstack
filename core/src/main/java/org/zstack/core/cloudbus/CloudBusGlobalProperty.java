@@ -43,4 +43,10 @@ public class CloudBusGlobalProperty {
     public static int CHANNEL_POOL_SIZE;
     @GlobalProperty(name="CloudBus.messageTTL", defaultValue = "300")
     public static int MESSAGE_TTL;
+    @GlobalProperty(name="CloudBus.httpPort", defaultValue = "8080")
+    public static int HTTP_PORT;
+    @GlobalProperty(name="CloudBus.alwaysUseHttp", defaultValue = "false")
+    public static boolean HTTP_ALWAYS;
+    @GlobalProperty(name="CloudBus.httpContextPath", defaultValue = "/zstack")
+    public static String HTTP_CONTEXT_PATH;
 }

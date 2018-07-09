@@ -1,5 +1,6 @@
 package org.zstack.rest;
 
+import org.zstack.core.cloudbus.CloudBusGson;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.JsonSchemaBuilder;
@@ -53,6 +54,6 @@ public class ApiEventResult {
         res.apiEventClassName = evt.getClass().getName();
         res.schema = new JsonSchemaBuilder(evt).build();
 
-        return JSONObjectUtil.toJsonString(res);
+        return CloudBusGson.toJson(res);
     }
 }

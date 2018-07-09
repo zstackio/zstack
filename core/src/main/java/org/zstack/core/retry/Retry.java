@@ -17,8 +17,8 @@ import java.util.concurrent.TimeUnit;
  */
 public abstract class Retry<T> {
 
-    private int times, count = 5;
-    private int interval = 1;
+    protected int times, count = 5;
+    protected int interval = 1;
 
     private static final CLogger logger = Utils.getLogger(Retry.class);
 
