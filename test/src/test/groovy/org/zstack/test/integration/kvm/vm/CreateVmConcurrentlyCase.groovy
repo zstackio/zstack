@@ -33,7 +33,7 @@ class CreateVmConcurrentlyCase extends SubCase {
 
     @Override
     void environment() {
-        CloudBusGlobalProperty.HTTP_ALWAYS = true
+        //CloudBusGlobalProperty.HTTP_ALWAYS = true
 
         env = makeEnv {
             instanceOffering {
