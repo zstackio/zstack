@@ -10,7 +10,7 @@ import org.zstack.core.config.GlobalConfigValidation;
 public class BackupStorageGlobalConfig {
     public static final String CATEGORY = "backupStorage";
 
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(numberGreaterThan = 1)
     public static GlobalConfig PING_INTERVAL = new GlobalConfig(CATEGORY, "ping.interval");
 
     @GlobalConfigValidation(numberGreaterThan = 0)

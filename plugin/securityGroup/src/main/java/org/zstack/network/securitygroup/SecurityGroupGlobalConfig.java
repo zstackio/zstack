@@ -10,7 +10,7 @@ import org.zstack.core.config.GlobalConfigValidation;
 public class SecurityGroupGlobalConfig {
     public static final String CATEGORY = "securityGroup";
 
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(numberGreaterThan = 1)
     public static GlobalConfig FAILURE_HOST_WORKER_INTERVAL = new GlobalConfig(CATEGORY, "host.failureWorkerInterval");
     @GlobalConfigValidation(numberGreaterThan = 0)
     public static GlobalConfig FAILURE_HOST_EACH_TIME_TO_TAKE = new GlobalConfig(CATEGORY, "host.failureResolvePerTime");
