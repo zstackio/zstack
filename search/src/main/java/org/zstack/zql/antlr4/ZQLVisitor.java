@@ -13,6 +13,12 @@ import org.antlr.v4.runtime.tree.ParseTreeVisitor;
  */
 public interface ZQLVisitor<T> extends ParseTreeVisitor<T> {
 	/**
+	 * Visit a parse tree produced by {@link ZQLParser#zqls}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitZqls(ZQLParser.ZqlsContext ctx);
+	/**
 	 * Visit a parse tree produced by the {@code queryGrammar}
 	 * labeled alternative in {@link ZQLParser#zql}.
 	 * @param ctx the parse tree
@@ -210,6 +216,18 @@ public interface ZQLVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitFilterBy(ZQLParser.FilterByContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ZQLParser#namedAsValue}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitNamedAsValue(ZQLParser.NamedAsValueContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ZQLParser#namedAs}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitNamedAs(ZQLParser.NamedAsContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link ZQLParser#query}.
 	 * @param ctx the parse tree

@@ -102,6 +102,7 @@ class ASTNode {
         OrderBy orderBy
         Limit limit
         Offset offset
+        String name
 
         void addRestrictExpr(RestrictExpr expr) {
             if (restrictBy == null)  {

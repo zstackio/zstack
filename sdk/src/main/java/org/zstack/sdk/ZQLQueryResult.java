@@ -1,14 +1,14 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.ZQLQueryReturn;
+
 
 public class ZQLQueryResult {
-    public ZQLQueryReturn result;
-    public void setResult(ZQLQueryReturn result) {
-        this.result = result;
+    public java.util.List results;
+    public void setResults(java.util.List results) {
+        this.results = results;
     }
-    public ZQLQueryReturn getResult() {
-        return this.result;
+    public java.util.List getResults() {
+        return this.results;
     }
 
 }

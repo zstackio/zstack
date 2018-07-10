@@ -18,6 +18,18 @@ public class ZQLBaseListener implements ZQLListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterZqls(ZQLParser.ZqlsContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitZqls(ZQLParser.ZqlsContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterQueryGrammar(ZQLParser.QueryGrammarContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -385,6 +397,30 @@ public class ZQLBaseListener implements ZQLListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitFilterBy(ZQLParser.FilterByContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterNamedAsValue(ZQLParser.NamedAsValueContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitNamedAsValue(ZQLParser.NamedAsValueContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterNamedAs(ZQLParser.NamedAsContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitNamedAs(ZQLParser.NamedAsContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

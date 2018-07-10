@@ -184,85 +184,100 @@ public class ZQL {
         }
     }
 
-    public ZQLQueryReturn execute() {
-        ZQLQueryReturn qr = new ZQLQueryReturn();
+    public ZQLQueryReturn getSingleResult() {
+        List<ZQLQueryReturn> rs = getResultList();
+        return rs.get(0);
+    }
 
-        class Ret {
-            Long count;
-            List vos;
-        }
-
-        Ret ret = new Ret();
+    public List<ZQLQueryReturn> getResultList() {
+        List<ZQLQueryReturn> rs = new ArrayList<>();
 
         ZQLLexer l = new ZQLLexer(CharStreams.fromString(text));
         ZQLParser p = new ZQLParser(new CommonTokenStream(l));
         p.addErrorListener(new ThrowingErrorListener(text));
 
-        ZQLParser.ZqlContext ctx = p.zql();
+        p.zqls().zql().forEach(ctx -> {
+            ZQLContext.clean();
 
-        if (ctx instanceof ZQLParser.CountGrammarContext) {
-            ASTNode.Query query = ((ZQLParser.CountGrammarContext)ctx).count().accept(new CountVisitor());
+            ZQLQueryReturn qr = new ZQLQueryReturn();
 
-            Runnable clean = prepareZQLContext(query);
-
-            callExtensions(query);
-
-            astResult = (QueryResult) query.accept(new QueryVisitor(true));
-
-            if (logger.isTraceEnabled()) {
-                logger.trace(String.format("ZQL query: %s", astResult.sql));
+            class Ret {
+                Long count;
+                List vos;
             }
 
-            new SQLBatch() {
-                @Override
-                protected void scripts() {
-                    Query q = astResult.createCountQuery.apply(databaseFacade.getEntityManager());
-                    ret.count = (Long) q.getSingleResult();
+            Ret ret = new Ret();
+
+            if (ctx instanceof ZQLParser.CountGrammarContext) {
+                ASTNode.Query query = ((ZQLParser.CountGrammarContext)ctx).count().accept(new CountVisitor());
+
+                Runnable clean = prepareZQLContext(query);
+
+                callExtensions(query);
+
+                astResult = (QueryResult) query.accept(new QueryVisitor(true));
+
+                if (logger.isTraceEnabled()) {
+                    logger.trace(String.format("ZQL query: %s", astResult.sql));
                 }
-            }.execute();
 
-            clean.run();
-        } else if (ctx instanceof ZQLParser.QueryGrammarContext) {
-            ASTNode.Query query = (( ZQLParser.QueryGrammarContext)ctx).query().accept(new org.zstack.zql.ast.parser.visitors.QueryVisitor());
-            ReturnWithQueryNodeWrapper wrapper = new ReturnWithQueryNodeWrapper(query);
-
-            wrapper.addPrimaryKeyFieldToTargetFieldNamesWhenReturnWithEnabledAndIsFieldQuery();
-
-            Runnable clean = prepareZQLContext(query);
-
-            callExtensions(query);
-            astResult = (QueryResult) query.accept(new QueryVisitor(false));
-
-            if (logger.isTraceEnabled()) {
-                logger.trace(String.format("ZQL query: %s", astResult.sql));
-            }
-
-            new SQLBatch() {
-                @Override
-                protected void scripts() {
-                    Query q = astResult.createJPAQuery.apply(databaseFacade.getEntityManager());
-                    ret.vos = q.getResultList();
-
-                    if (astResult.createCountQuery != null) {
-                        q = astResult.createCountQuery.apply(databaseFacade.getEntityManager());
+                new SQLBatch() {
+                    @Override
+                    protected void scripts() {
+                        Query q = astResult.createCountQuery.apply(databaseFacade.getEntityManager());
                         ret.count = (Long) q.getSingleResult();
                     }
+                }.execute();
+
+                qr.name = query.getName();
+
+                clean.run();
+            } else if (ctx instanceof ZQLParser.QueryGrammarContext) {
+                ASTNode.Query query = (( ZQLParser.QueryGrammarContext)ctx).query().accept(new org.zstack.zql.ast.parser.visitors.QueryVisitor());
+                ReturnWithQueryNodeWrapper wrapper = new ReturnWithQueryNodeWrapper(query);
+
+                wrapper.addPrimaryKeyFieldToTargetFieldNamesWhenReturnWithEnabledAndIsFieldQuery();
+
+                Runnable clean = prepareZQLContext(query);
+
+                callExtensions(query);
+                astResult = (QueryResult) query.accept(new QueryVisitor(false));
+
+                if (logger.isTraceEnabled()) {
+                    logger.trace(String.format("ZQL query: %s", astResult.sql));
                 }
-            }.execute();
 
-            qr.returnWith = callReturnWithExtensions(astResult, wrapper, ret.vos);
+                new SQLBatch() {
+                    @Override
+                    protected void scripts() {
+                        Query q = astResult.createJPAQuery.apply(databaseFacade.getEntityManager());
+                        ret.vos = q.getResultList();
 
-            wrapper.removePrimaryKeyFieldFromTargetFieldNamesWhenReturnWithEnabledAndIsFieldQuery(astResult);
+                        if (astResult.createCountQuery != null) {
+                            q = astResult.createCountQuery.apply(databaseFacade.getEntityManager());
+                            ret.count = (Long) q.getSingleResult();
+                        }
+                    }
+                }.execute();
 
-            clean.run();
-        } else {
-            throw new CloudRuntimeException(String.format("should not be here, %s", ctx));
-        }
+                qr.returnWith = callReturnWithExtensions(astResult, wrapper, ret.vos);
+                qr.name = query.getName();
 
-        qr.inventories = ret.vos != null ? entityVOtoInventories(ret.vos) : null;
-        qr.total = ret.count;
+                wrapper.removePrimaryKeyFieldFromTargetFieldNamesWhenReturnWithEnabledAndIsFieldQuery(astResult);
 
-        return qr;
+                clean.run();
+            } else {
+                throw new CloudRuntimeException(String.format("should not be here, %s", ctx));
+            }
+
+            qr.inventories = ret.vos != null ? entityVOtoInventories(ret.vos) : null;
+            qr.total = ret.count;
+
+            rs.add(qr);
+        });
+
+
+        return rs;
     }
 
     private Map callReturnWithExtensions(QueryResult astResult, ReturnWithQueryNodeWrapper wrapper, List vos) {

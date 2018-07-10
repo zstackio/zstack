@@ -11,6 +11,13 @@ import java.util.Stack;
 public class ZQLContext {
     private static ThreadLocal<Map<String, Object>> local = new ThreadLocal<>();
 
+    public static void clean() {
+        Map map = local.get();
+        if (map != null) {
+            map.clear();
+        }
+    }
+
     private static void put(String k, Object v) {
         Map map = local.get();
         if (map == null) {

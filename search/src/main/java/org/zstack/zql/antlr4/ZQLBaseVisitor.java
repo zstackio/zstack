@@ -19,6 +19,13 @@ public class ZQLBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements ZQ
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
+	@Override public T visitZqls(ZQLParser.ZqlsContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
 	@Override public T visitQueryGrammar(ZQLParser.QueryGrammarContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
@@ -230,6 +237,20 @@ public class ZQLBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements ZQ
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
 	@Override public T visitFilterBy(ZQLParser.FilterByContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
+	@Override public T visitNamedAsValue(ZQLParser.NamedAsValueContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
+	@Override public T visitNamedAs(ZQLParser.NamedAsContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *

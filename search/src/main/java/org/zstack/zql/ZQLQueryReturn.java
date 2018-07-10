@@ -7,4 +7,5 @@ public class ZQLQueryReturn {
     public List inventories;
     public Long total;
     public Map returnWith;
+    public String name;
 }
