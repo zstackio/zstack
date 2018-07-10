@@ -1010,7 +1010,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         String hostname = VmSystemTags.HOSTNAME.getTokenByTag(sysTag, VmSystemTags.HOSTNAME_TOKEN);
 
                         validateHostname(sysTag, hostname);
-                        validateHostNameOnDefaultL3Network(sysTag, hostname, msg.getDefaultL3NetworkUuid());
+                        List<String> l3NetworkUuids = msg.getL3NetworkUuids();
+                        l3NetworkUuids.forEach(it->validateHostNameOnDefaultL3Network(sysTag, hostname, it));
                     } else if (VmSystemTags.STATIC_IP.isMatch(sysTag)) {
                         validateStaticIp(sysTag);
                     }
@@ -1047,7 +1048,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
             }
 
             @Transactional(readOnly = true)
-            private void validateHostNameOnDefaultL3Network(String tag, String hostname, String l3Uuid) {
+            private List<SystemTagVO> querySystemTagsByL3(String tag, String l3Uuid) {
                 String sql = "select t" +
                         " from SystemTagVO t, VmInstanceVO vm, VmNicVO nic" +
                         " where t.resourceUuid = vm.uuid" +
@@ -1057,7 +1058,11 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 TypedQuery<SystemTagVO> q = dbf.getEntityManager().createQuery(sql, SystemTagVO.class);
                 q.setParameter("l3Uuid", l3Uuid);
                 q.setParameter("sysTag", tag);
-                List<SystemTagVO> vos = q.getResultList();
+                return q.getResultList();
+            }
+
+            private void validateHostNameOnDefaultL3Network(String tag, String hostname, String l3Uuid) {
+                List<SystemTagVO> vos = querySystemTagsByL3(tag, l3Uuid);
 
                 if (!vos.isEmpty()) {
                     SystemTagVO sameTag = vos.get(0);
