@@ -18,6 +18,14 @@ public class ZQLContext {
         }
     }
 
+    public static Map get() {
+        return local.get();
+    }
+
+    public static void set(Map m) {
+        local.set(m);
+    }
+
     private static void put(String k, Object v) {
         Map map = local.get();
         if (map == null) {

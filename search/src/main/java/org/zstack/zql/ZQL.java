@@ -198,8 +198,9 @@ public class ZQL {
         ZQLParser p = new ZQLParser(new CommonTokenStream(l));
         p.addErrorListener(new ThrowingErrorListener(text));
 
+        Map currentContext = ZQLContext.get();
         p.zqls().zql().forEach(ctx -> {
-            ZQLContext.clean();
+            ZQLContext.set(currentContext);
 
             ZQLQueryReturn qr = new ZQLQueryReturn();
 
