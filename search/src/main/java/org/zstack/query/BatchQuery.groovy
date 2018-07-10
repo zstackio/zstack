@@ -26,6 +26,7 @@ import org.zstack.header.query.QueryOp
 import org.zstack.utils.Utils
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.logging.CLogger
+import org.zstack.zql.ZQL
 import org.zstack.zql.ZQLQueryReturn
 
 import java.lang.reflect.Field
@@ -429,10 +430,12 @@ class BatchQuery {
             def query = { doQuery(it) }
             def put = { k, v -> output[k] = v }
             def call = { apiName, value -> syncApiCall(apiName, value) }
+            def zql = { ZQL.fromString(it).execute() }
 
             binding.setVariable("query", query)
             binding.setVariable("put", put)
             binding.setVariable("call", call)
+            binding.setVariable("zql", zql)
 
             def cc = new CompilerConfiguration()
             cc.addCompilationCustomizers(new SandboxTransformer())
