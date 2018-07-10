@@ -642,10 +642,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
                 }
 
                 // Not all systemTags are for the resources used by APICreateMessage
-                try {
-                    createNonInherentSystemTag(resourceUuid, sysTag, resourceType);
-                } catch (ApiMessageInterceptionException ignored) {
-                }
+                createNonInherentSystemTag(resourceUuid, sysTag, resourceType);
             }
         }
         if (userTags != null && !userTags.isEmpty()) {

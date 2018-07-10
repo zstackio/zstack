@@ -180,6 +180,6 @@ public class ErrorCode implements Serializable, Cloneable {
             }
         } while (true);
 
-        return root.getDetails();
+        return root.getDetails() == null ? root.getDescription() : root.getDetails();
     }
 }
