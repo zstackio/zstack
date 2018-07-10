@@ -1,10 +1,10 @@
 package org.zstack.identity.rbac;
 
-import org.zstack.header.identity.rbac.RBAC;
+import org.zstack.header.identity.rbac.RBACGroovy;
 
 public class PolicyUtils {
     public static boolean isAdminOnlyAction(String action) {
-        return RBAC.isAdminOnlyAPI(apiNamePatternFromAction(action));
+        return RBACGroovy.isAdminOnlyAPI(apiNamePatternFromAction(action));
     }
 
     public static String apiNamePatternFromAction(String action) {

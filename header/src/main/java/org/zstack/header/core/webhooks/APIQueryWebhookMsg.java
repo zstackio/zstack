@@ -18,6 +18,7 @@ import java.util.List;
         method = HttpMethod.GET,
         responseClass = APIQueryWebhookReply.class
 )
+@Deprecated
 public class APIQueryWebhookMsg extends APIQueryMessage {
     public static List<String> __example__() {
         return Arrays.asList("name=test");

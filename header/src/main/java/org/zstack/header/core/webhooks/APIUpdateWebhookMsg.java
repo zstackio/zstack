@@ -14,6 +14,7 @@ import org.zstack.header.rest.RestRequest;
         isAction = true,
         responseClass = APIUpdateWebhookEvent.class
 )
+@Deprecated
 public class APIUpdateWebhookMsg extends APIMessage {
     @APIParam(resourceType = WebhookVO.class)
     private String uuid;

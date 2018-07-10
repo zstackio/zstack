@@ -41,6 +41,9 @@ public class AccountResourceRefVO {
     private String resourceType;
 
     @Column
+    private String concreteResourceType;
+
+    @Column
     private int permission;
 
     @Column
@@ -55,6 +58,14 @@ public class AccountResourceRefVO {
     @PreUpdate
     private void preUpdate() {
         lastOpDate = null;
+    }
+
+    public String getConcreteResourceType() {
+        return concreteResourceType;
+    }
+
+    public void setConcreteResourceType(String concreteResourceType) {
+        this.concreteResourceType = concreteResourceType;
     }
 
     public long getId() {
@@ -129,10 +140,11 @@ public class AccountResourceRefVO {
         this.lastOpDate = lastOpDate;
     }
 
-    public static AccountResourceRefVO newOwn(String accountUuid, String resourceUuid, Class<?> resourceClass) {
+    public static AccountResourceRefVO New(String accountUuid, String resourceUuid, Class<?> baseType, Class concreteType) {
         AccountResourceRefVO ref = new AccountResourceRefVO();
         ref.setAccountUuid(accountUuid);
-        ref.setResourceType(resourceClass.getSimpleName());
+        ref.setResourceType(baseType.getSimpleName());
+        ref.setConcreteResourceType(concreteType.getName());
         ref.setResourceUuid(resourceUuid);
         ref.setPermission(AccountConstant.RESOURCE_PERMISSION_WRITE);
         ref.setOwnerAccountUuid(accountUuid);

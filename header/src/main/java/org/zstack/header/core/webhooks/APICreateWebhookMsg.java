@@ -14,6 +14,7 @@ import org.zstack.header.rest.RestRequest;
         parameterName = "params",
         responseClass = APICreateWebhookEvent.class
 )
+@Deprecated
 public class APICreateWebhookMsg extends APICreateMessage {
     @APIParam(maxLength = 255)
     private String name;

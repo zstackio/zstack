@@ -2,8 +2,8 @@ package org.zstack.identity.rbac;
 
 import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.header.identity.*;
-import org.zstack.header.identity.role.RoleState;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.identity.rbac.RBACEntity;
 
 import java.util.ArrayList;
 import java.util.HashMap;

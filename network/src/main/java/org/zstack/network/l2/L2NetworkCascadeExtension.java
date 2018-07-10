@@ -195,7 +195,7 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
                             " r.resourceType = :rtype and r.accountUuid in (:auuids)";
                     TypedQuery<L2NetworkVO> q = dbf.getEntityManager().createQuery(sql, L2NetworkVO.class);
                     q.setParameter("auuids", auuids);
-                    q.setParameter("rtype", "VxlanNetworkVO");
+                    q.setParameter("rtype", L2NetworkVO.class.getSimpleName());
                     return q.getResultList();
                 }
             }.call();
