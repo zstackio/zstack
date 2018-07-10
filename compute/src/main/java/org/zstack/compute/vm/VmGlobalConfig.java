@@ -16,7 +16,7 @@ public class VmGlobalConfig {
     public static GlobalConfig VM_DELETION_POLICY = new GlobalConfig(CATEGORY, "deletionPolicy");
     @GlobalConfigValidation(numberGreaterThan = 0)
     public static GlobalConfig VM_EXPUNGE_PERIOD = new GlobalConfig(CATEGORY, "expungePeriod");
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(numberGreaterThan = 1)
     public static GlobalConfig VM_EXPUNGE_INTERVAL = new GlobalConfig(CATEGORY, "expungeInterval");
     @GlobalConfigValidation(validValues = {"true", "false"})
     public static GlobalConfig VM_CLEAN_TRAFFIC = new GlobalConfig(CATEGORY, "cleanTraffic");

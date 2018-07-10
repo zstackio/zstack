@@ -11,6 +11,6 @@ import org.zstack.core.config.GlobalConfigValidation;
 public class GCGlobalConfig {
     public static final String CATEGORY = "gc";
 
-    @GlobalConfigValidation
+    @GlobalConfigValidation(numberGreaterThan = 1)
     public static GlobalConfig SCAN_ORPHAN_JOB_INTERVAL = new GlobalConfig(CATEGORY, "orphanJobScanInterval");
 }
