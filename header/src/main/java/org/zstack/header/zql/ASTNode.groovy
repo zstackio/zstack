@@ -93,6 +93,10 @@ class ASTNode {
          List<ReturnWithExpr> exprs
     }
 
+    static class Sum extends Query {
+        String groupByField
+    }
+
     static class Query extends ASTNode {
         QueryTarget target
         List<Condition> conditions

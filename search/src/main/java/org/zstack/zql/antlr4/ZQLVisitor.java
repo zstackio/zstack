@@ -33,6 +33,13 @@ public interface ZQLVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitCountGrammar(ZQLParser.CountGrammarContext ctx);
 	/**
+	 * Visit a parse tree produced by the {@code sumGrammar}
+	 * labeled alternative in {@link ZQLParser#zql}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitSumGrammar(ZQLParser.SumGrammarContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link ZQLParser#entity}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -240,4 +247,22 @@ public interface ZQLVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitCount(ZQLParser.CountContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ZQLParser#sumByValue}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitSumByValue(ZQLParser.SumByValueContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ZQLParser#sumBy}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitSumBy(ZQLParser.SumByContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ZQLParser#sum}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitSum(ZQLParser.SumContext ctx);
 }

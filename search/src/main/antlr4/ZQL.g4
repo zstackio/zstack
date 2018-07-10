@@ -11,6 +11,7 @@ zqls
 zql
     : query #queryGrammar
     | count #countGrammar
+    | sum #sumGrammar
     ;
 
 entity
@@ -147,6 +148,18 @@ count
     : COUNT queryTarget (WHERE condition+)? restrictBy? orderBy? limit? offset? namedAs?
     ;
 
+sumByValue
+    : ID
+    ;
+
+sumBy
+    : 'by' sumByValue
+    ;
+
+sum
+    : SUM queryTarget sumBy (WHERE condition+)? namedAs?
+    ;
+
 
 FILTER_BY: 'filter by';
 
@@ -157,6 +170,8 @@ LIMIT: 'limit';
 QUERY: 'query';
 
 COUNT: 'count';
+
+SUM: 'sum';
 
 ORDER_BY: 'order by';
 

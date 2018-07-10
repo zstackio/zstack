@@ -23,6 +23,7 @@ import org.zstack.zql.antlr4.ZQLLexer;
 import org.zstack.zql.antlr4.ZQLParser;
 import org.zstack.zql.ast.ZQLMetadata;
 import org.zstack.zql.ast.parser.visitors.CountVisitor;
+import org.zstack.zql.ast.parser.visitors.SumVisitor;
 import org.zstack.zql.ast.visitors.QueryVisitor;
 import org.zstack.zql.ast.visitors.ReturnWithVisitor;
 import org.zstack.zql.ast.visitors.result.QueryResult;
@@ -31,6 +32,7 @@ import org.zstack.zql.ast.visitors.result.ReturnWithResult;
 import javax.persistence.Query;
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class ZQL {
@@ -75,7 +77,7 @@ public class ZQL {
         }
 
         ZQL zql = new ZQL();
-        zql.text = text;
+        zql.text = StringUtils.removeEnd(text.trim(), ";");
         return zql;
     }
 
@@ -232,8 +234,10 @@ public class ZQL {
                 qr.name = query.getName();
 
                 clean.run();
+
+                qr.inventories = ret.vos != null ? entityVOtoInventories(ret.vos) : null;
             } else if (ctx instanceof ZQLParser.QueryGrammarContext) {
-                ASTNode.Query query = (( ZQLParser.QueryGrammarContext)ctx).query().accept(new org.zstack.zql.ast.parser.visitors.QueryVisitor());
+                ASTNode.Query query = ((ZQLParser.QueryGrammarContext) ctx).query().accept(new org.zstack.zql.ast.parser.visitors.QueryVisitor());
                 ReturnWithQueryNodeWrapper wrapper = new ReturnWithQueryNodeWrapper(query);
 
                 wrapper.addPrimaryKeyFieldToTargetFieldNamesWhenReturnWithEnabledAndIsFieldQuery();
@@ -266,19 +270,45 @@ public class ZQL {
                 wrapper.removePrimaryKeyFieldFromTargetFieldNamesWhenReturnWithEnabledAndIsFieldQuery(astResult);
 
                 clean.run();
+
+                qr.inventories = ret.vos != null ? entityVOtoInventories(ret.vos) : null;
+            } else if (ctx instanceof ZQLParser.SumGrammarContext) {
+                ASTNode.Sum sum = ((ZQLParser.SumGrammarContext) ctx).sum().accept(new SumVisitor());
+
+                Runnable clean = prepareZQLContext(sum);
+                callExtensions(sum);
+
+                astResult = (QueryResult) sum.accept(new QueryVisitor(false));
+
+                if (logger.isTraceEnabled()) {
+                    logger.trace(String.format("ZQL query: %s", astResult.sql));
+                }
+
+                new SQLBatch() {
+                    @Override
+                    protected void scripts() {
+                        Query q = astResult.createJPAQuery.apply(databaseFacade.getEntityManager());
+                        ret.vos = q.getResultList();
+                    }
+                }.execute();
+
+                qr.inventories = (List) ret.vos.stream().map(vo -> Arrays.asList((Object[]) vo)).collect(Collectors.toList());
+                qr.name = sum.getName();
+
+                clean.run();
             } else {
                 throw new CloudRuntimeException(String.format("should not be here, %s", ctx));
             }
 
-            qr.inventories = ret.vos != null ? entityVOtoInventories(ret.vos) : null;
+
             qr.total = ret.count;
 
             rs.add(qr);
         });
 
-
         return rs;
     }
+
 
     private Map callReturnWithExtensions(QueryResult astResult, ReturnWithQueryNodeWrapper wrapper, List vos) {
         if (astResult.returnWith == null || astResult.returnWith.isEmpty()) {

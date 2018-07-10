@@ -282,10 +282,18 @@ test a VM's start/stop/reboot/destroy/recover operations
             queryVmInstance { conditions = ["rootVolume.localStorageHostRef.hostUuid=abc"] }
 
             List<ZQLQueryReturn> fs = ZQL.fromString("""query host named as 'host';
-query zone return with (total) named as 'zone'
+query zone return with (total) named as 'zone';
+
 """).getResultList()
 
             assert fs.size() == 2
+            logger.debug(JSONObjectUtil.toJsonString(fs))
+
+            fs = ZQL.fromString("""query host named as 'host';
+query zone return with (total) named as 'zone'
+""").getResultList()
+
+            fs = ZQL.fromString("sum vminstance.cpuNum,memorySize by uuid where cpuNum > 0 named as 'sum'").getResultList()
             logger.debug(JSONObjectUtil.toJsonString(fs))
         }
     }
