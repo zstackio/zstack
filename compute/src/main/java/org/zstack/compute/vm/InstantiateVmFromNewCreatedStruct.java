@@ -1,19 +1,19 @@
 package org.zstack.compute.vm;
 
-import org.zstack.header.vm.CreateVmInstanceMsg;
-import org.zstack.header.vm.StartNewCreatedVmInstanceMsg;
+import org.zstack.header.vm.*;
 
 import java.util.List;
 
 /**
  * Created by xing5 on 2016/9/13.
  */
-public class StartVmFromNewCreatedStruct {
+public class InstantiateVmFromNewCreatedStruct {
     private List<String> dataDiskOfferingUuids;
     private List<String> l3NetworkUuids;
     private String rootDiskOfferingUuid;
     private String primaryStorageUuidForRootVolume;
     private String primaryStorageUuidForDataVolume;
+    private VmCreationStrategy strategy = VmCreationStrategy.InstantStart;
 
     public static String makeLabelKey(String vmUuid) {
         return String.format("not-start-vm-%s", vmUuid);
@@ -43,23 +43,33 @@ public class StartVmFromNewCreatedStruct {
         this.rootDiskOfferingUuid = rootDiskOfferingUuid;
     }
 
-    public static StartVmFromNewCreatedStruct fromMessage(StartNewCreatedVmInstanceMsg msg) {
-        StartVmFromNewCreatedStruct struct = new StartVmFromNewCreatedStruct();
+    public void setStrategy(VmCreationStrategy strategy) {
+        this.strategy = strategy;
+    }
+
+    public VmCreationStrategy getStrategy() {
+        return strategy;
+    }
+
+    public static InstantiateVmFromNewCreatedStruct fromMessage(InstantiateNewCreatedVmInstanceMsg msg) {
+        InstantiateVmFromNewCreatedStruct struct = new InstantiateVmFromNewCreatedStruct();
         struct.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
         struct.setL3NetworkUuids(msg.getL3NetworkUuids());
         struct.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
         struct.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
         struct.setPrimaryStorageUuidForDataVolume(msg.getPrimaryStorageUuidForDataVolume());
+        struct.strategy = VmCreationStrategy.valueOf(msg.getStrategy());
         return struct;
     }
 
-    public static StartVmFromNewCreatedStruct fromMessage(CreateVmInstanceMsg msg) {
-        StartVmFromNewCreatedStruct struct = new StartVmFromNewCreatedStruct();
+    public static InstantiateVmFromNewCreatedStruct fromMessage(CreateVmInstanceMsg msg) {
+        InstantiateVmFromNewCreatedStruct struct = new InstantiateVmFromNewCreatedStruct();
         struct.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
         struct.setL3NetworkUuids(msg.getL3NetworkUuids());
         struct.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
         struct.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
         struct.setPrimaryStorageUuidForDataVolume(msg.getPrimaryStorageUuidForDataVolume());
+        struct.strategy = VmCreationStrategy.valueOf(msg.getStrategy());
         return struct;
     }
 

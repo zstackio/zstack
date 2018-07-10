@@ -198,6 +198,7 @@ public class VmInstanceSpec implements Serializable {
     private String VDIMonitorNumber = "1";
     private String consolePassword;
     private VmAccountPreference accountPerference;
+    private boolean createPaused;
 
     public String getVDIMonitorNumber() {
         return VDIMonitorNumber == null ? "1" : VDIMonitorNumber;
@@ -221,6 +222,14 @@ public class VmInstanceSpec implements Serializable {
 
     public void setUsbRedirect(String usbRedirect) {
         this.usbRedirect = usbRedirect;
+    }
+
+    public void setCreatePaused(boolean createPaused) {
+        this.createPaused = createPaused;
+    }
+
+    public boolean isCreatePaused() {
+        return createPaused;
     }
 
     public VmAccountPreference getAccountPerference() {

@@ -857,6 +857,7 @@ public class KVMAgentCommands {
         private String usbRedirect;
         private Integer VDIMonitorNumber;
         private boolean useBootMenu;
+        private boolean createPaused;
         private boolean kvmHiddenState;
         private boolean vmPortOff;
         private String vmCpuModel;
@@ -934,6 +935,14 @@ public class KVMAgentCommands {
 
         public boolean isUseBootMenu() {
             return useBootMenu;
+        }
+
+        public void setCreatePaused(boolean createPaused) {
+            this.createPaused = createPaused;
+        }
+
+        public boolean isCreatePaused() {
+            return createPaused;
         }
 
         public String getUsbRedirect() {

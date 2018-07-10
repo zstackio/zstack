@@ -72,10 +72,7 @@ import org.zstack.identity.QuotaUtil;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.ObjectUtils;
-import org.zstack.utils.TagUtils;
-import org.zstack.utils.Utils;
+import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -765,6 +762,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
             extEmitter.handleSystemTag(vo.getUuid(), cmsg.getSystemTags());
         }
 
+        InstantiateNewCreatedVmInstanceMsg smsg = new InstantiateNewCreatedVmInstanceMsg();
         if (VmCreationStrategy.JustCreate == VmCreationStrategy.valueOf(msg.getStrategy())) {
             VmInstanceInventory inv = VmInstanceInventory.valueOf(vo);
             createVmButNotStart(msg, inv);
@@ -772,20 +770,20 @@ public class VmInstanceManagerImpl extends AbstractService implements
             return;
         }
 
-        StartNewCreatedVmInstanceMsg smsg = new StartNewCreatedVmInstanceMsg();
         smsg.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
         smsg.setL3NetworkUuids(msg.getL3NetworkUuids());
         smsg.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
         smsg.setVmInstanceInventory(VmInstanceInventory.valueOf(vo));
         smsg.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
         smsg.setPrimaryStorageUuidForDataVolume(msg.getPrimaryStorageUuidForDataVolume());
+        smsg.setStrategy(msg.getStrategy());
         bus.makeTargetServiceIdByResourceUuid(smsg, VmInstanceConstant.SERVICE_ID, vo.getUuid());
         bus.send(smsg, new CloudBusCallBack(smsg) {
             @Override
             public void run(MessageReply reply) {
                 try {
                     if (reply.isSuccess()) {
-                        StartNewCreatedVmInstanceReply r = (StartNewCreatedVmInstanceReply) reply;
+                        InstantiateNewCreatedVmInstanceReply r = (InstantiateNewCreatedVmInstanceReply) reply;
                         completion.success(r.getVmInventory());
                     } else {
                         completion.fail(reply.getError());
@@ -799,8 +797,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
     }
 
     private void createVmButNotStart(CreateVmInstanceMsg msg, VmInstanceInventory inv) {
-        StartVmFromNewCreatedStruct struct = StartVmFromNewCreatedStruct.fromMessage(msg);
-        new JsonLabel().create(StartVmFromNewCreatedStruct.makeLabelKey(inv.getUuid()), struct, inv.getUuid());
+        InstantiateVmFromNewCreatedStruct struct = InstantiateVmFromNewCreatedStruct.fromMessage(msg);
+        new JsonLabel().create(InstantiateVmFromNewCreatedStruct.makeLabelKey(inv.getUuid()), struct, inv.getUuid());
     }
 
     private void handle(final CreateVmInstanceMsg msg) {

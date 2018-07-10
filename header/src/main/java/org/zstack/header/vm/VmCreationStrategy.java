@@ -6,4 +6,5 @@ package org.zstack.header.vm;
 public enum VmCreationStrategy {
     InstantStart,
     JustCreate,
+    CreateStopped,
 }

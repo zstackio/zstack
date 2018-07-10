@@ -12,10 +12,7 @@ import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostErrors;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.vm.APIStopVmInstanceMsg;
-import org.zstack.header.vm.StopVmOnHypervisorMsg;
-import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.*;
 
 import java.util.Map;
 
@@ -34,9 +31,10 @@ public class VmStopOnHypervisorFlow extends NoRollbackFlow {
 
         StopVmOnHypervisorMsg msg = new StopVmOnHypervisorMsg();
         msg.setVmInventory(spec.getVmInventory());
-        if (spec.getMessage() instanceof APIStopVmInstanceMsg) {
-           msg.setType(((APIStopVmInstanceMsg)spec.getMessage()).getType());
+        if (spec.getMessage() instanceof StopVmMessage) {
+           msg.setType(((StopVmMessage)spec.getMessage()).getType());
         }
+
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, spec.getVmInventory().getHostUuid());
         bus.send(msg, new CloudBusCallBack(chain) {
             @Override

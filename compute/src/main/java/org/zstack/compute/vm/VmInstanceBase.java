@@ -60,7 +60,6 @@ import org.zstack.identity.AccountManager;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.DebugUtils;
 import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
@@ -74,7 +73,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
-import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.*;
 
@@ -348,8 +346,8 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     protected void handleLocalMessage(Message msg) {
-        if (msg instanceof StartNewCreatedVmInstanceMsg) {
-            handle((StartNewCreatedVmInstanceMsg) msg);
+        if (msg instanceof InstantiateNewCreatedVmInstanceMsg) {
+            handle((InstantiateNewCreatedVmInstanceMsg) msg);
         } else if (msg instanceof StartVmInstanceMsg) {
             handle((StartVmInstanceMsg) msg);
         } else if (msg instanceof StopVmInstanceMsg) {
@@ -2104,7 +2102,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
     }
 
-    protected void startVmFromNewCreate(final StartNewCreatedVmInstanceMsg msg, final SyncTaskChain taskChain) {
+    protected void instantiateVmFromNewCreate(final InstantiateNewCreatedVmInstanceMsg msg, final SyncTaskChain taskChain) {
         refreshVO();
         ErrorCode error = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
         if (error != null) {
@@ -2116,8 +2114,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             throw new OperationFailureException(error);
         }
 
-        StartNewCreatedVmInstanceReply reply = new StartNewCreatedVmInstanceReply();
-        startVmFromNewCreate(StartVmFromNewCreatedStruct.fromMessage(msg), new Completion(msg, taskChain) {
+        InstantiateNewCreatedVmInstanceReply reply = new InstantiateNewCreatedVmInstanceReply();
+        instantiateVmFromNewCreate(InstantiateVmFromNewCreatedStruct.fromMessage(msg), new Completion(msg, taskChain) {
             @Override
             public void success() {
                 self = dbf.reload(self);
@@ -2136,7 +2134,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     }
 
-    protected void handle(final StartNewCreatedVmInstanceMsg msg) {
+    protected void handle(final InstantiateNewCreatedVmInstanceMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getName() {
@@ -2150,9 +2148,8 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void run(SyncTaskChain chain) {
-                startVmFromNewCreate(msg, chain);
+                instantiateVmFromNewCreate(msg, chain);
             }
-
         });
     }
 
@@ -4259,10 +4256,11 @@ public class VmInstanceBase extends AbstractVmInstance {
         IsoOperator.checkIsoSystemTag(self.getUuid());
 
         if (self.getState() == VmInstanceState.Created) {
-            StartVmFromNewCreatedStruct struct = new JsonLabel().get(
-                    StartVmFromNewCreatedStruct.makeLabelKey(self.getUuid()), StartVmFromNewCreatedStruct.class);
+            InstantiateVmFromNewCreatedStruct struct = new JsonLabel().get(
+                    InstantiateVmFromNewCreatedStruct.makeLabelKey(self.getUuid()), InstantiateVmFromNewCreatedStruct.class);
 
-            startVmFromNewCreate(struct, completion);
+            struct.setStrategy(VmCreationStrategy.InstantStart);
+            instantiateVmFromNewCreate(struct, completion);
             return;
         }
 
@@ -4366,13 +4364,11 @@ public class VmInstanceBase extends AbstractVmInstance {
         }).start();
     }
 
-    private void startVmFromNewCreate(StartVmFromNewCreatedStruct struct, Completion completion) {
-        VmInstanceInventory inv = getSelfInventory();
-
+    private VmInstanceSpec buildVmInstanceSpecFromStruct(InstantiateVmFromNewCreatedStruct struct) {
         final VmInstanceSpec spec = new VmInstanceSpec();
         spec.setRequiredPrimaryStorageUuidForRootVolume(struct.getPrimaryStorageUuidForRootVolume());
         spec.setRequiredPrimaryStorageUuidForDataVolume(struct.getPrimaryStorageUuidForDataVolume());
-        spec.setVmInventory(inv);
+        spec.setVmInventory(getSelfInventory());
         if (struct.getL3NetworkUuids() != null && !struct.getL3NetworkUuids().isEmpty()) {
             SimpleQuery<L3NetworkVO> nwquery = dbf.createQuery(L3NetworkVO.class);
             nwquery.add(L3NetworkVO_.uuid, Op.IN, struct.getL3NetworkUuids());
@@ -4390,13 +4386,10 @@ public class VmInstanceBase extends AbstractVmInstance {
                 });
 
                 if(l3 == null){
-                    completion.fail(err(
-                            SysErrors.OPERATION_ERROR,
-                            "Unable to find L3Network[uuid:%s] to start the current vm, it may have been deleted, Operation suggestion: delete this vm, recreate a new vm",
-                            l3Uuid));
-                    return;
+                    throw new OperationFailureException(operr(
+                            "Unable to find L3Network[uuid:%s] to start the current vm, it may have been deleted, " +
+                                    "Operation suggestion: delete this vm, recreate a new vm", l3Uuid));
                 }
-                DebugUtils.Assert(l3 != null, "where is the L3???");
                 l3s.add(l3);
             }
 
@@ -4453,6 +4446,15 @@ public class VmInstanceBase extends AbstractVmInstance {
         spec.setConsolePassword(VmSystemTags.CONSOLE_PASSWORD.
                 getTokenByResourceUuid(self.getUuid(), VmSystemTags.CONSOLE_PASSWORD_TOKEN));
         spec.setUsbRedirect(VmSystemTags.USB_REDIRECT.getTokenByResourceUuid(self.getUuid(), VmSystemTags.USB_REDIRECT_TOKEN));
+        if (struct.getStrategy() == VmCreationStrategy.CreateStopped) {
+            spec.setCreatePaused(true);
+        }
+
+        return spec;
+    }
+
+    private void instantiateVmFromNewCreate(InstantiateVmFromNewCreatedStruct struct, Completion completion) {
+        VmInstanceSpec spec = buildVmInstanceSpecFromStruct(struct);
 
         changeVmStateInDb(VmInstanceStateEvent.starting);
 
@@ -4465,16 +4467,19 @@ public class VmInstanceBase extends AbstractVmInstance {
                 });
 
         extEmitter.beforeStartNewCreatedVm(VmInstanceInventory.valueOf(self));
-        FlowChain chain = getCreateVmWorkFlowChain(inv);
+        FlowChain chain = getCreateVmWorkFlowChain(getSelfInventory());
         setFlowMarshaller(chain);
 
         chain.setName(String.format("create-vm-%s", self.getUuid()));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
-        chain.done(new FlowDoneHandler(completion) {
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "after-started-vm-" + self.getUuid();
+
             @Override
-            public void handle(final Map data) {
+            public void run(FlowTrigger trigger, Map data) {
                 VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-                changeVmStateInDb(VmInstanceStateEvent.running, ()-> {
+                changeVmStateInDb(struct.getStrategy() == VmCreationStrategy.InstantStart ?
+                        VmInstanceStateEvent.running : VmInstanceStateEvent.paused, ()-> {
                     self.setLastHostUuid(spec.getDestHost().getUuid());
                     self.setHostUuid(spec.getDestHost().getUuid());
                     self.setClusterUuid(spec.getDestHost().getClusterUuid());
@@ -4482,9 +4487,42 @@ public class VmInstanceBase extends AbstractVmInstance {
                     self.setHypervisorType(spec.getDestHost().getHypervisorType());
                     self.setRootVolumeUuid(spec.getDestRootVolume().getUuid());
                 });
-                logger.debug(String.format("vm[uuid:%s] is running ..", self.getUuid()));
+                logger.debug(String.format("vm[uuid:%s] is started ..", self.getUuid()));
                 VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
                 extEmitter.afterStartNewCreatedVm(inv);
+                trigger.next();
+            }
+        });
+
+        if (struct.getStrategy() == VmCreationStrategy.CreateStopped) {
+            chain.then(new NoRollbackFlow() {
+                String __name__ = "stop-vm-" + self.getUuid();
+
+                @Override
+                public void run(FlowTrigger trigger, Map data) {
+                    StopVmInstanceMsg smsg = new StopVmInstanceMsg();
+                    smsg.setVmInstanceUuid(self.getUuid());
+                    smsg.setGcOnFailure(true);
+                    smsg.setType(StopVmType.cold);
+                    stopVm(smsg, new Completion(trigger) {
+                        @Override
+                        public void success() {
+                            trigger.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            trigger.fail(errorCode);
+                        }
+                    });
+                }
+            });
+        }
+
+        chain.done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(final Map data) {
+                logger.debug(String.format("vm[uuid:%s] is created ..", self.getUuid()));
                 completion.success();
             }
         }).error(new FlowErrorHandler(completion) {

@@ -8,9 +8,10 @@ import org.zstack.header.message.NeedReplyMessage;
  * Time: 9:46 PM
  * To change this template use File | Settings | File Templates.
  */
-public class StopVmInstanceMsg extends NeedReplyMessage implements VmInstanceMessage {
+public class StopVmInstanceMsg extends NeedReplyMessage implements VmInstanceMessage, StopVmMessage {
     private String vmInstanceUuid;
     private boolean gcOnFailure;
+    private StopVmType type = StopVmType.grace;
 
     public boolean isGcOnFailure() {
         return gcOnFailure;
@@ -27,5 +28,14 @@ public class StopVmInstanceMsg extends NeedReplyMessage implements VmInstanceMes
 
     public void setVmInstanceUuid(String vmInstanceUuid) {
         this.vmInstanceUuid = vmInstanceUuid;
+    }
+
+    public void setType(StopVmType type) {
+        this.type = type;
+    }
+
+    @Override
+    public String getType() {
+        return type.toString();
     }
 }
