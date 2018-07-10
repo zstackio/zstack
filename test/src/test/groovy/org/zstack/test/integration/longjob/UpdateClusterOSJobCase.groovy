@@ -21,9 +21,6 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
-
-import java.util.concurrent.TimeUnit
-
 /**
  * Created by GuoYi on 3/13/18
  */
@@ -357,7 +354,7 @@ class UpdateClusterOSJobCase extends SubCase {
         }
 
         retryInSecs {
-            assert cmdList.size() == 2
+            assert cmdList.size() <= 2
         }
 
     }
