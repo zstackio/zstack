@@ -45,6 +45,60 @@ public class ZQLMetadata {
         public Map<String, ExpandQueryAliasMetadata> expandQueryAliases = new HashMap<>();
         public Set<String> selfInventoryFieldNames;
 
+        private class FieldTypeMapping {
+            Class inventoryFieldType;
+            Class voFieldType;
+
+            public FieldTypeMapping(Class inventoryFieldType, Class voFieldType) {
+                this.inventoryFieldType = inventoryFieldType;
+                this.voFieldType = voFieldType;
+            }
+        }
+
+        private Map<String, FieldTypeMapping> typeMappingMap = new HashMap<>();
+
+        private void constructFieldMapping() {
+            Class selfVoClass = inventoryAnnotation.mappingVOClass();
+            Map<String, Field> inventoryFieldMap = getAllFieldMap(selfInventoryClass);
+            for (Field it : getAllFieldMap(selfVoClass).values()) {
+                try {
+                    Class voFieldType = it.getType();
+                    Field inventoryField = inventoryFieldMap.get(it.getName());
+                    if (inventoryField == null){
+                        continue;
+                    }
+                    Class inventoryFieldType = inventoryField.getType();
+                    if (!inventoryFieldType.equals(voFieldType)) {
+                        typeMappingMap.put(it.getName(), new FieldTypeMapping(inventoryFieldType, voFieldType));
+                    }
+                } catch (Exception e) {
+                    throw new CloudRuntimeException(e);
+                }
+            }
+        }
+
+        private Map<String, Field> getAllFieldMap(Class clazz) {
+            Map fields = new HashMap();
+            while (clazz != Object.class) {
+                Arrays.stream(clazz.getDeclaredFields()).forEach(it -> fields.put(it.getName(), it));
+                clazz = clazz.getSuperclass();
+            }
+            return fields;
+        }
+
+        public Object toInventoryFieldObject(String fieldName, Object value) {
+            FieldTypeMapping mapping = typeMappingMap.get(fieldName);
+            if (mapping == null) {
+                return value;
+            }
+
+            if (Enum.class.isAssignableFrom(mapping.voFieldType)) {
+                return value.toString();
+            }
+
+            throw new CloudRuntimeException(String.format("For the field[%s], fail to convert a vo to a inventory"));
+        }
+
         public boolean hasInventoryField(String fname) {
             if (fname.equals(SYS_TAG_NAME) || fname.equals(USER_TAG_NAME)) {
                 return true;
@@ -438,6 +492,10 @@ public class ZQLMetadata {
                         f.getDeclaringClass(), tf.getName(), f.getName()));
             }
             inventoryTypeFields.put(tf.getDeclaringClass(), tf);
+
+            for (InventoryMetadata metadata: inventoryMetadata.values()) {
+                metadata.constructFieldMapping();
+            }
         });
     }
 
