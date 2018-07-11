@@ -162,9 +162,32 @@ class OneVmDhcpCase extends SubCase {
             return rsp
         }
 
+        assert Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_VXLAN.value()) == 1450;
+
         updateGlobalConfig {
             category = NetworkServiceGlobalConfig.CATEGORY
             name = "defaultDhcpMtu.l2NoVlanNetwork"
+            value = 1600
+            sessionId = adminSession()
+        }
+
+        updateGlobalConfig {
+            category = NetworkServiceGlobalConfig.CATEGORY
+            name = "defaultDhcpMtu.l2VlanNetwork"
+            value = 1600
+            sessionId = adminSession()
+        }
+
+        updateGlobalConfig {
+            category = NetworkServiceGlobalConfig.CATEGORY
+            name = "defaultDhcpMtu.l2VxlanNetwork"
+            value = 1600
+            sessionId = adminSession()
+        }
+
+        updateGlobalConfig {
+            category = NetworkServiceGlobalConfig.CATEGORY
+            name = "defaultDhcpMtu.dummyNetwork"
             value = 1600
             sessionId = adminSession()
         }
@@ -174,8 +197,10 @@ class OneVmDhcpCase extends SubCase {
         }
 
         DhcpInfo info = cmd.dhcp[0]
-        assert info.mtu.equals(Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_NO_VLAN.getDefaultValue()));
-
+        assert info.mtu.equals(Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_NO_VLAN.value()));
+        assert info.mtu.equals(Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_VLAN.value()));
+        assert info.mtu.equals(Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_VXLAN.value()));
+        assert info.mtu.equals(Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_DUMMY.value()));
 
         setL3NetworkMtu {
             delegate.mtu = 1450
