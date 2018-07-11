@@ -19,7 +19,8 @@ public interface VmInstanceConstant {
         AbnormalLifeCycleStruct,
         DeletionPolicy,
         AttachingIsoInventory,
-        DetachingIsoUuid
+        DetachingIsoUuid,
+        ReleaseNicAfterDetachNic
     }
 
     enum VmOperation {
