@@ -185,6 +185,8 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
             }
 
             if (msg instanceof MessageReply) {
+                beforeDeliverMessage(msg);
+
                 MessageReply r = (MessageReply) msg;
                 String correlationId = r.getHeaderEntry(CORRELATION_ID);
                 Envelope e = envelopes.get(correlationId);
@@ -615,6 +617,19 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
         }
     }
 
+    private void beforeDeliverMessage(Message msg) {
+        List<BeforeDeliveryMessageInterceptor> is = beforeDeliveryMessageInterceptors.get(msg.getClass());
+        if (is != null) {
+            for (BeforeDeliveryMessageInterceptor i : is) {
+                i.beforeDeliveryMessage(msg);
+            }
+        }
+
+        for (BeforeDeliveryMessageInterceptor i : beforeDeliveryMessageInterceptorsForAll) {
+            i.beforeDeliveryMessage(msg);
+        }
+    }
+
     @Override
     public void registerService(Service serv) throws CloudConfigureFailException {
         int syncLevel = serv.getSyncLevel();
@@ -648,16 +663,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
                             setThreadLoggingContext(msg);
 
                             try {
-                                List<BeforeDeliveryMessageInterceptor> is = beforeDeliveryMessageInterceptors.get(msg.getClass());
-                                if (is != null) {
-                                    for (BeforeDeliveryMessageInterceptor i : is) {
-                                        i.beforeDeliveryMessage(msg);
-                                    }
-                                }
-
-                                for (BeforeDeliveryMessageInterceptor i : beforeDeliveryMessageInterceptorsForAll) {
-                                    i.beforeDeliveryMessage(msg);
-                                }
+                                beforeDeliverMessage(msg);
 
                                 serv.handleMessage(msg);
                             } catch (Throwable t) {
