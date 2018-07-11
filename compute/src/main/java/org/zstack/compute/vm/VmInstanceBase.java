@@ -1111,7 +1111,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 if (currentState == VmInstanceState.Running) {
                     changeVmStateInDb(VmInstanceStateEvent.running, ()-> self.setHostUuid(currentHostUuid));
                 } else if (currentState == VmInstanceState.Stopped) {
-                    changeVmStateInDb(VmInstanceStateEvent.stopped, ()-> self.setHostUuid(null));
+                    changeVmStateInDb(VmInstanceStateEvent.stopped);
                 }
 
                 fireEvent.run();
