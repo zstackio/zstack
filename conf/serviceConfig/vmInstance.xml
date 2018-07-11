@@ -45,6 +45,15 @@
         <name>org.zstack.header.vm.APIAttachL3NetworkToVmMsg</name>
     </message>
     <message>
+        <name>org.zstack.header.vm.APICreateVmNicMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.vm.APIAttachVmNicToVmMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.vm.APIDeleteVmNicMsg</name>
+    </message>
+    <message>
         <name>org.zstack.header.vm.APIGetVmMigrationCandidateHostsMsg</name>
     </message>
     <message>
