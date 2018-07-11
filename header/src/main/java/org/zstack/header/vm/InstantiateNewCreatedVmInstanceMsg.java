@@ -6,13 +6,14 @@ import org.zstack.header.message.NeedReplyMessage;
 import java.util.List;
 
 @ApiTimeout(apiClasses = {APICreateVmInstanceMsg.class})
-public class StartNewCreatedVmInstanceMsg extends NeedReplyMessage implements VmInstanceMessage {
+public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage implements VmInstanceMessage {
     private VmInstanceInventory vmInstanceInventory;
     private List<String> l3NetworkUuids;
     private List<String> dataDiskOfferingUuids;
     private String rootDiskOfferingUuid;
     private String primaryStorageUuidForRootVolume;
     private String primaryStorageUuidForDataVolume;
+    private String strategy;
 
     public VmInstanceInventory getVmInstanceInventory() {
         return vmInstanceInventory;
@@ -65,5 +66,13 @@ public class StartNewCreatedVmInstanceMsg extends NeedReplyMessage implements Vm
 
     public void setPrimaryStorageUuidForDataVolume(String primaryStorageUuidForDataVolume) {
         this.primaryStorageUuidForDataVolume = primaryStorageUuidForDataVolume;
+    }
+
+    public void setStrategy(String strategy) {
+        this.strategy = strategy;
+    }
+
+    public String getStrategy() {
+        return strategy;
     }
 }

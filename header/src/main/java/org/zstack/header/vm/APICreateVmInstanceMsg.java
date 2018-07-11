@@ -160,7 +160,7 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
     private String defaultL3NetworkUuid;
 
 
-    @APIParam(required = false, validValues = {"InstantStart", "JustCreate"})
+    @APIParam(required = false, validValues = {"InstantStart", "JustCreate", "CreateStopped"})
     private String strategy = VmCreationStrategy.InstantStart.toString();
 
     public String getStrategy() {

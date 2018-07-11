@@ -40,7 +40,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIStopVmInstanceEvent.class,
         isAction = true
 )
-public class APIStopVmInstanceMsg extends APIMessage implements VmInstanceMessage {
+public class APIStopVmInstanceMsg extends APIMessage implements VmInstanceMessage, StopVmMessage {
     /**
      * @desc vm uuid
      */
@@ -59,6 +59,7 @@ public class APIStopVmInstanceMsg extends APIMessage implements VmInstanceMessag
         this.uuid = uuid;
     }
 
+    @Override
     public String getType() {
         return type;
     }

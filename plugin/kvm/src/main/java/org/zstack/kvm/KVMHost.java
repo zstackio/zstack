@@ -2074,6 +2074,10 @@ public class KVMHost extends HostBase implements Host {
         cmd.setUseNuma(VmGlobalConfig.NUMA.value(Boolean.class));
         cmd.setVmPortOff(VmGlobalConfig.VM_PORT_OFF.value(Boolean.class));
         cmd.setConsoleMode("vnc");
+        if (spec.isCreatePaused()) {
+            cmd.setCreatePaused(true);
+            cmd.setTimeout(TimeUnit.MINUTES.toSeconds(5));
+        }
 
         addons(spec, cmd);
         KVMHostInventory khinv = KVMHostInventory.valueOf(getSelf());

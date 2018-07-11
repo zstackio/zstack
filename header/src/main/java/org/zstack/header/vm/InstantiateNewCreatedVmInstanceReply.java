@@ -2,7 +2,7 @@ package org.zstack.header.vm;
 
 import org.zstack.header.message.MessageReply;
 
-public class StartNewCreatedVmInstanceReply extends MessageReply {
+public class InstantiateNewCreatedVmInstanceReply extends MessageReply {
     private VmInstanceInventory vmInventory;
 
     public VmInstanceInventory getVmInventory() {
