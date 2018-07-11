@@ -103,7 +103,7 @@ public class L2VlanNetworkFactory extends AbstractService implements L2NetworkFa
 
     @Override
     public Integer getDefaultMtu() {
-        return Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_VLAN.getDefaultValue());
+        return Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_VLAN.value());
     }
 
     @Override

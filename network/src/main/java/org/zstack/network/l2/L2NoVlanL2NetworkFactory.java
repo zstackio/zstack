@@ -57,7 +57,7 @@ public class L2NoVlanL2NetworkFactory implements L2NetworkFactory, Component, L2
 
     @Override
     public Integer getDefaultMtu() {
-        return Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_NO_VLAN.getDefaultValue());
+        return Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_NO_VLAN.value());
     }
 
     @Override

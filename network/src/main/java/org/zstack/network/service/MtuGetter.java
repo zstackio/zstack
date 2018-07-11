@@ -50,7 +50,7 @@ public class MtuGetter {
         if (mtu != null) {
             return mtu;
         } else {
-            mtu = Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_DUMMY.getDefaultValue());
+            mtu = Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_DUMMY.value());
             logger.warn(String.format("unknown network type [%s], set mtu as default [%s]",
                     l2type, mtu));
             return mtu;

@@ -210,7 +210,7 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInsta
 
     @Override
     public Integer getDefaultMtu() {
-        return Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_VXLAN.getDefaultValue());
+        return Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_VXLAN.value());
     }
 
     @Override

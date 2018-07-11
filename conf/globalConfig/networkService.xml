@@ -17,7 +17,7 @@
     <config>
         <name>defaultDhcpMtu.l2VxlanNetwork</name>
         <description>Default mtu for l2VxlanNetwork.</description>
-        <defaultValue>1500</defaultValue>
+        <defaultValue>1450</defaultValue>
         <category>networkService</category>
         <type>java.lang.Integer</type>
     </config>
