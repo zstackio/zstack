@@ -4,9 +4,14 @@ grammar ZQL;
 package org.zstack.zql.antlr4;
 }
 
+zqls
+    : zql (';' zql)* EOF
+    ;
+
 zql
-    : query EOF #queryGrammar
-    | count EOF #countGrammar
+    : query #queryGrammar
+    | count #countGrammar
+    | sum #sumGrammar
     ;
 
 entity
@@ -127,12 +132,32 @@ filterBy
     : FILTER_BY filterByExpr (',' filterByExpr)*
     ;
 
+namedAsValue
+    : STRING
+    ;
+
+namedAs
+    : NAMED_AS namedAsValue
+    ;
+
 query
-    : QUERY queryTarget (WHERE condition+)? restrictBy? returnWith? orderBy? limit? offset? filterBy?
+    : QUERY queryTarget (WHERE condition+)? restrictBy? returnWith? orderBy? limit? offset? filterBy? namedAs?
     ;
 
 count
-    : COUNT queryTarget (WHERE condition+)? restrictBy? orderBy? limit? offset?
+    : COUNT queryTarget (WHERE condition+)? restrictBy? orderBy? limit? offset? namedAs?
+    ;
+
+sumByValue
+    : ID
+    ;
+
+sumBy
+    : 'by' sumByValue
+    ;
+
+sum
+    : SUM queryTarget sumBy (WHERE condition+)? namedAs?
     ;
 
 
@@ -146,7 +171,11 @@ QUERY: 'query';
 
 COUNT: 'count';
 
+SUM: 'sum';
+
 ORDER_BY: 'order by';
+
+NAMED_AS: 'named as';
 
 ORDER_BY_VALUE: ASC | DESC;
 

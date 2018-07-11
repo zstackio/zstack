@@ -21,38 +21,42 @@ public class ZQLParser extends Parser {
 	public static final int
 		T__0=1, T__1=2, T__2=3, T__3=4, T__4=5, T__5=6, T__6=7, T__7=8, T__8=9, 
 		T__9=10, T__10=11, T__11=12, T__12=13, T__13=14, T__14=15, T__15=16, T__16=17, 
-		T__17=18, FILTER_BY=19, OFFSET=20, LIMIT=21, QUERY=22, COUNT=23, ORDER_BY=24, 
-		ORDER_BY_VALUE=25, RESTRICT_BY=26, RETURN_WITH=27, WHERE=28, AND=29, OR=30, 
-		ASC=31, DESC=32, BOOLEAN=33, INT=34, FLOAT=35, ID=36, WS=37, STRING=38;
+		T__17=18, T__18=19, T__19=20, FILTER_BY=21, OFFSET=22, LIMIT=23, QUERY=24, 
+		COUNT=25, SUM=26, ORDER_BY=27, NAMED_AS=28, ORDER_BY_VALUE=29, RESTRICT_BY=30, 
+		RETURN_WITH=31, WHERE=32, AND=33, OR=34, ASC=35, DESC=36, BOOLEAN=37, 
+		INT=38, FLOAT=39, ID=40, WS=41, STRING=42;
 	public static final int
-		RULE_zql = 0, RULE_entity = 1, RULE_field = 2, RULE_multiFields = 3, RULE_operator = 4, 
-		RULE_value = 5, RULE_logicalOperator = 6, RULE_complexValue = 7, RULE_expr = 8, 
-		RULE_condition = 9, RULE_queryTarget = 10, RULE_orderBy = 11, RULE_limit = 12, 
-		RULE_offset = 13, RULE_restrictByExpr = 14, RULE_restrictBy = 15, RULE_returnWithExprBlock = 16, 
-		RULE_returnWithExpr = 17, RULE_returnWith = 18, RULE_subQueryTarget = 19, 
-		RULE_subQuery = 20, RULE_filterByExprBlock = 21, RULE_filterByExpr = 22, 
-		RULE_filterBy = 23, RULE_query = 24, RULE_count = 25;
+		RULE_zqls = 0, RULE_zql = 1, RULE_entity = 2, RULE_field = 3, RULE_multiFields = 4, 
+		RULE_operator = 5, RULE_value = 6, RULE_logicalOperator = 7, RULE_complexValue = 8, 
+		RULE_expr = 9, RULE_condition = 10, RULE_queryTarget = 11, RULE_orderBy = 12, 
+		RULE_limit = 13, RULE_offset = 14, RULE_restrictByExpr = 15, RULE_restrictBy = 16, 
+		RULE_returnWithExprBlock = 17, RULE_returnWithExpr = 18, RULE_returnWith = 19, 
+		RULE_subQueryTarget = 20, RULE_subQuery = 21, RULE_filterByExprBlock = 22, 
+		RULE_filterByExpr = 23, RULE_filterBy = 24, RULE_namedAsValue = 25, RULE_namedAs = 26, 
+		RULE_query = 27, RULE_count = 28, RULE_sumByValue = 29, RULE_sumBy = 30, 
+		RULE_sum = 31;
 	public static final String[] ruleNames = {
-		"zql", "entity", "field", "multiFields", "operator", "value", "logicalOperator", 
-		"complexValue", "expr", "condition", "queryTarget", "orderBy", "limit", 
-		"offset", "restrictByExpr", "restrictBy", "returnWithExprBlock", "returnWithExpr", 
-		"returnWith", "subQueryTarget", "subQuery", "filterByExprBlock", "filterByExpr", 
-		"filterBy", "query", "count"
+		"zqls", "zql", "entity", "field", "multiFields", "operator", "value", 
+		"logicalOperator", "complexValue", "expr", "condition", "queryTarget", 
+		"orderBy", "limit", "offset", "restrictByExpr", "restrictBy", "returnWithExprBlock", 
+		"returnWithExpr", "returnWith", "subQueryTarget", "subQuery", "filterByExprBlock", 
+		"filterByExpr", "filterBy", "namedAsValue", "namedAs", "query", "count", 
+		"sumByValue", "sumBy", "sum"
 	};
 
 	private static final String[] _LITERAL_NAMES = {
-		null, "'.'", "','", "'='", "'!='", "'>'", "'>='", "'<'", "'<='", "'is null'", 
-		"'is not null'", "'in'", "'not in'", "'like'", "'not like'", "'('", "')'", 
-		"'{'", "'}'", "'filter by'", "'offset'", "'limit'", "'query'", "'count'", 
-		"'order by'", null, "'restrict by'", "'return with'", "'where'", "'and'", 
-		"'or'", "'asc'", "'desc'"
+		null, "';'", "'.'", "','", "'='", "'!='", "'>'", "'>='", "'<'", "'<='", 
+		"'is null'", "'is not null'", "'in'", "'not in'", "'like'", "'not like'", 
+		"'('", "')'", "'{'", "'}'", "'by'", "'filter by'", "'offset'", "'limit'", 
+		"'query'", "'count'", "'sum'", "'order by'", "'named as'", null, "'restrict by'", 
+		"'return with'", "'where'", "'and'", "'or'", "'asc'", "'desc'"
 	};
 	private static final String[] _SYMBOLIC_NAMES = {
 		null, null, null, null, null, null, null, null, null, null, null, null, 
-		null, null, null, null, null, null, null, "FILTER_BY", "OFFSET", "LIMIT", 
-		"QUERY", "COUNT", "ORDER_BY", "ORDER_BY_VALUE", "RESTRICT_BY", "RETURN_WITH", 
-		"WHERE", "AND", "OR", "ASC", "DESC", "BOOLEAN", "INT", "FLOAT", "ID", 
-		"WS", "STRING"
+		null, null, null, null, null, null, null, null, null, "FILTER_BY", "OFFSET", 
+		"LIMIT", "QUERY", "COUNT", "SUM", "ORDER_BY", "NAMED_AS", "ORDER_BY_VALUE", 
+		"RESTRICT_BY", "RETURN_WITH", "WHERE", "AND", "OR", "ASC", "DESC", "BOOLEAN", 
+		"INT", "FLOAT", "ID", "WS", "STRING"
 	};
 	public static final Vocabulary VOCABULARY = new VocabularyImpl(_LITERAL_NAMES, _SYMBOLIC_NAMES);
 
@@ -103,6 +107,73 @@ public class ZQLParser extends Parser {
 		super(input);
 		_interp = new ParserATNSimulator(this,_ATN,_decisionToDFA,_sharedContextCache);
 	}
+	public static class ZqlsContext extends ParserRuleContext {
+		public List<ZqlContext> zql() {
+			return getRuleContexts(ZqlContext.class);
+		}
+		public ZqlContext zql(int i) {
+			return getRuleContext(ZqlContext.class,i);
+		}
+		public TerminalNode EOF() { return getToken(ZQLParser.EOF, 0); }
+		public ZqlsContext(ParserRuleContext parent, int invokingState) {
+			super(parent, invokingState);
+		}
+		@Override public int getRuleIndex() { return RULE_zqls; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof ZQLListener ) ((ZQLListener)listener).enterZqls(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof ZQLListener ) ((ZQLListener)listener).exitZqls(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof ZQLVisitor ) return ((ZQLVisitor<? extends T>)visitor).visitZqls(this);
+			else return visitor.visitChildren(this);
+		}
+	}
+
+	public final ZqlsContext zqls() throws RecognitionException {
+		ZqlsContext _localctx = new ZqlsContext(_ctx, getState());
+		enterRule(_localctx, 0, RULE_zqls);
+		int _la;
+		try {
+			enterOuterAlt(_localctx, 1);
+			{
+			setState(64);
+			zql();
+			setState(69);
+			_errHandler.sync(this);
+			_la = _input.LA(1);
+			while (_la==T__0) {
+				{
+				{
+				setState(65);
+				match(T__0);
+				setState(66);
+				zql();
+				}
+				}
+				setState(71);
+				_errHandler.sync(this);
+				_la = _input.LA(1);
+			}
+			setState(72);
+			match(EOF);
+			}
+		}
+		catch (RecognitionException re) {
+			_localctx.exception = re;
+			_errHandler.reportError(this, re);
+			_errHandler.recover(this, re);
+		}
+		finally {
+			exitRule();
+		}
+		return _localctx;
+	}
+
 	public static class ZqlContext extends ParserRuleContext {
 		public ZqlContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
@@ -118,7 +189,6 @@ public class ZQLParser extends Parser {
 		public QueryContext query() {
 			return getRuleContext(QueryContext.class,0);
 		}
-		public TerminalNode EOF() { return getToken(ZQLParser.EOF, 0); }
 		public QueryGrammarContext(ZqlContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
@@ -138,7 +208,6 @@ public class ZQLParser extends Parser {
 		public CountContext count() {
 			return getRuleContext(CountContext.class,0);
 		}
-		public TerminalNode EOF() { return getToken(ZQLParser.EOF, 0); }
 		public CountGrammarContext(ZqlContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
@@ -154,32 +223,55 @@ public class ZQLParser extends Parser {
 			else return visitor.visitChildren(this);
 		}
 	}
+	public static class SumGrammarContext extends ZqlContext {
+		public SumContext sum() {
+			return getRuleContext(SumContext.class,0);
+		}
+		public SumGrammarContext(ZqlContext ctx) { copyFrom(ctx); }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof ZQLListener ) ((ZQLListener)listener).enterSumGrammar(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof ZQLListener ) ((ZQLListener)listener).exitSumGrammar(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof ZQLVisitor ) return ((ZQLVisitor<? extends T>)visitor).visitSumGrammar(this);
+			else return visitor.visitChildren(this);
+		}
+	}
 
 	public final ZqlContext zql() throws RecognitionException {
 		ZqlContext _localctx = new ZqlContext(_ctx, getState());
-		enterRule(_localctx, 0, RULE_zql);
+		enterRule(_localctx, 2, RULE_zql);
 		try {
-			setState(58);
+			setState(77);
 			_errHandler.sync(this);
 			switch (_input.LA(1)) {
 			case QUERY:
 				_localctx = new QueryGrammarContext(_localctx);
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(52);
+				setState(74);
 				query();
-				setState(53);
-				match(EOF);
 				}
 				break;
 			case COUNT:
 				_localctx = new CountGrammarContext(_localctx);
 				enterOuterAlt(_localctx, 2);
 				{
-				setState(55);
+				setState(75);
 				count();
-				setState(56);
-				match(EOF);
+				}
+				break;
+			case SUM:
+				_localctx = new SumGrammarContext(_localctx);
+				enterOuterAlt(_localctx, 3);
+				{
+				setState(76);
+				sum();
 				}
 				break;
 			default:
@@ -220,11 +312,11 @@ public class ZQLParser extends Parser {
 
 	public final EntityContext entity() throws RecognitionException {
 		EntityContext _localctx = new EntityContext(_ctx, getState());
-		enterRule(_localctx, 2, RULE_entity);
+		enterRule(_localctx, 4, RULE_entity);
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(60);
+			setState(79);
 			match(ID);
 			}
 		}
@@ -265,40 +357,40 @@ public class ZQLParser extends Parser {
 
 	public final FieldContext field() throws RecognitionException {
 		FieldContext _localctx = new FieldContext(_ctx, getState());
-		enterRule(_localctx, 4, RULE_field);
+		enterRule(_localctx, 6, RULE_field);
 		int _la;
 		try {
-			setState(70);
+			setState(89);
 			_errHandler.sync(this);
-			switch ( getInterpreter().adaptivePredict(_input,2,_ctx) ) {
+			switch ( getInterpreter().adaptivePredict(_input,3,_ctx) ) {
 			case 1:
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(62);
+				setState(81);
 				match(ID);
 				}
 				break;
 			case 2:
 				enterOuterAlt(_localctx, 2);
 				{
-				setState(63);
+				setState(82);
 				match(ID);
-				setState(66); 
+				setState(85); 
 				_errHandler.sync(this);
 				_la = _input.LA(1);
 				do {
 					{
 					{
-					setState(64);
-					match(T__0);
-					setState(65);
+					setState(83);
+					match(T__1);
+					setState(84);
 					match(ID);
 					}
 					}
-					setState(68); 
+					setState(87); 
 					_errHandler.sync(this);
 					_la = _input.LA(1);
-				} while ( _la==T__0 );
+				} while ( _la==T__1 );
 				}
 				break;
 			}
@@ -340,29 +432,29 @@ public class ZQLParser extends Parser {
 
 	public final MultiFieldsContext multiFields() throws RecognitionException {
 		MultiFieldsContext _localctx = new MultiFieldsContext(_ctx, getState());
-		enterRule(_localctx, 6, RULE_multiFields);
+		enterRule(_localctx, 8, RULE_multiFields);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(72);
+			setState(91);
 			match(ID);
-			setState(75); 
+			setState(94); 
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			do {
 				{
 				{
-				setState(73);
-				match(T__1);
-				setState(74);
+				setState(92);
+				match(T__2);
+				setState(93);
 				match(ID);
 				}
 				}
-				setState(77); 
+				setState(96); 
 				_errHandler.sync(this);
 				_la = _input.LA(1);
-			} while ( _la==T__1 );
+			} while ( _la==T__2 );
 			}
 		}
 		catch (RecognitionException re) {
@@ -398,14 +490,14 @@ public class ZQLParser extends Parser {
 
 	public final OperatorContext operator() throws RecognitionException {
 		OperatorContext _localctx = new OperatorContext(_ctx, getState());
-		enterRule(_localctx, 8, RULE_operator);
+		enterRule(_localctx, 10, RULE_operator);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(79);
+			setState(98);
 			_la = _input.LA(1);
-			if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << T__2) | (1L << T__3) | (1L << T__4) | (1L << T__5) | (1L << T__6) | (1L << T__7) | (1L << T__8) | (1L << T__9) | (1L << T__10) | (1L << T__11) | (1L << T__12) | (1L << T__13))) != 0)) ) {
+			if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << T__3) | (1L << T__4) | (1L << T__5) | (1L << T__6) | (1L << T__7) | (1L << T__8) | (1L << T__9) | (1L << T__10) | (1L << T__11) | (1L << T__12) | (1L << T__13) | (1L << T__14))) != 0)) ) {
 			_errHandler.recoverInline(this);
 			}
 			else {
@@ -458,65 +550,65 @@ public class ZQLParser extends Parser {
 
 	public final ValueContext value() throws RecognitionException {
 		ValueContext _localctx = new ValueContext(_ctx, getState());
-		enterRule(_localctx, 10, RULE_value);
+		enterRule(_localctx, 12, RULE_value);
 		int _la;
 		try {
-			setState(96);
+			setState(115);
 			_errHandler.sync(this);
 			switch (_input.LA(1)) {
 			case STRING:
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(81);
+				setState(100);
 				match(STRING);
 				}
 				break;
 			case INT:
 				enterOuterAlt(_localctx, 2);
 				{
-				setState(82);
+				setState(101);
 				match(INT);
 				}
 				break;
 			case FLOAT:
 				enterOuterAlt(_localctx, 3);
 				{
-				setState(83);
+				setState(102);
 				match(FLOAT);
 				}
 				break;
 			case BOOLEAN:
 				enterOuterAlt(_localctx, 4);
 				{
-				setState(84);
+				setState(103);
 				match(BOOLEAN);
 				}
 				break;
-			case T__14:
+			case T__15:
 				enterOuterAlt(_localctx, 5);
 				{
-				setState(85);
-				match(T__14);
-				setState(86);
+				setState(104);
+				match(T__15);
+				setState(105);
 				value();
-				setState(91);
+				setState(110);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
-				while (_la==T__1) {
+				while (_la==T__2) {
 					{
 					{
-					setState(87);
-					match(T__1);
-					setState(88);
+					setState(106);
+					match(T__2);
+					setState(107);
 					value();
 					}
 					}
-					setState(93);
+					setState(112);
 					_errHandler.sync(this);
 					_la = _input.LA(1);
 				}
-				setState(94);
-				match(T__15);
+				setState(113);
+				match(T__16);
 				}
 				break;
 			default:
@@ -558,12 +650,12 @@ public class ZQLParser extends Parser {
 
 	public final LogicalOperatorContext logicalOperator() throws RecognitionException {
 		LogicalOperatorContext _localctx = new LogicalOperatorContext(_ctx, getState());
-		enterRule(_localctx, 12, RULE_logicalOperator);
+		enterRule(_localctx, 14, RULE_logicalOperator);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(98);
+			setState(117);
 			_la = _input.LA(1);
 			if ( !(_la==AND || _la==OR) ) {
 			_errHandler.recoverInline(this);
@@ -638,16 +730,16 @@ public class ZQLParser extends Parser {
 
 	public final ComplexValueContext complexValue() throws RecognitionException {
 		ComplexValueContext _localctx = new ComplexValueContext(_ctx, getState());
-		enterRule(_localctx, 14, RULE_complexValue);
+		enterRule(_localctx, 16, RULE_complexValue);
 		try {
-			setState(105);
+			setState(124);
 			_errHandler.sync(this);
-			switch ( getInterpreter().adaptivePredict(_input,6,_ctx) ) {
+			switch ( getInterpreter().adaptivePredict(_input,7,_ctx) ) {
 			case 1:
 				_localctx = new SimpleValueContext(_localctx);
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(100);
+				setState(119);
 				value();
 				}
 				break;
@@ -655,12 +747,12 @@ public class ZQLParser extends Parser {
 				_localctx = new SubQueryValueContext(_localctx);
 				enterOuterAlt(_localctx, 2);
 				{
-				setState(101);
-				match(T__14);
-				setState(102);
-				subQuery();
-				setState(103);
+				setState(120);
 				match(T__15);
+				setState(121);
+				subQuery();
+				setState(122);
+				match(T__16);
 				}
 				break;
 			}
@@ -707,20 +799,20 @@ public class ZQLParser extends Parser {
 
 	public final ExprContext expr() throws RecognitionException {
 		ExprContext _localctx = new ExprContext(_ctx, getState());
-		enterRule(_localctx, 16, RULE_expr);
+		enterRule(_localctx, 18, RULE_expr);
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(107);
+			setState(126);
 			field();
-			setState(108);
+			setState(127);
 			operator();
-			setState(110);
+			setState(129);
 			_errHandler.sync(this);
-			switch ( getInterpreter().adaptivePredict(_input,7,_ctx) ) {
+			switch ( getInterpreter().adaptivePredict(_input,8,_ctx) ) {
 			case 1:
 				{
-				setState(109);
+				setState(128);
 				complexValue();
 				}
 				break;
@@ -828,27 +920,27 @@ public class ZQLParser extends Parser {
 		int _parentState = getState();
 		ConditionContext _localctx = new ConditionContext(_ctx, _parentState);
 		ConditionContext _prevctx = _localctx;
-		int _startState = 18;
-		enterRecursionRule(_localctx, 18, RULE_condition, _p);
+		int _startState = 20;
+		enterRecursionRule(_localctx, 20, RULE_condition, _p);
 		try {
 			int _alt;
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(118);
+			setState(137);
 			_errHandler.sync(this);
 			switch (_input.LA(1)) {
-			case T__14:
+			case T__15:
 				{
 				_localctx = new ParenthesisConditionContext(_localctx);
 				_ctx = _localctx;
 				_prevctx = _localctx;
 
-				setState(113);
-				match(T__14);
-				setState(114);
-				condition(0);
-				setState(115);
+				setState(132);
 				match(T__15);
+				setState(133);
+				condition(0);
+				setState(134);
+				match(T__16);
 				}
 				break;
 			case ID:
@@ -856,7 +948,7 @@ public class ZQLParser extends Parser {
 				_localctx = new SimpleConditionContext(_localctx);
 				_ctx = _localctx;
 				_prevctx = _localctx;
-				setState(117);
+				setState(136);
 				expr();
 				}
 				break;
@@ -864,9 +956,9 @@ public class ZQLParser extends Parser {
 				throw new NoViableAltException(this);
 			}
 			_ctx.stop = _input.LT(-1);
-			setState(130);
+			setState(149);
 			_errHandler.sync(this);
-			_alt = getInterpreter().adaptivePredict(_input,10,_ctx);
+			_alt = getInterpreter().adaptivePredict(_input,11,_ctx);
 			while ( _alt!=2 && _alt!=org.antlr.v4.runtime.atn.ATN.INVALID_ALT_NUMBER ) {
 				if ( _alt==1 ) {
 					if ( _parseListeners!=null ) triggerExitRuleEvent();
@@ -876,9 +968,9 @@ public class ZQLParser extends Parser {
 					_localctx = new NestConditionContext(new ConditionContext(_parentctx, _parentState));
 					((NestConditionContext)_localctx).left = _prevctx;
 					pushNewRecursionContext(_localctx, _startState, RULE_condition);
-					setState(120);
+					setState(139);
 					if (!(precpred(_ctx, 2))) throw new FailedPredicateException(this, "precpred(_ctx, 2)");
-					setState(124); 
+					setState(143); 
 					_errHandler.sync(this);
 					_alt = 1;
 					do {
@@ -886,9 +978,9 @@ public class ZQLParser extends Parser {
 						case 1:
 							{
 							{
-							setState(121);
+							setState(140);
 							((NestConditionContext)_localctx).op = logicalOperator();
-							setState(122);
+							setState(141);
 							((NestConditionContext)_localctx).right = condition(0);
 							}
 							}
@@ -896,16 +988,16 @@ public class ZQLParser extends Parser {
 						default:
 							throw new NoViableAltException(this);
 						}
-						setState(126); 
+						setState(145); 
 						_errHandler.sync(this);
-						_alt = getInterpreter().adaptivePredict(_input,9,_ctx);
+						_alt = getInterpreter().adaptivePredict(_input,10,_ctx);
 					} while ( _alt!=2 && _alt!=org.antlr.v4.runtime.atn.ATN.INVALID_ALT_NUMBER );
 					}
 					} 
 				}
-				setState(132);
+				setState(151);
 				_errHandler.sync(this);
-				_alt = getInterpreter().adaptivePredict(_input,10,_ctx);
+				_alt = getInterpreter().adaptivePredict(_input,11,_ctx);
 			}
 			}
 		}
@@ -997,16 +1089,16 @@ public class ZQLParser extends Parser {
 
 	public final QueryTargetContext queryTarget() throws RecognitionException {
 		QueryTargetContext _localctx = new QueryTargetContext(_ctx, getState());
-		enterRule(_localctx, 20, RULE_queryTarget);
+		enterRule(_localctx, 22, RULE_queryTarget);
 		try {
-			setState(142);
+			setState(161);
 			_errHandler.sync(this);
-			switch ( getInterpreter().adaptivePredict(_input,11,_ctx) ) {
+			switch ( getInterpreter().adaptivePredict(_input,12,_ctx) ) {
 			case 1:
 				_localctx = new OnlyEntityContext(_localctx);
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(133);
+				setState(152);
 				entity();
 				}
 				break;
@@ -1014,11 +1106,11 @@ public class ZQLParser extends Parser {
 				_localctx = new WithSingleFieldContext(_localctx);
 				enterOuterAlt(_localctx, 2);
 				{
-				setState(134);
+				setState(153);
 				entity();
-				setState(135);
-				match(T__0);
-				setState(136);
+				setState(154);
+				match(T__1);
+				setState(155);
 				field();
 				}
 				break;
@@ -1026,11 +1118,11 @@ public class ZQLParser extends Parser {
 				_localctx = new WithMultiFieldsContext(_localctx);
 				enterOuterAlt(_localctx, 3);
 				{
-				setState(138);
+				setState(157);
 				entity();
-				setState(139);
-				match(T__0);
-				setState(140);
+				setState(158);
+				match(T__1);
+				setState(159);
 				multiFields();
 				}
 				break;
@@ -1072,15 +1164,15 @@ public class ZQLParser extends Parser {
 
 	public final OrderByContext orderBy() throws RecognitionException {
 		OrderByContext _localctx = new OrderByContext(_ctx, getState());
-		enterRule(_localctx, 22, RULE_orderBy);
+		enterRule(_localctx, 24, RULE_orderBy);
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(144);
+			setState(163);
 			match(ORDER_BY);
-			setState(145);
+			setState(164);
 			match(ID);
-			setState(146);
+			setState(165);
 			match(ORDER_BY_VALUE);
 			}
 		}
@@ -1119,13 +1211,13 @@ public class ZQLParser extends Parser {
 
 	public final LimitContext limit() throws RecognitionException {
 		LimitContext _localctx = new LimitContext(_ctx, getState());
-		enterRule(_localctx, 24, RULE_limit);
+		enterRule(_localctx, 26, RULE_limit);
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(148);
+			setState(167);
 			match(LIMIT);
-			setState(149);
+			setState(168);
 			match(INT);
 			}
 		}
@@ -1164,13 +1256,13 @@ public class ZQLParser extends Parser {
 
 	public final OffsetContext offset() throws RecognitionException {
 		OffsetContext _localctx = new OffsetContext(_ctx, getState());
-		enterRule(_localctx, 26, RULE_offset);
+		enterRule(_localctx, 28, RULE_offset);
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(151);
+			setState(170);
 			match(OFFSET);
-			setState(152);
+			setState(171);
 			match(INT);
 			}
 		}
@@ -1217,29 +1309,29 @@ public class ZQLParser extends Parser {
 
 	public final RestrictByExprContext restrictByExpr() throws RecognitionException {
 		RestrictByExprContext _localctx = new RestrictByExprContext(_ctx, getState());
-		enterRule(_localctx, 28, RULE_restrictByExpr);
+		enterRule(_localctx, 30, RULE_restrictByExpr);
 		int _la;
 		try {
-			setState(166);
+			setState(185);
 			_errHandler.sync(this);
-			switch ( getInterpreter().adaptivePredict(_input,14,_ctx) ) {
+			switch ( getInterpreter().adaptivePredict(_input,15,_ctx) ) {
 			case 1:
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(154);
+				setState(173);
 				entity();
-				setState(155);
-				match(T__0);
-				setState(156);
+				setState(174);
+				match(T__1);
+				setState(175);
 				match(ID);
-				setState(157);
+				setState(176);
 				operator();
-				setState(159);
+				setState(178);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
-				if ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << T__14) | (1L << BOOLEAN) | (1L << INT) | (1L << FLOAT) | (1L << STRING))) != 0)) {
+				if ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << T__15) | (1L << BOOLEAN) | (1L << INT) | (1L << FLOAT) | (1L << STRING))) != 0)) {
 					{
-					setState(158);
+					setState(177);
 					value();
 					}
 				}
@@ -1249,16 +1341,16 @@ public class ZQLParser extends Parser {
 			case 2:
 				enterOuterAlt(_localctx, 2);
 				{
-				setState(161);
+				setState(180);
 				match(ID);
-				setState(162);
+				setState(181);
 				operator();
-				setState(164);
+				setState(183);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
-				if ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << T__14) | (1L << BOOLEAN) | (1L << INT) | (1L << FLOAT) | (1L << STRING))) != 0)) {
+				if ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << T__15) | (1L << BOOLEAN) | (1L << INT) | (1L << FLOAT) | (1L << STRING))) != 0)) {
 					{
-					setState(163);
+					setState(182);
 					value();
 					}
 				}
@@ -1307,35 +1399,35 @@ public class ZQLParser extends Parser {
 
 	public final RestrictByContext restrictBy() throws RecognitionException {
 		RestrictByContext _localctx = new RestrictByContext(_ctx, getState());
-		enterRule(_localctx, 30, RULE_restrictBy);
+		enterRule(_localctx, 32, RULE_restrictBy);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(168);
+			setState(187);
 			match(RESTRICT_BY);
-			setState(169);
-			match(T__14);
-			setState(170);
+			setState(188);
+			match(T__15);
+			setState(189);
 			restrictByExpr();
-			setState(175);
+			setState(194);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
-			while (_la==T__1) {
+			while (_la==T__2) {
 				{
 				{
-				setState(171);
-				match(T__1);
-				setState(172);
+				setState(190);
+				match(T__2);
+				setState(191);
 				restrictByExpr();
 				}
 				}
-				setState(177);
+				setState(196);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
 			}
-			setState(178);
-			match(T__15);
+			setState(197);
+			match(T__16);
 			}
 		}
 		catch (RecognitionException re) {
@@ -1377,26 +1469,26 @@ public class ZQLParser extends Parser {
 
 	public final ReturnWithExprBlockContext returnWithExprBlock() throws RecognitionException {
 		ReturnWithExprBlockContext _localctx = new ReturnWithExprBlockContext(_ctx, getState());
-		enterRule(_localctx, 32, RULE_returnWithExprBlock);
+		enterRule(_localctx, 34, RULE_returnWithExprBlock);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(180);
-			match(T__16);
-			setState(185);
+			setState(199);
+			match(T__17);
+			setState(204);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
-			while ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << T__0) | (1L << T__1) | (1L << T__2) | (1L << T__3) | (1L << T__4) | (1L << T__5) | (1L << T__6) | (1L << T__7) | (1L << T__8) | (1L << T__9) | (1L << T__10) | (1L << T__11) | (1L << T__12) | (1L << T__13) | (1L << T__14) | (1L << T__15) | (1L << T__16) | (1L << FILTER_BY) | (1L << OFFSET) | (1L << LIMIT) | (1L << QUERY) | (1L << COUNT) | (1L << ORDER_BY) | (1L << ORDER_BY_VALUE) | (1L << RESTRICT_BY) | (1L << RETURN_WITH) | (1L << WHERE) | (1L << AND) | (1L << OR) | (1L << ASC) | (1L << DESC) | (1L << BOOLEAN) | (1L << INT) | (1L << FLOAT) | (1L << ID) | (1L << WS) | (1L << STRING))) != 0)) {
+			while ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << T__0) | (1L << T__1) | (1L << T__2) | (1L << T__3) | (1L << T__4) | (1L << T__5) | (1L << T__6) | (1L << T__7) | (1L << T__8) | (1L << T__9) | (1L << T__10) | (1L << T__11) | (1L << T__12) | (1L << T__13) | (1L << T__14) | (1L << T__15) | (1L << T__16) | (1L << T__17) | (1L << T__19) | (1L << FILTER_BY) | (1L << OFFSET) | (1L << LIMIT) | (1L << QUERY) | (1L << COUNT) | (1L << SUM) | (1L << ORDER_BY) | (1L << NAMED_AS) | (1L << ORDER_BY_VALUE) | (1L << RESTRICT_BY) | (1L << RETURN_WITH) | (1L << WHERE) | (1L << AND) | (1L << OR) | (1L << ASC) | (1L << DESC) | (1L << BOOLEAN) | (1L << INT) | (1L << FLOAT) | (1L << ID) | (1L << WS) | (1L << STRING))) != 0)) {
 				{
-				setState(183);
+				setState(202);
 				_errHandler.sync(this);
-				switch ( getInterpreter().adaptivePredict(_input,16,_ctx) ) {
+				switch ( getInterpreter().adaptivePredict(_input,17,_ctx) ) {
 				case 1:
 					{
-					setState(181);
+					setState(200);
 					_la = _input.LA(1);
-					if ( _la <= 0 || (_la==T__17) ) {
+					if ( _la <= 0 || (_la==T__18) ) {
 					_errHandler.recoverInline(this);
 					}
 					else {
@@ -1408,18 +1500,18 @@ public class ZQLParser extends Parser {
 					break;
 				case 2:
 					{
-					setState(182);
+					setState(201);
 					returnWithExprBlock();
 					}
 					break;
 				}
 				}
-				setState(187);
+				setState(206);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
 			}
-			setState(188);
-			match(T__17);
+			setState(207);
+			match(T__18);
 			}
 		}
 		catch (RecognitionException re) {
@@ -1487,31 +1579,31 @@ public class ZQLParser extends Parser {
 
 	public final ReturnWithExprContext returnWithExpr() throws RecognitionException {
 		ReturnWithExprContext _localctx = new ReturnWithExprContext(_ctx, getState());
-		enterRule(_localctx, 34, RULE_returnWithExpr);
+		enterRule(_localctx, 36, RULE_returnWithExpr);
 		int _la;
 		try {
-			setState(200);
+			setState(219);
 			_errHandler.sync(this);
-			switch ( getInterpreter().adaptivePredict(_input,19,_ctx) ) {
+			switch ( getInterpreter().adaptivePredict(_input,20,_ctx) ) {
 			case 1:
 				_localctx = new ReturnWithExprIdContext(_localctx);
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(190);
+				setState(209);
 				match(ID);
-				setState(195);
+				setState(214);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
-				while (_la==T__0) {
+				while (_la==T__1) {
 					{
 					{
-					setState(191);
-					match(T__0);
-					setState(192);
+					setState(210);
+					match(T__1);
+					setState(211);
 					match(ID);
 					}
 					}
-					setState(197);
+					setState(216);
 					_errHandler.sync(this);
 					_la = _input.LA(1);
 				}
@@ -1521,9 +1613,9 @@ public class ZQLParser extends Parser {
 				_localctx = new ReturnWithExprFunctionContext(_localctx);
 				enterOuterAlt(_localctx, 2);
 				{
-				setState(198);
+				setState(217);
 				match(ID);
-				setState(199);
+				setState(218);
 				returnWithExprBlock();
 				}
 				break;
@@ -1569,35 +1661,35 @@ public class ZQLParser extends Parser {
 
 	public final ReturnWithContext returnWith() throws RecognitionException {
 		ReturnWithContext _localctx = new ReturnWithContext(_ctx, getState());
-		enterRule(_localctx, 36, RULE_returnWith);
+		enterRule(_localctx, 38, RULE_returnWith);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(202);
+			setState(221);
 			match(RETURN_WITH);
-			setState(203);
-			match(T__14);
-			setState(204);
+			setState(222);
+			match(T__15);
+			setState(223);
 			returnWithExpr();
-			setState(209);
+			setState(228);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
-			while (_la==T__1) {
+			while (_la==T__2) {
 				{
 				{
-				setState(205);
-				match(T__1);
-				setState(206);
+				setState(224);
+				match(T__2);
+				setState(225);
 				returnWithExpr();
 				}
 				}
-				setState(211);
+				setState(230);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
 			}
-			setState(212);
-			match(T__15);
+			setState(231);
+			match(T__16);
 			}
 		}
 		catch (RecognitionException re) {
@@ -1640,29 +1732,29 @@ public class ZQLParser extends Parser {
 
 	public final SubQueryTargetContext subQueryTarget() throws RecognitionException {
 		SubQueryTargetContext _localctx = new SubQueryTargetContext(_ctx, getState());
-		enterRule(_localctx, 38, RULE_subQueryTarget);
+		enterRule(_localctx, 40, RULE_subQueryTarget);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(214);
+			setState(233);
 			entity();
-			setState(217); 
+			setState(236); 
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			do {
 				{
 				{
-				setState(215);
-				match(T__0);
-				setState(216);
+				setState(234);
+				match(T__1);
+				setState(235);
 				match(ID);
 				}
 				}
-				setState(219); 
+				setState(238); 
 				_errHandler.sync(this);
 				_la = _input.LA(1);
-			} while ( _la==T__0 );
+			} while ( _la==T__1 );
 			}
 		}
 		catch (RecognitionException re) {
@@ -1709,36 +1801,36 @@ public class ZQLParser extends Parser {
 
 	public final SubQueryContext subQuery() throws RecognitionException {
 		SubQueryContext _localctx = new SubQueryContext(_ctx, getState());
-		enterRule(_localctx, 40, RULE_subQuery);
+		enterRule(_localctx, 42, RULE_subQuery);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(221);
+			setState(240);
 			match(QUERY);
-			setState(222);
+			setState(241);
 			subQueryTarget();
-			setState(229);
+			setState(248);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			if (_la==WHERE) {
 				{
-				setState(223);
+				setState(242);
 				match(WHERE);
-				setState(225); 
+				setState(244); 
 				_errHandler.sync(this);
 				_la = _input.LA(1);
 				do {
 					{
 					{
-					setState(224);
+					setState(243);
 					condition(0);
 					}
 					}
-					setState(227); 
+					setState(246); 
 					_errHandler.sync(this);
 					_la = _input.LA(1);
-				} while ( _la==T__14 || _la==ID );
+				} while ( _la==T__15 || _la==ID );
 				}
 			}
 
@@ -1783,26 +1875,26 @@ public class ZQLParser extends Parser {
 
 	public final FilterByExprBlockContext filterByExprBlock() throws RecognitionException {
 		FilterByExprBlockContext _localctx = new FilterByExprBlockContext(_ctx, getState());
-		enterRule(_localctx, 42, RULE_filterByExprBlock);
+		enterRule(_localctx, 44, RULE_filterByExprBlock);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(231);
-			match(T__16);
-			setState(236);
+			setState(250);
+			match(T__17);
+			setState(255);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
-			while ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << T__0) | (1L << T__1) | (1L << T__2) | (1L << T__3) | (1L << T__4) | (1L << T__5) | (1L << T__6) | (1L << T__7) | (1L << T__8) | (1L << T__9) | (1L << T__10) | (1L << T__11) | (1L << T__12) | (1L << T__13) | (1L << T__14) | (1L << T__15) | (1L << T__16) | (1L << FILTER_BY) | (1L << OFFSET) | (1L << LIMIT) | (1L << QUERY) | (1L << COUNT) | (1L << ORDER_BY) | (1L << ORDER_BY_VALUE) | (1L << RESTRICT_BY) | (1L << RETURN_WITH) | (1L << WHERE) | (1L << AND) | (1L << OR) | (1L << ASC) | (1L << DESC) | (1L << BOOLEAN) | (1L << INT) | (1L << FLOAT) | (1L << ID) | (1L << WS) | (1L << STRING))) != 0)) {
+			while ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << T__0) | (1L << T__1) | (1L << T__2) | (1L << T__3) | (1L << T__4) | (1L << T__5) | (1L << T__6) | (1L << T__7) | (1L << T__8) | (1L << T__9) | (1L << T__10) | (1L << T__11) | (1L << T__12) | (1L << T__13) | (1L << T__14) | (1L << T__15) | (1L << T__16) | (1L << T__17) | (1L << T__19) | (1L << FILTER_BY) | (1L << OFFSET) | (1L << LIMIT) | (1L << QUERY) | (1L << COUNT) | (1L << SUM) | (1L << ORDER_BY) | (1L << NAMED_AS) | (1L << ORDER_BY_VALUE) | (1L << RESTRICT_BY) | (1L << RETURN_WITH) | (1L << WHERE) | (1L << AND) | (1L << OR) | (1L << ASC) | (1L << DESC) | (1L << BOOLEAN) | (1L << INT) | (1L << FLOAT) | (1L << ID) | (1L << WS) | (1L << STRING))) != 0)) {
 				{
-				setState(234);
+				setState(253);
 				_errHandler.sync(this);
-				switch ( getInterpreter().adaptivePredict(_input,24,_ctx) ) {
+				switch ( getInterpreter().adaptivePredict(_input,25,_ctx) ) {
 				case 1:
 					{
-					setState(232);
+					setState(251);
 					_la = _input.LA(1);
-					if ( _la <= 0 || (_la==T__17) ) {
+					if ( _la <= 0 || (_la==T__18) ) {
 					_errHandler.recoverInline(this);
 					}
 					else {
@@ -1814,18 +1906,18 @@ public class ZQLParser extends Parser {
 					break;
 				case 2:
 					{
-					setState(233);
+					setState(252);
 					filterByExprBlock();
 					}
 					break;
 				}
 				}
-				setState(238);
+				setState(257);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
 			}
-			setState(239);
-			match(T__17);
+			setState(258);
+			match(T__18);
 			}
 		}
 		catch (RecognitionException re) {
@@ -1865,13 +1957,13 @@ public class ZQLParser extends Parser {
 
 	public final FilterByExprContext filterByExpr() throws RecognitionException {
 		FilterByExprContext _localctx = new FilterByExprContext(_ctx, getState());
-		enterRule(_localctx, 44, RULE_filterByExpr);
+		enterRule(_localctx, 46, RULE_filterByExpr);
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(241);
+			setState(260);
 			match(ID);
-			setState(242);
+			setState(261);
 			filterByExprBlock();
 			}
 		}
@@ -1915,31 +2007,120 @@ public class ZQLParser extends Parser {
 
 	public final FilterByContext filterBy() throws RecognitionException {
 		FilterByContext _localctx = new FilterByContext(_ctx, getState());
-		enterRule(_localctx, 46, RULE_filterBy);
+		enterRule(_localctx, 48, RULE_filterBy);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(244);
+			setState(263);
 			match(FILTER_BY);
-			setState(245);
+			setState(264);
 			filterByExpr();
-			setState(250);
+			setState(269);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
-			while (_la==T__1) {
+			while (_la==T__2) {
 				{
 				{
-				setState(246);
-				match(T__1);
-				setState(247);
+				setState(265);
+				match(T__2);
+				setState(266);
 				filterByExpr();
 				}
 				}
-				setState(252);
+				setState(271);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
 			}
+			}
+		}
+		catch (RecognitionException re) {
+			_localctx.exception = re;
+			_errHandler.reportError(this, re);
+			_errHandler.recover(this, re);
+		}
+		finally {
+			exitRule();
+		}
+		return _localctx;
+	}
+
+	public static class NamedAsValueContext extends ParserRuleContext {
+		public TerminalNode STRING() { return getToken(ZQLParser.STRING, 0); }
+		public NamedAsValueContext(ParserRuleContext parent, int invokingState) {
+			super(parent, invokingState);
+		}
+		@Override public int getRuleIndex() { return RULE_namedAsValue; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof ZQLListener ) ((ZQLListener)listener).enterNamedAsValue(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof ZQLListener ) ((ZQLListener)listener).exitNamedAsValue(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof ZQLVisitor ) return ((ZQLVisitor<? extends T>)visitor).visitNamedAsValue(this);
+			else return visitor.visitChildren(this);
+		}
+	}
+
+	public final NamedAsValueContext namedAsValue() throws RecognitionException {
+		NamedAsValueContext _localctx = new NamedAsValueContext(_ctx, getState());
+		enterRule(_localctx, 50, RULE_namedAsValue);
+		try {
+			enterOuterAlt(_localctx, 1);
+			{
+			setState(272);
+			match(STRING);
+			}
+		}
+		catch (RecognitionException re) {
+			_localctx.exception = re;
+			_errHandler.reportError(this, re);
+			_errHandler.recover(this, re);
+		}
+		finally {
+			exitRule();
+		}
+		return _localctx;
+	}
+
+	public static class NamedAsContext extends ParserRuleContext {
+		public TerminalNode NAMED_AS() { return getToken(ZQLParser.NAMED_AS, 0); }
+		public NamedAsValueContext namedAsValue() {
+			return getRuleContext(NamedAsValueContext.class,0);
+		}
+		public NamedAsContext(ParserRuleContext parent, int invokingState) {
+			super(parent, invokingState);
+		}
+		@Override public int getRuleIndex() { return RULE_namedAs; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof ZQLListener ) ((ZQLListener)listener).enterNamedAs(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof ZQLListener ) ((ZQLListener)listener).exitNamedAs(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof ZQLVisitor ) return ((ZQLVisitor<? extends T>)visitor).visitNamedAs(this);
+			else return visitor.visitChildren(this);
+		}
+	}
+
+	public final NamedAsContext namedAs() throws RecognitionException {
+		NamedAsContext _localctx = new NamedAsContext(_ctx, getState());
+		enterRule(_localctx, 52, RULE_namedAs);
+		try {
+			enterOuterAlt(_localctx, 1);
+			{
+			setState(274);
+			match(NAMED_AS);
+			setState(275);
+			namedAsValue();
 			}
 		}
 		catch (RecognitionException re) {
@@ -1977,6 +2158,9 @@ public class ZQLParser extends Parser {
 		public FilterByContext filterBy() {
 			return getRuleContext(FilterByContext.class,0);
 		}
+		public NamedAsContext namedAs() {
+			return getRuleContext(NamedAsContext.class,0);
+		}
 		public List<ConditionContext> condition() {
 			return getRuleContexts(ConditionContext.class);
 		}
@@ -2004,96 +2188,106 @@ public class ZQLParser extends Parser {
 
 	public final QueryContext query() throws RecognitionException {
 		QueryContext _localctx = new QueryContext(_ctx, getState());
-		enterRule(_localctx, 48, RULE_query);
+		enterRule(_localctx, 54, RULE_query);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(253);
+			setState(277);
 			match(QUERY);
-			setState(254);
+			setState(278);
 			queryTarget();
-			setState(261);
+			setState(285);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			if (_la==WHERE) {
 				{
-				setState(255);
+				setState(279);
 				match(WHERE);
-				setState(257); 
+				setState(281); 
 				_errHandler.sync(this);
 				_la = _input.LA(1);
 				do {
 					{
 					{
-					setState(256);
+					setState(280);
 					condition(0);
 					}
 					}
-					setState(259); 
+					setState(283); 
 					_errHandler.sync(this);
 					_la = _input.LA(1);
-				} while ( _la==T__14 || _la==ID );
+				} while ( _la==T__15 || _la==ID );
 				}
 			}
 
-			setState(264);
+			setState(288);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			if (_la==RESTRICT_BY) {
 				{
-				setState(263);
+				setState(287);
 				restrictBy();
 				}
 			}
 
-			setState(267);
+			setState(291);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			if (_la==RETURN_WITH) {
 				{
-				setState(266);
+				setState(290);
 				returnWith();
 				}
 			}
 
-			setState(270);
+			setState(294);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			if (_la==ORDER_BY) {
 				{
-				setState(269);
+				setState(293);
 				orderBy();
 				}
 			}
 
-			setState(273);
+			setState(297);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			if (_la==LIMIT) {
 				{
-				setState(272);
+				setState(296);
 				limit();
 				}
 			}
 
-			setState(276);
+			setState(300);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			if (_la==OFFSET) {
 				{
-				setState(275);
+				setState(299);
 				offset();
 				}
 			}
 
-			setState(279);
+			setState(303);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			if (_la==FILTER_BY) {
 				{
-				setState(278);
+				setState(302);
 				filterBy();
+				}
+			}
+
+			setState(306);
+			_errHandler.sync(this);
+			_la = _input.LA(1);
+			if (_la==NAMED_AS) {
+				{
+				setState(305);
+				namedAs();
 				}
 			}
 
@@ -2128,6 +2322,9 @@ public class ZQLParser extends Parser {
 		public OffsetContext offset() {
 			return getRuleContext(OffsetContext.class,0);
 		}
+		public NamedAsContext namedAs() {
+			return getRuleContext(NamedAsContext.class,0);
+		}
 		public List<ConditionContext> condition() {
 			return getRuleContexts(ConditionContext.class);
 		}
@@ -2155,76 +2352,271 @@ public class ZQLParser extends Parser {
 
 	public final CountContext count() throws RecognitionException {
 		CountContext _localctx = new CountContext(_ctx, getState());
-		enterRule(_localctx, 50, RULE_count);
+		enterRule(_localctx, 56, RULE_count);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(281);
+			setState(308);
 			match(COUNT);
-			setState(282);
+			setState(309);
 			queryTarget();
-			setState(289);
+			setState(316);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			if (_la==WHERE) {
 				{
-				setState(283);
+				setState(310);
 				match(WHERE);
-				setState(285); 
+				setState(312); 
 				_errHandler.sync(this);
 				_la = _input.LA(1);
 				do {
 					{
 					{
-					setState(284);
+					setState(311);
 					condition(0);
 					}
 					}
-					setState(287); 
+					setState(314); 
 					_errHandler.sync(this);
 					_la = _input.LA(1);
-				} while ( _la==T__14 || _la==ID );
+				} while ( _la==T__15 || _la==ID );
 				}
 			}
 
-			setState(292);
+			setState(319);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			if (_la==RESTRICT_BY) {
 				{
-				setState(291);
+				setState(318);
 				restrictBy();
 				}
 			}
 
-			setState(295);
+			setState(322);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			if (_la==ORDER_BY) {
 				{
-				setState(294);
+				setState(321);
 				orderBy();
 				}
 			}
 
-			setState(298);
+			setState(325);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			if (_la==LIMIT) {
 				{
-				setState(297);
+				setState(324);
 				limit();
 				}
 			}
 
-			setState(301);
+			setState(328);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			if (_la==OFFSET) {
 				{
-				setState(300);
+				setState(327);
 				offset();
+				}
+			}
+
+			setState(331);
+			_errHandler.sync(this);
+			_la = _input.LA(1);
+			if (_la==NAMED_AS) {
+				{
+				setState(330);
+				namedAs();
+				}
+			}
+
+			}
+		}
+		catch (RecognitionException re) {
+			_localctx.exception = re;
+			_errHandler.reportError(this, re);
+			_errHandler.recover(this, re);
+		}
+		finally {
+			exitRule();
+		}
+		return _localctx;
+	}
+
+	public static class SumByValueContext extends ParserRuleContext {
+		public TerminalNode ID() { return getToken(ZQLParser.ID, 0); }
+		public SumByValueContext(ParserRuleContext parent, int invokingState) {
+			super(parent, invokingState);
+		}
+		@Override public int getRuleIndex() { return RULE_sumByValue; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof ZQLListener ) ((ZQLListener)listener).enterSumByValue(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof ZQLListener ) ((ZQLListener)listener).exitSumByValue(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof ZQLVisitor ) return ((ZQLVisitor<? extends T>)visitor).visitSumByValue(this);
+			else return visitor.visitChildren(this);
+		}
+	}
+
+	public final SumByValueContext sumByValue() throws RecognitionException {
+		SumByValueContext _localctx = new SumByValueContext(_ctx, getState());
+		enterRule(_localctx, 58, RULE_sumByValue);
+		try {
+			enterOuterAlt(_localctx, 1);
+			{
+			setState(333);
+			match(ID);
+			}
+		}
+		catch (RecognitionException re) {
+			_localctx.exception = re;
+			_errHandler.reportError(this, re);
+			_errHandler.recover(this, re);
+		}
+		finally {
+			exitRule();
+		}
+		return _localctx;
+	}
+
+	public static class SumByContext extends ParserRuleContext {
+		public SumByValueContext sumByValue() {
+			return getRuleContext(SumByValueContext.class,0);
+		}
+		public SumByContext(ParserRuleContext parent, int invokingState) {
+			super(parent, invokingState);
+		}
+		@Override public int getRuleIndex() { return RULE_sumBy; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof ZQLListener ) ((ZQLListener)listener).enterSumBy(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof ZQLListener ) ((ZQLListener)listener).exitSumBy(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof ZQLVisitor ) return ((ZQLVisitor<? extends T>)visitor).visitSumBy(this);
+			else return visitor.visitChildren(this);
+		}
+	}
+
+	public final SumByContext sumBy() throws RecognitionException {
+		SumByContext _localctx = new SumByContext(_ctx, getState());
+		enterRule(_localctx, 60, RULE_sumBy);
+		try {
+			enterOuterAlt(_localctx, 1);
+			{
+			setState(335);
+			match(T__19);
+			setState(336);
+			sumByValue();
+			}
+		}
+		catch (RecognitionException re) {
+			_localctx.exception = re;
+			_errHandler.reportError(this, re);
+			_errHandler.recover(this, re);
+		}
+		finally {
+			exitRule();
+		}
+		return _localctx;
+	}
+
+	public static class SumContext extends ParserRuleContext {
+		public TerminalNode SUM() { return getToken(ZQLParser.SUM, 0); }
+		public QueryTargetContext queryTarget() {
+			return getRuleContext(QueryTargetContext.class,0);
+		}
+		public SumByContext sumBy() {
+			return getRuleContext(SumByContext.class,0);
+		}
+		public TerminalNode WHERE() { return getToken(ZQLParser.WHERE, 0); }
+		public NamedAsContext namedAs() {
+			return getRuleContext(NamedAsContext.class,0);
+		}
+		public List<ConditionContext> condition() {
+			return getRuleContexts(ConditionContext.class);
+		}
+		public ConditionContext condition(int i) {
+			return getRuleContext(ConditionContext.class,i);
+		}
+		public SumContext(ParserRuleContext parent, int invokingState) {
+			super(parent, invokingState);
+		}
+		@Override public int getRuleIndex() { return RULE_sum; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof ZQLListener ) ((ZQLListener)listener).enterSum(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof ZQLListener ) ((ZQLListener)listener).exitSum(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof ZQLVisitor ) return ((ZQLVisitor<? extends T>)visitor).visitSum(this);
+			else return visitor.visitChildren(this);
+		}
+	}
+
+	public final SumContext sum() throws RecognitionException {
+		SumContext _localctx = new SumContext(_ctx, getState());
+		enterRule(_localctx, 62, RULE_sum);
+		int _la;
+		try {
+			enterOuterAlt(_localctx, 1);
+			{
+			setState(338);
+			match(SUM);
+			setState(339);
+			queryTarget();
+			setState(340);
+			sumBy();
+			setState(347);
+			_errHandler.sync(this);
+			_la = _input.LA(1);
+			if (_la==WHERE) {
+				{
+				setState(341);
+				match(WHERE);
+				setState(343); 
+				_errHandler.sync(this);
+				_la = _input.LA(1);
+				do {
+					{
+					{
+					setState(342);
+					condition(0);
+					}
+					}
+					setState(345); 
+					_errHandler.sync(this);
+					_la = _input.LA(1);
+				} while ( _la==T__15 || _la==ID );
+				}
+			}
+
+			setState(350);
+			_errHandler.sync(this);
+			_la = _input.LA(1);
+			if (_la==NAMED_AS) {
+				{
+				setState(349);
+				namedAs();
 				}
 			}
 
@@ -2243,7 +2635,7 @@ public class ZQLParser extends Parser {
 
 	public boolean sempred(RuleContext _localctx, int ruleIndex, int predIndex) {
 		switch (ruleIndex) {
-		case 9:
+		case 10:
 			return condition_sempred((ConditionContext)_localctx, predIndex);
 		}
 		return true;
@@ -2257,113 +2649,132 @@ public class ZQLParser extends Parser {
 	}
 
 	public static final String _serializedATN =
-		"\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3(\u0132\4\2\t\2\4"+
+		"\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3,\u0163\4\2\t\2\4"+
 		"\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7\4\b\t\b\4\t\t\t\4\n\t\n\4\13\t"+
 		"\13\4\f\t\f\4\r\t\r\4\16\t\16\4\17\t\17\4\20\t\20\4\21\t\21\4\22\t\22"+
 		"\4\23\t\23\4\24\t\24\4\25\t\25\4\26\t\26\4\27\t\27\4\30\t\30\4\31\t\31"+
-		"\4\32\t\32\4\33\t\33\3\2\3\2\3\2\3\2\3\2\3\2\5\2=\n\2\3\3\3\3\3\4\3\4"+
-		"\3\4\3\4\6\4E\n\4\r\4\16\4F\5\4I\n\4\3\5\3\5\3\5\6\5N\n\5\r\5\16\5O\3"+
-		"\6\3\6\3\7\3\7\3\7\3\7\3\7\3\7\3\7\3\7\7\7\\\n\7\f\7\16\7_\13\7\3\7\3"+
-		"\7\5\7c\n\7\3\b\3\b\3\t\3\t\3\t\3\t\3\t\5\tl\n\t\3\n\3\n\3\n\5\nq\n\n"+
-		"\3\13\3\13\3\13\3\13\3\13\3\13\5\13y\n\13\3\13\3\13\3\13\3\13\6\13\177"+
-		"\n\13\r\13\16\13\u0080\7\13\u0083\n\13\f\13\16\13\u0086\13\13\3\f\3\f"+
-		"\3\f\3\f\3\f\3\f\3\f\3\f\3\f\5\f\u0091\n\f\3\r\3\r\3\r\3\r\3\16\3\16\3"+
-		"\16\3\17\3\17\3\17\3\20\3\20\3\20\3\20\3\20\5\20\u00a2\n\20\3\20\3\20"+
-		"\3\20\5\20\u00a7\n\20\5\20\u00a9\n\20\3\21\3\21\3\21\3\21\3\21\7\21\u00b0"+
-		"\n\21\f\21\16\21\u00b3\13\21\3\21\3\21\3\22\3\22\3\22\7\22\u00ba\n\22"+
-		"\f\22\16\22\u00bd\13\22\3\22\3\22\3\23\3\23\3\23\7\23\u00c4\n\23\f\23"+
-		"\16\23\u00c7\13\23\3\23\3\23\5\23\u00cb\n\23\3\24\3\24\3\24\3\24\3\24"+
-		"\7\24\u00d2\n\24\f\24\16\24\u00d5\13\24\3\24\3\24\3\25\3\25\3\25\6\25"+
-		"\u00dc\n\25\r\25\16\25\u00dd\3\26\3\26\3\26\3\26\6\26\u00e4\n\26\r\26"+
-		"\16\26\u00e5\5\26\u00e8\n\26\3\27\3\27\3\27\7\27\u00ed\n\27\f\27\16\27"+
-		"\u00f0\13\27\3\27\3\27\3\30\3\30\3\30\3\31\3\31\3\31\3\31\7\31\u00fb\n"+
-		"\31\f\31\16\31\u00fe\13\31\3\32\3\32\3\32\3\32\6\32\u0104\n\32\r\32\16"+
-		"\32\u0105\5\32\u0108\n\32\3\32\5\32\u010b\n\32\3\32\5\32\u010e\n\32\3"+
-		"\32\5\32\u0111\n\32\3\32\5\32\u0114\n\32\3\32\5\32\u0117\n\32\3\32\5\32"+
-		"\u011a\n\32\3\33\3\33\3\33\3\33\6\33\u0120\n\33\r\33\16\33\u0121\5\33"+
-		"\u0124\n\33\3\33\5\33\u0127\n\33\3\33\5\33\u012a\n\33\3\33\5\33\u012d"+
-		"\n\33\3\33\5\33\u0130\n\33\3\33\2\3\24\34\2\4\6\b\n\f\16\20\22\24\26\30"+
-		"\32\34\36 \"$&(*,.\60\62\64\2\5\3\2\5\20\3\2\37 \3\2\24\24\2\u0144\2<"+
-		"\3\2\2\2\4>\3\2\2\2\6H\3\2\2\2\bJ\3\2\2\2\nQ\3\2\2\2\fb\3\2\2\2\16d\3"+
-		"\2\2\2\20k\3\2\2\2\22m\3\2\2\2\24x\3\2\2\2\26\u0090\3\2\2\2\30\u0092\3"+
-		"\2\2\2\32\u0096\3\2\2\2\34\u0099\3\2\2\2\36\u00a8\3\2\2\2 \u00aa\3\2\2"+
-		"\2\"\u00b6\3\2\2\2$\u00ca\3\2\2\2&\u00cc\3\2\2\2(\u00d8\3\2\2\2*\u00df"+
-		"\3\2\2\2,\u00e9\3\2\2\2.\u00f3\3\2\2\2\60\u00f6\3\2\2\2\62\u00ff\3\2\2"+
-		"\2\64\u011b\3\2\2\2\66\67\5\62\32\2\678\7\2\2\38=\3\2\2\29:\5\64\33\2"+
-		":;\7\2\2\3;=\3\2\2\2<\66\3\2\2\2<9\3\2\2\2=\3\3\2\2\2>?\7&\2\2?\5\3\2"+
-		"\2\2@I\7&\2\2AD\7&\2\2BC\7\3\2\2CE\7&\2\2DB\3\2\2\2EF\3\2\2\2FD\3\2\2"+
-		"\2FG\3\2\2\2GI\3\2\2\2H@\3\2\2\2HA\3\2\2\2I\7\3\2\2\2JM\7&\2\2KL\7\4\2"+
-		"\2LN\7&\2\2MK\3\2\2\2NO\3\2\2\2OM\3\2\2\2OP\3\2\2\2P\t\3\2\2\2QR\t\2\2"+
-		"\2R\13\3\2\2\2Sc\7(\2\2Tc\7$\2\2Uc\7%\2\2Vc\7#\2\2WX\7\21\2\2X]\5\f\7"+
-		"\2YZ\7\4\2\2Z\\\5\f\7\2[Y\3\2\2\2\\_\3\2\2\2][\3\2\2\2]^\3\2\2\2^`\3\2"+
-		"\2\2_]\3\2\2\2`a\7\22\2\2ac\3\2\2\2bS\3\2\2\2bT\3\2\2\2bU\3\2\2\2bV\3"+
-		"\2\2\2bW\3\2\2\2c\r\3\2\2\2de\t\3\2\2e\17\3\2\2\2fl\5\f\7\2gh\7\21\2\2"+
-		"hi\5*\26\2ij\7\22\2\2jl\3\2\2\2kf\3\2\2\2kg\3\2\2\2l\21\3\2\2\2mn\5\6"+
-		"\4\2np\5\n\6\2oq\5\20\t\2po\3\2\2\2pq\3\2\2\2q\23\3\2\2\2rs\b\13\1\2s"+
-		"t\7\21\2\2tu\5\24\13\2uv\7\22\2\2vy\3\2\2\2wy\5\22\n\2xr\3\2\2\2xw\3\2"+
-		"\2\2y\u0084\3\2\2\2z~\f\4\2\2{|\5\16\b\2|}\5\24\13\2}\177\3\2\2\2~{\3"+
-		"\2\2\2\177\u0080\3\2\2\2\u0080~\3\2\2\2\u0080\u0081\3\2\2\2\u0081\u0083"+
-		"\3\2\2\2\u0082z\3\2\2\2\u0083\u0086\3\2\2\2\u0084\u0082\3\2\2\2\u0084"+
-		"\u0085\3\2\2\2\u0085\25\3\2\2\2\u0086\u0084\3\2\2\2\u0087\u0091\5\4\3"+
-		"\2\u0088\u0089\5\4\3\2\u0089\u008a\7\3\2\2\u008a\u008b\5\6\4\2\u008b\u0091"+
-		"\3\2\2\2\u008c\u008d\5\4\3\2\u008d\u008e\7\3\2\2\u008e\u008f\5\b\5\2\u008f"+
-		"\u0091\3\2\2\2\u0090\u0087\3\2\2\2\u0090\u0088\3\2\2\2\u0090\u008c\3\2"+
-		"\2\2\u0091\27\3\2\2\2\u0092\u0093\7\32\2\2\u0093\u0094\7&\2\2\u0094\u0095"+
-		"\7\33\2\2\u0095\31\3\2\2\2\u0096\u0097\7\27\2\2\u0097\u0098\7$\2\2\u0098"+
-		"\33\3\2\2\2\u0099\u009a\7\26\2\2\u009a\u009b\7$\2\2\u009b\35\3\2\2\2\u009c"+
-		"\u009d\5\4\3\2\u009d\u009e\7\3\2\2\u009e\u009f\7&\2\2\u009f\u00a1\5\n"+
-		"\6\2\u00a0\u00a2\5\f\7\2\u00a1\u00a0\3\2\2\2\u00a1\u00a2\3\2\2\2\u00a2"+
-		"\u00a9\3\2\2\2\u00a3\u00a4\7&\2\2\u00a4\u00a6\5\n\6\2\u00a5\u00a7\5\f"+
-		"\7\2\u00a6\u00a5\3\2\2\2\u00a6\u00a7\3\2\2\2\u00a7\u00a9\3\2\2\2\u00a8"+
-		"\u009c\3\2\2\2\u00a8\u00a3\3\2\2\2\u00a9\37\3\2\2\2\u00aa\u00ab\7\34\2"+
-		"\2\u00ab\u00ac\7\21\2\2\u00ac\u00b1\5\36\20\2\u00ad\u00ae\7\4\2\2\u00ae"+
-		"\u00b0\5\36\20\2\u00af\u00ad\3\2\2\2\u00b0\u00b3\3\2\2\2\u00b1\u00af\3"+
-		"\2\2\2\u00b1\u00b2\3\2\2\2\u00b2\u00b4\3\2\2\2\u00b3\u00b1\3\2\2\2\u00b4"+
-		"\u00b5\7\22\2\2\u00b5!\3\2\2\2\u00b6\u00bb\7\23\2\2\u00b7\u00ba\n\4\2"+
-		"\2\u00b8\u00ba\5\"\22\2\u00b9\u00b7\3\2\2\2\u00b9\u00b8\3\2\2\2\u00ba"+
-		"\u00bd\3\2\2\2\u00bb\u00b9\3\2\2\2\u00bb\u00bc\3\2\2\2\u00bc\u00be\3\2"+
-		"\2\2\u00bd\u00bb\3\2\2\2\u00be\u00bf\7\24\2\2\u00bf#\3\2\2\2\u00c0\u00c5"+
-		"\7&\2\2\u00c1\u00c2\7\3\2\2\u00c2\u00c4\7&\2\2\u00c3\u00c1\3\2\2\2\u00c4"+
-		"\u00c7\3\2\2\2\u00c5\u00c3\3\2\2\2\u00c5\u00c6\3\2\2\2\u00c6\u00cb\3\2"+
-		"\2\2\u00c7\u00c5\3\2\2\2\u00c8\u00c9\7&\2\2\u00c9\u00cb\5\"\22\2\u00ca"+
-		"\u00c0\3\2\2\2\u00ca\u00c8\3\2\2\2\u00cb%\3\2\2\2\u00cc\u00cd\7\35\2\2"+
-		"\u00cd\u00ce\7\21\2\2\u00ce\u00d3\5$\23\2\u00cf\u00d0\7\4\2\2\u00d0\u00d2"+
-		"\5$\23\2\u00d1\u00cf\3\2\2\2\u00d2\u00d5\3\2\2\2\u00d3\u00d1\3\2\2\2\u00d3"+
-		"\u00d4\3\2\2\2\u00d4\u00d6\3\2\2\2\u00d5\u00d3\3\2\2\2\u00d6\u00d7\7\22"+
-		"\2\2\u00d7\'\3\2\2\2\u00d8\u00db\5\4\3\2\u00d9\u00da\7\3\2\2\u00da\u00dc"+
-		"\7&\2\2\u00db\u00d9\3\2\2\2\u00dc\u00dd\3\2\2\2\u00dd\u00db\3\2\2\2\u00dd"+
-		"\u00de\3\2\2\2\u00de)\3\2\2\2\u00df\u00e0\7\30\2\2\u00e0\u00e7\5(\25\2"+
-		"\u00e1\u00e3\7\36\2\2\u00e2\u00e4\5\24\13\2\u00e3\u00e2\3\2\2\2\u00e4"+
-		"\u00e5\3\2\2\2\u00e5\u00e3\3\2\2\2\u00e5\u00e6\3\2\2\2\u00e6\u00e8\3\2"+
-		"\2\2\u00e7\u00e1\3\2\2\2\u00e7\u00e8\3\2\2\2\u00e8+\3\2\2\2\u00e9\u00ee"+
-		"\7\23\2\2\u00ea\u00ed\n\4\2\2\u00eb\u00ed\5,\27\2\u00ec\u00ea\3\2\2\2"+
-		"\u00ec\u00eb\3\2\2\2\u00ed\u00f0\3\2\2\2\u00ee\u00ec\3\2\2\2\u00ee\u00ef"+
-		"\3\2\2\2\u00ef\u00f1\3\2\2\2\u00f0\u00ee\3\2\2\2\u00f1\u00f2\7\24\2\2"+
-		"\u00f2-\3\2\2\2\u00f3\u00f4\7&\2\2\u00f4\u00f5\5,\27\2\u00f5/\3\2\2\2"+
-		"\u00f6\u00f7\7\25\2\2\u00f7\u00fc\5.\30\2\u00f8\u00f9\7\4\2\2\u00f9\u00fb"+
-		"\5.\30\2\u00fa\u00f8\3\2\2\2\u00fb\u00fe\3\2\2\2\u00fc\u00fa\3\2\2\2\u00fc"+
-		"\u00fd\3\2\2\2\u00fd\61\3\2\2\2\u00fe\u00fc\3\2\2\2\u00ff\u0100\7\30\2"+
-		"\2\u0100\u0107\5\26\f\2\u0101\u0103\7\36\2\2\u0102\u0104\5\24\13\2\u0103"+
-		"\u0102\3\2\2\2\u0104\u0105\3\2\2\2\u0105\u0103\3\2\2\2\u0105\u0106\3\2"+
-		"\2\2\u0106\u0108\3\2\2\2\u0107\u0101\3\2\2\2\u0107\u0108\3\2\2\2\u0108"+
-		"\u010a\3\2\2\2\u0109\u010b\5 \21\2\u010a\u0109\3\2\2\2\u010a\u010b\3\2"+
-		"\2\2\u010b\u010d\3\2\2\2\u010c\u010e\5&\24\2\u010d\u010c\3\2\2\2\u010d"+
-		"\u010e\3\2\2\2\u010e\u0110\3\2\2\2\u010f\u0111\5\30\r\2\u0110\u010f\3"+
-		"\2\2\2\u0110\u0111\3\2\2\2\u0111\u0113\3\2\2\2\u0112\u0114\5\32\16\2\u0113"+
-		"\u0112\3\2\2\2\u0113\u0114\3\2\2\2\u0114\u0116\3\2\2\2\u0115\u0117\5\34"+
-		"\17\2\u0116\u0115\3\2\2\2\u0116\u0117\3\2\2\2\u0117\u0119\3\2\2\2\u0118"+
-		"\u011a\5\60\31\2\u0119\u0118\3\2\2\2\u0119\u011a\3\2\2\2\u011a\63\3\2"+
-		"\2\2\u011b\u011c\7\31\2\2\u011c\u0123\5\26\f\2\u011d\u011f\7\36\2\2\u011e"+
-		"\u0120\5\24\13\2\u011f\u011e\3\2\2\2\u0120\u0121\3\2\2\2\u0121\u011f\3"+
-		"\2\2\2\u0121\u0122\3\2\2\2\u0122\u0124\3\2\2\2\u0123\u011d\3\2\2\2\u0123"+
-		"\u0124\3\2\2\2\u0124\u0126\3\2\2\2\u0125\u0127\5 \21\2\u0126\u0125\3\2"+
-		"\2\2\u0126\u0127\3\2\2\2\u0127\u0129\3\2\2\2\u0128\u012a\5\30\r\2\u0129"+
-		"\u0128\3\2\2\2\u0129\u012a\3\2\2\2\u012a\u012c\3\2\2\2\u012b\u012d\5\32"+
-		"\16\2\u012c\u012b\3\2\2\2\u012c\u012d\3\2\2\2\u012d\u012f\3\2\2\2\u012e"+
-		"\u0130\5\34\17\2\u012f\u012e\3\2\2\2\u012f\u0130\3\2\2\2\u0130\65\3\2"+
-		"\2\2+<FHO]bkpx\u0080\u0084\u0090\u00a1\u00a6\u00a8\u00b1\u00b9\u00bb\u00c5"+
-		"\u00ca\u00d3\u00dd\u00e5\u00e7\u00ec\u00ee\u00fc\u0105\u0107\u010a\u010d"+
-		"\u0110\u0113\u0116\u0119\u0121\u0123\u0126\u0129\u012c\u012f";
+		"\4\32\t\32\4\33\t\33\4\34\t\34\4\35\t\35\4\36\t\36\4\37\t\37\4 \t \4!"+
+		"\t!\3\2\3\2\3\2\7\2F\n\2\f\2\16\2I\13\2\3\2\3\2\3\3\3\3\3\3\5\3P\n\3\3"+
+		"\4\3\4\3\5\3\5\3\5\3\5\6\5X\n\5\r\5\16\5Y\5\5\\\n\5\3\6\3\6\3\6\6\6a\n"+
+		"\6\r\6\16\6b\3\7\3\7\3\b\3\b\3\b\3\b\3\b\3\b\3\b\3\b\7\bo\n\b\f\b\16\b"+
+		"r\13\b\3\b\3\b\5\bv\n\b\3\t\3\t\3\n\3\n\3\n\3\n\3\n\5\n\177\n\n\3\13\3"+
+		"\13\3\13\5\13\u0084\n\13\3\f\3\f\3\f\3\f\3\f\3\f\5\f\u008c\n\f\3\f\3\f"+
+		"\3\f\3\f\6\f\u0092\n\f\r\f\16\f\u0093\7\f\u0096\n\f\f\f\16\f\u0099\13"+
+		"\f\3\r\3\r\3\r\3\r\3\r\3\r\3\r\3\r\3\r\5\r\u00a4\n\r\3\16\3\16\3\16\3"+
+		"\16\3\17\3\17\3\17\3\20\3\20\3\20\3\21\3\21\3\21\3\21\3\21\5\21\u00b5"+
+		"\n\21\3\21\3\21\3\21\5\21\u00ba\n\21\5\21\u00bc\n\21\3\22\3\22\3\22\3"+
+		"\22\3\22\7\22\u00c3\n\22\f\22\16\22\u00c6\13\22\3\22\3\22\3\23\3\23\3"+
+		"\23\7\23\u00cd\n\23\f\23\16\23\u00d0\13\23\3\23\3\23\3\24\3\24\3\24\7"+
+		"\24\u00d7\n\24\f\24\16\24\u00da\13\24\3\24\3\24\5\24\u00de\n\24\3\25\3"+
+		"\25\3\25\3\25\3\25\7\25\u00e5\n\25\f\25\16\25\u00e8\13\25\3\25\3\25\3"+
+		"\26\3\26\3\26\6\26\u00ef\n\26\r\26\16\26\u00f0\3\27\3\27\3\27\3\27\6\27"+
+		"\u00f7\n\27\r\27\16\27\u00f8\5\27\u00fb\n\27\3\30\3\30\3\30\7\30\u0100"+
+		"\n\30\f\30\16\30\u0103\13\30\3\30\3\30\3\31\3\31\3\31\3\32\3\32\3\32\3"+
+		"\32\7\32\u010e\n\32\f\32\16\32\u0111\13\32\3\33\3\33\3\34\3\34\3\34\3"+
+		"\35\3\35\3\35\3\35\6\35\u011c\n\35\r\35\16\35\u011d\5\35\u0120\n\35\3"+
+		"\35\5\35\u0123\n\35\3\35\5\35\u0126\n\35\3\35\5\35\u0129\n\35\3\35\5\35"+
+		"\u012c\n\35\3\35\5\35\u012f\n\35\3\35\5\35\u0132\n\35\3\35\5\35\u0135"+
+		"\n\35\3\36\3\36\3\36\3\36\6\36\u013b\n\36\r\36\16\36\u013c\5\36\u013f"+
+		"\n\36\3\36\5\36\u0142\n\36\3\36\5\36\u0145\n\36\3\36\5\36\u0148\n\36\3"+
+		"\36\5\36\u014b\n\36\3\36\5\36\u014e\n\36\3\37\3\37\3 \3 \3 \3!\3!\3!\3"+
+		"!\3!\6!\u015a\n!\r!\16!\u015b\5!\u015e\n!\3!\5!\u0161\n!\3!\2\3\26\"\2"+
+		"\4\6\b\n\f\16\20\22\24\26\30\32\34\36 \"$&(*,.\60\62\64\668:<>@\2\5\3"+
+		"\2\6\21\3\2#$\3\2\25\25\2\u0176\2B\3\2\2\2\4O\3\2\2\2\6Q\3\2\2\2\b[\3"+
+		"\2\2\2\n]\3\2\2\2\fd\3\2\2\2\16u\3\2\2\2\20w\3\2\2\2\22~\3\2\2\2\24\u0080"+
+		"\3\2\2\2\26\u008b\3\2\2\2\30\u00a3\3\2\2\2\32\u00a5\3\2\2\2\34\u00a9\3"+
+		"\2\2\2\36\u00ac\3\2\2\2 \u00bb\3\2\2\2\"\u00bd\3\2\2\2$\u00c9\3\2\2\2"+
+		"&\u00dd\3\2\2\2(\u00df\3\2\2\2*\u00eb\3\2\2\2,\u00f2\3\2\2\2.\u00fc\3"+
+		"\2\2\2\60\u0106\3\2\2\2\62\u0109\3\2\2\2\64\u0112\3\2\2\2\66\u0114\3\2"+
+		"\2\28\u0117\3\2\2\2:\u0136\3\2\2\2<\u014f\3\2\2\2>\u0151\3\2\2\2@\u0154"+
+		"\3\2\2\2BG\5\4\3\2CD\7\3\2\2DF\5\4\3\2EC\3\2\2\2FI\3\2\2\2GE\3\2\2\2G"+
+		"H\3\2\2\2HJ\3\2\2\2IG\3\2\2\2JK\7\2\2\3K\3\3\2\2\2LP\58\35\2MP\5:\36\2"+
+		"NP\5@!\2OL\3\2\2\2OM\3\2\2\2ON\3\2\2\2P\5\3\2\2\2QR\7*\2\2R\7\3\2\2\2"+
+		"S\\\7*\2\2TW\7*\2\2UV\7\4\2\2VX\7*\2\2WU\3\2\2\2XY\3\2\2\2YW\3\2\2\2Y"+
+		"Z\3\2\2\2Z\\\3\2\2\2[S\3\2\2\2[T\3\2\2\2\\\t\3\2\2\2]`\7*\2\2^_\7\5\2"+
+		"\2_a\7*\2\2`^\3\2\2\2ab\3\2\2\2b`\3\2\2\2bc\3\2\2\2c\13\3\2\2\2de\t\2"+
+		"\2\2e\r\3\2\2\2fv\7,\2\2gv\7(\2\2hv\7)\2\2iv\7\'\2\2jk\7\22\2\2kp\5\16"+
+		"\b\2lm\7\5\2\2mo\5\16\b\2nl\3\2\2\2or\3\2\2\2pn\3\2\2\2pq\3\2\2\2qs\3"+
+		"\2\2\2rp\3\2\2\2st\7\23\2\2tv\3\2\2\2uf\3\2\2\2ug\3\2\2\2uh\3\2\2\2ui"+
+		"\3\2\2\2uj\3\2\2\2v\17\3\2\2\2wx\t\3\2\2x\21\3\2\2\2y\177\5\16\b\2z{\7"+
+		"\22\2\2{|\5,\27\2|}\7\23\2\2}\177\3\2\2\2~y\3\2\2\2~z\3\2\2\2\177\23\3"+
+		"\2\2\2\u0080\u0081\5\b\5\2\u0081\u0083\5\f\7\2\u0082\u0084\5\22\n\2\u0083"+
+		"\u0082\3\2\2\2\u0083\u0084\3\2\2\2\u0084\25\3\2\2\2\u0085\u0086\b\f\1"+
+		"\2\u0086\u0087\7\22\2\2\u0087\u0088\5\26\f\2\u0088\u0089\7\23\2\2\u0089"+
+		"\u008c\3\2\2\2\u008a\u008c\5\24\13\2\u008b\u0085\3\2\2\2\u008b\u008a\3"+
+		"\2\2\2\u008c\u0097\3\2\2\2\u008d\u0091\f\4\2\2\u008e\u008f\5\20\t\2\u008f"+
+		"\u0090\5\26\f\2\u0090\u0092\3\2\2\2\u0091\u008e\3\2\2\2\u0092\u0093\3"+
+		"\2\2\2\u0093\u0091\3\2\2\2\u0093\u0094\3\2\2\2\u0094\u0096\3\2\2\2\u0095"+
+		"\u008d\3\2\2\2\u0096\u0099\3\2\2\2\u0097\u0095\3\2\2\2\u0097\u0098\3\2"+
+		"\2\2\u0098\27\3\2\2\2\u0099\u0097\3\2\2\2\u009a\u00a4\5\6\4\2\u009b\u009c"+
+		"\5\6\4\2\u009c\u009d\7\4\2\2\u009d\u009e\5\b\5\2\u009e\u00a4\3\2\2\2\u009f"+
+		"\u00a0\5\6\4\2\u00a0\u00a1\7\4\2\2\u00a1\u00a2\5\n\6\2\u00a2\u00a4\3\2"+
+		"\2\2\u00a3\u009a\3\2\2\2\u00a3\u009b\3\2\2\2\u00a3\u009f\3\2\2\2\u00a4"+
+		"\31\3\2\2\2\u00a5\u00a6\7\35\2\2\u00a6\u00a7\7*\2\2\u00a7\u00a8\7\37\2"+
+		"\2\u00a8\33\3\2\2\2\u00a9\u00aa\7\31\2\2\u00aa\u00ab\7(\2\2\u00ab\35\3"+
+		"\2\2\2\u00ac\u00ad\7\30\2\2\u00ad\u00ae\7(\2\2\u00ae\37\3\2\2\2\u00af"+
+		"\u00b0\5\6\4\2\u00b0\u00b1\7\4\2\2\u00b1\u00b2\7*\2\2\u00b2\u00b4\5\f"+
+		"\7\2\u00b3\u00b5\5\16\b\2\u00b4\u00b3\3\2\2\2\u00b4\u00b5\3\2\2\2\u00b5"+
+		"\u00bc\3\2\2\2\u00b6\u00b7\7*\2\2\u00b7\u00b9\5\f\7\2\u00b8\u00ba\5\16"+
+		"\b\2\u00b9\u00b8\3\2\2\2\u00b9\u00ba\3\2\2\2\u00ba\u00bc\3\2\2\2\u00bb"+
+		"\u00af\3\2\2\2\u00bb\u00b6\3\2\2\2\u00bc!\3\2\2\2\u00bd\u00be\7 \2\2\u00be"+
+		"\u00bf\7\22\2\2\u00bf\u00c4\5 \21\2\u00c0\u00c1\7\5\2\2\u00c1\u00c3\5"+
+		" \21\2\u00c2\u00c0\3\2\2\2\u00c3\u00c6\3\2\2\2\u00c4\u00c2\3\2\2\2\u00c4"+
+		"\u00c5\3\2\2\2\u00c5\u00c7\3\2\2\2\u00c6\u00c4\3\2\2\2\u00c7\u00c8\7\23"+
+		"\2\2\u00c8#\3\2\2\2\u00c9\u00ce\7\24\2\2\u00ca\u00cd\n\4\2\2\u00cb\u00cd"+
+		"\5$\23\2\u00cc\u00ca\3\2\2\2\u00cc\u00cb\3\2\2\2\u00cd\u00d0\3\2\2\2\u00ce"+
+		"\u00cc\3\2\2\2\u00ce\u00cf\3\2\2\2\u00cf\u00d1\3\2\2\2\u00d0\u00ce\3\2"+
+		"\2\2\u00d1\u00d2\7\25\2\2\u00d2%\3\2\2\2\u00d3\u00d8\7*\2\2\u00d4\u00d5"+
+		"\7\4\2\2\u00d5\u00d7\7*\2\2\u00d6\u00d4\3\2\2\2\u00d7\u00da\3\2\2\2\u00d8"+
+		"\u00d6\3\2\2\2\u00d8\u00d9\3\2\2\2\u00d9\u00de\3\2\2\2\u00da\u00d8\3\2"+
+		"\2\2\u00db\u00dc\7*\2\2\u00dc\u00de\5$\23\2\u00dd\u00d3\3\2\2\2\u00dd"+
+		"\u00db\3\2\2\2\u00de\'\3\2\2\2\u00df\u00e0\7!\2\2\u00e0\u00e1\7\22\2\2"+
+		"\u00e1\u00e6\5&\24\2\u00e2\u00e3\7\5\2\2\u00e3\u00e5\5&\24\2\u00e4\u00e2"+
+		"\3\2\2\2\u00e5\u00e8\3\2\2\2\u00e6\u00e4\3\2\2\2\u00e6\u00e7\3\2\2\2\u00e7"+
+		"\u00e9\3\2\2\2\u00e8\u00e6\3\2\2\2\u00e9\u00ea\7\23\2\2\u00ea)\3\2\2\2"+
+		"\u00eb\u00ee\5\6\4\2\u00ec\u00ed\7\4\2\2\u00ed\u00ef\7*\2\2\u00ee\u00ec"+
+		"\3\2\2\2\u00ef\u00f0\3\2\2\2\u00f0\u00ee\3\2\2\2\u00f0\u00f1\3\2\2\2\u00f1"+
+		"+\3\2\2\2\u00f2\u00f3\7\32\2\2\u00f3\u00fa\5*\26\2\u00f4\u00f6\7\"\2\2"+
+		"\u00f5\u00f7\5\26\f\2\u00f6\u00f5\3\2\2\2\u00f7\u00f8\3\2\2\2\u00f8\u00f6"+
+		"\3\2\2\2\u00f8\u00f9\3\2\2\2\u00f9\u00fb\3\2\2\2\u00fa\u00f4\3\2\2\2\u00fa"+
+		"\u00fb\3\2\2\2\u00fb-\3\2\2\2\u00fc\u0101\7\24\2\2\u00fd\u0100\n\4\2\2"+
+		"\u00fe\u0100\5.\30\2\u00ff\u00fd\3\2\2\2\u00ff\u00fe\3\2\2\2\u0100\u0103"+
+		"\3\2\2\2\u0101\u00ff\3\2\2\2\u0101\u0102\3\2\2\2\u0102\u0104\3\2\2\2\u0103"+
+		"\u0101\3\2\2\2\u0104\u0105\7\25\2\2\u0105/\3\2\2\2\u0106\u0107\7*\2\2"+
+		"\u0107\u0108\5.\30\2\u0108\61\3\2\2\2\u0109\u010a\7\27\2\2\u010a\u010f"+
+		"\5\60\31\2\u010b\u010c\7\5\2\2\u010c\u010e\5\60\31\2\u010d\u010b\3\2\2"+
+		"\2\u010e\u0111\3\2\2\2\u010f\u010d\3\2\2\2\u010f\u0110\3\2\2\2\u0110\63"+
+		"\3\2\2\2\u0111\u010f\3\2\2\2\u0112\u0113\7,\2\2\u0113\65\3\2\2\2\u0114"+
+		"\u0115\7\36\2\2\u0115\u0116\5\64\33\2\u0116\67\3\2\2\2\u0117\u0118\7\32"+
+		"\2\2\u0118\u011f\5\30\r\2\u0119\u011b\7\"\2\2\u011a\u011c\5\26\f\2\u011b"+
+		"\u011a\3\2\2\2\u011c\u011d\3\2\2\2\u011d\u011b\3\2\2\2\u011d\u011e\3\2"+
+		"\2\2\u011e\u0120\3\2\2\2\u011f\u0119\3\2\2\2\u011f\u0120\3\2\2\2\u0120"+
+		"\u0122\3\2\2\2\u0121\u0123\5\"\22\2\u0122\u0121\3\2\2\2\u0122\u0123\3"+
+		"\2\2\2\u0123\u0125\3\2\2\2\u0124\u0126\5(\25\2\u0125\u0124\3\2\2\2\u0125"+
+		"\u0126\3\2\2\2\u0126\u0128\3\2\2\2\u0127\u0129\5\32\16\2\u0128\u0127\3"+
+		"\2\2\2\u0128\u0129\3\2\2\2\u0129\u012b\3\2\2\2\u012a\u012c\5\34\17\2\u012b"+
+		"\u012a\3\2\2\2\u012b\u012c\3\2\2\2\u012c\u012e\3\2\2\2\u012d\u012f\5\36"+
+		"\20\2\u012e\u012d\3\2\2\2\u012e\u012f\3\2\2\2\u012f\u0131\3\2\2\2\u0130"+
+		"\u0132\5\62\32\2\u0131\u0130\3\2\2\2\u0131\u0132\3\2\2\2\u0132\u0134\3"+
+		"\2\2\2\u0133\u0135\5\66\34\2\u0134\u0133\3\2\2\2\u0134\u0135\3\2\2\2\u0135"+
+		"9\3\2\2\2\u0136\u0137\7\33\2\2\u0137\u013e\5\30\r\2\u0138\u013a\7\"\2"+
+		"\2\u0139\u013b\5\26\f\2\u013a\u0139\3\2\2\2\u013b\u013c\3\2\2\2\u013c"+
+		"\u013a\3\2\2\2\u013c\u013d\3\2\2\2\u013d\u013f\3\2\2\2\u013e\u0138\3\2"+
+		"\2\2\u013e\u013f\3\2\2\2\u013f\u0141\3\2\2\2\u0140\u0142\5\"\22\2\u0141"+
+		"\u0140\3\2\2\2\u0141\u0142\3\2\2\2\u0142\u0144\3\2\2\2\u0143\u0145\5\32"+
+		"\16\2\u0144\u0143\3\2\2\2\u0144\u0145\3\2\2\2\u0145\u0147\3\2\2\2\u0146"+
+		"\u0148\5\34\17\2\u0147\u0146\3\2\2\2\u0147\u0148\3\2\2\2\u0148\u014a\3"+
+		"\2\2\2\u0149\u014b\5\36\20\2\u014a\u0149\3\2\2\2\u014a\u014b\3\2\2\2\u014b"+
+		"\u014d\3\2\2\2\u014c\u014e\5\66\34\2\u014d\u014c\3\2\2\2\u014d\u014e\3"+
+		"\2\2\2\u014e;\3\2\2\2\u014f\u0150\7*\2\2\u0150=\3\2\2\2\u0151\u0152\7"+
+		"\26\2\2\u0152\u0153\5<\37\2\u0153?\3\2\2\2\u0154\u0155\7\34\2\2\u0155"+
+		"\u0156\5\30\r\2\u0156\u015d\5> \2\u0157\u0159\7\"\2\2\u0158\u015a\5\26"+
+		"\f\2\u0159\u0158\3\2\2\2\u015a\u015b\3\2\2\2\u015b\u0159\3\2\2\2\u015b"+
+		"\u015c\3\2\2\2\u015c\u015e\3\2\2\2\u015d\u0157\3\2\2\2\u015d\u015e\3\2"+
+		"\2\2\u015e\u0160\3\2\2\2\u015f\u0161\5\66\34\2\u0160\u015f\3\2\2\2\u0160"+
+		"\u0161\3\2\2\2\u0161A\3\2\2\2\61GOY[bpu~\u0083\u008b\u0093\u0097\u00a3"+
+		"\u00b4\u00b9\u00bb\u00c4\u00cc\u00ce\u00d8\u00dd\u00e6\u00f0\u00f8\u00fa"+
+		"\u00ff\u0101\u010f\u011d\u011f\u0122\u0125\u0128\u012b\u012e\u0131\u0134"+
+		"\u013c\u013e\u0141\u0144\u0147\u014a\u014d\u015b\u015d\u0160";
 	public static final ATN _ATN =
 		new ATNDeserializer().deserialize(_serializedATN.toCharArray());
 	static {

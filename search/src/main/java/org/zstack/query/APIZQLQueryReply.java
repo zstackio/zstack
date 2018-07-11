@@ -5,21 +5,23 @@ import org.zstack.header.message.NoJsonSchema;
 import org.zstack.header.rest.RestResponse;
 import org.zstack.zql.ZQLQueryReturn;
 
-@RestResponse(allTo = "result")
+import java.util.List;
+
+@RestResponse(allTo = "results")
 public class APIZQLQueryReply extends APIReply {
     @NoJsonSchema
-    private ZQLQueryReturn result;
+    private List<ZQLQueryReturn> results;
 
     public static APIZQLQueryReply __example__() {
         APIZQLQueryReply ret = new APIZQLQueryReply();
         return ret;
     }
 
-    public ZQLQueryReturn getResult() {
-        return result;
+    public List<ZQLQueryReturn> getResults() {
+        return results;
     }
 
-    public void setResult(ZQLQueryReturn result) {
-        this.result = result;
+    public void setResults(List<ZQLQueryReturn> results) {
+        this.results = results;
     }
 }

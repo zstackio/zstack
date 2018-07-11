@@ -93,6 +93,10 @@ class ASTNode {
          List<ReturnWithExpr> exprs
     }
 
+    static class Sum extends Query {
+        String groupByField
+    }
+
     static class Query extends ASTNode {
         QueryTarget target
         List<Condition> conditions
@@ -102,6 +106,7 @@ class ASTNode {
         OrderBy orderBy
         Limit limit
         Offset offset
+        String name
 
         void addRestrictExpr(RestrictExpr expr) {
             if (restrictBy == null)  {

@@ -3,12 +3,9 @@ package org.zstack.zql.ast.visitors;
 import org.zstack.header.zql.ASTNode;
 import org.zstack.header.zql.ASTVisitor;
 
-public class OffsetVisitor implements ASTVisitor<String, ASTNode.Offset> {
-    public Integer offset;
-
+public class OffsetVisitor implements ASTVisitor<Integer, ASTNode.Offset> {
     @Override
-    public String visit(ASTNode.Offset node) {
-        offset = node.getOffset();
-        return String.format("OFFSET %s", offset);
+    public Integer visit(ASTNode.Offset node) {
+        return node.getOffset();
     }
 }

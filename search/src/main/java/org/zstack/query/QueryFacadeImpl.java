@@ -13,7 +13,6 @@ import org.zstack.core.thread.ThreadGlobalProperty;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
-import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -174,11 +173,11 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
                 ZQLContext.putAPISession(msg.getSession());
 
                 // use doCall to make message exception safe
-                doCall(new ReturnValueCompletion<ZQLQueryReturn>(msg) {
+                doCall(new ReturnValueCompletion<List<ZQLQueryReturn>>(msg) {
                     @Override
-                    public void success(ZQLQueryReturn returnValue) {
+                    public void success(List<ZQLQueryReturn> returnValue) {
                         ZQLContext.cleanAPISession();
-                        reply.setResult(returnValue);
+                        reply.setResults(returnValue);
                         bus.reply(msg, reply);
                     }
 
@@ -193,8 +192,8 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
                 return null;
             }
 
-            private void doCall(ReturnValueCompletion<ZQLQueryReturn> completion) {
-                completion.success(ZQL.fromString(msg.getZql()).execute());
+            private void doCall(ReturnValueCompletion<List<ZQLQueryReturn>> completion) {
+                completion.success(ZQL.fromString(msg.getZql()).getResultList());
             }
 
             @Override
@@ -454,7 +453,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             logger.trace(text);
         }
         ZQL zql = ZQL.fromString(text);
-        ZQLQueryReturn result = zql.execute();
+        ZQLQueryReturn result = zql.getSingleResult();
         ZQLContext.cleanAPISession();
         return result;
     }

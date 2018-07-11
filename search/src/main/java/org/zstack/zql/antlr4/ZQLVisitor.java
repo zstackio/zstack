@@ -13,6 +13,12 @@ import org.antlr.v4.runtime.tree.ParseTreeVisitor;
  */
 public interface ZQLVisitor<T> extends ParseTreeVisitor<T> {
 	/**
+	 * Visit a parse tree produced by {@link ZQLParser#zqls}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitZqls(ZQLParser.ZqlsContext ctx);
+	/**
 	 * Visit a parse tree produced by the {@code queryGrammar}
 	 * labeled alternative in {@link ZQLParser#zql}.
 	 * @param ctx the parse tree
@@ -26,6 +32,13 @@ public interface ZQLVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitCountGrammar(ZQLParser.CountGrammarContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code sumGrammar}
+	 * labeled alternative in {@link ZQLParser#zql}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitSumGrammar(ZQLParser.SumGrammarContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link ZQLParser#entity}.
 	 * @param ctx the parse tree
@@ -211,6 +224,18 @@ public interface ZQLVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitFilterBy(ZQLParser.FilterByContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link ZQLParser#namedAsValue}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitNamedAsValue(ZQLParser.NamedAsValueContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ZQLParser#namedAs}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitNamedAs(ZQLParser.NamedAsContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link ZQLParser#query}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -222,4 +247,22 @@ public interface ZQLVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitCount(ZQLParser.CountContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ZQLParser#sumByValue}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitSumByValue(ZQLParser.SumByValueContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ZQLParser#sumBy}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitSumBy(ZQLParser.SumByContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ZQLParser#sum}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitSum(ZQLParser.SumContext ctx);
 }

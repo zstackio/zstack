@@ -10,6 +10,16 @@ import org.antlr.v4.runtime.tree.ParseTreeListener;
  */
 public interface ZQLListener extends ParseTreeListener {
 	/**
+	 * Enter a parse tree produced by {@link ZQLParser#zqls}.
+	 * @param ctx the parse tree
+	 */
+	void enterZqls(ZQLParser.ZqlsContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ZQLParser#zqls}.
+	 * @param ctx the parse tree
+	 */
+	void exitZqls(ZQLParser.ZqlsContext ctx);
+	/**
 	 * Enter a parse tree produced by the {@code queryGrammar}
 	 * labeled alternative in {@link ZQLParser#zql}.
 	 * @param ctx the parse tree
@@ -33,6 +43,18 @@ public interface ZQLListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitCountGrammar(ZQLParser.CountGrammarContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code sumGrammar}
+	 * labeled alternative in {@link ZQLParser#zql}.
+	 * @param ctx the parse tree
+	 */
+	void enterSumGrammar(ZQLParser.SumGrammarContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code sumGrammar}
+	 * labeled alternative in {@link ZQLParser#zql}.
+	 * @param ctx the parse tree
+	 */
+	void exitSumGrammar(ZQLParser.SumGrammarContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link ZQLParser#entity}.
 	 * @param ctx the parse tree
@@ -344,6 +366,26 @@ public interface ZQLListener extends ParseTreeListener {
 	 */
 	void exitFilterBy(ZQLParser.FilterByContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link ZQLParser#namedAsValue}.
+	 * @param ctx the parse tree
+	 */
+	void enterNamedAsValue(ZQLParser.NamedAsValueContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ZQLParser#namedAsValue}.
+	 * @param ctx the parse tree
+	 */
+	void exitNamedAsValue(ZQLParser.NamedAsValueContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link ZQLParser#namedAs}.
+	 * @param ctx the parse tree
+	 */
+	void enterNamedAs(ZQLParser.NamedAsContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ZQLParser#namedAs}.
+	 * @param ctx the parse tree
+	 */
+	void exitNamedAs(ZQLParser.NamedAsContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link ZQLParser#query}.
 	 * @param ctx the parse tree
 	 */
@@ -363,4 +405,34 @@ public interface ZQLListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitCount(ZQLParser.CountContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link ZQLParser#sumByValue}.
+	 * @param ctx the parse tree
+	 */
+	void enterSumByValue(ZQLParser.SumByValueContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ZQLParser#sumByValue}.
+	 * @param ctx the parse tree
+	 */
+	void exitSumByValue(ZQLParser.SumByValueContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link ZQLParser#sumBy}.
+	 * @param ctx the parse tree
+	 */
+	void enterSumBy(ZQLParser.SumByContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ZQLParser#sumBy}.
+	 * @param ctx the parse tree
+	 */
+	void exitSumBy(ZQLParser.SumByContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link ZQLParser#sum}.
+	 * @param ctx the parse tree
+	 */
+	void enterSum(ZQLParser.SumContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ZQLParser#sum}.
+	 * @param ctx the parse tree
+	 */
+	void exitSum(ZQLParser.SumContext ctx);
 }

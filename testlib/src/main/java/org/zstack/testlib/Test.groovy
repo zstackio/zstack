@@ -48,11 +48,11 @@ abstract class Test implements ApiHelper, Retry {
     protected List<Closure> methodsOnClean = []
 
     protected List zqlQuery(String text) {
-        return zQLQuery { zql = text }.result.inventories
+        return zQLQuery { zql = text }.results[0].inventories
     }
 
     protected ZQLQueryReturn zqlQueryFull(String text) {
-        return zQLQuery { zql = text }.result
+        return zQLQuery { zql = text }.results[0]
     }
 
     static {
