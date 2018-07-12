@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class PreviewResourceStackAction extends AbstractAction {
+public class GetSupportedCloudFormationResourcesAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class PreviewResourceStackAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.PreviewResourceStackResult value;
+        public org.zstack.sdk.GetSupportedCloudFormationResourcesResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,17 +25,11 @@ public class PreviewResourceStackAction extends AbstractAction {
         }
     }
 
+    @Param(required = false, validValues = {"v1"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String version;
+
     @Param(required = false, validValues = {"zstack"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type = "zstack";
-
-    @Param(required = false, maxLength = 4194304, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String templateContent;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false, maxLength = 524288, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String parameters;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -54,8 +48,8 @@ public class PreviewResourceStackAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.PreviewResourceStackResult value = res.getResult(org.zstack.sdk.PreviewResourceStackResult.class);
-        ret.value = value == null ? new org.zstack.sdk.PreviewResourceStackResult() : value; 
+        org.zstack.sdk.GetSupportedCloudFormationResourcesResult value = res.getResult(org.zstack.sdk.GetSupportedCloudFormationResourcesResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetSupportedCloudFormationResourcesResult() : value; 
 
         return ret;
     }
@@ -84,11 +78,11 @@ public class PreviewResourceStackAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/cloudformation/stack/preview";
+        info.httpMethod = "GET";
+        info.path = "/cloudformation/resources";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 
