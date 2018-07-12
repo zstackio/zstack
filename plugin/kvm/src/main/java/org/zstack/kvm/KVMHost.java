@@ -332,7 +332,11 @@ public class KVMHost extends HostBase implements Host {
             }
 
             unit = unit == null ? TimeUnit.MILLISECONDS : unit;
-            timeout = timeout == null ? Integer.toUnsignedLong(CoreGlobalProperty.REST_FACADE_READ_TIMEOUT) : timeout;
+            if (timeout == null) {
+                int defaultTimeout = CoreGlobalProperty.REST_FACADE_READ_TIMEOUT;
+                timeout = cmd == null ? defaultTimeout : timeoutManager.getTimeout(cmd.getClass(), defaultTimeout);
+            }
+
             if (commandStr.equals("{}")) {
                 commandStr = commandStr.replaceAll("\\}$",
                         String.format("\"%s\":%s}", KVMConstant.KVM_HOST_ADDONS, JSONObjectUtil.toJsonString(kvmHostAddon)));
