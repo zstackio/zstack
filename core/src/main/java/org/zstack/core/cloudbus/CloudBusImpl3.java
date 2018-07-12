@@ -364,6 +364,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
             @Override
             public void run(MessageReply reply) {
                 callback.run(msg, reply);
+                completion.done();
             }
         }), parallelLevel).run(new NopeNoErrorCompletion());
     }
