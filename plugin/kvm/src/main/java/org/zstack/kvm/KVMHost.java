@@ -2050,10 +2050,11 @@ public class KVMHost extends HostBase implements Host {
 
         List<NicTO> nics = new ArrayList<>(spec.getDestNics().size());
         for (VmNicInventory nic : spec.getDestNics()) {
-            if (!spec.getVmInventory().getType().equals(VmInstanceConstant.USER_VM_TYPE)) {
-                nic.setIp("");
+            NicTO to = completeNicInfo(nic);
+            if (!spec.getVmInventory().getType().equals(VmInstanceConstant.USER_VM_TYPE) && VmGlobalConfig.VM_CLEAN_TRAFFIC.value(Boolean.class)) {
+                to.setIp("");
             }
-            nics.add(completeNicInfo(nic));
+            nics.add(to);
         }
         nics = nics.stream().sorted(Comparator.comparing(NicTO::getDeviceId)).collect(Collectors.toList());
         cmd.setNics(nics);
