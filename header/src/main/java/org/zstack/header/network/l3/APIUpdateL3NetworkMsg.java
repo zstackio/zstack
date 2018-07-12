@@ -25,6 +25,8 @@ public class APIUpdateL3NetworkMsg extends APIMessage implements L3NetworkMessag
     private String name;
     @APIParam(maxLength = 2048, required = false)
     private String description;
+    @APIParam(maxLength = 255, required = false)
+    private String dnsDomain;
     @APIParam(required = false, validValues = {"Public", "Private", "System"})
     private String category;
     private Boolean system;
@@ -72,6 +74,14 @@ public class APIUpdateL3NetworkMsg extends APIMessage implements L3NetworkMessag
 
     public void setCategory(String category) {
         this.category = category;
+    }
+
+    public String getDnsDomain() {
+        return dnsDomain;
+    }
+
+    public void setDnsDomain(String dnsDomain) {
+        this.dnsDomain = dnsDomain;
     }
 
     public static APIUpdateL3NetworkMsg __example__() {

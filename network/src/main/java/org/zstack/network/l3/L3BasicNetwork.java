@@ -499,6 +499,10 @@ public class L3BasicNetwork implements L3Network {
                 self.setCategory(L3NetworkCategory.valueOf(msg.getCategory()));
                 update = true;
         }
+        if (msg.getDnsDomain() != null) {
+            self.setDnsDomain(msg.getDnsDomain());
+            update = true;
+        }
         if (update) {
             self = dbf.updateAndRefresh(self);
         }
