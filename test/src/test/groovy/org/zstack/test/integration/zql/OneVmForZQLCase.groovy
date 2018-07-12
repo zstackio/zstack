@@ -295,11 +295,48 @@ query zone return with (total) named as 'zone'
 
             fs = ZQL.fromString("sum vminstance.cpuNum,memorySize by uuid where cpuNum > 0 named as 'sum'").getResultList()
             logger.debug(JSONObjectUtil.toJsonString(fs))
+
+            testQueryField()
         }
     }
 
     @Override
     void clean() {
         env.delete()
+    }
+
+    void testQueryField(){
+        List vmInstances = queryVmInstance {}
+
+        List names = queryVmInstance {
+            fields = ["name"]
+        }
+        assert names.size() == vmInstances.size()
+
+        List cpus = queryVmInstance {
+            fields = ["cpuNum"]
+        }
+        assert cpus.size() == vmInstances.size()
+
+        List memorySizes = queryVmInstance {
+            fields = ["memorySize"]
+        }
+        assert memorySizes.size() == vmInstances.size()
+
+        List createDates = queryVmInstance {
+            fields = ["createDate"]
+        }
+        assert createDates.size() == vmInstances.size()
+
+        List states = queryVmInstance {
+            fields = ["state"]
+        }
+        assert states.size() == vmInstances.size()
+
+        List nameAndCpus = queryVmInstance {
+            fields = ["name", "cpuNum"]
+        }
+        assert nameAndCpus.size() == vmInstances.size()
+
     }
 }

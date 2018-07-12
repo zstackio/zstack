@@ -52,7 +52,6 @@ public class TypeUtils {
         return primitivesTypes.contains(clazz);
     }
 
-
     public static boolean isPrimitiveOrWrapper(Class clazz) {
         return primitivesAndWrapperTypes.contains(clazz);
     }
