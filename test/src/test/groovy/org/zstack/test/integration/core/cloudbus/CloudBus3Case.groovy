@@ -33,7 +33,7 @@ class CloudBus3Case extends SubCase {
         CloudBus bus = bean(CloudBus.class)
         String SERVICE_ID = "testStepSend"
 
-        bus.registerService(new AbstractService() {
+        def service = new AbstractService() {
             @Override
             void handleMessage(Message msg) {
                 bus.reply(msg, new MessageReply())
@@ -53,7 +53,9 @@ class CloudBus3Case extends SubCase {
             boolean stop() {
                 return true
             }
-        })
+        }
+
+        bus.registerService(service)
 
         List<StartVmInstanceMsg> msgs = []
         for (int i=0; i<3; i++) {
@@ -74,6 +76,8 @@ class CloudBus3Case extends SubCase {
 
         latch.await(5, TimeUnit.SECONDS)
         assert count == 3
+
+        bus.unregisterService(service)
     }
 
     @Override
