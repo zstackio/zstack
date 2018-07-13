@@ -364,6 +364,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
             @Override
             public void run(MessageReply reply) {
                 callback.run(msg, reply);
+                completion.done();
             }
         }), parallelLevel).run(new NopeNoErrorCompletion());
     }
@@ -712,6 +713,10 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
 
     @Override
     public void unregisterService(Service serv) {
+        EndPoint ep = endPoints.get(serv.getId());
+        if (ep != null) {
+            ep.inactive();
+        }
         endPoints.remove(serv.getId());
     }
 

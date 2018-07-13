@@ -1,6 +1,7 @@
 package org.zstack.test.integration.core
 
 import org.zstack.core.asyncbatch.While
+import org.zstack.core.thread.AsyncThread
 import org.zstack.header.core.FutureCompletion
 import org.zstack.header.core.NoErrorCompletion
 import org.zstack.header.core.workflow.WhileCompletion
@@ -37,12 +38,36 @@ class WhileCase extends SubCase{
 
     @Override
     void test() {
+        testStepSmallerThanItems()
         testRunAllWhenItemsEmpty()
         testRunAllCompletionAllDone()
         testRunStepWhenItemsEmpty()
         testRunStepCompletionDone()
         testRunStepComletionAllDone()
         testConcurrentAdd()
+    }
+
+    void testStepSmallerThanItems() {
+        List<Integer> lst = [1, 2, 3]
+        FutureCompletion future = new FutureCompletion(null)
+
+        int count = 0
+        new While<>(lst).step(new While.Do() {
+            @Override
+            @AsyncThread
+            void accept(Object item, WhileCompletion completion) {
+                count ++
+                completion.done()
+            }
+        } ,2).run(new NoErrorCompletion() {
+            @Override
+            void done() {
+                future.success()
+            }
+        })
+
+        future.await(TIME_OUT)
+        assert count == 3
     }
 
     static void testRunAllWhenItemsEmpty(){
