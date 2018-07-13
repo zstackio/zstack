@@ -38,6 +38,7 @@ class WhileCase extends SubCase{
 
     @Override
     void test() {
+        testStepSmallerThanItems()
         testRunAllWhenItemsEmpty()
         testRunAllCompletionAllDone()
         testRunStepWhenItemsEmpty()
