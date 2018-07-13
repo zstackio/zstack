@@ -3,7 +3,7 @@ package org.zstack.header.storage.backup
 import org.zstack.header.core.StaticInit
 import org.zstack.header.image.ImageVO
 
-import static org.zstack.header.identity.rbac.RBAC.rbac
+import static org.zstack.header.identity.rbac.RBACGroovy.rbac
 
 @StaticInit
 static void init() {

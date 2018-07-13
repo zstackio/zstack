@@ -21,6 +21,7 @@ public class CheckIfAccountCanAccessResource {
                         " or ref.resourceUuid in" +
                         " (select sh.resourceUuid from SharedResourceVO sh where sh.receiverAccountUuid = :accountUuid or sh.toPublic = 1)" +
                         " and ref.resourceUuid in (:uuids)";
+
                 List<String> auuids = sql(text, String.class)
                         .param("accountUuid", accountUuid)
                         .param("uuids", resourceUuids)

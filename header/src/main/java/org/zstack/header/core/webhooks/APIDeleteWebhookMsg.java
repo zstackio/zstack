@@ -13,6 +13,7 @@ import org.zstack.header.rest.RestRequest;
         method = HttpMethod.DELETE,
         responseClass = APIDeleteWebhookEvent.class
 )
+@Deprecated
 public class APIDeleteWebhookMsg extends APIDeleteMessage {
     @APIParam(resourceType = WebhookVO.class, successIfResourceNotExisting = true)
     private String uuid;

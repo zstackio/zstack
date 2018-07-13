@@ -26,6 +26,9 @@ public class ResourceVO {
     @Column
     private String resourceType;
 
+    @Column
+    private String concreteResourceType;
+
     private static Map<Class, Field> nameFields = new ConcurrentHashMap<>();
 
     public ResourceVO() {
@@ -73,8 +76,17 @@ public class ResourceVO {
 
     @PrePersist
     private void prePersist() {
-        resourceType = getClass().getSimpleName();
+        resourceType = ResourceTypeMetadata.getBaseResourceTypeFromConcreteType(getClass()).getSimpleName();
+        concreteResourceType = getClass().getName();
         resourceName = getValueOfNameField();
+    }
+
+    public String getConcreteResourceType() {
+        return concreteResourceType;
+    }
+
+    public void setConcreteResourceType(String concreteResourceType) {
+        this.concreteResourceType = concreteResourceType;
     }
 
     public String getResourceName() {

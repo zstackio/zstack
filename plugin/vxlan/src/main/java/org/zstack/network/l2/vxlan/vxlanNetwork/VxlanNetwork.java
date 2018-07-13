@@ -267,8 +267,8 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
 
             @Transactional(readOnly = true)
             private long getUsedVxlan(String accountUuid) {
-                long cnt = SQL.New("select count(vxlan) from VxlanNetworkVO vxlan, AccountResourceRefVO ref where vxlan.uuid = ref.resourceUuid and " +
-                        "ref.accountUuid = :auuid and ref.resourceType = :rtype", Long.class).param("auuid", accountUuid).param("rtype", VxlanNetworkVO.class.getSimpleName()).find();
+                long cnt = SQL.New("select count(vxlan) from L2NetworkVO vxlan, AccountResourceRefVO ref where vxlan.uuid = ref.resourceUuid and " +
+                        "ref.accountUuid = :auuid and vxlan.type = :rtype", Long.class).param("auuid", accountUuid).param("rtype", VxlanNetworkConstant.VXLAN_NETWORK_TYPE).find();
                 return cnt;
             }
 
