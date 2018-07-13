@@ -88,7 +88,7 @@ public class ZQLMetadata {
 
         public Object toInventoryFieldObject(String fieldName, Object value) {
             FieldTypeMapping mapping = typeMappingMap.get(fieldName);
-            if (mapping == null) {
+            if (mapping == null || TypeUtils.isZstackBeanPrimitive(mapping.voFieldType)) {
                 return value;
             }
 
@@ -96,7 +96,7 @@ public class ZQLMetadata {
                 return value.toString();
             }
 
-            throw new CloudRuntimeException(String.format("For the field[%s], fail to convert a vo to a inventory"));
+            throw new CloudRuntimeException(String.format("For the field[%s], fail to convert a vo to a inventory", fieldName));
         }
 
         public boolean hasInventoryField(String fname) {
