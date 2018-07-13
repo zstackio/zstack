@@ -70,6 +70,7 @@ public class SourceClassMap {
 			put("org.zstack.header.cloudformation.ResourceStackInventory", "org.zstack.sdk.ResourceStackInventory");
 			put("org.zstack.header.cloudformation.StackParameters", "org.zstack.sdk.StackParameters");
 			put("org.zstack.header.cloudformation.StackTemplateInventory", "org.zstack.sdk.StackTemplateInventory");
+			put("org.zstack.header.cloudformation.SupportedResourceStruct", "org.zstack.sdk.SupportedResourceStruct");
 			put("org.zstack.header.cluster.ClusterInventory", "org.zstack.sdk.ClusterInventory");
 			put("org.zstack.header.configuration.DiskOfferingInventory", "org.zstack.sdk.DiskOfferingInventory");
 			put("org.zstack.header.configuration.InstanceOfferingInventory", "org.zstack.sdk.InstanceOfferingInventory");
@@ -248,6 +249,7 @@ public class SourceClassMap {
 			put("org.zstack.storage.fusionstor.primary.FusionstorPrimaryStorageMonInventory", "org.zstack.sdk.FusionstorPrimaryStorageMonInventory");
 			put("org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply$HostDiskCapacity", "org.zstack.sdk.HostDiskCapacity");
 			put("org.zstack.storage.primary.local.LocalStorageResourceRefInventory", "org.zstack.sdk.LocalStorageResourceRefInventory");
+			put("org.zstack.storage.primary.sharedblock.SharedBlockCandidateStruct", "org.zstack.sdk.SharedBlockCandidateStruct");
 			put("org.zstack.storage.primary.sharedblock.SharedBlockGroupPrimaryStorageHostRefInventory", "org.zstack.sdk.SharedBlockGroupPrimaryStorageHostRefInventory");
 			put("org.zstack.storage.primary.sharedblock.SharedBlockGroupPrimaryStorageInventory", "org.zstack.sdk.SharedBlockGroupPrimaryStorageInventory");
 			put("org.zstack.storage.primary.sharedblock.SharedBlockGroupType", "org.zstack.sdk.SharedBlockGroupType");
@@ -474,6 +476,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.SessionInventory", "org.zstack.header.identity.SessionInventory");
 			put("org.zstack.sdk.SftpBackupStorageInventory", "org.zstack.storage.backup.sftp.SftpBackupStorageInventory");
 			put("org.zstack.sdk.ShareableVolumeVmInstanceRefInventory", "org.zstack.mevoco.ShareableVolumeVmInstanceRefInventory");
+			put("org.zstack.sdk.SharedBlockCandidateStruct", "org.zstack.storage.primary.sharedblock.SharedBlockCandidateStruct");
 			put("org.zstack.sdk.SharedBlockGroupPrimaryStorageHostRefInventory", "org.zstack.storage.primary.sharedblock.SharedBlockGroupPrimaryStorageHostRefInventory");
 			put("org.zstack.sdk.SharedBlockGroupPrimaryStorageInventory", "org.zstack.storage.primary.sharedblock.SharedBlockGroupPrimaryStorageInventory");
 			put("org.zstack.sdk.SharedBlockGroupType", "org.zstack.storage.primary.sharedblock.SharedBlockGroupType");
@@ -491,6 +494,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.SpendingDetails", "org.zstack.billing.SpendingDetails");
 			put("org.zstack.sdk.StackParameters", "org.zstack.header.cloudformation.StackParameters");
 			put("org.zstack.sdk.StackTemplateInventory", "org.zstack.header.cloudformation.StackTemplateInventory");
+			put("org.zstack.sdk.SupportedResourceStruct", "org.zstack.header.cloudformation.SupportedResourceStruct");
 			put("org.zstack.sdk.SystemTagInventory", "org.zstack.header.tag.SystemTagInventory");
 			put("org.zstack.sdk.TagInventory", "org.zstack.header.tag.TagInventory");
 			put("org.zstack.sdk.TaskProgressInventory", "org.zstack.header.core.progress.TaskProgressInventory");
