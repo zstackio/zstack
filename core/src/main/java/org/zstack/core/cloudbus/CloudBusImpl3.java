@@ -611,7 +611,9 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
     }
 
     private boolean islogMessage(Message msg) {
-        if (CloudBusGlobalProperty.MESSAGE_LOG_FILTER_ALL) {
+        if (CloudBusGlobalProperty.READ_API_LOG_OFF && (msg instanceof APISyncCallMessage || msg instanceof APIReply)) {
+            return false;
+        } else if (CloudBusGlobalProperty.MESSAGE_LOG_FILTER_ALL) {
             return !filterMsgNames.contains(msg.getClass().getName());
         } else {
             return filterMsgNames.contains(msg.getClass().getName());
