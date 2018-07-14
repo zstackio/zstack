@@ -127,7 +127,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
                 if (sgn + 1 > sgNum) {
                     throw new ApiMessageInterceptionException(new QuotaUtil().buildQuataExceedError(
-                                    msg.getSession().getAccountUuid(), SecurityGroupQuotaConstant.SG_NUM, sgNum));
+                            msg.getSession().getAccountUuid(), SecurityGroupQuotaConstant.SG_NUM, sgNum));
                 }
             }
         };
@@ -494,9 +494,17 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             handle((RefreshSecurityGroupRulesOnVmMsg) msg);
         } else if (msg instanceof RemoveVmNicFromSecurityGroupMsg) {
             handle((RemoveVmNicFromSecurityGroupMsg) msg);
+        } else if (msg instanceof SecurityGroupDeletionMsg) {
+            handle((SecurityGroupDeletionMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(SecurityGroupDeletionMsg msg) {
+        SecurityGroupDeletionReply reply = new SecurityGroupDeletionReply();
+        dbf.removeByPrimaryKey(msg.getUuid(), SecurityGroupVO.class);
+        bus.reply(msg, reply);
     }
 
     private void handle(RemoveVmNicFromSecurityGroupMsg msg) {

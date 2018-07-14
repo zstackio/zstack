@@ -1,16 +1,24 @@
 package org.zstack.network.securitygroup;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.core.cascade.*;
+import org.zstack.core.asyncbatch.While;
+import org.zstack.core.cascade.AbstractAsyncCascadeExtension;
+import org.zstack.core.cascade.CascadeAction;
+import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.identity.AccountInventory;
+import org.zstack.header.identity.AccountResourceRefVO;
+import org.zstack.header.identity.AccountResourceRefVO_;
+import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmDeletionStruct;
-import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.utils.CollectionUtils;
@@ -19,6 +27,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  */
@@ -54,7 +63,7 @@ public class SecurityGroupCascadeExtension extends AbstractAsyncCascadeExtension
         completion.success();
     }
 
-    private void handleDeletion(CascadeAction action, final Completion completion) {
+    private void handleSecurityGroupRefDeletion(CascadeAction action, final Completion completion) {
         List<VmNicSecurityGroupRefInventory> refs = refFromAction(action);
         if (refs.isEmpty()) {
             completion.success();
@@ -95,9 +104,67 @@ public class SecurityGroupCascadeExtension extends AbstractAsyncCascadeExtension
         });
     }
 
+    private void handleDeletion(CascadeAction action, final Completion completion) {
+        if (VmInstanceVO.class.getSimpleName().equals(action.getParentIssuer())) {
+            handleSecurityGroupRefDeletion(action, completion);
+        } else {
+            handleSecurityGroupDeletion(action, completion);
+        }
+
+    }
+
+    private void handleSecurityGroupDeletion(CascadeAction action, final Completion completion) {
+        List<AccountInventory> accounts = action.getParentIssuerContext();
+        List<String> accountUuids = accounts.stream().map(AccountInventory::getUuid).collect(Collectors.toList());
+
+        List<SecurityGroupDeletionMsg> msgs = new SQLBatchWithReturn<List<SecurityGroupDeletionMsg>>() {
+            @Override
+            protected List<SecurityGroupDeletionMsg> scripts() {
+                List<String> uuids = q(AccountResourceRefVO.class)
+                        .select(AccountResourceRefVO_.resourceUuid)
+                        .eq(AccountResourceRefVO_.resourceType, SecurityGroupVO.class.getSimpleName())
+                        .in(AccountResourceRefVO_.ownerAccountUuid, accountUuids)
+                        .listValues();
+
+                if (uuids.isEmpty()) {
+                    return null;
+                }
+
+                return uuids.stream().map(auuid -> {
+                    SecurityGroupDeletionMsg msg = new SecurityGroupDeletionMsg();
+                    msg.setUuid(auuid);
+                    bus.makeTargetServiceIdByResourceUuid(msg, SecurityGroupConstant.SERVICE_ID, auuid);
+                    return msg;
+                }).collect(Collectors.toList());
+            }
+        }.execute();
+
+
+        if (msgs == null) {
+            completion.success();
+            return;
+        }
+
+        new While<>(msgs).all((msg, com) -> bus.send(msg, new CloudBusCallBack(com) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    logger.warn(String.format("failed to delete scheduler[uuid:%s], %s", msg.getUuid(), reply.getError()));
+                }
+
+                com.done();
+            }
+        })).run(new NoErrorCompletion() {
+            @Override
+            public void done() {
+                completion.success();
+            }
+        });
+    }
+
     @Override
     public List<String> getEdgeNames() {
-        return Arrays.asList(VmInstanceVO.class.getSimpleName());
+        return Arrays.asList(VmInstanceVO.class.getSimpleName(), AccountVO.class.getSimpleName());
     }
 
     @Override

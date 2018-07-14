@@ -102,7 +102,17 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
     }
 
     protected void handleLocalMessage(Message msg) {
-        bus.dealWithUnknownMessage(msg);
+        if (msg instanceof CertificateDeletionMsg) {
+            handle((CertificateDeletionMsg) msg);
+        } else {
+            bus.dealWithUnknownMessage(msg);
+        }
+    }
+
+    private void handle(CertificateDeletionMsg msg) {
+        CertificateDeletionReply reply = new CertificateDeletionReply();
+        dbf.removeByPrimaryKey(msg.getUuid(), CertificateVO.class);
+        bus.reply(msg, reply);
     }
 
     protected void handleApiMessage(APIMessage msg) {
