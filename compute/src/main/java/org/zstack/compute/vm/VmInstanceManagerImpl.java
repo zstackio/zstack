@@ -1,7 +1,9 @@
 package org.zstack.compute.vm;
 
+import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 import org.apache.commons.validator.routines.DomainValidator;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.allocator.HostAllocatorManager;
 import org.zstack.core.Platform;
@@ -34,7 +36,7 @@ import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
@@ -209,6 +211,10 @@ public class VmInstanceManagerImpl extends AbstractService implements
             handle((APIGetVmInstanceMsg) msg);
         } else if (msg instanceof APIListVmNicMsg) {
             handle((APIListVmNicMsg) msg);
+        } else if(msg instanceof APICreateVmNicMsg) {
+            handle((APICreateVmNicMsg) msg);
+        } else if (msg instanceof APIDeleteVmNicMsg) {
+            handle((APIDeleteVmNicMsg) msg);
         } else if (msg instanceof APIGetCandidateZonesClustersHostsForCreatingVmMsg) {
             handle((APIGetCandidateZonesClustersHostsForCreatingVmMsg) msg);
         } else if (msg instanceof APIGetCandidatePrimaryStoragesForCreatingVmMsg) {
@@ -662,6 +668,125 @@ public class VmInstanceManagerImpl extends AbstractService implements
         bus.reply(msg, reply);
     }
 
+    private void handle(APICreateVmNicMsg msg) {
+        final APICreateVmNicEvent evt = new APICreateVmNicEvent(msg.getId());
+        VmNicInventory nic = new VmNicInventory();
+
+        FlowChain flowChain = FlowChainBuilder.newSimpleFlowChain();
+        flowChain.setName(String.format("create-nic-on-l3-network-%s", msg.getL3NetworkUuid()));
+        flowChain.then(new NoRollbackFlow() {
+            String __name__ = "allocate-nic-ip-and-mac";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                AllocateIpMsg allocateIpMsg = new AllocateIpMsg();
+                allocateIpMsg.setRequiredIp(msg.getIp());
+                allocateIpMsg.setL3NetworkUuid(msg.getL3NetworkUuid());
+                bus.makeTargetServiceIdByResourceUuid(allocateIpMsg, L3NetworkConstant.SERVICE_ID, msg.getL3NetworkUuid());
+
+                bus.send(allocateIpMsg, new CloudBusCallBack(msg) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            trigger.fail(reply.getError());
+                            return;
+                        }
+
+                        AllocateIpReply areply = reply.castReply();
+                        int deviceId = 1;
+                        nic.setUuid(Platform.getUuid());
+                        nic.setIp(areply.getIpInventory().getIp());
+                        nic.setUsedIpUuid(areply.getIpInventory().getUuid());
+                        nic.setL3NetworkUuid(areply.getIpInventory().getL3NetworkUuid());
+
+                        assert nic.getL3NetworkUuid() != null;
+                        nic.setMac(NetworkUtils.generateMacWithDeviceId((short) deviceId));
+                        nic.setDeviceId(deviceId);
+                        nic.setNetmask(areply.getIpInventory().getNetmask());
+                        nic.setGateway(areply.getIpInventory().getGateway());
+
+                        trigger.next();
+                    }
+                });
+            }
+        }).then(new Flow() {
+            String __name__ = "persist-nic-to-db";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                VmNicVO vo = new VmNicVO();
+                vo.setUuid(nic.getUuid());
+                vo.setIp(nic.getIp());
+                vo.setL3NetworkUuid(nic.getL3NetworkUuid());
+                vo.setUsedIpUuid(nic.getUsedIpUuid());
+                vo.setVmInstanceUuid(nic.getVmInstanceUuid());
+                vo.setDeviceId(nic.getDeviceId());
+                vo.setMac(nic.getMac());
+                vo.setNetmask(nic.getNetmask());
+                vo.setGateway(nic.getGateway());
+                vo.setInternalName(nic.getInternalName());
+                vo.setAccountUuid(msg.getSession().getAccountUuid());
+
+                int tries = 5;
+                while (tries-- > 0) {
+                    try {
+                        new SQLBatch() {
+                            @Override
+                            protected void scripts() {
+                                dbf.persistAndRefresh(vo);
+                                acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), nic.getUuid(), VmNicVO.class);
+                            }
+                        }.execute();
+                    } catch (JpaSystemException e) {
+                        if (e.getRootCause() instanceof MySQLIntegrityConstraintViolationException &&
+                                e.getRootCause().getMessage().contains("Duplicate entry")) {
+                            logger.debug(String.format("Concurrent mac allocation. Mac[%s] has been allocated, try allocating another one. " +
+                                    "The error[Duplicate entry] printed by jdbc.spi.SqlExceptionHelper is no harm, " +
+                                    "we will try finding another mac", vo.getMac()));
+                            logger.trace("", e);
+                            vo.setMac(NetworkUtils.generateMacWithDeviceId((short) vo.getDeviceId()));
+                        } else {
+                            throw e;
+                        }
+                    }
+                }
+
+                trigger.next();
+            }
+
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+                ReturnIpMsg msg = new ReturnIpMsg();
+                msg.setL3NetworkUuid(nic.getL3NetworkUuid());
+                msg.setUsedIpUuid(nic.getUsedIpUuid());
+                bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, nic.getL3NetworkUuid());
+
+                bus.send(msg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply replie) {
+                        dbf.removeByPrimaryKey(nic.getUuid(), VmNicVO.class);
+                        trigger.rollback();
+                    }
+                });
+            }
+        });
+
+        flowChain.done(new FlowDoneHandler(msg) {
+            @Override
+            public void handle(Map data) {
+            	tagMgr.createTagsFromAPICreateMessage(msg, nic.getUuid(), VmNicVO.class.getSimpleName());
+                evt.setInventory(nic);
+                bus.publish(evt);
+            }
+        }).error(new FlowErrorHandler(msg) {
+            @Override
+            public void handle(final ErrorCode errCode, Map data) {
+                evt.setError(errCode);
+                bus.publish(evt);
+            }
+        }).start();
+    }
+
     private void handle(APIGetVmInstanceMsg msg) {
         SearchQuery<VmInstanceInventory> query = new SearchQuery(VmInstanceInventory.class);
         query.addAccountAsAnd(msg);
@@ -881,6 +1006,44 @@ public class VmInstanceManagerImpl extends AbstractService implements
             @Override
             public void fail(ErrorCode errorCode) {
                 evt.setError(errorCode);
+                bus.publish(evt);
+            }
+        });
+    }
+
+    private void handle(final APIDeleteVmNicMsg msg) {
+        APIDeleteVmNicEvent evt = new APIDeleteVmNicEvent(msg.getId());
+
+        VmNicVO nic = dbf.findByUuid(msg.getUuid(), VmNicVO.class);
+        if (nic.getVmInstanceUuid() == null) {
+            ReturnIpMsg returnIpMsg = new ReturnIpMsg();
+            returnIpMsg.setUsedIpUuid(nic.getUsedIpUuid());
+            returnIpMsg.setL3NetworkUuid(nic.getL3NetworkUuid());
+            bus.makeTargetServiceIdByResourceUuid(returnIpMsg, L3NetworkConstant.SERVICE_ID, nic.getL3NetworkUuid());
+            bus.send(returnIpMsg, new CloudBusCallBack(msg) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (reply.isSuccess()) {
+                        dbf.removeByPrimaryKey(nic.getUuid(), VmNicVO.class);
+                    } else {
+                        evt.setError(reply.getError());
+                    }
+                    bus.publish(evt);
+                }
+            });
+            return;
+        }
+
+        DetachNicFromVmMsg detachNicFromVmMsg = new DetachNicFromVmMsg();
+        detachNicFromVmMsg.setVmInstanceUuid(nic.getVmInstanceUuid());
+        detachNicFromVmMsg.setVmNicUuid(nic.getUuid());
+        bus.makeTargetServiceIdByResourceUuid(detachNicFromVmMsg, VmInstanceConstant.SERVICE_ID, nic.getVmInstanceUuid());
+        bus.send(detachNicFromVmMsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    evt.setError(reply.getError());
+                }
                 bus.publish(evt);
             }
         });

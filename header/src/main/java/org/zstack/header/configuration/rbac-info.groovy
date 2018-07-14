@@ -15,7 +15,8 @@ static void init() {
 
             normalAPIs(
                     APIQueryDiskOfferingMsg.class.name,
-                    APIQueryInstanceOfferingMsg.class.name
+                    APIQueryInstanceOfferingMsg.class.name,
+                    APICreateDiskOfferingMsg.class.name
             )
         }
 
