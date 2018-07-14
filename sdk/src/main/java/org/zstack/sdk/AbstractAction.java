@@ -103,7 +103,7 @@ public abstract class AbstractAction {
         return getParameterValue(getNonAPIParameterMap(), name, exceptionOnNotFound);
     }
 
-    void checkParameters() {
+    public void checkParameters() {
         initializeParametersIfNot();
 
         try {

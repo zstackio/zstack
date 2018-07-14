@@ -44,4 +44,11 @@ public class ActionStruct  {
         return this.actions;
     }
 
+    public java.lang.String error;
+    public java.lang.String getError() {
+        return error;
+    }
+    public void setError(java.lang.String error) {
+        this.error = error;
+    }
 }
