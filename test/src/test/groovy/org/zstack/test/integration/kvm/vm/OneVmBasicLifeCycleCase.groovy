@@ -2,6 +2,8 @@ package org.zstack.test.integration.kvm.vm
 
 import org.springframework.http.HttpEntity
 import org.zstack.compute.vm.VmSystemTags
+import org.zstack.core.cloudbus.CloudBusGlobalConfig
+import org.zstack.core.cloudbus.CloudBusGlobalProperty
 import org.zstack.header.vm.VmCreationStrategy
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
@@ -37,6 +39,8 @@ test a VM's start/stop/reboot/destroy/recover operations
 
     @Override
     void environment() {
+        CloudBusGlobalConfig.STATISTICS_ON.updateValue(true)
+
         env = Env.oneVmBasicEnv()
     }
 

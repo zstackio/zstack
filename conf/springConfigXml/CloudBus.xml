@@ -21,6 +21,12 @@
     <bean id="CloudBus" class = "org.zstack.core.cloudbus.CloudBusImpl3" depends-on="ThreadFacade,ThreadAspectj">
     </bean>
 
+    <bean id="CloudBusJMX" class = "org.zstack.core.cloudbus.CloudBusJMX">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="EventFacade" class = "org.zstack.core.cloudbus.EventFacadeImpl">
     	<zstack:plugin>
 		<zstack:extension interface="org.zstack.header.Component" />
