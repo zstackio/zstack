@@ -34,6 +34,12 @@ public class GetTwoFactorAuthenticationSecretAction extends AbstractAction {
     @Param(required = true, validValues = {"account","iam2"}, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String captchaUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String verifyCode;
+
     @Param(required = false)
     public java.util.List systemTags;
 

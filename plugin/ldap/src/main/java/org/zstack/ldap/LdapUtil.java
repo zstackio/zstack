@@ -15,7 +15,7 @@ import javax.net.ssl.SSLSession;
 /**
  * Created by miao on 12/19/16.
  */
-class LdapUtil {
+public class LdapUtil {
     private static final CLogger logger = Utils.getLogger(LdapUtil.class);
 
     void setTls(LdapContextSource ldapContextSource) {
