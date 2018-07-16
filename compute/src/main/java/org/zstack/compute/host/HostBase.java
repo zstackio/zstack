@@ -918,7 +918,10 @@ public abstract class HostBase extends AbstractHost {
                                 HostInventory inv = getSelfInventory();
 
                                 for (PostHostConnectExtensionPoint p : pluginRgty.getExtensionList(PostHostConnectExtensionPoint.class)) {
-                                    postConnectChain.then(p.createPostHostConnectFlow(inv));
+                                    Flow flow = p.createPostHostConnectFlow(inv);
+                                    if (flow != null) {
+                                        postConnectChain.then(flow);
+                                    }
                                 }
 
                                 postConnectChain.done(new FlowDoneHandler(trigger) {
