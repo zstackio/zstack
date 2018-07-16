@@ -280,6 +280,13 @@ class BatchQuery {
         return res
     }
 
+    private List<ZQLQueryReturn> zqlQuery(String qstr){
+        ZQLContext.putAPISession(session)
+        List result = ZQL.fromString(qstr).getResultList()
+        ZQLContext.cleanAPISession()
+        return result
+    }
+
     private Map doQuery(String qstr) {
         List<String> words = qstr.split(" ")
         words = words.findAll { !it.isEmpty() }
@@ -431,7 +438,7 @@ class BatchQuery {
             def query = { doQuery(it) }
             def put = { k, v -> output[k] = v }
             def call = { apiName, value -> syncApiCall(apiName, value) }
-            def zql = { ZQL.fromString(it).getResultList() }
+            def zql = { zqlQuery(it) }
 
             binding.setVariable("query", query)
             binding.setVariable("put", put)
