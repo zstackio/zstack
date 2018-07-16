@@ -26,6 +26,8 @@ public interface AccountConstant {
     String PRINCIPAL_USER = "user";
     String PRINCIPAL_ACCOUNT = "account";
 
+    String LOGIN_TYPE = "account";
+
     static boolean isAdminPermission(SessionInventory session) {
         return isAdminPermission(session.getAccountUuid());
     }
