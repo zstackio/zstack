@@ -115,6 +115,10 @@ public class VmDeleteVolumeFlow extends NoRollbackFlow {
             }
         });
 
+        if (dataVolumeUuids == null || dataVolumeUuids.isEmpty()) {
+            return;
+        }
+
         String sql = "update VolumeVO vol set vol.vmInstanceUuid = null where vol.uuid in (:uuids)";
         Query q = dbf.getEntityManager().createQuery(sql);
         q.setParameter("uuids", dataVolumeUuids);
