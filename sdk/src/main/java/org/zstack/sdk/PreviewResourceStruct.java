@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class PreviewResourceStruct  {
 
     public java.util.List actions;
@@ -9,4 +11,5 @@ public class PreviewResourceStruct  {
     public java.util.List getActions() {
         return this.actions;
     }
+
 }
