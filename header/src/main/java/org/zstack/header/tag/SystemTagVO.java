@@ -1,6 +1,7 @@
 package org.zstack.header.tag;
 
 import org.zstack.header.vo.BaseResource;
+import org.zstack.header.vo.ToInventory;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -11,7 +12,7 @@ import javax.persistence.Table;
 @Entity
 @Table
 @BaseResource
-public class SystemTagVO extends TagAO {
+public class SystemTagVO extends TagAO implements ToInventory {
     @Column
     private boolean inherent;
 

@@ -367,9 +367,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         if (!vo.getTag().equals(newTag)) {
             vo.setTag(newTag);
 
-            SystemTagInventory n = ObjectUtils.copy(new SystemTagInventory(), old);
-            n.setTag(newTag);
-            preTagUpdated(old, n);
+            preTagUpdated(old, vo.toInventory());
 
             vo = dbf.updateAndRefresh(vo);
             SystemTagInventory nt = SystemTagInventory.valueOf(vo);
