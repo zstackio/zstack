@@ -70,6 +70,7 @@ public class SourceClassMap {
 			put("org.zstack.header.cloudformation.ResourceStackInventory", "org.zstack.sdk.ResourceStackInventory");
 			put("org.zstack.header.cloudformation.StackParameters", "org.zstack.sdk.StackParameters");
 			put("org.zstack.header.cloudformation.StackTemplateInventory", "org.zstack.sdk.StackTemplateInventory");
+			put("org.zstack.header.cloudformation.SupportedResourceStruct", "org.zstack.sdk.SupportedResourceStruct");
 			put("org.zstack.header.cluster.ClusterInventory", "org.zstack.sdk.ClusterInventory");
 			put("org.zstack.header.configuration.DiskOfferingInventory", "org.zstack.sdk.DiskOfferingInventory");
 			put("org.zstack.header.configuration.InstanceOfferingInventory", "org.zstack.sdk.InstanceOfferingInventory");
@@ -132,6 +133,8 @@ public class SourceClassMap {
 			put("org.zstack.header.scheduler.SchedulerTriggerInventory", "org.zstack.sdk.SchedulerTriggerInventory");
 			put("org.zstack.header.simulator.SimulatorHostInventory", "org.zstack.sdk.SimulatorHostInventory");
 			put("org.zstack.header.storage.backup.BackupStorageInventory", "org.zstack.sdk.BackupStorageInventory");
+			put("org.zstack.header.storage.backup.VolumeBackupInventory", "org.zstack.sdk.VolumeBackupInventory");
+			put("org.zstack.header.storage.backup.VolumeBackupStorageRefInventory", "org.zstack.sdk.VolumeBackupStorageRefInventory");
 			put("org.zstack.header.storage.primary.ImageCacheInventory", "org.zstack.sdk.ImageCacheInventory");
 			put("org.zstack.header.storage.primary.PrimaryStorageHostStatus", "org.zstack.sdk.PrimaryStorageHostStatus");
 			put("org.zstack.header.storage.primary.PrimaryStorageInventory", "org.zstack.sdk.PrimaryStorageInventory");
@@ -491,6 +494,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.SpendingDetails", "org.zstack.billing.SpendingDetails");
 			put("org.zstack.sdk.StackParameters", "org.zstack.header.cloudformation.StackParameters");
 			put("org.zstack.sdk.StackTemplateInventory", "org.zstack.header.cloudformation.StackTemplateInventory");
+			put("org.zstack.sdk.SupportedResourceStruct", "org.zstack.header.cloudformation.SupportedResourceStruct");
 			put("org.zstack.sdk.SystemTagInventory", "org.zstack.header.tag.SystemTagInventory");
 			put("org.zstack.sdk.TagInventory", "org.zstack.header.tag.TagInventory");
 			put("org.zstack.sdk.TaskProgressInventory", "org.zstack.header.core.progress.TaskProgressInventory");
@@ -522,6 +526,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VmSpending", "org.zstack.billing.VmSpending");
 			put("org.zstack.sdk.VmSpendingDetails", "org.zstack.billing.VmSpendingDetails");
 			put("org.zstack.sdk.VniRangeInventory", "org.zstack.network.l2.vxlan.vxlanNetworkPool.VniRangeInventory");
+			put("org.zstack.sdk.VolumeBackupInventory", "org.zstack.header.storage.backup.VolumeBackupInventory");
+			put("org.zstack.sdk.VolumeBackupStorageRefInventory", "org.zstack.header.storage.backup.VolumeBackupStorageRefInventory");
 			put("org.zstack.sdk.VolumeFormatReplyStruct", "org.zstack.header.volume.APIGetVolumeFormatReply$VolumeFormatReplyStruct");
 			put("org.zstack.sdk.VolumeInventory", "org.zstack.header.volume.VolumeInventory");
 			put("org.zstack.sdk.VolumeSnapshotBackupStorageRefInventory", "org.zstack.header.storage.snapshot.VolumeSnapshotBackupStorageRefInventory");

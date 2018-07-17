@@ -28,6 +28,14 @@ public class AccountResourceRefInventory  {
         return this.resourceType;
     }
 
+    public java.lang.String concreteResourceType;
+    public void setConcreteResourceType(java.lang.String concreteResourceType) {
+        this.concreteResourceType = concreteResourceType;
+    }
+    public java.lang.String getConcreteResourceType() {
+        return this.concreteResourceType;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
