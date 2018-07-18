@@ -1177,7 +1177,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
     }
 
     @Override
-    public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid, boolean migrateFromDest) {
+    public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {
     }
 
     @Override

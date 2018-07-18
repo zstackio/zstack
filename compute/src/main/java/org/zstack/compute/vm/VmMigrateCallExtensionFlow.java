@@ -43,7 +43,7 @@ public class VmMigrateCallExtensionFlow implements Flow {
         CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmInstanceMigrateExtensionPoint.class), new ForEachFunction<VmInstanceMigrateExtensionPoint>() {
             @Override
             public void run(VmInstanceMigrateExtensionPoint ext) {
-                ext.beforeMigrateVm(spec.getVmInventory(), destHost.getUuid(), fromDest);
+                ext.beforeMigrateVm(spec.getVmInventory(), destHost.getUuid());
             }
         });
 

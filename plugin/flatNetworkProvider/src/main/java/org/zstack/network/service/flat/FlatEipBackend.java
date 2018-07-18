@@ -21,10 +21,8 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostErrors;
-import org.zstack.header.host.HostVO;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.service.AfterApplyFlatEipExtensionPoint;
-import org.zstack.header.search.DeleteVO;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperation;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
@@ -32,10 +30,12 @@ import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.kvm.KVMHostConnectExtensionPoint;
 import org.zstack.kvm.KVMHostConnectedContext;
 import org.zstack.network.service.NetworkServiceFilter;
-import org.zstack.network.service.eip.*;
+import org.zstack.network.service.eip.EipBackend;
+import org.zstack.network.service.eip.EipConstant;
+import org.zstack.network.service.eip.EipStruct;
+import org.zstack.network.service.eip.EipVO;
 import org.zstack.network.service.flat.FlatNetworkServiceConstant.AgentCmd;
 import org.zstack.network.service.flat.FlatNetworkServiceConstant.AgentRsp;
-import org.zstack.network.service.vip.VipGetServiceReferencePoint;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
@@ -115,7 +115,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
     }
 
     @Override
-    public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid, boolean migrateFromDest) {
+    public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {
 
     }
 
