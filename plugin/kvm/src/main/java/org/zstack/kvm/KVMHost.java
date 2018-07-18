@@ -17,6 +17,7 @@ import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleGlobalProperty;
 import org.zstack.core.ansible.AnsibleRunner;
+import org.zstack.core.ansible.SshChronyConfigChecker;
 import org.zstack.core.ansible.SshFileMd5Checker;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -2750,8 +2751,15 @@ public class KVMHost extends HostBase implements Host {
                             checker.addSrcDestPair(SshFileMd5Checker.ZSTACKLIB_SRC_PATH, String.format("/var/lib/zstack/kvm/package/%s", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME));
                             checker.addSrcDestPair(srcPath, destPath);
 
+                            SshChronyConfigChecker chronyChecker = new SshChronyConfigChecker();
+                            chronyChecker.setTargetIp(getSelf().getManagementIp());
+                            chronyChecker.setUsername(getSelf().getUsername());
+                            chronyChecker.setPassword(getSelf().getPassword());
+                            chronyChecker.setSshPort(getSelf().getPort());
+
                             AnsibleRunner runner = new AnsibleRunner();
                             runner.installChecker(checker);
+                            runner.installChecker(chronyChecker);
                             runner.setAgentPort(KVMGlobalProperty.AGENT_PORT);
                             runner.setTargetIp(getSelf().getManagementIp());
                             runner.setPlayBookName(KVMConstant.ANSIBLE_PLAYBOOK_NAME);
