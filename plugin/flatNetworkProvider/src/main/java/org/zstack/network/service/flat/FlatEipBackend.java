@@ -115,7 +115,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
     }
 
     @Override
-    public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {
+    public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid, boolean migrateFromDest) {
 
     }
 
