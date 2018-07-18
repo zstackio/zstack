@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS `VolumeBackupVO` (
     `description` VARCHAR(2048) DEFAULT NULL,
     `volumeUuid` VARCHAR(32) NOT NULL,
     `size` bigint unsigned NOT NULL,
+    `type` varchar(64) NOT NULL,
     `state` varchar(64) NOT NULL,
     `status` varchar(64) NOT NULL,
     `metadata` text DEFAULT NULL,
