@@ -205,7 +205,7 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
     }
 
     @Override
-    public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {
+    public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid, boolean migrateFromDest) {
 
     }
 
