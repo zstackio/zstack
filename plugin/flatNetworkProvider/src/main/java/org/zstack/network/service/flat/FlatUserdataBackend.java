@@ -327,7 +327,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
     }
 
     @Override
-    public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {
+    public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid, boolean migrateFromDest) {
 
     }
 
