@@ -33,6 +33,7 @@ class WindowsADCase extends SubCase {
     void setup() {
         spring {
             include("LdapManagerImpl.xml")
+            include("captcha.xml")
         }
     }
 

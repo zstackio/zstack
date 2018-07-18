@@ -1,4 +1,4 @@
-package org.zstack.header.core.captcha;
+package org.zstack.core.captcha;
 
 import org.apache.commons.codec.binary.Base64;
 import org.patchca.color.ColorFactory;
@@ -11,6 +11,7 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.APIMessage;
@@ -195,6 +196,15 @@ public class CaptchaImpl extends AbstractService implements Component, Captcha {
     }
 
     @Override
+    public void removeCaptcha(String targetResourceIdentity, NoErrorCompletion completion) {
+        if (Q.New(CaptchaVO.class).eq(CaptchaVO_.targetResourceIdentity, targetResourceIdentity).isExists()) {
+            SQL.New(CaptchaVO.class).eq(CaptchaVO_.targetResourceIdentity, targetResourceIdentity).delete();
+        }
+
+        completion.done();
+    }
+
+    @Override
     public boolean start() {
         return true;
     }
@@ -208,6 +218,8 @@ public class CaptchaImpl extends AbstractService implements Component, Captcha {
     public void handleMessage(Message msg) {
         if (msg instanceof APIMessage) {
             handleApiMessage((APIMessage) msg);
+        } else {
+            bus.dealWithUnknownMessage(msg);
         }
     }
 

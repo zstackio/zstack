@@ -151,6 +151,6 @@
         <class>org.zstack.header.identity.role.RoleVO</class>
         <class>org.zstack.header.identity.role.SystemRoleVO</class>
         <class>org.zstack.header.identity.role.RolePolicyStatementVO</class>
-        <class>org.zstack.header.core.captcha.CaptchaVO</class>
+        <class>org.zstack.core.captcha.CaptchaVO</class>
     </persistence-unit>
 </persistence>

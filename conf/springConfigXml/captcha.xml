@@ -12,7 +12,7 @@
          http://zstack.org/schema/zstack/plugin.xsd"
        default-init-method="init" default-destroy-method="destroy">
 
-    <bean id="Captcha" class="org.zstack.header.core.captcha.CaptchaImpl">
+    <bean id="Captcha" class="org.zstack.core.captcha.CaptchaImpl">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" order="9002"/>
             <zstack:extension interface="org.zstack.header.Service"/>

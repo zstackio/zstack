@@ -1,5 +1,6 @@
-package org.zstack.header.core.captcha;
+package org.zstack.core.captcha;
 
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 
 /**
@@ -19,4 +20,6 @@ public interface Captcha {
     CaptchaVO refreshCaptcha(String uuid);
 
     boolean verifyCaptcha(String uuid, String verifyCode);
+
+    void removeCaptcha(String targetResourceIdentity, NoErrorCompletion completion);
 }
