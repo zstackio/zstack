@@ -7,6 +7,8 @@ import org.zstack.header.Component;
 import org.zstack.header.apimediator.ApiMediatorConstant;
 import org.zstack.header.message.*;
 import org.zstack.utils.BeanUtils;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import javax.management.MXBean;
 import java.lang.reflect.Modifier;
@@ -19,6 +21,7 @@ import java.util.Map;
 public class CloudBusJMX implements Component, BeforeSendMessageInterceptor,
         BeforeDeliveryMessageInterceptor, BeforePublishEventInterceptor, CloudBusMXBean {
     private Map<String, MessageStatistic> statistics = new HashMap<>();
+    private static final CLogger logger = Utils.getLogger(CloudBusJMX.class);
 
     @Autowired
     private CloudBus bus;
@@ -79,7 +82,11 @@ public class CloudBusJMX implements Component, BeforeSendMessageInterceptor,
         }
 
         Bundle bundle = messageStartTime.getIfPresent(msgId);
-        assert bundle != null : String.format("cannot find bundle for message[id:%s]", msg.getId());
+        if (bundle == null) {
+            logger.warn(String.format("cannot find bundle for message[id:%s]", msg.getId()));
+            return;
+        }
+
         long cost = System.currentTimeMillis() - bundle.startTime;
         bundle.statistic.count(cost);
         messageStartTime.invalidate(bundle);
