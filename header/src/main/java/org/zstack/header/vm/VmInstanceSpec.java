@@ -193,6 +193,7 @@ public class VmInstanceSpec implements Serializable {
     private String userdata;
     private List<String> bootOrders;
     private boolean gcOnStopFailure;
+    private boolean ignoreResourceReleaseFailure;
     private String usbRedirect = "false";
     private String enableRDP = "false";
     private String VDIMonitorNumber = "1";
@@ -486,5 +487,13 @@ public class VmInstanceSpec implements Serializable {
 
     public void setSrcHost(HostInventory srcHost) {
         this.srcHost = srcHost;
+    }
+
+    public boolean ignoreResourceReleaseFailure() {
+        return ignoreResourceReleaseFailure;
+    }
+
+    public void setIgnoreResourceReleaseFailure(boolean ignoreResourceReleaseFailure) {
+        this.ignoreResourceReleaseFailure = ignoreResourceReleaseFailure;
     }
 }
