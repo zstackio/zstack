@@ -38,6 +38,9 @@ public class CreateVolumeBackupAction extends AbstractAction {
     public java.lang.String description;
 
     @Param(required = false)
+    public java.lang.String resourceUuid;
+
+    @Param(required = false)
     public java.util.List systemTags;
 
     @Param(required = false)
