@@ -28,7 +28,15 @@ public class LdapLoginProcessor implements LoginProcessor {
     }
 
     public String resourceChecker(String resourceName) {
-        return ldapManager.getFullUserDn(resourceName);
+        String dn = ldapManager.getFullUserDn(resourceName);
+
+        LdapAccountRefVO vo = ldapManager.findLdapAccountRefVO(dn);
+
+        if (vo == null) {
+            return null;
+        }
+
+        return dn;
     }
 
     @Override
@@ -38,7 +46,14 @@ public class LdapLoginProcessor implements LoginProcessor {
         APILogInByLdapMsg msg = (APILogInByLdapMsg) message;
         String dn = ldapManager.getFullUserDn(msg.getUid());
 
-        r.setTargetResourceIdentity(dn);
+        LdapAccountRefVO vo = ldapManager.findLdapAccountRefVO(dn);
+
+        if (vo == null) {
+            r.setTargetResourceIdentity(null);
+        } else {
+            r.setTargetResourceIdentity(dn);
+        }
+
         r.setVerifyCode(msg.getVerifyCode());
         r.setCaptchaUuid(msg.getCaptchaUuid());
 

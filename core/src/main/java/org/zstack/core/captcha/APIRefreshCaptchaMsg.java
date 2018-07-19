@@ -1,4 +1,4 @@
-package org.zstack.header.core.captcha;
+package org.zstack.core.captcha;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.SuppressCredentialCheck;
