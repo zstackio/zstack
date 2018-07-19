@@ -13,7 +13,9 @@ public interface Captcha {
 
     void resetAttemptCount(String targetResourceIdentity);
 
-    void generateCaptcha(String targetResourceIdentity, ReturnValueCompletion<CaptchaStruct> completion);
+    CaptchaStruct getCaptcha(String targetResourceIdentity);
+
+    void generateCaptcha(String targetResourceIdentity);
 
     void refreshCaptcha(String uuid, ReturnValueCompletion<CaptchaStruct> completion);
 
