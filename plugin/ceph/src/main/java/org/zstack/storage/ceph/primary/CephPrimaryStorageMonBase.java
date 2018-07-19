@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.ansible.AnsibleGlobalProperty;
 import org.zstack.core.ansible.AnsibleRunner;
+import org.zstack.core.ansible.SshChronyConfigChecker;
 import org.zstack.core.ansible.SshFileMd5Checker;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
@@ -167,8 +168,16 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
                             checker.addSrcDestPair(SshFileMd5Checker.ZSTACKLIB_SRC_PATH, String.format("/var/lib/zstack/cephp/package/%s", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME));
                             checker.addSrcDestPair(PathUtil.findFileOnClassPath(String.format("ansible/cephp/%s", CephGlobalProperty.PRIMARY_STORAGE_PACKAGE_NAME), true).getAbsolutePath(),
                                     String.format("/var/lib/zstack/cephp/package/%s", CephGlobalProperty.PRIMARY_STORAGE_PACKAGE_NAME));
+
+                            SshChronyConfigChecker chronyChecker = new SshChronyConfigChecker();
+                            chronyChecker.setTargetIp(getSelf().getHostname());
+                            chronyChecker.setUsername(getSelf().getSshUsername());
+                            chronyChecker.setPassword(getSelf().getSshPassword());
+                            chronyChecker.setSshPort(getSelf().getSshPort());
+
                             AnsibleRunner runner = new AnsibleRunner();
                             runner.installChecker(checker);
+                            runner.installChecker(chronyChecker);
                             runner.setPassword(getSelf().getSshPassword());
                             runner.setUsername(getSelf().getSshUsername());
                             runner.setSshPort(getSelf().getSshPort());
