@@ -584,7 +584,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     }
 
     @Override
-    public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid, boolean migrateFromDest) {
+    public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {
     }
 
     @Override

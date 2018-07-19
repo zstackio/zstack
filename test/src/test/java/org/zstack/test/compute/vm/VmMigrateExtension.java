@@ -23,7 +23,7 @@ public class VmMigrateExtension implements VmInstanceMigrateExtensionPoint {
     }
 
     @Override
-    public void beforeMigrateVm(VmInstanceInventory inv, String huuid, boolean migrateFromDest) {
+    public void beforeMigrateVm(VmInstanceInventory inv, String huuid) {
         if (inv.getUuid().equals(expectedUuid)) {
             beforeCalled = true;
         } else {
