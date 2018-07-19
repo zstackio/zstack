@@ -6,7 +6,6 @@ import org.json.JSONArray;
 
 import java.util.Collection;
 import java.util.LinkedHashMap;
-import java.util.Map;
 
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
@@ -28,7 +27,7 @@ public class JSONObjectUtil {
             Collection c = collections.newInstance();
             JSONArray jarr = new JSONArray(content);
             for (int i=0; i<jarr.length(); i++) {
-                String objstr = jarr.getString(i);
+                String objstr = jarr.get(i).toString();
                 if (String.class != clazz) {
                     c.add(gson.fromJson(objstr, clazz));
                 } else {

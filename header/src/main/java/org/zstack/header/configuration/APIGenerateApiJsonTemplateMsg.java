@@ -1,11 +1,15 @@
 package org.zstack.header.configuration;
 
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.APIParam;
 
 import java.util.List;
 
 public class APIGenerateApiJsonTemplateMsg extends APIMessage {
+    @APIParam(required = false)
     private String exportPath;
+
+    @APIParam(required = false)
     private List<String> basePackageNames;
 
     public String getExportPath() {

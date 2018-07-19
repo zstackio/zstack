@@ -178,6 +178,23 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
                             rp.setStatement(JSONObjectUtil.toJsonString(s));
                             persist(rp);
                         });
+                    } else {
+                        role.toStatements().forEach(s -> {
+                            String statementString = JSONObjectUtil.toJsonString(s);
+
+                            if (q(RolePolicyStatementVO.class).select(RolePolicyStatementVO_.uuid)
+                                    .eq(RolePolicyStatementVO_.roleUuid, role.getUuid())
+                                    .eq(RolePolicyStatementVO_.statement, statementString).isExists()) {
+                                return;
+                            }
+
+                            String uuid = q(RolePolicyStatementVO.class).select(RolePolicyStatementVO_.uuid)
+                                    .eq(RolePolicyStatementVO_.roleUuid, role.getUuid()).findValue();
+
+                            sql(RolePolicyStatementVO.class).eq(RolePolicyStatementVO_.uuid, uuid)
+                                    .set(RolePolicyStatementVO_.statement, statementString).update();
+                        });
+
                     }
                 });
             }

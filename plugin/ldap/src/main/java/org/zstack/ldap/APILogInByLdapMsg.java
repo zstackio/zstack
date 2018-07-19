@@ -18,6 +18,10 @@ public class APILogInByLdapMsg extends APISessionMessage {
     private String uid;
     @APIParam
     private String password;
+    @APIParam(required = false)
+    private String verifyCode;
+    @APIParam(required = false)
+    private String captchaUuid;
 
     public String getPassword() {
         return password;
@@ -34,7 +38,23 @@ public class APILogInByLdapMsg extends APISessionMessage {
     public void setUid(String uid) {
         this.uid = uid;
     }
- 
+
+    public String getVerifyCode() {
+        return verifyCode;
+    }
+
+    public void setVerifyCode(String verifyCode) {
+        this.verifyCode = verifyCode;
+    }
+
+    public String getCaptchaUuid() {
+        return captchaUuid;
+    }
+
+    public void setCaptchaUuid(String captchaUuid) {
+        this.captchaUuid = captchaUuid;
+    }
+
     public static APILogInByLdapMsg __example__() {
         APILogInByLdapMsg msg = new APILogInByLdapMsg();
         msg.setUid("ou=Employee,uid=test");
