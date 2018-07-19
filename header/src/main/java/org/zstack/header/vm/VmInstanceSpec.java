@@ -457,9 +457,7 @@ public class VmInstanceSpec implements Serializable {
         List<String> nsTypes = new ArrayList<>();
         if (getL3Networks() != null) {
             for (L3NetworkInventory l3 : getL3Networks()) {
-                for (NetworkServiceL3NetworkRefInventory ref : l3.getNetworkServices()) {
-                    nsTypes.add(ref.getNetworkServiceType());
-                }
+                nsTypes.addAll(l3.getNetworkServiceTypes());
             }
         }
         return nsTypes;
