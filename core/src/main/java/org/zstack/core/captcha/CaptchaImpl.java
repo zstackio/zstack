@@ -108,20 +108,17 @@ public class CaptchaImpl extends AbstractService implements Component, Captcha {
     }
 
     @Override
-    public void generateCaptcha(String targetResourceIdentity, ReturnValueCompletion<CaptchaStruct> completion) {
+    public CaptchaStruct getCaptcha(String targetResourceIdentity) {
         CaptchaVO vo = Q.New(CaptchaVO.class).eq(CaptchaVO_.targetResourceIdentity, targetResourceIdentity).find();
 
-        if (!vo.getVerifyCode().equals("")) {
-            CaptchaStruct struct = new CaptchaStruct();
-            struct.setUuid(vo.getUuid());
-            struct.setCaptcha(vo.getCaptcha());
+        CaptchaStruct struct = new CaptchaStruct();
+        struct.setUuid(vo.getUuid());
+        struct.setCaptcha(vo.getCaptcha());
+        return struct;
+    }
 
-            completion.success(struct);
-            return;
-        }
-
-        String fileName = vo.getUuid();
-
+    @Override
+    public void generateCaptcha(String targetResourceIdentify) {
         String verifyCode = "";
         String base64Image = "";
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
@@ -137,16 +134,11 @@ public class CaptchaImpl extends AbstractService implements Component, Captcha {
             e.printStackTrace();
         }
 
-        SQL.New(CaptchaVO.class).eq(CaptchaVO_.uuid, fileName)
+        SQL.New(CaptchaVO.class)
+                .eq(CaptchaVO_.targetResourceIdentity, targetResourceIdentify)
                 .set(CaptchaVO_.captcha, base64Image)
                 .set(CaptchaVO_.verifyCode, verifyCode)
                 .update();
-
-        CaptchaStruct struct = new CaptchaStruct();
-        struct.setUuid(fileName);
-        struct.setCaptcha(base64Image);
-
-        completion.success(struct);
     }
 
     public CaptchaVO refreshCaptcha(String uuid) {
