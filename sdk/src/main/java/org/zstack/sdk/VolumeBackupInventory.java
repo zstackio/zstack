@@ -36,6 +36,14 @@ public class VolumeBackupInventory  {
         return this.description;
     }
 
+    public java.lang.String type;
+    public void setType(java.lang.String type) {
+        this.type = type;
+    }
+    public java.lang.String getType() {
+        return this.type;
+    }
+
     public java.lang.String state;
     public void setState(java.lang.String state) {
         this.state = state;
