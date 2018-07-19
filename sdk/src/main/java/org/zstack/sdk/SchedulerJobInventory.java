@@ -60,6 +60,14 @@ public class SchedulerJobInventory  {
         return this.lastOpDate;
     }
 
+    public java.lang.String jobData;
+    public void setJobData(java.lang.String jobData) {
+        this.jobData = jobData;
+    }
+    public java.lang.String getJobData() {
+        return this.jobData;
+    }
+
     public java.util.List triggersUuid;
     public void setTriggersUuid(java.util.List triggersUuid) {
         this.triggersUuid = triggersUuid;

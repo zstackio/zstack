@@ -6,7 +6,7 @@ import org.springframework.ldap.core.support.LdapContextSource;
 /**
  * Created by miao on 12/19/16.
  */
-class LdapTemplateContextSource {
+public class LdapTemplateContextSource {
     private LdapTemplate ldapTemplate;
     private LdapContextSource ldapContextSource;
 
@@ -16,7 +16,7 @@ class LdapTemplateContextSource {
     }
 
 
-    LdapTemplate getLdapTemplate() {
+    public LdapTemplate getLdapTemplate() {
         return ldapTemplate;
     }
 

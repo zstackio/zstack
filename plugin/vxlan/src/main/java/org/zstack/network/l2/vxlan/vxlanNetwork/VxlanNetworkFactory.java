@@ -192,7 +192,7 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInsta
     }
 
     @Override
-    public void  beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {
+    public void  beforeMigrateVm(VmInstanceInventory inv, String destHostUuid, boolean migrateFromDest) {
     }
 
     @Override
