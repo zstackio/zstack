@@ -94,7 +94,7 @@ public class CreateVolumeBackupAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/volumes/{uuid}/volume-backups";
+        info.path = "/volumes/{volumeUuid}/volume-backups";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
