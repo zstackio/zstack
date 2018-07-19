@@ -306,6 +306,14 @@ public class L3NetworkInventory implements Serializable {
         return nwTypes;
     }
 
+    public List<String> getNetworkServiceTypes() {
+        List<String> nwTypes = new ArrayList<String>();
+        for (NetworkServiceL3NetworkRefInventory ref : getNetworkServices()) {
+            nwTypes.add(ref.getNetworkServiceType());
+        }
+        return nwTypes;
+    }
+
     public String getState() {
         return state;
     }
