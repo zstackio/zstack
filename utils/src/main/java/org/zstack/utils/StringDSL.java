@@ -7,7 +7,9 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -140,5 +142,14 @@ public class StringDSL {
 
     public static boolean isApiId(String apiId) {
         return apiId != null && apiId.matches("[0-9a-f]{8}[0-9a-f]{4}[0-9a-f]{4}[0-9a-f]{4}[0-9a-f]{12}");
+    }
+
+    private static int hashOXR(List lst) {
+        return lst.stream().mapToInt(Object::hashCode)
+                .reduce(0, (l, r) -> l ^ r);
+    }
+
+    public static boolean stringCompareInLineOrderIndpendent(String str1, String str2) {
+        return hashOXR(Arrays.asList(str1.split("\n"))) == hashOXR(Arrays.asList(str2.split("\n")));
     }
 }
