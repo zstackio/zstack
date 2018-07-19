@@ -805,8 +805,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     }
 
     @Override
-    public void beforeRecoverDataVolume(VolumeInventory vol, Completion completion) {
-        completion.success();
+    public void beforeRecoverDataVolume(VolumeInventory vol) {
     }
 
     @Override
