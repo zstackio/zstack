@@ -104,6 +104,7 @@ public class VmAllocateVolumeFlow implements Flow {
                         VolumeInventory inv = cr.getInventory();
                         if (inv.getType().equals(VolumeType.Root.toString())) {
                             UpdateQuery.New(VmInstanceVO.class)
+                                    .isNull(VmInstanceVO_.rootVolumeUuid)
                                     .set(VmInstanceVO_.rootVolumeUuid, inv.getUuid())
                                     .condAnd(VmInstanceVO_.uuid, Op.EQ, spec.getVmInventory().getUuid())
                                     .update();
