@@ -131,6 +131,14 @@ public class VirtualRouterDhcpCase extends SubCase {
                         name = "pubL3"
                         category = "Public"
 
+                        service {
+                            provider = VyosConstants.VYOS_ROUTER_PROVIDER_TYPE
+                            types = [NetworkServiceType.DHCP.toString(),
+                                     NetworkServiceType.DNS.toString(),
+                                     NetworkServiceType.Centralized_DNS.toString(),
+                                     EipConstant.EIP_NETWORK_SERVICE_TYPE]
+                        }
+
                         ip {
                             startIp = "11.168.100.10"
                             endIp = "11.168.100.100"

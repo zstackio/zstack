@@ -850,8 +850,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
 
     }
 
-    public void beforeRecoverDataVolume(VolumeInventory volume, Completion completion) {
-        completion.success();
+    public void beforeRecoverDataVolume(VolumeInventory volume) {
     }
 
     public void afterRecoverDataVolume(VolumeInventory volume) {

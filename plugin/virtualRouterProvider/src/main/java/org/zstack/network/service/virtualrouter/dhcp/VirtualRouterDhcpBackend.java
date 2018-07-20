@@ -92,7 +92,7 @@ public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend imple
                 e.setVrNicMac(vrNic.getMac());
                 if (struct.isDefaultL3Network()) {
                     /*if there is no DNS service, the DHCP uses the external DNS service. ZSTAC-13262 by miaozhanyong*/
-                    if (spec.getRequiredNetworkServiceTypes().contains(NetworkServiceType.DNS.toString())) {
+                    if (struct.getL3Network().getNetworkServiceTypes().contains(NetworkServiceType.DNS.toString())) {
                         e.setDns(CollectionDSL.list(vrNic.getIp()));
                     } else {
                         e.setDns(struct.getL3Network().getDns());

@@ -1,5 +1,6 @@
-package org.zstack.header.core.captcha;
+package org.zstack.core.captcha;
 
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 
 /**
@@ -12,11 +13,15 @@ public interface Captcha {
 
     void resetAttemptCount(String targetResourceIdentity);
 
-    void generateCaptcha(String targetResourceIdentity, ReturnValueCompletion<CaptchaStruct> completion);
+    CaptchaStruct getCaptcha(String targetResourceIdentity);
+
+    void generateCaptcha(String targetResourceIdentity);
 
     void refreshCaptcha(String uuid, ReturnValueCompletion<CaptchaStruct> completion);
 
     CaptchaVO refreshCaptcha(String uuid);
 
     boolean verifyCaptcha(String uuid, String verifyCode);
+
+    void removeCaptcha(String targetResourceIdentity, NoErrorCompletion completion);
 }

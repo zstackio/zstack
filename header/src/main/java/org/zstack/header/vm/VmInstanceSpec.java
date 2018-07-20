@@ -193,6 +193,7 @@ public class VmInstanceSpec implements Serializable {
     private String userdata;
     private List<String> bootOrders;
     private boolean gcOnStopFailure;
+    private boolean ignoreResourceReleaseFailure;
     private String usbRedirect = "false";
     private String enableRDP = "false";
     private String VDIMonitorNumber = "1";
@@ -456,9 +457,7 @@ public class VmInstanceSpec implements Serializable {
         List<String> nsTypes = new ArrayList<>();
         if (getL3Networks() != null) {
             for (L3NetworkInventory l3 : getL3Networks()) {
-                for (NetworkServiceL3NetworkRefInventory ref : l3.getNetworkServices()) {
-                    nsTypes.add(ref.getNetworkServiceType());
-                }
+                nsTypes.addAll(l3.getNetworkServiceTypes());
             }
         }
         return nsTypes;
@@ -486,5 +485,13 @@ public class VmInstanceSpec implements Serializable {
 
     public void setSrcHost(HostInventory srcHost) {
         this.srcHost = srcHost;
+    }
+
+    public boolean ignoreResourceReleaseFailure() {
+        return ignoreResourceReleaseFailure;
+    }
+
+    public void setIgnoreResourceReleaseFailure(boolean ignoreResourceReleaseFailure) {
+        this.ignoreResourceReleaseFailure = ignoreResourceReleaseFailure;
     }
 }

@@ -1,4 +1,4 @@
-package org.zstack.header.core.captcha
+package org.zstack.core.captcha
 
 import org.zstack.header.errorcode.ErrorCode
 
@@ -8,7 +8,7 @@ doc {
 
 	ref {
 		name "error"
-		path "org.zstack.header.core.captcha.APIRefreshCaptchaReply.error"
+		path "APIRefreshCaptchaReply.error"
 		desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null",false
 		type "ErrorCode"
 		since "0.6"
@@ -34,7 +34,7 @@ doc {
 	}
 	ref {
 		name "error"
-		path "org.zstack.header.core.captcha.APIRefreshCaptchaReply.error"
+		path "APIRefreshCaptchaReply.error"
 		desc "null"
 		type "ErrorCode"
 		since "0.6"

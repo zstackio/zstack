@@ -47,6 +47,7 @@ class LdapBasicCase extends SubCase {
             localStorage()
             sftpBackupStorage()
             include("LdapManagerImpl.xml")
+            include("captcha.xml")
         }
     }
 

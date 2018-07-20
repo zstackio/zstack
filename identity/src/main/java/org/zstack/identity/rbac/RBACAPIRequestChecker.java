@@ -45,9 +45,8 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
         }
     }).create();
 
-
-    public boolean bypass(APIMessage msg) {
-        return msg.getHeaders().containsKey(IdentityByPassCheck.NoRBACCheck.toString());
+    public boolean bypass(RBACEntity entity) {
+        return entity.getApiMessage().getHeaders().containsKey(IdentityByPassCheck.NoRBACCheck.toString());
     }
 
     @Override
@@ -59,6 +58,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
 
         check();
     }
+
 
     protected List<PolicyInventory> getPoliciesForAPI() {
         return RBACManager.getPoliciesByAPI(rbacEntity.getApiMessage());
