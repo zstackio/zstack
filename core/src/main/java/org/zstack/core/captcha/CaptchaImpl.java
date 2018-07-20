@@ -1,4 +1,4 @@
-package org.zstack.header.core.captcha;
+package org.zstack.core.captcha;
 
 import org.apache.commons.codec.binary.Base64;
 import org.patchca.color.ColorFactory;
@@ -11,6 +11,7 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.APIMessage;
@@ -107,20 +108,17 @@ public class CaptchaImpl extends AbstractService implements Component, Captcha {
     }
 
     @Override
-    public void generateCaptcha(String targetResourceIdentity, ReturnValueCompletion<CaptchaStruct> completion) {
+    public CaptchaStruct getCaptcha(String targetResourceIdentity) {
         CaptchaVO vo = Q.New(CaptchaVO.class).eq(CaptchaVO_.targetResourceIdentity, targetResourceIdentity).find();
 
-        if (!vo.getVerifyCode().equals("")) {
-            CaptchaStruct struct = new CaptchaStruct();
-            struct.setUuid(vo.getUuid());
-            struct.setCaptcha(vo.getCaptcha());
+        CaptchaStruct struct = new CaptchaStruct();
+        struct.setUuid(vo.getUuid());
+        struct.setCaptcha(vo.getCaptcha());
+        return struct;
+    }
 
-            completion.success(struct);
-            return;
-        }
-
-        String fileName = vo.getUuid();
-
+    @Override
+    public void generateCaptcha(String targetResourceIdentify) {
         String verifyCode = "";
         String base64Image = "";
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
@@ -136,16 +134,11 @@ public class CaptchaImpl extends AbstractService implements Component, Captcha {
             e.printStackTrace();
         }
 
-        SQL.New(CaptchaVO.class).eq(CaptchaVO_.uuid, fileName)
+        SQL.New(CaptchaVO.class)
+                .eq(CaptchaVO_.targetResourceIdentity, targetResourceIdentify)
                 .set(CaptchaVO_.captcha, base64Image)
                 .set(CaptchaVO_.verifyCode, verifyCode)
                 .update();
-
-        CaptchaStruct struct = new CaptchaStruct();
-        struct.setUuid(fileName);
-        struct.setCaptcha(base64Image);
-
-        completion.success(struct);
     }
 
     public CaptchaVO refreshCaptcha(String uuid) {
@@ -195,6 +188,15 @@ public class CaptchaImpl extends AbstractService implements Component, Captcha {
     }
 
     @Override
+    public void removeCaptcha(String targetResourceIdentity, NoErrorCompletion completion) {
+        if (Q.New(CaptchaVO.class).eq(CaptchaVO_.targetResourceIdentity, targetResourceIdentity).isExists()) {
+            SQL.New(CaptchaVO.class).eq(CaptchaVO_.targetResourceIdentity, targetResourceIdentity).delete();
+        }
+
+        completion.done();
+    }
+
+    @Override
     public boolean start() {
         return true;
     }
@@ -208,6 +210,8 @@ public class CaptchaImpl extends AbstractService implements Component, Captcha {
     public void handleMessage(Message msg) {
         if (msg instanceof APIMessage) {
             handleApiMessage((APIMessage) msg);
+        } else {
+            bus.dealWithUnknownMessage(msg);
         }
     }
 

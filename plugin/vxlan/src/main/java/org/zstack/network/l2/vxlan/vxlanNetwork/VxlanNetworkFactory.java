@@ -27,10 +27,8 @@ import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.l2.L2NetworkDefaultMtu;
-import org.zstack.network.l2.L2VlanNetwork;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.AllocateVniMsg;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.AllocateVniReply;
-import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPool;
 import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.query.QueryFacade;
 import org.zstack.utils.Utils;
@@ -192,7 +190,7 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInsta
     }
 
     @Override
-    public void  beforeMigrateVm(VmInstanceInventory inv, String destHostUuid, boolean migrateFromDest) {
+    public void  beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {
     }
 
     @Override

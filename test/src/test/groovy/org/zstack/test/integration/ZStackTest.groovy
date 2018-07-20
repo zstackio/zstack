@@ -27,6 +27,7 @@ class ZStackTest extends Test {
         console()
 
         include("LdapManagerImpl.xml")
+        include("captcha.xml")
         include("CloudBusAopProxy.xml")
         include("ZoneManager.xml")
         include("webhook.xml")

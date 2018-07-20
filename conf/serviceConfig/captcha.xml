@@ -3,6 +3,6 @@
     <id>captcha</id>
 
     <message>
-        <name>org.zstack.header.core.captcha.APIRefreshCaptchaMsg</name>
+        <name>org.zstack.core.captcha.APIRefreshCaptchaMsg</name>
     </message>
 </service>

@@ -13,19 +13,25 @@ import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
+import org.zstack.core.captcha.Captcha;
+import org.zstack.core.captcha.CaptchaConstant;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.AbstractService;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.IdentityGlobalConfig;
 import org.zstack.tag.PatternedSystemTag;
@@ -64,6 +70,8 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
     private ErrorFacade errf;
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    private Captcha captcha;
 
 
     @Transactional(readOnly = true)
@@ -304,6 +312,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         }
     }
 
+    @Override
     public LdapAccountRefVO findLdapAccountRefVO(String ldapDn){
 
         LdapAccountRefVO ldapAccountRefVO = Q.New(LdapAccountRefVO.class)
@@ -491,7 +500,24 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
     private void handle(APIDeleteLdapServerMsg msg) {
         APIDeleteLdapServerEvent evt = new APIDeleteLdapServerEvent(msg.getId());
 
-        dbf.removeByPrimaryKey(msg.getUuid(), LdapServerVO.class);
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                if (!q(LdapServerVO.class).eq(LdapServerVO_.uuid, msg.getUuid()).isExists()) {
+                    return;
+                }
+
+                LdapServerVO vo = q(LdapServerVO.class).eq(LdapServerVO_.uuid, msg.getUuid()).find();
+
+                captcha.removeCaptcha(vo.getUsername(), new NoErrorCompletion(msg) {
+                    @Override
+                    public void done() {
+                        remove(vo);
+                        flush();
+                    }
+                });
+            }
+        }.execute();
 
         bus.publish(evt);
     }

@@ -4940,6 +4940,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         spec.setMessage(msg);
         if (msg instanceof StopVmInstanceMsg) {
             spec.setGcOnStopFailure(((StopVmInstanceMsg) msg).isGcOnFailure());
+            spec.setIgnoreResourceReleaseFailure(((StopVmInstanceMsg) msg).ignoreResourceReleaseFailure());
         }
 
         final VmInstanceState originState = self.getState();

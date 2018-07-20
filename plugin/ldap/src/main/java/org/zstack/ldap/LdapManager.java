@@ -7,4 +7,6 @@ public interface LdapManager {
     boolean isValid(String uid, String password);
 
     String getFullUserDn(String uid);
+
+    LdapAccountRefVO findLdapAccountRefVO(String dn);
 }

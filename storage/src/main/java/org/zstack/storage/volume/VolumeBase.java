@@ -1035,49 +1035,40 @@ public class VolumeBase implements Volume {
     protected void recoverVolume(Completion completion) {
         final VolumeInventory vol = getSelfInventory();
         List<RecoverDataVolumeExtensionPoint> exts = pluginRgty.getExtensionList(RecoverDataVolumeExtensionPoint.class);
-        for (RecoverDataVolumeExtensionPoint ext : exts) {
-            ext.preRecoverDataVolume(vol);
-        }
 
-        ErrorCodeList errorList = new ErrorCodeList();
-        new While<>(exts).all((ext, c) -> ext.beforeRecoverDataVolume(vol, new Completion(c) {
+        CollectionUtils.safeForEach(exts, new ForEachFunction<RecoverDataVolumeExtensionPoint>() {
             @Override
-            public void success() {
-                c.done();
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                errorList.getCauses().add(errorCode);
-                c.done();
-            }
-        })).run(new NoErrorCompletion(completion) {
-            @Override
-            public void done() {
-                if (errorList.getCauses().size() > 0) {
-                    completion.fail(errorList.getCauses().get(0));
-                    return;
-                }
-                VolumeStatus oldStatus = self.getStatus();
-
-                if (self.getInstallPath() != null) {
-                    self.setStatus(VolumeStatus.Ready);
-                } else {
-                    self.setStatus(VolumeStatus.NotInstantiated);
-                }
-                self = dbf.updateAndRefresh(self);
-
-                new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(oldStatus, getSelfInventory());
-
-                CollectionUtils.safeForEach(exts, new ForEachFunction<RecoverDataVolumeExtensionPoint>() {
-                    @Override
-                    public void run(RecoverDataVolumeExtensionPoint ext) {
-                        ext.afterRecoverDataVolume(vol);
-                    }
-                });
-                completion.success();
+            public void run(RecoverDataVolumeExtensionPoint ext) {
+                ext.preRecoverDataVolume(vol);
             }
         });
+
+
+        CollectionUtils.safeForEach(exts, new ForEachFunction<RecoverDataVolumeExtensionPoint>() {
+            @Override
+            public void run(RecoverDataVolumeExtensionPoint ext) {
+                ext.beforeRecoverDataVolume(vol);
+            }
+        });
+
+        VolumeStatus oldStatus = self.getStatus();
+
+        if (self.getInstallPath() != null) {
+            self.setStatus(VolumeStatus.Ready);
+        } else {
+            self.setStatus(VolumeStatus.NotInstantiated);
+        }
+        self = dbf.updateAndRefresh(self);
+
+        new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(oldStatus, getSelfInventory());
+
+        CollectionUtils.safeForEach(exts, new ForEachFunction<RecoverDataVolumeExtensionPoint>() {
+            @Override
+            public void run(RecoverDataVolumeExtensionPoint ext) {
+                ext.afterRecoverDataVolume(vol);
+            }
+        });
+        completion.success();
     }
 
     private void handle(APIRecoverDataVolumeMsg msg) {
