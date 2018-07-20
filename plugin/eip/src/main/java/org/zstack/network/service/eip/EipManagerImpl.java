@@ -812,7 +812,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                 flow(new Flow() {
                     boolean s = false;
 
-                    String __name__ = "acquire-vip";
+                    String __name__ = "acquire-vip-for-attach-eip";
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
@@ -862,8 +862,8 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                     }
                 });
 
-                flow(new NoRollbackFlow() {
-                    String __name__ = "create-eip-on-backend";
+                flow(new Flow() {
+                    String __name__ = "create-eip-on-backend-for-attach-eip";
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
@@ -877,6 +877,24 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                             @Override
                             public void fail(ErrorCode errorCode) {
                                 trigger.fail(errorCode);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        EipBackend bkd = getEipBackend(providerType);
+                        bkd.revokeEip(struct, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.rollback();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                logger.warn(String.format("failed to detach eip[uuid:%s, ip:%s, vm nic uuid:%s] on service provider[%s], service provider will garbage collect. %s",
+                                        struct.getEip().getUuid(), struct.getVip().getIp(), struct.getNic().getUuid(), providerType, errorCode));
+                                trigger.rollback();
                             }
                         });
                     }
