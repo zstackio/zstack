@@ -384,6 +384,7 @@ public class VirtualRouter extends ApplianceVmBase {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
+                self = dbf.reload(self);
                 getSelf().setStatus(ApplianceVmStatus.Connected);
                 self = dbf.updateAndRefresh(self);
                 trigger.next();
