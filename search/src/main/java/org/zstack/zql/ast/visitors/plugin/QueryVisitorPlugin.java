@@ -29,7 +29,5 @@ public abstract class QueryVisitorPlugin {
     public abstract String orderBy();
     public abstract Integer limit();
     public abstract Integer offset();
-    public String groupBy() {
-        return null;
-    }
+    public abstract String groupBy();
 }

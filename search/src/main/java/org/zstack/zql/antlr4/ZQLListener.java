@@ -316,6 +316,26 @@ public interface ZQLListener extends ParseTreeListener {
 	 */
 	void exitReturnWith(ZQLParser.ReturnWithContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link ZQLParser#groupByExpr}.
+	 * @param ctx the parse tree
+	 */
+	void enterGroupByExpr(ZQLParser.GroupByExprContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ZQLParser#groupByExpr}.
+	 * @param ctx the parse tree
+	 */
+	void exitGroupByExpr(ZQLParser.GroupByExprContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link ZQLParser#groupBy}.
+	 * @param ctx the parse tree
+	 */
+	void enterGroupBy(ZQLParser.GroupByContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ZQLParser#groupBy}.
+	 * @param ctx the parse tree
+	 */
+	void exitGroupBy(ZQLParser.GroupByContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link ZQLParser#subQueryTarget}.
 	 * @param ctx the parse tree
 	 */

@@ -1,5 +1,7 @@
 package org.zstack.test.integration.zql
 
+import org.zstack.core.db.Q
+import org.zstack.header.network.l3.L3NetworkVO
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.header.search.Inventory
 import org.zstack.header.zone.ZoneVO
@@ -297,6 +299,9 @@ query zone return with (total) named as 'zone'
             logger.debug(JSONObjectUtil.toJsonString(fs))
 
             testQueryField()
+
+            def l3s = zqlQuery("query l3network group by uuid, name")
+            assert l3s.size() == Q.New(L3NetworkVO.class).count()
         }
     }
 
