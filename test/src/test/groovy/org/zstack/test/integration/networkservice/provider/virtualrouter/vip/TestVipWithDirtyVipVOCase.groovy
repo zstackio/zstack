@@ -165,10 +165,8 @@ class TestVipWithDirtyVipVOCase extends SubCase{
         /* set vip usefor and provider to NULL */
         SQL.New(VipVO.class).eq(VipVO_.uuid, eipInv.vipUuid).set(VipVO_.useFor, null).set(VipVO_.serviceProvider, null).update()
 
-        expect (AssertionError.class) {
-            deleteVip {
-                uuid = eipInv.vipUuid
-            }
+        deleteVip {
+            uuid = eipInv.vipUuid
         }
     }
 }

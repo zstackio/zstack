@@ -66,4 +66,16 @@ public abstract class AbstractQueryVisitorPlugin extends QueryVisitorPlugin {
     public Integer offset() {
         return node.getOffset() == null ? null : (Integer) node.getOffset().accept(new OffsetVisitor());
     }
+
+    @Override
+    public String groupBy() {
+        if (node.getGroupBy() == null) {
+            return null;
+        }
+
+        List<String> fs = node.getGroupBy().getFields();
+        ZQLMetadata.InventoryMetadata inventory = ZQLMetadata.findInventoryMetadata(node.getTarget().getEntity());
+        fs.forEach(inventory::errorIfNoField);
+        return node.getGroupBy() == null ? null : (String) node.getGroupBy().accept(new GroupByVisitor());
+    }
 }

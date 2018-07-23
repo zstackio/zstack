@@ -111,6 +111,14 @@ returnWith
     : RETURN_WITH '(' returnWithExpr (',' returnWithExpr)* ')'
     ;
 
+groupByExpr
+    : ID (',' ID)*
+    ;
+
+groupBy
+    : GROUP_BY groupByExpr
+    ;
+
 subQueryTarget
     : entity ('.' ID)+
     ;
@@ -141,11 +149,11 @@ namedAs
     ;
 
 query
-    : QUERY queryTarget (WHERE condition+)? restrictBy? returnWith? orderBy? limit? offset? filterBy? namedAs?
+    : QUERY queryTarget (WHERE condition+)? restrictBy? returnWith? groupBy? orderBy? limit? offset? filterBy? namedAs?
     ;
 
 count
-    : COUNT queryTarget (WHERE condition+)? restrictBy? orderBy? limit? offset? namedAs?
+    : COUNT queryTarget (WHERE condition+)? restrictBy? groupBy? orderBy? limit? offset? namedAs?
     ;
 
 sumByValue
@@ -174,6 +182,8 @@ COUNT: 'count';
 SUM: 'sum';
 
 ORDER_BY: 'order by';
+
+GROUP_BY: 'group by';
 
 NAMED_AS: 'named as';
 
