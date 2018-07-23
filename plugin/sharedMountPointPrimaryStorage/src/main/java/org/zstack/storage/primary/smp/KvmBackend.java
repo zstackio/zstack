@@ -128,6 +128,10 @@ public class KvmBackend extends HypervisorBackend {
         public String volumePath;
     }
 
+    @ApiTimeout(apiClasses = {
+            APICreateRootVolumeTemplateFromVolumeSnapshotMsg.class,
+            APICreateRootVolumeTemplateFromRootVolumeMsg.class,
+    })
     public static class SftpUploadBitsCmd extends AgentCmd implements HasThreadContext{
         public String primaryStorageInstallPath;
         public String backupStorageInstallPath;
