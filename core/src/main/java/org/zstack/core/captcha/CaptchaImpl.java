@@ -24,7 +24,7 @@ import java.awt.*;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 
 /**
@@ -45,41 +45,20 @@ public class CaptchaImpl extends AbstractService implements Component, Captcha {
     static {
         cs = new ConfigurableCaptchaService();
 
-        Random random = new Random();
-
         cs.setColorFactory(new ColorFactory() {
-            @Override
             public Color getColor(int x) {
                 int[] c = new int[3];
-                int i = random.nextInt(c.length);
+                int i = ThreadLocalRandom.current().nextInt(c.length);
                 for (int fi = 0; fi < c.length; fi++) {
                     if (fi == i) {
-                        c[fi] = random.nextInt(71);
+                        c[fi] = ThreadLocalRandom.current().nextInt(55, 94);
                     } else {
-                        c[fi] = random.nextInt(256);
+                        c[fi] = ThreadLocalRandom.current().nextInt(1, 255);
                     }
                 }
                 return new Color(c[0], c[1], c[2]);
             }
         });
-
-        switch (random.nextInt(5)) {
-            case 0:
-                cs.setFilterFactory(new CurvesRippleFilterFactory(cs.getColorFactory()));
-                break;
-            case 1:
-                cs.setFilterFactory(new MarbleRippleFilterFactory());
-                break;
-            case 2:
-                cs.setFilterFactory(new DoubleRippleFilterFactory());
-                break;
-            case 3:
-                cs.setFilterFactory(new WobbleRippleFilterFactory());
-                break;
-            case 4:
-                cs.setFilterFactory(new DiffuseRippleFilterFactory());
-                break;
-        }
     }
 
     @Override
@@ -117,11 +96,32 @@ public class CaptchaImpl extends AbstractService implements Component, Captcha {
         return struct;
     }
 
+    private void useRandomFilter() {
+        switch (ThreadLocalRandom.current().nextInt(5)) {
+            case 0:
+                cs.setFilterFactory(new CurvesRippleFilterFactory(cs.getColorFactory()));
+                break;
+            case 1:
+                cs.setFilterFactory(new MarbleRippleFilterFactory());
+                break;
+            case 2:
+                cs.setFilterFactory(new DoubleRippleFilterFactory());
+                break;
+            case 3:
+                cs.setFilterFactory(new WobbleRippleFilterFactory());
+                break;
+            case 4:
+                cs.setFilterFactory(new DiffuseRippleFilterFactory());
+                break;
+        }
+    }
+
     @Override
     public void generateCaptcha(String targetResourceIdentify) {
         String verifyCode = "";
         String base64Image = "";
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            useRandomFilter();
             org.patchca.service.Captcha captcha = cs.getCaptcha();
             ImageIO.write(captcha.getImage(), CAPTCHA_FILE_TYPE, baos);
             baos.flush();
@@ -145,6 +145,7 @@ public class CaptchaImpl extends AbstractService implements Component, Captcha {
         String verifyCode = "";
         String base64Image = "";
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            useRandomFilter();
             org.patchca.service.Captcha captcha = cs.getCaptcha();
             ImageIO.write(captcha.getImage(), CAPTCHA_FILE_TYPE, baos);
             baos.flush();
