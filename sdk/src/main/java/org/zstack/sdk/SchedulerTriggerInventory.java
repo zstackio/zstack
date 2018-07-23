@@ -28,6 +28,14 @@ public class SchedulerTriggerInventory  {
         return this.description;
     }
 
+    public java.lang.String cron;
+    public void setCron(java.lang.String cron) {
+        this.cron = cron;
+    }
+    public java.lang.String getCron() {
+        return this.cron;
+    }
+
     public java.lang.String schedulerType;
     public void setSchedulerType(java.lang.String schedulerType) {
         this.schedulerType = schedulerType;
