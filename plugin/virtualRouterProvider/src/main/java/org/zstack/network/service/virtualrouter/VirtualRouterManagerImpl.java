@@ -106,7 +106,8 @@ import static org.zstack.utils.VipUseForList.SNAT_NETWORK_SERVICE_TYPE;
 public class VirtualRouterManagerImpl extends AbstractService implements VirtualRouterManager,
         PrepareDbInitialValueExtensionPoint, L2NetworkCreateExtensionPoint,
         GlobalApiMessageInterceptor, AddExpandedQueryExtensionPoint, GetCandidateVmNicsForLoadBalancerExtensionPoint,
-        FilterVmNicsForEipInVirtualRouterExtensionPoint, ApvmCascadeFilterExtensionPoint, ManagementNodeReadyExtensionPoint {
+        FilterVmNicsForEipInVirtualRouterExtensionPoint, ApvmCascadeFilterExtensionPoint, ManagementNodeReadyExtensionPoint,
+        VipCleanupExtensionPoint {
 	private final static CLogger logger = Utils.getLogger(VirtualRouterManagerImpl.class);
 	
 	private final static List<String> supportedL2NetworkTypes = new ArrayList<String>();
@@ -1607,5 +1608,10 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 }
             });
         }
+    }
+
+    @Override
+    public void cleanupVip(String uuid) {
+        SQL.New(VirtualRouterVipVO.class).eq(VirtualRouterVipVO_.uuid, uuid).delete();
     }
 }

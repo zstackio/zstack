@@ -249,6 +249,9 @@ public class VipBase {
         if (self.getServiceProvider() == null) {
             logger.debug(String.format("the serviceProvider field is null, the vip[uuid:%s, name:%s, ip:%s] has been released" +
                     " by other service", self.getUuid(), self.getName(), self.getIp()));
+            for (VipCleanupExtensionPoint ext : pluginRgty.getExtensionList(VipCleanupExtensionPoint.class)) {
+                ext.cleanupVip(self.getUuid());
+            }
             completion.success();
             return;
         }

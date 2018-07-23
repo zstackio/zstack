@@ -97,6 +97,10 @@ class ASTNode {
         String groupByField
     }
 
+    static class GroupByExpr extends ASTNode {
+        List<String> fields
+    }
+
     static class Query extends ASTNode {
         QueryTarget target
         List<Condition> conditions
@@ -107,6 +111,7 @@ class ASTNode {
         Limit limit
         Offset offset
         String name
+        GroupByExpr groupBy
 
         void addRestrictExpr(RestrictExpr expr) {
             if (restrictBy == null)  {

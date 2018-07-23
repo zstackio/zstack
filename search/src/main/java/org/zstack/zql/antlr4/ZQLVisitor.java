@@ -194,6 +194,18 @@ public interface ZQLVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitReturnWith(ZQLParser.ReturnWithContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link ZQLParser#groupByExpr}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitGroupByExpr(ZQLParser.GroupByExprContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ZQLParser#groupBy}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitGroupBy(ZQLParser.GroupByContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link ZQLParser#subQueryTarget}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
