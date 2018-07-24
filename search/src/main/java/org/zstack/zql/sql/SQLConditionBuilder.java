@@ -111,6 +111,8 @@ public class SQLConditionBuilder {
                 if (qf == null) {
                     template = String.format("%s.%s %%s %%s", fc.self.selfInventoryClass.getSimpleName(), fc.fieldName);
                 } else {
+                    // self may be children class
+                    qf.inventoryClass = fc.self.selfInventoryClass;
                     template = qf.toSQL();
                 }
             }
