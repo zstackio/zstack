@@ -1876,7 +1876,12 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         httpCall(DELETE_PATH, cmd, DeleteRsp.class, new ReturnValueCompletion<DeleteRsp>(msg) {
             @Override
             public void fail(ErrorCode err) {
-                reply.setError(err);
+                CephDeleteVolumeGC gc = new CephDeleteVolumeGC();
+                gc.NAME = String.format("gc-ceph-%s-volume-%s", self.getUuid(), msg.getVolume());
+                gc.primaryStorageUuid = self.getUuid();
+                gc.volume = msg.getVolume();
+                gc.submit(CephGlobalConfig.GC_INTERVAL.value(Long.class), TimeUnit.SECONDS);
+
                 bus.reply(msg, reply);
             }
 
