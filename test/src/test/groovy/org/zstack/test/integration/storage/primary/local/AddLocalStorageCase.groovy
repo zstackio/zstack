@@ -3,6 +3,11 @@ package org.zstack.test.integration.storage.primary.local
 import org.springframework.http.HttpEntity
 import org.zstack.compute.vm.VmGlobalConfig
 import org.zstack.core.db.DatabaseFacade
+import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
+import org.zstack.header.host.HostStatus
+import org.zstack.header.host.HostVO
+import org.zstack.header.host.HostVO_
 import org.zstack.header.storage.primary.PrimaryStorageState
 import org.zstack.header.storage.primary.PrimaryStorageStateEvent
 import org.zstack.header.storage.primary.PrimaryStorageVO
@@ -12,7 +17,11 @@ import org.zstack.header.vm.VmInstanceVO
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.sdk.AddLocalPrimaryStorageAction
+import org.zstack.sdk.ClusterInventory
+import org.zstack.sdk.HostInventory
+import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.storage.primary.local.APILocalStorageMigrateVolumeMsg
+import org.zstack.storage.primary.local.LocalStorageHostRefVO
 import org.zstack.test.integration.storage.Env
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.*
@@ -37,19 +46,26 @@ class AddLocalStorageCase extends SubCase {
     @Override
     void environment() {
         env = env {
-            sftpBackupStorage {
-                name = "sftp"
-                url = "/sftp"
-                username = "root"
-                password = "password"
-                hostname = "localhost"
-            }
-
             zone {
                 name = "zone"
                 description = "test"
 
-                attachBackupStorage("sftp")
+                cluster {
+                    name = "cluster"
+                    hypervisorType = "KVM"
+
+                    kvm {
+                        name = "kvm"
+                        managementIp = "localhost"
+                        username = "root"
+                        password = "password"
+                    }
+                }
+
+                localPrimaryStorage {
+                    name = "local"
+                    url = "/local_ps"
+                }
             }
         }
     }
@@ -58,6 +74,7 @@ class AddLocalStorageCase extends SubCase {
     void test() {
         env.create {
             addErrorPathLSailure()
+            testAttachLocalStorage()
         }
     }
 
@@ -76,5 +93,24 @@ class AddLocalStorageCase extends SubCase {
         addLocalPrimaryStorageAction.url = "/sys/test"
         res= addLocalPrimaryStorageAction.call()
         assert res.error !=null
+    }
+
+    void testAttachLocalStorage(){
+        def cluster = env.inventoryByName("cluster") as ClusterInventory
+        def host = env.inventoryByName("kvm") as HostInventory
+        def ls = env.inventoryByName("local") as PrimaryStorageInventory
+        SQL.New(HostVO.class).set(HostVO_.status, HostStatus.Connecting).eq(HostVO_.uuid, host.uuid).update()
+        attachPrimaryStorageToCluster {
+            clusterUuid = cluster.uuid
+            primaryStorageUuid = ls.uuid
+        }
+        retryInSecs(3) {
+            assert Q.New(LocalStorageHostRefVO.class).count() == 1
+        }
+
+        detachPrimaryStorageFromCluster {
+            clusterUuid = cluster.uuid
+            primaryStorageUuid = ls.uuid
+        }
     }
 }
