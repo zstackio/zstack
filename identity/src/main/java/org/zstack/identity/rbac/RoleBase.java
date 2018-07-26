@@ -9,6 +9,8 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatch;
+import org.zstack.core.db.SQLBatchWithReturn;
+import org.zstack.header.identity.PolicyVO;
 import org.zstack.header.identity.role.*;
 import org.zstack.header.identity.role.api.*;
 import org.zstack.header.message.APIMessage;
@@ -63,9 +65,63 @@ public class RoleBase implements Role {
             handle((APIRemovePolicyStatementsFromRoleMsg) msg);
         } else if (msg instanceof APIChangeRoleStateMsg) {
             handle((APIChangeRoleStateMsg) msg);
+        } else if (msg instanceof APIUpdateRoleMsg) {
+            handle((APIUpdateRoleMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIUpdateRoleMsg msg) {
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                boolean updated = false;
+
+                self = reload(self);
+
+                if (msg.getName() != null) {
+                    self.setName(msg.getName());
+                    updated = true;
+                }
+
+                if (msg.getDescription() != null) {
+                    self.setDescription(msg.getDescription());
+                    updated = true;
+                }
+
+                if (msg.getStatements() != null) {
+                    sql(RolePolicyStatementVO.class).eq(RolePolicyStatementVO_.roleUuid, msg.getRoleUuid()).delete();
+
+                    msg.getStatements().forEach(s -> {
+                        RolePolicyStatementVO pvo = new RolePolicyStatementVO();
+                        pvo.setRoleUuid(msg.getRoleUuid());
+                        pvo.setUuid(Platform.getUuid());
+                        pvo.setStatement(JSONObjectUtil.toJsonString(s));
+                        persist(pvo);
+                    });
+                    updated = true;
+                }
+
+                if (msg.getPolicyUuids() != null) {
+                    sql(RolePolicyRefVO.class).eq(RolePolicyRefVO_.roleUuid, msg.getRoleUuid()).delete();
+
+                    msg.getPolicyUuids().forEach(puuid -> {
+                        RolePolicyRefVO ref = new RolePolicyRefVO();
+                        ref.setPolicyUuid(puuid);
+                        ref.setRoleUuid(msg.getRoleUuid());
+                        persist(ref);
+                    });
+                    updated = true;
+                }
+
+                if (updated) {
+                    merge(self);
+                    flush();
+                }
+            }
+        }.execute();
+
     }
 
     private void handle(APIChangeRoleStateMsg msg) {
