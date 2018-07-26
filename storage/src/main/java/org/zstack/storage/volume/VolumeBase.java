@@ -3,6 +3,7 @@ package org.zstack.storage.volume;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.security.access.method.P;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
@@ -716,6 +717,11 @@ public class VolumeBase implements Volume {
                             bus.send(dmsg, new CloudBusCallBack(trigger) {
                                 @Override
                                 public void run(MessageReply reply) {
+                                    if (!reply.isSuccess()) {
+                                        trigger.fail(reply.getError());
+                                        return;
+                                    }
+
                                     self.setVmInstanceUuid(null);
                                     self = dbf.updateAndRefresh(self);
                                     trigger.next();

@@ -55,4 +55,12 @@
         <defaultValue>true</defaultValue>
         <type>java.lang.Boolean</type>
     </config>
+
+    <config>
+        <name>deletion.gcInterval</name>
+        <description>the interval to garbage collect stale volumes, in seconds</description>
+        <defaultValue>3600</defaultValue>
+        <category>ceph</category>
+        <type>java.lang.Integer</type>
+    </config>
 </globalConfig>
