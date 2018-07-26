@@ -140,6 +140,7 @@ DROP TABLE IF EXISTS `zstack`.`BaremetalHostBondingVO`;
 DROP TABLE IF EXISTS `zstack`.`BaremetalHostCfgVO`;
 DROP TABLE IF EXISTS `zstack`.`BaremetalHostNicCfgVO`;
 
+ALTER TABLE `zstack`.`BaremetalChassisVO` MODIFY COLUMN `ipmiPort` int DEFAULT NULL;
 ALTER TABLE `zstack`.`BaremetalChassisVO` ADD COLUMN `state` varchar(32) NOT NULL;
 ALTER TABLE `zstack`.`BaremetalChassisVO` ADD COLUMN `zoneUuid` varchar(32) NOT NULL;
 ALTER TABLE `zstack`.`BaremetalChassisVO` ADD COLUMN `clusterUuid` varchar(32) NOT NULL;

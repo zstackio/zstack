@@ -52,11 +52,11 @@ public class BaremetalChassisInventory  {
         return this.ipmiAddress;
     }
 
-    public java.lang.String ipmiPort;
-    public void setIpmiPort(java.lang.String ipmiPort) {
+    public java.lang.Integer ipmiPort;
+    public void setIpmiPort(java.lang.Integer ipmiPort) {
         this.ipmiPort = ipmiPort;
     }
-    public java.lang.String getIpmiPort() {
+    public java.lang.Integer getIpmiPort() {
         return this.ipmiPort;
     }
 
