@@ -84,11 +84,11 @@ public class BaremetalInstanceInventory  {
         return this.username;
     }
 
-    public java.lang.String port;
-    public void setPort(java.lang.String port) {
+    public java.lang.Integer port;
+    public void setPort(java.lang.Integer port) {
         this.port = port;
     }
-    public java.lang.String getPort() {
+    public java.lang.Integer getPort() {
         return this.port;
     }
 
