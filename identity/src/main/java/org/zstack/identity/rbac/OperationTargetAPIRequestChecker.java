@@ -21,7 +21,7 @@ import static org.zstack.core.Platform.operr;
 public class OperationTargetAPIRequestChecker implements APIRequestChecker {
     protected RBACEntity rbacEntity;
 
-    private static Map<Class, RBACInfo> rbacInfos =  Collections.synchronizedMap(new HashMap<>());
+    private static Map<Class, RBAC.Permission> rbacInfos =  Collections.synchronizedMap(new HashMap<>());
     private static PolicyMatcher policyMatcher = new PolicyMatcher();
 
 
@@ -36,18 +36,18 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
         return policyMatcher.match(ap, rbacEntity.getApiMessage().getClass().getName());
     }
 
-    private RBACInfo getRBACInfo() {
+    private RBAC.Permission getRBACInfo() {
         return rbacInfos.computeIfAbsent(rbacEntity.getApiMessage().getClass(), x-> {
-            for (RBACInfo rbacInfo : RBACGroovy.getRbacInfos()) {
-                for (String s : rbacInfo.getNormalAPIs()) {
+            for (RBAC.Permission permission : RBAC.permissions) {
+                for (String s : permission.getNormalAPIs()) {
                     if (isMatch(s)) {
-                        return rbacInfo;
+                        return permission;
                     }
                 }
 
-                for (String s : rbacInfo.getAdminOnlyAPIs()) {
+                for (String s : permission.getAdminOnlyAPIs()) {
                     if (isMatch(s)) {
-                        return rbacInfo;
+                        return permission;
                     }
                 }
             }
@@ -90,7 +90,7 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
             return;
         }
 
-        RBACInfo info = getRBACInfo();
+        RBAC.Permission info = getRBACInfo();
 
         new SQLBatch() {
             @Override
@@ -116,7 +116,7 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
                 try {
                     if (resourceType.isAssignableFrom(AccountVO.class)) {
                         checkIfTheAccountOperationItSelf(param);
-                    } else if (info.isTargetResource(resourceType)) {
+                    } else if (info.getTargetResources().stream().anyMatch( it -> resourceType.isAssignableFrom(it))) {
                         checkIfTheAccountOwnTheResource(param);
                     } else {
                         checkIfTheAccountCanAccessTheResource(param);
