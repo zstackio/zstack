@@ -30,4 +30,13 @@
 		<defaultValue>3600</defaultValue>
 		<type>java.lang.Long</type>
 	</config>
+
+    <config>
+        <name>refreshVolumeSizeInterval</name>
+        <description>the interval the task to scan the volumes which need refresh size periodical, in seconds</description>
+        <category>volume</category>
+        <defaultValue>3600</defaultValue>
+        <type>java.lang.Long</type>
+    </config>
+
 </globalConfig>
