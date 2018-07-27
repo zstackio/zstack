@@ -3,7 +3,6 @@ package org.zstack.identity.rbac;
 import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.header.identity.*;
 import org.zstack.header.message.APIMessage;
-import org.zstack.header.identity.rbac.RBACEntity;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -15,17 +14,17 @@ public interface RBACManager {
     String SERVICE_ID = "rbac";
 
     List<PolicyInventory> internalPolices = new ArrayList<>();
-    Map<PolicyInventory, List<PolicyStatement>> internalDenyStatements = new HashMap<>();
-    Map<PolicyInventory, List<PolicyStatement>> internalAllowStatements = new HashMap<>();
 
     static List<PolicyInventory> getPoliciesByAPI(APIMessage message) {
         return new SQLBatchWithReturn<List<PolicyInventory>>() {
             @Override
             protected List<PolicyInventory> scripts() {
                 SessionInventory session = message.getSession();
-                List<PolicyInventory> ret = new ArrayList<>(internalPolices);
-                if (!session.isAccountSession()) {
+                List<PolicyInventory> ret = new ArrayList<>();
+                if (!session.getAccountUuid().equals(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID) && !session.isAccountSession()) {
                     ret.addAll(getPoliciesForUser(session));
+                } else {
+                    ret.addAll(internalPolices);
                 }
 
                 return ret;
