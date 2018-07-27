@@ -48,4 +48,6 @@ public interface ResourceDestinationMaker {
     Collection<NodeInfo> getAllNodeInfo();
 
     int getManagementNodeCount();
+
+    boolean isNodeInCircle(String nodeId);
 }
