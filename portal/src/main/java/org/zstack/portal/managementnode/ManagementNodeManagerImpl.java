@@ -903,6 +903,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
     @Override
     public void quit(String reason) {
+        new BootErrorLog().write(reason);
         logger.debug(String.format("stopping the management node because %s", reason));
         stop();
     }
