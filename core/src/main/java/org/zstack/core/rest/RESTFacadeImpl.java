@@ -346,7 +346,7 @@ public class RESTFacadeImpl implements RESTFacade {
             ResponseEntity<String> rsp;
 
             try {
-                if (CoreGlobalProperty.UNIT_TEST_ON) {
+                if (CoreGlobalProperty.UNIT_TEST_ON && !CoreGlobalProperty.SIMULATORS_ON) {
                     rsp = template.exchange(url, HttpMethod.POST, req, String.class);
                 } else {
                     rsp = retry.run();

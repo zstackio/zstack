@@ -76,3 +76,22 @@ CREATE TABLE IF NOT EXISTS `CaptchaVO` (
     PRIMARY KEY (`uuid`),
     UNIQUE KEY `uuid` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `AliyunNasPrimaryStorageMountPointVO` (
+    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+    `hostUuid` varchar(32) NOT NULL,
+    `primaryStorageUuid` varchar(32) NOT NULL,
+    `mountUrl` varchar(512) NOT NULL,
+    `mountPath` varchar(512) NOT NULL,
+    `lastErrInfo` varchar(1024) DEFAULT NULL,
+    `checkTimes` bigint unsigned NOT NULL,
+    `errorTimes` bigint unsigned DEFAULT 0,
+    `lastNormalDistance` bigint unsigned DEFAULT 0,
+    `status` varchar(32) NOT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`id`),
+    INDEX `idxMountPointVOhostUuid` (`hostUuid`),
+    CONSTRAINT `fkMountPointVOHostEO` FOREIGN KEY (`hostUuid`) REFERENCES HostEO (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkMountPointVOPrimaryStorageEO` FOREIGN KEY (`primaryStorageUuid`) REFERENCES PrimaryStorageEO (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

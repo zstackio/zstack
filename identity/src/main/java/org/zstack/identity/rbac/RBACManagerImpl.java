@@ -84,9 +84,6 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
                 throw new CloudRuntimeException(e);
             }
         });
-
-        internalAllowStatements.putAll(RBACManager.collectAllowedStatements(internalPolices));
-        internalDenyStatements.putAll(RBACManager.collectDenyStatements(internalPolices));
     }
 
     private void handleLocalMessage(Message msg) {
