@@ -439,6 +439,10 @@ public class NfsPrimaryStorageKVMBackendCommands {
         }
     }
 
+    @ApiTimeout(apiClasses = {
+            APICreateRootVolumeTemplateFromRootVolumeMsg.class,
+            APICreateDataVolumeTemplateFromVolumeMsg.class,
+    })
     public static class UploadToSftpCmd extends NfsPrimaryStorageAgentCommand implements HasThreadContext{
         private String primaryStorageInstallPath;
         private String backupStorageInstallPath;

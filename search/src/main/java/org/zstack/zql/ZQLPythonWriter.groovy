@@ -24,7 +24,6 @@ class ZQLPythonWriter implements PythonApiBindingWriter {
     @Override
     void writePython(StringBuilder sb) {
         ZQLMetadata.inventoryMetadata.values().each {
-            def primitiveFields = it.selfInventoryFieldNames.collect {"'" + it + "'"}.join(",")
             def expandedFields = []
             it.expandQueries.each { name, metadata ->
                 if (!metadata.hidden) {
@@ -54,6 +53,7 @@ class ZQLPythonWriter implements PythonApiBindingWriter {
             queryObjectMap.each { k, v -> queryObjectMapStrList.add("        '${k}' : '${v}',") }
             def queryObjectMapStr = queryObjectMapStrList.join('\n')
 
+            def primitiveFields = (it.selfInventoryFieldNames - expandedFields).collect {"'" + it + "'"}.join(",")
             sb.append("""class QueryObject${it.simpleInventoryName()}(object):
     PRIMITIVE_FIELDS = [${primitiveFields}, '__systemTag__', '__userTag__']
     EXPANDED_FIELDS = [${expandedFieldsStr}]
