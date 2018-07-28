@@ -510,6 +510,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
         }).done(new FlowDoneHandler(msg) {
             @Override
             public void handle(Map data) {
+                /* update vm last host uuid */
+                SQL.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, struct.getVmUuid()).set(VmInstanceVO_.lastHostUuid, msg.getDestHostUuid())
+                        .set(VmInstanceVO_.hostUuid, msg.getDestHostUuid()).update();
+
                 bus.publish(evt);
             }
         }).error(new FlowErrorHandler(msg) {
