@@ -10,6 +10,7 @@ import org.zstack.sdk.L3NetworkHostRouteInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.sdk.HostInventory
+import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.test.integration.networkservice.provider.flat.FlatNetworkServiceEnv
 import org.zstack.testlib.EnvSpec
@@ -39,7 +40,7 @@ class FlatAddHostRouteCase extends SubCase {
 
     @Override
     void environment() {
-        env = FlatNetworkServiceEnv.oneHostNoVmEnv()
+        env = FlatNetworkServiceEnv.oneHostNoVmTwoFlatL3Env()
     }
 
     void testAddDns() {
@@ -161,6 +162,20 @@ class FlatAddHostRouteCase extends SubCase {
 
     }
 
+    void testAddFlatL3ToVm(){
+        def L3NetworkInventory l3_1 = env.inventoryByName("l3-1") as L3NetworkInventory
+        def vm4 = queryVmInstance { conditions=["name=test-4"]}[0] as VmInstanceInventory
+
+        detachL3NetworkFromVm {
+            vmNicUuid = vm4.getVmNics().get(0).getUuid()
+        }
+
+        attachL3NetworkToVm {
+            l3NetworkUuid = l3_1.uuid
+            vmInstanceUuid = vm4.uuid
+        }
+    }
+
     @Override
     void test() {
         env.create {
@@ -220,6 +235,7 @@ class FlatAddHostRouteCase extends SubCase {
             }
 
             testAddDns()
+            testAddFlatL3ToVm()
         }
     }
 }
