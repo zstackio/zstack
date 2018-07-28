@@ -46,3 +46,37 @@ CREATE TABLE IF NOT EXISTS `AliyunNasPrimaryStorageMountPointVO` (
     CONSTRAINT `fkMountPointVOHostEO` FOREIGN KEY (`hostUuid`) REFERENCES HostEO (`uuid`) ON DELETE CASCADE,
     CONSTRAINT `fkMountPointVOPrimaryStorageEO` FOREIGN KEY (`primaryStorageUuid`) REFERENCES PrimaryStorageEO (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP PROCEDURE IF EXISTS updatePlatformAdminsWithoutZoneRelation;
+DELIMITER $$
+CREATE PROCEDURE updatePlatformAdminsWithoutZoneRelation()
+    BEGIN
+        DECLARE virtualIDUuid VARCHAR(32);
+        DECLARE attributeUuid VARCHAR(32);
+        DECLARE done INT DEFAULT FALSE;
+        DECLARE cur CURSOR FOR SELECT vid.uuid FROM IAM2VirtualIDVO vid, IAM2VirtualIDAttributeVO vida WHERE vida.name = '__PlatformAdmin__' AND vida.virtualIDUuid = vid.uuid;
+        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+        OPEN cur;
+        read_loop: LOOP
+            FETCH cur INTO virtualIDUuid;
+            IF done THEN
+                LEAVE read_loop;
+            END IF;
+
+            SET attributeUuid = REPLACE(UUID(), '-', '');
+
+            IF (select count(*) from IAM2VirtualIDAttributeVO vida where vida.name = '__PlatformAdminRelatedZone__' and vida.virtualIDUuid = virtualIDUuid) = 0 THEN
+            BEGIN
+            INSERT INTO zstack.IAM2VirtualIDAttributeVO (`uuid`, `name`, `value`, `type`, `virtualIDUuid`, `lastOpDate`, `createDate`)
+                    values (attributeUuid, '__PlatformAdminRelatedZone__', 'ALL_ZONES', 'Customized', virtualIDUuid, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
+            END;
+            END IF;
+        END LOOP;
+        CLOSE cur;
+        # work around a bug of mysql : jira.mariadb.org/browse/MDEV-4602
+        SELECT CURTIME();
+    END $$
+DELIMITER ;
+
+CALL updatePlatformAdminsWithoutZoneRelation();
+DROP PROCEDURE IF EXISTS updatePlatformAdminsWithoutZoneRelation;
