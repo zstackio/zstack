@@ -338,14 +338,6 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                     return;
                 }
 
-                if (version.contains(".")) {
-                    version = version.split("\\.")[0];
-                }
-
-                if (cversion.contains(".")) {
-                    cversion = cversion.split("\\.")[0];
-                }
-
                 String mineVersion = String.format("%s;%s;%s", distro, release, version);
                 String currentVersion = String.format("%s;%s;%s", cdistro, crelease, cversion);
 
