@@ -23,6 +23,8 @@ public class RBAC {
     private static List<RoleContributor> roleContributors = new ArrayList<>();
     private static List<RoleBuilder> roleBuilders = new ArrayList<>();
 
+    private static PolicyMatcher matcher = new PolicyMatcher();
+
     static class APIPermissionCheckerWrapper {
         boolean takeOver;
         APIPermissionChecker checker;
@@ -517,5 +519,9 @@ public class RBAC {
         }
 
         return entity;
+    }
+
+    public static boolean isAdminOnlyAPI(String apiName) {
+        return permissions.stream().anyMatch(permission -> permission.getAdminOnlyAPIs().stream().anyMatch(api -> matcher.match(api, apiName)));
     }
 }
