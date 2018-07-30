@@ -1867,6 +1867,7 @@ public class KVMAgentCommands {
         public String hostUuid;
         public List<String> psUuids;
         public String psStatus;
+        public String reason;
     }
 
     public static class ReportHostDeviceEventCmd {
