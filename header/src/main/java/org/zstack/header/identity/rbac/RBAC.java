@@ -3,11 +3,15 @@ package org.zstack.header.identity.rbac;
 import org.apache.commons.lang.StringUtils;
 import org.zstack.header.core.StaticInit;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.StatementEffect;
 import org.zstack.header.message.APIMessage;
 import org.zstack.utils.BeanUtils;
+import org.zstack.utils.DebugUtils;
 
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class RBAC {
     public static List<Permission> permissions = new ArrayList<>();
@@ -184,6 +188,24 @@ public class RBAC {
 
         public void setExcludedActions(List<String> excludedActions) {
             this.excludedActions = excludedActions;
+        }
+
+        public PolicyStatement toStatement() {
+            Role self = this;
+            if (!excludedActions.isEmpty()) {
+                RBACDescriptionHelper.FlattenResult fr = RBACDescriptionHelper.flatten(new HashSet<>(excludedActions), allowedActions);
+                self.allowedActions = fr.normal;
+            }
+
+            PolicyStatement p = new PolicyStatement();
+            p.setName(self.getName());
+            p.setActions(new ArrayList<>(self.allowedActions));
+            p.setEffect(self.getEffect());
+            return p;
+        }
+
+        public List<PolicyStatement> toStatements() {
+            return Arrays.asList(toStatement());
         }
     }
 

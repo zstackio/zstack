@@ -13,9 +13,7 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.InternalPolicy;
 import org.zstack.header.identity.SharedResourceVO;
-import org.zstack.header.identity.rbac.RBACGroovy;
-import org.zstack.header.identity.rbac.RBACEntityFormatter;
-import org.zstack.header.identity.rbac.RoleInfo;
+import org.zstack.header.identity.rbac.*;
 import org.zstack.header.identity.role.*;
 import org.zstack.header.identity.role.api.APICreateRoleEvent;
 import org.zstack.header.identity.role.api.APICreateRoleMsg;
@@ -23,7 +21,6 @@ import org.zstack.header.identity.role.api.RoleMessage;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
-import org.zstack.header.identity.rbac.RBACEntity;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -151,12 +148,12 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
         new SQLBatch() {
             @Override
             protected void scripts() {
-                RBACGroovy.getRoleInfos().stream().filter(RoleInfo::isPredefine).forEach(role -> {
+                RBAC.roles.stream().filter(RBAC.Role::isPredefine).forEach(role -> {
                     if (!q(SystemRoleVO.class).eq(SystemRoleVO_.uuid, role.getUuid()).isExists()) {
                         SystemRoleVO rvo = new SystemRoleVO();
                         rvo.setUuid(role.getUuid());
                         rvo.setName(String.format("predefined: %s", role.getName()));
-                        rvo.setSystemRoleType(role.getAdminOnly() ? SystemRoleType.Admin : SystemRoleType.Normal);
+                        rvo.setSystemRoleType(role.isAdminOnly() ? SystemRoleType.Admin : SystemRoleType.Normal);
                         rvo.setType(RoleType.Predefined);
                         rvo.setAccountUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
                         persist(rvo);
@@ -179,7 +176,7 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
                         role.toStatements().forEach(s -> {
                             String statementString = JSONObjectUtil.toJsonString(s);
 
-                            if (q(RolePolicyStatementVO.class).select(RolePolicyStatementVO_.uuid)
+                            if (q(RolePolicyStatementVO.class)
                                     .eq(RolePolicyStatementVO_.roleUuid, role.getUuid())
                                     .eq(RolePolicyStatementVO_.statement, statementString).isExists()) {
                                 return;
