@@ -7,4 +7,12 @@
         <defaultValue>false</defaultValue>
         <type>java.lang.Boolean</type>
     </config>
+
+    <config>
+        <category>query</category>
+        <name>zql.returnWith.concurrency</name>
+        <description>zql return with concurrency</description>
+        <defaultValue>10</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
 </globalConfig>
