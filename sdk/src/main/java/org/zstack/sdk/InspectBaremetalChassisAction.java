@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class QueryBaremetalHardwareInfoAction extends QueryAction {
+public class InspectBaremetalChassisAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class QueryBaremetalHardwareInfoAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.QueryBaremetalHardwareInfoResult value;
+        public org.zstack.sdk.InspectBaremetalChassisResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,6 +25,23 @@ public class QueryBaremetalHardwareInfoAction extends QueryAction {
         }
     }
 
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String uuid;
+
+    @Param(required = false)
+    public java.util.List systemTags;
+
+    @Param(required = false)
+    public java.util.List userTags;
+
+    @Param(required = true)
+    public String sessionId;
+
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -34,8 +51,8 @@ public class QueryBaremetalHardwareInfoAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.QueryBaremetalHardwareInfoResult value = res.getResult(org.zstack.sdk.QueryBaremetalHardwareInfoResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QueryBaremetalHardwareInfoResult() : value; 
+        org.zstack.sdk.InspectBaremetalChassisResult value = res.getResult(org.zstack.sdk.InspectBaremetalChassisResult.class);
+        ret.value = value == null ? new org.zstack.sdk.InspectBaremetalChassisResult() : value; 
 
         return ret;
     }
@@ -64,11 +81,11 @@ public class QueryBaremetalHardwareInfoAction extends QueryAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/baremetal/hardwareinfo";
+        info.httpMethod = "PUT";
+        info.path = "/baremetal/chassis/{uuid}/actions";
         info.needSession = true;
-        info.needPoll = false;
-        info.parameterName = "";
+        info.needPoll = true;
+        info.parameterName = "inspectBaremetalChassis";
         return info;
     }
 

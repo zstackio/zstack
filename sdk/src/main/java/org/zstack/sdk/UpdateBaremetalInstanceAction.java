@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class ProvisionBaremetalHostAction extends AbstractAction {
+public class UpdateBaremetalInstanceAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class ProvisionBaremetalHostAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.ProvisionBaremetalHostResult value;
+        public org.zstack.sdk.UpdateBaremetalInstanceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,7 +26,19 @@ public class ProvisionBaremetalHostAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String chassisUuid;
+    public java.lang.String uuid;
+
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
+
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String password;
+
+    @Param(required = false, validValues = {"Linux"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String platform;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -51,8 +63,8 @@ public class ProvisionBaremetalHostAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.ProvisionBaremetalHostResult value = res.getResult(org.zstack.sdk.ProvisionBaremetalHostResult.class);
-        ret.value = value == null ? new org.zstack.sdk.ProvisionBaremetalHostResult() : value; 
+        org.zstack.sdk.UpdateBaremetalInstanceResult value = res.getResult(org.zstack.sdk.UpdateBaremetalInstanceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateBaremetalInstanceResult() : value; 
 
         return ret;
     }
@@ -82,10 +94,10 @@ public class ProvisionBaremetalHostAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/baremetal/chassis/{chassisUuid}/actions";
+        info.path = "/baremetal/instances/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "provisionBaremetalHost";
+        info.parameterName = "updateBaremetalInstance";
         return info;
     }
 

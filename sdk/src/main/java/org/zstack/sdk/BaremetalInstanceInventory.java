@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class BaremetalChassisInventory  {
+public class BaremetalInstanceInventory  {
 
     public java.lang.String uuid;
     public void setUuid(java.lang.String uuid) {
@@ -44,28 +44,52 @@ public class BaremetalChassisInventory  {
         return this.clusterUuid;
     }
 
-    public java.lang.String ipmiAddress;
-    public void setIpmiAddress(java.lang.String ipmiAddress) {
-        this.ipmiAddress = ipmiAddress;
+    public java.lang.String chassisUuid;
+    public void setChassisUuid(java.lang.String chassisUuid) {
+        this.chassisUuid = chassisUuid;
     }
-    public java.lang.String getIpmiAddress() {
-        return this.ipmiAddress;
-    }
-
-    public java.lang.Integer ipmiPort;
-    public void setIpmiPort(java.lang.Integer ipmiPort) {
-        this.ipmiPort = ipmiPort;
-    }
-    public java.lang.Integer getIpmiPort() {
-        return this.ipmiPort;
+    public java.lang.String getChassisUuid() {
+        return this.chassisUuid;
     }
 
-    public java.lang.String ipmiUsername;
-    public void setIpmiUsername(java.lang.String ipmiUsername) {
-        this.ipmiUsername = ipmiUsername;
+    public java.lang.String imageUuid;
+    public void setImageUuid(java.lang.String imageUuid) {
+        this.imageUuid = imageUuid;
     }
-    public java.lang.String getIpmiUsername() {
-        return this.ipmiUsername;
+    public java.lang.String getImageUuid() {
+        return this.imageUuid;
+    }
+
+    public java.lang.String platform;
+    public void setPlatform(java.lang.String platform) {
+        this.platform = platform;
+    }
+    public java.lang.String getPlatform() {
+        return this.platform;
+    }
+
+    public java.lang.String managementIp;
+    public void setManagementIp(java.lang.String managementIp) {
+        this.managementIp = managementIp;
+    }
+    public java.lang.String getManagementIp() {
+        return this.managementIp;
+    }
+
+    public java.lang.String username;
+    public void setUsername(java.lang.String username) {
+        this.username = username;
+    }
+    public java.lang.String getUsername() {
+        return this.username;
+    }
+
+    public java.lang.Integer port;
+    public void setPort(java.lang.Integer port) {
+        this.port = port;
+    }
+    public java.lang.Integer getPort() {
+        return this.port;
     }
 
     public java.lang.String state;
@@ -100,12 +124,12 @@ public class BaremetalChassisInventory  {
         return this.lastOpDate;
     }
 
-    public java.util.List hardwareInfos;
-    public void setHardwareInfos(java.util.List hardwareInfos) {
-        this.hardwareInfos = hardwareInfos;
+    public java.util.List bmNics;
+    public void setBmNics(java.util.List bmNics) {
+        this.bmNics = bmNics;
     }
-    public java.util.List getHardwareInfos() {
-        return this.hardwareInfos;
+    public java.util.List getBmNics() {
+        return this.bmNics;
     }
 
 }

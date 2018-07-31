@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class StopBaremetalPxeServerAction extends AbstractAction {
+public class QueryBaremetalInstanceAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class StopBaremetalPxeServerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.StopBaremetalPxeServerResult value;
+        public org.zstack.sdk.QueryBaremetalInstanceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,23 +25,6 @@ public class StopBaremetalPxeServerAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = true)
-    public String sessionId;
-
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -51,8 +34,8 @@ public class StopBaremetalPxeServerAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.StopBaremetalPxeServerResult value = res.getResult(org.zstack.sdk.StopBaremetalPxeServerResult.class);
-        ret.value = value == null ? new org.zstack.sdk.StopBaremetalPxeServerResult() : value; 
+        org.zstack.sdk.QueryBaremetalInstanceResult value = res.getResult(org.zstack.sdk.QueryBaremetalInstanceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryBaremetalInstanceResult() : value; 
 
         return ret;
     }
@@ -81,11 +64,11 @@ public class StopBaremetalPxeServerAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/baremetal/pxeservers/{uuid}/actions";
+        info.httpMethod = "GET";
+        info.path = "/baremetal/instances";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "stopBaremetalPxeServer";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 

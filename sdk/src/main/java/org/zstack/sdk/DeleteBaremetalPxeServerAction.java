@@ -85,7 +85,7 @@ public class DeleteBaremetalPxeServerAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
-        info.path = "/baremetal/pxeserver/{uuid}";
+        info.path = "/baremetal/pxeservers/{uuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";

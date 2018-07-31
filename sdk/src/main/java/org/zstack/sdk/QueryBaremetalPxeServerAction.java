@@ -65,7 +65,7 @@ public class QueryBaremetalPxeServerAction extends QueryAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/baremetal/pxeserver";
+        info.path = "/baremetal/pxeservers";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

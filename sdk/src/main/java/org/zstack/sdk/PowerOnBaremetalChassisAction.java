@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class RequestBaremetalConsoleAccessAction extends AbstractAction {
+public class PowerOnBaremetalChassisAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class RequestBaremetalConsoleAccessAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.RequestBaremetalConsoleAccessResult value;
+        public org.zstack.sdk.PowerOnBaremetalChassisResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -51,8 +51,8 @@ public class RequestBaremetalConsoleAccessAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.RequestBaremetalConsoleAccessResult value = res.getResult(org.zstack.sdk.RequestBaremetalConsoleAccessResult.class);
-        ret.value = value == null ? new org.zstack.sdk.RequestBaremetalConsoleAccessResult() : value; 
+        org.zstack.sdk.PowerOnBaremetalChassisResult value = res.getResult(org.zstack.sdk.PowerOnBaremetalChassisResult.class);
+        ret.value = value == null ? new org.zstack.sdk.PowerOnBaremetalChassisResult() : value; 
 
         return ret;
     }
@@ -81,11 +81,11 @@ public class RequestBaremetalConsoleAccessAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/baremetal/consoles";
+        info.httpMethod = "PUT";
+        info.path = "/baremetal/chassis/{chassisUuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "powerOnBaremetalChassis";
         return info;
     }
 
