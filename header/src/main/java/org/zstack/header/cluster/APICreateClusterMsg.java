@@ -69,16 +69,14 @@ public class APICreateClusterMsg extends APICreateMessage implements APIAuditor 
      * @desc see field 'hypervisorType' of :ref:`ClusterInventory` for details
      * @choices - KVM
      * - Simulator
-     * - baremetal
      */
-    @APIParam(validValues = {"KVM", "Simulator", "baremetal"})
+    @APIParam(validValues = {"KVM", "Simulator"})
     private String hypervisorType;
     /**
      * @desc see field 'type' of :ref:`ClusterInventory` for details
      * @choices zstack
-     * - baremetal
      */
-    @APIParam(required = false, validValues = {"zstack", "baremetal"})
+    @APIParam(required = false, validValues = {"zstack"})
     private String type;
 
     public APICreateClusterMsg() {

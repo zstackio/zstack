@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class RecoverBaremetalInstanceAction extends AbstractAction {
+public class CreateBaremetalHostCfgAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class RecoverBaremetalInstanceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.RecoverBaremetalInstanceResult value;
+        public org.zstack.sdk.CreateBaremetalHostCfgResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,7 +26,25 @@ public class RecoverBaremetalInstanceAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    public java.lang.String chassisUuid;
+
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String password;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public boolean vnc = true;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public boolean unattended = true;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public boolean cloneIso = false;
+
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.Map cfgItems;
+
+    @Param(required = false)
+    public java.lang.String resourceUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -51,8 +69,8 @@ public class RecoverBaremetalInstanceAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.RecoverBaremetalInstanceResult value = res.getResult(org.zstack.sdk.RecoverBaremetalInstanceResult.class);
-        ret.value = value == null ? new org.zstack.sdk.RecoverBaremetalInstanceResult() : value; 
+        org.zstack.sdk.CreateBaremetalHostCfgResult value = res.getResult(org.zstack.sdk.CreateBaremetalHostCfgResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateBaremetalHostCfgResult() : value; 
 
         return ret;
     }
@@ -81,11 +99,11 @@ public class RecoverBaremetalInstanceAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/baremetal/instances/{uuid}/actions";
+        info.httpMethod = "POST";
+        info.path = "/baremetal/hostcfg";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "recoverBaremetalInstance";
+        info.parameterName = "params";
         return info;
     }
 

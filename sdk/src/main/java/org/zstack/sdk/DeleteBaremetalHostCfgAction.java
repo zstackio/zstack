@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetBaremetalChassisPowerStatusAction extends AbstractAction {
+public class DeleteBaremetalHostCfgAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetBaremetalChassisPowerStatusAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetBaremetalChassisPowerStatusResult value;
+        public org.zstack.sdk.DeleteBaremetalHostCfgResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -29,6 +29,9 @@ public class GetBaremetalChassisPowerStatusAction extends AbstractAction {
     public java.lang.String uuid;
 
     @Param(required = false)
+    public java.lang.String deleteMode = "Permissive";
+
+    @Param(required = false)
     public java.util.List systemTags;
 
     @Param(required = false)
@@ -36,6 +39,12 @@ public class GetBaremetalChassisPowerStatusAction extends AbstractAction {
 
     @Param(required = true)
     public String sessionId;
+
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -45,8 +54,8 @@ public class GetBaremetalChassisPowerStatusAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetBaremetalChassisPowerStatusResult value = res.getResult(org.zstack.sdk.GetBaremetalChassisPowerStatusResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetBaremetalChassisPowerStatusResult() : value; 
+        org.zstack.sdk.DeleteBaremetalHostCfgResult value = res.getResult(org.zstack.sdk.DeleteBaremetalHostCfgResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteBaremetalHostCfgResult() : value; 
 
         return ret;
     }
@@ -75,10 +84,10 @@ public class GetBaremetalChassisPowerStatusAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/baremetal/chassis/{uuid}/powerstatus";
+        info.httpMethod = "DELETE";
+        info.path = "/baremetal/hostcfg/{uuid}";
         info.needSession = true;
-        info.needPoll = false;
+        info.needPoll = true;
         info.parameterName = "";
         return info;
     }

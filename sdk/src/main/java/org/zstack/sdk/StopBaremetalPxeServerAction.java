@@ -82,7 +82,7 @@ public class StopBaremetalPxeServerAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/baremetal/pxeservers/{uuid}/actions";
+        info.path = "/baremetal/pxeserver/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "stopBaremetalPxeServer";

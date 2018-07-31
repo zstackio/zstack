@@ -60,14 +60,6 @@ public class SharedBlockCandidateStruct  {
         return this.type;
     }
 
-    public java.lang.String path;
-    public void setPath(java.lang.String path) {
-        this.path = path;
-    }
-    public java.lang.String getPath() {
-        return this.path;
-    }
-
     public java.lang.Long size;
     public void setSize(java.lang.Long size) {
         this.size = size;

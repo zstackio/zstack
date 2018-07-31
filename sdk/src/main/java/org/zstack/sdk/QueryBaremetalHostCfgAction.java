@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class ExpungeBaremetalInstanceAction extends AbstractAction {
+public class QueryBaremetalHostCfgAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class ExpungeBaremetalInstanceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.ExpungeBaremetalInstanceResult value;
+        public org.zstack.sdk.QueryBaremetalHostCfgResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,23 +25,6 @@ public class ExpungeBaremetalInstanceAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = true)
-    public String sessionId;
-
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -51,8 +34,8 @@ public class ExpungeBaremetalInstanceAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.ExpungeBaremetalInstanceResult value = res.getResult(org.zstack.sdk.ExpungeBaremetalInstanceResult.class);
-        ret.value = value == null ? new org.zstack.sdk.ExpungeBaremetalInstanceResult() : value; 
+        org.zstack.sdk.QueryBaremetalHostCfgResult value = res.getResult(org.zstack.sdk.QueryBaremetalHostCfgResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryBaremetalHostCfgResult() : value; 
 
         return ret;
     }
@@ -81,11 +64,11 @@ public class ExpungeBaremetalInstanceAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/baremetal/instances/{uuid}/actions";
+        info.httpMethod = "GET";
+        info.path = "/baremetal/hostcfg";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "expungeBaremetalInstance";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 

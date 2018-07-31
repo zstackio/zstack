@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class GetBaremetalChassisPowerStatusResult {
+public class PowerStatusBaremetalHostResult {
     public java.lang.String status;
     public void setStatus(java.lang.String status) {
         this.status = status;

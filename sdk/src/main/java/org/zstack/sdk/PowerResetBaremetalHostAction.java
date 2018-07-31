@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class PowerResetBaremetalChassisAction extends AbstractAction {
+public class PowerResetBaremetalHostAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class PowerResetBaremetalChassisAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.PowerResetBaremetalChassisResult value;
+        public org.zstack.sdk.PowerResetBaremetalHostResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -51,8 +51,8 @@ public class PowerResetBaremetalChassisAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.PowerResetBaremetalChassisResult value = res.getResult(org.zstack.sdk.PowerResetBaremetalChassisResult.class);
-        ret.value = value == null ? new org.zstack.sdk.PowerResetBaremetalChassisResult() : value; 
+        org.zstack.sdk.PowerResetBaremetalHostResult value = res.getResult(org.zstack.sdk.PowerResetBaremetalHostResult.class);
+        ret.value = value == null ? new org.zstack.sdk.PowerResetBaremetalHostResult() : value; 
 
         return ret;
     }
@@ -85,7 +85,7 @@ public class PowerResetBaremetalChassisAction extends AbstractAction {
         info.path = "/baremetal/chassis/{chassisUuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "powerResetBaremetalChassis";
+        info.parameterName = "powerResetBaremetalHost";
         return info;
     }
 

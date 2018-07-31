@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class DestroyBaremetalInstanceAction extends AbstractAction {
+public class PowerOnBaremetalHostAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class DestroyBaremetalInstanceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DestroyBaremetalInstanceResult value;
+        public org.zstack.sdk.PowerOnBaremetalHostResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,10 +26,7 @@ public class DestroyBaremetalInstanceAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false)
-    public java.lang.String deleteMode = "Permissive";
+    public java.lang.String chassisUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -54,8 +51,8 @@ public class DestroyBaremetalInstanceAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DestroyBaremetalInstanceResult value = res.getResult(org.zstack.sdk.DestroyBaremetalInstanceResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DestroyBaremetalInstanceResult() : value; 
+        org.zstack.sdk.PowerOnBaremetalHostResult value = res.getResult(org.zstack.sdk.PowerOnBaremetalHostResult.class);
+        ret.value = value == null ? new org.zstack.sdk.PowerOnBaremetalHostResult() : value; 
 
         return ret;
     }
@@ -84,11 +81,11 @@ public class DestroyBaremetalInstanceAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/baremetal/instances/{uuid}";
+        info.httpMethod = "PUT";
+        info.path = "/baremetal/chassis/{chassisUuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "powerOnBaremetalHost";
         return info;
     }
 

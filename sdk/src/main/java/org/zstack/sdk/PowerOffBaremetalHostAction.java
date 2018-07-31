@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class StopBaremetalInstanceAction extends AbstractAction {
+public class PowerOffBaremetalHostAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class StopBaremetalInstanceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.StopBaremetalInstanceResult value;
+        public org.zstack.sdk.PowerOffBaremetalHostResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,10 +26,7 @@ public class StopBaremetalInstanceAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false, validValues = {"grace","cold"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type = "grace";
+    public java.lang.String chassisUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -54,8 +51,8 @@ public class StopBaremetalInstanceAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.StopBaremetalInstanceResult value = res.getResult(org.zstack.sdk.StopBaremetalInstanceResult.class);
-        ret.value = value == null ? new org.zstack.sdk.StopBaremetalInstanceResult() : value; 
+        org.zstack.sdk.PowerOffBaremetalHostResult value = res.getResult(org.zstack.sdk.PowerOffBaremetalHostResult.class);
+        ret.value = value == null ? new org.zstack.sdk.PowerOffBaremetalHostResult() : value; 
 
         return ret;
     }
@@ -85,10 +82,10 @@ public class StopBaremetalInstanceAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/baremetal/instances/{uuid}/actions";
+        info.path = "/baremetal/chassis/{chassisUuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "stopBaremetalInstance";
+        info.parameterName = "powerOffBaremetalHost";
         return info;
     }
 

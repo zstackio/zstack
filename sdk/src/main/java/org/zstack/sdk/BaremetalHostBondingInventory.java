@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class BaremetalNicInventory  {
+public class BaremetalHostBondingInventory  {
 
     public java.lang.String uuid;
     public void setUuid(java.lang.String uuid) {
@@ -12,28 +12,36 @@ public class BaremetalNicInventory  {
         return this.uuid;
     }
 
-    public java.lang.String baremetalInstanceUuid;
-    public void setBaremetalInstanceUuid(java.lang.String baremetalInstanceUuid) {
-        this.baremetalInstanceUuid = baremetalInstanceUuid;
+    public java.lang.String hostCfgUuid;
+    public void setHostCfgUuid(java.lang.String hostCfgUuid) {
+        this.hostCfgUuid = hostCfgUuid;
     }
-    public java.lang.String getBaremetalInstanceUuid() {
-        return this.baremetalInstanceUuid;
-    }
-
-    public java.lang.String l3NetworkUuid;
-    public void setL3NetworkUuid(java.lang.String l3NetworkUuid) {
-        this.l3NetworkUuid = l3NetworkUuid;
-    }
-    public java.lang.String getL3NetworkUuid() {
-        return this.l3NetworkUuid;
+    public java.lang.String getHostCfgUuid() {
+        return this.hostCfgUuid;
     }
 
-    public java.lang.String mac;
-    public void setMac(java.lang.String mac) {
-        this.mac = mac;
+    public java.lang.String name;
+    public void setName(java.lang.String name) {
+        this.name = name;
     }
-    public java.lang.String getMac() {
-        return this.mac;
+    public java.lang.String getName() {
+        return this.name;
+    }
+
+    public java.lang.String slaves;
+    public void setSlaves(java.lang.String slaves) {
+        this.slaves = slaves;
+    }
+    public java.lang.String getSlaves() {
+        return this.slaves;
+    }
+
+    public java.lang.String mode;
+    public void setMode(java.lang.String mode) {
+        this.mode = mode;
+    }
+    public java.lang.String getMode() {
+        return this.mode;
     }
 
     public java.lang.String ip;
@@ -60,20 +68,12 @@ public class BaremetalNicInventory  {
         return this.gateway;
     }
 
-    public java.lang.String metadata;
-    public void setMetadata(java.lang.String metadata) {
-        this.metadata = metadata;
+    public java.lang.String dns;
+    public void setDns(java.lang.String dns) {
+        this.dns = dns;
     }
-    public java.lang.String getMetadata() {
-        return this.metadata;
-    }
-
-    public java.lang.Boolean pxe;
-    public void setPxe(java.lang.Boolean pxe) {
-        this.pxe = pxe;
-    }
-    public java.lang.Boolean getPxe() {
-        return this.pxe;
+    public java.lang.String getDns() {
+        return this.dns;
     }
 
     public java.sql.Timestamp createDate;
