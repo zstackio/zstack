@@ -178,6 +178,10 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     to.metadata = mto;
 
                     VmIpL3Uuid l = vmipl3.get(vmuuid);
+                    if (l.vmIp == null) {
+                        continue;
+                    }
+
                     to.dhcpServerIp = l.dhcpServerIp;
                     to.vmIp = l.vmIp;
                     to.netmask = l.netmask;
