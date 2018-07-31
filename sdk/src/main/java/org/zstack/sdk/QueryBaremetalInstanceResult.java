@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class QueryBaremetalHardwareInfoResult {
+public class QueryBaremetalInstanceResult {
     public java.util.List inventories;
     public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
