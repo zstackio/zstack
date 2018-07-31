@@ -206,6 +206,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
         private long size;
         private long actualSize;
         private String installPath;
+        private String format;
 
         public boolean isCompleted() {
             return completed;
@@ -245,6 +246,14 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
         public void setInstallPath(String installPath) {
             this.installPath = installPath;
+        }
+
+        public String getFormat() {
+            return format;
+        }
+
+        public void setFormat(String format) {
+            this.format = format;
         }
     }
 
@@ -755,6 +764,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                     r.setActualSize(resp.getActualSize());
                     r.setSize(resp.getSize());
                     r.setInstallPath(resp.getInstallPath());
+                    r.setFormat(resp.getFormat());
                 } else {
                     r.setError(operr("operation error, because:%s", resp.getError()));
                 }

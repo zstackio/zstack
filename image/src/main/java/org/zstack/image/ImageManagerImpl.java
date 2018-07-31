@@ -768,12 +768,22 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 new SQLBatch() {
                     @Override
                     protected void scripts() {
-                        sql(ImageVO.class)
-                                .eq(ImageVO_.uuid, imageUuid)
-                                .set(ImageVO_.status, ImageStatus.Ready)
-                                .set(ImageVO_.size, dr.getSize())
-                                .set(ImageVO_.actualSize, dr.getActualSize())
-                                .update();
+                        ImageVO vo = findByUuid(imageUuid, ImageVO.class);
+                        if (StringUtils.isNotEmpty(dr.getFormat())) {
+                            vo.setFormat(dr.getFormat());
+                        }
+                        if (vo.getFormat().equals(ImageConstant.ISO_FORMAT_STRING)
+                                && ImageMediaType.RootVolumeTemplate.equals(vo.getMediaType())) {
+                            vo.setMediaType(ImageMediaType.ISO);
+                        }
+                        if (ImageConstant.QCOW2_FORMAT_STRING.equals(vo.getFormat())
+                                && ImageMediaType.ISO.equals(vo.getMediaType())) {
+                            vo.setMediaType(ImageMediaType.RootVolumeTemplate);
+                        }
+                        vo.setStatus(ImageStatus.Ready);
+                        vo.setSize(dr.getSize());
+                        vo.setActualSize(dr.getActualSize());
+                        merge(vo);
                         sql(ImageBackupStorageRefVO.class)
                                 .eq(ImageBackupStorageRefVO_.backupStorageUuid, bsUuid)
                                 .eq(ImageBackupStorageRefVO_.imageUuid, imageUuid)
