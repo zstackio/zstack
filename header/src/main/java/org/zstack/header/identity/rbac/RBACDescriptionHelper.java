@@ -10,12 +10,16 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class RBACDescriptionHelper {
-    private static class FlattenResult {
+    protected static class FlattenResult {
         Set<String> adminOnly = new HashSet<>();
         Set<String> normal = new HashSet<>();
     }
 
     private static PolicyMatcher matcher = new PolicyMatcher();
+
+    static FlattenResult flatten(Set<String> adminInput, Set<String> normalInput) {
+        return _flatten(adminInput, normalInput);
+    }
 
     private static FlattenResult _flatten(Set<String> adminInput, Set<String> normalInput) {
         boolean is = adminInput.stream().anyMatch(a -> normalInput.stream().anyMatch(n -> matcher.match(a, n) || matcher.match(n, a)));
