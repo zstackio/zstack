@@ -65,6 +65,44 @@ class AccountCase extends SubCase {
             testAdminAccountDeleteSystemAdmin()
             testCreateAccount()
             testQuotaConfig()
+            testUserReadApi()
+        }
+    }
+
+    void testUserReadApi() {
+        def a = createAccount {
+            name = "test user api account"
+            password = "password"
+        }
+
+        def s = logInByAccount {
+            accountName = "test user api account"
+            password = "password"
+        }
+
+        def user = createUser {
+            name = "test user"
+            password = "password"
+            sessionId = s.uuid
+        }
+
+        def s2 = logInByUser {
+            accountName = "test user api account"
+            userName = "test user"
+            password = "password"
+        }
+
+        def list = queryZone {
+            sessionId = s2.uuid
+        }
+
+        assert !list.isEmpty()
+
+        expect(AssertionError.class) {
+            createZone {
+                name = "test"
+                sessionId = s2.uuid
+            }
         }
     }
 

@@ -28,11 +28,10 @@ import org.zstack.header.identity.*;
 import org.zstack.header.identity.IdentityCanonicalEvents.AccountDeletedData;
 import org.zstack.header.identity.IdentityCanonicalEvents.UserDeletedData;
 import org.zstack.header.identity.Quota.QuotaPair;
+import org.zstack.header.identity.rbac.RBAC;
+import org.zstack.header.identity.rbac.RBACGroovy;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
-import org.zstack.header.message.APIEvent;
-import org.zstack.header.message.APIMessage;
-import org.zstack.header.message.APIParam;
-import org.zstack.header.message.Message;
+import org.zstack.header.message.*;
 import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.notification.ApiNotificationFactory;
 import org.zstack.header.notification.ApiNotificationFactoryExtensionPoint;
@@ -80,6 +79,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     private EventFacade evtf;
     @Autowired
     private GlobalConfigFacade gcf;
+
+    private String readAPIsForNormalAccountJSONStatement;
 
     private List<String> resourceTypeForAccountRef = new ArrayList<>();
     private Map<String, Class> resourceTypeClassMap = new HashMap<>();
@@ -569,24 +570,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 p.setUuid(Platform.getUuid());
                 p.setAccountUuid(vo.getUuid());
                 p.setName("DEFAULT-READ");
-                PolicyStatement s = new PolicyStatement();
-                s.setName(String.format("read-permission-for-account-%s", vo.getUuid()));
-                s.setEffect(StatementEffect.Allow);
-                s.addAction(".*:read");
-                p.setData(JSONObjectUtil.toJsonString(list(s)));
-                persist(p);
-                reload(p);
-
-                p = new PolicyVO();
-                p.setUuid(Platform.getUuid());
-                p.setAccountUuid(vo.getUuid());
-                p.setName("USER-RESET-PASSWORD");
-                s = new PolicyStatement();
-                s.setName(String.format("user-reset-password-%s", vo.getUuid()));
-                s.setEffect(StatementEffect.Allow);
-                s.addAction(String.format("%s:%s", AccountConstant.ACTION_CATEGORY, APIUpdateUserMsg.class.getSimpleName()));
-                p.setData(JSONObjectUtil.toJsonString(list(s)));
-                p.setAccountUuid(vo.getUuid());
+                p.setData(readAPIsForNormalAccountJSONStatement);
                 persist(p);
                 reload(p);
 
@@ -625,6 +609,25 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     @Override
     public String getId() {
         return bus.makeLocalServiceId(AccountConstant.SERVICE_ID);
+    }
+
+    private void makeReadAPIsForNormalAccountJSONStatement() {
+        List<String> readAPIs = new ArrayList<>();
+        APIMessage.apiMessageClasses.forEach(clz -> {
+            if (APISyncCallMessage.class.isAssignableFrom(clz) && !RBAC.isAdminOnlyAPI(clz.getName())) {
+                readAPIs.add(clz.getName());
+            }
+        });
+
+
+        readAPIs.add(APIUpdateUserMsg.class.getName());
+
+        PolicyStatement s = PolicyStatement.builder().name("read-apis-for-normal-account")
+                .effect(StatementEffect.Allow)
+                .actions(readAPIs)
+                .build();
+
+        readAPIsForNormalAccountJSONStatement = JSONObjectUtil.toJsonString(list(s)).replace("\\", "");
     }
 
     private void buildResourceTypes() throws ClassNotFoundException {
@@ -1122,18 +1125,28 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     @Override
     public void prepareDbInitialValue() {
         try {
-            SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
-            q.add(AccountVO_.name, Op.EQ, AccountConstant.INITIAL_SYSTEM_ADMIN_NAME);
-            q.add(AccountVO_.type, Op.EQ, AccountType.SystemAdmin);
-            if (!q.isExists()) {
-                AccountVO vo = new AccountVO();
-                vo.setUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
-                vo.setName(AccountConstant.INITIAL_SYSTEM_ADMIN_NAME);
-                vo.setPassword(AccountConstant.INITIAL_SYSTEM_ADMIN_PASSWORD);
-                vo.setType(AccountType.SystemAdmin);
-                dbf.persist(vo);
-                logger.debug(String.format("Created initial system admin account[name:%s]", AccountConstant.INITIAL_SYSTEM_ADMIN_NAME));
-            }
+            makeReadAPIsForNormalAccountJSONStatement();
+
+            new SQLBatch() {
+                @Override
+                protected void scripts() {
+                    if (!q(AccountVO.class)
+                            .eq(AccountVO_.name, AccountConstant.INITIAL_SYSTEM_ADMIN_NAME)
+                            .eq(AccountVO_.type, AccountType.SystemAdmin).isExists()) {
+                        AccountVO vo = new AccountVO();
+                        vo.setUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
+                        vo.setName(AccountConstant.INITIAL_SYSTEM_ADMIN_NAME);
+                        vo.setPassword(AccountConstant.INITIAL_SYSTEM_ADMIN_PASSWORD);
+                        vo.setType(AccountType.SystemAdmin);
+                        persist(vo);
+                        flush();
+                        
+                        logger.debug(String.format("Created initial system admin account[name:%s]", AccountConstant.INITIAL_SYSTEM_ADMIN_NAME));
+                    }
+
+                    sql(PolicyVO.class).eq(PolicyVO_.name, "DEFAULT-READ").set(PolicyVO_.data, readAPIsForNormalAccountJSONStatement).update();
+                }
+            }.execute();
         } catch (Exception e) {
             throw new CloudRuntimeException("Unable to create default system admin account", e);
         }
