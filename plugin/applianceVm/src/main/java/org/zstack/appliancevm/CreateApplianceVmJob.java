@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
@@ -20,13 +21,13 @@ import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.image.ImageVO_;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.network.l3.L3NetworkConstant;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSequenceNumberVO;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.identity.AccountManager;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -53,6 +54,8 @@ public class CreateApplianceVmJob implements Job {
     private PluginRegistry pluginRgty;
     @Autowired
     private ApplianceVmFacade apvf;
+    @Autowired
+    private EventFacade evtf;
 
     @Override
     public void run(final ReturnValueCompletion<Object> complete) {
@@ -125,6 +128,19 @@ public class CreateApplianceVmJob implements Job {
             tagMgr.createNonInherentSystemTags(spec.getNonInherentSystemTags(), avo.getUuid(), VmInstanceVO.class.getSimpleName());
         }
         apvf.setApplianceVmSystemTags(avo.getUuid(), avo.getApplianceVmType());
+
+        /**
+         * send event, if cloudformation is creating now, it will recieve the event and record vrouter for rollback
+         */
+        L3NetworkConstant.VRouterData data = new L3NetworkConstant.VRouterData();
+        for (ApplianceVmNicSpec nic: spec.getAdditionalNics()) {
+            data.l3NetworkUuid.add(nic.getL3NetworkUuid());
+        }
+        if (data.l3NetworkUuid.isEmpty()) {
+            data.l3NetworkUuid.add(spec.getManagementNic().getL3NetworkUuid());
+        }
+        data.vrouterUuid = avo.getUuid();
+        evtf.fire(L3NetworkConstant.VROUTER_CREATE_EVENT_PATH, data);
 
         final ApplianceVmInventory inv = ApplianceVmInventory.valueOf(avo);
         StartNewCreatedApplianceVmMsg msg = new StartNewCreatedApplianceVmMsg();

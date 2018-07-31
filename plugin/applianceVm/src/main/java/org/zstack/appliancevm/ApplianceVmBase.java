@@ -675,6 +675,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
             ImageVO imvo = dbf.findByUuid(spec.getVmInventory().getImageUuid(), ImageVO.class);
             spec.getImageSpec().setInventory(ImageInventory.valueOf(imvo));
 
+            spec.putExtensionData(ApplianceVmConstant.Params.timeout.toString(), msg.getTimeout());
             spec.putExtensionData(ApplianceVmConstant.Params.applianceVmSpec.toString(), aspec);
             spec.setCurrentVmOperation(VmInstanceConstant.VmOperation.NewCreate);
             spec.putExtensionData(ApplianceVmConstant.Params.applianceVmSubType.toString(), getSelf().getApplianceVmType());

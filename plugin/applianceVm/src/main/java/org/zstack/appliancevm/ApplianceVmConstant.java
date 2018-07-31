@@ -33,6 +33,7 @@ public class ApplianceVmConstant {
         isReconnect,
         managementNicIp,
         applianceVmUuid,
+        timeout,
     }
 
     public static final String REFRESH_FIREWALL_PATH = "/appliancevm/refreshfirewall";
