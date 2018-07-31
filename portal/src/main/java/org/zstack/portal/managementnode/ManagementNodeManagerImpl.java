@@ -692,10 +692,27 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                         nodeLifeCycle.nodeLeft(ourNode);
                     }
                 }
+
+                // check if any node missing in our hash ring
+                nodesInDb.forEach(nuuid -> {
+                    if (nuuid.equals(node.getUuid())) {
+                        return;
+                    }
+
+                    if (!destinationMaker.getManagementNodesInHashRing().contains(nuuid)) {
+                        new Runnable() {
+                            @Override
+                            @AsyncThread
+                            public void run() {
+                                nodeLifeCycle.nodeJoin(nuuid);
+                            }
+                        }.run();
+                    }
+                });
             }
 
             @Override
-            public Void call() throws Exception {
+            public Void call() {
                 int heartbeatFailure = 0;
 
                 while (true) {
@@ -886,6 +903,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
     @Override
     public void quit(String reason) {
+        new BootErrorLog().write(reason);
         logger.debug(String.format("stopping the management node because %s", reason));
         stop();
     }

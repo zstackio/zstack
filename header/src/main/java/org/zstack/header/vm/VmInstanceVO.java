@@ -5,10 +5,8 @@ import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.image.ImageVO;
+import org.zstack.header.vo.*;
 import org.zstack.header.vo.EntityGraph;
-import org.zstack.header.vo.BaseResource;
-import org.zstack.header.vo.EO;
-import org.zstack.header.vo.NoView;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.zone.ZoneVO;
 
@@ -35,7 +33,7 @@ import java.util.Set;
                 @EntityGraph.Neighbour(type = VmNicVO.class, myField = "uuid", targetField = "vmInstanceUuid"),
         }
 )
-public class VmInstanceVO extends VmInstanceAO implements OwnedByAccount {
+public class VmInstanceVO extends VmInstanceAO implements OwnedByAccount, ToInventory {
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "vmInstanceUuid", insertable = false, updatable = false)
     @NoView
