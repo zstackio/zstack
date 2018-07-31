@@ -33,6 +33,7 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.operr;
 
@@ -56,6 +57,8 @@ public class VirtualRouterDeployAgentFlow extends NoRollbackFlow {
         final FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("virtual-router-%s-continue-connecting", mgmtNic.getVmInstanceUuid()));
         chain.then(new ShareFlow() {
+            Long timeout = data.get(ApplianceVmConstant.Params.timeout.toString()) == null ?
+                    null : (Long)data.get(ApplianceVmConstant.Params.timeout.toString());
             @Override
             public void setup() {
                 flow(new NoRollbackFlow() {
@@ -64,17 +67,31 @@ public class VirtualRouterDeployAgentFlow extends NoRollbackFlow {
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
                         String url = vrMgr.buildUrl(mgmtNic.getIp(), VirtualRouterConstant.VR_ECHO_PATH);
-                        restf.echo(url, new Completion(trigger) {
-                            @Override
-                            public void success() {
-                                trigger.next();
-                            }
+                        if (timeout == null) {
+                            restf.echo(url, new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    trigger.next();
+                                }
 
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
-                            }
-                        });
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        } else {
+                            restf.echo(url, new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            }, 100, timeout);
+                        }
                     }
                 });
 
@@ -87,26 +104,49 @@ public class VirtualRouterDeployAgentFlow extends NoRollbackFlow {
                         InitCommand cmd = new InitCommand();
                         cmd.setUuid(vr.getUuid());
                         cmd.setRestartDnsmasqAfterNumberOfSIGUSER1(VirtualRouterGlobalConfig.RESTART_DNSMASQ_COUNT.value(Integer.class));
-                        restf.asyncJsonPost(url, cmd, new JsonAsyncRESTCallback<InitRsp>(trigger) {
-                            @Override
-                            public void fail(ErrorCode err) {
-                                trigger.fail(err);
-                            }
-
-                            @Override
-                            public void success(InitRsp ret) {
-                                if (ret.isSuccess()) {
-                                    trigger.next();
-                                } else {
-                                    trigger.fail(operr("operation error, because:%s", ret.getError()));
+                        if (timeout == null) {
+                            restf.asyncJsonPost(url, cmd, new JsonAsyncRESTCallback<InitRsp>(trigger) {
+                                @Override
+                                public void fail(ErrorCode err) {
+                                    trigger.fail(err);
                                 }
-                            }
 
-                            @Override
-                            public Class<InitRsp> getReturnClass() {
-                                return InitRsp.class;
-                            }
-                        });
+                                @Override
+                                public void success(InitRsp ret) {
+                                    if (ret.isSuccess()) {
+                                        trigger.next();
+                                    } else {
+                                        trigger.fail(operr("operation error, because:%s", ret.getError()));
+                                    }
+                                }
+
+                                @Override
+                                public Class<InitRsp> getReturnClass() {
+                                    return InitRsp.class;
+                                }
+                            });
+                        } else {
+                            restf.asyncJsonPost(url, cmd, new JsonAsyncRESTCallback<InitRsp>(trigger) {
+                                @Override
+                                public void fail(ErrorCode err) {
+                                    trigger.fail(err);
+                                }
+
+                                @Override
+                                public void success(InitRsp ret) {
+                                    if (ret.isSuccess()) {
+                                        trigger.next();
+                                    } else {
+                                        trigger.fail(operr("operation error, because:%s", ret.getError()));
+                                    }
+                                }
+
+                                @Override
+                                public Class<InitRsp> getReturnClass() {
+                                    return InitRsp.class;
+                                }
+                            }, TimeUnit.MILLISECONDS, timeout);
+                        }
                     }
                 });
 
@@ -150,6 +190,7 @@ public class VirtualRouterDeployAgentFlow extends NoRollbackFlow {
         }
 
         boolean isReconnect = Boolean.valueOf((String) data.get(Param.IS_RECONNECT.toString()));
+
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             continueConnect(mgmtNic, data, chain);
             return;
