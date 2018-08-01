@@ -232,7 +232,6 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 DeleteVolumeBitsOnPrimaryStorageMsg dmsg = new DeleteVolumeBitsOnPrimaryStorageMsg();
-                dmsg.setFolder(true);
                 dmsg.setHypervisorType(bkd.getHypervisorType().toString());
                 dmsg.setInstallPath(new File(msg.getInstallPath()).getParent());
                 dmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
@@ -824,8 +823,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         final DeleteVolumeOnPrimaryStorageReply reply = new DeleteVolumeOnPrimaryStorageReply();
         final VolumeInventory vol = msg.getVolume();
         final NfsPrimaryStorageBackend backend = getBackend(nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(vol.getFormat(), self.getUuid()));
-        String volumeFolder = PathUtil.parentFolder(vol.getInstallPath());
-        backend.deleteFolder(getSelfInventory(), volumeFolder, new Completion(msg) {
+        backend.delete(getSelfInventory(), vol.getInstallPath(), new Completion(msg) {
             @Override
             public void success() {
                 logger.debug(String.format("successfully delete volume[uuid:%s, installPath:%s] on nfs primary storage[uuid:%s]", vol.getUuid(),

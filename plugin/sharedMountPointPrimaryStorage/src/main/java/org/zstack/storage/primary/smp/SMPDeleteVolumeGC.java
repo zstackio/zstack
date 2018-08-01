@@ -30,7 +30,6 @@ public class SMPDeleteVolumeGC extends TimeBasedGarbageCollector {
 
         DeleteVolumeBitsOnPrimaryStorageMsg msg = new DeleteVolumeBitsOnPrimaryStorageMsg();
         msg.setInstallPath(volume.getInstallPath());
-        msg.setFolder(true);
         msg.setPrimaryStorageUuid(primaryStorageUuid);
         msg.setHypervisorType(hypervisorType);
         bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, primaryStorageUuid);

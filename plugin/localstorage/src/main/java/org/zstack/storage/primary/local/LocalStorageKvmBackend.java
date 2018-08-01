@@ -1399,7 +1399,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     @Override
     void handle(DeleteVolumeBitsOnPrimaryStorageMsg msg, final ReturnValueCompletion<DeleteVolumeBitsOnPrimaryStorageReply> completion) {
         String hostUuid = getHostUuidByResourceUuid(msg.getBitsUuid(), msg.getBitsType());
-        deleteBits(PathUtil.parentFolder(msg.getInstallPath()), hostUuid, true, new Completion(completion) {
+        deleteBits(msg.getInstallPath(), hostUuid, true, new Completion(completion) {
             @Override
             public void success() {
                 DeleteVolumeBitsOnPrimaryStorageReply reply = new DeleteVolumeBitsOnPrimaryStorageReply();
