@@ -13,6 +13,7 @@ public aspect UnitTestBypassMethodAspect {
     Object around() : execution(@org.zstack.header.core.BypassWhenUnitTest * *.*(..)) {
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             logger.debug(String.format("bypass %s because of unit test", thisJoinPoint.getSignature().toLongString()));
+            UnitTestBypassHelper.callConsumer(thisJoinPoint);
             return null;
         } else {
             return proceed();
