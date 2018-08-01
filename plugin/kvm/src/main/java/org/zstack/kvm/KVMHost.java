@@ -2766,6 +2766,7 @@ public class KVMHost extends HostBase implements Host {
                             runner.setUsername(getSelf().getUsername());
                             runner.setPassword(getSelf().getPassword());
                             runner.setSshPort(getSelf().getPort());
+                            runner.putArgument("update_packages", String.valueOf(CoreGlobalProperty.UPDATE_PKG_WHEN_CONNECT));
                             if (info.isNewAdded()) {
                                 runner.putArgument("init", "true");
                                 runner.setFullDeploy(true);
