@@ -15,6 +15,7 @@ import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
+import org.zstack.core.With;
 import org.zstack.core.ansible.AnsibleGlobalProperty;
 import org.zstack.core.ansible.AnsibleRunner;
 import org.zstack.core.ansible.SshChronyConfigChecker;
@@ -25,8 +26,10 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
@@ -97,6 +100,8 @@ public class KVMHost extends HostBase implements Host {
     private ApiTimeoutManager timeoutManager;
     @Autowired
     private PluginRegistry pluginRegistry;
+    @Autowired
+    private ThreadFacade thdf;
 
     private KVMHostContext context;
 
@@ -2671,6 +2676,60 @@ public class KVMHost extends HostBase implements Host {
             chain.then(new ShareFlow() {
                 @Override
                 public void setup() {
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "test-if-ssh-port-open";
+
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            long timeout = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(KVMGlobalConfig.TEST_SSH_PORT_ON_CONNECT_TIMEOUT.value(Long.class));
+
+                            thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask(trigger) {
+                                @Override
+                                public boolean run() {
+                                    if (testPort()) {
+                                        trigger.next();
+                                        return true;
+                                    }
+
+                                    return ifTimeout();
+                                }
+
+                                private boolean testPort() {
+                                    if (!NetworkUtils.isRemotePortOpen(getSelf().getManagementIp(), getSelf().getPort(), (int) TimeUnit.SECONDS.toMillis(2))) {
+                                        logger.debug(String.format("host[uuid:%s, name:%s, ip:%s]'s ssh port[%s] is not ready yet", getSelf().getUuid(), getSelf().getName(), getSelf().getManagementIp(), getSelf().getPort()));
+                                        return false;
+                                    } else {
+                                        return true;
+                                    }
+                                }
+
+                                private boolean ifTimeout() {
+                                    if (System.currentTimeMillis() > timeout) {
+                                        trigger.fail(operr("the host' ssh port[%s] not open after %s seconds, connect timeout", getSelf().getPort(), KVMGlobalConfig.TEST_SSH_PORT_ON_CONNECT_TIMEOUT.value(Long.class)));
+                                        return true;
+                                    } else {
+                                        return false;
+                                    }
+                                }
+
+                                @Override
+                                public TimeUnit getTimeUnit() {
+                                    return TimeUnit.SECONDS;
+                                }
+
+                                @Override
+                                public long getInterval() {
+                                    return 2;
+                                }
+
+                                @Override
+                                public String getName() {
+                                    return "test-ssh-port-open-for-kvm-host";
+                                }
+                            });
+                        }
+                    });
+
                     if (info.isNewAdded()) {
 
                         if ((!AnsibleGlobalProperty.ZSTACK_REPO.contains("zstack-mn")) && (!AnsibleGlobalProperty.ZSTACK_REPO.equals("false"))) {
