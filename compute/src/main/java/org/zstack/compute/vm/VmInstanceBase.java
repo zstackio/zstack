@@ -148,7 +148,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    protected void destroy(final VmInstanceDeletionPolicy deletionPolicy, final Completion completion) {
+    protected void destroy(final VmInstanceDeletionPolicy deletionPolicy, Message msg, final Completion completion) {
         if (deletionPolicy == VmInstanceDeletionPolicy.DBOnly) {
             completion.success();
             return;
@@ -161,6 +161,9 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         final VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
         VmInstanceSpec spec = buildSpecFromInventory(inv, VmOperation.Destroy);
+        if (msg instanceof ReleaseResourceMessage) {
+            spec.setIgnoreResourceReleaseFailure(((ReleaseResourceMessage) msg).ignoreResourceReleaseFailure());
+        }
 
         self = changeVmStateInDb(VmInstanceStateEvent.destroying);
 
@@ -1675,11 +1678,11 @@ public class VmInstanceBase extends AbstractVmInstance {
         CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmJustBeforeDeleteFromDbExtensionPoint.class), p -> p.vmJustBeforeDeleteFromDb(inv));
     }
 
-    protected void doDestroy(final VmInstanceDeletionPolicy deletionPolicy, final Completion completion) {
+    protected void doDestroy(final VmInstanceDeletionPolicy deletionPolicy, Message msg, final Completion completion) {
         final VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
         extEmitter.beforeDestroyVm(inv);
 
-        destroy(deletionPolicy, new Completion(completion) {
+        destroy(deletionPolicy, msg, new Completion(completion) {
             @Override
             public void success() {
                 extEmitter.afterDestroyVm(inv);
@@ -1754,7 +1757,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     }
                 }
 
-                destroyHook(deletionPolicy, new Completion(msg, chain) {
+                destroyHook(deletionPolicy, msg, new Completion(msg, chain) {
                     @Override
                     public void success() {
                         bus.reply(msg, r);
@@ -1777,8 +1780,8 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    protected void destroyHook(VmInstanceDeletionPolicy deletionPolicy, Completion completion) {
-        doDestroy(deletionPolicy, completion);
+    protected void destroyHook(VmInstanceDeletionPolicy deletionPolicy, Message msg, Completion completion) {
+        doDestroy(deletionPolicy, msg, completion);
     }
 
     private void handle(final RebootVmInstanceMsg msg) {
@@ -4940,7 +4943,10 @@ public class VmInstanceBase extends AbstractVmInstance {
         spec.setMessage(msg);
         if (msg instanceof StopVmInstanceMsg) {
             spec.setGcOnStopFailure(((StopVmInstanceMsg) msg).isGcOnFailure());
-            spec.setIgnoreResourceReleaseFailure(((StopVmInstanceMsg) msg).ignoreResourceReleaseFailure());
+        }
+
+        if (msg instanceof ReleaseResourceMessage) {
+            spec.setIgnoreResourceReleaseFailure(((ReleaseResourceMessage) msg).ignoreResourceReleaseFailure());
         }
 
         final VmInstanceState originState = self.getState();
