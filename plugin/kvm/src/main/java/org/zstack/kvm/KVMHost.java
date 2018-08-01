@@ -15,7 +15,6 @@ import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
-import org.zstack.core.With;
 import org.zstack.core.ansible.AnsibleGlobalProperty;
 import org.zstack.core.ansible.AnsibleRunner;
 import org.zstack.core.ansible.SshChronyConfigChecker;
@@ -2681,7 +2680,8 @@ public class KVMHost extends HostBase implements Host {
 
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
-                            long timeout = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(KVMGlobalConfig.TEST_SSH_PORT_ON_CONNECT_TIMEOUT.value(Long.class));
+                            long timeout = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(KVMGlobalConfig.TEST_SSH_PORT_ON_OPEN_TIMEOUT.value(Long.class));
+                            long ctimeout = TimeUnit.SECONDS.toMillis(KVMGlobalConfig.TEST_SSH_PORT_ON_CONNECT_TIMEOUT.value(Integer.class).longValue());
 
                             thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask(trigger) {
                                 @Override
@@ -2695,7 +2695,7 @@ public class KVMHost extends HostBase implements Host {
                                 }
 
                                 private boolean testPort() {
-                                    if (!NetworkUtils.isRemotePortOpen(getSelf().getManagementIp(), getSelf().getPort(), (int) TimeUnit.SECONDS.toMillis(2))) {
+                                    if (!NetworkUtils.isRemotePortOpen(getSelf().getManagementIp(), getSelf().getPort(), (int) ctimeout)) {
                                         logger.debug(String.format("host[uuid:%s, name:%s, ip:%s]'s ssh port[%s] is not ready yet", getSelf().getUuid(), getSelf().getName(), getSelf().getManagementIp(), getSelf().getPort()));
                                         return false;
                                     } else {
@@ -2705,7 +2705,7 @@ public class KVMHost extends HostBase implements Host {
 
                                 private boolean ifTimeout() {
                                     if (System.currentTimeMillis() > timeout) {
-                                        trigger.fail(operr("the host' ssh port[%s] not open after %s seconds, connect timeout", getSelf().getPort(), KVMGlobalConfig.TEST_SSH_PORT_ON_CONNECT_TIMEOUT.value(Long.class)));
+                                        trigger.fail(operr("the host' ssh port[%s] not open after %s seconds, connect timeout", getSelf().getPort(), KVMGlobalConfig.TEST_SSH_PORT_ON_OPEN_TIMEOUT.value(Long.class)));
                                         return true;
                                     } else {
                                         return false;

@@ -39,5 +39,7 @@ public class KVMGlobalConfig {
     @GlobalConfigValidation
     public static GlobalConfig KVM_IGNORE_MSRS = new GlobalConfig(CATEGORY, "ignoreMsrs");
     @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 3600)
+    public static GlobalConfig TEST_SSH_PORT_ON_OPEN_TIMEOUT = new GlobalConfig(CATEGORY, "testSshPortOpenTimeout");
+    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 300)
     public static GlobalConfig TEST_SSH_PORT_ON_CONNECT_TIMEOUT = new GlobalConfig(CATEGORY, "testSshPortOnConnectTimeout");
 }
