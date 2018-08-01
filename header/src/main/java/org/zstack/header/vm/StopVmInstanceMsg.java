@@ -8,7 +8,7 @@ import org.zstack.header.message.NeedReplyMessage;
  * Time: 9:46 PM
  * To change this template use File | Settings | File Templates.
  */
-public class StopVmInstanceMsg extends NeedReplyMessage implements VmInstanceMessage, StopVmMessage {
+public class StopVmInstanceMsg extends NeedReplyMessage implements VmInstanceMessage, StopVmMessage, ReleaseResourceMessage {
     private String vmInstanceUuid;
     private boolean gcOnFailure;
     private StopVmType type = StopVmType.grace;
@@ -40,6 +40,7 @@ public class StopVmInstanceMsg extends NeedReplyMessage implements VmInstanceMes
         return type.toString();
     }
 
+    @Override
     public boolean ignoreResourceReleaseFailure() {
         return ignoreResourceReleaseFailure;
     }

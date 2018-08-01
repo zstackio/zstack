@@ -10,6 +10,7 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceDeletionPolicyManager;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmReleaseResourceExtensionPoint;
 import org.zstack.utils.Utils;

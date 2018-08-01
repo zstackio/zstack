@@ -93,11 +93,11 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
     }
 
     @Override
-    protected void destroyHook(VmInstanceDeletionPolicy deletionPolicy, final Completion completion){
+    protected void destroyHook(VmInstanceDeletionPolicy deletionPolicy, Message msg, final Completion completion){
         logger.debug(String.format("deleting appliance vm[uuid:%s], always use Direct deletion policy", self.getUuid()));
         VmInstanceDeletionPolicy policy = (deletionPolicy == VmInstanceDeletionPolicy.DBOnly)
                 ? deletionPolicy : VmInstanceDeletionPolicy.Direct;
-        super.doDestroy(policy, completion);
+        super.doDestroy(policy, msg, completion);
     }
 
     @Override

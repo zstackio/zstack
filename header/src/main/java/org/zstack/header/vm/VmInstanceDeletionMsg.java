@@ -4,9 +4,10 @@ import org.zstack.header.message.DeletionMessage;
 
 /**
  */
-public class VmInstanceDeletionMsg extends DeletionMessage implements VmInstanceMessage {
+public class VmInstanceDeletionMsg extends DeletionMessage implements VmInstanceMessage, ReleaseResourceMessage {
     private String vmInstanceUuid;
     private String deletionPolicy;
+    private boolean ignoreResourceReleaseFailure;
 
     public String getDeletionPolicy() {
         return deletionPolicy;
@@ -22,5 +23,14 @@ public class VmInstanceDeletionMsg extends DeletionMessage implements VmInstance
 
     public void setVmInstanceUuid(String vmInstanceUuid) {
         this.vmInstanceUuid = vmInstanceUuid;
+    }
+
+    @Override
+    public boolean ignoreResourceReleaseFailure() {
+        return ignoreResourceReleaseFailure;
+    }
+
+    public void setIgnoreResourceReleaseFailure(boolean ignoreResourceReleaseFailure) {
+        this.ignoreResourceReleaseFailure = ignoreResourceReleaseFailure;
     }
 }
