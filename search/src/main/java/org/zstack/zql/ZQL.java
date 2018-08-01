@@ -7,9 +7,16 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.EntityMetadata;
 import org.zstack.core.db.SQLBatch;
+import org.zstack.core.keyvalue.Op;
+import org.zstack.header.core.FutureCompletion;
+import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.vo.ToInventory;
 import org.zstack.header.zql.ASTNode;
@@ -32,6 +39,7 @@ import org.zstack.zql.ast.visitors.result.ReturnWithResult;
 import javax.persistence.Query;
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -316,8 +324,10 @@ public class ZQL {
             return null;
         }
 
-        Map ret = new HashMap();
-        astResult.returnWith.forEach(r -> {
+        FutureCompletion future = new FutureCompletion(null);
+        Map ret = new ConcurrentHashMap();
+        List<ErrorCode> errs = new ArrayList<>();
+        new While<>(astResult.returnWith).all((r, coml) -> {
             Optional<ReturnWithExtensionPoint> opt = pluginRgty.getExtensionList(ReturnWithExtensionPoint.class)
                     .stream().filter(ext->r.name.equals(ext.getReturnWithName())).findAny();
             if (!opt.isPresent()) {
@@ -335,13 +345,36 @@ public class ZQL {
             param.vos = vos;
             param.voClass = astResult.inventoryMetadata.inventoryAnnotation.mappingVOClass();
 
-            Map m = ext.returnWith(param);
-            if (m != null) {
-                ret.putAll(m);
+            ext.returnWith(param, new ReturnValueCompletion<Map>(coml) {
+                @Override
+                public void success(Map result) {
+                    Optional.ofNullable(result).ifPresent(ret::putAll);
+                    coml.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    errs.add(errorCode);
+                    coml.allDone();
+                }
+            });
+        }).run(new NoErrorCompletion(future) {
+            @Override
+            public void done() {
+                if (errs.isEmpty()) {
+                    future.success();
+                } else {
+                    future.fail(errs.get(0));
+                }
             }
         });
 
-        return ret;
+        future.await();
+        if (future.isSuccess()) {
+            return ret;
+        } else {
+            throw new OperationFailureException(future.getErrorCode());
+        }
     }
 
     @Override

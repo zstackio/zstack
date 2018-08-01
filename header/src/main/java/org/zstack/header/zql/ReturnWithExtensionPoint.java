@@ -1,5 +1,8 @@
 package org.zstack.header.zql;
 
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.ReturnValueCompletion;
+
 import java.util.List;
 import java.util.Map;
 
@@ -14,5 +17,5 @@ public interface ReturnWithExtensionPoint {
 
     String getReturnWithName();
 
-    Map returnWith(ReturnWithExtensionParam param);
+    void returnWith(ReturnWithExtensionParam param, ReturnValueCompletion<Map> completion);
 }
