@@ -47,7 +47,7 @@ public abstract class Retry<T> {
 
     // return true to continue to throw out the exception
     protected boolean onFailure(Throwable t) {
-        return false;
+        return true;
     }
 
     protected String __name__;
