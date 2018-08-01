@@ -4,12 +4,13 @@ import junit.framework.Assert;
 import org.junit.Test;
 import org.zstack.core.retry.Retry;
 import org.zstack.core.retry.RetryCondition;
+import org.zstack.testlib.SubCase;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TestRetry {
+public class TestRetry extends SubCase {
     int successAfter = 3;
 
     private String sayHello() {
@@ -19,6 +20,16 @@ public class TestRetry {
             successAfter--;
             throw new RuntimeException("on purpose");
         }
+    }
+
+    @Override
+    public void setup() {
+
+    }
+
+    @Override
+    public void environment() {
+
     }
 
     @Test
@@ -96,6 +107,11 @@ public class TestRetry {
             assert 1 == ctimes.size();
             assert true;
         }
+
+    }
+
+    @Override
+    public void clean() {
 
     }
 }

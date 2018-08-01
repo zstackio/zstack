@@ -107,6 +107,8 @@ public abstract class Retry<T> {
                     if (onFailure(t)) {
                         throw t;
                     }
+
+                    return null;
                 }
             }
         } while (true);
