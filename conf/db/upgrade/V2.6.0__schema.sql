@@ -213,3 +213,4 @@ CREATE TABLE  `zstack`.`BaremetalImageCacheVO` (
     PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 ALTER TABLE BaremetalImageCacheVO ADD CONSTRAINT fkBaremetalImageCacheVOImageEO FOREIGN KEY (imageUuid) REFERENCES ImageEO (uuid) ON DELETE SET NULL;
+ALTER TABLE `zstack`.`AliyunNasMountVolumeRefVO` add column dataPath varchar(1024) NOT NULL;
