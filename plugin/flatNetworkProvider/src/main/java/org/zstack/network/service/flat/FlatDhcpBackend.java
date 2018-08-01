@@ -170,6 +170,9 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
         List<DhcpInfo> dhcpInfoList = new ArrayList<DhcpInfo>();
         for (VmNicVO nic : nics) {
+            if (nic.getIp() == null) {
+                continue;
+            }
             DhcpInfo info = new DhcpInfo();
             info.bridgeName = KVMSystemTags.L2_BRIDGE_NAME.getTokenByTag(bridgeNames.get(nic.getL3NetworkUuid()), KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
             info.namespaceName = makeNamespaceName(
@@ -530,6 +533,9 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
         List<DhcpInfo> dhcpInfoList = new ArrayList<DhcpInfo>();
         for (VmNicVO nic : nics) {
+            if (nic.getIp() == null) {
+                continue;
+            }
             DhcpInfo info = new DhcpInfo();
             info.bridgeName = KVMSystemTags.L2_BRIDGE_NAME.getTokenByTag(bridgeNames.get(nic.getL3NetworkUuid()), KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
             info.namespaceName = makeNamespaceName(
@@ -1013,6 +1019,9 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         return CollectionUtils.transformToList(structs, new Function<DhcpInfo, DhcpStruct>() {
             @Override
             public DhcpInfo call(DhcpStruct arg) {
+                if (arg.getIp() == null) {
+                    return null;
+                }
                 DhcpInfo info = new DhcpInfo();
                 info.dnsDomain = arg.getDnsDomain();
                 info.gateway = arg.getGateway();

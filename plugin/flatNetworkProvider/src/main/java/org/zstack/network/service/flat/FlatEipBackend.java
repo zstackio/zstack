@@ -379,6 +379,9 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                 EipTO to = new EipTO();
                 VmNicVO nic = nicMap.get(eip.getVmNicUuid());
                 VipVO vip = vipMap.get(eip.getVipUuid());
+                if (nic.getIp() == null) {
+                    return null;
+                }
                 to.eipUuid = eip.getUuid();
                 to.vmUuid = nic.getVmInstanceUuid();
                 to.nicName = nic.getInternalName();
