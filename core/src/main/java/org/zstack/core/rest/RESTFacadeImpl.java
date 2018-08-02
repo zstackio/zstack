@@ -525,37 +525,34 @@ public class RESTFacadeImpl implements RESTFacade {
     }
     
     @Override
-    public void echo(final String url, final Completion completion, final long interval, final long timeout) {
-        class Echo extends CancelablePeriodicTask {
-            private long count;
+    public void echo(final String url, final Completion completion, final long interval, long timeout) {
+        if (CoreGlobalProperty.UNIT_TEST_ON) {
+            timeout = 1;
+        }
 
-            Echo() {
-                if (CoreGlobalProperty.UNIT_TEST_ON) {
-                    this.count = 1;
-                } else {
-                    this.count = timeout / interval;
-                }
-
-                DebugUtils.Assert(count!=0, String.format("invalid timeout[%s], interval[%s]", timeout, interval));
-            }
-
+        long expired = System.currentTimeMillis() + timeout;
+        long finalTimeout = timeout;
+        thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask(completion) {
             @Override
             public boolean run() {
                 try {
-                    syncJsonPost(url, "", Void.class);
+                    syncJsonPost(url, "", Void.class, TimeUnit.SECONDS, 2);
                     logger.debug(String.format("successfully echo %s", url));
                     completion.success();
                     return true;
-                } catch (Exception e) {
-                    String info = String.format("still unable to echo %s, will try %s times. %s", url, count, e.getMessage());
+                } catch (Throwable t) {
+                    long now = System.currentTimeMillis();
+
+                    String info = String.format("still unable to echo %s, remaining %sms to timeout. %s", url, now - expired, t.getMessage());
                     logger.debug(info);
-                    if (--count <= 0) {
-                        completion.fail(operr("unable to echo %s in %sms", url, timeout));
+
+                    if (now > expired) {
+                        completion.fail(operr("unable to echo %s in %sms", url, finalTimeout));
                         return true;
-                    } else {
-                        return false;
                     }
                 }
+
+                return false;
             }
 
             @Override
@@ -572,9 +569,7 @@ public class RESTFacadeImpl implements RESTFacade {
             public String getName() {
                 return "RESTFacade echo";
             }
-        }
-
-        thdf.submitCancelablePeriodicTask(new Echo());
+        });
     }
 
     @Override
