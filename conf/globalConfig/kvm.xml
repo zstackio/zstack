@@ -105,4 +105,20 @@
         <type>java.lang.Boolean</type>
         <defaultValue>false</defaultValue>
     </config>
+
+    <config>
+        <category>kvm</category>
+        <name>testSshPortOpenTimeout</name>
+        <description>the total timeout to test if host's ssh port ready when reconnecting hosts, in seconds</description>
+        <type>java.lang.Long</type>
+        <defaultValue>300</defaultValue>
+    </config>
+
+    <config>
+        <category>kvm</category>
+        <name>testSshPortOnConnectTimeout</name>
+        <description>use with testSshPortOpenTimeout, the connect timeout launching a socket connection to hosts' ssh port, in seconds</description>
+        <type>java.lang.Integer</type>
+        <defaultValue>2</defaultValue>
+    </config>
 </globalConfig>

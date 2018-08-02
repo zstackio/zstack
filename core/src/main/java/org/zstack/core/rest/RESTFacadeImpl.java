@@ -526,7 +526,7 @@ public class RESTFacadeImpl implements RESTFacade {
     
     @Override
     public void echo(final String url, final Completion completion, final long interval, final long timeout) {
-        class Echo implements CancelablePeriodicTask {
+        class Echo extends CancelablePeriodicTask {
             private long count;
 
             Echo() {
