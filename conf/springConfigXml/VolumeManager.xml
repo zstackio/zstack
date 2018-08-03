@@ -77,4 +77,11 @@
             <zstack:extension interface="org.zstack.header.vm.ChangeVmImageExtensionPoint"/>
         </zstack:plugin>
     </bean>
+
+    <bean id="VolumeSizeTracker" class="org.zstack.storage.volume.VolumeSizeTrackerImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.storage.volume.VolumeSizeTracker"/>
+            <zstack:extension interface="org.zstack.header.Component"/>
+        </zstack:plugin>
+    </bean>
 </beans>
