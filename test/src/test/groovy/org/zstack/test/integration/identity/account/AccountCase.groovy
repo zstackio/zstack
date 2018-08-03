@@ -11,6 +11,7 @@ import org.zstack.header.identity.QuotaVO
 import org.zstack.header.identity.QuotaVO_
 import org.zstack.identity.QuotaGlobalConfig
 import org.zstack.sdk.AccountInventory
+import org.zstack.sdk.CheckResourcePermissionAction
 import org.zstack.sdk.SessionInventory
 import org.zstack.sdk.UpdateGlobalConfigAction
 import org.zstack.test.integration.ZStackTest
@@ -66,7 +67,15 @@ class AccountCase extends SubCase {
             testCreateAccount()
             testQuotaConfig()
             testUserReadApi()
+            testCheckPermission()
         }
+    }
+
+    void testCheckPermission() {
+        def action = new CheckResourcePermissionAction()
+        action.resourceType = "VmInstanceVO"
+        action.sessionId = adminSession()
+        CheckResourcePermissionAction.Result ret = action.call()
     }
 
     void testUserReadApi() {

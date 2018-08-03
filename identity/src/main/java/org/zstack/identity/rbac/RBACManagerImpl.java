@@ -8,12 +8,10 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
-import org.zstack.header.core.StaticInit;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.identity.AccountConstant;
-import org.zstack.header.identity.InternalPolicy;
-import org.zstack.header.identity.SharedResourceVO;
-import org.zstack.header.identity.rbac.*;
+import org.zstack.header.identity.*;
+import org.zstack.header.identity.rbac.PolicyMatcher;
+import org.zstack.header.identity.rbac.RBAC;
 import org.zstack.header.identity.role.*;
 import org.zstack.header.identity.role.api.APICreateRoleEvent;
 import org.zstack.header.identity.role.api.APICreateRoleMsg;
@@ -27,12 +25,14 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class RBACManagerImpl extends AbstractService implements RBACManager, Component, PrepareDbInitialValueExtensionPoint {
     private static final CLogger logger = Utils.getLogger(RBACManagerImpl.class);
+
+    private static PolicyMatcher matcher = new PolicyMatcher();
 
     @Autowired
     private CloudBus bus;
@@ -90,9 +90,36 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
     private void handleApiMessage(Message msg) {
         if (msg instanceof APICreateRoleMsg) {
             handle((APICreateRoleMsg) msg);
+        } else if (msg instanceof APICheckResourcePermissionMsg) {
+            handle((APICheckResourcePermissionMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APICheckResourcePermissionMsg msg) {
+        APICheckResourcePermissionReply reply = new APICheckResourcePermissionReply();
+
+        List<RBAC.Permission> permissions = RBAC.permissions.stream().filter(p -> p.getTargetResources().stream().anyMatch(resource -> resource.getSimpleName().equals(msg.getResourceType()))).collect(Collectors.toList());
+
+        List<PolicyInventory> policies = RBACManager.getPoliciesByAPI(msg);
+        Map<PolicyInventory, List<PolicyStatement>> denyStatements = RBACManager.collectDenyStatements(policies);
+        Map<PolicyInventory, List<PolicyStatement>> allowStatements = RBACManager.collectAllowedStatements(policies);
+
+        List<String> apis = new ArrayList<>();
+        APIMessage.apiMessageClasses.forEach(apiClz -> {
+            boolean deny = denyStatements.values().stream().anyMatch(states -> states.stream().anyMatch(s -> s.getActions().stream().anyMatch(action -> matcher.match(PolicyUtils.apiNamePatternFromAction(action), apiClz.getName()))));
+            boolean allow = allowStatements.values().stream().anyMatch(states -> states.stream().anyMatch(s -> s.getActions().stream().anyMatch(action -> matcher.match(PolicyUtils.apiNamePatternFromAction(action), apiClz.getName()))));
+
+            boolean matched = permissions.stream().anyMatch(p -> p.getNormalAPIs().stream().anyMatch(api -> matcher.match(api, apiClz.getName())));
+
+            if (allow && !deny && matched) {
+                apis.add(apiClz.getSimpleName());
+            }
+        });
+
+        reply.setApis(apis);
+        bus.reply(msg, reply);
     }
 
     private void handle(APICreateRoleMsg msg) {
