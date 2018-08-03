@@ -232,6 +232,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 DeleteVolumeBitsOnPrimaryStorageMsg dmsg = new DeleteVolumeBitsOnPrimaryStorageMsg();
+                dmsg.setFolder(true);
                 dmsg.setHypervisorType(bkd.getHypervisorType().toString());
                 dmsg.setInstallPath(new File(msg.getInstallPath()).getParent());
                 dmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());

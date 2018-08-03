@@ -244,12 +244,19 @@ class CleanImageCacheOnPrimaryStorageCase extends SubCase{
             uuid = vm1.uuid
         }
 
+        def isFolder = false
+        env.afterSimulator(NfsPrimaryStorageKVMBackend.DELETE_PATH) { rsp, HttpEntity<String> e ->
+            NfsPrimaryStorageKVMBackendCommands.DeleteCmd cmd = JSONObjectUtil.toObject(e.body, NfsPrimaryStorageKVMBackendCommands.DeleteCmd.class)
+            isFolder = cmd.folder
+            return rsp
+        }
+
         cleanUpImageCacheOnPrimaryStorage {
             uuid = nfs.uuid
         }
 
         retryInSecs {
-            assert checked
+            isFolder
         }
         q = dbf.createQuery(ImageCacheVO.class)
         q.add(ImageCacheVO_.imageUuid, SimpleQuery.Op.EQ, image1.getUuid())
