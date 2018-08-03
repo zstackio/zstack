@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.UpdateQuery;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.message.MessageReply;
@@ -45,6 +46,18 @@ public class VmDetachNicFlow extends NoRollbackFlow {
             VmInstanceVO vm = dbf.findByUuid(spec.getVmInventory().getUuid(), VmInstanceVO.class);
             vm.setDefaultL3NetworkUuid(l3Uuid);
             dbf.update(vm);
+        }
+
+        boolean releaseNic = (boolean) data.get(VmInstanceConstant.Params.ReleaseNicAfterDetachNic.toString());
+        if (!releaseNic) {
+            UpdateQuery.New(VmNicVO.class)
+                    .eq(VmNicVO_.uuid, nic.getUuid())
+                    .set(VmNicVO_.vmInstanceUuid, null)
+                    .set(VmNicVO_.deviceId, 1)
+                    .set(VmNicVO_.internalName, null)
+                    .update();
+            trigger.next();
+            return;
         }
 
         ReturnIpMsg msg = new ReturnIpMsg();
