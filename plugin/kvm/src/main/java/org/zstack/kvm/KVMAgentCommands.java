@@ -4,6 +4,7 @@ import org.zstack.core.validation.ConditionalValidation;
 import org.zstack.header.cluster.APIUpdateClusterOSMsg;
 import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.core.validation.Validation;
+import org.zstack.header.host.APIReconnectHostMsg;
 import org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotMsg;
 import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.header.vm.APIMigrateVmMsg;
@@ -1841,6 +1842,14 @@ public class KVMAgentCommands {
     }
 
     public static class UpdateHostOSRsp extends AgentResponse {
+    }
+
+    @ApiTimeout(apiClasses = APIReconnectHostMsg.class)
+    public static class UpdateDependencyCmd extends AgentCommand {
+        public String hostUuid;
+    }
+
+    public static class UpdateDependencyRsp extends AgentResponse {
     }
 
     public static class ReportVmStateCmd {

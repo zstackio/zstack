@@ -228,5 +228,9 @@ class KVMSimulator implements Simulator {
         spec.simulator(KVMConstant.KVM_UPDATE_HOST_OS_PATH) {
             return new KVMAgentCommands.UpdateHostOSRsp()
         }
+
+        spec.simulator(KVMConstant.KVM_HOST_UPDATE_DEPENDENCY_PATH) {
+            return new KVMAgentCommands.UpdateDependencyRsp()
+        }
     }
 }
