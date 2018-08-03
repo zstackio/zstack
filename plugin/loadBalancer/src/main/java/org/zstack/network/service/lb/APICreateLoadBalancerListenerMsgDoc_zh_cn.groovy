@@ -79,8 +79,8 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "2.3"
-					values ("tcp","http","https")
+					since "3.0"
+					values ("udp","tcp","http","https")
 				}
 				column {
 					name "certificateUuid"
