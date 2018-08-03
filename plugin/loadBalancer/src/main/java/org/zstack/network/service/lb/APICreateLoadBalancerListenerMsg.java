@@ -33,7 +33,7 @@ public class APICreateLoadBalancerListenerMsg extends APICreateMessage implement
     private Integer instancePort;
     @APIParam(numberRange = {1, 65535})
     private int loadBalancerPort;
-    @APIParam(maxLength = 255, validValues = {LoadBalancerConstants.LB_PROTOCOL_TCP, LoadBalancerConstants.LB_PROTOCOL_HTTP, LoadBalancerConstants.LB_PROTOCOL_HTTPS}, required = false)
+    @APIParam(maxLength = 255, validValues = {LoadBalancerConstants.LB_PROTOCOL_UDP, LoadBalancerConstants.LB_PROTOCOL_TCP, LoadBalancerConstants.LB_PROTOCOL_HTTP, LoadBalancerConstants.LB_PROTOCOL_HTTPS}, required = false)
     private String protocol;
     @APIParam(resourceType = CertificateVO.class, required = false)
     private String certificateUuid;
