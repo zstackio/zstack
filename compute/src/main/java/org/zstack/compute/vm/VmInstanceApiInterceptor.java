@@ -72,6 +72,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APIDetachL3NetworkFromVmMsg) msg);
         } else if (msg instanceof APIAttachL3NetworkToVmMsg) {
             validate((APIAttachL3NetworkToVmMsg) msg);
+        } else if (msg instanceof APIAttachVmNicToVmMsg) {
+            validate((APIAttachVmNicToVmMsg) msg);
+        } else if (msg instanceof APICreateVmNicMsg) {
+            validate((APICreateVmNicMsg) msg);
         } else if (msg instanceof APIAttachIsoToVmInstanceMsg) {
             validate((APIAttachIsoToVmInstanceMsg) msg);
         } else if (msg instanceof APIDetachIsoFromVmInstanceMsg) {
@@ -278,6 +282,43 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
+    private void validate(APICreateVmNicMsg msg) {
+        SimpleQuery<L3NetworkVO> l3q = dbf.createQuery(L3NetworkVO.class);
+        l3q.select(L3NetworkVO_.state, L3NetworkVO_.system, L3NetworkVO_.category, L3NetworkVO_.type);
+        l3q.add(L3NetworkVO_.uuid, Op.EQ, msg.getL3NetworkUuid());
+        Tuple t = l3q.findTuple();
+        L3NetworkState l3state = t.get(0, L3NetworkState.class);
+
+        if (l3state == L3NetworkState.Disabled) {
+            throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The L3 network[uuid:%s] is disabled", msg.getL3NetworkUuid()));
+        }
+
+        if (msg.getIp() != null) {
+            SimpleQuery<IpRangeVO> iprq = dbf.createQuery(IpRangeVO.class);
+            iprq.add(IpRangeVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
+            List<IpRangeVO> iprs = iprq.list();
+
+            boolean found = false;
+            for (IpRangeVO ipr : iprs) {
+                if (NetworkUtils.isIpv4InRange(msg.getIp(), ipr.getStartIp(), ipr.getEndIp())) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                throw new ApiMessageInterceptionException(argerr("the static IP[%s] is not in any IP range of the L3 network[uuid:%s]", msg.getIp(), msg.getL3NetworkUuid()));
+            }
+
+            SimpleQuery<UsedIpVO> uq = dbf.createQuery(UsedIpVO.class);
+            uq.add(UsedIpVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
+            uq.add(UsedIpVO_.ip, Op.EQ, msg.getIp());
+            if (uq.isExists()) {
+                throw new ApiMessageInterceptionException(operr("the static IP[%s] has been occupied on the L3 network[uuid:%s]", msg.getIp(), msg.getL3NetworkUuid()));
+            }
+        }
+    }
+
     private void validate(APIAttachL3NetworkToVmMsg msg) {
         SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
         q.select(VmInstanceVO_.type, VmInstanceVO_.state);
@@ -342,7 +383,39 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
+    private void validate(APIAttachVmNicToVmMsg msg) {
+        VmInstanceVO vmInstanceVO = dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
+        String type = vmInstanceVO.getType();
+        VmInstanceState state = vmInstanceVO.getState();
 
+        if (!VmInstanceState.Running.equals(state) && !VmInstanceState.Stopped.equals(state)) {
+            throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The vm[uuid: %s] is not Running or Stopped; the current state is %s",
+                    msg.getVmInstanceUuid(), state));
+        }
+
+        VmNicVO vmNicVO = dbf.findByUuid(msg.getVmNicUuid(), VmNicVO.class);
+
+        boolean exist = Q.New(VmNicVO.class)
+                .eq(VmNicVO_.l3NetworkUuid, vmNicVO.getL3NetworkUuid())
+                .eq(VmNicVO_.vmInstanceUuid, msg.getVmInstanceUuid())
+                .isExists();
+        if (exist) {
+            throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The L3 network[uuid:%s] is already attached to the vm[uuid: %s]",
+                    vmNicVO.getL3NetworkUuid(), msg.getVmInstanceUuid()));
+        }
+
+        L3NetworkVO l3NetworkVO = dbf.findByUuid(vmNicVO.getL3NetworkUuid(), L3NetworkVO.class);
+        L3NetworkState l3state = l3NetworkVO.getState();
+        boolean system = l3NetworkVO.isSystem();
+
+        if (l3state == L3NetworkState.Disabled) {
+            throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The L3 network[uuid:%s] is disabled", l3NetworkVO.getUuid()));
+        }
+        if (VmInstanceConstant.USER_VM_TYPE.equals(type) && system) {
+            throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The L3 network[uuid:%s] is a system network and vm is a user vm",
+                    l3NetworkVO.getUuid()));
+        }
+    }
 
     @Transactional(readOnly = true)
     private void validate(APIDetachL3NetworkFromVmMsg msg) {
