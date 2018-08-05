@@ -290,6 +290,9 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                     VmInstanceState.Unknown.toString(),
                     VmInstanceState.Stopped.toString(),
                     VmInstanceState.Running.toString());
+            boolean ignoreResourceReleaseFailure = Arrays.asList(
+                    HostVO.class.getSimpleName(), PrimaryStorageVO.class.getSimpleName()
+            ).contains(action.getParentIssuer());
             for (VmDeletionStruct inv : vminvs) {
                 if (!vmStateCanStop.stream().anyMatch(
                         str -> str.trim().equals(inv.getInventory().getState()))) {
@@ -297,7 +300,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 }
                 StopVmInstanceMsg msg = new StopVmInstanceMsg();
                 msg.setVmInstanceUuid(inv.getInventory().getUuid());
-                msg.setGcOnFailure(true);
+                msg.setGcOnFailure(ignoreResourceReleaseFailure);
                 msg.setIgnoreResourceReleaseFailure(true);
                 bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, inv.getInventory().getUuid());
                 msgs.add(msg);
@@ -324,12 +327,17 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 }
             });
         } else if (op == OP_DELETION) {
+            boolean ignoreResourceReleaseFailure = Arrays.asList(
+                    HostVO.class.getSimpleName(), PrimaryStorageVO.class.getSimpleName()
+            ).contains(action.getParentIssuer());
+
             new While<>(vminvs).all((inv, noErrorCompletion) -> {
                 VmInstanceDeletionMsg msg = new VmInstanceDeletionMsg();
                 if (PrimaryStorageVO.class.getSimpleName().equals(action.getParentIssuer())) {
-                    msg.setIgnoreResourceReleaseFailure(true);
                     msg.setDeletionPolicy(VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy.KeepVolume.toString());
                 }
+
+                msg.setIgnoreResourceReleaseFailure(ignoreResourceReleaseFailure);
                 msg.setForceDelete(action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE));
                 msg.setVmInstanceUuid(inv.getInventory().getUuid());
                 bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, inv.getInventory().getUuid());
