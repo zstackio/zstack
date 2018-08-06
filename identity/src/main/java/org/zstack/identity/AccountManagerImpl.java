@@ -1037,12 +1037,25 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 return uuids;
             }
 
+            @Transactional(readOnly = true)
+            private Timestamp getCurrentSqlDate() {
+                Query query = dbf.getEntityManager().createNativeQuery("select current_timestamp()");
+                return (Timestamp) query.getSingleResult();
+            }
+
+            private void deleteExpiredCachedSessions() {
+                Timestamp curr = getCurrentSqlDate();
+                sessions.entrySet().removeIf(entry -> curr.after(entry.getValue().getExpiredDate()));
+            }
+
             @Override
             public void run() {
                 List<String> uuids = deleteExpiredSessions();
                 for (String uuid : uuids) {
                     sessions.remove(uuid);
                 }
+
+                deleteExpiredCachedSessions();
             }
 
             @Override
