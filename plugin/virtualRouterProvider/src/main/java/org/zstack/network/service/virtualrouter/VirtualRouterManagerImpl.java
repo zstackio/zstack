@@ -861,20 +861,38 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         }
 
         //TODO: find a way to remove the GLock
-        final GLock lock = new GLock(String.format("glock-vr-l3-%s", struct.getL3Network().getUuid()), TimeUnit.HOURS.toSeconds(1));
-        lock.setSeparateThreadEnabled(false);
-        lock.lock();
-        acquireVirtualRouterVmInternal(struct, new ReturnValueCompletion<VirtualRouterVmInventory>(completion) {
+        String syncName = String.format("glock-vr-l3-%s", struct.getL3Network().getUuid());
+        thdf.chainSubmit(new ChainTask(completion) {
             @Override
-            public void success(VirtualRouterVmInventory returnValue) {
-                lock.unlock();
-                completion.success(returnValue);
+            public String getSyncSignature() {
+                return syncName;
             }
 
             @Override
-            public void fail(ErrorCode errorCode) {
-                lock.unlock();
-                completion.fail(errorCode);
+            public void run(final SyncTaskChain chain) {
+                final GLock lock = new GLock(syncName, TimeUnit.HOURS.toSeconds(1));
+                lock.setSeparateThreadEnabled(false);
+                lock.lock();
+                acquireVirtualRouterVmInternal(struct, new ReturnValueCompletion<VirtualRouterVmInventory>(chain, completion) {
+                    @Override
+                    public void success(VirtualRouterVmInventory returnValue) {
+                        lock.unlock();
+                        completion.success(returnValue);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        lock.unlock();
+                        completion.fail(errorCode);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return syncName;
             }
         });
     }
