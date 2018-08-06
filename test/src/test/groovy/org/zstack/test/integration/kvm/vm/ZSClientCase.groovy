@@ -7,6 +7,8 @@ import org.zstack.test.integration.kvm.Env
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
+import org.zstack.testlib.Test
+import org.zstack.testlib.WebBeanConstructor
 
 import java.util.concurrent.TimeUnit
 
@@ -37,6 +39,20 @@ class ZSClientCase extends SubCase {
     }
 
     void testAsyncCall(){
+        ZSConfig config = ZSClient.config
+
+        ZSClient.configure(
+                new ZSConfig.Builder()
+                        .setHostname("localhost")
+                        .setPort(WebBeanConstructor.port)
+                        .setWebHook(WebBeanConstructor.WEB_HOOK_PATH)
+                        .setDefaultPollingInterval(100, TimeUnit.MILLISECONDS)
+                        .setDefaultPollingTimeout(100, TimeUnit.MILLISECONDS)
+                        .setReadTimeout(10, TimeUnit.MINUTES)
+                        .setWriteTimeout(10, TimeUnit.MINUTES)
+                        .build()
+        )
+
         InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
         ImageInventory image = env.inventoryByName("image1") as ImageInventory
         L3NetworkInventory l3 = env.inventoryByName("l3") as L3NetworkInventory
@@ -61,6 +77,8 @@ class ZSClientCase extends SubCase {
         retryInSecs(){
             assert null != createVmResult
         }
+
+        ZSClient.configure(config)
     }
 
     void testSyncTimeout(){
