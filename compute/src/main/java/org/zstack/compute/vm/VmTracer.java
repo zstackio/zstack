@@ -154,8 +154,10 @@ public abstract class VmTracer {
     }
 
     protected void reportVmState(final String hostUuid, final Map<String, VmInstanceState> vmStates) {
-        for (Map.Entry<String, VmInstanceState> e : vmStates.entrySet()) {
-            logger.debug(String.format("reportVmState vm: %s, state: %s", e.getKey(), e.getValue().toString()));
+        if (logger.isTraceEnabled()) {
+            for (Map.Entry<String, VmInstanceState> e : vmStates.entrySet()) {
+                logger.trace(String.format("reportVmState vm: %s, state: %s", e.getKey(), e.getValue().toString()));
+            }
         }
 
         for (VmInstanceState state : vmStates.values()) {
