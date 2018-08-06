@@ -13207,54 +13207,6 @@
     "fileName": "src/main/java/org/zstack/storage/primary/smp/SharedMountPointApiInterceptor.java"
   },
   {
-    "raw": "Data volume pool not provided",
-    "en_US": "Data volume pool not provided",
-    "zh_CN": "数据云盘池未提供",
-    "arguments": [],
-    "line": 26,
-    "fileName": "src/main/java/org/zstack/storage/primary/xsky/XSkyApiInterceptor.java"
-  },
-  {
-    "raw": "Image cache pool not provided",
-    "en_US": "Image cache pool not provided",
-    "zh_CN": "镜像缓存池未提供",
-    "arguments": [],
-    "line": 30,
-    "fileName": "src/main/java/org/zstack/storage/primary/xsky/XSkyApiInterceptor.java"
-  },
-  {
-    "raw": "Root volume pool not provided",
-    "en_US": "Root volume pool not provided",
-    "zh_CN": "根云盘池未提供",
-    "arguments": [],
-    "line": 34,
-    "fileName": "src/main/java/org/zstack/storage/primary/xsky/XSkyApiInterceptor.java"
-  },
-  {
-    "raw": "Missing access token",
-    "en_US": "Missing access token",
-    "zh_CN": "遗失访问令牌",
-    "arguments": [],
-    "line": 38,
-    "fileName": "src/main/java/org/zstack/storage/primary/xsky/XSkyApiInterceptor.java"
-  },
-  {
-    "raw": "found multiple access token tags",
-    "en_US": "found multiple access token tags",
-    "zh_CN": "发现多个访问令牌标签",
-    "arguments": [],
-    "line": 53,
-    "fileName": "src/main/java/org/zstack/storage/primary/xsky/XSkyApiInterceptor.java"
-  },
-  {
-    "raw": "No access token found",
-    "en_US": "No access token found",
-    "zh_CN": "未发现访问令牌",
-    "arguments": [],
-    "line": 61,
-    "fileName": "src/main/java/org/zstack/storage/primary/xsky/XSkyApiInterceptor.java"
-  },
-  {
     "raw": "unable to create an empty volume[uuid:%s, name:%s] on the kvm host[uuid:%s]",
     "en_US": "unable to create an empty volume[uuid:{0}, name:{1}] on the kvm host[uuid:{2}]",
     "zh_CN": "不能在物理机[uuid:{2}]上创建空云盘[uuid:{0}, name:{1}]",
