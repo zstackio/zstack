@@ -132,6 +132,7 @@ public class KVMHost extends HostBase implements Host {
     private String onlineIncreaseMemPath;
     private String deleteConsoleFirewall;
     private String updateHostOSPath;
+    private String updateDependencyPath;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
 
@@ -244,6 +245,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_UPDATE_HOST_OS_PATH);
         updateHostOSPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_HOST_UPDATE_DEPENDENCY_PATH);
+        updateDependencyPath = ub.build().toString();
     }
 
     class Http<T> {
@@ -2825,7 +2830,6 @@ public class KVMHost extends HostBase implements Host {
                             runner.setUsername(getSelf().getUsername());
                             runner.setPassword(getSelf().getPassword());
                             runner.setSshPort(getSelf().getPort());
-                            runner.putArgument("update_packages", String.valueOf(CoreGlobalProperty.UPDATE_PKG_WHEN_CONNECT));
                             if (info.isNewAdded()) {
                                 runner.putArgument("init", "true");
                                 runner.setFullDeploy(true);
@@ -2835,6 +2839,7 @@ public class KVMHost extends HostBase implements Host {
                             if (CoreGlobalProperty.CHRONY_SERVERS != null && !CoreGlobalProperty.CHRONY_SERVERS.isEmpty()) {
                                 runner.putArgument("chrony_servers", String.join(",", CoreGlobalProperty.CHRONY_SERVERS));
                             }
+                            runner.putArgument("update_packages", String.valueOf(CoreGlobalProperty.UPDATE_PKG_WHEN_CONNECT));
 
                             UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(restf.getBaseUrl());
                             ub.path(new StringBind(KVMConstant.KVM_ANSIBLE_LOG_PATH_FROMAT).bind("uuid", self.getUuid()).toString());
@@ -2871,6 +2876,37 @@ public class KVMHost extends HostBase implements Host {
                                     trigger.fail(errorCode);
                                 }
                             });
+                        }
+                    });
+
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "update-kvmagent-dependencies";
+
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            if (!CoreGlobalProperty.UPDATE_PKG_WHEN_CONNECT) {
+                                trigger.next();
+                                return;
+                            }
+
+                            UpdateDependencyCmd cmd = new UpdateDependencyCmd();
+                            cmd.hostUuid = self.getUuid();
+                            new Http<>(updateDependencyPath, cmd, UpdateDependencyRsp.class)
+                                    .call(new ReturnValueCompletion<UpdateDependencyRsp>(trigger) {
+                                        @Override
+                                        public void success(UpdateDependencyRsp ret) {
+                                            if (ret.isSuccess()) {
+                                                trigger.next();
+                                            } else {
+                                                trigger.fail(Platform.operr(ret.getError()));
+                                            }
+                                        }
+
+                                        @Override
+                                        public void fail(ErrorCode errorCode) {
+                                            trigger.fail(errorCode);
+                                        }
+                                    });
                         }
                     });
 
