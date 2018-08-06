@@ -4,10 +4,13 @@ import org.zstack.compute.vm.VmQuotaConstant
 import org.zstack.core.cloudbus.CloudBusGlobalProperty
 import org.zstack.core.db.Q
 import org.zstack.header.identity.AccountType
+import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmInstanceVO_
 import org.zstack.image.ImageQuotaConstant
+import org.zstack.network.securitygroup.SecurityGroupConstant
+import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.sdk.*
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
@@ -58,6 +61,11 @@ class CreateVmConcurrentlyCase extends SubCase {
                     name = "image"
                     url  = "http://zstack.org/download/test.qcow2"
                 }
+
+                image {
+                    name = "vr"
+                    url  = "http://zstack.org/download/vr.qcow2"
+                }
             }
 
             zone {
@@ -88,6 +96,7 @@ class CreateVmConcurrentlyCase extends SubCase {
 
                     attachPrimaryStorage("local")
                     attachL2Network("l2")
+                    attachL2Network("l2-2")
                 }
 
                 localPrimaryStorage {
@@ -111,6 +120,52 @@ class CreateVmConcurrentlyCase extends SubCase {
                     }
                 }
 
+                l2NoVlanNetwork {
+                    name = "l2-2"
+                    physicalInterface = "eth1"
+
+                    l3Network {
+                        name = "l3-vr"
+
+                        service {
+                            provider = VirtualRouterConstant.PROVIDER_TYPE
+                            types = [NetworkServiceType.DHCP.toString(), NetworkServiceType.DNS.toString()]
+                        }
+
+                        service {
+                            provider = SecurityGroupConstant.SECURITY_GROUP_PROVIDER_TYPE
+                            types = [SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE]
+                        }
+
+                        ip {
+                            startIp = "192.168.100.10"
+                            endIp = "192.168.110.100"
+                            netmask = "255.255.0.0"
+                            gateway = "192.168.100.1"
+                        }
+                    }
+
+                    l3Network {
+                        name = "pubL3"
+
+                        ip {
+                            startIp = "12.16.10.10"
+                            endIp = "12.16.10.100"
+                            netmask = "255.255.255.0"
+                            gateway = "12.16.10.1"
+                        }
+                    }
+                }
+
+                virtualRouterOffering {
+                    name = "vr"
+                    memory = SizeUnit.MEGABYTE.toByte(512)
+                    cpu = 2
+                    useManagementL3Network("pubL3")
+                    usePublicL3Network("pubL3")
+                    useImage("vr")
+                }
+
                 attachBackupStorage("sftp")
             }
 
@@ -128,8 +183,11 @@ class CreateVmConcurrentlyCase extends SubCase {
     @Override
     void test() {
         env.create {
+            def flatl3 = env.inventoryByName("l3") as L3NetworkInventory
+            def vrl3 = env.inventoryByName("l3-vr") as L3NetworkInventory
             testCreateVMWithQuota()
-//            testCreateVMConcurrently(1000)
+            //testCreateVMConcurrently(1000, flatl3.uuid)
+            //testCreateVMConcurrently(300, vrl3.uuid)
         }
     }
 
@@ -298,10 +356,9 @@ class CreateVmConcurrentlyCase extends SubCase {
     // This case is for ZSTAC-8576
     // PR system will met API timeout (api timeout is 25s)
     // Can be execute separately if needed
-    void testCreateVMConcurrently(int numberOfVM) {
+    void testCreateVMConcurrently(int numberOfVM, String l3Uuid) {
         def instanceOffering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
         def image = env.inventoryByName("image") as ImageInventory
-        def l3 = env.inventoryByName("l3") as L3NetworkInventory
 
         def list = []
         def existingVM = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.state, VmInstanceState.Running).count()
@@ -312,7 +369,7 @@ class CreateVmConcurrentlyCase extends SubCase {
                     name = "test-vm"
                     instanceOfferingUuid = instanceOffering.uuid
                     imageUuid = image.uuid
-                    l3NetworkUuids = [l3.uuid]
+                    l3NetworkUuids = [l3Uuid]
                 } as VmInstanceInventory
 
                 assert Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, inv.uuid).eq(VmInstanceVO_.state, VmInstanceState.Running).isExists()
@@ -324,7 +381,7 @@ class CreateVmConcurrentlyCase extends SubCase {
         list.each { it.join() }
 
         retryInSecs(25, 3) {
-            assert Q.New(VmInstanceVO.class).eq(VmInstanceVO_.state, VmInstanceState.Running).count() == existingVM + numberOfVM
+            assert Q.New(VmInstanceVO.class).eq(VmInstanceVO_.type, "UserVm").eq(VmInstanceVO_.state, VmInstanceState.Running).count() == existingVM + numberOfVM
         }
 
     }
