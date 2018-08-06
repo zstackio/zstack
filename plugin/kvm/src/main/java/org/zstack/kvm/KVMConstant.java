@@ -46,6 +46,7 @@ public interface KVMConstant {
     String KVM_HARDEN_CONSOLE_PATH = "/vm/console/harden";
     String KVM_DELETE_CONSOLE_FIREWALL_PATH = "/vm/console/deletefirewall";
     String KVM_UPDATE_HOST_OS_PATH = "/host/updateos";
+    String KVM_HOST_UPDATE_DEPENDENCY_PATH = "/host/updatedependency";
 
     String ISO_TO = "kvm.isoto";
     String ANSIBLE_PLAYBOOK_NAME = "kvm.py";
