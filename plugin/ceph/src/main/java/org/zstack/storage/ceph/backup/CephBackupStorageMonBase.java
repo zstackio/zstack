@@ -180,7 +180,11 @@ public class CephBackupStorageMonBase extends CephMonBase {
                             runner.setAgentPort(CephGlobalProperty.BACKUP_STORAGE_AGENT_PORT);
                             runner.setPlayBookName(CephGlobalProperty.BACKUP_STORAGE_PLAYBOOK_NAME);
                             runner.putArgument("pkg_cephbagent", CephGlobalProperty.BACKUP_STORAGE_PACKAGE_NAME);
-                            if (CoreGlobalProperty.CHRONY_SERVERS != null && !CoreGlobalProperty.CHRONY_SERVERS.isEmpty()) {
+                            if (CoreGlobalProperty.SYNC_NODE_TIME) {
+                                if (CoreGlobalProperty.CHRONY_SERVERS == null || CoreGlobalProperty.CHRONY_SERVERS.isEmpty()) {
+                                    trigger.fail(operr("chrony server not configured!"));
+                                    return;
+                                }
                                 runner.putArgument("chrony_servers", String.join(",", CoreGlobalProperty.CHRONY_SERVERS));
                             }
                             runner.run(new Completion(trigger) {

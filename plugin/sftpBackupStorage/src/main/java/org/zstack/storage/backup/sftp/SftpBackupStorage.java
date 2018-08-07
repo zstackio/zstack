@@ -350,7 +350,11 @@ public class SftpBackupStorage extends BackupStorageBase {
         runner.setAgentPort(SftpBackupStorageGlobalProperty.AGENT_PORT);
         runner.setPlayBookName(SftpBackupStorageConstant.ANSIBLE_PLAYBOOK_NAME);
         runner.putArgument("pkg_sftpbackupstorage", agentPackageName);
-        if (CoreGlobalProperty.CHRONY_SERVERS != null && !CoreGlobalProperty.CHRONY_SERVERS.isEmpty()) {
+        if (CoreGlobalProperty.SYNC_NODE_TIME) {
+            if (CoreGlobalProperty.CHRONY_SERVERS == null || CoreGlobalProperty.CHRONY_SERVERS.isEmpty()) {
+                complete.fail(operr("chrony server not configured!"));
+                return;
+            }
             runner.putArgument("chrony_servers", String.join(",", CoreGlobalProperty.CHRONY_SERVERS));
         }
         runner.run(new Completion(complete) {
