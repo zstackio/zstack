@@ -219,7 +219,11 @@ public class VirtualRouterDeployAgentFlow extends NoRollbackFlow {
         runner.setAgentPort(VirtualRouterGlobalProperty.AGENT_PORT);
         runner.setTargetIp(mgmtIp);
         runner.putArgument("pkg_virtualrouter", agentPackageName);
-        if (CoreGlobalProperty.CHRONY_SERVERS != null && !CoreGlobalProperty.CHRONY_SERVERS.isEmpty()) {
+        if (CoreGlobalProperty.SYNC_NODE_TIME) {
+            if (CoreGlobalProperty.CHRONY_SERVERS == null || CoreGlobalProperty.CHRONY_SERVERS.isEmpty()) {
+                chain.fail(operr("chrony server not configured!"));
+                return;
+            }
             runner.putArgument("chrony_servers", String.join(",", CoreGlobalProperty.CHRONY_SERVERS));
         }
         final VmNicInventory fmgmtNic = mgmtNic;

@@ -160,7 +160,11 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                     runner.setTargetIp(Platform.getManagementServerIp());
                     runner.setPlayBookName(ANSIBLE_PLAYBOOK_NAME);
                     runner.putArgument("pkg_consoleproxy", agentPackageName);
-                    if (CoreGlobalProperty.CHRONY_SERVERS != null && !CoreGlobalProperty.CHRONY_SERVERS.isEmpty()) {
+                    if (CoreGlobalProperty.SYNC_NODE_TIME) {
+                        if (CoreGlobalProperty.CHRONY_SERVERS == null || CoreGlobalProperty.CHRONY_SERVERS.isEmpty()) {
+                            completion.fail(operr("chrony server not configured!"));
+                            return;
+                        }
                         runner.putArgument("chrony_servers", String.join(",", CoreGlobalProperty.CHRONY_SERVERS));
                     }
                     runner.run(new Completion(completion, chain) {
