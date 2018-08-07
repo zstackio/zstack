@@ -13,10 +13,8 @@ import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
-import org.zstack.core.captcha.Captcha;
-import org.zstack.core.captcha.CaptchaConstant;
+import org.zstack.header.core.captcha.Captcha;
 import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
@@ -31,7 +29,6 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
-import org.zstack.header.message.MessageReply;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.IdentityGlobalConfig;
 import org.zstack.tag.PatternedSystemTag;
@@ -508,14 +505,8 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
                 }
 
                 LdapServerVO vo = q(LdapServerVO.class).eq(LdapServerVO_.uuid, msg.getUuid()).find();
-
-                captcha.removeCaptcha(vo.getUsername(), new NoErrorCompletion(msg) {
-                    @Override
-                    public void done() {
-                        remove(vo);
-                        flush();
-                    }
-                });
+                remove(vo);
+                flush();
             }
         }.execute();
 
