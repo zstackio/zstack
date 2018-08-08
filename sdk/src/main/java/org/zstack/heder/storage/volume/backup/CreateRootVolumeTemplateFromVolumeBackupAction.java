@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.heder.storage.volume.backup;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class SyncBackupFromImageStoreBackupStorageAction extends AbstractAction {
+public class CreateRootVolumeTemplateFromVolumeBackupAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class SyncBackupFromImageStoreBackupStorageAction extends AbstractAction 
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.SyncBackupFromImageStoreBackupStorageResult value;
+        public org.zstack.heder.storage.volume.backup.CreateRootVolumeTemplateFromVolumeBackupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,13 +26,28 @@ public class SyncBackupFromImageStoreBackupStorageAction extends AbstractAction 
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    public java.lang.String backupUuid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String srcBackupStorageUuid;
+    public java.lang.String backupStorageUuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String dstBackupStorageUuid;
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
+
+    @Param(required = false)
+    public java.lang.String guestOsType;
+
+    @Param(required = false, validValues = {"Linux","Windows","Other","Paravirtualization","WindowsVirtio"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String platform;
+
+    @Param(required = false)
+    public boolean system = false;
+
+    @Param(required = false)
+    public java.lang.String resourceUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -57,8 +72,8 @@ public class SyncBackupFromImageStoreBackupStorageAction extends AbstractAction 
             return ret;
         }
         
-        org.zstack.sdk.SyncBackupFromImageStoreBackupStorageResult value = res.getResult(org.zstack.sdk.SyncBackupFromImageStoreBackupStorageResult.class);
-        ret.value = value == null ? new org.zstack.sdk.SyncBackupFromImageStoreBackupStorageResult() : value; 
+        org.zstack.heder.storage.volume.backup.CreateRootVolumeTemplateFromVolumeBackupResult value = res.getResult(org.zstack.heder.storage.volume.backup.CreateRootVolumeTemplateFromVolumeBackupResult.class);
+        ret.value = value == null ? new org.zstack.heder.storage.volume.backup.CreateRootVolumeTemplateFromVolumeBackupResult() : value; 
 
         return ret;
     }
@@ -87,11 +102,11 @@ public class SyncBackupFromImageStoreBackupStorageAction extends AbstractAction 
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/volume-backups/{uuid}/actions";
+        info.httpMethod = "POST";
+        info.path = "/images/root-volume-templates/from/volume-template/{backupUuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "syncBackupFromImageStoreBackupStorage";
+        info.parameterName = "params";
         return info;
     }
 

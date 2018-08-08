@@ -1,4 +1,4 @@
-package org.zstack.sdk;
+package org.zstack.heder.storage.volume.backup;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,7 +12,7 @@ public class QueryVolumeBackupAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.QueryVolumeBackupResult value;
+        public org.zstack.heder.storage.volume.backup.QueryVolumeBackupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -34,8 +34,8 @@ public class QueryVolumeBackupAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.QueryVolumeBackupResult value = res.getResult(org.zstack.sdk.QueryVolumeBackupResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QueryVolumeBackupResult() : value; 
+        org.zstack.heder.storage.volume.backup.QueryVolumeBackupResult value = res.getResult(org.zstack.heder.storage.volume.backup.QueryVolumeBackupResult.class);
+        ret.value = value == null ? new org.zstack.heder.storage.volume.backup.QueryVolumeBackupResult() : value; 
 
         return ret;
     }

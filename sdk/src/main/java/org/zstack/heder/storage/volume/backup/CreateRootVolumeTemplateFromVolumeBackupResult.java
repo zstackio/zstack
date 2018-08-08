@@ -1,8 +1,8 @@
-package org.zstack.sdk;
+package org.zstack.heder.storage.volume.backup;
 
 import org.zstack.sdk.ImageInventory;
 
-public class CreateDataVolumeTemplateFromVolumeBackupResult {
+public class CreateRootVolumeTemplateFromVolumeBackupResult {
     public ImageInventory inventory;
     public void setInventory(ImageInventory inventory) {
         this.inventory = inventory;

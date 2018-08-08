@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.heder.storage.volume.backup;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class DeleteVolumeBackupAction extends AbstractAction {
+public class CreateVolumeBackupAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class DeleteVolumeBackupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteVolumeBackupResult value;
+        public org.zstack.heder.storage.volume.backup.CreateVolumeBackupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,13 +26,19 @@ public class DeleteVolumeBackupAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    public java.lang.String volumeUuid;
 
-    @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List backupStorageUuids;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String backupStorageUuid;
+
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
 
     @Param(required = false)
-    public java.lang.String deleteMode = "Permissive";
+    public java.lang.String resourceUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -57,8 +63,8 @@ public class DeleteVolumeBackupAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteVolumeBackupResult value = res.getResult(org.zstack.sdk.DeleteVolumeBackupResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteVolumeBackupResult() : value; 
+        org.zstack.heder.storage.volume.backup.CreateVolumeBackupResult value = res.getResult(org.zstack.heder.storage.volume.backup.CreateVolumeBackupResult.class);
+        ret.value = value == null ? new org.zstack.heder.storage.volume.backup.CreateVolumeBackupResult() : value; 
 
         return ret;
     }
@@ -87,11 +93,11 @@ public class DeleteVolumeBackupAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/volume-backups/{uuid}";
+        info.httpMethod = "POST";
+        info.path = "/volumes/{volumeUuid}/volume-backups";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

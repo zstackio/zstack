@@ -1,4 +1,4 @@
-package org.zstack.sdk;
+package org.zstack.heder.storage.volume.backup;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,7 +12,7 @@ public class CreateDataVolumeTemplateFromVolumeBackupAction extends AbstractActi
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateDataVolumeTemplateFromVolumeBackupResult value;
+        public org.zstack.heder.storage.volume.backup.CreateDataVolumeTemplateFromVolumeBackupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -72,8 +72,8 @@ public class CreateDataVolumeTemplateFromVolumeBackupAction extends AbstractActi
             return ret;
         }
         
-        org.zstack.sdk.CreateDataVolumeTemplateFromVolumeBackupResult value = res.getResult(org.zstack.sdk.CreateDataVolumeTemplateFromVolumeBackupResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateDataVolumeTemplateFromVolumeBackupResult() : value; 
+        org.zstack.heder.storage.volume.backup.CreateDataVolumeTemplateFromVolumeBackupResult value = res.getResult(org.zstack.heder.storage.volume.backup.CreateDataVolumeTemplateFromVolumeBackupResult.class);
+        ret.value = value == null ? new org.zstack.heder.storage.volume.backup.CreateDataVolumeTemplateFromVolumeBackupResult() : value; 
 
         return ret;
     }
