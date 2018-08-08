@@ -21,6 +21,7 @@ import org.zstack.utils.data.SizeUnit
  */
 class NfsCapacityCase extends SubCase {
     EnvSpec env
+    PrimaryStorageInventory ps
 
     @Override
     void clean() {
@@ -87,6 +88,11 @@ class NfsCapacityCase extends SubCase {
 
                     attachPrimaryStorage("nfs")
                     attachL2Network("l2")
+                }
+
+                cluster {
+                    name = "cluster2"
+                    hypervisorType = "KVM"
                 }
 
                 nfsPrimaryStorage {
@@ -157,12 +163,13 @@ class NfsCapacityCase extends SubCase {
     @Override
     void test() {
         env.create {
+            ps = env.inventoryByName("nfs")
             testReconnectPrimaryStorageCapacityRecalculation()
+            testMultiPrimaryStorageCapacity()
         }
     }
 
     void testReconnectPrimaryStorageCapacityRecalculation() {
-        PrimaryStorageInventory ps = env.inventoryByName("nfs")
         L3NetworkInventory l3 = env.inventoryByName("l3")
         InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering")
         ImageInventory image = env.inventoryByName("iso")
@@ -195,5 +202,29 @@ class NfsCapacityCase extends SubCase {
         assert afterReconnectPS.availableCapacity == afterCreateVmInstance.availableCapacity
         assert afterReconnectPS.totalCapacity == afterCreateVmInstance.totalCapacity
         assert beforeCapacity.totalCapacity == afterReconnectPS.totalCapacity
+    }
+
+    void testMultiPrimaryStorageCapacity(){
+        def cluster1 = env.inventoryByName("cluster")
+        def cluster2 = env.inventoryByName("cluster2")
+
+        assert getPrimaryStorageCapacity {
+            clusterUuids = [cluster2.uuid]
+        }.availableCapacity == 0
+
+        long before = getPrimaryStorageCapacity {
+            clusterUuids = [cluster1.uuid, cluster2.uuid]
+        }.availableCapacity
+
+        attachPrimaryStorageToCluster {
+            primaryStorageUuid = ps.uuid
+            clusterUuid = cluster2.uuid
+        }
+
+        long after = getPrimaryStorageCapacity {
+            clusterUuids = [cluster1.uuid, cluster2.uuid]
+        }.availableCapacity
+
+        assert before == after
     }
 }

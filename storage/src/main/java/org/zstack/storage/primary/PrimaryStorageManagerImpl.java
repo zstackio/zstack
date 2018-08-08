@@ -139,9 +139,12 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                             " sum(psc.availableCapacity)," +
                             " sum(psc.totalPhysicalCapacity)," +
                             " sum(psc.availablePhysicalCapacity)" +
-                            " from PrimaryStorageCapacityVO psc, PrimaryStorageClusterRefVO ref" +
-                            " where ref.primaryStorageUuid = psc.uuid" +
-                            " and ref.clusterUuid in (:clusterUuids)";
+                            " from PrimaryStorageCapacityVO psc" +
+                            " where psc.uuid in" +
+                            " (" +
+                            " select distinct ref.primaryStorageUuid from PrimaryStorageClusterRefVO ref" +
+                            " where ref.clusterUuid in (:clusterUuids)" +
+                            " )";
                     TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     q.setParameter("clusterUuids", msg.getClusterUuids());
                     return q.getSingleResult();
