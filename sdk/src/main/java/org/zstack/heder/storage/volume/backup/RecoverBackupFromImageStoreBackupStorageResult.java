@@ -1,8 +1,8 @@
-package org.zstack.sdk;
+package org.zstack.heder.storage.volume.backup;
 
 import org.zstack.sdk.VolumeBackupInventory;
 
-public class CreateVolumeBackupResult {
+public class RecoverBackupFromImageStoreBackupStorageResult {
     public VolumeBackupInventory inventory;
     public void setInventory(VolumeBackupInventory inventory) {
         this.inventory = inventory;

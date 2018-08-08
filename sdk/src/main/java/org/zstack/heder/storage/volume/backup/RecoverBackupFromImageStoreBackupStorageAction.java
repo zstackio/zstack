@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.heder.storage.volume.backup;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class RevertVolumeFromVolumeBackupAction extends AbstractAction {
+public class RecoverBackupFromImageStoreBackupStorageAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class RevertVolumeFromVolumeBackupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.RevertVolumeFromVolumeBackupResult value;
+        public org.zstack.heder.storage.volume.backup.RecoverBackupFromImageStoreBackupStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -28,8 +28,11 @@ public class RevertVolumeFromVolumeBackupAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String backupStrogeUuid;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String srcBackupStorageUuid;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String dstBackupStorageUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -54,8 +57,8 @@ public class RevertVolumeFromVolumeBackupAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.RevertVolumeFromVolumeBackupResult value = res.getResult(org.zstack.sdk.RevertVolumeFromVolumeBackupResult.class);
-        ret.value = value == null ? new org.zstack.sdk.RevertVolumeFromVolumeBackupResult() : value; 
+        org.zstack.heder.storage.volume.backup.RecoverBackupFromImageStoreBackupStorageResult value = res.getResult(org.zstack.heder.storage.volume.backup.RecoverBackupFromImageStoreBackupStorageResult.class);
+        ret.value = value == null ? new org.zstack.heder.storage.volume.backup.RecoverBackupFromImageStoreBackupStorageResult() : value; 
 
         return ret;
     }
@@ -88,7 +91,7 @@ public class RevertVolumeFromVolumeBackupAction extends AbstractAction {
         info.path = "/volume-backups/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "revertVolumeFromVolumeBackup";
+        info.parameterName = "recoverBackupFromImageStoreBackupStorage";
         return info;
     }
 

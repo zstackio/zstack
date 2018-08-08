@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.heder.storage.volume.backup;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateRootVolumeTemplateFromVolumeBackupAction extends AbstractAction {
+public class DeleteVolumeBackupAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateRootVolumeTemplateFromVolumeBackupAction extends AbstractActi
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateRootVolumeTemplateFromVolumeBackupResult value;
+        public org.zstack.heder.storage.volume.backup.DeleteVolumeBackupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,28 +26,13 @@ public class CreateRootVolumeTemplateFromVolumeBackupAction extends AbstractActi
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String backupUuid;
+    public java.lang.String uuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String backupStorageUuid;
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
+    @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List backupStorageUuids;
 
     @Param(required = false)
-    public java.lang.String guestOsType;
-
-    @Param(required = false, validValues = {"Linux","Windows","Other","Paravirtualization","WindowsVirtio"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String platform;
-
-    @Param(required = false)
-    public boolean system = false;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -72,8 +57,8 @@ public class CreateRootVolumeTemplateFromVolumeBackupAction extends AbstractActi
             return ret;
         }
         
-        org.zstack.sdk.CreateRootVolumeTemplateFromVolumeBackupResult value = res.getResult(org.zstack.sdk.CreateRootVolumeTemplateFromVolumeBackupResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateRootVolumeTemplateFromVolumeBackupResult() : value; 
+        org.zstack.heder.storage.volume.backup.DeleteVolumeBackupResult value = res.getResult(org.zstack.heder.storage.volume.backup.DeleteVolumeBackupResult.class);
+        ret.value = value == null ? new org.zstack.heder.storage.volume.backup.DeleteVolumeBackupResult() : value; 
 
         return ret;
     }
@@ -102,11 +87,11 @@ public class CreateRootVolumeTemplateFromVolumeBackupAction extends AbstractActi
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/images/root-volume-templates/from/volume-template/{backupUuid}";
+        info.httpMethod = "DELETE";
+        info.path = "/volume-backups/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

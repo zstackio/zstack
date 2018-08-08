@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.heder.storage.volume.backup;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class RecoverBackupFromImageStoreBackupStorageAction extends AbstractAction {
+public class SyncBackupFromImageStoreBackupStorageAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class RecoverBackupFromImageStoreBackupStorageAction extends AbstractActi
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.RecoverBackupFromImageStoreBackupStorageResult value;
+        public org.zstack.heder.storage.volume.backup.SyncBackupFromImageStoreBackupStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -57,8 +57,8 @@ public class RecoverBackupFromImageStoreBackupStorageAction extends AbstractActi
             return ret;
         }
         
-        org.zstack.sdk.RecoverBackupFromImageStoreBackupStorageResult value = res.getResult(org.zstack.sdk.RecoverBackupFromImageStoreBackupStorageResult.class);
-        ret.value = value == null ? new org.zstack.sdk.RecoverBackupFromImageStoreBackupStorageResult() : value; 
+        org.zstack.heder.storage.volume.backup.SyncBackupFromImageStoreBackupStorageResult value = res.getResult(org.zstack.heder.storage.volume.backup.SyncBackupFromImageStoreBackupStorageResult.class);
+        ret.value = value == null ? new org.zstack.heder.storage.volume.backup.SyncBackupFromImageStoreBackupStorageResult() : value; 
 
         return ret;
     }
@@ -91,7 +91,7 @@ public class RecoverBackupFromImageStoreBackupStorageAction extends AbstractActi
         info.path = "/volume-backups/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "recoverBackupFromImageStoreBackupStorage";
+        info.parameterName = "syncBackupFromImageStoreBackupStorage";
         return info;
     }
 

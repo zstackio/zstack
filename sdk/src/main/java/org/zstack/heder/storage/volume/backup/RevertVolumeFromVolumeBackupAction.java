@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.heder.storage.volume.backup;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateVolumeBackupAction extends AbstractAction {
+public class RevertVolumeFromVolumeBackupAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateVolumeBackupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateVolumeBackupResult value;
+        public org.zstack.heder.storage.volume.backup.RevertVolumeFromVolumeBackupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,19 +26,10 @@ public class CreateVolumeBackupAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String volumeUuid;
+    public java.lang.String uuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String backupStorageUuid;
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String backupStrogeUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -63,8 +54,8 @@ public class CreateVolumeBackupAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateVolumeBackupResult value = res.getResult(org.zstack.sdk.CreateVolumeBackupResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateVolumeBackupResult() : value; 
+        org.zstack.heder.storage.volume.backup.RevertVolumeFromVolumeBackupResult value = res.getResult(org.zstack.heder.storage.volume.backup.RevertVolumeFromVolumeBackupResult.class);
+        ret.value = value == null ? new org.zstack.heder.storage.volume.backup.RevertVolumeFromVolumeBackupResult() : value; 
 
         return ret;
     }
@@ -93,11 +84,11 @@ public class CreateVolumeBackupAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/volumes/{volumeUuid}/volume-backups";
+        info.httpMethod = "PUT";
+        info.path = "/volume-backups/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "revertVolumeFromVolumeBackup";
         return info;
     }
 
