@@ -12,7 +12,7 @@ public class UpdateIscsiServerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddIscsiServerResult value;
+        public org.zstack.sdk.UpdateIscsiServerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -41,9 +41,6 @@ public class UpdateIscsiServerAction extends AbstractAction {
     public java.lang.String state;
 
     @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false)
     public java.util.List systemTags;
 
     @Param(required = false)
@@ -66,8 +63,8 @@ public class UpdateIscsiServerAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddIscsiServerResult value = res.getResult(org.zstack.sdk.AddIscsiServerResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddIscsiServerResult() : value; 
+        org.zstack.sdk.UpdateIscsiServerResult value = res.getResult(org.zstack.sdk.UpdateIscsiServerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateIscsiServerResult() : value; 
 
         return ret;
     }
@@ -96,11 +93,11 @@ public class UpdateIscsiServerAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/storage-devices/iscsi/servers";
+        info.httpMethod = "PUT";
+        info.path = "/storage-devices/iscsi/servers/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "updateIscsiServer";
         return info;
     }
 
