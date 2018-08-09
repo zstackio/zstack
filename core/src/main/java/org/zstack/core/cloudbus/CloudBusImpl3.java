@@ -519,6 +519,8 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
                 }
             } catch (OperationFailureException e) {
                 replyErrorIfNeeded(e.getErrorCode());
+            } catch (Throwable e) {
+                replyErrorIfNeeded(errf.throwableToOperationError(e));
             }
         }
 
