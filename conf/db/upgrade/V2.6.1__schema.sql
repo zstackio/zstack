@@ -25,3 +25,4 @@ CREATE TABLE `AliyunProxyVSwitchVO` (
     CONSTRAINT `fkAliyunProxyVSwitchVOAliyunProxyVpcVO` FOREIGN KEY (`aliyunProxyVpcUuid`) REFERENCES `AliyunProxyVpcVO` (`uuid`) ON DELETE CASCADE,
     CONSTRAINT `fkAliyunProxyVSwitchVOL3NetworkEO` FOREIGN KEY (`vpcL3NetworkUuid`) REFERENCES `L3NetworkEO` (`uuid`) ON DELETE CASCADE
 )  ENGINE=InnoDB DEFAULT CHARSET=utf8;
+

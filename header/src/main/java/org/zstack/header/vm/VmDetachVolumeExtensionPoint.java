@@ -1,5 +1,6 @@
 package org.zstack.header.vm;
 
+import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.volume.VolumeInventory;
 
@@ -11,7 +12,7 @@ public interface VmDetachVolumeExtensionPoint {
 
     void beforeDetachVolume(VmInstanceInventory vm, VolumeInventory volume);
 
-    void afterDetachVolume(VmInstanceInventory vm, VolumeInventory volume);
+    void afterDetachVolume(VmInstanceInventory vm, VolumeInventory volume, Completion completion);
 
     void failedToDetachVolume(VmInstanceInventory vm, VolumeInventory volume, ErrorCode errorCode);
 }

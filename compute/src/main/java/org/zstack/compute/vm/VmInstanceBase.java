@@ -4450,9 +4450,21 @@ public class VmInstanceBase extends AbstractVmInstance {
         VolumeVO vvo = dbf.findByUuid(volume.getUuid(), VolumeVO.class);
         // the volume is already detached, skip the bellow actions, except sharable
         if (vvo.getVmInstanceUuid() == null && !vvo.isShareable()) {
-            extEmitter.afterDetachVolume(getSelfInventory(), volume);
-            bus.reply(msg, reply);
-            completion.done();
+            extEmitter.afterDetachVolume(getSelfInventory(), volume, new Completion(completion) {
+                @Override
+                public void success() {
+                    bus.reply(msg, reply);
+                    completion.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    reply.setError(errorCode);
+                    bus.reply(msg, reply);
+                    completion.done();
+                }
+            });
+
             return;
         }
 
@@ -4460,9 +4472,20 @@ public class VmInstanceBase extends AbstractVmInstance {
         extEmitter.beforeDetachVolume(getSelfInventory(), volume);
 
         if (self.getState() == VmInstanceState.Stopped) {
-            extEmitter.afterDetachVolume(getSelfInventory(), volume);
-            bus.reply(msg, reply);
-            completion.done();
+            extEmitter.afterDetachVolume(getSelfInventory(), volume, new Completion(completion) {
+                @Override
+                public void success() {
+                    bus.reply(msg, reply);
+                    completion.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    reply.setError(errorCode);
+                    bus.reply(msg, reply);
+                    completion.done();
+                }
+            });
             return;
         }
 
@@ -4479,16 +4502,27 @@ public class VmInstanceBase extends AbstractVmInstance {
                 if (!r.isSuccess()) {
                     reply.setError(r.getError());
                     extEmitter.failedToDetachVolume(getSelfInventory(), volume, r.getError());
+                    bus.reply(msg, reply);
+                    completion.done();
                 } else {
-                    extEmitter.afterDetachVolume(getSelfInventory(), volume);
+                    extEmitter.afterDetachVolume(getSelfInventory(), volume, new Completion(completion) {
+                        @Override
+                        public void success() {
+                            // update Volumevo before exit message queue
+                            vvo.setVmInstanceUuid(null);
+                            dbf.updateAndRefresh(vvo);
+                            bus.reply(msg, reply);
+                            completion.done();
+                        }
 
-                    // update Volumevo before exit message queue
-                    vvo.setVmInstanceUuid(null);
-                    dbf.updateAndRefresh(vvo);
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            reply.setError(errorCode);
+                            bus.reply(msg, reply);
+                            completion.done();
+                        }
+                    });
                 }
-
-                bus.reply(msg, reply);
-                completion.done();
             }
         });
     }

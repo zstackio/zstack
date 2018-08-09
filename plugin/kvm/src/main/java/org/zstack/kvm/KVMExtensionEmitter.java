@@ -249,7 +249,6 @@ public class KVMExtensionEmitter implements Component {
         }
     }
 
-
     @Override
     public boolean start() {
         populateExtensions();
