@@ -1133,7 +1133,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }).start();
     }
 
-    private String buildUserdata() {
+    private List<String> buildUserdata() {
         return new UserdataBuilder().buildByVmUuid(self.getUuid());
     }
 
@@ -4664,7 +4664,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
         buildHostname(spec);
 
-        spec.setUserdata(buildUserdata());
+        spec.setUserdataList(buildUserdata());
         selectBootOrder(spec);
         spec.setConsolePassword(VmSystemTags.CONSOLE_PASSWORD.
                 getTokenByResourceUuid(self.getUuid(), VmSystemTags.CONSOLE_PASSWORD_TOKEN));
@@ -4928,7 +4928,7 @@ public class VmInstanceBase extends AbstractVmInstance {
     protected VmInstanceSpec buildSpecFromInventory(VmInstanceInventory inv, VmOperation operation) {
         VmInstanceSpec spec = new VmInstanceSpec();
 
-        spec.setUserdata(buildUserdata());
+        spec.setUserdataList(buildUserdata());
 
         // for L3Network that has been deleted
         List<String> nicUuidToDel = CollectionUtils.transformToList(inv.getVmNics(), new Function<String, VmNicInventory>() {

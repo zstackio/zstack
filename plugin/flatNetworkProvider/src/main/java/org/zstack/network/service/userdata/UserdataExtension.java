@@ -117,7 +117,7 @@ public class UserdataExtension extends AbstractNetworkServiceExtension implement
         UserdataStruct struct = new UserdataStruct();
         struct.setL3NetworkUuid(servedVm.getVmInventory().getDefaultL3NetworkUuid());
         struct.setParametersFromVmSpec(servedVm);
-        struct.setUserdata(servedVm.getUserdata());
+        struct.setUserdataList(servedVm.getUserdataList());
 
         UserdataBackend bkd = getUserdataBackend(provider.getType());
         bkd.applyUserdata(struct, completion);
@@ -125,7 +125,7 @@ public class UserdataExtension extends AbstractNetworkServiceExtension implement
 
     @Override
     public void releaseNetworkService(final VmInstanceSpec servedVm, Map<String, Object> data, final NoErrorCompletion completion) {
-        if (servedVm.getUserdata() == null) {
+        if (servedVm.getUserdataList() == null || servedVm.getUserdataList().isEmpty()) {
             completion.done();
             return;
         }
@@ -152,7 +152,7 @@ public class UserdataExtension extends AbstractNetworkServiceExtension implement
         UserdataStruct struct = new UserdataStruct();
         struct.setL3NetworkUuid(servedVm.getVmInventory().getDefaultL3NetworkUuid());
         struct.setParametersFromVmSpec(servedVm);
-        struct.setUserdata(servedVm.getUserdata());
+        struct.setUserdataList(servedVm.getUserdataList());
 
         UserdataBackend bkd = getUserdataBackend(provider.getType());
         bkd.releaseUserdata(struct, new Completion(completion) {

@@ -159,7 +159,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     return null;
                 }
 
-                Map<String, String> userdata = new UserdataBuilder().buildByVmUuids(vmUuids);
+                Map<String, List<String>> userdata = new UserdataBuilder().buildByVmUuids(vmUuids);
                 Set<String> l3Uuids = new HashSet<String>();
                 for (VmIpL3Uuid l : vmipl3.values()) {
                     UsedIpInventory dhcpIpInv = dhcpBackend.allocateDhcpIp(l.l3Uuid);
@@ -190,7 +190,9 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     to.netmask = l.netmask;
                     to.bridgeName = bridgeNames.get(l.l3Uuid);
                     to.namespaceName = FlatDhcpBackend.makeNamespaceName(to.bridgeName, l.l3Uuid);
-                    to.userdata = userdata.get(vmuuid);
+                    if (userdata.get(vmuuid) != null) {
+                        to.userdataList.addAll(userdata.get(vmuuid));
+                    }
                     to.port = UserdataGlobalProperty.HOST_PORT;
                     to.l3NetworkUuid = l.l3Uuid;
                     tos.add(to);
@@ -303,8 +305,8 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
             return null;
         }
 
-        String userdata = new UserdataBuilder().buildByVmUuid(inv.getUuid());
-        if (userdata == null) {
+        List<String> userdataList = new UserdataBuilder().buildByVmUuid(inv.getUuid());
+        if (userdataList == null || userdataList.isEmpty()) {
             return null;
         }
 
@@ -312,7 +314,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
         struct.setParametersFromVmInventory(inv);
         struct.setHostUuid(hostUuid);
         struct.setL3NetworkUuid(inv.getDefaultL3NetworkUuid());
-        struct.setUserdata(userdata);
+        struct.setUserdataList(userdataList);
         return struct;
     }
 
@@ -440,7 +442,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
 
     public static class UserdataTO {
         public MetadataTO metadata;
-        public String userdata;
+        public List<String> userdataList = new ArrayList<>();
         public String vmIp;
         public String netmask;
         public String dhcpServerIp;
@@ -539,7 +541,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                         to.vmHostname = vmHostname;
                         UserdataTO uto = new UserdataTO();
                         uto.metadata = to;
-                        uto.userdata = struct.getUserdata();
+                        uto.userdataList = struct.getUserdataList();
                         uto.dhcpServerIp = dhcpServerIp;
                         uto.vmIp = CollectionUtils.find(struct.getVmNics(), new Function<String, VmNicInventory>() {
                             @Override
