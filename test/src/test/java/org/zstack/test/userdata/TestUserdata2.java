@@ -98,7 +98,7 @@ public class TestUserdata2 {
         Assert.assertEquals(1, cmd.userdata.size());
         UserdataTO to = cmd.userdata.get(0);
 
-        Assert.assertEquals(userdata, to.userdata);
+        Assert.assertTrue(to.userdataList.contains(userdata));
         Assert.assertEquals(vm.getUuid(), to.metadata.vmUuid);
         Assert.assertEquals(nic.getIp(), to.vmIp);
         String brName = new BridgeNameFinder().findByL3Uuid(nic.getL3NetworkUuid());
