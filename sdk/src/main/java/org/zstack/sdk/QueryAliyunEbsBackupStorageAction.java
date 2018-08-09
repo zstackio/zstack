@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class DeleteOssBucketRemoteAction extends AbstractAction {
+public class QueryAliyunEbsBackupStorageAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class DeleteOssBucketRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteOssBucketRemoteResult value;
+        public org.zstack.sdk.QueryBackupStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,35 +25,6 @@ public class DeleteOssBucketRemoteAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false, maxLength = 127, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String ossDomain;
-
-    @Param(required = false, maxLength = 127, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String ossKey;
-
-    @Param(required = false, maxLength = 127, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String ossSecret;
-
-    @Param(required = false)
-    public java.lang.String deleteMode = "Permissive";
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = true)
-    public String sessionId;
-
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -63,8 +34,8 @@ public class DeleteOssBucketRemoteAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteOssBucketRemoteResult value = res.getResult(org.zstack.sdk.DeleteOssBucketRemoteResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteOssBucketRemoteResult() : value; 
+        org.zstack.sdk.QueryBackupStorageResult value = res.getResult(org.zstack.sdk.QueryBackupStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryBackupStorageResult() : value; 
 
         return ret;
     }
@@ -93,10 +64,10 @@ public class DeleteOssBucketRemoteAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/hybrid/aliyun/oss-bucket/remote/{uuid}";
+        info.httpMethod = "GET";
+        info.path = "/backup-storage/aliyun/ebs";
         info.needSession = true;
-        info.needPoll = true;
+        info.needPoll = false;
         info.parameterName = "";
         return info;
     }

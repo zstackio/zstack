@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateOssBucketRemoteAction extends AbstractAction {
+public class AddAliyunPanguPartitionAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateOssBucketRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateOssBucketRemoteResult value;
+        public org.zstack.sdk.AddAliyunPanguPartitionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,23 +25,20 @@ public class CreateOssBucketRemoteAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String dataCenterUuid;
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
 
-    @Param(required = true, maxLength = 128, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String bucketName;
-
-    @Param(required = false, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = false, maxLength = 256, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String ossDomain;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String identityZoneUuid;
 
-    @Param(required = false, maxLength = 127, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String ossKey;
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String appName;
 
-    @Param(required = false, maxLength = 127, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String ossSecret;
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String partitionName;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
@@ -69,8 +66,8 @@ public class CreateOssBucketRemoteAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateOssBucketRemoteResult value = res.getResult(org.zstack.sdk.CreateOssBucketRemoteResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateOssBucketRemoteResult() : value; 
+        org.zstack.sdk.AddAliyunPanguPartitionResult value = res.getResult(org.zstack.sdk.AddAliyunPanguPartitionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddAliyunPanguPartitionResult() : value; 
 
         return ret;
     }
@@ -100,7 +97,7 @@ public class CreateOssBucketRemoteAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/hybrid/aliyun/oss-bucket/remote";
+        info.path = "/aliyun/pangu";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

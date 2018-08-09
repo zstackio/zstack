@@ -3,7 +3,10 @@ package org.zstack.compute.vm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.Component;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.vm.*;
 import org.zstack.header.volume.VolumeInventory;
@@ -321,13 +324,46 @@ public class VmInstanceExtensionPointEmitter implements Component {
         });
     }
 
-    public void afterDetachVolume(final VmInstanceInventory vm, final VolumeInventory volume) {
+    public void afterDetachVolume(final VmInstanceInventory vm, final VolumeInventory volume, final Completion completion) {
+        if (detachVolumeExtensions.isEmpty()) {
+            completion.success();
+            return;
+        }
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         CollectionUtils.safeForEach(detachVolumeExtensions, new ForEachFunction<VmDetachVolumeExtensionPoint>() {
             @Override
             public void run(VmDetachVolumeExtensionPoint arg) {
-                arg.afterDetachVolume(vm, volume);
+                chain.then(new NoRollbackFlow() {
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        arg.afterDetachVolume(vm, volume, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
             }
         });
+
+        chain.done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
     }
 
     public void failedToDetachVolume(final VmInstanceInventory vm, final VolumeInventory volume, final ErrorCode errorCode) {
