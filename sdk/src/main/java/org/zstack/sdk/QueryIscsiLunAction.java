@@ -12,7 +12,7 @@ public class QueryIscsiLunAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.QueryIscsiLunsResult value;
+        public org.zstack.sdk.QueryIscsiLunResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -34,8 +34,8 @@ public class QueryIscsiLunAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.QueryIscsiLunsResult value = res.getResult(org.zstack.sdk.QueryIscsiLunsResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QueryIscsiLunsResult() : value; 
+        org.zstack.sdk.QueryIscsiLunResult value = res.getResult(org.zstack.sdk.QueryIscsiLunResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryIscsiLunResult() : value; 
 
         return ret;
     }
