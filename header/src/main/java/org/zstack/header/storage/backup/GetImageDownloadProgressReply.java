@@ -9,6 +9,7 @@ public class GetImageDownloadProgressReply extends MessageReply {
     private long size;
     private long actualSize;
     private String installPath;
+    private String format;
 
     public boolean isCompleted() {
         return completed;
@@ -48,5 +49,13 @@ public class GetImageDownloadProgressReply extends MessageReply {
 
     public void setInstallPath(String installPath) {
         this.installPath = installPath;
+    }
+
+    public String getFormat() {
+        return format;
+    }
+
+    public void setFormat(String format) {
+        this.format = format;
     }
 }
