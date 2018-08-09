@@ -85,6 +85,13 @@ class NearestSubCaseCollectionStrategy implements SubCaseCollectionStrategy{
                     continue
                 }
 
+                if (!subCasePackage.replace(testPackage, "").startsWith(".") && !subCasePackage.equals(testPackage)) {
+                    logger.debug("${subCasePackage}, ${testPackage} skiped".toString())
+                    // NOTE(weiw): like org.zstack.storage vs org.zstack.storageDevice, if case is org.zstack.storageDevice.AbcCase,
+                    // the first should not be match
+                    continue
+                }
+
                 String defferPackage = subCasePackage.replace(testPackage, "")
                 int layer = defferPackage.length() - defferPackage.replaceAll("\\.", "").length()
                 if(packageLayer == -1 || packageLayer >  layer){
