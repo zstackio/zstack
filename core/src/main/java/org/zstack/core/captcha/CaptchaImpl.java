@@ -5,14 +5,18 @@ import org.patchca.color.ColorFactory;
 import org.patchca.filter.predefined.*;
 import org.patchca.service.ConfigurableCaptchaService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
+import org.zstack.core.thread.PeriodicTask;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
-import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.captcha.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -20,11 +24,15 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.imageio.ImageIO;
+import javax.persistence.Query;
 import java.awt.*;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.sql.Timestamp;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -37,10 +45,14 @@ public class CaptchaImpl extends AbstractService implements Component, Captcha {
     private DatabaseFacade dbf;
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private ThreadFacade thdf;
 
     private String CAPTCHA_FILE_TYPE = "png";
 
     private static ConfigurableCaptchaService cs;
+
+    private Future<Void> staleCaptchaCollector;
 
     static {
         cs = new ConfigurableCaptchaService();
@@ -61,39 +73,8 @@ public class CaptchaImpl extends AbstractService implements Component, Captcha {
         });
     }
 
-    @Override
-    public int getAttemptsForCurrentResource(String targetResourceIdentity) {
-        return Q.New(CaptchaVO.class).select(CaptchaVO_.attempts).eq(CaptchaVO_.targetResourceIdentity, targetResourceIdentity).findValue();
-    }
-
-    @Override
-    public void increaseAttemptCount(String targetResourceIdentity) {
-        CaptchaVO vo = Q.New(CaptchaVO.class).eq(CaptchaVO_.targetResourceIdentity, targetResourceIdentity).find();
-        vo.setAttempts(vo.getAttempts() + 1);
-        dbf.update(vo);
-    }
-
-    @Override
-    public void resetAttemptCount(String targetResourceIdentity) {
-        CaptchaVO vo = Q.New(CaptchaVO.class).eq(CaptchaVO_.targetResourceIdentity, targetResourceIdentity).find();
-        vo.setAttempts(0);
-        vo.setVerifyCode("");
-        vo.setCaptcha("");
-        dbf.update(vo);
-    }
-
     private String bytesToBase64(byte[] bytes) {
         return Base64.encodeBase64String(bytes);// 返回Base64编码过的字节数组字符串
-    }
-
-    @Override
-    public CaptchaStruct getCaptcha(String targetResourceIdentity) {
-        CaptchaVO vo = Q.New(CaptchaVO.class).eq(CaptchaVO_.targetResourceIdentity, targetResourceIdentity).find();
-
-        CaptchaStruct struct = new CaptchaStruct();
-        struct.setUuid(vo.getUuid());
-        struct.setCaptcha(vo.getCaptcha());
-        return struct;
     }
 
     private void useRandomFilter() {
@@ -117,7 +98,7 @@ public class CaptchaImpl extends AbstractService implements Component, Captcha {
     }
 
     @Override
-    public void generateCaptcha(String targetResourceIdentify) {
+    public CaptchaVO generateCaptcha(String targetResourceIdentity) {
         String verifyCode = "";
         String base64Image = "";
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
@@ -134,11 +115,12 @@ public class CaptchaImpl extends AbstractService implements Component, Captcha {
             e.printStackTrace();
         }
 
-        SQL.New(CaptchaVO.class)
-                .eq(CaptchaVO_.targetResourceIdentity, targetResourceIdentify)
-                .set(CaptchaVO_.captcha, base64Image)
-                .set(CaptchaVO_.verifyCode, verifyCode)
-                .update();
+        CaptchaVO vo = new CaptchaVO();
+        vo.setVerifyCode(verifyCode);
+        vo.setCaptcha(base64Image);
+        vo.setTargetResourceIdentity(targetResourceIdentity);
+        vo.setUuid(Platform.getUuid());
+        return dbf.persistAndRefresh(vo);
     }
 
     public CaptchaVO refreshCaptcha(String uuid) {
@@ -176,34 +158,67 @@ public class CaptchaImpl extends AbstractService implements Component, Captcha {
     }
 
     @Override
-    public boolean verifyCaptcha(String uuid, String verifyCode) {
-        if (Q.New(CaptchaVO.class).eq(CaptchaVO_.uuid, uuid).eq(CaptchaVO_.verifyCode, verifyCode).isExists()) {
+    public boolean verifyCaptcha(String uuid, String verifyCode, String targetResourceIdentify) {
+        if (Q.New(CaptchaVO.class)
+                .eq(CaptchaVO_.uuid, uuid)
+                .eq(CaptchaVO_.verifyCode, verifyCode)
+                .eq(CaptchaVO_.targetResourceIdentity, targetResourceIdentify)
+                .isExists()) {
             return true;
-        }
-
-        if (Q.New(CaptchaVO.class).eq(CaptchaVO_.uuid, uuid).isExists()) {
-            refreshCaptcha(uuid);
         }
 
         return false;
     }
 
     @Override
-    public void removeCaptcha(String targetResourceIdentity, NoErrorCompletion completion) {
-        if (Q.New(CaptchaVO.class).eq(CaptchaVO_.targetResourceIdentity, targetResourceIdentity).isExists()) {
-            SQL.New(CaptchaVO.class).eq(CaptchaVO_.targetResourceIdentity, targetResourceIdentity).delete();
-        }
+    public boolean start() {
+        startStaleCaptchaCollector();
 
-        completion.done();
+        return true;
     }
 
-    @Override
-    public boolean start() {
-        return true;
+    private void startStaleCaptchaCollector() {
+        final int interval = CaptchaGlobalConfig.CAPTCHA_CLEANUP_INTERVAL.value(Integer.class);
+        staleCaptchaCollector = thdf.submitPeriodicTask(new PeriodicTask() {
+            @Transactional(readOnly = true)
+            private Timestamp getCurrentSqlDate() {
+                Query query = dbf.getEntityManager().createNativeQuery("select current_timestamp()");
+                return (Timestamp) query.getSingleResult();
+            }
+
+            @Override
+            public void run() {
+                Long finalExtendPeriod = CaptchaGlobalConfig.CAPTCHA_VALID_PERIOD.value(Long.class);
+
+                Timestamp expiredDate = new Timestamp(getCurrentSqlDate().getTime() - TimeUnit.SECONDS.toMillis(finalExtendPeriod));
+
+                SQL.New(CaptchaVO.class).lt(CaptchaVO_.createDate, expiredDate).delete();
+            }
+
+            @Override
+            public TimeUnit getTimeUnit() {
+                return TimeUnit.SECONDS;
+            }
+
+            @Override
+            public long getInterval() {
+                return interval;
+            }
+
+            @Override
+            public String getName() {
+                return "StaleCaptchaCleanupThread";
+            }
+
+        });
     }
 
     @Override
     public boolean stop() {
+        if (staleCaptchaCollector != null) {
+            staleCaptchaCollector.cancel(true);
+        }
+
         return true;
     }
 

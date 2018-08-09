@@ -1,6 +1,7 @@
 package org.zstack.core.captcha;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.core.captcha.CaptchaVO;
 import org.zstack.header.identity.SuppressCredentialCheck;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.message.APISyncCallMessage;

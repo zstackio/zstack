@@ -1,4 +1,4 @@
-package org.zstack.core.captcha;
+package org.zstack.header.core.captcha;
 
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.ResourceVO;
@@ -24,9 +24,6 @@ public class CaptchaVO extends ResourceVO {
 
     @Column
     private String targetResourceIdentity;
-
-    @Column
-    private Integer attempts;
 
     @Column
     private Timestamp createDate;
@@ -77,13 +74,5 @@ public class CaptchaVO extends ResourceVO {
 
     public void setTargetResourceIdentity(String targetResourceIdentity) {
         this.targetResourceIdentity = targetResourceIdentity;
-    }
-
-    public Integer getAttempts() {
-        return attempts;
-    }
-
-    public void setAttempts(Integer attempts) {
-        this.attempts = attempts;
     }
 }

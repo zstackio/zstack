@@ -1,4 +1,4 @@
-package org.zstack.core.captcha;
+package org.zstack.header.core.captcha;
 
 /**
  * Created by kayo on 2018/7/6.

@@ -1,4 +1,4 @@
-package org.zstack.core.captcha;
+package org.zstack.header.core.captcha;
 
 import org.zstack.header.vo.ResourceVO_;
 
@@ -14,7 +14,6 @@ public class CaptchaVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<CaptchaVO, String> captcha;
     public static volatile SingularAttribute<CaptchaVO, String> verifyCode;
     public static volatile SingularAttribute<CaptchaVO, String> targetResourceIdentity;
-    public static volatile SingularAttribute<CaptchaVO, Integer> attempts;
     public static volatile SingularAttribute<CaptchaVO, Timestamp> createDate;
     public static volatile SingularAttribute<CaptchaVO, Timestamp> lastOpDate;
 }
