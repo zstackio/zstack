@@ -68,4 +68,12 @@ public class TicketFlowInventory  {
         return this.lastOpDate;
     }
 
+    public java.lang.String collectionUuid;
+    public void setCollectionUuid(java.lang.String collectionUuid) {
+        this.collectionUuid = collectionUuid;
+    }
+    public java.lang.String getCollectionUuid() {
+        return this.collectionUuid;
+    }
+
 }

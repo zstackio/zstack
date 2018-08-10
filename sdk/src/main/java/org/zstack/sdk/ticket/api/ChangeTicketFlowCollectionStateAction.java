@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.sdk.ticket.api;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetLoginCaptchaAction extends AbstractAction {
+public class ChangeTicketFlowCollectionStateAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetLoginCaptchaAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetLoginCaptchaResult value;
+        public org.zstack.sdk.ticket.api.ChangeTicketFlowCollectionStateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,19 +26,25 @@ public class GetLoginCaptchaAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String resourceName;
+    public java.lang.String uuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String loginType;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String captchaUuid;
+    @Param(required = true, validValues = {"enable","disable"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String stateEvent;
 
     @Param(required = false)
     public java.util.List systemTags;
 
     @Param(required = false)
     public java.util.List userTags;
+
+    @Param(required = true)
+    public String sessionId;
+
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -48,8 +54,8 @@ public class GetLoginCaptchaAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetLoginCaptchaResult value = res.getResult(org.zstack.sdk.GetLoginCaptchaResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetLoginCaptchaResult() : value; 
+        org.zstack.sdk.ticket.api.ChangeTicketFlowCollectionStateResult value = res.getResult(org.zstack.sdk.ticket.api.ChangeTicketFlowCollectionStateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ticket.api.ChangeTicketFlowCollectionStateResult() : value; 
 
         return ret;
     }
@@ -78,11 +84,11 @@ public class GetLoginCaptchaAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/login/control/captcha";
-        info.needSession = false;
-        info.needPoll = false;
-        info.parameterName = "";
+        info.httpMethod = "PUT";
+        info.path = "/tickets/flow-collections/{uuid}/actions";
+        info.needSession = true;
+        info.needPoll = true;
+        info.parameterName = "changeTicketFlowCollectionState";
         return info;
     }
 
