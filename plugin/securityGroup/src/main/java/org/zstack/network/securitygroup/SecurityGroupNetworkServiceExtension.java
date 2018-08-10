@@ -1,6 +1,7 @@
 package org.zstack.network.securitygroup;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.header.core.Completion;
@@ -9,13 +10,17 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceType;
+import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.AbstractNetworkServiceExtension;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.List;
 import java.util.Map;
+
+import javax.persistence.Query;
 
 /**
  */
@@ -72,8 +77,23 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
                 if (!reply.isSuccess()) {
                     logger.debug(String.format("failed to remove security group rules for vm[uuid:%s], %s", servedVm.getVmInventory().getUuid(), reply.getError()));
                 }
+
+	            if (servedVm.getCurrentVmOperation() == VmInstanceConstant.VmOperation.DetachNic) {
+		            VmNicInventory nic = servedVm.getDestNics().get(0);
+		            deleteVmNicSecurityGroupRef(nic.getUuid());
+	            }
+
                 completion.done();
             }
         });
+    }
+
+    @Transactional
+    private void deleteVmNicSecurityGroupRef(String vmNicUuid){
+	    String sql = String.format("delete from %s ref where ref.%s = :id",
+			    VmNicSecurityGroupRefVO.class.getSimpleName(), "vmNicUuid");
+	    Query query = dbf.getEntityManager().createQuery(sql);
+	    query.setParameter("id", vmNicUuid);
+	    query.executeUpdate();
     }
 }

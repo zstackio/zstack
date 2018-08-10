@@ -376,7 +376,8 @@ class OneVmUserdataCase extends SubCase {
         assert nic.l3NetworkUuid == cmd.userdata.l3NetworkUuid
         assert cmd.userdata.namespaceName != null
         assert UserdataGlobalProperty.HOST_PORT == cmd.userdata.port
-        assert userdata == cmd.userdata.userdata
+        assert 1 == cmd.userdata.userdataList.size()
+        assert userdata == cmd.userdata.userdataList.get(0)
 
         assert vm.uuid == cmd.userdata.metadata.vmUuid
     }
