@@ -1,9 +1,6 @@
 alter table VmNicVO modify vmInstanceUuid varchar(32) NULL COMMENT 'vm instance uuid';
 alter table VmNicVO modify internalName varchar(128) NULL;
 
-ALTER TABLE VmNicVO modify vmInstanceUuid VARCHAR(32) NULL COMMENT 'vm instance uuid';
-ALTER TABLE VmNicVO modify internalName VARCHAR(128) NULL;
-
 CREATE TABLE `AliyunProxyVpcVO` (
   `uuid` VARCHAR(32) NOT NULL,
   `status` VARCHAR(32) NOT NULL,
