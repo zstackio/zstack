@@ -16,18 +16,12 @@ public class SshChronyConfigChecker implements AnsibleChecker {
     private String targetIp;
     private int sshPort = 22;
 
-    private class SrcDestPair {
-        private SrcDestPair(String srcPath, String destPath) {
-            this.srcPath = srcPath;
-            this.destPath = destPath;
-        }
-
-        String srcPath;
-        String destPath;
-    }
-
     @Override
     public boolean needDeploy() {
+        if (!CoreGlobalProperty.SYNC_NODE_TIME) {
+            return false;
+        }
+
         Ssh ssh = new Ssh();
         ssh.setUsername(username).setPrivateKey(privateKey)
                 .setPassword(password).setPort(sshPort)
