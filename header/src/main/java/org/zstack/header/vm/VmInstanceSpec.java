@@ -190,7 +190,7 @@ public class VmInstanceSpec implements Serializable {
     private Map<String, JsonWrapper> extensionData = new HashMap<>();
     private String dataIsoPath;
     private List<IsoSpec> destIsoList = new ArrayList<>();
-    private String userdata;
+    private List<String> userdataList;
     private List<String> bootOrders;
     private boolean gcOnStopFailure;
     private boolean ignoreResourceReleaseFailure;
@@ -289,12 +289,12 @@ public class VmInstanceSpec implements Serializable {
         this.consolePassword = consolePassword;
     }
 
-    public String getUserdata() {
-        return userdata;
+    public List<String> getUserdataList() {
+        return userdataList;
     }
 
-    public void setUserdata(String userdata) {
-        this.userdata = userdata;
+    public void setUserdataList(List<String> userdataList) {
+        this.userdataList = userdataList;
     }
 
     public List<IsoSpec> getDestIsoList() {

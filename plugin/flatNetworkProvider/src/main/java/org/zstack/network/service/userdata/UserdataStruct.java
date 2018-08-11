@@ -10,7 +10,7 @@ import java.util.List;
  * Created by frank on 10/13/2015.
  */
 public class UserdataStruct {
-    private String userdata;
+    private List<String> userdataList;
     private String l3NetworkUuid;
     private String vmUuid;
     private List<VmNicInventory> vmNics;
@@ -60,11 +60,11 @@ public class UserdataStruct {
         hostUuid = inv.getHostUuid();
     }
 
-    public String getUserdata() {
-        return userdata;
+    public List<String> getUserdataList() {
+        return userdataList;
     }
 
-    public void setUserdata(String userdata) {
-        this.userdata = userdata;
+    public void setUserdataList(List<String> userdataList) {
+        this.userdataList = userdataList;
     }
 }

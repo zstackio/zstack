@@ -32,27 +32,26 @@ public class UserdataBuilder {
         return sb.toString();
     }
 
-    public String buildByVmUuid(String vmUuid) {
+    public List<String> buildByVmUuid(String vmUuid) {
+        List<String> userdataList = new ArrayList<>();
+
         String userdata = VmSystemTags.USERDATA.getTokenByResourceUuid(vmUuid, VmSystemTags.USERDATA_TOKEN);
         if (userdata != null) {
             userdata = new String(Base64.getDecoder().decode(userdata.getBytes()));
+            userdataList.add(userdata);
         }
 
         String sshKey = VmSystemTags.SSHKEY.getTokenByResourceUuid(vmUuid, VmSystemTags.SSHKEY_TOKEN);
         String rootPassword = VmSystemTags.ROOT_PASSWORD.getTokenByResourceUuid(vmUuid, VmSystemTags.ROOT_PASSWORD_TOKEN);
-        if (sshKey == null && rootPassword == null && userdata == null) {
-            return null;
+        if (sshKey != null || rootPassword != null) {
+            userdataList.add(String.format("#cloud-config%s", sshkeyRootPassword(sshKey, rootPassword)));
         }
 
-        if (userdata == null){
-            return String.format("#cloud-config%s", sshkeyRootPassword(sshKey, rootPassword));
-        }
-
-        return String.format("%s%s",userdata, sshkeyRootPassword(sshKey, rootPassword));
+        return userdataList;
     }
 
-    public Map<String, String> buildByVmUuids(List<String> vmUuids) {
-        Map<String, String> ret = new HashMap<String, String>();
+    public Map<String, List<String>> buildByVmUuids(List<String> vmUuids) {
+        Map<String, List<String>> ret = new HashMap<>();
         for (String vmUuid : vmUuids) {
             ret.put(vmUuid, buildByVmUuid(vmUuid));
         }
