@@ -9,7 +9,7 @@ public class RBACInfo implements RBACDescription {
                 .name("configuration")
                 .adminOnlyAPIs("org.zstack.header.configuration.**")
                 .targetResources(InstanceOfferingVO.class, DiskOfferingVO.class)
-                .normalAPIs(APIQueryDiskOfferingMsg.class, APIQueryInstanceOfferingMsg.class)
+                .normalAPIs(APIQueryDiskOfferingMsg.class, APIQueryInstanceOfferingMsg.class, APICreateDiskOfferingMsg.class)
                 .build();
     }
 
