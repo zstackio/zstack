@@ -8,6 +8,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.image.*;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
@@ -112,6 +113,7 @@ public class CephBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
                 imageVO.setUuid(imageInventory.getUuid());
                 imageVO.setCreateDate(imageInventory.getCreateDate());
                 imageVO.setLastOpDate(imageInventory.getLastOpDate());
+                imageVO.setAccountUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
                 imageVOs.add(imageVO);
             }
         }

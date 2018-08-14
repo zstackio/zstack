@@ -15,6 +15,7 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.image.*;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
@@ -124,6 +125,7 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
                 imageVO.setUuid(imageInventory.getUuid());
                 imageVO.setCreateDate(imageInventory.getCreateDate());
                 imageVO.setLastOpDate(imageInventory.getLastOpDate());
+                imageVO.setAccountUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
                 imageVOs.add(imageVO);
             }
         }
