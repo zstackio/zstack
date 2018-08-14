@@ -161,8 +161,8 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
 
         Map<String, Triplet> mt = new HashMap<String, Triplet>();
         for (Tuple t : ts) {
-            String listenerUuid = t.get(0, String.class);
-            Triplet tr = mt.get(listenerUuid);
+            String lbUuid = t.get(1, String.class);
+            Triplet tr = mt.get(lbUuid);
             if (tr == null) {
                 tr = new Triplet();
                 tr.listenerUuids = new HashSet<>();
