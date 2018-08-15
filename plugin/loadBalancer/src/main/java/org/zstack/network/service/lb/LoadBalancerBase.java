@@ -900,11 +900,13 @@ public class LoadBalancerBase {
 
     private LoadBalancerStruct removeNicStruct(List<String> listenerUuids, List<String> nicUuids) {
         LoadBalancerStruct s = makeStruct();
-        Optional<LoadBalancerListenerInventory> opt = s.getListeners().stream().filter(it -> listenerUuids.contains(it.getUuid())).findAny();
-        DebugUtils.Assert(opt.isPresent(), String.format("cannot find listener[uuid:%s]", listenerUuids.get(0)));
+        for (LoadBalancerListenerInventory l : s.getListeners()) {
+            if (!listenerUuids.contains(l.getUuid())) {
+                continue;
+            }
 
-        LoadBalancerListenerInventory l = opt.get();
-        l.getVmNicRefs().removeIf(loadBalancerListenerVmNicRefInventory -> nicUuids.contains(loadBalancerListenerVmNicRefInventory.getVmNicUuid()));
+            l.getVmNicRefs().removeIf(loadBalancerListenerVmNicRefInventory -> nicUuids.contains(loadBalancerListenerVmNicRefInventory.getVmNicUuid()));
+        }
 
         return s;
     }
