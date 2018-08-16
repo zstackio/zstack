@@ -2,6 +2,7 @@ package org.zstack.test.integration.kvm.vm
 
 import org.springframework.http.HttpEntity
 import org.zstack.compute.vm.VmGlobalConfig
+import org.zstack.compute.vm.VmQuotaConstant
 import org.zstack.compute.vm.VmSystemTags
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.header.host.HostVO
@@ -17,6 +18,7 @@ import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.SystemTagInventory
 import org.zstack.sdk.UpdateVmInstanceAction
 import org.zstack.sdk.VmInstanceInventory
+import org.zstack.storage.snapshot.VolumeSnapshotQuotaConstant
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -173,7 +175,6 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
 
             dbf = bean(DatabaseFacade.class)
 
-
             testOnlineChangeCpuAndMemory()
             testChangeCpuAndMemoryWhenVmStopped()
             testChangeCpuWhenVmRunning()
@@ -185,7 +186,78 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
             testCannotFindHostWontMakeChangeVmCpuAndMemoryChainRollback()
             testUpdateCpuOrMemoryWhenVMisUnknownOrDestroy()
             testDecreaseVmCpuAndMemoryReturnFail()
+            testVmChangeCpuMemoryQuota()
         }
+    }
+
+    void testVmChangeCpuMemoryQuota() {
+        def image = env.inventoryByName("image1")
+        def l3 = env.inventoryByName("l3")
+        def instance = env.inventoryByName("instanceOffering")
+
+        def test = createAccount {
+            name = "test"
+            password = "password"
+        }
+
+        def session = logInByAccount {
+            accountName = "test"
+            password = "password"
+        }
+
+        updateQuota {
+            identityUuid = test.uuid
+            name = VmQuotaConstant.VM_RUNNING_MEMORY_SIZE
+            value = SizeUnit.GIGABYTE.toByte(3)
+        }
+
+        shareResource {
+            resourceUuids = [instance.uuid, image.uuid, l3.uuid]
+            toPublic = true
+        }
+
+        def vm2 = createVmInstance {
+            name = "test"
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3.uuid]
+            instanceOfferingUuid = instance.uuid
+            sessionId = session.uuid
+        }
+
+        updateVmInstance {
+            uuid = vm2.uuid
+            cpuNum = 10
+            sessionId = session.uuid
+        }
+
+        updateQuota {
+            identityUuid = test.uuid
+            name = VmQuotaConstant.VM_RUNNING_CPU_NUM
+            value = 10
+        }
+
+        updateVmInstance {
+            uuid = vm2.uuid
+            memorySize = SizeUnit.GIGABYTE.toByte(3)
+            sessionId = session.uuid
+        }
+
+        expect(AssertionError.class) {
+            updateVmInstance {
+                uuid = vm2.uuid
+                memorySize = SizeUnit.GIGABYTE.toByte(4)
+                sessionId = session.uuid
+            }
+        }
+
+        expect(AssertionError.class) {
+            updateVmInstance {
+                uuid = vm2.uuid
+                cpuNum = 11
+                sessionId = session.uuid
+            }
+        }
+
     }
 
     void testOnlineChangeCpuAndMemory() {

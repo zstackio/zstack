@@ -113,7 +113,6 @@ public class VmQuotaOperator implements Quota.QuotaOperator {
         return usages;
     }
 
-
     private void check(APIStartVmInstanceMsg msg, Map<String, Quota.QuotaPair> pairs) {
         checkStartVmInstance(msg.getSession().getAccountUuid(), msg.getVmInstanceUuid(), pairs);
     }
@@ -169,8 +168,6 @@ public class VmQuotaOperator implements Quota.QuotaOperator {
                                       String vmInstanceUuid,
                                       Map<String, Quota.QuotaPair> pairs) {
         long vmNumQuota = pairs.get(VmQuotaConstant.VM_RUNNING_NUM).getValue();
-        long cpuNumQuota = pairs.get(VmQuotaConstant.VM_RUNNING_CPU_NUM).getValue();
-        long memoryQuota = pairs.get(VmQuotaConstant.VM_RUNNING_MEMORY_SIZE).getValue();
 
         VmQuotaUtil.VmQuota vmQuotaUsed = new VmQuotaUtil().getUsedVmCpuMemory(resourceTargetOwnerAccountUuid);
         //
@@ -193,6 +190,16 @@ public class VmQuotaOperator implements Quota.QuotaOperator {
                 vmQuotaUsed.totalVmNum);
         //
         VmInstanceVO vm = dbf.getEntityManager().find(VmInstanceVO.class, vmInstanceUuid);
+
+        checkVmCupAndMemoryCapacity(currentAccountUuid, resourceTargetOwnerAccountUuid, vm.getCpuNum(), vm.getMemorySize(), pairs);
+    }
+
+    @Transactional(readOnly = true)
+    public void checkVmCupAndMemoryCapacity(String currentAccountUuid, String resourceTargetOwnerAccountUuid, long cpu, long memory, Map<String, Quota.QuotaPair> pairs) {
+        VmQuotaUtil.VmQuota vmQuotaUsed = new VmQuotaUtil().getUsedVmCpuMemory(resourceTargetOwnerAccountUuid);
+        long cpuNumQuota = pairs.get(VmQuotaConstant.VM_RUNNING_CPU_NUM).getValue();
+        long memoryQuota = pairs.get(VmQuotaConstant.VM_RUNNING_MEMORY_SIZE).getValue();
+
         {
             QuotaUtil.QuotaCompareInfo quotaCompareInfo;
             quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
@@ -201,7 +208,7 @@ public class VmQuotaOperator implements Quota.QuotaOperator {
             quotaCompareInfo.quotaName = VmQuotaConstant.VM_RUNNING_CPU_NUM;
             quotaCompareInfo.quotaValue = cpuNumQuota;
             quotaCompareInfo.currentUsed = vmQuotaUsed.runningVmCpuNum;
-            quotaCompareInfo.request = vm.getCpuNum();
+            quotaCompareInfo.request = cpu;
             new QuotaUtil().CheckQuota(quotaCompareInfo);
         }
         {
@@ -212,11 +219,10 @@ public class VmQuotaOperator implements Quota.QuotaOperator {
             quotaCompareInfo.quotaName = VmQuotaConstant.VM_RUNNING_MEMORY_SIZE;
             quotaCompareInfo.quotaValue = memoryQuota;
             quotaCompareInfo.currentUsed = vmQuotaUsed.runningVmMemorySize;
-            quotaCompareInfo.request = vm.getMemorySize();
+            quotaCompareInfo.request = memory;
             new QuotaUtil().CheckQuota(quotaCompareInfo);
         }
     }
-
 
     private void checkVolumeQuotaForChangeResourceOwner(List<String> dataVolumeUuids,
                                                         List<String> rootVolumeUuids,

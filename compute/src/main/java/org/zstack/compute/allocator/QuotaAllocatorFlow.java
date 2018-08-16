@@ -21,6 +21,17 @@ public class QuotaAllocatorFlow extends AbstractHostAllocatorFlow {
             return;
         }
 
+        if (!spec.isFullAllocate()) {
+            new VmQuotaOperator().checkVmCupAndMemoryCapacity(accountUuid,
+                    accountUuid,
+                    spec.getCpuCapacity(),
+                    spec.getMemoryCapacity(),
+                    new QuotaUtil().makeQuotaPairs(accountUuid));
+
+            next(candidates);
+            return;
+        }
+
         new VmQuotaOperator().checkVmInstanceQuota(
                 accountUuid,
                 accountUuid,
