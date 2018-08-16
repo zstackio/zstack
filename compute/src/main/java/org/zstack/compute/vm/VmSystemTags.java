@@ -74,4 +74,6 @@ public class VmSystemTags {
     public static final String VM_SYSTEM_SERIAL_NUMBER_TOKEN = "vmSystemSerialNumber";
     public static PatternedSystemTag VM_SYSTEM_SERIAL_NUMBER = new PatternedSystemTag(String.format("vmSystemSerialNumber::{%s}", VM_SYSTEM_SERIAL_NUMBER_TOKEN), VmInstanceVO.class);
 
+    public static String BOOT_MODE_TOKEN = "bootMode";
+    public static PatternedSystemTag BOOT_MODE = new PatternedSystemTag(String.format("bootMode::{%s}", BOOT_MODE_TOKEN), VmInstanceVO.class);
 }
