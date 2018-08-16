@@ -9,10 +9,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.cloudbus.ReplyMessagePreSendingExtensionPoint;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SQLBatchWithReturn;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ThreadFacade;
@@ -29,12 +26,15 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.AfterReimageVmInstanceExtensionPoint;
+import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmJustBeforeDeleteFromDbExtensionPoint;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.volume.FireSnapShotCanonicalEvent;
+import org.zstack.storage.volume.VolumeJustBeforeDeleteFromDbExtensionPoint;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.ExceptionDSL;
@@ -59,7 +59,9 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         VolumeBeforeExpungeExtensionPoint,
         ResourceOwnerAfterChangeExtensionPoint,
         ReportQuotaExtensionPoint,
-        AfterReimageVmInstanceExtensionPoint {
+        AfterReimageVmInstanceExtensionPoint,
+        VmJustBeforeDeleteFromDbExtensionPoint,
+        VolumeJustBeforeDeleteFromDbExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VolumeSnapshotManagerImpl.class);
     private String syncSignature;
     @Autowired
@@ -948,5 +950,32 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         q = dbf.getEntityManager().createQuery(sql);
         q.setParameter("volUuid", rootVolumeUuid);
         q.executeUpdate();
+    }
+
+    @Override
+    public void vmJustBeforeDeleteFromDb(VmInstanceInventory inv) {
+        deleteStaleSnapshotRecords(inv.getRootVolumeUuid());
+    }
+
+    private void deleteStaleSnapshotRecords(String volumeUuid) {
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                if (!q(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.volumeUuid, volumeUuid).isExists()) {
+                    return;
+                }
+
+                List<String> treeUuids = q(VolumeSnapshotVO.class).select(VolumeSnapshotVO_.treeUuid).eq(VolumeSnapshotVO_.volumeUuid, volumeUuid).listValues();
+
+                sql(VolumeSnapshotTreeVO.class).in(VolumeSnapshotTreeVO_.uuid, treeUuids).delete();
+
+                sql(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.volumeUuid, volumeUuid).delete();
+            }
+        }.execute();
+    }
+
+    @Override
+    public void volumeJustBeforeDeleteFromDb(VolumeInventory inv) {
+        deleteStaleSnapshotRecords(inv.getUuid());
     }
 }
