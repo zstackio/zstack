@@ -62,5 +62,4 @@ public class APIExportImageFromBackupStorageMsg extends APIMessage implements Ba
             }
         };
     }
-
 }
