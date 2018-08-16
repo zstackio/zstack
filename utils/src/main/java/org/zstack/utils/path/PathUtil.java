@@ -6,8 +6,10 @@ import org.zstack.utils.logging.CLogger;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -181,6 +183,22 @@ public class PathUtil {
             logger.warn(String.format("Delete %s status: %s", path, success));
         } catch (Exception e) {
             logger.warn(String.format("Failed to delete file[path:%s]", path));
+        }
+    }
+
+    public static String createTempDirectory(){
+        try {
+            return Files.createTempDirectory("tmp").toAbsolutePath().normalize().toString();
+        } catch (IOException e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public static String createTempFile(String prefix, String suffix){
+        try {
+            return Files.createTempFile(prefix, suffix).toAbsolutePath().normalize().toString();
+        } catch (IOException e) {
+            throw new RuntimeException(e.getMessage());
         }
     }
 }
