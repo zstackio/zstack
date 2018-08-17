@@ -5,6 +5,7 @@ import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.AsyncBatchRunner;
 import org.zstack.core.asyncbatch.LoopAsyncBatch;
@@ -24,6 +25,7 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.AsyncLatch;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.progress.TaskProgressRange;
@@ -39,16 +41,15 @@ import org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotEven
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageDeletionPolicyManager.ImageDeletionPolicy;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
-import org.zstack.header.message.APIMessage;
-import org.zstack.header.message.Message;
-import org.zstack.header.message.MessageReply;
-import org.zstack.header.message.NeedQuotaCheckMessage;
+import org.zstack.header.message.*;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.search.SearchOp;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.storage.primary.PrimaryStorageVO_;
 import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.tag.SystemTagCreateMessageValidator;
+import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.CreateTemplateFromVmRootVolumeMsg;
 import org.zstack.header.vm.CreateTemplateFromVmRootVolumeReply;
 import org.zstack.header.vm.VmInstanceConstant;
@@ -56,6 +57,7 @@ import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.search.SearchQuery;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
 import org.zstack.utils.function.ForEachFunction;
@@ -75,12 +77,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.getTaskStage;
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.header.Constants.THREAD_CONTEXT_API;
 import static org.zstack.header.Constants.THREAD_CONTEXT_TASK_NAME;
+import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionDSL.map;
 
 public class ImageManagerImpl extends AbstractService implements ImageManager, ManagementNodeReadyExtensionPoint,
         ReportQuotaExtensionPoint, ResourceOwnerPreChangeExtensionPoint {
@@ -394,8 +399,65 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
     @Override
     public boolean start() {
         populateExtensions();
+        installSystemTagValidator();
         installGlobalConfigUpdater();
         return true;
+    }
+
+    private void installSystemTagValidator() {
+        installBootModeValidator();
+    }
+
+    private void installBootModeValidator() {
+        class BootModeValidator implements SystemTagCreateMessageValidator, SystemTagValidator {
+            @Override
+            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                if (!ImageSystemTags.BOOT_MODE.isMatch(systemTag)) {
+                    return;
+                }
+
+                String bootMode = ImageSystemTags.BOOT_MODE.getTokenByTag(systemTag, ImageSystemTags.BOOT_MODE_TOKEN);
+                validateBootMode(systemTag, bootMode);
+            }
+
+            @Override
+            public void validateSystemTagInCreateMessage(APICreateMessage msg) {
+                if (msg.getSystemTags() == null || msg.getSystemTags().isEmpty()) {
+                    return;
+                }
+
+                int bootModeCount = 0;
+                for (String systemTag : msg.getSystemTags()) {
+                    if (ImageSystemTags.BOOT_MODE.isMatch(systemTag)) {
+                        if (++bootModeCount > 1) {
+                            throw new ApiMessageInterceptionException(argerr("only one bootMode system tag is allowed, but %d got", bootModeCount));
+                        }
+
+                        String bootMode = ImageSystemTags.BOOT_MODE.getTokenByTag(systemTag, ImageSystemTags.BOOT_MODE_TOKEN);
+                        validateBootMode(systemTag, bootMode);
+                    }
+                }
+            }
+
+            private void validateBootMode(String systemTag, String bootMode) {
+                boolean valid = false;
+                for (ImageBootMode bm : ImageBootMode.values()) {
+                    if (bm.name().equalsIgnoreCase(bootMode)) {
+                        valid = true;
+                        break;
+                    }
+                }
+                if (!valid) {
+                    throw new ApiMessageInterceptionException(argerr(
+                            "[%s] specified in system tag [%s] is not a valid boot mode", bootMode, systemTag)
+                    );
+                }
+            }
+        }
+
+        BootModeValidator validator = new BootModeValidator();
+        tagMgr.installCreateMessageValidator(ImageVO.class.getSimpleName(), validator);
+        ImageSystemTags.BOOT_MODE.installValidator(validator);
     }
 
     private void installGlobalConfigUpdater() {
@@ -1445,6 +1507,16 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                     ImageSystemTags.IMAGE_INJECT_QEMUGA.getTagFormat(),
                                     ImageVO.class.getSimpleName());
                         }
+
+                        String bootMode = VmSystemTags.BOOT_MODE.getTokenByResourceUuid(vmInstanceUuid, VmSystemTags.BOOT_MODE_TOKEN);
+                        if (bootMode != null) {
+                            SystemTagCreator creator = ImageSystemTags.BOOT_MODE.newSystemTagCreator(imageVO.getUuid());
+                            creator.setTagByTokens(map(e(VmSystemTags.BOOT_MODE_TOKEN, bootMode)));
+                            creator.inherent = false;
+                            creator.recreate = true;
+                            creator.create();
+                        }
+
                         trigger.next();
                     }
 

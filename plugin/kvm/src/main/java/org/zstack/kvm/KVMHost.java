@@ -45,6 +45,7 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.host.MigrateVmOnHypervisorMsg.StorageMigrationPolicy;
 import org.zstack.header.image.ImagePlatform;
+import org.zstack.header.image.ImageBootMode;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -2081,6 +2082,8 @@ public class KVMHost extends HostBase implements Host {
             cmd.getBootIso().add(bootIso);
         }
 
+        String bootMode = VmSystemTags.BOOT_MODE.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmSystemTags.BOOT_MODE_TOKEN);
+        cmd.setBootMode(bootMode == null ? ImageBootMode.Legacy.toString() : bootMode);
         cmd.setBootDev(toKvmBootDev(spec.getBootOrders()));
         cmd.setHostManagementIp(self.getManagementIp());
         cmd.setConsolePassword(spec.getConsolePassword());

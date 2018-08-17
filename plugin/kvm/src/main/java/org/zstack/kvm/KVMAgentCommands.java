@@ -865,6 +865,15 @@ public class KVMAgentCommands {
         private boolean emulateHyperV;
         private boolean isApplianceVm;
         private String systemSerialNumber;
+        private String bootMode;
+
+        public String getBootMode() {
+            return bootMode;
+        }
+
+        public void setBootMode(String bootMode) {
+            this.bootMode = bootMode;
+        }
 
         public boolean isEmulateHyperV() {
             return emulateHyperV;

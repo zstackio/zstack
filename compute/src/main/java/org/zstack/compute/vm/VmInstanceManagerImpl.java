@@ -48,11 +48,8 @@ import org.zstack.header.host.HostStatus;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.Quota.QuotaOperator;
 import org.zstack.header.identity.Quota.QuotaPair;
+import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
-import org.zstack.header.image.ImageInventory;
-import org.zstack.header.image.ImagePlatform;
-import org.zstack.header.image.ImageVO;
-import org.zstack.header.image.ImageVO_;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
@@ -74,7 +71,10 @@ import org.zstack.identity.QuotaUtil;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.*;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.ObjectUtils;
+import org.zstack.utils.TagUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -1312,9 +1312,62 @@ public class VmInstanceManagerImpl extends AbstractService implements
         VmSystemTags.USERDATA.installValidator(userDataValidator);
     }
 
+    private void installBootModeValidator() {
+        class BootModeValidator implements SystemTagCreateMessageValidator, SystemTagValidator {
+            @Override
+            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                if (!VmSystemTags.BOOT_MODE.isMatch(systemTag)) {
+                    return;
+                }
+
+                String bootMode = VmSystemTags.BOOT_MODE.getTokenByTag(systemTag, VmSystemTags.BOOT_MODE_TOKEN);
+                validateBootMode(systemTag, bootMode);
+            }
+
+            @Override
+            public void validateSystemTagInCreateMessage(APICreateMessage msg) {
+                if (msg.getSystemTags() == null || msg.getSystemTags().isEmpty()) {
+                    return;
+                }
+
+                int bootModeCount = 0;
+                for (String systemTag : msg.getSystemTags()) {
+                    if (VmSystemTags.BOOT_MODE.isMatch(systemTag)) {
+                        if (++bootModeCount > 1) {
+                            throw new ApiMessageInterceptionException(argerr("only one bootMode system tag is allowed, but %d got", bootModeCount));
+                        }
+
+                        String bootMode = VmSystemTags.BOOT_MODE.getTokenByTag(systemTag, VmSystemTags.BOOT_MODE_TOKEN);
+                        validateBootMode(systemTag, bootMode);
+                    }
+                }
+            }
+
+            private void validateBootMode(String systemTag, String bootMode) {
+                boolean valid = false;
+                for (ImageBootMode bm : ImageBootMode.values()) {
+                    if (bm.name().equalsIgnoreCase(bootMode)) {
+                        valid = true;
+                        break;
+                    }
+                }
+                if (!valid) {
+                    throw new ApiMessageInterceptionException(argerr(
+                            "[%s] specified in system tag [%s] is not a valid boot mode", bootMode, systemTag)
+                    );
+                }
+            }
+        }
+
+        BootModeValidator validator = new BootModeValidator();
+        tagMgr.installCreateMessageValidator(VmInstanceVO.class.getSimpleName(), validator);
+        VmSystemTags.BOOT_MODE.installValidator(validator);
+    }
+
     private void installSystemTagValidator() {
         installHostnameValidator();
         installUserdataValidator();
+        installBootModeValidator();
     }
 
     @Override
