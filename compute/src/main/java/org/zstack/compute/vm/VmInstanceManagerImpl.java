@@ -1,8 +1,6 @@
 package org.zstack.compute.vm;
 
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
-import org.apache.commons.collections.EnumerationUtils;
-import org.apache.commons.lang.enums.EnumUtils;
 import org.apache.commons.validator.routines.DomainValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.jpa.JpaSystemException;
@@ -50,11 +48,8 @@ import org.zstack.header.host.HostStatus;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.Quota.QuotaOperator;
 import org.zstack.header.identity.Quota.QuotaPair;
+import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
-import org.zstack.header.image.ImageInventory;
-import org.zstack.header.image.ImagePlatform;
-import org.zstack.header.image.ImageVO;
-import org.zstack.header.image.ImageVO_;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
@@ -1339,7 +1334,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 for (String systemTag : msg.getSystemTags()) {
                     if (VmSystemTags.BOOT_MODE.isMatch(systemTag)) {
                         if (++bootModeCount > 1) {
-                            throw new ApiMessageInterceptionException(argerr("only one bootMode system tag is allowed, but %s got", bootModeCount));
+                            throw new ApiMessageInterceptionException(argerr("only one bootMode system tag is allowed, but %d got", bootModeCount));
                         }
 
                         String bootMode = VmSystemTags.BOOT_MODE.getTokenByTag(systemTag, VmSystemTags.BOOT_MODE_TOKEN);
@@ -1350,8 +1345,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
             private void validateBootMode(String systemTag, String bootMode) {
                 boolean valid = false;
-                for (VmBootMode bm : VmBootMode.values()) {
-                    if (bm.name().equals(bootMode)) {
+                for (ImageBootMode bm : ImageBootMode.values()) {
+                    if (bm.name().equalsIgnoreCase(bootMode)) {
                         valid = true;
                         break;
                     }

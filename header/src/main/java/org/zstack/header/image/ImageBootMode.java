@@ -1,9 +1,9 @@
-package org.zstack.header.vm;
+package org.zstack.header.image;
 
 /**
  * Created by GuoYi on 8/16/18.
  */
-public enum VmBootMode {
+public enum ImageBootMode {
     Legacy,
     UEFI
 }
