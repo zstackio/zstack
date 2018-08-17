@@ -21,6 +21,8 @@
             <zstack:extension interface="org.zstack.header.identity.ResourceOwnerAfterChangeExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.identity.ReportQuotaExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.vm.AfterReimageVmInstanceExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.vm.VmJustBeforeDeleteFromDbExtensionPoint"/>
+            <zstack:extension interface="org.zstack.storage.volume.VolumeJustBeforeDeleteFromDbExtensionPoint"/>
         </zstack:plugin>
     </bean>
 
