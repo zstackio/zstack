@@ -44,6 +44,14 @@ public class VmNicInventory  {
         return this.mac;
     }
 
+    public java.lang.String hypervisorType;
+    public void setHypervisorType(java.lang.String hypervisorType) {
+        this.hypervisorType = hypervisorType;
+    }
+    public java.lang.String getHypervisorType() {
+        return this.hypervisorType;
+    }
+
     public java.lang.String netmask;
     public void setNetmask(java.lang.String netmask) {
         this.netmask = netmask;

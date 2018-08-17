@@ -4,7 +4,6 @@ import org.zstack.header.message.APIReply;
 import org.zstack.header.rest.RestResponse;
 import org.zstack.header.vm.VmNicInventory;
 
-import java.sql.Timestamp;
 import java.util.List;
 
 import static java.util.Arrays.asList;
@@ -33,6 +32,7 @@ public class APIGetPortForwardingAttachableVmNicsReply extends APIReply {
         vmNic.setIp("192.168.0.123");
         vmNic.setL3NetworkUuid(uuid());
         vmNic.setMac("fa:ef:34:5c:6c:00");
+        vmNic.setHypervisorType("KVM");
         vmNic.setNetmask("255.255.255.0");
         vmNic.setVmInstanceUuid(uuid());
         reply.setInventories(asList(vmNic));

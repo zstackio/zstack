@@ -32,6 +32,8 @@ import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -80,11 +82,38 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             handle((APICancelLongJobMsg) msg);
         } else if (msg instanceof APIDeleteLongJobMsg) {
             handle((APIDeleteLongJobMsg) msg);
+        } else if (msg instanceof APIRerunLongJobMsg) {
+            handle((APIRerunLongJobMsg) msg);
         } else if (msg instanceof SubmitLongJobMsg) {
             handle((SubmitLongJobMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIRerunLongJobMsg msg) {
+        APIRerunLongJobEvent evt = new APIRerunLongJobEvent(msg.getId());
+        SubmitLongJobMsg smsg = new SubmitLongJobMsg();
+        LongJobVO job = dbf.findByUuid(msg.getUuid(), LongJobVO.class);
+        smsg.setJobUuid(job.getUuid());
+        smsg.setDescription(job.getDescription());
+        smsg.setJobData(job.getJobData());
+        smsg.setJobName(job.getJobName());
+        smsg.setName(job.getName());
+        smsg.setTargetResourceUuid(job.getTargetResourceUuid());
+        smsg.setResourceUuid(job.getUuid());
+        smsg.setSystemTags(msg.getSystemTags());
+        smsg.setUserTags(msg.getUserTags());
+        smsg.setAccountUuid(msg.getSession().getAccountUuid());
+        bus.makeLocalServiceId(smsg, LongJobConstants.SERVICE_ID);
+        bus.send(smsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply rly) {
+                SubmitLongJobReply reply = rly.castReply();
+                evt.setInventory(reply.getInventory());
+                bus.publish(evt);
+            }
+        });
     }
 
     private void handle(APIDeleteLongJobMsg msg) {
@@ -172,30 +201,44 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
     }
 
     private void handle(SubmitLongJobMsg msg) {
-        // create LongJobVO
-        LongJobVO vo = new LongJobVO();
+        // create new LongJobVO or get old LongJobVO
+        LongJobVO vo = null;
         if (msg.getResourceUuid() != null) {
-            vo.setUuid(msg.getResourceUuid());
-        } else {
-            vo.setUuid(Platform.getUuid());
+            vo = dbf.findByUuid(msg.getResourceUuid(), LongJobVO.class);
+            vo.setApiId(ThreadContext.getImmutableContext().get(Constants.THREAD_CONTEXT_API));
+            vo.setState(LongJobState.Waiting);
+            vo.setJobResult(null);
+            Timestamp now = Timestamp.valueOf(LocalDateTime.now());
+            vo.setCreateDate(now);
+            vo.setLastOpDate(now);
+            vo = dbf.updateAndRefresh(vo);
+            logger.info(String.format("longjob [uuid:%s, name:%s] has been re-submitted", vo.getUuid(), vo.getName()));
         }
-        if (msg.getName() != null) {
-            vo.setName(msg.getName());
-        } else {
-            vo.setName(msg.getJobName());
+        if (vo == null) {
+            vo = new LongJobVO();
+            if (msg.getResourceUuid() != null) {
+                vo.setUuid(msg.getResourceUuid());
+            } else {
+                vo.setUuid(Platform.getUuid());
+            }
+            if (msg.getName() != null) {
+                vo.setName(msg.getName());
+            } else {
+                vo.setName(msg.getJobName());
+            }
+            vo.setDescription(msg.getDescription());
+            vo.setApiId(ThreadContext.getImmutableContext().get(Constants.THREAD_CONTEXT_API));
+            vo.setJobName(msg.getJobName());
+            vo.setJobData(msg.getJobData());
+            vo.setState(LongJobState.Waiting);
+            vo.setTargetResourceUuid(msg.getTargetResourceUuid());
+            vo.setManagementNodeUuid(Platform.getManagementServerId());
+            vo.setAccountUuid(msg.getAccountUuid());
+            vo = dbf.persistAndRefresh(vo);
+            msg.setJobUuid(vo.getUuid());
+            tagMgr.createTags(msg.getSystemTags(), msg.getUserTags(), vo.getUuid(), LongJobVO.class.getSimpleName());
+            logger.info(String.format("new longjob [uuid:%s, name:%s] has been created", vo.getUuid(), vo.getName()));
         }
-        vo.setDescription(msg.getDescription());
-        vo.setApiId(ThreadContext.getImmutableContext().get(Constants.THREAD_CONTEXT_API));
-        vo.setJobName(msg.getJobName());
-        vo.setJobData(msg.getJobData());
-        vo.setState(LongJobState.Waiting);
-        vo.setTargetResourceUuid(msg.getTargetResourceUuid());
-        vo.setManagementNodeUuid(Platform.getManagementServerId());
-        vo.setAccountUuid(msg.getAccountUuid());
-        vo = dbf.persistAndRefresh(vo);
-        msg.setJobUuid(vo.getUuid());
-        tagMgr.createTags(msg.getSystemTags(), msg.getUserTags(), vo.getUuid(), LongJobVO.class.getSimpleName());
-        logger.info(String.format("new longjob [uuid:%s, name:%s] has been created", vo.getUuid(), vo.getName()));
 
         // wait in line
         thdf.chainSubmit(new ChainTask(msg) {
@@ -224,6 +267,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                         vo.setState(LongJobState.Succeeded);
                         if (vo.getJobResult() == null || vo.getJobResult().isEmpty())
                             vo.setJobResult("Succeeded");
+                        vo.setLastOpDate(Timestamp.valueOf(LocalDateTime.now()));
                         dbf.update(vo);
                         logger.info(String.format("successfully run longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
                     }
@@ -234,6 +278,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                         vo.setState(LongJobState.Failed);
                         if (vo.getJobResult() == null || vo.getJobResult().isEmpty())
                             vo.setJobResult("Failed : " + errorCode.toString());
+                        vo.setLastOpDate(Timestamp.valueOf(LocalDateTime.now()));
                         dbf.update(vo);
                         logger.info(String.format("failed to run longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
                     }

@@ -79,7 +79,7 @@ import static java.util.Arrays.asList;
         responseClass = APICreateVmInstanceEvent.class,
         parameterName = "params"
 )
-public class APICreateVmInstanceMsg extends APICreateMessage implements APIAuditor {
+public class APICreateVmInstanceMsg extends APICreateMessage implements APIAuditor, NewVmInstanceMessage {
     /**
      * @desc max length of 255 characters
      */
