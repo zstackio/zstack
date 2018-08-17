@@ -9,3 +9,15 @@ CREATE TABLE `LoginAttemptsVO` (
     PRIMARY KEY (`uuid`),
     UNIQUE KEY `uuid` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `V2VConverterServerVO` (
+    `uuid` VARCHAR(32) NOT NULL,
+    `name` varchar(128) NOT NULL,
+    `description` VARCHAR(2048) DEFAULT NULL,
+    `hostUuid` varchar(32) NOT NULL,
+    `storagePath`varchar(1024) NOT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`uuid`),
+    UNIQUE KEY `uuid` (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
