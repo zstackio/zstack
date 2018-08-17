@@ -27,6 +27,7 @@ public class VmNicInventory implements Serializable {
     private String l3NetworkUuid;
     private String ip;
     private String mac;
+    private String hypervisorType;
     private String netmask;
     private String gateway;
     private String metaData;
@@ -45,6 +46,7 @@ public class VmNicInventory implements Serializable {
         inv.setInternalName(vo.getInternalName());
         inv.setIp(vo.getIp());
         inv.setMac(vo.getMac());
+        inv.setHypervisorType(vo.getHypervisorType());
         inv.setDeviceId(vo.getDeviceId());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
@@ -100,6 +102,14 @@ public class VmNicInventory implements Serializable {
 
     public void setMac(String mac) {
         this.mac = mac;
+    }
+
+    public String getHypervisorType() {
+        return hypervisorType;
+    }
+
+    public void setHypervisorType(String hypervisorType) {
+        this.hypervisorType = hypervisorType;
     }
 
     public String getL3NetworkUuid() {
