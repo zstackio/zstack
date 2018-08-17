@@ -25,6 +25,7 @@ public class AllocateHostMsg extends NeedReplyMessage {
     private boolean listAllHosts;
     private String requiredBackupStorageUuid;
     private String requiredPrimaryStorageUuid;
+    private boolean fullAllocate = true;
 
     public String getRequiredPrimaryStorageUuid() {
         return requiredPrimaryStorageUuid;
@@ -158,5 +159,13 @@ public class AllocateHostMsg extends NeedReplyMessage {
 
     public void setVmInstance(VmInstanceInventory vmInstance) {
         this.vmInstance = vmInstance;
+    }
+
+    public boolean isFullAllocate() {
+        return fullAllocate;
+    }
+
+    public void setFullAllocate(boolean fullAllocate) {
+        this.fullAllocate = fullAllocate;
     }
 }
