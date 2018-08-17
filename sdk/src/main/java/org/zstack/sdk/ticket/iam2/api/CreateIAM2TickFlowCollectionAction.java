@@ -28,6 +28,9 @@ public class CreateIAM2TickFlowCollectionAction extends AbstractAction {
     @Param(required = false)
     public java.util.List flows;
 
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String projectUuid;
+
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
@@ -35,7 +38,7 @@ public class CreateIAM2TickFlowCollectionAction extends AbstractAction {
     public java.lang.String description;
 
     @Param(required = false)
-    public java.lang.Boolean isDefault;
+    public java.lang.Boolean isDefault = false;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
