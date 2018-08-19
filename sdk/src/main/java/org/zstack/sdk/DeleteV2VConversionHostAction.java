@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddV2VConverterServerAction extends AbstractAction {
+public class DeleteV2VConversionHostAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddV2VConverterServerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddV2VConverterServerResult value;
+        public org.zstack.sdk.DeleteV2VConversionHostResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,20 +25,11 @@ public class AddV2VConverterServerAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String hostUuid;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String storagePath;
+    public java.lang.String uuid;
 
     @Param(required = false)
-    public java.lang.String resourceUuid;
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -63,8 +54,8 @@ public class AddV2VConverterServerAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddV2VConverterServerResult value = res.getResult(org.zstack.sdk.AddV2VConverterServerResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddV2VConverterServerResult() : value; 
+        org.zstack.sdk.DeleteV2VConversionHostResult value = res.getResult(org.zstack.sdk.DeleteV2VConversionHostResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteV2VConversionHostResult() : value; 
 
         return ret;
     }
@@ -93,11 +84,11 @@ public class AddV2VConverterServerAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/v2v-converter-servers";
+        info.httpMethod = "DELETE";
+        info.path = "/v2v-conversion-hosts/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

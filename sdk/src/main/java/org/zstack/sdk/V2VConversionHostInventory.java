@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class V2VConverterServerInventory  {
+public class V2VConversionHostInventory  {
 
     public java.lang.String uuid;
     public void setUuid(java.lang.String uuid) {

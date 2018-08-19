@@ -1448,8 +1448,8 @@ trait ApiHelper {
     }
 
 
-    def addV2VConverterServer(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.AddV2VConverterServerAction.class) Closure c) {
-        def a = new org.zstack.sdk.AddV2VConverterServerAction()
+    def addV2VConversionHost(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.AddV2VConversionHostAction.class) Closure c) {
+        def a = new org.zstack.sdk.AddV2VConversionHostAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -7685,8 +7685,8 @@ trait ApiHelper {
     }
 
 
-    def deleteV2VConverterServer(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteV2VConverterServerAction.class) Closure c) {
-        def a = new org.zstack.sdk.DeleteV2VConverterServerAction()
+    def deleteV2VConversionHost(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteV2VConversionHostAction.class) Closure c) {
+        def a = new org.zstack.sdk.DeleteV2VConversionHostAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -15640,8 +15640,8 @@ trait ApiHelper {
     }
 
 
-    def queryV2VConverterServer(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryV2VConverterServerAction.class) Closure c) {
-        def a = new org.zstack.sdk.QueryV2VConverterServerAction()
+    def queryV2VConversionHost(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryV2VConversionHostAction.class) Closure c) {
+        def a = new org.zstack.sdk.QueryV2VConversionHostAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -21152,8 +21152,8 @@ trait ApiHelper {
     }
 
 
-    def updateV2VConverterServer(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateV2VConverterServerAction.class) Closure c) {
-        def a = new org.zstack.sdk.UpdateV2VConverterServerAction()
+    def updateV2VConversionHost(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateV2VConversionHostAction.class) Closure c) {
+        def a = new org.zstack.sdk.UpdateV2VConversionHostAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a

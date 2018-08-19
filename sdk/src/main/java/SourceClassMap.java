@@ -273,7 +273,7 @@ public class SourceClassMap {
 			put("org.zstack.twoFactorAuthentication.TwoFactorAuthenticationSecretInventory", "org.zstack.sdk.TwoFactorAuthenticationSecretInventory");
 			put("org.zstack.usbDevice.UsbDeviceInventory", "org.zstack.sdk.UsbDeviceInventory");
 			put("org.zstack.usbDevice.UsbDeviceState", "org.zstack.sdk.UsbDeviceState");
-			put("org.zstack.v2v.V2VConverterServerInventory", "org.zstack.sdk.V2VConverterServerInventory");
+			put("org.zstack.v2v.V2VConversionHostInventory", "org.zstack.sdk.V2VConversionHostInventory");
 			put("org.zstack.vmware.ESXHostInventory", "org.zstack.sdk.ESXHostInventory");
 			put("org.zstack.vmware.VCenterBackupStorageInventory", "org.zstack.sdk.VCenterBackupStorageInventory");
 			put("org.zstack.vmware.VCenterClusterInventory", "org.zstack.sdk.VCenterClusterInventory");
@@ -511,7 +511,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.UserGroupInventory", "org.zstack.header.identity.UserGroupInventory");
 			put("org.zstack.sdk.UserInventory", "org.zstack.header.identity.UserInventory");
 			put("org.zstack.sdk.UserTagInventory", "org.zstack.header.tag.UserTagInventory");
-			put("org.zstack.sdk.V2VConverterServerInventory", "org.zstack.v2v.V2VConverterServerInventory");
+			put("org.zstack.sdk.V2VConversionHostInventory", "org.zstack.v2v.V2VConversionHostInventory");
 			put("org.zstack.sdk.VCenterBackupStorageInventory", "org.zstack.vmware.VCenterBackupStorageInventory");
 			put("org.zstack.sdk.VCenterClusterInventory", "org.zstack.vmware.VCenterClusterInventory");
 			put("org.zstack.sdk.VCenterDatacenterInventory", "org.zstack.vmware.VCenterDatacenterInventory");
