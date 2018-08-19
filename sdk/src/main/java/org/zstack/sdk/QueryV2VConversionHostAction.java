@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class QueryV2VConverterServerAction extends QueryAction {
+public class QueryV2VConversionHostAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class QueryV2VConverterServerAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.QueryV2VConverterServerResult value;
+        public org.zstack.sdk.QueryV2VConversionHostResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -34,8 +34,8 @@ public class QueryV2VConverterServerAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.QueryV2VConverterServerResult value = res.getResult(org.zstack.sdk.QueryV2VConverterServerResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QueryV2VConverterServerResult() : value; 
+        org.zstack.sdk.QueryV2VConversionHostResult value = res.getResult(org.zstack.sdk.QueryV2VConversionHostResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryV2VConversionHostResult() : value; 
 
         return ret;
     }
@@ -65,7 +65,7 @@ public class QueryV2VConverterServerAction extends QueryAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/v2v-converter-servers";
+        info.path = "/v2v-conversion-hosts";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

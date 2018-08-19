@@ -10,7 +10,7 @@ CREATE TABLE `LoginAttemptsVO` (
     UNIQUE KEY `uuid` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `V2VConverterServerVO` (
+CREATE TABLE `V2VConversionHostVO` (
     `uuid` VARCHAR(32) NOT NULL,
     `name` varchar(128) NOT NULL,
     `description` VARCHAR(2048) DEFAULT NULL,

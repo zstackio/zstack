@@ -2,9 +2,8 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
-public class UpdateV2VConverterServerAction extends AbstractAction {
+public class AddV2VConversionHostAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +11,7 @@ public class UpdateV2VConverterServerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateV2VConverterServerResult value;
+        public org.zstack.sdk.AddV2VConversionHostResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,14 +24,20 @@ public class UpdateV2VConverterServerAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String hostUuid;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String storagePath;
+
+    @Param(required = false)
+    public java.lang.String resourceUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -57,8 +62,8 @@ public class UpdateV2VConverterServerAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateV2VConverterServerResult value = res.getResult(org.zstack.sdk.UpdateV2VConverterServerResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateV2VConverterServerResult() : value; 
+        org.zstack.sdk.AddV2VConversionHostResult value = res.getResult(org.zstack.sdk.AddV2VConversionHostResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddV2VConversionHostResult() : value; 
 
         return ret;
     }
@@ -87,11 +92,11 @@ public class UpdateV2VConverterServerAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/v2v-converter-servers/{uuid}/actions";
+        info.httpMethod = "POST";
+        info.path = "/v2v-conversion-hosts";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "updateV2VConverterServer";
+        info.parameterName = "params";
         return info;
     }
 

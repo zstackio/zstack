@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class QueryV2VConverterServerResult {
+public class QueryV2VConversionHostResult {
     public java.util.List inventories;
     public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
