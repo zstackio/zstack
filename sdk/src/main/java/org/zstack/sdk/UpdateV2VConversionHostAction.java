@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class UpdateV2VConversionHostAction extends AbstractAction {
 
@@ -32,6 +33,9 @@ public class UpdateV2VConversionHostAction extends AbstractAction {
 
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String storagePath;
 
     @Param(required = false)
     public java.util.List systemTags;
