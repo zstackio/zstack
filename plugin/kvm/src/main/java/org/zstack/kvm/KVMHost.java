@@ -2081,6 +2081,8 @@ public class KVMHost extends HostBase implements Host {
             cmd.getBootIso().add(bootIso);
         }
 
+        String bootMode = VmSystemTags.BOOT_MODE.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmSystemTags.BOOT_MODE_TOKEN);
+        cmd.setBootMode(bootMode == null ? VmBootMode.Legacy.toString() : bootMode);
         cmd.setBootDev(toKvmBootDev(spec.getBootOrders()));
         cmd.setHostManagementIp(self.getManagementIp());
         cmd.setConsolePassword(spec.getConsolePassword());
