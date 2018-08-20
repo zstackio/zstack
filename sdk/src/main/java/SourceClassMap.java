@@ -15,6 +15,14 @@ public class SourceClassMap {
 			put("org.zstack.aliyunproxy.vpc.AliyunProxyVSwitchInventory", "org.zstack.sdk.AliyunProxyVSwitchInventory");
 			put("org.zstack.aliyunproxy.vpc.AliyunProxyVpcInventory", "org.zstack.sdk.AliyunProxyVpcInventory");
 			put("org.zstack.appliancevm.ApplianceVmInventory", "org.zstack.sdk.ApplianceVmInventory");
+			put("org.zstack.autoscaling.group.AutoScalingGroupInventory", "org.zstack.sdk.AutoScalingGroupInventory");
+			put("org.zstack.autoscaling.group.AutoScalingTemplateInventory", "org.zstack.sdk.AutoScalingTemplateInventory");
+			put("org.zstack.autoscaling.group.AutoScalingVmTemplateInventory", "org.zstack.sdk.AutoScalingVmTemplateInventory");
+			put("org.zstack.autoscaling.profile.AutoScalingHorizontalScalingProfileInventory", "org.zstack.sdk.AutoScalingHorizontalScalingProfileInventory");
+			put("org.zstack.autoscaling.profile.AutoScalingProfileInventory", "org.zstack.sdk.AutoScalingProfileInventory");
+			put("org.zstack.autoscaling.profile.AutoScalingProfileState", "org.zstack.sdk.AutoScalingProfileState");
+			put("org.zstack.autoscaling.profile.AutoScalingProfileStatus", "org.zstack.sdk.AutoScalingProfileStatus");
+			put("org.zstack.autoscaling.profile.ScaleInStrategy", "org.zstack.sdk.ScaleInStrategy");
 			put("org.zstack.billing.DataVolumeSpending", "org.zstack.sdk.DataVolumeSpending");
 			put("org.zstack.billing.DataVolumeSpendingInventory", "org.zstack.sdk.DataVolumeSpendingInventory");
 			put("org.zstack.billing.PciDeviceSpending", "org.zstack.sdk.PciDeviceSpending");
@@ -349,6 +357,13 @@ public class SourceClassMap {
 			put("org.zstack.sdk.AliyunRouterInterfaceInventory", "org.zstack.header.aliyun.network.connection.AliyunRouterInterfaceInventory");
 			put("org.zstack.sdk.AliyunSnapshotInventory", "org.zstack.header.aliyun.storage.snapshot.AliyunSnapshotInventory");
 			put("org.zstack.sdk.ApplianceVmInventory", "org.zstack.appliancevm.ApplianceVmInventory");
+			put("org.zstack.sdk.AutoScalingGroupInventory", "org.zstack.autoscaling.group.AutoScalingGroupInventory");
+			put("org.zstack.sdk.AutoScalingHorizontalScalingProfileInventory", "org.zstack.autoscaling.profile.AutoScalingHorizontalScalingProfileInventory");
+			put("org.zstack.sdk.AutoScalingProfileInventory", "org.zstack.autoscaling.profile.AutoScalingProfileInventory");
+			put("org.zstack.sdk.AutoScalingProfileState", "org.zstack.autoscaling.profile.AutoScalingProfileState");
+			put("org.zstack.sdk.AutoScalingProfileStatus", "org.zstack.autoscaling.profile.AutoScalingProfileStatus");
+			put("org.zstack.sdk.AutoScalingTemplateInventory", "org.zstack.autoscaling.group.AutoScalingTemplateInventory");
+			put("org.zstack.sdk.AutoScalingVmTemplateInventory", "org.zstack.autoscaling.group.AutoScalingVmTemplateInventory");
 			put("org.zstack.sdk.BackupStorageInventory", "org.zstack.header.storage.backup.BackupStorageInventory");
 			put("org.zstack.sdk.BaremetalChassisInventory", "org.zstack.header.baremetal.chassis.BaremetalChassisInventory");
 			put("org.zstack.sdk.BaremetalException", "org.zstack.header.baremetal.BaremetalException");
@@ -490,6 +505,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ResourceType", "org.zstack.cloudformation.template.struct.ResourceType");
 			put("org.zstack.sdk.RootVolumeSpending", "org.zstack.billing.RootVolumeSpending");
 			put("org.zstack.sdk.RootVolumeSpendingInventory", "org.zstack.billing.RootVolumeSpendingInventory");
+			put("org.zstack.sdk.ScaleInStrategy", "org.zstack.autoscaling.profile.ScaleInStrategy");
 			put("org.zstack.sdk.SchedulerJobInventory", "org.zstack.header.scheduler.SchedulerJobInventory");
 			put("org.zstack.sdk.SchedulerJobSchedulerTriggerInventory", "org.zstack.header.scheduler.SchedulerJobSchedulerTriggerInventory");
 			put("org.zstack.sdk.SchedulerTriggerInventory", "org.zstack.header.scheduler.SchedulerTriggerInventory");
