@@ -28,6 +28,14 @@ public class V2VConversionHostInventory  {
         return this.description;
     }
 
+    public java.lang.String type;
+    public void setType(java.lang.String type) {
+        this.type = type;
+    }
+    public java.lang.String getType() {
+        return this.type;
+    }
+
     public java.lang.String hostUuid;
     public void setHostUuid(java.lang.String hostUuid) {
         this.hostUuid = hostUuid;
@@ -42,6 +50,14 @@ public class V2VConversionHostInventory  {
     }
     public java.lang.String getStoragePath() {
         return this.storagePath;
+    }
+
+    public java.lang.String state;
+    public void setState(java.lang.String state) {
+        this.state = state;
+    }
+    public java.lang.String getState() {
+        return this.state;
     }
 
     public java.sql.Timestamp createDate;
