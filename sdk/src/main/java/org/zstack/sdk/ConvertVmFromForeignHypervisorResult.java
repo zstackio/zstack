@@ -1,13 +1,13 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.VmInstanceInventory;
+import org.zstack.sdk.LongJobInventory;
 
 public class ConvertVmFromForeignHypervisorResult {
-    public VmInstanceInventory inventory;
-    public void setInventory(VmInstanceInventory inventory) {
+    public LongJobInventory inventory;
+    public void setInventory(LongJobInventory inventory) {
         this.inventory = inventory;
     }
-    public VmInstanceInventory getInventory() {
+    public LongJobInventory getInventory() {
         return this.inventory;
     }
 
