@@ -14,13 +14,18 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.identity.AccountConstant;
+import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.query.APIQueryReply;
 import org.zstack.header.tag.*;
+import org.zstack.identity.AccountManagerImpl;
+import org.zstack.identity.Session;
 import org.zstack.query.QueryFacade;
 import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
@@ -56,6 +61,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     private PluginRegistry pluginRgty;
 
     private List<SystemTag> systemTags = new ArrayList<>();
+    private List<SystemTag> adminOnlySystemTags = new ArrayList<>();
     private Map<String, List<SystemTag>> resourceTypeSystemTagMap = new HashMap<>();
     private Map<String, Class> resourceTypeClassMap = new HashMap<>();
     private Map<Class, Class> resourceTypeCreateMessageMap = new HashMap<>();
@@ -100,6 +106,10 @@ public class TagManagerImpl extends AbstractService implements TagManager,
                     f.set(null, sstag);
                     systemTags.add(sstag);
                     stag = sstag;
+                }
+
+                if (f.isAnnotationPresent(AdminOnlyTag.class)) {
+                    adminOnlySystemTags.add(stag);
                 }
 
                 stag.setTagMgr(this);
@@ -540,12 +550,26 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     @Deferred
     private void handle(APIUpdateSystemTagMsg msg) {
         APIUpdateSystemTagEvent evt = new APIUpdateSystemTagEvent(msg.getId());
+        ErrorCode err = checkPemission(msg.getTag(), msg.getSession());
+        if (err != null) {
+            evt.setError(err);
+            bus.publish(evt);
+            return;
+        }
+
         evt.setInventory(updateSystemTag(msg.getUuid(), msg.getTag()));
         bus.publish(evt);
     }
 
     private void handle(APICreateSystemTagMsg msg) {
         APICreateSystemTagEvent evt = new APICreateSystemTagEvent(msg.getId());
+        ErrorCode err = checkPemission(msg.getTag(), msg.getSession());
+        if (err != null) {
+            evt.setError(err);
+            bus.publish(evt);
+            return;
+        }
+
         SystemTagInventory inv = createNonInherentSystemTag(msg.getResourceUuid(), msg.getTag(), msg.getResourceType());
         evt.setInventory(inv);
         bus.publish(evt);
@@ -561,8 +585,14 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     private void handle(APIDeleteTagMsg msg) {
         APIDeleteTagEvent evt = new APIDeleteTagEvent(msg.getId());
         SystemTagVO stag = dbf.findByUuid(msg.getUuid(), SystemTagVO.class);
-
         if (stag != null) {
+            ErrorCode err = checkPemission(stag.getTag(), msg.getSession());
+            if (err != null) {
+                evt.setError(err);
+                bus.publish(evt);
+                return;
+            }
+
             preTagDeleted(SystemTagInventory.valueOf(stag));
         }
 
@@ -748,6 +778,11 @@ public class TagManagerImpl extends AbstractService implements TagManager,
                     }
                 }
 
+                ErrorCode err = checkPemission(tag, msg.getSession());
+                if (err != null) {
+                    throw new ApiMessageInterceptionException(err);
+                }
+
                 if (!checked) {
                     throw new ApiMessageInterceptionException(argerr("no system tag matches %s", tag));
                 }
@@ -770,6 +805,17 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         }
 
         return msg;
+    }
+
+    private ErrorCode checkPemission(String tag, SessionInventory session){
+        if (session == null || session.getUuid() == null || AccountConstant.isAdminPermission(Session.getSession(session.getUuid()))) {
+            return null;
+        }
+
+        if (adminOnlySystemTags.stream().anyMatch(it -> it.isMatch(tag))) {
+            return operr("tag[%s] is only for admin", tag);
+        }
+        return null;
     }
 
     private boolean isTagMatch(SystemTagInventory t, SystemTag s) {

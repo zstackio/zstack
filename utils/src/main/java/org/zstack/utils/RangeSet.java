@@ -1,6 +1,7 @@
 package org.zstack.utils;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  */
@@ -138,5 +139,36 @@ public class RangeSet {
         }
 
         return strList;
+    }
+
+    public static RangeSet valueOf(Collection<Long> numbers) {
+        RangeSet results = new RangeSet();
+        if (numbers.isEmpty()) {
+            return results;
+        }
+
+        List<Long> asc = numbers.stream().sorted().distinct().collect(Collectors.toList());
+        Long begin = asc.remove(0);
+        Long end = begin;
+        for (long n : asc) {
+            long lastEnd = end;
+            if (n != ++end) {
+                results.ranges.add(new Range(begin, lastEnd));
+                begin = n;
+                end = n;
+            }
+        }
+        results.ranges.add(new Range(begin, end));
+        return results;
+    }
+
+    public Set<Long> values(){
+        Set<Long> result = new HashSet<>();
+        for (Range range : ranges) {
+            for (long i = range.start; i <= range.end; i++) {
+                result.add(i);
+            }
+        }
+        return result;
     }
 }
