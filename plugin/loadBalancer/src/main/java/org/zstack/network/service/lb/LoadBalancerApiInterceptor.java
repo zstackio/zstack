@@ -1,5 +1,6 @@
 package org.zstack.network.service.lb;
 
+import javassist.compiler.ast.ASTList;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
@@ -29,6 +30,7 @@ import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 
 import javax.persistence.TypedQuery;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -237,30 +239,15 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
         q.select(LoadBalancerListenerVO_.uuid);
         q.add(LoadBalancerListenerVO_.loadBalancerPort, Op.EQ, msg.getLoadBalancerPort());
         q.add(LoadBalancerListenerVO_.loadBalancerUuid, Op.EQ, msg.getLoadBalancerUuid());
+        if (LoadBalancerConstants.LB_PROTOCOL_UDP.equals(msg.getProtocol())) {
+            q.add(LoadBalancerListenerVO_.protocol, Op.EQ, LoadBalancerConstants.LB_PROTOCOL_UDP);
+        } else {
+            q.add(LoadBalancerListenerVO_.protocol, Op.IN, Arrays.asList(LoadBalancerConstants.LB_PROTOCOL_TCP, LoadBalancerConstants.LB_PROTOCOL_HTTP,
+                    LoadBalancerConstants.LB_PROTOCOL_HTTPS));
+        }
         String luuid = q.findValue();
         if (luuid != null) {
             throw new ApiMessageInterceptionException(argerr("conflict loadBalancerPort[%s], a listener[uuid:%s] has used that port", msg.getLoadBalancerPort(), luuid));
-        }
-
-        /* there are 2 queries:
-        * #1. get the vip of current LoadBalancer
-        * #2. get all vips who has loadBalancerPort use the  defined loadbalancePort
-        * if #1 is in #2, throw a exception
-        * no need to check the instance port*/
-        LoadBalancerVO vo = dbf.findByUuid(msg.getLoadBalancerUuid(), LoadBalancerVO.class);
-        String TargetVipUuids = vo.getVipUuid();
-
-        if (TargetVipUuids == null){
-            logger.warn(String.format("conflict loadbalancer %s does NOT has VIP", msg.getLoadBalancerUuid()));
-        }
-
-        if (TargetVipUuids != null) {
-            List<String>  VipUuids = SQL.New("select distinct lb.vipUuid from LoadBalancerVO lb, LoadBalancerListenerVO " +
-                    "lbl where lbl.loadBalancerPort=:port and lbl.loadBalancerUuid=lb.uuid", String.class).param("port", msg.getLoadBalancerPort()).list();
-            if (!VipUuids.isEmpty() && VipUuids.contains(TargetVipUuids)) {
-                throw new ApiMessageInterceptionException(argerr("conflict loadBalancerPort[%s], a vip[uuid:%s] has used that port", msg.getLoadBalancerPort(), TargetVipUuids));
-            }
-
         }
     }
 
