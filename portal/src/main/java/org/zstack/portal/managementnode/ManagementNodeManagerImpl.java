@@ -44,6 +44,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -405,7 +406,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 public void run(FlowTrigger trigger, Map data) {
                     ManagementNodeVO vo = new ManagementNodeVO();
                     vo.setHostName(Platform.getManagementServerIp());
-                    vo.setUuid(Platform.getManagementServerId());
+                    vo.setUuid(UUID.nameUUIDFromBytes(vo.getHostName().getBytes()).toString());
                     node = dbf.persistAndRefresh(vo);
                     trigger.next();
                 }
