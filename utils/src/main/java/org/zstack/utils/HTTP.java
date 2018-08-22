@@ -31,7 +31,7 @@ public class HTTP {
 
     static {
         OkHttpClient.Builder ob = new OkHttpClient.Builder();
-        HttpLoggingInterceptor hlogger = new HttpLoggingInterceptor();
+        HttpLoggingInterceptor hlogger = new HttpLoggingInterceptor(msg -> logger.trace(String.format("========== %s", msg)));
         if (logger.isTraceEnabled()) {
             hlogger.setLevel(HttpLoggingInterceptor.Level.BODY);
         } else {
@@ -130,6 +130,8 @@ public class HTTP {
         private OkHttpClient client = http;
         private Request request;
 
+        private boolean build;
+
         public Param getParam() {
             return param;
         }
@@ -197,10 +199,14 @@ public class HTTP {
         }
 
         public Response callWithException() throws IOException {
+            build();
+
             return client.newCall(request).execute();
         }
 
         public Response call() {
+            build();
+
             try {
                 return client.newCall(request).execute();
             } catch (IOException e) {
@@ -209,6 +215,8 @@ public class HTTP {
         }
 
         public <T> T call(Class<T> clz) {
+            build();
+
             try {
                 Response rsp = call();
                 String body = rsp.body().string();
@@ -223,6 +231,12 @@ public class HTTP {
         }
 
         private void build() {
+            if (build) {
+                return;
+            }
+
+            build = true;
+
             HttpUrl url = HttpUrl.parse(param.url);
             HttpUrl.Builder ub = url.newBuilder();
             if (param.queryParameters != null) {
@@ -230,7 +244,7 @@ public class HTTP {
             }
 
             Request.Builder rb = new Request.Builder();
-            rb.url(url);
+            rb.url(ub.build());
 
             String contentType = "application/json";
             if (param.headers != null) {
