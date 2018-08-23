@@ -3,19 +3,20 @@ package org.zstack.test.integration.networkservice.provider.virtualrouter.loadba
 import org.springframework.http.HttpEntity
 import org.zstack.appliancevm.ApplianceVmVO
 import org.zstack.core.db.DatabaseFacade
-import org.zstack.core.db.Q
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.lb.LoadBalancerConstants
 import org.zstack.network.service.lb.LoadBalancerVO
-import org.zstack.network.service.lb.LoadBalancerVO_
 import org.zstack.network.service.portforwarding.PortForwardingConstant
 import org.zstack.network.service.vip.VipVO
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
-import org.zstack.sdk.*
+import org.zstack.sdk.L3NetworkInventory
+import org.zstack.sdk.LoadBalancerInventory
+import org.zstack.sdk.LoadBalancerListenerInventory
+import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -139,11 +140,18 @@ class VirtualRouterLoadBalancerUDPCase extends SubCase{
 
                     listener {
                         protocol = "udp"
+                        loadBalancerPort = 8000
+                        instancePort = 8000
+                        useVmNic("vm", "l3")
+                        useVmNic("vm2", "l3")
+                        systemTags = ["healthCheckTarget::udp:8000"]
+                    }
+                    listener {
+                        protocol = "tcp"
                         loadBalancerPort = 10000
                         instancePort = 10000
                         useVmNic("vm", "l3")
                         useVmNic("vm2", "l3")
-                        systemTags = ["healthCheckTarget::udp:10000"]
                     }
                 }
             }
@@ -186,15 +194,16 @@ class VirtualRouterLoadBalancerUDPCase extends SubCase{
         LoadBalancerListenerInventory listener = createLoadBalancerListener {
             protocol = "udp"
             loadBalancerUuid = lb.uuid
-            loadBalancerPort = 44
-            instancePort = 22
+            loadBalancerPort = 10000
+            instancePort = 10000
             name = "test-listener"
-            systemTags = ["healthCheckTarget::udp:22"]
+            //systemTags = ["healthCheckTarget::udp:22"]
         }
-
+        def count = 0
         VirtualRouterLoadBalancerBackend.RefreshLbCmd cmd = null
         env.afterSimulator(VirtualRouterLoadBalancerBackend.REFRESH_LB_PATH) { rsp, HttpEntity<String> e ->
             cmd = JSONObjectUtil.toObject(e.body, VirtualRouterLoadBalancerBackend.RefreshLbCmd.class)
+            count++
             return rsp
         }
 
@@ -203,7 +212,15 @@ class VirtualRouterLoadBalancerUDPCase extends SubCase{
             vmNicUuids = [vm.getVmNics().get(0).getUuid()]
         }
 
-        assert cmd.lbs.get(0).mode == LoadBalancerConstants.LB_PROTOCOL_UDP
+        assert count == 1
+        assert cmd.lbs.size() == 3
+        count = 0
+        for (VirtualRouterLoadBalancerBackend.LbTO lbtemp in cmd.lbs) {
+            if (lbtemp.getParameters().contains("healthCheckTarget::udp:default")) {
+                count++
+            }
+        }
+        assert count == 1
 
         deleteLoadBalancerListener {
             uuid = listener.uuid
@@ -233,29 +250,16 @@ class VirtualRouterLoadBalancerUDPCase extends SubCase{
         assert list.get(0).getLoadBalancerUuid() == load.getUuid()
         LoadBalancerVO lb = dbFindByUuid(list.get(0).getLoadBalancerUuid(),LoadBalancerVO.class)
         assert !lb.getListeners().isEmpty()
-        assert LoadBalancerConstants.LB_PROTOCOL_UDP == lb.getListeners().toArray()[0].getProtocol()
+        assert lb.getListeners().size() == 2
+        if (8000 == lb.getListeners().toArray()[0].getInstancePort()) {
+            assert LoadBalancerConstants.LB_PROTOCOL_UDP == lb.getListeners().toArray()[0].getProtocol()
+            assert LoadBalancerConstants.LB_PROTOCOL_TCP == lb.getListeners().toArray()[1].getProtocol()
+        } else {
+            assert LoadBalancerConstants.LB_PROTOCOL_UDP == lb.getListeners().toArray()[1].getProtocol()
+            assert LoadBalancerConstants.LB_PROTOCOL_TCP == lb.getListeners().toArray()[0].getProtocol()
+        }
     }
 
-    void TestUpdateLoadBalancerCase() {
-        LoadBalancerInventory load = env.inventoryByName("lb")
-        def _name = "test2"
-        def _description = "info2"
-        LoadBalancerVO lbvo = Q.New(LoadBalancerVO.class).eq(LoadBalancerVO_.uuid, load.uuid).find()
-        def lbUuid = lbvo.uuid
-
-        UpdateLoadBalancerAction updateLoadBalancerAction = new UpdateLoadBalancerAction()
-        updateLoadBalancerAction.uuid  = lbUuid
-        updateLoadBalancerAction.name = _name
-        updateLoadBalancerAction.description = _description
-        updateLoadBalancerAction.sessionId = adminSession()
-        UpdateLoadBalancerAction.Result res = updateLoadBalancerAction.call()
-        assert res.error == null
-        assert res.value.inventory.name == _name
-        assert res.value.inventory.description == _description
-        LoadBalancerVO lbvo2 = Q.New(LoadBalancerVO.class).eq(LoadBalancerVO_.uuid, load.uuid).find()
-        assert lbvo2.name == _name
-        assert lbvo2.description == _description
-    }
     @Override
     void clean() {
         env.delete()
