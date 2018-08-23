@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class RecoverDatabaseFromBackupAction extends AbstractAction {
+public class SyncDatabaseBackupFromImageStoreBackupStorageAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class RecoverDatabaseFromBackupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.databasebackup.RecoverDatabaseFromBackupResult value;
+        public org.zstack.sdk.databasebackup.SyncDatabaseBackupFromImageStoreBackupStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,20 +25,14 @@ public class RecoverDatabaseFromBackupAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String backupStorageUrl;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String backupInstallPath;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String srcBackupStorageUuid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String mysqlRootPassword;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.Map extParams;
+    public java.lang.String dstBackupStorageUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -63,8 +57,8 @@ public class RecoverDatabaseFromBackupAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.databasebackup.RecoverDatabaseFromBackupResult value = res.getResult(org.zstack.sdk.databasebackup.RecoverDatabaseFromBackupResult.class);
-        ret.value = value == null ? new org.zstack.sdk.databasebackup.RecoverDatabaseFromBackupResult() : value; 
+        org.zstack.sdk.databasebackup.SyncDatabaseBackupFromImageStoreBackupStorageResult value = res.getResult(org.zstack.sdk.databasebackup.SyncDatabaseBackupFromImageStoreBackupStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.databasebackup.SyncDatabaseBackupFromImageStoreBackupStorageResult() : value; 
 
         return ret;
     }
@@ -94,10 +88,10 @@ public class RecoverDatabaseFromBackupAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/database-backups/actions";
+        info.path = "/database-backups/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "recoverDatabaseFromBackup";
+        info.parameterName = "syncDatabaseBackupFromImageStoreBackupStorage";
         return info;
     }
 
