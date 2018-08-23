@@ -21,5 +21,6 @@ CREATE TABLE `V2VConversionHostVO` (
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY (`uuid`),
-    UNIQUE KEY `uuid` (`uuid`)
+    UNIQUE KEY `uuid` (`uuid`),
+    CONSTRAINT fkV2VConversionHostVOHostEO FOREIGN KEY (`hostUuid`) REFERENCES HostEO (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
