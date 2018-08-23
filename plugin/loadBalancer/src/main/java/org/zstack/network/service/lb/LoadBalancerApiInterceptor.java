@@ -1,12 +1,10 @@
 package org.zstack.network.service.lb;
 
-import javassist.compiler.ast.ASTList;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -21,13 +19,10 @@ import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO_;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.vip.VipVO_;
 import org.zstack.tag.PatternedSystemTag;
-import org.zstack.utils.logging.CLogger;
-import org.zstack.utils.logging.CLoggerImpl;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.VipUseForList;
-
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.operr;
+import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.logging.CLoggerImpl;
 
 import javax.persistence.TypedQuery;
 import java.util.Arrays;
@@ -35,6 +30,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -200,12 +197,21 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
                 )
         );
 
-        insertTagIfNotExisting(
-                msg, LoadBalancerSystemTags.HEALTH_TARGET,
-                LoadBalancerSystemTags.HEALTH_TARGET.instantiateTag(
-                        map(e(LoadBalancerSystemTags.HEALTH_TARGET_TOKEN, LoadBalancerGlobalConfig.HEALTH_TARGET.value()))
-                )
-        );
+        if(LoadBalancerConstants.LB_PROTOCOL_UDP.equals(msg.getProtocol())) {
+            insertTagIfNotExisting(
+                    msg, LoadBalancerSystemTags.HEALTH_TARGET,
+                    LoadBalancerSystemTags.HEALTH_TARGET.instantiateTag(
+                            map(e(LoadBalancerSystemTags.HEALTH_TARGET_TOKEN, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_UDP+":default"))
+                    )
+            );
+        } else {
+            insertTagIfNotExisting(
+                    msg, LoadBalancerSystemTags.HEALTH_TARGET,
+                    LoadBalancerSystemTags.HEALTH_TARGET.instantiateTag(
+                            map(e(LoadBalancerSystemTags.HEALTH_TARGET_TOKEN, LoadBalancerGlobalConfig.HEALTH_TARGET.value()))
+                    )
+            );
+        }
 
         insertTagIfNotExisting(
                 msg, LoadBalancerSystemTags.HEALTH_TIMEOUT,
