@@ -62,3 +62,5 @@ CREATE TABLE `IscsiLunVO` (
   PRIMARY KEY (`uuid`),
   CONSTRAINT `fkIscsiLunVOIscsiTargetVO` FOREIGN KEY (`iscsiTargetUuid`) REFERENCES IscsiTargetVO (`uuid`)
 )  ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `zstack`.`VolumeBackupVO` ADD COLUMN `groupUuid` varchar(32) DEFAULT NULL;
