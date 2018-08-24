@@ -121,7 +121,14 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
             }
 
             HostTrackerPreReconnectChecker preReconnectChecker = newHostTrackerPreReconnectChecker(clz);
-            if (preReconnectChecker.canDoReconnect(uuid)) {
+            Boolean canDo = preReconnectChecker.canDoReconnect(uuid);
+            if (canDo == null) {
+                // the host is deleted
+                completion.done();
+                return;
+            }
+
+            if (canDo) {
                 reconnectNow(uuid, new Completion(completion) {
                     @Override
                     public void success() {

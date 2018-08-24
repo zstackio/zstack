@@ -1,7 +1,7 @@
 package org.zstack.compute.host;
 
 public interface HostTrackerPreReconnectChecker {
-    boolean canDoReconnect(String hostUuid);
+    Boolean canDoReconnect(String hostUuid);
 
     String getHypervisorType();
 }
