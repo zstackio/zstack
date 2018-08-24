@@ -15,6 +15,8 @@ public class SessionInventory implements Serializable {
     private String userUuid;
     private Timestamp expiredDate;
     private Timestamp createDate;
+    @APINoSee
+    private boolean noSessionEvaluation;
 
     public static SessionInventory valueOf(SessionVO vo) {
         SessionInventory inv = new SessionInventory();
@@ -72,5 +74,13 @@ public class SessionInventory implements Serializable {
 
     public void setCreateDate(Timestamp createDate) {
         this.createDate = createDate;
+    }
+
+    public boolean isNoSessionEvaluation() {
+        return noSessionEvaluation;
+    }
+
+    public void setNoSessionEvaluation(boolean noSessionEvaluation) {
+        this.noSessionEvaluation = noSessionEvaluation;
     }
 }

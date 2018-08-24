@@ -1,6 +1,7 @@
 package org.zstack.identity;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
@@ -34,6 +35,10 @@ import org.zstack.header.message.*;
 import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.notification.ApiNotificationFactory;
 import org.zstack.header.notification.ApiNotificationFactoryExtensionPoint;
+import org.zstack.header.rest.RestAuthenticationBackend;
+import org.zstack.header.rest.RestAuthenticationParams;
+import org.zstack.header.rest.RestAuthenticationType;
+import org.zstack.header.rest.RestException;
 import org.zstack.header.vo.*;
 import org.zstack.identity.rbac.PolicyUtils;
 import org.zstack.utils.*;
@@ -55,11 +60,12 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
+import static org.zstack.header.identity.AccountConstant.ACCOUNT_REST_AUTHENTICATION_TYPE;
 import static org.zstack.utils.CollectionDSL.list;
 
 public class AccountManagerImpl extends AbstractService implements AccountManager, PrepareDbInitialValueExtensionPoint,
         SoftDeleteEntityExtensionPoint, HardDeleteEntityExtensionPoint,
-        ApiMessageInterceptor, ApiNotificationFactoryExtensionPoint, RenewSessionExtensionPoint {
+        ApiMessageInterceptor, ApiNotificationFactoryExtensionPoint, RenewSessionExtensionPoint, RestAuthenticationBackend {
     private static final CLogger logger = Utils.getLogger(AccountManagerImpl.class);
 
     @Autowired
@@ -1897,5 +1903,23 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         if (session != null) {
             session.setExpiredDate(expireTime);
         }
+    }
+
+    @Override
+    public RestAuthenticationType getAuthenticationType() {
+        return ACCOUNT_REST_AUTHENTICATION_TYPE;
+    }
+
+    @Override
+    public SessionInventory doAuth(RestAuthenticationParams params) throws RestException {
+        SessionVO vo = Q.New(SessionVO.class).eq(SessionVO_.uuid, params.authKey).find();
+        if (vo != null) {
+            return SessionInventory.valueOf(vo);
+        }
+
+        /* invalid session error should be raised in ApiMessageProcessorImpl */
+        SessionInventory session = new SessionInventory();
+        session.setUuid(params.authKey);
+        return session;
     }
 }

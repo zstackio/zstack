@@ -1,6 +1,7 @@
 package org.zstack.header.identity;
 
 import org.zstack.header.configuration.PythonClass;
+import org.zstack.header.rest.RestAuthenticationType;
 
 @PythonClass
 public interface AccountConstant {
@@ -46,4 +47,7 @@ public interface AccountConstant {
         Role,
         Group
     }
+
+    String ACCOUNT_REST_AUTH = "OAuth";
+    RestAuthenticationType ACCOUNT_REST_AUTHENTICATION_TYPE = new RestAuthenticationType(ACCOUNT_REST_AUTH);
 }

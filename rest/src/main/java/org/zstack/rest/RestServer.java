@@ -22,6 +22,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusEventListener;
 import org.zstack.core.cloudbus.CloudBusGlobalProperty;
 import org.zstack.core.cloudbus.CloudBusGson;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.retry.Retry;
 import org.zstack.core.retry.RetryCondition;
 import org.zstack.header.Component;
@@ -29,6 +30,7 @@ import org.zstack.header.Constants;
 import org.zstack.header.MapField;
 import org.zstack.header.apimediator.ApiMediatorConstant;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.identity.IdentityByPassCheck;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.identity.SuppressCredentialCheck;
 import org.zstack.header.message.*;
@@ -57,6 +59,9 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -82,6 +87,10 @@ public class RestServer implements Component, CloudBusEventListener {
     private AsyncRestApiStore asyncStore;
     @Autowired
     private RESTFacade restf;
+    @Autowired
+    private PluginRegistry pluginRgty;
+
+    private Map<RestAuthenticationType, RestAuthenticationBackend> restAuthBackends = new HashMap<RestAuthenticationType, RestAuthenticationBackend>();
 
     private List<RestServletRequestInterceptor> interceptors = new ArrayList<>();
 
@@ -436,16 +445,6 @@ public class RestServer implements Component, CloudBusEventListener {
         }
     }
 
-    class RestException extends Exception {
-        private int statusCode;
-        private String error;
-
-        public RestException(int statusCode, String error) {
-            this.statusCode = statusCode;
-            this.error = error;
-        }
-    }
-
     class RestResponseWrapper {
         RestResponse annotation;
         Map<String, String> responseMappingFields = new HashMap<>();
@@ -759,7 +758,7 @@ public class RestServer implements Component, CloudBusEventListener {
             body = new HashMap();
         }
 
-        String sessionId = null;
+        SessionInventory session = null;
         if (!api.apiClass.isAnnotationPresent(SuppressCredentialCheck.class)) {
             String auth = entity.getHeaders().getFirst("Authorization");
             if (auth == null) {
@@ -767,15 +766,55 @@ public class RestServer implements Component, CloudBusEventListener {
             }
 
             auth = auth.trim();
-            if (!auth.startsWith(RestConstants.HEADER_OAUTH)) {
+            RestAuthenticationType authType = null;
+            RestAuthenticationParams params = new RestAuthenticationParams();
+            if (auth.startsWith(RestConstants.HEADER_OAUTH)) {
+                authType =  RestAuthenticationType.valueOf(RestConstants.ACCOUNT_REST_AUTH);
+                params.authKey = auth.replaceFirst(RestConstants.HEADER_OAUTH, "").trim();
+            } else if (auth.startsWith(RestConstants.HEADER_ACCESSKEY)) {
+                authType =  RestAuthenticationType.valueOf(RestConstants.ACCOUNT_REST_ACCESSKEY);
+                String dateStr = entity.getHeaders().getFirst(RestConstants.HEADER_DATE);
+                if (dateStr == null) {
+                    throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("'Date' must be incuded in request header"));
+                }
+                params.date = dateStr;
+
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss z");
+                LocalDateTime date;
+                try {
+                    date = LocalDateTime.parse(dateStr, formatter);
+                } catch (RuntimeException e) {
+                    throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("'Date' format error, correct format is 'EEE, dd MMM yyyy HH:mm:ss '"));
+                }
+
+                LocalDateTime now = LocalDateTime.now();
+                if (date.isAfter(now) || date.isBefore(now.minus(Duration.ofMinutes(RestConstants.REQUEST_DURATION_MINUTES)))) {
+                    throw new RestException(HttpStatus.FORBIDDEN.value(), String.format("requestTimeTooSkewed"));
+                }
+
+                String str = auth.replaceFirst(RestConstants.HEADER_ACCESSKEY, "").trim();
+                String[] res = str.split(":");
+                if (res.length != 2) {
+                    throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("accessKey format is 'ZStack AccessKeyId:Signature'"));
+                }
+                params.authKey = str;
+                params.method = req.getMethod();
+                params.contentMd5 = entity.getHeaders().getFirst(RestConstants.HEADER_CONTENT_MD5);
+                params.contentType = entity.getHeaders().getFirst(RestConstants.HEADER_CONTENT_TYPE);
+                params.uri = getDecodedUrl(req);
+            } else {
                 throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("Authorization type must be '%s'", RestConstants.HEADER_OAUTH));
             }
 
-            sessionId = auth.replaceFirst("OAuth", "").trim();
+            RestAuthenticationBackend bkd = restAuthBackends.get(authType);
+            if (bkd == null) {
+                throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("unable to find RestAuthenticationBackend[provider type: %s]", authType));
+            }
+            session = bkd.doAuth(params);
         }
 
         if (APIQueryMessage.class.isAssignableFrom(api.apiClass)) {
-            handleQueryApi(api, sessionId, req, rsp);
+            handleQueryApi(api, session, req, rsp);
             return;
         }
 
@@ -846,10 +885,11 @@ public class RestServer implements Component, CloudBusEventListener {
             msg.setTimeout(TimeUnit.SECONDS.toMillis(Long.valueOf(apiTimeout)));
         }
 
-        if (sessionId != null) {
-            SessionInventory session = new SessionInventory();
-            session.setUuid(sessionId);
+        if (session != null) {
             msg.setSession(session);
+            if (session.isNoSessionEvaluation()) {
+                msg.putHeaderEntry(IdentityByPassCheck.NoSessionEvaluation.toString(), true);
+            }
         }
 
         if (!req.getMethod().equals(HttpMethod.GET.toString()) && !req.getMethod().equals(HttpMethod.DELETE.toString())) {
@@ -899,12 +939,13 @@ public class RestServer implements Component, CloudBusEventListener {
         QUERY_OP_MAPPING.put("not null", QueryOp.NOT_NULL.toString());
     }
 
-    private void handleQueryApi(Api api, String sessionId, HttpServletRequest req, HttpServletResponse rsp) throws IllegalAccessException, InstantiationException, RestException, IOException, NoSuchMethodException, InvocationTargetException {
+    private void handleQueryApi(Api api, SessionInventory session, HttpServletRequest req, HttpServletResponse rsp) throws IllegalAccessException, InstantiationException, RestException, IOException, NoSuchMethodException, InvocationTargetException {
         Map<String, String[]> vars = req.getParameterMap();
         APIQueryMessage msg = (APIQueryMessage) api.apiClass.newInstance();
 
-        SessionInventory session = new SessionInventory();
-        session.setUuid(sessionId);
+        if (session != null && session.isNoSessionEvaluation()) {
+            msg.putHeaderEntry(IdentityByPassCheck.NoSessionEvaluation.toString(), true);
+        }
         msg.setSession(session);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
 
@@ -1098,7 +1139,19 @@ public class RestServer implements Component, CloudBusEventListener {
     @Override
     public boolean start() {
         build();
+        populateExtensions();
         return true;
+    }
+
+    private void populateExtensions() {
+        for (RestAuthenticationBackend bkd : pluginRgty.getExtensionList(RestAuthenticationBackend.class)) {
+            RestAuthenticationBackend old = restAuthBackends.get(bkd.getAuthenticationType());
+            if (old != null) {
+                throw new CloudRuntimeException(String.format("duplicate RestAuthenticationBackend[%s, %s] for type[%s]",
+                        bkd.getClass().getName(), old.getClass().getName(), bkd.getAuthenticationType()));
+            }
+            restAuthBackends.put(bkd.getAuthenticationType(), bkd);
+        }
     }
 
     private String substituteUrl(String url, Map<String, String> tokens) {

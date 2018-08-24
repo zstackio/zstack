@@ -5,6 +5,8 @@ import java.util.HashMap;
 public class SourceClassMap {
     public final static HashMap<String, String> srcToDstMapping = new HashMap() {
         {
+			put("org.zstack.accessKey.AccessKeyInventory", "org.zstack.sdk.AccessKeyInventory");
+			put("org.zstack.accessKey.AccessKeyState", "org.zstack.sdk.AccessKeyState");
 			put("org.zstack.aliyun.nas.filesystem.AliyunNasAccessGroupInventory", "org.zstack.sdk.AliyunNasAccessGroupInventory");
 			put("org.zstack.aliyun.nas.filesystem.AliyunNasAccessRuleInventory", "org.zstack.sdk.AliyunNasAccessRuleInventory");
 			put("org.zstack.aliyun.nas.filesystem.AliyunNasFileSystemInventory", "org.zstack.sdk.AliyunNasFileSystemInventory");
@@ -345,6 +347,8 @@ public class SourceClassMap {
 
     public final static HashMap<String, String> dstToSrcMapping = new HashMap() {
         {
+			put("org.zstack.sdk.AccessKeyInventory", "org.zstack.accessKey.AccessKeyInventory");
+			put("org.zstack.sdk.AccessKeyState", "org.zstack.accessKey.AccessKeyState");
 			put("org.zstack.sdk.AccountInventory", "org.zstack.header.identity.AccountInventory");
 			put("org.zstack.sdk.AccountResourceRefInventory", "org.zstack.header.identity.AccountResourceRefInventory");
 			put("org.zstack.sdk.ActionStruct", "org.zstack.cloudformation.template.struct.ActionStruct");
