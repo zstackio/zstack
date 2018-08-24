@@ -44,7 +44,7 @@ public class VmAllocateVolumeFlow implements Flow {
     @Autowired
     protected ErrorFacade errf;
 
-    private List<CreateVolumeMsg> prepareMsg(Map<String, Object> ctx) {
+    protected List<CreateVolumeMsg> prepareMsg(Map<String, Object> ctx) {
         taskProgress("create volumes");
 
         VmInstanceSpec spec = (VmInstanceSpec) ctx.get(VmInstanceConstant.Params.VmInstanceSpec.toString());

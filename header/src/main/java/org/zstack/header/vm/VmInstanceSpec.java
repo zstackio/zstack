@@ -7,7 +7,6 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.NoJsonSchema;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.volume.VolumeInventory;
@@ -168,6 +167,8 @@ public class VmInstanceSpec implements Serializable {
     private List<L3NetworkInventory> l3Networks;
     private List<DiskOfferingInventory> dataDiskOfferings;
     private DiskOfferingInventory rootDiskOffering;
+    private Long rootVolumeSize;
+    private List<Long> dataVolumeSizes;
     private String hostAllocatorStrategy;
     private String ipAllocatorStrategy;
     private Message message;
@@ -349,6 +350,22 @@ public class VmInstanceSpec implements Serializable {
 
     public void setRootDiskOffering(DiskOfferingInventory rootDiskOffering) {
         this.rootDiskOffering = rootDiskOffering;
+    }
+
+    public Long getRootVolumeSize() {
+        return rootVolumeSize;
+    }
+
+    public void setRootVolumeSize(Long rootVolumeSize) {
+        this.rootVolumeSize = rootVolumeSize;
+    }
+
+    public List<Long> getDataVolumeSizes() {
+        return dataVolumeSizes;
+    }
+
+    public void setDataVolumeSizes(List<Long> dataVolumeSizes) {
+        this.dataVolumeSizes = dataVolumeSizes;
     }
 
     public String getHostAllocatorStrategy() {
