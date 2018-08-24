@@ -13,6 +13,7 @@ import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.GLock;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.Task;
 import org.zstack.core.thread.ThreadFacade;
@@ -44,6 +45,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -403,10 +405,23 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
                 @Override
                 public void run(FlowTrigger trigger, Map data) {
-                    ManagementNodeVO vo = new ManagementNodeVO();
-                    vo.setHostName(Platform.getManagementServerIp());
-                    vo.setUuid(Platform.getManagementServerId());
-                    node = dbf.persistAndRefresh(vo);
+                    new SQLBatch() {
+                        @Override
+                        protected void scripts() {
+                            String ip = Platform.getManagementServerIp();
+                            String uuid = Platform.getManagementServerId();
+
+                            sql(ManagementNodeVO.class).eq(ManagementNodeVO_.uuid, uuid).hardDelete();
+
+                            ManagementNodeVO vo = new ManagementNodeVO();
+                            vo.setHostName(ip);
+                            vo.setUuid(uuid);
+                            persist(vo);
+                            reload(vo);
+                            node = vo;
+                        }
+                    }.execute();
+
                     trigger.next();
                 }
 
