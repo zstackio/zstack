@@ -18,6 +18,9 @@ public interface AccountConstant {
     int RESOURCE_PERMISSION_READ = 1;
     int RESOURCE_PERMISSION_WRITE = 2;
 
+    int ACCESSKEY_ID_LEN = 20;
+    int ACCESSKEY_SECRET_LEN = 40;
+
     String ACTION_CATEGORY = "identity";
     String READ_PERMISSION_POLICY = "default-read-permission";
 

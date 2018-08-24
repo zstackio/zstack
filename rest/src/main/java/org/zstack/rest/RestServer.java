@@ -2,6 +2,7 @@ package org.zstack.rest;
 
 import okhttp3.*;
 import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -14,6 +15,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.AntPathMatcher;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.util.UriUtils;
 import org.zstack.core.CoreGlobalProperty;
@@ -29,6 +31,8 @@ import org.zstack.header.Constants;
 import org.zstack.header.MapField;
 import org.zstack.header.apimediator.ApiMediatorConstant;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.identity.AccessKeyInventory;
+import org.zstack.header.identity.IdentityByPassCheck;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.identity.SuppressCredentialCheck;
 import org.zstack.header.message.*;
@@ -37,6 +41,7 @@ import org.zstack.header.query.APIQueryReply;
 import org.zstack.header.query.QueryCondition;
 import org.zstack.header.query.QueryOp;
 import org.zstack.header.rest.*;
+import org.zstack.identity.AccessKey;
 import org.zstack.rest.sdk.DocumentGenerator;
 import org.zstack.rest.sdk.SdkFile;
 import org.zstack.rest.sdk.SdkTemplate;
@@ -45,6 +50,8 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.X509TrustManager;
 import javax.servlet.http.HttpServletRequest;
@@ -57,6 +64,15 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.Period;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -74,6 +90,7 @@ public class RestServer implements Component, CloudBusEventListener {
 
     private static final OkHttpClient http;
     private MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+    private Mac macInstance;
 
     @Autowired
     private CloudBus bus;
@@ -752,13 +769,17 @@ public class RestServer implements Component, CloudBusEventListener {
         });
     }
 
+    private boolean isAccessKeySession(SessionInventory session) {
+        return (session.getAccountUuid() != null) && (session.getUserUuid() != null);
+    }
+
     private void handleApi(Api api, Map body, String parameterName, HttpEntity<String> entity, HttpServletRequest req, HttpServletResponse rsp) throws RestException, IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException, IOException {
         if (body == null) {
             // for some POST request, the body may be null, for example, attach primary storage to a cluster
             body = new HashMap();
         }
 
-        String sessionId = null;
+        SessionInventory session = null;
         if (!api.apiClass.isAnnotationPresent(SuppressCredentialCheck.class)) {
             String auth = entity.getHeaders().getFirst("Authorization");
             if (auth == null) {
@@ -766,15 +787,78 @@ public class RestServer implements Component, CloudBusEventListener {
             }
 
             auth = auth.trim();
-            if (!auth.startsWith(RestConstants.HEADER_OAUTH)) {
+            if (auth.startsWith(RestConstants.HEADER_OAUTH)) {
+                session = new SessionInventory();
+                session.setUuid(auth.replaceFirst("OAuth", "").trim());
+            } else if (auth.startsWith(RestConstants.HEADER_ACCESSKEY)) {
+                String dateStr = entity.getHeaders().getFirst(RestConstants.HEADER_Date);
+                if (dateStr == null) {
+                    throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("'Date' must be incuded in request header"));
+                }
+
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss z");
+                LocalDateTime  date;
+                try {
+                    date = LocalDateTime.parse(dateStr, formatter);
+                } catch (RuntimeException e) {
+                    throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("'Date' format error, correct format is 'EEE, dd MMM yyyy HH:mm:ss '"));
+                }
+
+                LocalDateTime now = LocalDateTime.now();
+                if (date.isAfter(now) || date.isBefore(now.minus(Duration.ofMinutes(RestConstants.REQUEST_DURATION_MINUTES)))) {
+                    throw new RestException(HttpStatus.FORBIDDEN.value(), String.format("requestTimeTooSkewed"));
+                }
+
+                String str = auth.replaceFirst(RestConstants.HEADER_ACCESSKEY, "").trim();
+                String[] res = str.split(":");
+                if (res.length != 2) {
+                    throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("accessKey format is 'ZStack AccessKeyId:Signature'"));
+                }
+
+                String accessKeyId = res[0];
+                String signature = res[1];
+
+                AccessKeyInventory key = AccessKey.getAccessKey(accessKeyId);
+                if (key == null) {
+                    throw new RestException(HttpStatus.FORBIDDEN.value(), String.format("access key id: %s does not existed", accessKeyId));
+                }
+
+                StringBuilder sb = new StringBuilder();
+                sb.append(req.getMethod()).append("\n");
+                if (entity.getHeaders().getFirst(RestConstants.HEADER_CONTENT_MD5) != null) {
+                    sb.append(entity.getHeaders().getFirst(RestConstants.HEADER_CONTENT_MD5));
+                }
+                sb.append("\n");
+                if (entity.getHeaders().getFirst(RestConstants.HEADER_CONTENT_Type) != null) {
+                    sb.append(entity.getHeaders().getFirst(RestConstants.HEADER_CONTENT_Type));
+                }
+                sb.append("\n");
+                sb.append(dateStr).append("\n").append(getDecodedUrl(req));
+
+                SecretKeySpec secret = new SecretKeySpec(key.getAccessKeySecret().getBytes(), RestConstants.ACCESS_KEY_ALGORITHM);
+                String sign;
+                try {
+                    Mac mac = (Mac) macInstance.clone();
+                    mac.init(secret);
+                    sign = new String(Base64.encodeBase64(mac.doFinal(sb.toString().getBytes())));
+                } catch (CloneNotSupportedException|InvalidKeyException e) {
+                    throw  new RestException(HttpStatus.INTERNAL_SERVER_ERROR.value(), "initialize HmacSHA1 signature failed");
+                }
+
+                if (!sign.equals(signature)) {
+                    throw  new RestException(HttpStatus.FORBIDDEN.value(), "wrong accessKey signature");
+                }
+
+                session = new SessionInventory();
+                session.setAccountUuid(key.getAccountUuid());
+                session.setUserUuid(key.getUserUuid());
+            } else {
                 throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("Authorization type must be '%s'", RestConstants.HEADER_OAUTH));
             }
-
-            sessionId = auth.replaceFirst("OAuth", "").trim();
         }
 
         if (APIQueryMessage.class.isAssignableFrom(api.apiClass)) {
-            handleQueryApi(api, sessionId, req, rsp);
+            handleQueryApi(api, session, req, rsp);
             return;
         }
 
@@ -840,10 +924,11 @@ public class RestServer implements Component, CloudBusEventListener {
             msg.setId(jobUuid);
         }
 
-        if (sessionId != null) {
-            SessionInventory session = new SessionInventory();
-            session.setUuid(sessionId);
+        if (session != null) {
             msg.setSession(session);
+            if (isAccessKeySession(session)) {
+                msg.putHeaderEntry(IdentityByPassCheck.NoSessionEvaluation.toString(), true);
+            }
         }
 
         if (!req.getMethod().equals(HttpMethod.GET.toString()) && !req.getMethod().equals(HttpMethod.DELETE.toString())) {
@@ -893,12 +978,13 @@ public class RestServer implements Component, CloudBusEventListener {
         QUERY_OP_MAPPING.put("not null", QueryOp.NOT_NULL.toString());
     }
 
-    private void handleQueryApi(Api api, String sessionId, HttpServletRequest req, HttpServletResponse rsp) throws IllegalAccessException, InstantiationException, RestException, IOException, NoSuchMethodException, InvocationTargetException {
+    private void handleQueryApi(Api api, SessionInventory session, HttpServletRequest req, HttpServletResponse rsp) throws IllegalAccessException, InstantiationException, RestException, IOException, NoSuchMethodException, InvocationTargetException {
         Map<String, String[]> vars = req.getParameterMap();
         APIQueryMessage msg = (APIQueryMessage) api.apiClass.newInstance();
 
-        SessionInventory session = new SessionInventory();
-        session.setUuid(sessionId);
+        if (isAccessKeySession(session)) {
+            msg.putHeaderEntry(IdentityByPassCheck.NoSessionEvaluation.toString(), true);
+        }
         msg.setSession(session);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
 
@@ -1092,6 +1178,14 @@ public class RestServer implements Component, CloudBusEventListener {
     @Override
     public boolean start() {
         build();
+        try {
+            // Because Mac.getInstance(String) calls a synchronized method, it
+            // could block on
+            // invoked concurrently, so use prototype pattern to improve perf.
+            macInstance = Mac.getInstance(RestConstants.ACCESS_KEY_ALGORITHM);
+        } catch (NoSuchAlgorithmException e) {
+            logger.info("initialize HMAC-SHA1 md5 failed");
+        }
         return true;
     }
 

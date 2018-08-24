@@ -84,6 +84,7 @@
         <class>org.zstack.header.identity.UserGroupUserRefVO</class>
         <class>org.zstack.header.identity.SharedResourceVO</class>
         <class>org.zstack.header.identity.QuotaVO</class>
+        <class>org.zstack.header.identity.AccountAccessKeyVO</class>
         <class>org.zstack.header.search.DeleteVO</class>
         <class>org.zstack.header.search.InsertVO</class>
         <class>org.zstack.header.search.UpdateVO</class>

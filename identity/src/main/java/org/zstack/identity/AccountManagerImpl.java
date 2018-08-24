@@ -278,9 +278,18 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             handle((APIIsOpensourceVersionMsg) msg);
         } else if (msg instanceof APIRenewSessionMsg) {
             handle((APIRenewSessionMsg) msg);
+        } else if (msg instanceof APICreateAccessKeyMsg) {
+            handle((APICreateAccessKeyMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APICreateAccessKeyMsg msg) {
+        APICreateAccessKeyEvent event = new APICreateAccessKeyEvent(msg.getId());
+        AccessKeyInventory inv = AccessKey.createAccessKey(msg);
+        event.setInventory(inv);
+        bus.publish(event);
     }
 
     private void handle(APIIsOpensourceVersionMsg msg) {
@@ -1616,6 +1625,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             validate((APIGetAccountQuotaUsageMsg) msg);
         } else if (msg instanceof APIChangeResourceOwnerMsg) {
             validate((APIChangeResourceOwnerMsg) msg);
+        } else if (msg instanceof APICreateAccessKeyMsg) {
+            validate((APICreateAccessKeyMsg) msg);
         }
 
         setServiceId(msg);
@@ -1648,6 +1659,16 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         Map<String, QuotaPair> pairs = new QuotaUtil().makeQuotaPairs(msg.getAccountUuid());
         for (Quota quota : messageQuotaMap.get(APIChangeResourceOwnerMsg.class)) {
             quota.getOperator().checkQuota(msg, pairs);
+        }
+    }
+
+    private void validate(APICreateAccessKeyMsg msg) {
+        /* user id can be account id or userid from ldap, will not verify it */
+        /* each accountUuid/UserId pair can have at most 2 accessKey pairs */
+        if (Q.New(AccountAccessKeyVO.class).eq(AccountAccessKeyVO_.accountUuid, msg.getAccountUuid()).eq(AccountAccessKeyVO_.userUuid, msg.getUserUuid()).count() >= 2 ) {
+            throw new ApiMessageInterceptionException(argerr(
+                    "there are ready have 2 access key pairs for account[uuid: %s] and user[uuid: %s]", msg.getAccountUuid(), msg.getUserUuid()
+            ));
         }
     }
 
