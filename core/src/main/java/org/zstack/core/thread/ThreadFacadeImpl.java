@@ -255,9 +255,9 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
     }
 
     @Override
-    public void submitTimerTask(final TimerTask task, TimeUnit unit, long delay) {
+    public Runnable submitTimerTask(final TimerTask task, TimeUnit unit, long delay) {
         final TimerWrapper timer = timerPool.getTimer();
-        timer.schedule(new java.util.TimerTask() {
+        java.util.TimerTask t = new java.util.TimerTask() {
             @Override
             public void run() {
                 try {
@@ -268,7 +268,10 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
                     _logger.warn(String.format("Unhandled exception happened when running %s", task.getClass().getName()), t);
                 }
             }
-        }, unit.toMillis(delay));
+        };
+
+        timer.schedule(t, unit.toMillis(delay));
+        return t::cancel;
     }
 
     @Override

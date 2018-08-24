@@ -624,27 +624,25 @@ public abstract class HostBase extends AbstractHost {
         }
 
         final List<ErrorCode> errs = new ArrayList<>();
-        new While<>(stepCount).each((currentStep, compl) -> {
-            pingHook(new Completion(compl) {
-                @Override
-                public void success() {
-                    compl.allDone();
-                }
+        new While<>(stepCount).each((currentStep, compl) -> pingHook(new Completion(compl) {
+            @Override
+            public void success() {
+                compl.allDone();
+            }
 
-                @Override
-                public void fail(ErrorCode errorCode) {
-                    logger.warn(String.format("ping host failed (%d/%d): %s", currentStep, MAX_PING_CNT, errorCode.toString()));
-                    errs.add(errorCode);
-                    if (errs.size() != stepCount.size()) {
-                        try {
-                            TimeUnit.SECONDS.sleep(1);
-                        } catch (InterruptedException ignored) {
-                        }
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.warn(String.format("ping host failed (%d/%d): %s", currentStep, MAX_PING_CNT, errorCode.toString()));
+                errs.add(errorCode);
+                if (errs.size() != stepCount.size()) {
+                    try {
+                        TimeUnit.SECONDS.sleep(1);
+                    } catch (InterruptedException ignored) {
                     }
-                    compl.done();
                 }
-            });
-        }).run(new NoErrorCompletion(msg) {
+                compl.done();
+            }
+        })).run(new NoErrorCompletion(msg) {
             @Override
             public void done() {
                 if (errs.size() == stepCount.size()){
