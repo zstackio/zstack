@@ -14,6 +14,8 @@ import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.GLock;
 import org.zstack.core.db.SQLBatch;
+import org.zstack.core.defer.Defer;
+import org.zstack.core.defer.Deferred;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.Task;
 import org.zstack.core.thread.ThreadFacade;
@@ -31,10 +33,7 @@ import org.zstack.header.managementnode.ManagementNodeCanonicalEvent.ManagementN
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.portal.apimediator.ApiMediator;
-import org.zstack.utils.BootErrorLog;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.StringDSL;
-import org.zstack.utils.Utils;
+import org.zstack.utils.*;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -428,7 +427,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 @Override
                 public void rollback(FlowRollback trigger, Map data) {
                     if (node != null) {
-                        dbf.remove(node);
+                        dbf.remove(node());
                     }
 
                     trigger.rollback();
@@ -469,7 +468,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
                 @Override
                 public void run(FlowTrigger trigger, Map data) {
-                    nodeLifeCycle.iJoin(node.getUuid());
+                    nodeLifeCycle.iJoin(node().getUuid());
                     trigger.next();
                 }
             }).then(new NoRollbackFlow() {
@@ -497,8 +496,8 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 @Override
                 public void run(FlowTrigger trigger, Map data) {
                     ManagementNodeLifeCycleData d = new ManagementNodeLifeCycleData();
-                    d.setNodeUuid(node.getUuid());
-                    d.setInventory(ManagementNodeInventory.valueOf(node));
+                    d.setNodeUuid(node().getUuid());
+                    d.setInventory(ManagementNodeInventory.valueOf(node()));
                     d.setLifeCycle(LifeCycle.NodeJoin.toString());
                     evtf.fire(ManagementNodeCanonicalEvent.NODE_LIFECYCLE_PATH, d);
                     trigger.next();
@@ -596,6 +595,10 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
         }
     }
 
+    private ManagementNodeVO node() {
+        DebugUtils.Assert(node != null, "node is set to null!!!");
+        return node;
+    }
 
     private void startHeartbeat() {
         if (heartBeatTask != null) {
@@ -612,7 +615,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
             private boolean amIalive() {
                 String sql = "select count(*) from ManagementNodeVO where uuid = ?";
-                long count = heartBeatDBSource.jdbc.queryForObject(sql, new Object[]{node.getUuid()}, Long.class);
+                long count = heartBeatDBSource.jdbc.queryForObject(sql, new Object[]{node().getUuid()}, Long.class);
                 return count != 0;
             }
 
@@ -663,8 +666,13 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
             private void updateHeartbeat() {
                 String sql = "update ManagementNodeVO set heartBeat = NULL where uuid = ?";
-                if (heartBeatDBSource.jdbc.update(sql, node.getUuid()) > 0) {
-                    node = getNode(node.getUuid());
+                if (heartBeatDBSource.jdbc.update(sql, node().getUuid()) > 0) {
+                    ManagementNodeVO n = getNode(node().getUuid());
+                    if (n != null) {
+                        node = n;
+                    } else {
+                        logger.warn(String.format("updateHeartbeat cannot find our record[uuid:%s] in database, we are deleted by other nodes", node().getUuid()));
+                    }
                 }
             }
 
@@ -684,7 +692,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
                     nodesInDb.add(vo.getUuid());
 
-                    if (vo.getUuid().equals(node.getUuid())) {
+                    if (vo.getUuid().equals(node().getUuid())) {
                         continue;
                     }
 
@@ -710,7 +718,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
                 // check if any node missing in our hash ring
                 nodesInDb.forEach(nuuid -> {
-                    if (nuuid.equals(node.getUuid())) {
+                    if (nuuid.equals(node().getUuid())) {
                         return;
                     }
 
@@ -733,7 +741,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 while (true) {
                     try {
                         if (!amIalive()) {
-                            logger.warn(String.format("cannot find my[uuid:%s] heartbeat in database, quit process", node.getUuid()));
+                            logger.warn(String.format("cannot find my[uuid:%s] heartbeat in database, quit process", node().getUuid()));
                             stop();
                             return null;
                         } else {
@@ -798,6 +806,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
     }
 
     @Override
+    @Deferred
     public boolean stop() {
         Platform.IS_RUNNING = false;
 
@@ -807,9 +816,24 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
             return true;
         }
 
+        // this makes sure the process exits even any exceptions happened during the stop process
+        Defer.defer(() -> {
+            if (CoreGlobalProperty.EXIT_JVM_ON_STOP) {
+                new Runnable() {
+                    @Override
+                    @ExceptionSafe
+                    public void run() {
+                        logger.info("exitJVMOnStop is set to true, exit the JVM");
+                    }
+                }.run();
+
+                System.exit(0);
+            }
+        });
+
         stopped = true;
         final Service self = this;
-        logger.debug(String.format("start stopping the management node[uuid:%s]", node.getUuid()));
+        logger.debug(String.format("start stopping the management node[uuid:%s]", node().getUuid()));
 
         class Stopper {
             void stop() {
@@ -848,20 +872,20 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
             @ExceptionSafe
             private void notifyOtherNodes() {
                 ManagementNodeLifeCycleData d = new ManagementNodeLifeCycleData();
-                d.setNodeUuid(node.getUuid());
+                d.setNodeUuid(node().getUuid());
                 d.setLifeCycle(LifeCycle.NodeLeft.toString());
-                d.setInventory(ManagementNodeInventory.valueOf(node));
+                d.setInventory(ManagementNodeInventory.valueOf(node()));
                 evtf.fire(ManagementNodeCanonicalEvent.NODE_LIFECYCLE_PATH, d);
             }
 
             @ExceptionSafe
             private void deleteNode() {
-                dbf.remove(node);
+                dbf.removeByPrimaryKey(Platform.getManagementServerId(), ManagementNodeVO.class);
             }
 
             @ExceptionSafe
             private void iAmDead() {
-                nodeLifeCycle.iAmDead(node.getUuid());
+                nodeLifeCycle.iAmDead(node().getUuid());
             }
 
             @ExceptionSafe
@@ -878,10 +902,6 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
         new Stopper().stop();
 
         logger.info("Management node: " + getId() + " exits successfully");
-        if (CoreGlobalProperty.EXIT_JVM_ON_STOP) {
-            logger.info("exitJVMOnStop is set to true, exit the JVM");
-            System.exit(0);
-        }
 
         return true;
     }
