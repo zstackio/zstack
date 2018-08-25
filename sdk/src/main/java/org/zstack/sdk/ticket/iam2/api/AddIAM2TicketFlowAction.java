@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.sdk.ticket.iam2.api;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetLoginCaptchaAction extends AbstractAction {
+public class AddIAM2TicketFlowAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetLoginCaptchaAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetLoginCaptchaResult value;
+        public org.zstack.sdk.ticket.iam2.api.AddIAM2TicketFlowResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,19 +26,40 @@ public class GetLoginCaptchaAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String resourceName;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String loginType;
+    public java.lang.String approverUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String captchaUuid;
+    public java.lang.String approverTitle;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String collectionUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String parentFlowUuid;
+
+    @Param(required = false)
+    public java.lang.String resourceUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
 
     @Param(required = false)
     public java.util.List userTags;
+
+    @Param(required = true)
+    public String sessionId;
+
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -48,8 +69,8 @@ public class GetLoginCaptchaAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetLoginCaptchaResult value = res.getResult(org.zstack.sdk.GetLoginCaptchaResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetLoginCaptchaResult() : value; 
+        org.zstack.sdk.ticket.iam2.api.AddIAM2TicketFlowResult value = res.getResult(org.zstack.sdk.ticket.iam2.api.AddIAM2TicketFlowResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ticket.iam2.api.AddIAM2TicketFlowResult() : value; 
 
         return ret;
     }
@@ -78,11 +99,11 @@ public class GetLoginCaptchaAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/login/control/captcha";
-        info.needSession = false;
-        info.needPoll = false;
-        info.parameterName = "";
+        info.httpMethod = "POST";
+        info.path = "/tickets/flow";
+        info.needSession = true;
+        info.needPoll = true;
+        info.parameterName = "params";
         return info;
     }
 

@@ -62,3 +62,27 @@ CREATE TABLE `IscsiLunVO` (
   PRIMARY KEY (`uuid`),
   CONSTRAINT `fkIscsiLunVOIscsiTargetVO` FOREIGN KEY (`iscsiTargetUuid`) REFERENCES IscsiTargetVO (`uuid`)
 )  ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `zstack`.`IAM2TicketFlowCollectionVO` (
+  `uuid` varchar(32) NOT NULL,
+  `projectUuid` varchar(32) NOT NULL,
+  PRIMARY KEY  (`uuid`),
+	CONSTRAINT fkIAM2TicketFlowCollectionVOTicketFlowCollectionVO FOREIGN KEY (uuid) REFERENCES TicketFlowCollectionVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE,
+	CONSTRAINT fkIAM2TicketFlowCollectionVOIAM2ProjectVO FOREIGN KEY (projectUuid) REFERENCES IAM2ProjectVO (uuid) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `TicketFlowCollectionVO` ADD COLUMN `state` varchar(64) NOT NULL;
+ALTER TABLE `TicketFlowCollectionVO` ADD COLUMN `status` varchar(64) NOT NULL;
+ALTER TABLE `TicketFlowCollectionVO` ADD COLUMN `type` varchar(64) NOT NULL;
+
+UPDATE `TicketFlowCollectionVO` set `state` = 'Enabled', `status` = 'Valid', `type` = 'iam2';
+
+CREATE TABLE `zstack`.`IAM2TicketFlowVO` (
+  `uuid` varchar(32) NOT NULL,
+  `approverUuid` varchar(32) NOT NULL,
+  `valid` tinyint(1) unsigned NOT NULL,
+  PRIMARY KEY  (`uuid`),
+	CONSTRAINT fkIAM2TicketFlowVOTicketFlowVO FOREIGN KEY (uuid) REFERENCES TicketFlowVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT INTO `IAM2TicketFlowVO` (`uuid`, `approverUuid`, `valid`) SELECT flow.uuid, '36c27e8ff05c4780bf6d2fa65700f22e', true from `TicketFlowCollectionVO` collection, `TicketFlowVO` flow where flow.collectionUuid = collection.uuid and collection.uuid = '872c04e82fee40509447b9ec90fc5aa1';
