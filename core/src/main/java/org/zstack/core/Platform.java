@@ -340,8 +340,6 @@ public class Platform {
 
     static {
         try {
-            msId = UUID.nameUUIDFromBytes(getManagementServerIp().getBytes()).toString().replaceAll("-", "");;
-
             Set<Class> baseResourceClasses = reflections.getTypesAnnotatedWith(BaseResource.class).stream()
                     .filter(clz -> clz.isAnnotationPresent(BaseResource.class)).collect(Collectors.toSet());
             for (Class clz : baseResourceClasses) {
@@ -355,6 +353,9 @@ public class Platform {
             File globalPropertiesFile = PathUtil.findFileOnClassPath("zstack.properties", true);
             FileInputStream in = new FileInputStream(globalPropertiesFile);
             System.getProperties().load(in);
+
+            // get ms ip should after global property setup
+            msId = UUID.nameUUIDFromBytes(getManagementServerIp().getBytes()).toString().replaceAll("-", "");
 
             collectDynamicObjectMetadata();
             linkGlobalProperty();
