@@ -6,7 +6,6 @@ import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.notification.N;
 import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -118,8 +117,7 @@ public abstract class VmTracer {
                 data.setHostUuid(hostUuid);
                 evtf.fire(VmTracerCanonicalEvents.STRANGER_VM_FOUND_PATH, data);
 
-                N.New(VmInstanceVO.class, vmUuid).warn_("A strange vm[%s] was found on the host[%s], May cause problems, Please manually clean this vm", vmUuid, hostUuid);
-
+                logger.warn(String.format("A strange vm[%s] was found on the host[%s], May cause problems, Please manually clean this vm", vmUuid, hostUuid));
                 return;
             }
 

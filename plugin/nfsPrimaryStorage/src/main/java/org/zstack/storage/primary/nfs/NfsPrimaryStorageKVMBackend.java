@@ -15,7 +15,6 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.notification.N;
 import org.zstack.core.step.StepRun;
 import org.zstack.core.step.StepRunCondition;
 import org.zstack.core.timeout.ApiTimeoutManager;
@@ -53,6 +52,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import static org.zstack.core.Platform.*;
 
 import javax.persistence.Query;
 import javax.persistence.Tuple;
@@ -1243,9 +1243,9 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                             public void fail(ErrorCode errorCode) {
                                 errors.add(errorCode);
 
-                                N.New(HostVO.class, hostUuid).warn_("unable to update the nfs[uuid:%s, name:%s] mount point" +
+                                logger.warn(String.format("unable to update the nfs[uuid:%s, name:%s] mount point" +
                                                 " from %s to %s on the host[uuid:%s], %s. Put the host-nfs into Disconnected status",
-                                        pinv.getUuid(), pinv.getName(), oldMountPoint, newMountPoint, hostUuid, errorCode);
+                                        pinv.getUuid(), pinv.getName(), oldMountPoint, newMountPoint, hostUuid, errorCode));
 
                                 nfsFactory.updateNfsHostStatus(pinv.getUuid(), hostUuid, PrimaryStorageHostStatus.Disconnected);
                                 completion.done();
@@ -1304,8 +1304,8 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
                         @Override
                         public void fail(ErrorCode errorCode) {
-                            N.New(HostVO.class, huuid).warn_("fail to mount nfs[uuid:%s] from host[uuid:%s], because:%s"
-                                    , inv.getUuid(), huuid, errorCode.toString());
+                            logger.warn(String.format("fail to mount nfs[uuid:%s] from host[uuid:%s], because:%s"
+                                    , inv.getUuid(), huuid, errorCode.toString()));
                             nfsFactory.updateNfsHostStatus(inv.getUuid(), huuid, PrimaryStorageHostStatus.Disconnected);
                             completion.done();
                         }

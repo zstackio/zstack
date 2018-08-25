@@ -12,7 +12,6 @@ import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.notification.N;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -502,9 +501,9 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                 gc.hypervisorType = bkd.getHypervisorType().toString();
                 gc.submit(NfsPrimaryStorageGlobalConfig.GC_INTERVAL.value(Long.class), TimeUnit.SECONDS);
 
-                N.New(PrimaryStorageVO.class, self.getUuid()).warn_("NFS primary storage[uuid:%s] failed to delete a volume snapshot[uuid:%s], %s. A GC" +
+                logger.warn(String.format("NFS primary storage[uuid:%s] failed to delete a volume snapshot[uuid:%s], %s. A GC" +
                         " job[uuid:%s] is scheduled to cleanup it in the interval of %s seconds",
-                        self.getUuid(), sinv.getUuid(), errorCode, NfsPrimaryStorageGlobalConfig.GC_INTERVAL.value(Long.class));
+                        self.getUuid(), sinv.getUuid(), errorCode, gc.getUuid(), NfsPrimaryStorageGlobalConfig.GC_INTERVAL.value(Long.class)));
                 bus.reply(msg, reply);
             }
         });

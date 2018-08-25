@@ -13,7 +13,6 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.notification.N;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.cluster.ClusterConnectionStatus;
 import org.zstack.header.cluster.ClusterVO;
@@ -53,7 +52,6 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.Platform.err;
-
 /**
  * Created by xing5 on 2016/3/26.
  */
@@ -406,8 +404,8 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
                 future.await();
 
                 if (!future.isSuccess()) {
-                    N.New(PrimaryStorageVO.class, self.getUuid()).warn_("unable to reconnect the primary storage[uuid:%s, name:%s], %s",
-                            self.getUuid(), self.getName(), future.getErrorCode());
+                    logger.warn(String.format("unable to reconnect the primary storage[uuid:%s, name:%s], %s",
+                            self.getUuid(), self.getName(), future.getErrorCode()));
                 } else {
                     changeStatus(PrimaryStorageStatus.Connected);
                 }

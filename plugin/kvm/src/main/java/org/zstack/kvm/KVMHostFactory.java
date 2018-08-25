@@ -15,7 +15,6 @@ import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.notification.N;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
@@ -264,7 +263,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         restf.registerSyncHttpCallHandler(KVMConstant.KVM_RECONNECT_ME, ReconnectMeCmd.class, new SyncHttpCallHandler<ReconnectMeCmd>() {
             @Override
             public String handleSyncHttpCall(ReconnectMeCmd cmd) {
-                N.New(HostVO.class, cmd.hostUuid).info_("the kvm host[uuid:%s] asks the management server to reconnect it for %s", cmd.hostUuid, cmd.reason);
+                logger.debug(String.format("the kvm host[uuid:%s] asks the management server to reconnect it for %s", cmd.hostUuid, cmd.reason));
                 ReconnectHostMsg msg = new ReconnectHostMsg();
                 msg.setHostUuid(cmd.hostUuid);
                 bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, cmd.hostUuid);

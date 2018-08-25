@@ -15,7 +15,6 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.notification.N;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
@@ -35,6 +34,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import static org.zstack.core.Platform.*;
 
 import javax.persistence.Query;
 import javax.persistence.Tuple;
@@ -43,7 +43,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.zstack.core.Platform.argerr;
 import static org.zstack.utils.CollectionDSL.list;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -447,10 +446,10 @@ public class AccountBase extends AbstractAccount {
 
             if (msg.getAccountUuids() != null) {
                 for (String auuid : msg.getAccountUuids()) {
-                    N.New(resourceType, ruuid).info_("Revoke Shared resource[uuid:%s type:%s] of account[uuid:%s] from account[uuid:%s]", ruuid, resourceType, self.getUuid(), auuid);
+                    logger.debug(String.format("Revoke Shared resource[uuid:%s type:%s] of account[uuid:%s] from account[uuid:%s]", ruuid, resourceType, self.getUuid(), auuid));
                 }
             } else {
-                N.New(resourceType, ruuid).info_("Revoke Shared resource[uuid:%s type:%s] of account[uuid:%s]", ruuid, resourceType, self.getUuid());
+                logger.debug(String.format("Revoke Shared resource[uuid:%s type:%s] of account[uuid:%s]", ruuid, resourceType, self.getUuid()));
             }
 
         }
@@ -503,7 +502,7 @@ public class AccountBase extends AbstractAccount {
                         svo.setResourceUuid(ruuid);
                         svo.setToPublic(true);
                         dbf.persist(svo);
-                        N.New(resourceType, ruuid).info_("Shared resource[uuid:%s type:%s] to public", ruuid, resourceType);
+                        logger.debug(String.format("Shared resource[uuid:%s type:%s] to public", ruuid, resourceType));
                     }
                 } else {
                     for (String ruuid : msg.getResourceUuids()) {
@@ -520,7 +519,7 @@ public class AccountBase extends AbstractAccount {
                                 svo.setResourceUuid(ruuid);
                                 svo.setReceiverAccountUuid(auuid);
                                 dbf.persist(svo);
-                                N.New(resourceType, ruuid).info_("Shared resource[uuid:%s type:%s] to account[uuid:%s]", ruuid, resourceType, auuid);
+                                logger.debug(String.format("Shared resource[uuid:%s type:%s] to account[uuid:%s]", ruuid, resourceType, auuid));
                             }
                         }
                     }
