@@ -35,6 +35,7 @@ import org.zstack.header.configuration.DiskOfferingVO_;
 import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.NopeNoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -1761,9 +1762,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 return;
             }
 
-            FutureCompletion future = new FutureCompletion(null);
-
-            new While<>(vmUuids).all((vmUuid, completion) -> {
+            new While<>(vmUuids).step((vmUuid, completion) -> {
                 VmStateChangedOnHostMsg msg = new VmStateChangedOnHostMsg();
                 msg.setVmInstanceUuid(vmUuid);
                 msg.setHostUuid(hostUuid);
@@ -1773,25 +1772,15 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     @Override
                     public void run(MessageReply reply) {
                         if(!reply.isSuccess()){
-                            N.New(VmInstanceVO.class, vmUuid).warn_("the host[uuid:%s] disconnected, but the vm[uuid:%s] fails to change it's state to Unknown, %s",
-                                    hostUuid, vmUuid, reply.getError());
+                            logger.warn(String.format("the host[uuid:%s] disconnected, but the vm[uuid:%s] fails to " +
+                                            "change it's state to Unknown, %s", hostUuid, vmUuid, reply.getError()));
                         } else {
-                            N.New(VmInstanceVO.class, vmUuid).info_("the host[uuid:%s] disconnected, change the VM[uuid:%s]' state to Unknown", hostUuid, vmUuid);
+                            logger.debug(String.format("the host[uuid:%s] disconnected, change the VM[uuid:%s]' state to Unknown", hostUuid, vmUuid));
                         }
                         completion.done();
                     }
                 });
-            }).run(new NoErrorCompletion(future) {
-                @Override
-                public void done() {
-                    future.success();
-                }
-            });
-            future.await(TimeUnit.SECONDS.toMillis(30));
-            if (future.getErrorCode() != null){
-                logger.debug(String.format("%s when put vm into unknown during reconnect host, ignore it and continue.",
-                        future.getErrorCode().getDetails()));
-            }
+            }, 200).run(new NopeNoErrorCompletion());
         }
     }
 }
