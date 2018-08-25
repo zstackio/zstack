@@ -340,7 +340,7 @@ public class Platform {
 
     static {
         try {
-            msId = getUuid();
+            msId = UUID.nameUUIDFromBytes(getManagementServerIp().getBytes()).toString().replaceAll("-", "");;
 
             Set<Class> baseResourceClasses = reflections.getTypesAnnotatedWith(BaseResource.class).stream()
                     .filter(clz -> clz.isAnnotationPresent(BaseResource.class)).collect(Collectors.toSet());

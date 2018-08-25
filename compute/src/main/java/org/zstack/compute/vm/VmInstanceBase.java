@@ -3674,6 +3674,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     msg.setImage(ImageInventory.valueOf(dbf.findByUuid(self.getImageUuid(), ImageVO.class)));
                 }
                 msg.setHostUuid(self.getHostUuid());
+                msg.setFullAllocate(false);
                 msg.setL3NetworkUuids(CollectionUtils.transformToList(self.getVmNics(), new Function<String, VmNicVO>() {
                     @Override
                     public String call(VmNicVO arg) {

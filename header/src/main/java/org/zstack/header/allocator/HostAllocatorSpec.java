@@ -32,6 +32,7 @@ public class HostAllocatorSpec {
     private boolean dryRun;
     private List<String> systemTags;
     private Map<String, Set<String>> host2PrimaryStorageBlacklist = new HashMap<>();
+    private boolean fullAllocate;
 
     public List<String> getSystemTags() {
         return systemTags;
@@ -200,6 +201,7 @@ public class HostAllocatorSpec {
         spec.setDiskSize(msg.getDiskSize());
         spec.setListAllHosts(msg.isListAllHosts());
         spec.setDryRun(msg.isDryRun());
+        spec.setFullAllocate(msg.isFullAllocate());
         String hvType = null;
         if (msg.getVmInstance() != null && msg.getVmInstance().getHypervisorType() != null) {
             hvType = msg.getVmInstance().getHypervisorType();
@@ -241,5 +243,13 @@ public class HostAllocatorSpec {
 
     public void setHost2PrimaryStorageBlacklist(Map<String, Set<String>> host2PrimaryStorageBlacklist) {
         this.host2PrimaryStorageBlacklist = host2PrimaryStorageBlacklist;
+    }
+
+    public boolean isFullAllocate() {
+        return fullAllocate;
+    }
+
+    public void setFullAllocate(boolean fullAllocate) {
+        this.fullAllocate = fullAllocate;
     }
 }

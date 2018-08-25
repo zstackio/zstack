@@ -247,6 +247,10 @@ public class SourceClassMap {
 			put("org.zstack.storage.ceph.primary.CephPrimaryStorageInventory", "org.zstack.sdk.CephPrimaryStorageInventory");
 			put("org.zstack.storage.ceph.primary.CephPrimaryStorageMonInventory", "org.zstack.sdk.CephPrimaryStorageMonInventory");
 			put("org.zstack.storage.ceph.primary.CephPrimaryStoragePoolInventory", "org.zstack.sdk.CephPrimaryStoragePoolInventory");
+			put("org.zstack.storage.device.iscsi.IscsiLunInventory", "org.zstack.sdk.IscsiLunInventory");
+			put("org.zstack.storage.device.iscsi.IscsiServerClusterRefInventory", "org.zstack.sdk.IscsiServerClusterRefInventory");
+			put("org.zstack.storage.device.iscsi.IscsiServerInventory", "org.zstack.sdk.IscsiServerInventory");
+			put("org.zstack.storage.device.iscsi.IscsiTargetInventory", "org.zstack.sdk.IscsiTargetInventory");
 			put("org.zstack.storage.fusionstor.backup.FusionstorBackupStorageInventory", "org.zstack.sdk.FusionstorBackupStorageInventory");
 			put("org.zstack.storage.fusionstor.backup.FusionstorBackupStorageMonInventory", "org.zstack.sdk.FusionstorBackupStorageMonInventory");
 			put("org.zstack.storage.fusionstor.primary.FusionstorPrimaryStorageInventory", "org.zstack.sdk.FusionstorPrimaryStorageInventory");
@@ -411,6 +415,10 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ImageStoreImageStruct", "org.zstack.storage.backup.imagestore.ImageStoreImageStruct");
 			put("org.zstack.sdk.InstanceOfferingInventory", "org.zstack.header.configuration.InstanceOfferingInventory");
 			put("org.zstack.sdk.IpRangeInventory", "org.zstack.header.network.l3.IpRangeInventory");
+			put("org.zstack.sdk.IscsiLunInventory", "org.zstack.storage.device.iscsi.IscsiLunInventory");
+			put("org.zstack.sdk.IscsiServerClusterRefInventory", "org.zstack.storage.device.iscsi.IscsiServerClusterRefInventory");
+			put("org.zstack.sdk.IscsiServerInventory", "org.zstack.storage.device.iscsi.IscsiServerInventory");
+			put("org.zstack.sdk.IscsiTargetInventory", "org.zstack.storage.device.iscsi.IscsiTargetInventory");
 			put("org.zstack.sdk.ItemInventory", "org.zstack.monitoring.items.ItemInventory");
 			put("org.zstack.sdk.KVMHostInventory", "org.zstack.kvm.KVMHostInventory");
 			put("org.zstack.sdk.KVMIsoTO", "org.zstack.kvm.KVMIsoTO");

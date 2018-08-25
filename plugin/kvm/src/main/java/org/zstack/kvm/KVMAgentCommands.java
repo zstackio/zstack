@@ -865,6 +865,15 @@ public class KVMAgentCommands {
         private boolean emulateHyperV;
         private boolean isApplianceVm;
         private String systemSerialNumber;
+        private String bootMode;
+
+        public String getBootMode() {
+            return bootMode;
+        }
+
+        public void setBootMode(String bootMode) {
+            this.bootMode = bootMode;
+        }
 
         public boolean isEmulateHyperV() {
             return emulateHyperV;
@@ -1867,6 +1876,7 @@ public class KVMAgentCommands {
         public String hostUuid;
         public List<String> psUuids;
         public String psStatus;
+        public String reason;
     }
 
     public static class ReportHostDeviceEventCmd {

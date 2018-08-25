@@ -43,4 +43,8 @@
     <message>
         <name>org.zstack.header.identity.role.api.APIRemovePolicyStatementsFromRoleMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.identity.APICheckResourcePermissionMsg</name>
+    </message>
 </service>

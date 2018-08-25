@@ -1,5 +1,6 @@
 package org.zstack.header.storage.primary;
 
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.NeedReplyMessage;
 
 import java.util.List;
@@ -11,6 +12,7 @@ public class UpdatePrimaryStorageHostStatusMsg extends NeedReplyMessage implemen
     private List<String> primaryStorageUuids;
     private String hostUuid;
     private PrimaryStorageHostStatus status;
+    private ErrorCode reason;
 
     public void setStatus(PrimaryStorageHostStatus status) {
         this.status = status;
@@ -39,5 +41,13 @@ public class UpdatePrimaryStorageHostStatusMsg extends NeedReplyMessage implemen
     @Override
     public String getPrimaryStorageUuid() {
         return primaryStorageUuids.get(0);
+    }
+
+    public ErrorCode getReason() {
+        return reason;
+    }
+
+    public void setReason(ErrorCode reason) {
+        this.reason = reason;
     }
 }

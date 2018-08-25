@@ -11,6 +11,7 @@ public class VolumeSnapshotDeletionMsg extends DeletionMessage implements Volume
     private String snapshotUuid;
     private String volumeUuid;
     private boolean volumeDeletion;
+    private boolean dbOnly;
     /**
      * @ignore
      */
@@ -50,5 +51,13 @@ public class VolumeSnapshotDeletionMsg extends DeletionMessage implements Volume
 
     public void setSnapshotUuid(String snapshotUuid) {
         this.snapshotUuid = snapshotUuid;
+    }
+
+    public boolean isDbOnly() {
+        return dbOnly;
+    }
+
+    public void setDbOnly(boolean dbOnly) {
+        this.dbOnly = dbOnly;
     }
 }

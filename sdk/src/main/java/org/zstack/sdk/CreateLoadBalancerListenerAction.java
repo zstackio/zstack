@@ -40,7 +40,7 @@ public class CreateLoadBalancerListenerAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,65535L}, noTrim = false)
     public int loadBalancerPort = 0;
 
-    @Param(required = false, validValues = {"tcp","http","https"}, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"udp","tcp","http","https"}, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String protocol;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)

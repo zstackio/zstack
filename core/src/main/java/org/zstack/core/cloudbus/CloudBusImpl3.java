@@ -107,7 +107,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
             }
         }
 
-        if (CoreGlobalProperty.UNIT_TEST_ON) {
+        if (CoreGlobalProperty.UNIT_TEST_ON && !CoreGlobalProperty.SIMULATORS_ON) {
             CloudBusGlobalProperty.HTTP_CONTEXT_PATH = "";
             CloudBusGlobalProperty.HTTP_PORT = 8989;
         }

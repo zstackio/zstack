@@ -35,6 +35,7 @@ import org.zstack.header.configuration.DiskOfferingVO_;
 import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.NopeNoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -48,11 +49,8 @@ import org.zstack.header.host.HostStatus;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.Quota.QuotaOperator;
 import org.zstack.header.identity.Quota.QuotaPair;
+import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
-import org.zstack.header.image.ImageInventory;
-import org.zstack.header.image.ImagePlatform;
-import org.zstack.header.image.ImageVO;
-import org.zstack.header.image.ImageVO_;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
@@ -74,7 +72,10 @@ import org.zstack.identity.QuotaUtil;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.*;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.ObjectUtils;
+import org.zstack.utils.TagUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -1312,9 +1313,62 @@ public class VmInstanceManagerImpl extends AbstractService implements
         VmSystemTags.USERDATA.installValidator(userDataValidator);
     }
 
+    private void installBootModeValidator() {
+        class BootModeValidator implements SystemTagCreateMessageValidator, SystemTagValidator {
+            @Override
+            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                if (!VmSystemTags.BOOT_MODE.isMatch(systemTag)) {
+                    return;
+                }
+
+                String bootMode = VmSystemTags.BOOT_MODE.getTokenByTag(systemTag, VmSystemTags.BOOT_MODE_TOKEN);
+                validateBootMode(systemTag, bootMode);
+            }
+
+            @Override
+            public void validateSystemTagInCreateMessage(APICreateMessage msg) {
+                if (msg.getSystemTags() == null || msg.getSystemTags().isEmpty()) {
+                    return;
+                }
+
+                int bootModeCount = 0;
+                for (String systemTag : msg.getSystemTags()) {
+                    if (VmSystemTags.BOOT_MODE.isMatch(systemTag)) {
+                        if (++bootModeCount > 1) {
+                            throw new ApiMessageInterceptionException(argerr("only one bootMode system tag is allowed, but %d got", bootModeCount));
+                        }
+
+                        String bootMode = VmSystemTags.BOOT_MODE.getTokenByTag(systemTag, VmSystemTags.BOOT_MODE_TOKEN);
+                        validateBootMode(systemTag, bootMode);
+                    }
+                }
+            }
+
+            private void validateBootMode(String systemTag, String bootMode) {
+                boolean valid = false;
+                for (ImageBootMode bm : ImageBootMode.values()) {
+                    if (bm.name().equalsIgnoreCase(bootMode)) {
+                        valid = true;
+                        break;
+                    }
+                }
+                if (!valid) {
+                    throw new ApiMessageInterceptionException(argerr(
+                            "[%s] specified in system tag [%s] is not a valid boot mode", bootMode, systemTag)
+                    );
+                }
+            }
+        }
+
+        BootModeValidator validator = new BootModeValidator();
+        tagMgr.installCreateMessageValidator(VmInstanceVO.class.getSimpleName(), validator);
+        VmSystemTags.BOOT_MODE.installValidator(validator);
+    }
+
     private void installSystemTagValidator() {
         installHostnameValidator();
         installUserdataValidator();
+        installBootModeValidator();
     }
 
     @Override
@@ -1708,9 +1762,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 return;
             }
 
-            FutureCompletion future = new FutureCompletion(null);
-
-            new While<>(vmUuids).all((vmUuid, completion) -> {
+            new While<>(vmUuids).step((vmUuid, completion) -> {
                 VmStateChangedOnHostMsg msg = new VmStateChangedOnHostMsg();
                 msg.setVmInstanceUuid(vmUuid);
                 msg.setHostUuid(hostUuid);
@@ -1720,25 +1772,15 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     @Override
                     public void run(MessageReply reply) {
                         if(!reply.isSuccess()){
-                            N.New(VmInstanceVO.class, vmUuid).warn_("the host[uuid:%s] disconnected, but the vm[uuid:%s] fails to change it's state to Unknown, %s",
-                                    hostUuid, vmUuid, reply.getError());
+                            logger.warn(String.format("the host[uuid:%s] disconnected, but the vm[uuid:%s] fails to " +
+                                            "change it's state to Unknown, %s", hostUuid, vmUuid, reply.getError()));
                         } else {
-                            N.New(VmInstanceVO.class, vmUuid).info_("the host[uuid:%s] disconnected, change the VM[uuid:%s]' state to Unknown", hostUuid, vmUuid);
+                            logger.debug(String.format("the host[uuid:%s] disconnected, change the VM[uuid:%s]' state to Unknown", hostUuid, vmUuid));
                         }
                         completion.done();
                     }
                 });
-            }).run(new NoErrorCompletion(future) {
-                @Override
-                public void done() {
-                    future.success();
-                }
-            });
-            future.await(TimeUnit.SECONDS.toMillis(30));
-            if (future.getErrorCode() != null){
-                logger.debug(String.format("%s when put vm into unknown during reconnect host, ignore it and continue.",
-                        future.getErrorCode().getDetails()));
-            }
+            }, 200).run(new NopeNoErrorCompletion());
         }
     }
 }

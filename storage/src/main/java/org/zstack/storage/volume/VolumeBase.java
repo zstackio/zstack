@@ -818,6 +818,7 @@ public class VolumeBase implements Volume {
                                         self = dbf.updateAndRefresh(self);
                                         new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(oldStatus, getSelfInventory());
                                     } else if (deletionPolicy == VolumeDeletionPolicy.DBOnly) {
+                                        callVmJustBeforeDeleteFromDbExtensionPoint();
                                         VolumeInventory inventory = getSelfInventory();
                                         inventory.setStatus(VolumeStatus.Deleted.toString());
                                         new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(oldStatus, inventory);
@@ -856,6 +857,11 @@ public class VolumeBase implements Volume {
                 });
             }
         }).start();
+    }
+
+    private void callVmJustBeforeDeleteFromDbExtensionPoint() {
+        VolumeInventory inv = getSelfInventory();
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VolumeJustBeforeDeleteFromDbExtensionPoint.class), p -> p.volumeJustBeforeDeleteFromDb(inv));
     }
 
     private void handle(final VolumeDeletionMsg msg) {

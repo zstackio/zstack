@@ -669,25 +669,30 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
 
         RangeSet portRangeList = new RangeSet();
         List<RangeSet.Range> portRanges = new ArrayList<RangeSet.Range>();
-
-        /* no matter TCP or HTTP, retrieve all the ports of TCP and HTTP */
-        if (protocol.toLowerCase().equals(LoadBalancerConstants.LB_PROTOCOL_TCP) ||
-                protocol.toLowerCase().equals(LoadBalancerConstants.LB_PROTOCOL_HTTP)) {
-            List<Tuple> lbPortList = SQL.New("select lbl.loadBalancerPort, lbl.loadBalancerPort from LoadBalancerListenerVO lbl, LoadBalancerVO lb "
-                    + "where lbl.loadBalancerUuid=lb.uuid and lb.vipUuid = :vipUuid", Tuple.class).
-                    param("vipUuid", vipUuid).list();
-
-            Iterator<Tuple> it = lbPortList.iterator();
-            while (it.hasNext()) {
-                Tuple strRange = it.next();
-                int start = strRange.get(0, Integer.class);
-                int end = strRange.get(1, Integer.class);
-
-                RangeSet.Range range = new RangeSet.Range(start, end);
-                portRanges.add(range);
-            }
-            portRangeList.setRanges(portRanges);
+        List<String> protocols = new ArrayList<>();
+        if (LoadBalancerConstants.LB_PROTOCOL_UDP.equals(protocol.toLowerCase())) {
+            protocols.add(LoadBalancerConstants.LB_PROTOCOL_UDP);
+        } else {
+            protocols.add(LoadBalancerConstants.LB_PROTOCOL_TCP);
+            protocols.add(LoadBalancerConstants.LB_PROTOCOL_HTTP);
+            protocols.add(LoadBalancerConstants.LB_PROTOCOL_HTTPS);
         }
+
+        List<Tuple> lbPortList = SQL.New("select lbl.loadBalancerPort, lbl.loadBalancerPort from LoadBalancerListenerVO lbl, LoadBalancerVO lb "
+                + "where lbl.protocol in (:protocols) and lbl.loadBalancerUuid=lb.uuid and lb.vipUuid = :vipUuid", Tuple.class).
+                param("protocols", protocols).
+                param("vipUuid", vipUuid).list();
+
+        Iterator<Tuple> it = lbPortList.iterator();
+        while (it.hasNext()) {
+            Tuple strRange = it.next();
+            int start = strRange.get(0, Integer.class);
+            int end = strRange.get(1, Integer.class);
+
+            RangeSet.Range range = new RangeSet.Range(start, end);
+            portRanges.add(range);
+        }
+        portRangeList.setRanges(portRanges);
 
         return portRangeList;
     }

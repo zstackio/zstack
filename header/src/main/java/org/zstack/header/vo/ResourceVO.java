@@ -66,6 +66,8 @@ public class ResourceVO {
             Field nameField = getNameField();
             if (nameField != null) {
                 name = (String) nameField.get(this);
+            } else if (this.getResourceName() != null) {
+                name = this.getResourceName();
             }
 
             return name;

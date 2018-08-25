@@ -34,6 +34,7 @@ import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 
 import javax.persistence.Tuple;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -176,17 +177,23 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
                         .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, vol.getPrimaryStorageUuid())
                         .listValues();
 
-                List<String> vmInstanceClusterUuids = q(VmInstanceVO.class)
-                        .select(VmInstanceVO_.clusterUuid)
+                List<String> vmInstanceClusterUuids = new ArrayList<>();
+                if (!q(VmInstanceVO.class)
+                        .isNull(VmInstanceVO_.clusterUuid)
                         .eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid())
-                        .listValues();
+                        .isExists()) {
+                    vmInstanceClusterUuids.add(q(VmInstanceVO.class)
+                            .select(VmInstanceVO_.clusterUuid)
+                            .eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid())
+                            .findValue());
+                }
 
                 if (vmInstanceClusterUuids.isEmpty()) {
                     String vmRootVolumeUuid = q(VmInstanceVO.class).select(VmInstanceVO_.rootVolumeUuid)
                             .eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).findValue();
 
                     String vmPrimaryStorageUuid = q(VolumeVO.class).select(VolumeVO_.primaryStorageUuid)
-                            .eq(VmInstanceVO_.uuid, vmRootVolumeUuid).findValue();
+                            .eq(VolumeVO_.uuid, vmRootVolumeUuid).findValue();
 
                     vmInstanceClusterUuids = q(PrimaryStorageClusterRefVO.class)
                             .select(PrimaryStorageClusterRefVO_.clusterUuid)

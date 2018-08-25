@@ -142,6 +142,7 @@ public class PrimaryStorageCanonicalEvent {
         private String hostUuid;
         private PrimaryStorageHostStatus oldStatus;
         private PrimaryStorageHostStatus newStatus;
+        private ErrorCode reason;
 
         public void setHostUuid(String hostUuid) {
             this.hostUuid = hostUuid;
@@ -173,6 +174,14 @@ public class PrimaryStorageCanonicalEvent {
 
         public String getPrimaryStorageUuid() {
             return primaryStorageUuid;
+        }
+
+        public ErrorCode getReason() {
+            return reason;
+        }
+
+        public void setReason(ErrorCode reason) {
+            this.reason = reason;
         }
     }
 }

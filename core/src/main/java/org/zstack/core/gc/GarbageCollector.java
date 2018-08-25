@@ -123,10 +123,6 @@ public abstract class GarbageCollector {
             }
         }
 
-        FieldUtils.getAllFields(getClass()).forEach(f -> {
-
-        });
-
         GarbageCollectorVO vo = new GarbageCollectorVO();
         vo.setUuid(Platform.getUuid());
         vo.setContext(JSONObjectUtil.toJsonString(context));

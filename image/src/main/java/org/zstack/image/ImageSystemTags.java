@@ -29,4 +29,7 @@ public class ImageSystemTags {
 
     public static String IMAGE_SOURCE_TYPE_TOKEN = "sourceType";
     public static PatternedSystemTag IMAGE_SOURCE_TYPE = new PatternedSystemTag(String.format("sourceType::{%s}", IMAGE_SOURCE_TYPE_TOKEN), ImageVO.class);
+
+    public static String BOOT_MODE_TOKEN = "bootMode";
+    public static PatternedSystemTag BOOT_MODE = new PatternedSystemTag(String.format("bootMode::{%s}", BOOT_MODE_TOKEN), ImageVO.class);
 }

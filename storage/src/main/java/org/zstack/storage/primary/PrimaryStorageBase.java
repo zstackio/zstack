@@ -333,11 +333,11 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     }
 
     protected void handle(UpdatePrimaryStorageHostStatusMsg msg){
-        updatePrimaryStorageHostStatus(msg.getPrimaryStorageUuids(), msg.getHostUuid(), msg.getStatus());
+        updatePrimaryStorageHostStatus(msg.getPrimaryStorageUuids(), msg.getHostUuid(), msg.getStatus(), msg.getReason());
 
     }
     
-    private void updatePrimaryStorageHostStatus(List<String> psUuids, String hostUuid, PrimaryStorageHostStatus newStatus){
+    private void updatePrimaryStorageHostStatus(List<String> psUuids, String hostUuid, PrimaryStorageHostStatus newStatus, ErrorCode reason){
         List<PrimaryStorageCanonicalEvent.PrimaryStorageHostStatusChangeData> datas = new ArrayList<>();
 
         new SQLBatch(){
@@ -367,6 +367,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                         data.setPrimaryStorageUuid(psUuid);
                         data.setNewStatus(newStatus);
                         data.setOldStatus(oldStatus);
+                        data.setReason(reason);
                         datas.add(data);
                     }
                 }
