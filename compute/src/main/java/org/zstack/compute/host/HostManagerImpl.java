@@ -22,6 +22,8 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
@@ -148,9 +150,8 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         }
 
         if (vo == null) {
-            String err = "Cannot find host: " + msg.getHostUuid() + ", it may have been deleted";
-            bus.replyErrorByMessageType((Message) msg, err);
-            return;
+            ErrorCode err = Platform.err(SysErrors.RESOURCE_NOT_FOUND, "cannot find host[uuid:%s], it may have been deleted", msg.getHostUuid());
+            throw new OperationFailureException(err);
         }
 
         HypervisorFactory factory = this.getHypervisorFactory(HypervisorType.valueOf(vo.getHypervisorType()));

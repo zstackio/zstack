@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
@@ -13,6 +14,8 @@ import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.exception.CloudResourceUnmanagedException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
@@ -42,28 +45,10 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
     private CloudBus bus;
     @Autowired
     private ThreadFacade thdf;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
-    private static Map<String, Class> hostTrackerPreReconnectCheckers = new HashMap<>();
-
-    private static HostTrackerPreReconnectChecker newHostTrackerPreReconnectChecker(Class clz) {
-        try {
-            return (HostTrackerPreReconnectChecker) clz.getConstructor().newInstance();
-        } catch (Exception e) {
-            throw new CloudRuntimeException(e);
-        }
-    }
-
-    static {
-        BeanUtils.reflections.getSubTypesOf(HostTrackerPreReconnectChecker.class).forEach(clz -> {
-            HostTrackerPreReconnectChecker checker = newHostTrackerPreReconnectChecker(clz);
-            Class old = hostTrackerPreReconnectCheckers.get(checker.getHypervisorType());
-            if (old  != null) {
-                throw new CloudRuntimeException(String.format("duplicate HostTrackerPreReconnectChecker[%s, %s] with the same hypervisor type[%s]", clz, checker.getHypervisorType(), checker.getHypervisorType()));
-            }
-
-            hostTrackerPreReconnectCheckers.put(checker.getHypervisorType(), clz);
-        });
-    }
+    private static Map<String, HostReconnectTaskFactory> hostReconnectTaskFactories = new HashMap<>();
 
     enum ReconnectDecision {
         DoNothing,
@@ -88,70 +73,10 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
         });
     }
 
-    private class ReconnectTask extends AsyncTimer {
-        private String uuid;
-        private String hypervisorType;
-        private NoErrorCompletion completion;
-
-        public ReconnectTask(String uuid, String hypervisorType, NoErrorCompletion completion) {
-            super(TimeUnit.SECONDS, HostGlobalConfig.PING_HOST_INTERVAL.value(Long.class));
-            this.uuid = uuid;
-            this.hypervisorType = hypervisorType;
-            this.completion = completion;
-        }
-
-        @Override
-        protected void execute() {
-            Class clz = hostTrackerPreReconnectCheckers.get(hypervisorType);
-            if (clz == null) {
-                reconnectNow(uuid, new Completion(completion) {
-                    @Override
-                    public void success() {
-                        completion.done();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        // still fail to reconnect the host, continue this reconnect task
-                        continueToRunThisTimer();
-                    }
-                });
-
-                return;
-            }
-
-            HostTrackerPreReconnectChecker preReconnectChecker = newHostTrackerPreReconnectChecker(clz);
-            Boolean canDo = preReconnectChecker.canDoReconnect(uuid);
-            if (canDo == null) {
-                // the host is deleted
-                completion.done();
-                return;
-            }
-
-            if (canDo) {
-                reconnectNow(uuid, new Completion(completion) {
-                    @Override
-                    public void success() {
-                        completion.done();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        // still fail to reconnect the host, continue this reconnect task
-                        continueToRunThisTimer();
-                    }
-                });
-            } else {
-                // still not ready to reconnect the host, continue this reconnect task
-                continueToRunThisTimer();
-            }
-        }
-    }
-
     private class Tracker extends AsyncTimer {
         private String uuid;
         private String hypervisorType;
-        private ReconnectTask reconnectTask;
+        private HostReconnectTask reconnectTask;
 
         public Tracker(String uuid) {
             super(TimeUnit.SECONDS, HostGlobalConfig.PING_HOST_INTERVAL.value(Long.class));
@@ -257,12 +182,13 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
                 reconnectTask.cancel();
             }
 
-            reconnectTask = new ReconnectTask(uuid, hypervisorType, new NoErrorCompletion() {
+            reconnectTask = getHostReconnectTaskFactory(hypervisorType).createTask(uuid, new NoErrorCompletion() {
                 @Override
                 public void done() {
                     continueToRunThisTimer();
                 }
             });
+
             reconnectTask.start();
         }
 
@@ -338,8 +264,19 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
 
     }
 
+    private HostReconnectTaskFactory getHostReconnectTaskFactory(String hvType) {
+        HostReconnectTaskFactory f = hostReconnectTaskFactories.get(hvType);
+        if (f == null) {
+            throw new CloudRuntimeException(String.format("cannot find HostReconnectTaskFactory with hypervisorType[%s]", hvType));
+        }
+
+        return f;
+    }
+
     @Override
     public boolean start() {
+        populateExtensions();
+
         HostGlobalConfig.PING_HOST_INTERVAL.installUpdateExtension((oldConfig, newConfig) -> {
             logger.debug(String.format("%s change from %s to %s, restart host trackers",
                     oldConfig.getCanonicalName(), oldConfig.value(), newConfig.value()));
@@ -348,6 +285,17 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
 
         reScanHost();
         return true;
+    }
+
+    private void populateExtensions() {
+        pluginRgty.getExtensionList(HostReconnectTaskFactory.class).forEach(f -> {
+            HostReconnectTaskFactory old = hostReconnectTaskFactories.get(f.getHypervisorType());
+            if (old != null) {
+                throw new CloudRuntimeException(String.format("duplicate HostReconnectTaskFactory[%s, %s] with the same type[%s]", f, old, f.getHypervisorType()));
+            }
+
+            hostReconnectTaskFactories.put(f.getHypervisorType(), f);
+        });
     }
 
     @Override

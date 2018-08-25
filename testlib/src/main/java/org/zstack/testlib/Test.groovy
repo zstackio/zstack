@@ -9,6 +9,7 @@ import org.zstack.core.db.DatabaseFacade
 import org.zstack.header.AbstractService
 import org.zstack.header.exception.CloudRuntimeException
 import org.zstack.header.identity.AccountConstant
+import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor
 import org.zstack.header.message.AbstractBeforeSendMessageInterceptor
 import org.zstack.header.message.Event
 import org.zstack.header.message.Message
@@ -46,6 +47,7 @@ abstract class Test implements ApiHelper, Retry {
     static Map<Class, Closure> functionForMockTestObjectFactory = new ConcurrentHashMap<>()
 
     protected List<Closure> methodsOnClean = []
+    private Map<Class, List<Closure>> notifiersOfReceivedMessages = new ConcurrentHashMap<>()
 
     protected List zqlQuery(String text) {
         return zQLQuery { zql = text }.results[0].inventories
@@ -306,6 +308,21 @@ abstract class Test implements ApiHelper, Retry {
                 }
             }
         })
+
+        bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
+            @Override
+            void beforeDeliveryMessage(Message msg) {
+                notifiersOfReceivedMessages.each { msgClz, cs ->
+                    if (msgClz.isAssignableFrom(msg.getClass())) {
+                        synchronized (cs) {
+                            cs.each {
+                                it(msg)
+                            }
+                        }
+                    }
+                }
+            }
+        })
     }
 
     void buildBeanConstructor(boolean useWeb = true) {
@@ -356,6 +373,19 @@ abstract class Test implements ApiHelper, Retry {
 
         hijackService()
         environment()
+    }
+
+    protected Closure notifyWhenReceivedMessage(Class msgClz, Closure c) {
+        List<Closure> cs = notifiersOfReceivedMessages.computeIfAbsent(msgClz, { Collections.synchronizedList([]) })
+        synchronized (cs) {
+            cs.add(c)
+        }
+
+        return {
+            synchronized (cs) {
+                cs.remove(c)
+            }
+        }
     }
 
     protected <T> T bean(Class<T> clz) {

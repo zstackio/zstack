@@ -12,6 +12,12 @@
     http://zstack.org/schema/zstack/plugin.xsd"
     default-init-method="init" default-destroy-method="destroy">
 
+    <bean id="KVMHostReconnectTaskFactory" class="org.zstack.kvm.KVMHostReconnectTaskFactory">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.compute.host.HostReconnectTaskFactory" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="KvmHostReserveExtension" class="org.zstack.kvm.KvmHostReserveExtension">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />
