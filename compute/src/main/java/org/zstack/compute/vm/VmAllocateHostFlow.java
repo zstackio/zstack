@@ -57,14 +57,14 @@ public class VmAllocateHostFlow implements Flow {
     }
 
     @Transactional
-    private List<String> getAvoidHost(VmInstanceSpec spec){
+    protected List<String> getAvoidHost(VmInstanceSpec spec){
         return Q.New(PrimaryStorageHostRefVO.class).select(PrimaryStorageHostRefVO_.hostUuid)
                 .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, spec.getRequiredPrimaryStorageUuidForRootVolume())
                 .eq(PrimaryStorageHostRefVO_.status, PrimaryStorageHostStatus.Disconnected)
                 .listValues();
     }
 
-    private AllocateHostMsg prepareMsg(VmInstanceSpec spec) {
+    protected AllocateHostMsg prepareMsg(VmInstanceSpec spec) {
         DesignatedAllocateHostMsg msg = new DesignatedAllocateHostMsg();
 
         List<DiskOfferingInventory> diskOfferings = new ArrayList<>();
