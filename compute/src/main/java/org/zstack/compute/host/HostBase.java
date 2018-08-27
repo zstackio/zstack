@@ -838,9 +838,14 @@ public abstract class HostBase extends AbstractHost {
     }
 
     protected boolean changeConnectionState(final HostStatusEvent event) {
+        return changeConnectionState(event, null);
+    }
 
-        if(!Q.New(HostVO.class).eq(HostVO_.uuid, self.getUuid()).isExists()){
-            throw new CloudRuntimeException(String.format("change host connection state fail, can not find the host[%s]", self.getUuid()));
+    protected boolean changeConnectionState(final HostStatusEvent event, Runnable runnable) {
+        String hostUuid = self.getUuid();
+        self = dbf.reload(self);
+        if(self == null){
+            throw new CloudRuntimeException(String.format("change host connection state fail, can not find the host[%s]", hostUuid));
         }
 
         HostStatus before = self.getStatus();
@@ -850,6 +855,7 @@ public abstract class HostBase extends AbstractHost {
         }
 
         self.setStatus(next);
+        Optional.ofNullable(runnable).ifPresent(Runnable::run);
         self = dbf.updateAndRefresh(self);
         logger.debug(String.format("Host %s [uuid:%s] changed connection state from %s to %s",
                 self.getName(), self.getUuid(), before, next));
