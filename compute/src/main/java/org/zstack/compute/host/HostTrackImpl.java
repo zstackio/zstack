@@ -86,6 +86,9 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
             if (hypervisorType == null) {
                 throw new CloudRuntimeException(String.format("host[uuid:%s] is deleted, why you submit a tracker for it???", uuid));
             }
+
+
+            __name__ = String.format("host-tracker-%s-hypervisor-%s", uuid, hypervisorType);
         }
 
         @Override
@@ -136,13 +139,14 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
                         return ReconnectDecision.DoNothing;
                     }
 
-                    if (!r.isConnected()) {
+                    boolean autoReconnect = HostGlobalConfig.AUTO_RECONNECT_ON_ERROR.value(Boolean.class);
+                    if (!r.isConnected() && autoReconnect) {
                         return ReconnectDecision.SubmitReconnectTask;
                     }
 
                     // host can be successfully pinged
                     if (r.getCurrentHostStatus().equals(HostStatus.Disconnected.toString())) {
-                        if (HostGlobalConfig.AUTO_RECONNECT_ON_ERROR.value(Boolean.class)) {
+                        if (autoReconnect) {
                             return ReconnectDecision.ReconnectNow;
                         } else {
                             return ReconnectDecision.DoNothing;

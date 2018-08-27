@@ -3,16 +3,15 @@ package org.zstack.test.integration.kvm.host
 import org.springframework.http.HttpEntity
 import org.zstack.compute.host.HostGlobalConfig
 import org.zstack.compute.host.HostReconnectTask
+import org.zstack.compute.host.HostTrackImpl
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.Q
 import org.zstack.header.core.NoErrorCompletion
-import org.zstack.header.host.HostStatus
-import org.zstack.header.host.HostVO
-import org.zstack.header.host.HostVO_
-import org.zstack.header.host.PingHostMsg
+import org.zstack.header.host.*
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.KVMReconnectHostTask
+import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.HostInventory
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
@@ -65,13 +64,220 @@ class KVMPingCase extends SubCase {
         }
     }
 
+    void waitHostStateChange(String hostUuid, HostState state) {
+        retryInSecs {
+            assert Q.New(HostVO.class).select(HostVO_.state).eq(HostVO_.uuid, hostUuid).findValue() == state
+        }
+    }
+
     void waitHostDisconnected(String hostUuid) {
         retryInSecs {
             assert Q.New(HostVO.class).select(HostVO_.status).eq(HostVO_.uuid, hostUuid).findValue() == HostStatus.Disconnected
         }
     }
 
-    void testPing() {
+    void waitHostConnected(String hostUuid) {
+        retryInSecs {
+            assert Q.New(HostVO.class).select(HostVO_.status).eq(HostVO_.uuid, hostUuid).findValue() == HostStatus.Connected
+        }
+    }
+
+    void recoverHostToConnected(String hostUuid) {
+        env.cleanSimulatorHandlers()
+        canDoReconnectFunc = {  HostReconnectTask.CanDoAnswer.Ready }
+        waitHostConnected(hostUuid)
+    }
+
+    void testHostReconnectAfterPingFailure() {
+        canDoReconnectFunc = {  HostReconnectTask.CanDoAnswer.Ready }
+
+        HostInventory kvm1 = env.inventoryByName("kvm1")
+
+        boolean pingSuccess = false
+
+        env.simulator(KVMConstant.KVM_PING_PATH) { HttpEntity<String> e, EnvSpec espec ->
+            KVMAgentCommands.PingCmd cmd = JSONObjectUtil.toObject(e.getBody(), KVMAgentCommands.PingCmd.class)
+
+            def rsp = new KVMAgentCommands.PingResponse()
+            if (cmd.hostUuid == kvm1.uuid && !pingSuccess) {
+                throw new RuntimeException("failure on purpose")
+            } else {
+                rsp.hostUuid = cmd.hostUuid
+            }
+
+            return rsp
+        }
+
+        waitHostDisconnected(kvm1.uuid)
+        pingSuccess = true
+        waitHostConnected(kvm1.uuid)
+    }
+
+    void testNoPingWhenHostMaintainedAndPingAfterEnabled() {
+        canDoReconnectFunc = {  HostReconnectTask.CanDoAnswer.Ready }
+        HostInventory kvm1 = env.inventoryByName("kvm1")
+
+        changeHostState {
+            uuid = kvm1.uuid
+            stateEvent = HostStateEvent.maintain
+        }
+
+        waitHostStateChange(kvm1.uuid, HostState.Maintenance)
+
+        int count = 0
+
+        def cleanup = notifyWhenReceivedMessage(PingHostMsg.class) { PingHostMsg msg ->
+            if (msg.hostUuid == kvm1.uuid) {
+                count ++
+            }
+        }
+
+        TimeUnit.SECONDS.sleep(3L)
+        assert count == 0
+
+        changeHostState {
+            uuid = kvm1.uuid
+            stateEvent = HostStateEvent.enable
+        }
+
+        waitHostStateChange(kvm1.uuid, HostState.Enabled)
+
+        count = 0
+
+        retryInSecs {
+            assert count > 0
+        }
+
+        cleanup()
+        recoverHostToConnected(kvm1.uuid)
+    }
+
+    void testContinuePingIfAutoReconnectIsFalse() {
+        canDoReconnectFunc = {  HostReconnectTask.CanDoAnswer.Ready }
+
+        boolean pingSuccess = false
+
+        HostInventory kvm1 = env.inventoryByName("kvm1")
+
+        env.simulator(KVMConstant.KVM_PING_PATH) { HttpEntity<String> e, EnvSpec espec ->
+            KVMAgentCommands.PingCmd cmd = JSONObjectUtil.toObject(e.getBody(), KVMAgentCommands.PingCmd.class)
+
+            def rsp = new KVMAgentCommands.PingResponse()
+            if (cmd.hostUuid == kvm1.uuid && !pingSuccess) {
+                throw new RuntimeException("failure on purpose")
+            } else {
+                rsp.hostUuid = cmd.hostUuid
+            }
+
+            return rsp
+        }
+
+        HostGlobalConfig.AUTO_RECONNECT_ON_ERROR.updateValue(false)
+        waitHostDisconnected(kvm1.uuid)
+        pingSuccess = true
+
+        retryInSecs {
+            assert Q.New(HostVO.class).select(HostVO_.status).eq(HostVO_.uuid, kvm1.uuid).findValue() == HostStatus.Disconnected
+        }
+
+        HostGlobalConfig.AUTO_RECONNECT_ON_ERROR.updateValue(true)
+        recoverHostToConnected(kvm1.uuid)
+    }
+
+    void testContinuePingIfHostNoReconnect() {
+        canDoReconnectFunc = {  HostReconnectTask.CanDoAnswer.NoReconnect }
+
+        HostInventory kvm1 = env.inventoryByName("kvm1")
+
+        env.simulator(KVMConstant.KVM_PING_PATH) { HttpEntity<String> e, EnvSpec espec ->
+            KVMAgentCommands.PingCmd cmd = JSONObjectUtil.toObject(e.getBody(), KVMAgentCommands.PingCmd.class)
+
+            def rsp = new KVMAgentCommands.PingResponse()
+            if (cmd.hostUuid == kvm1.uuid) {
+                rsp.success = false
+                rsp.error = "on purpose"
+            } else {
+                rsp.hostUuid = cmd.hostUuid
+            }
+
+            return rsp
+        }
+
+        waitHostDisconnected(kvm1.uuid)
+
+        int count = 0
+
+        def cleanup = notifyWhenReceivedMessage(PingHostMsg.class) { PingHostMsg msg ->
+            if (msg.hostUuid == kvm1.uuid) {
+                count ++
+            }
+        }
+
+        retryInSecs {
+            assert count > 0
+        }
+
+        cleanup()
+        recoverHostToConnected(kvm1.uuid)
+    }
+
+    void testNoPingAfterHostDeleted() {
+        ClusterInventory cluster = env.inventoryByName("cluster")
+
+        HostInventory kvm = addKVMHost {
+            clusterUuid = cluster.uuid
+            managementIp = "127.0.0.3"
+            name = "kvm3"
+            username = "root"
+            password = "password"
+        }
+
+        int count = 0
+        def cleanup = notifyWhenReceivedMessage(PingHostMsg.class) { PingHostMsg msg ->
+            if (msg.hostUuid == kvm.uuid) {
+                count ++
+            }
+        }
+
+        retryInSecs {
+            assert count > 0
+        }
+
+        deleteHost { uuid = kvm.uuid }
+
+        count = 0
+
+        TimeUnit.SECONDS.sleep(3L)
+
+        assert count == 0
+
+        cleanup()
+    }
+
+    void testPingAfterRescanHost() {
+        canDoReconnectFunc = {  HostReconnectTask.CanDoAnswer.Ready }
+
+        HostInventory kvm1 = env.inventoryByName("kvm1")
+        HostTrackImpl tracker = bean(HostTrackImpl.class)
+        tracker.reScanHost()
+
+        int count = 0
+
+        def cleanup = notifyWhenReceivedMessage(PingHostMsg.class) { PingHostMsg msg ->
+            if (msg.hostUuid == kvm1.uuid) {
+                count ++
+            }
+        }
+
+        retryInSecs {
+            assert count > 0
+        }
+
+        cleanup()
+        recoverHostToConnected(kvm1.uuid)
+    }
+
+    void testNoPingIfHostNotReadyToReconnect() {
         canDoReconnectFunc = {  HostReconnectTask.CanDoAnswer.NotReady }
 
         HostInventory kvm1 = env.inventoryByName("kvm1")
@@ -101,11 +307,10 @@ class KVMPingCase extends SubCase {
         }
 
         TimeUnit.SECONDS.sleep(3L)
-
         assert count == 0
 
-        env.cleanSimulatorHandlers()
         cleanup()
+        recoverHostToConnected(kvm1.uuid)
     }
 
     static class HostReconnectTaskForTest extends HostReconnectTask {
@@ -144,7 +349,15 @@ class KVMPingCase extends SubCase {
                 functionForMockTestObjectFactory.remove(HostReconnectTask.class)
             }
 
-            testPing()
+            testNoPingAfterHostDeleted()
+            testPingAfterRescanHost()
+            testNoPingWhenHostMaintainedAndPingAfterEnabled()
+            testContinuePingIfAutoReconnectIsFalse()
+            testHostReconnectAfterPingFailure()
+            testContinuePingIfHostNoReconnect()
+            testNoPingIfHostNotReadyToReconnect()
+
+            canDoReconnectFunc = null
         }
     }
 }

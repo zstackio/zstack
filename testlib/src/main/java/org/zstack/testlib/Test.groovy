@@ -49,7 +49,6 @@ abstract class Test implements ApiHelper, Retry {
     static Map<Class, Closure> functionForMockTestObjectFactory = new ConcurrentHashMap<>()
 
     protected List<Closure> methodsOnClean = []
-    protected Map<Class, List<Closure>> notifiersOfReceivedMessages = new ConcurrentHashMap<>()
 
     protected List zqlQuery(String text) {
         return zQLQuery { zql = text }.results[0].inventories
@@ -314,7 +313,7 @@ abstract class Test implements ApiHelper, Retry {
         bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
             @Override
             void beforeDeliveryMessage(Message msg) {
-                notifiersOfReceivedMessages.each { msgClz, cs ->
+                currentEnvSpec.notifiersOfReceivedMessages.each { msgClz, cs ->
                     if (msgClz.isAssignableFrom(msg.getClass())) {
                         synchronized (cs) {
                             cs.each {
@@ -378,7 +377,9 @@ abstract class Test implements ApiHelper, Retry {
     }
 
     protected Closure notifyWhenReceivedMessage(Class msgClz, Closure c) {
-        List<Closure> cs = notifiersOfReceivedMessages.computeIfAbsent(msgClz, { Collections.synchronizedList([]) })
+        assert currentEnvSpec != null
+
+        List<Closure> cs = currentEnvSpec.notifiersOfReceivedMessages.computeIfAbsent(msgClz, { Collections.synchronizedList([]) })
         synchronized (cs) {
             cs.add(c)
         }

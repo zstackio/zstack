@@ -13,20 +13,29 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public abstract class AsyncTimer implements Runnable {
     protected static final CLogger logger = Utils.getLogger(AsyncTimer.class);
+    protected static long index = 0;
 
     protected TimeUnit timeUnit;
     protected long period;
     private AtomicBoolean cancelled = new AtomicBoolean(false);
     private ThreadFacadeImpl.TimeoutTaskReceipt cancel;
 
+    protected String __name__ = getClass().getName();
+
     @Autowired
     protected ThreadFacade thdf;
+
+    protected long num = index++;
 
     protected abstract void execute();
 
     public AsyncTimer(TimeUnit timeUnit, long period) {
         this.timeUnit = timeUnit;
         this.period = period;
+    }
+    
+    protected String getName() {
+        return String.format("async-timer-%s[%s]", num, __name__);
     }
 
     public void start() {
@@ -35,11 +44,18 @@ public abstract class AsyncTimer implements Runnable {
         }
 
         cancel = thdf.submitTimeoutTask(this, timeUnit, period);
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("%s starts", getName()));
+        }
     }
 
     public void cancel() {
         cancelled.set(true);
         cancel.cancel();
+
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("%s cancelled", getName()));
+        }
     }
 
     protected void continueToRunThisTimer() {
@@ -48,6 +64,9 @@ public abstract class AsyncTimer implements Runnable {
         }
 
         cancel = thdf.submitTimeoutTask(this, timeUnit, period);
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("%s continues to run", getName()));
+        }
     }
 
     @Override
@@ -57,9 +76,13 @@ public abstract class AsyncTimer implements Runnable {
         }
 
         try {
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("%s executes", getName()));
+            }
+
             execute();
         } catch (Throwable t) {
-            logger.warn(String.format("unhandled exception while executing AsyncTimer[%s]", getClass()), t);
+            logger.warn(String.format("unhandled exception while executing %s", getName()), t);
             continueToRunThisTimer();
         }
     }

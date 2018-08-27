@@ -101,6 +101,8 @@
 
         <Logger name="org.zstack.core.cloudbus" level="TRACE" />
 
+        <Logger name="org.zstack.core.thread" level="TRACE" />
+
         <Logger name="org.zstack.billing" level="TRACE" />
 
         <Logger name="org.zstack.zql" level="TRACE" />

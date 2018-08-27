@@ -36,6 +36,8 @@ public abstract class HostReconnectTask extends AsyncTimer {
         super(TimeUnit.SECONDS, HostGlobalConfig.PING_HOST_INTERVAL.value(Long.class));
         this.uuid = uuid;
         this.completion = completion;
+
+        __name__ = String.format("host-%s-reconnect-task", uuid);
     }
 
     private void reconnectNow(String uuid, Completion completion) {
