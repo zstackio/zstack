@@ -159,7 +159,12 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
             if (decision == ReconnectDecision.DoNothing) {
                 continueToRunThisTimer();
             } else if (decision == ReconnectDecision.ReconnectNow) {
-                reconnectNow(uuid, new Completion(null) {
+                reconnectNow(uuid, new Completion(new NoErrorCompletion() {
+                    @Override
+                    public void done() {
+                        continueToRunThisTimer();
+                    }
+                }) {
                     @Override
                     public void success() {
                         continueToRunThisTimer();

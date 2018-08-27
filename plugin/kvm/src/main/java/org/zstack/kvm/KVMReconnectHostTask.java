@@ -1,6 +1,7 @@
 package org.zstack.kvm;
 
 import org.zstack.compute.host.HostReconnectTask;
+import org.zstack.core.aspect.NoAsyncSafe;
 import org.zstack.core.db.Q;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.utils.network.NetworkUtils;
@@ -9,6 +10,7 @@ import javax.persistence.Tuple;
 import java.util.concurrent.TimeUnit;
 
 public class KVMReconnectHostTask extends HostReconnectTask {
+    @NoAsyncSafe
     public KVMReconnectHostTask(String uuid, NoErrorCompletion completion) {
         super(uuid, completion);
     }

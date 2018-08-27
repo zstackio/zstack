@@ -2,13 +2,15 @@ package org.zstack.test.integration.kvm.host
 
 import org.springframework.http.HttpEntity
 import org.zstack.compute.host.HostGlobalConfig
+import org.zstack.compute.host.HostReconnectTask
 import org.zstack.compute.host.HostTrackImpl
-
+import org.zstack.core.aspect.NoAsyncSafe
 import org.zstack.core.cloudbus.CloudBus
+import org.zstack.header.core.NoErrorCompletion
 import org.zstack.header.host.PingHostMsg
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
-
+import org.zstack.kvm.KVMReconnectHostTask
 import org.zstack.sdk.HostInventory
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
@@ -26,24 +28,7 @@ class KVMPingCase extends SubCase {
         env.delete()
     }
 
-    static Closure<Boolean> canDoReconnectFunc
-
-    static class KVMHostTrackerPreReconnectCheckerForTest implements HostTrackerPreReconnectChecker {
-        @Override
-        Boolean canDoReconnect(String hostUuid) {
-            if (canDoReconnectFunc == null) {
-                return true
-            }
-
-            return canDoReconnectFunc(hostUuid)
-        }
-
-        @Override
-        String getHypervisorType() {
-            return KVMConstant.KVM_HYPERVISOR_TYPE
-        }
-    }
-
+    static Closure<HostReconnectTask.CanDoAnswer> canDoReconnectFunc
 
     @Override
     void setup() {
@@ -78,7 +63,7 @@ class KVMPingCase extends SubCase {
     }
 
     void testPing() {
-        canDoReconnectFunc = { false }
+        canDoReconnectFunc = {  HostReconnectTask.CanDoAnswer.NotReady }
 
         HostInventory kvm1 = env.inventoryByName("kvm1")
 
@@ -112,20 +97,39 @@ class KVMPingCase extends SubCase {
         cleanup()
     }
 
+    private static class HostReconnectTaskForTest extends HostReconnectTask {
+        @Override
+        protected CanDoAnswer canDoReconnect() {
+            if (canDoReconnectFunc != null) {
+                return canDoReconnectFunc()
+            }
+
+            return  HostReconnectTask.CanDoAnswer.NoReconnect
+        }
+
+        @NoAsyncSafe
+        HostReconnectTaskForTest(String uuid, NoErrorCompletion completion) {
+            super(uuid, completion)
+        }
+    }
+
     @Override
     void test() {
         bus = bean(CloudBus.class)
-        def origin = KVMHostTrackerPreReconnectChecker.metaClass.methods.find { it.name == "canDoReconnect" }
-        onCleanExecute { KVMHostTrackerPreReconnectChecker.metaClass["canDoReconnect"] = origin }
 
         env.create {
             HostGlobalConfig.PING_HOST_INTERVAL.updateValue(1)
-            HostTrackImpl ht = bean(HostTrackImpl.class)
-            def origin = ht.hostTrackerPreReconnectCheckers[KVMConstant.KVM_HYPERVISOR_TYPE]
-            onCleanExecute {
-                ht.hostTrackerPreReconnectCheckers[KVMConstant.KVM_HYPERVISOR_TYPE] = origin
+            functionForMockTestObjectFactory[HostReconnectTask.class] = { HostReconnectTask task ->
+                if (task instanceof KVMReconnectHostTask) {
+                    return new HostReconnectTaskForTest(task.uuid, task.completion)
+                } else {
+                    return task
+                }
             }
-            ht.hostTrackerPreReconnectCheckers[KVMConstant.KVM_HYPERVISOR_TYPE] = KVMHostTrackerPreReconnectCheckerForTest.class
+
+            onCleanExecute {
+                functionForMockTestObjectFactory.remove(HostReconnectTask.class)
+            }
 
             testPing()
         }

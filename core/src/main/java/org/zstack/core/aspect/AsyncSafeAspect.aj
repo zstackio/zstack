@@ -19,9 +19,9 @@ import java.util.List;
 public aspect AsyncSafeAspect {
     private static final CLogger logger = Utils.getLogger(AsyncSafeAspect.class);
 
-    pointcut asyncSafe1() : execution(* *.*(.., Completion, ..));
-    pointcut asyncSafe2() : execution(* *.*(.., NoErrorCompletion, ..));
-    pointcut asyncSafe3() : execution(* *.*(.., ReturnValueCompletion, ..));
+    pointcut asyncSafe1() : execution(* *.*(.., Completion, ..)) && execution(!@NoAsyncSafe * *(..)) && execution(!@NoAsyncSafe *.new(..));
+    pointcut asyncSafe2() : execution(* *.*(.., NoErrorCompletion, ..)) && execution(!@NoAsyncSafe * *(..)) && execution(!@NoAsyncSafe *.new(..));
+    pointcut asyncSafe3() : execution(* *.*(.., ReturnValueCompletion, ..)) && execution(!@NoAsyncSafe * *(..)) && execution(!@NoAsyncSafe *.new(..));
 
     @Autowired
     private ErrorFacade errf;
