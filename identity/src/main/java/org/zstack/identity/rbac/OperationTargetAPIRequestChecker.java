@@ -7,7 +7,6 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.rbac.*;
-import org.zstack.header.identity.rbac.RBACInfo;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.identity.APIRequestChecker;

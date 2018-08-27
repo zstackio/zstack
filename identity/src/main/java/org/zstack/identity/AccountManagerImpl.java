@@ -29,7 +29,6 @@ import org.zstack.header.identity.IdentityCanonicalEvents.AccountDeletedData;
 import org.zstack.header.identity.IdentityCanonicalEvents.UserDeletedData;
 import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.identity.rbac.RBAC;
-import org.zstack.header.identity.rbac.RBACGroovy;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.*;
 import org.zstack.header.notification.ApiNotification;
