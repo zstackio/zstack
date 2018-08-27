@@ -3,7 +3,6 @@ package org.zstack.compute.host;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.core.aspect.NoAsyncSafe;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.thread.AsyncTimer;
@@ -33,7 +32,6 @@ public abstract class HostReconnectTask extends AsyncTimer {
 
     protected abstract CanDoAnswer canDoReconnect();
 
-    @NoAsyncSafe
     public HostReconnectTask(String uuid, NoErrorCompletion completion) {
         super(TimeUnit.SECONDS, HostGlobalConfig.PING_HOST_INTERVAL.value(Long.class));
         this.uuid = uuid;

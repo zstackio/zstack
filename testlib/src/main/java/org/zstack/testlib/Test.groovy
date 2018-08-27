@@ -20,6 +20,7 @@ import org.zstack.sdk.ZSClient
 import org.zstack.testlib.collectstrategy.SubCaseCollectionStrategyFactory
 import org.zstack.testlib.collectstrategy.SubCaseCollectionStrategy
 import org.zstack.testlib.util.Retry
+import org.zstack.utils.FieldUtils
 import org.zstack.utils.ShellUtils
 import org.zstack.utils.Utils
 import org.zstack.utils.gson.JSONObjectUtil
@@ -29,6 +30,7 @@ import org.zstack.zql.ZQL
 
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
+import java.lang.reflect.Field
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.logging.Level
@@ -47,7 +49,7 @@ abstract class Test implements ApiHelper, Retry {
     static Map<Class, Closure> functionForMockTestObjectFactory = new ConcurrentHashMap<>()
 
     protected List<Closure> methodsOnClean = []
-    private Map<Class, List<Closure>> notifiersOfReceivedMessages = new ConcurrentHashMap<>()
+    protected Map<Class, List<Closure>> notifiersOfReceivedMessages = new ConcurrentHashMap<>()
 
     protected List zqlQuery(String text) {
         return zQLQuery { zql = text }.results[0].inventories

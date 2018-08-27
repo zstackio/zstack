@@ -19,9 +19,9 @@ import java.util.List;
 public aspect AsyncSafeAspect {
     private static final CLogger logger = Utils.getLogger(AsyncSafeAspect.class);
 
-    pointcut asyncSafe1() : execution(* *.*(.., Completion, ..)) && execution(!@NoAsyncSafe * *(..)) && execution(!@NoAsyncSafe *.new(..));
-    pointcut asyncSafe2() : execution(* *.*(.., NoErrorCompletion, ..)) && execution(!@NoAsyncSafe * *(..)) && execution(!@NoAsyncSafe *.new(..));
-    pointcut asyncSafe3() : execution(* *.*(.., ReturnValueCompletion, ..)) && execution(!@NoAsyncSafe * *(..)) && execution(!@NoAsyncSafe *.new(..));
+    pointcut asyncSafe1() : execution(* *.*(.., Completion, ..));
+    pointcut asyncSafe2() : execution(* *.*(.., NoErrorCompletion, ..));
+    pointcut asyncSafe3() : execution(* *.*(.., ReturnValueCompletion, ..));
 
     @Autowired
     private ErrorFacade errf;
@@ -79,9 +79,9 @@ public aspect AsyncSafeAspect {
         return wrappers;
     }
 
-    void around() : asyncSafe1() || asyncSafe2() || asyncSafe3() {
+    Object around() : asyncSafe1() || asyncSafe2() || asyncSafe3() {
         try {
-            proceed();
+            return proceed();
         } catch (Throwable t) {
             List<Wrapper> wrappers = getAsyncInterface(thisJoinPoint.getArgs());
             if (wrappers.isEmpty()) {
@@ -103,6 +103,8 @@ public aspect AsyncSafeAspect {
             for (Wrapper w : wrappers) {
                 w.call(errCode);
             }
+
+            return null;
         }
     }
 }

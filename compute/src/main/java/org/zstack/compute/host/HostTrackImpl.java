@@ -95,7 +95,7 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
 
         private void track()  {
             Tuple t = Q.New(HostVO.class).select(HostVO_.state, HostVO_.status)
-                    .eq(HostVO_.uuid, uuid).findValue();
+                    .eq(HostVO_.uuid, uuid).findTuple();
 
             if (t == null) {
                 logger.debug(String.format("host[uuid:%s] seems to be deleted, stop tracking it", uuid));

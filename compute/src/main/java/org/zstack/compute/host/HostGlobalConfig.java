@@ -24,6 +24,8 @@ public class HostGlobalConfig {
     public static GlobalConfig PING_HOST_TIMEOUT = new GlobalConfig(CATEGORY, "ping.timeout");
     @GlobalConfigValidation(numberGreaterThan = 0)
     public static GlobalConfig MAXIMUM_PING_FAILURE = new GlobalConfig(CATEGORY, "ping.maxFailure");
+    @GlobalConfigValidation(numberGreaterThan = -1)
+    public static GlobalConfig SLEEP_TIME_AFTER_PING_FAILURE = new GlobalConfig(CATEGORY, "ping.sleepPeriodAfterFailure");
     @GlobalConfigValidation
     public static GlobalConfig IGNORE_ERROR_ON_MAINTENANCE_MODE = new GlobalConfig(CATEGORY, "maintenanceMode.ignoreError");
     @GlobalConfigValidation(numberGreaterThan = 1, numberLessThan = 1000)

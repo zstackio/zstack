@@ -634,12 +634,17 @@ public abstract class HostBase extends AbstractHost {
             public void fail(ErrorCode errorCode) {
                 logger.warn(String.format("ping host failed (%d/%d): %s", currentStep, MAX_PING_CNT, errorCode.toString()));
                 errs.add(errorCode);
+
                 if (errs.size() != stepCount.size()) {
-                    try {
-                        TimeUnit.SECONDS.sleep(1);
-                    } catch (InterruptedException ignored) {
+                    int sleep = HostGlobalConfig.SLEEP_TIME_AFTER_PING_FAILURE.value(Integer.class);
+                    if (sleep > 0) {
+                        try {
+                            TimeUnit.SECONDS.sleep(sleep);
+                        } catch (InterruptedException ignored) {
+                        }
                     }
                 }
+
                 compl.done();
             }
         })).run(new NoErrorCompletion(msg) {

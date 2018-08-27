@@ -3,10 +3,12 @@ package org.zstack.test.integration.kvm.host
 import org.springframework.http.HttpEntity
 import org.zstack.compute.host.HostGlobalConfig
 import org.zstack.compute.host.HostReconnectTask
-import org.zstack.compute.host.HostTrackImpl
-import org.zstack.core.aspect.NoAsyncSafe
 import org.zstack.core.cloudbus.CloudBus
+import org.zstack.core.db.Q
 import org.zstack.header.core.NoErrorCompletion
+import org.zstack.header.host.HostStatus
+import org.zstack.header.host.HostVO
+import org.zstack.header.host.HostVO_
 import org.zstack.header.host.PingHostMsg
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
@@ -15,6 +17,7 @@ import org.zstack.sdk.HostInventory
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
+import org.zstack.utils.FieldUtils
 import org.zstack.utils.gson.JSONObjectUtil
 
 import java.util.concurrent.TimeUnit
@@ -32,6 +35,11 @@ class KVMPingCase extends SubCase {
 
     @Override
     void setup() {
+        useSpring(KvmTest.springSpec)
+    }
+
+    @Override
+    void environment() {
         env = makeEnv {
             zone {
                 name = "zone"
@@ -57,9 +65,10 @@ class KVMPingCase extends SubCase {
         }
     }
 
-    @Override
-    void environment() {
-        useSpring(KvmTest.springSpec)
+    void waitHostDisconnected(String hostUuid) {
+        retryInSecs {
+            assert Q.New(HostVO.class).select(HostVO_.status).eq(HostVO_.uuid, hostUuid).findValue() == HostStatus.Disconnected
+        }
     }
 
     void testPing() {
@@ -81,6 +90,8 @@ class KVMPingCase extends SubCase {
             return rsp
         }
 
+        waitHostDisconnected(kvm1.uuid)
+
         int count = 0
 
         def cleanup = notifyWhenReceivedMessage(PingHostMsg.class) { PingHostMsg msg ->
@@ -97,17 +108,16 @@ class KVMPingCase extends SubCase {
         cleanup()
     }
 
-    private static class HostReconnectTaskForTest extends HostReconnectTask {
+    static class HostReconnectTaskForTest extends HostReconnectTask {
         @Override
-        protected CanDoAnswer canDoReconnect() {
+        protected HostReconnectTask.CanDoAnswer canDoReconnect() {
             if (canDoReconnectFunc != null) {
-                return canDoReconnectFunc()
+                return (HostReconnectTask.CanDoAnswer) canDoReconnectFunc()
             }
 
             return  HostReconnectTask.CanDoAnswer.NoReconnect
         }
 
-        @NoAsyncSafe
         HostReconnectTaskForTest(String uuid, NoErrorCompletion completion) {
             super(uuid, completion)
         }
@@ -119,11 +129,14 @@ class KVMPingCase extends SubCase {
 
         env.create {
             HostGlobalConfig.PING_HOST_INTERVAL.updateValue(1)
-            functionForMockTestObjectFactory[HostReconnectTask.class] = { HostReconnectTask task ->
-                if (task instanceof KVMReconnectHostTask) {
-                    return new HostReconnectTaskForTest(task.uuid, task.completion)
+            HostGlobalConfig.MAXIMUM_PING_FAILURE.updateValue(1)
+            HostGlobalConfig.SLEEP_TIME_AFTER_PING_FAILURE.updateValue(0)
+
+            functionForMockTestObjectFactory[HostReconnectTask.class] = {
+                if (it instanceof KVMReconnectHostTask) {
+                    return new HostReconnectTaskForTest(it.uuid, FieldUtils.getFieldValue("completion", it))
                 } else {
-                    return task
+                    return it
                 }
             }
 
