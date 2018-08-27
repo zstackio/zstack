@@ -1003,7 +1003,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         final VmInstanceState originalState = self.getState();
         final VmInstanceState currentState = VmInstanceState.valueOf(msg.getStateOnHost());
 
-        if (originalState == currentState && originalHostUuid != null && currentHostUuid.equals(originalHostUuid)) {
+        if (originalState == currentState && currentHostUuid.equals(originalHostUuid)) {
             logger.debug(String.format("vm[uuid:%s]'s state[%s] is inline with its state on the host[uuid:%s], ignore VmStateChangeOnHostMsg",
                     self.getUuid(), originalState, originalHostUuid));
             bus.reply(msg, reply);
