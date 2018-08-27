@@ -85,4 +85,5 @@ CREATE TABLE `zstack`.`IAM2TicketFlowVO` (
 	CONSTRAINT fkIAM2TicketFlowVOTicketFlowVO FOREIGN KEY (uuid) REFERENCES TicketFlowVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-INSERT INTO `IAM2TicketFlowVO` (`uuid`, `approverUuid`, `valid`) SELECT flow.uuid, '36c27e8ff05c4780bf6d2fa65700f22e', true from `TicketFlowCollectionVO` collection, `TicketFlowVO` flow where flow.collectionUuid = collection.uuid and collection.uuid = '872c04e82fee40509447b9ec90fc5aa1';
+INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "TicketFlowVO" FROM TicketFlowVO t;
+INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "TicketFlowCollectionVO" FROM TicketFlowCollectionVO t;
