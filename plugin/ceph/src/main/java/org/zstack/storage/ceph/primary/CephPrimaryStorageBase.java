@@ -936,7 +936,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         private String username;
         private String sshKey;
         private int sshPort;
-        private String hostInstallPath;
+        // it's file path on kvm host actually
+        private String backupStorageInstallPath;
         private String primaryStorageInstallPath;
 
         public String getHostname() {
@@ -971,12 +972,12 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             this.sshPort = sshPort;
         }
 
-        public String getHostInstallPath() {
-            return hostInstallPath;
+        public String getBackupStorageInstallPath() {
+            return backupStorageInstallPath;
         }
 
-        public void setHostInstallPath(String hostInstallPath) {
-            this.hostInstallPath = hostInstallPath;
+        public void setBackupStorageInstallPath(String backupStorageInstallPath) {
+            this.backupStorageInstallPath = backupStorageInstallPath;
         }
 
         public String getPrimaryStorageInstallPath() {
@@ -3150,23 +3151,24 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 cmd.setUsername(grly.getUsername());
                 cmd.setSshKey(grly.getSshKey());
                 cmd.setSshPort(grly.getSshPort());
-                cmd.setHostInstallPath(msg.getHostInstallPath());
+                cmd.setBackupStorageInstallPath(msg.getHostInstallPath());
                 cmd.setPrimaryStorageInstallPath(msg.getPrimaryStorageInstallPath());
                 httpCall(DOWNLOAD_BITS_FROM_KVM_HOST_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(reply) {
                     @Override
                     public void success(AgentResponse returnValue) {
                         if (returnValue.isSuccess()) {
-                            logger.info(String.format("successfully downloaded bits %s from kvm host %s to primary storage %s", cmd.getHostInstallPath(), msg.getHostUuid(), msg.getPrimaryStorageUuid()));
+                            logger.info(String.format("successfully downloaded bits %s from kvm host %s to primary storage %s", cmd.getBackupStorageInstallPath(), msg.getHostUuid(), msg.getPrimaryStorageUuid()));
                             bus.reply(msg, reply);
                         } else {
-                            logger.error(String.format("failed to download bits %s from kvm host %s to primary storage %s", cmd.getHostInstallPath(), msg.getHostUuid(), msg.getPrimaryStorageUuid()));
+                            logger.error(String.format("failed to download bits %s from kvm host %s to primary storage %s", cmd.getBackupStorageInstallPath(), msg.getHostUuid(), msg.getPrimaryStorageUuid()));
                             reply.setError(Platform.operr("operation error, because:%s", returnValue.getError()));
+                            bus.reply(msg, reply);
                         }
                     }
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        logger.error(String.format("failed to download bits %s from kvm host %s to primary storage %s", cmd.getHostInstallPath(), msg.getHostUuid(), msg.getPrimaryStorageUuid()));
+                        logger.error(String.format("failed to download bits %s from kvm host %s to primary storage %s", cmd.getBackupStorageInstallPath(), msg.getHostUuid(), msg.getPrimaryStorageUuid()));
                         reply.setError(errorCode);
                         bus.reply(msg, reply);
                     }
