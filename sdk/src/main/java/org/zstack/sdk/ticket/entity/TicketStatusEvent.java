@@ -6,4 +6,5 @@ public enum TicketStatusEvent {
 	cancel,
 	reject,
 	reopen,
+	delete,
 }

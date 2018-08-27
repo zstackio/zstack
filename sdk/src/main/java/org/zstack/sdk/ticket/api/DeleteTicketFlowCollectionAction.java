@@ -1,10 +1,10 @@
-package org.zstack.sdk.ticket.iam2.api;
+package org.zstack.sdk.ticket.api;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateIAM2TickFlowCollectionAction extends AbstractAction {
+public class DeleteTicketFlowCollectionAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateIAM2TickFlowCollectionAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.ticket.api.CreateTickFlowCollectionResult value;
+        public org.zstack.sdk.ticket.api.DeleteTicketFlowCollectionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,23 +25,11 @@ public class CreateIAM2TickFlowCollectionAction extends AbstractAction {
         }
     }
 
-    @Param(required = false)
-    public java.util.List flows;
-
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String projectUuid;
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = true, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
+    public java.lang.String uuid;
 
     @Param(required = false)
-    public java.lang.Boolean isDefault = false;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -66,8 +54,8 @@ public class CreateIAM2TickFlowCollectionAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.ticket.api.CreateTickFlowCollectionResult value = res.getResult(org.zstack.sdk.ticket.api.CreateTickFlowCollectionResult.class);
-        ret.value = value == null ? new org.zstack.sdk.ticket.api.CreateTickFlowCollectionResult() : value; 
+        org.zstack.sdk.ticket.api.DeleteTicketFlowCollectionResult value = res.getResult(org.zstack.sdk.ticket.api.DeleteTicketFlowCollectionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ticket.api.DeleteTicketFlowCollectionResult() : value; 
 
         return ret;
     }
@@ -96,11 +84,11 @@ public class CreateIAM2TickFlowCollectionAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/tickets/flow-collections";
+        info.httpMethod = "DELETE";
+        info.path = "/tickets/flow-collections/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 
