@@ -312,7 +312,7 @@ public class GlobalConfig {
             try {
                 ext.updateGlobalConfig(origin, this);
             } catch (Throwable t) {
-                logger.warn(String.format("unhandled exception when calling %s", ext.getClass()));
+                logger.warn(String.format("unhandled exception when calling %s", ext.getClass()), t);
             }
         }
 

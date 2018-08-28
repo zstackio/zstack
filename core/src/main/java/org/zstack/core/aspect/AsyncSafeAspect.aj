@@ -79,9 +79,9 @@ public aspect AsyncSafeAspect {
         return wrappers;
     }
 
-    void around() : asyncSafe1() || asyncSafe2() || asyncSafe3() {
+    Object around() : asyncSafe1() || asyncSafe2() || asyncSafe3() {
         try {
-            proceed();
+            return proceed();
         } catch (Throwable t) {
             List<Wrapper> wrappers = getAsyncInterface(thisJoinPoint.getArgs());
             if (wrappers.isEmpty()) {
@@ -103,6 +103,8 @@ public aspect AsyncSafeAspect {
             for (Wrapper w : wrappers) {
                 w.call(errCode);
             }
+
+            return null;
         }
     }
 }

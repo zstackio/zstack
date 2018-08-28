@@ -43,6 +43,13 @@
         <type>java.lang.Integer</type>
     </config>
     <config>
+        <category>host</category>
+        <name>ping.sleepPeriodAfterFailure</name>
+        <description>The sleep period before retrying the next ping after a ping failure</description>
+        <defaultValue>1</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
+    <config>
 	<category>host</category>
 	<name>ping.timeout</name>
 	<description>The timeout value of agent ping, in seconds</description>

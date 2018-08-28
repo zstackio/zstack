@@ -26,5 +26,5 @@ public interface ThreadFacade extends Component {
     
     ThreadFacadeImpl.TimeoutTaskReceipt submitTimeoutTask(Runnable task, TimeUnit unit, long delay);
 
-    void submitTimerTask(TimerTask task, TimeUnit unit, long delay);
+    Runnable submitTimerTask(TimerTask task, TimeUnit unit, long delay);
 }

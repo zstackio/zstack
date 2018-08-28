@@ -78,6 +78,7 @@ class EnvSpec implements Node, ApiHelper {
     private ConcurrentHashMap<String, Closure> defaultHttpHandlers = [:]
     private ConcurrentHashMap<String, Closure> defaultHttpPostHandlers = [:]
     protected ConcurrentHashMap<Class, List<Tuple>> messageHandlers = [:]
+    protected ConcurrentHashMap<Class, List<Closure>> notifiersOfReceivedMessages = [:]
     private ConcurrentHashMap<Class, List<Tuple>> defaultMessageHandlers = [:]
     private static RestTemplate restTemplate
     protected static Set<Class> simulatorClasses = Platform.reflections.getSubTypesOf(Simulator.class)

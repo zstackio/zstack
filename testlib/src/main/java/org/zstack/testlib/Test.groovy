@@ -9,6 +9,7 @@ import org.zstack.core.db.DatabaseFacade
 import org.zstack.header.AbstractService
 import org.zstack.header.exception.CloudRuntimeException
 import org.zstack.header.identity.AccountConstant
+import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor
 import org.zstack.header.message.AbstractBeforeSendMessageInterceptor
 import org.zstack.header.message.Event
 import org.zstack.header.message.Message
@@ -19,6 +20,7 @@ import org.zstack.sdk.ZSClient
 import org.zstack.testlib.collectstrategy.SubCaseCollectionStrategyFactory
 import org.zstack.testlib.collectstrategy.SubCaseCollectionStrategy
 import org.zstack.testlib.util.Retry
+import org.zstack.utils.FieldUtils
 import org.zstack.utils.ShellUtils
 import org.zstack.utils.Utils
 import org.zstack.utils.gson.JSONObjectUtil
@@ -28,6 +30,7 @@ import org.zstack.zql.ZQL
 
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
+import java.lang.reflect.Field
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.logging.Level
@@ -306,6 +309,23 @@ abstract class Test implements ApiHelper, Retry {
                 }
             }
         })
+
+        bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
+            @Override
+            void beforeDeliveryMessage(Message msg) {
+                if (currentEnvSpec?.notifiersOfReceivedMessages != null) {
+                    currentEnvSpec.notifiersOfReceivedMessages.each { msgClz, cs ->
+                        if (msgClz.isAssignableFrom(msg.getClass())) {
+                            synchronized (cs) {
+                                cs.each {
+                                    it(msg)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        })
     }
 
     void buildBeanConstructor(boolean useWeb = true) {
@@ -356,6 +376,21 @@ abstract class Test implements ApiHelper, Retry {
 
         hijackService()
         environment()
+    }
+
+    protected Closure notifyWhenReceivedMessage(Class msgClz, Closure c) {
+        assert currentEnvSpec != null
+
+        List<Closure> cs = currentEnvSpec.notifiersOfReceivedMessages.computeIfAbsent(msgClz, { Collections.synchronizedList([]) })
+        synchronized (cs) {
+            cs.add(c)
+        }
+
+        return {
+            synchronized (cs) {
+                cs.remove(c)
+            }
+        }
     }
 
     protected <T> T bean(Class<T> clz) {
