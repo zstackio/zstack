@@ -59,6 +59,7 @@ class AsyncTimerCase extends SubCase {
         timer.start()
         TimeUnit.SECONDS.sleep(2L)
         timer.cancel()
+        TimeUnit.SECONDS.sleep(2L)
         int now = count
         TimeUnit.SECONDS.sleep(2L)
         assert now == count

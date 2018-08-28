@@ -53,7 +53,8 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
     enum ReconnectDecision {
         DoNothing,
         ReconnectNow,
-        SubmitReconnectTask
+        SubmitReconnectTask,
+        StopPing
     }
 
     private void reconnectNow(String uuid, Completion completion) {
@@ -149,7 +150,7 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
                         if (autoReconnect) {
                             return ReconnectDecision.ReconnectNow;
                         } else {
-                            return ReconnectDecision.DoNothing;
+                            return ReconnectDecision.StopPing;
                         }
                     }
 
@@ -179,6 +180,9 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
                         submitReconnectTask();
                     }
                 });
+            } else if (decision == ReconnectDecision.StopPing) {
+                logger.debug(String.format("stop pinging host[uuid:%s, hypervisorType:%s] because it's disconnected and connection.autoReconnectOnError is false", uuid, hypervisorType));
+                cancel();
             } else if (decision == ReconnectDecision.SubmitReconnectTask) {
                 submitReconnectTask();
             } else {
@@ -208,12 +212,19 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
             }
 
             super.cancel();
+
+            trackers.remove(uuid);
         }
     }
 
 
     public void trackHost(String hostUuid) {
-        Tracker t = new Tracker(hostUuid);
+        Tracker t = trackers.get(hostUuid);
+        if (t != null) {
+            t.cancel();
+        }
+
+        t = new Tracker(hostUuid);
         trackers.put(hostUuid, t);
         t.start();
         logger.debug(String.format("starting tracking hosts[uuid:%s]", hostUuid));
@@ -240,13 +251,27 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
     }
 
     private void reScanHost() {
-        trackers.values().forEach(Tracker::cancel);
+        reScanHost(false);
+    }
+
+    private void reScanHost(boolean skipExisting) {
+        if (!skipExisting) {
+            trackers.values().forEach(Tracker::cancel);
+        }
+
         new SQLBatch() {
             @Override
             protected void scripts() {
                 long count = sql("select count(h) from HostVO h", Long.class).find();
                 sql("select h.uuid from HostVO h", String.class).limit(1000).paginate(count, (List<String> hostUuids) -> {
-                    List<String> byUs = hostUuids.stream().filter(huuid -> destMaker.isManagedByUs(huuid)).collect(Collectors.toList());
+                    List<String> byUs = hostUuids.stream().filter(huuid -> {
+                        if (skipExisting) {
+                            return destMaker.isManagedByUs(huuid) && !trackers.containsKey(huuid);
+                        } else {
+                            return destMaker.isManagedByUs(huuid);
+                        }
+                    }).collect(Collectors.toList());
+
                     trackHost(byUs);
                 });
             }
@@ -290,6 +315,14 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
             logger.debug(String.format("%s change from %s to %s, restart host trackers",
                     oldConfig.getCanonicalName(), oldConfig.value(), newConfig.value()));
             reScanHost();
+        });
+
+        HostGlobalConfig.AUTO_RECONNECT_ON_ERROR.installUpdateExtension((oc, nc)-> {
+            if (nc.value(Boolean.class)) {
+                logger.debug(String.format("%s change from %s to %s, restart host trackers",
+                        oc.getCanonicalName(), oc.value(), nc.value()));
+                reScanHost(true);
+            }
         });
 
         reScanHost();

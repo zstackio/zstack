@@ -117,6 +117,8 @@ class KVMPingCase extends SubCase {
         canDoReconnectFunc = {  HostReconnectTask.CanDoAnswer.Ready }
         HostInventory kvm1 = env.inventoryByName("kvm1")
 
+        waitHostConnected(kvm1.uuid)
+
         changeHostState {
             uuid = kvm1.uuid
             stateEvent = HostStateEvent.maintain
@@ -152,7 +154,7 @@ class KVMPingCase extends SubCase {
         recoverHostToConnected(kvm1.uuid)
     }
 
-    void testContinuePingIfAutoReconnectIsFalse() {
+    void testNoPingIfAutoReconnectIsFalse() {
         canDoReconnectFunc = {  HostReconnectTask.CanDoAnswer.Ready }
 
         boolean pingSuccess = false
@@ -174,13 +176,29 @@ class KVMPingCase extends SubCase {
 
         HostGlobalConfig.AUTO_RECONNECT_ON_ERROR.updateValue(false)
         waitHostDisconnected(kvm1.uuid)
-        pingSuccess = true
 
         retryInSecs {
             assert Q.New(HostVO.class).select(HostVO_.status).eq(HostVO_.uuid, kvm1.uuid).findValue() == HostStatus.Disconnected
         }
+        
+        TimeUnit.SECONDS.sleep(2L)
+
+        int count = 0
+
+        def cleanup = notifyWhenReceivedMessage(PingHostMsg.class) { PingHostMsg msg ->
+            if (msg.hostUuid == kvm1.uuid) {
+                count ++
+            }
+        }
+
+        TimeUnit.SECONDS.sleep(2L)
+        assert count == 0
 
         HostGlobalConfig.AUTO_RECONNECT_ON_ERROR.updateValue(true)
+        pingSuccess = true
+        waitHostConnected(kvm1.uuid)
+
+        cleanup()
         recoverHostToConnected(kvm1.uuid)
     }
 
@@ -352,7 +370,7 @@ class KVMPingCase extends SubCase {
             testNoPingAfterHostDeleted()
             testPingAfterRescanHost()
             testNoPingWhenHostMaintainedAndPingAfterEnabled()
-            testContinuePingIfAutoReconnectIsFalse()
+            testNoPingIfAutoReconnectIsFalse()
             testHostReconnectAfterPingFailure()
             testContinuePingIfHostNoReconnect()
             testNoPingIfHostNotReadyToReconnect()
