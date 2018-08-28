@@ -137,6 +137,9 @@ public class SourceClassMap {
 			put("org.zstack.header.storage.backup.BackupStorageInventory", "org.zstack.sdk.BackupStorageInventory");
 			put("org.zstack.header.storage.backup.VolumeBackupInventory", "org.zstack.sdk.VolumeBackupInventory");
 			put("org.zstack.header.storage.backup.VolumeBackupStorageRefInventory", "org.zstack.sdk.VolumeBackupStorageRefInventory");
+			put("org.zstack.header.storage.database.backup.DatabaseBackupInventory", "org.zstack.sdk.databasebackup.DatabaseBackupInventory");
+			put("org.zstack.header.storage.database.backup.DatabaseBackupStorageRefInventory", "org.zstack.sdk.databasebackup.DatabaseBackupStorageRefInventory");
+			put("org.zstack.header.storage.database.backup.DatabaseBackupStruct", "org.zstack.sdk.databasebackup.DatabaseBackupStruct");
 			put("org.zstack.header.storage.primary.ImageCacheInventory", "org.zstack.sdk.ImageCacheInventory");
 			put("org.zstack.header.storage.primary.PrimaryStorageHostStatus", "org.zstack.sdk.PrimaryStorageHostStatus");
 			put("org.zstack.header.storage.primary.PrimaryStorageInventory", "org.zstack.sdk.PrimaryStorageInventory");
@@ -564,6 +567,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.WebhookInventory", "org.zstack.header.core.webhooks.WebhookInventory");
 			put("org.zstack.sdk.ZQLQueryReturn", "org.zstack.zql.ZQLQueryReturn");
 			put("org.zstack.sdk.ZoneInventory", "org.zstack.header.zone.ZoneInventory");
+			put("org.zstack.sdk.databasebackup.DatabaseBackupInventory", "org.zstack.header.storage.database.backup.DatabaseBackupInventory");
+			put("org.zstack.sdk.databasebackup.DatabaseBackupStorageRefInventory", "org.zstack.header.storage.database.backup.DatabaseBackupStorageRefInventory");
+			put("org.zstack.sdk.databasebackup.DatabaseBackupStruct", "org.zstack.header.storage.database.backup.DatabaseBackupStruct");
 			put("org.zstack.sdk.iam2.api.APIPermissionStruct", "org.zstack.iam2.api.APIGetIAM2VirtualIDAPIPermissionMsg$APIPermissionStruct");
 			put("org.zstack.sdk.iam2.api.Attribute", "org.zstack.iam2.api.Attribute");
 			put("org.zstack.sdk.iam2.api.Permission", "org.zstack.iam2.api.APIGetIAM2VirtualIDAPIPermissionReply$Permission");
