@@ -1,7 +1,12 @@
 package org.zstack.test.integration.kvm.host
 
+import org.zstack.core.db.Q
 import org.zstack.header.vm.VmInstanceState
+import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
+import org.zstack.kvm.KVMHostVO
+import org.zstack.kvm.KVMHostVO_
+import org.zstack.sdk.HostInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.kvm.Env
 import org.zstack.test.integration.kvm.KvmTest
@@ -15,6 +20,7 @@ import org.zstack.utils.logging.CLogger
  */
 class ReconnectHostCase extends SubCase{
     EnvSpec env
+    HostInventory host
     private final static CLogger logger = Utils.getLogger(ReconnectHostCase.class)
     static RECONNECT_TIME = 10
 
@@ -31,14 +37,62 @@ class ReconnectHostCase extends SubCase{
     @Override
     void test() {
         env.create {
+            host = env.inventoryByName("kvm")
             testReconnectHostVmState()
             testReconnectFailureHostVmState()
+            testUpdateHostDuringConnecting()
         }
     }
 
     @Override
     void clean() {
         env.delete()
+    }
+
+    void testUpdateHostDuringConnecting(){
+        boolean called
+        env.simulator(KVMConstant.KVM_CONNECT_PATH) {
+            def rsp = new KVMAgentCommands.ConnectResponse()
+            rsp.success = true
+            rsp.libvirtVersion = "1.0.0"
+            rsp.qemuVersion = "1.3.0"
+            rsp.iptablesSucc = true
+            updateKVMHost {
+                uuid = host.uuid
+                sshPort = 23
+            }
+
+            if (!called) {
+                rsp.setError("on purpose")
+            }
+
+            return rsp
+        }
+        expect(AssertionError.class) {
+            reconnectHost {
+                uuid = host.uuid
+            }
+        }
+
+        called = true
+        assert Q.New(KVMHostVO.class).select(KVMHostVO_.port).findValue() == 23
+
+        updateKVMHost {
+            uuid = host.uuid
+            sshPort = 22
+        }
+        assert Q.New(KVMHostVO.class).select(KVMHostVO_.port).findValue() == 22
+        reconnectHost {
+            uuid = host.uuid
+        }
+
+        assert Q.New(KVMHostVO.class).select(KVMHostVO_.port).findValue() == 23
+
+        updateKVMHost {
+            uuid = host.uuid
+            sshPort = 22
+        }
+        env.cleanSimulatorHandlers()
     }
 
     void testReconnectFailureHostVmState() {
