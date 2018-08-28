@@ -313,11 +313,13 @@ abstract class Test implements ApiHelper, Retry {
         bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
             @Override
             void beforeDeliveryMessage(Message msg) {
-                currentEnvSpec.notifiersOfReceivedMessages.each { msgClz, cs ->
-                    if (msgClz.isAssignableFrom(msg.getClass())) {
-                        synchronized (cs) {
-                            cs.each {
-                                it(msg)
+                if (currentEnvSpec?.notifiersOfReceivedMessages != null) {
+                    currentEnvSpec.notifiersOfReceivedMessages.each { msgClz, cs ->
+                        if (msgClz.isAssignableFrom(msg.getClass())) {
+                            synchronized (cs) {
+                                cs.each {
+                                    it(msg)
+                                }
                             }
                         }
                     }

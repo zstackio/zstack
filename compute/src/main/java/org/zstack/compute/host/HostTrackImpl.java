@@ -25,10 +25,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -256,7 +253,7 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
 
     private void reScanHost(boolean skipExisting) {
         if (!skipExisting) {
-            trackers.values().forEach(Tracker::cancel);
+            new HashSet<>(trackers.values()).forEach(Tracker::cancel);
         }
 
         new SQLBatch() {
