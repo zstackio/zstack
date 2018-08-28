@@ -1,6 +1,7 @@
 package org.zstack.kvm;
 
 import org.zstack.compute.host.HostReconnectTask;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.db.Q;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.utils.network.NetworkUtils;
@@ -15,6 +16,10 @@ public class KVMReconnectHostTask extends HostReconnectTask {
 
     @Override
     protected CanDoAnswer canDoReconnect() {
+        if (CoreGlobalProperty.UNIT_TEST_ON) {
+            return CanDoAnswer.Ready;
+        }
+
         Tuple t = Q.New(KVMHostVO.class).select(KVMHostVO_.managementIp, KVMHostVO_.port).eq(KVMHostVO_.uuid, uuid).findTuple();
         if (t == null) {
             return CanDoAnswer.NoReconnect;
