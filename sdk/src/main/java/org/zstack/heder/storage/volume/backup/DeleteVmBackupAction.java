@@ -12,7 +12,7 @@ public class DeleteVmBackupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.heder.storage.volume.backup.DeleteVolumeBackupResult value;
+        public org.zstack.heder.storage.volume.backup.DeleteVmBackupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -57,8 +57,8 @@ public class DeleteVmBackupAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.heder.storage.volume.backup.DeleteVolumeBackupResult value = res.getResult(org.zstack.heder.storage.volume.backup.DeleteVolumeBackupResult.class);
-        ret.value = value == null ? new org.zstack.heder.storage.volume.backup.DeleteVolumeBackupResult() : value; 
+        org.zstack.heder.storage.volume.backup.DeleteVmBackupResult value = res.getResult(org.zstack.heder.storage.volume.backup.DeleteVmBackupResult.class);
+        ret.value = value == null ? new org.zstack.heder.storage.volume.backup.DeleteVmBackupResult() : value; 
 
         return ret;
     }
