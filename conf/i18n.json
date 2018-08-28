@@ -23,16 +23,16 @@
     "en_US": "accessKey and keySecret must be set!",
     "zh_CN": "",
     "arguments": [],
-    "line": 33,
-    "fileName": "src/main/java/org/zstack/aliyun/core/AliyunNasClient.java"
+    "line": 34,
+    "fileName": "src/main/java/org/zstack/aliyun/core/AliyunClient.java"
   },
   {
     "raw": "regionId must be set!",
     "en_US": "regionId must be set!",
     "zh_CN": "",
     "arguments": [],
-    "line": 40,
-    "fileName": "src/main/java/org/zstack/aliyun/core/AliyunNasClient.java"
+    "line": 41,
+    "fileName": "src/main/java/org/zstack/aliyun/core/AliyunClient.java"
   },
   {
     "raw": "Bucket name is already existed (maybe created by other user), Please select a different name and try again.(aliyun request-id: %s)",
@@ -297,6 +297,16 @@
     "fileName": "src/main/java/org/zstack/aliyun/identityzone/SelectValidIdentityZoneFlow.java"
   },
   {
+    "raw": "no ossbucket attached to the datacenter: %s",
+    "en_US": "no ossbucket attached to the datacenter: {0}",
+    "zh_CN": "没有oss Bucket添加到数据中心{0}",
+    "arguments": [
+      "msg.getDataCenterUuid()"
+    ],
+    "line": 93,
+    "fileName": "src/main/java/org/zstack/aliyun/image/EcsImageApiInterceptor.java"
+  },
+  {
     "raw": "the operation only custom image",
     "en_US": "the operation only custom image",
     "zh_CN": "这个操作只能对用户自己的镜像进行",
@@ -376,16 +386,6 @@
     ],
     "line": 176,
     "fileName": "src/main/java/org/zstack/aliyun/image/EcsImageApiInterceptor.java"
-  },
-  {
-    "raw": "no ossbucket attached to the datacenter: %s",
-    "en_US": "no ossbucket attached to the datacenter: {0}",
-    "zh_CN": "没有oss Bucket添加到数据中心{0}",
-    "arguments": [
-      "msg.getDataCenterUuid()"
-    ],
-    "line": 307,
-    "fileName": "src/main/java/org/zstack/aliyun/image/EcsImageManagerImpl.java"
   },
   {
     "raw": "the indicated image [%s] is importing to datacenter [%s] now...",
@@ -512,38 +512,6 @@
     "fileName": "src/main/java/org/zstack/aliyun/nas/filesystem/AliyunNasMountTargetBase.java"
   },
   {
-    "raw": "image [uuid:%s] has been deleted",
-    "en_US": "image [uuid:{0}] has been deleted",
-    "zh_CN": "镜像[uuid:{0}]已经被删除",
-    "arguments": [
-      "imageVO.getUuid()"
-    ],
-    "line": 2905,
-    "fileName": "src/main/java/org/zstack/aliyun/nas/storage/primary/AliyunKvmBackend.java"
-  },
-  {
-    "raw": "unable to allocate backup storage specified by uuids: %s, becasue: %s",
-    "en_US": "unable to allocate backup storage specified by uuids: {0}, becasue: {1}",
-    "zh_CN": "不能给uuid列表{0}分配镜像服务器，因为{1}",
-    "arguments": [
-      "String.join(\",\", msg.getBackupStorageUuids())",
-      "errorCodes.get(0).getDetails()"
-    ],
-    "line": 2643,
-    "fileName": "src/main/java/org/zstack/aliyun/nas/storage/primary/AliyunKvmBackend.java"
-  },
-  {
-    "raw": "unable to commit backup storage specified by uuids: %s, becasue: %s",
-    "en_US": "unable to commit backup storage specified by uuids: {0}, becasue: {1}",
-    "zh_CN": "无法向镜像服务器[uuids:{0}]提交数据，因为: {1}",
-    "arguments": [
-      "String.join(\",\", msg.getBackupStorageUuids())",
-      "errorCodes.get(0).getDetails()"
-    ],
-    "line": 2820,
-    "fileName": "src/main/java/org/zstack/aliyun/nas/storage/primary/AliyunKvmBackend.java"
-  },
-  {
     "raw": "EcsVSwitchVO[%s] is not existed, may be it has been deleted!",
     "en_US": "EcsVSwitchVO[{0}] is not existed, may be it has been deleted!",
     "zh_CN": "",
@@ -604,13 +572,23 @@
     "fileName": "src/main/java/org/zstack/aliyun/nas/storage/primary/AliyunKvmBackend.java"
   },
   {
+    "raw": "cannot find host to operate volume: [%s]",
+    "en_US": "cannot find host to operate volume: [{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "vol.getUuid()"
+    ],
+    "line": 2047,
+    "fileName": "src/main/java/org/zstack/aliyun/nas/storage/primary/AliyunKvmBackend.java"
+  },
+  {
     "raw": "cannot find and host to sync volume size in primary: %s",
     "en_US": "cannot find and host to sync volume size in primary: {0}",
     "zh_CN": "",
     "arguments": [
       "self.getUuid()"
     ],
-    "line": 2225,
+    "line": 2284,
     "fileName": "src/main/java/org/zstack/aliyun/nas/storage/primary/AliyunKvmBackend.java"
   },
   {
@@ -618,17 +596,7 @@
     "en_US": "image [{0}] has been deleted, cannot reinit root volume from it",
     "zh_CN": "",
     "arguments": [],
-    "line": 2252,
-    "fileName": "src/main/java/org/zstack/aliyun/nas/storage/primary/AliyunKvmBackend.java"
-  },
-  {
-    "raw": "cannot find host to reinit root volume: [%s]",
-    "en_US": "cannot find host to reinit root volume: [{0}]",
-    "zh_CN": "",
-    "arguments": [
-      "msg.getVolume().getUuid()"
-    ],
-    "line": 2279,
+    "line": 2311,
     "fileName": "src/main/java/org/zstack/aliyun/nas/storage/primary/AliyunKvmBackend.java"
   },
   {
@@ -636,7 +604,7 @@
     "en_US": "no available host could check mountPath!",
     "zh_CN": "",
     "arguments": [],
-    "line": 2418,
+    "line": 2466,
     "fileName": "src/main/java/org/zstack/aliyun/nas/storage/primary/AliyunKvmBackend.java"
   },
   {
@@ -646,47 +614,7 @@
     "arguments": [
       "bsvo.getType()"
     ],
-    "line": 2811,
-    "fileName": "src/main/java/org/zstack/aliyun/nas/storage/primary/AliyunKvmBackend.java"
-  },
-  {
-    "raw": "cannot find host to commit volume: [%s]",
-    "en_US": "cannot find host to commit volume: [{0}]",
-    "zh_CN": "",
-    "arguments": [
-      "vol.getUuid()"
-    ],
-    "line": 3042,
-    "fileName": "src/main/java/org/zstack/aliyun/nas/storage/primary/AliyunKvmBackend.java"
-  },
-  {
-    "raw": "cannot find host to create template for volume: [%s]",
-    "en_US": "cannot find host to create template for volume: [{0}]",
-    "zh_CN": "",
-    "arguments": [
-      "volume.getUuid()"
-    ],
-    "line": 4417,
-    "fileName": "src/main/java/org/zstack/aliyun/nas/storage/primary/AliyunKvmBackend.java"
-  },
-  {
-    "raw": "cannot find host to create template for snapshot volume: [%s]",
-    "en_US": "cannot find host to create template for snapshot volume: [{0}]",
-    "zh_CN": "",
-    "arguments": [
-      "spVolume.getUuid()"
-    ],
-    "line": 4042,
-    "fileName": "src/main/java/org/zstack/aliyun/nas/storage/primary/AliyunKvmBackend.java"
-  },
-  {
-    "raw": "cannot find host to revert volume from snapshot: [%s]",
-    "en_US": "cannot find host to revert volume from snapshot: [{0}]",
-    "zh_CN": "",
-    "arguments": [
-      "msg.getSnapshot().getUuid()"
-    ],
-    "line": 4712,
+    "line": 2859,
     "fileName": "src/main/java/org/zstack/aliyun/nas/storage/primary/AliyunKvmBackend.java"
   },
   {
@@ -723,7 +651,7 @@
       "oldStatus \u003d\u003d null ? \"unknown\" : oldStatus.toString()",
       "status.toString()"
     ],
-    "line": 616,
+    "line": 617,
     "fileName": "src/main/java/org/zstack/aliyun/nas/storage/primary/AliyunNasPrimaryStorageBase.java"
   },
   {
@@ -756,7 +684,7 @@
       "self.getUuid()",
       "self.getName()"
     ],
-    "line": 218,
+    "line": 219,
     "fileName": "src/main/java/org/zstack/aliyun/nas/storage/primary/AliyunNasPrimaryStorageBase.java"
   },
   {
@@ -767,7 +695,7 @@
       "self.getUuid()",
       "self.getName()"
     ],
-    "line": 581,
+    "line": 582,
     "fileName": "src/main/java/org/zstack/aliyun/nas/storage/primary/AliyunNasPrimaryStorageBase.java"
   },
   {
@@ -777,7 +705,7 @@
     "arguments": [
       "hostUuid"
     ],
-    "line": 848,
+    "line": 849,
     "fileName": "src/main/java/org/zstack/aliyun/nas/storage/primary/AliyunNasPrimaryStorageBase.java"
   },
   {
@@ -785,7 +713,7 @@
     "en_US": "cannot find a host to cleanup image cache.",
     "zh_CN": "",
     "arguments": [],
-    "line": 935,
+    "line": 936,
     "fileName": "src/main/java/org/zstack/aliyun/nas/storage/primary/AliyunNasPrimaryStorageBase.java"
   },
   {
@@ -1324,7 +1252,7 @@
     "en_US": "pxe server must exist and running",
     "zh_CN": "需保证部署服务器存在且处于运行状态",
     "arguments": [],
-    "line": 600,
+    "line": 604,
     "fileName": "src/main/java/org/zstack/baremetal/chassis/BaremetalChassisManagerImpl.java"
   },
   {
@@ -1334,7 +1262,7 @@
     "arguments": [
       "bmc.getUuid()"
     ],
-    "line": 617,
+    "line": 628,
     "fileName": "src/main/java/org/zstack/baremetal/chassis/BaremetalChassisManagerImpl.java"
   },
   {
@@ -1550,16 +1478,6 @@
     ],
     "line": 1414,
     "fileName": "src/main/java/org/zstack/baremetal/instance/BaremetalInstanceManagerImpl.java"
-  },
-  {
-    "raw": "%s can only be called by admin account",
-    "en_US": "{0} can only be called by admin account",
-    "zh_CN": "{0}只能被admin账户调用",
-    "arguments": [
-      "msg.getClass().getSimpleName()"
-    ],
-    "line": 32,
-    "fileName": "src/main/java/org/zstack/baremetal/pxeserver/BaremetalPxeServerApiInterceptor.java"
   },
   {
     "raw": "Set Range Start \u0026 End, or set Range Start \u0026 End \u0026 Netmask!",
@@ -1821,7 +1739,7 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 61,
+    "line": 63,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationInterceptor.java"
   },
   {
@@ -1831,7 +1749,7 @@
     "arguments": [
       "validStatus"
     ],
-    "line": 65,
+    "line": 67,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationInterceptor.java"
   },
   {
@@ -1839,7 +1757,7 @@
     "en_US": "templateContent and uuid mustn\u0027t both be empty or both be set!",
     "zh_CN": "",
     "arguments": [],
-    "line": 154,
+    "line": 175,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationInterceptor.java"
   },
   {
@@ -1849,7 +1767,7 @@
     "arguments": [
       "validStatus"
     ],
-    "line": 96,
+    "line": 98,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationInterceptor.java"
   },
   {
@@ -1857,7 +1775,7 @@
     "en_US": "templateContent and templateUuid mustn\u0027t both be empty!",
     "zh_CN": "",
     "arguments": [],
-    "line": 116,
+    "line": 118,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationInterceptor.java"
   },
   {
@@ -1865,7 +1783,7 @@
     "en_US": "templateContent and url mustn\u0027t both be empty or both be set!",
     "zh_CN": "",
     "arguments": [],
-    "line": 127,
+    "line": 129,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationInterceptor.java"
   },
   {
@@ -1873,7 +1791,7 @@
     "en_US": "only admin could enable/disable system StackTemplate",
     "zh_CN": "",
     "arguments": [],
-    "line": 143,
+    "line": 145,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationInterceptor.java"
   },
   {
@@ -1883,7 +1801,7 @@
     "arguments": [
       "vo.getName()"
     ],
-    "line": 816,
+    "line": 846,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationManagerImpl.java"
   },
   {
@@ -1893,7 +1811,7 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 393,
+    "line": 380,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationManagerImpl.java"
   },
   {
@@ -1903,7 +1821,7 @@
     "arguments": [
       "uuid"
     ],
-    "line": 423,
+    "line": 410,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationManagerImpl.java"
   },
   {
@@ -1911,7 +1829,7 @@
     "en_US": "templateContent must be set!",
     "zh_CN": "",
     "arguments": [],
-    "line": 672,
+    "line": 633,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationManagerImpl.java"
   },
   {
@@ -1921,7 +1839,18 @@
     "arguments": [
       "template.getUuid()"
     ],
-    "line": 667,
+    "line": 628,
+    "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationManagerImpl.java"
+  },
+  {
+    "raw": "cannot find parameters for %s, which is %s type, please check parameters",
+    "en_US": "cannot find parameters for {0}, which is {1} type, please check parameters",
+    "zh_CN": "",
+    "arguments": [
+      "p.getParamName()",
+      "p.getResourceType()"
+    ],
+    "line": 771,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationManagerImpl.java"
   },
   {
@@ -1929,7 +1858,7 @@
     "en_US": "StackTemplateVO has been deleted...",
     "zh_CN": "",
     "arguments": [],
-    "line": 809,
+    "line": 839,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationManagerImpl.java"
   },
   {
@@ -1937,7 +1866,7 @@
     "en_US": "content must be set by templateContent or url!",
     "zh_CN": "",
     "arguments": [],
-    "line": 832,
+    "line": 862,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationManagerImpl.java"
   },
   {
@@ -1945,7 +1874,7 @@
     "en_US": "get null content input",
     "zh_CN": "",
     "arguments": [],
-    "line": 850,
+    "line": 880,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationManagerImpl.java"
   },
   {
@@ -1955,7 +1884,7 @@
     "arguments": [
       "result.getTemplateVersion()"
     ],
-    "line": 857,
+    "line": 887,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationManagerImpl.java"
   },
   {
@@ -1965,7 +1894,7 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 871,
+    "line": 901,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationManagerImpl.java"
   },
   {
@@ -2000,7 +1929,7 @@
     "en_US": "verb must contain \u0027::\u0027!",
     "zh_CN": "",
     "arguments": [],
-    "line": 150,
+    "line": 154,
     "fileName": "src/main/java/org/zstack/cloudformation/template/CloudFormationCreator.java"
   },
   {
@@ -2011,7 +1940,7 @@
       "t[0]",
       "last.getClass().getName()"
     ],
-    "line": 191,
+    "line": 195,
     "fileName": "src/main/java/org/zstack/cloudformation/template/CloudFormationCreator.java"
   },
   {
@@ -2021,7 +1950,7 @@
     "arguments": [
       "value"
     ],
-    "line": 215,
+    "line": 219,
     "fileName": "src/main/java/org/zstack/cloudformation/template/CloudFormationCreator.java"
   },
   {
@@ -2029,7 +1958,7 @@
     "en_US": "cannot find resource of properties set before!",
     "zh_CN": "",
     "arguments": [],
-    "line": 277,
+    "line": 281,
     "fileName": "src/main/java/org/zstack/cloudformation/template/CloudFormationCreator.java"
   },
   {
@@ -2037,7 +1966,7 @@
     "en_US": "Some actions are invalid",
     "zh_CN": "",
     "arguments": [],
-    "line": 353,
+    "line": 357,
     "fileName": "src/main/java/org/zstack/cloudformation/template/CloudFormationCreator.java"
   },
   {
@@ -2137,6 +2066,14 @@
     "fileName": "src/main/java/org/zstack/cloudformation/template/decoder/OutputDecoder.java"
   },
   {
+    "raw": "Parameters body cannot support null!",
+    "en_US": "Parameters body cannot support null!",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 86,
+    "fileName": "src/main/java/org/zstack/cloudformation/template/decoder/ParameterDecoder.java"
+  },
+  {
     "raw": "paramName must be found in result, or it is invalid cfn json.",
     "en_US": "paramName must be found in result, or it is invalid cfn json.",
     "zh_CN": "",
@@ -2157,7 +2094,7 @@
     "en_US": "Mappings root body must be json object!",
     "zh_CN": "",
     "arguments": [],
-    "line": 143,
+    "line": 145,
     "fileName": "src/main/java/org/zstack/cloudformation/template/decoder/ResourceDecoder.java"
   },
   {
@@ -2165,15 +2102,7 @@
     "en_US": "resourceName must be found in result, or it is invalid cfn json.",
     "zh_CN": "",
     "arguments": [],
-    "line": 110,
-    "fileName": "src/main/java/org/zstack/cloudformation/template/decoder/ResourceDecoder.java"
-  },
-  {
-    "raw": "Parameters body cannot support null!",
-    "en_US": "Parameters body cannot support null!",
-    "zh_CN": "",
-    "arguments": [],
-    "line": 121,
+    "line": 112,
     "fileName": "src/main/java/org/zstack/cloudformation/template/decoder/ResourceDecoder.java"
   },
   {
@@ -2201,7 +2130,7 @@
     "en_US": "Resource root body must be json object!",
     "zh_CN": "",
     "arguments": [],
-    "line": 252,
+    "line": 254,
     "fileName": "src/main/java/org/zstack/cloudformation/template/decoder/ResourceDecoder.java"
   },
   {
@@ -2209,7 +2138,7 @@
     "en_US": "Resource Type must be String!",
     "zh_CN": "",
     "arguments": [],
-    "line": 214,
+    "line": 216,
     "fileName": "src/main/java/org/zstack/cloudformation/template/decoder/ResourceDecoder.java"
   },
   {
@@ -2446,6 +2375,54 @@
     "fileName": "src/main/java/org/zstack/compute/cluster/ClusterApiInterceptor.java"
   },
   {
+    "raw": "invalid cpu pinning ref[%s]. correct example is [1,3:3-6,^5]",
+    "en_US": "invalid cpu pinning ref[{0}]. correct example is [1,3:3-6,^5]",
+    "zh_CN": "",
+    "arguments": [
+      "r"
+    ],
+    "line": 46,
+    "fileName": "src/main/java/org/zstack/compute/cpuPinning/CpuPinningBasicFactory.java"
+  },
+  {
+    "raw": "the size of vCpuSet is greater than pCpuSet",
+    "en_US": "the size of vCpuSet is greater than pCpuSet",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 74,
+    "fileName": "src/main/java/org/zstack/compute/cpuPinning/CpuPinningBasicFactory.java"
+  },
+  {
+    "raw": "the host vm located only have % CPUs",
+    "en_US": "the host vm located only have % CPUs",
+    "zh_CN": "",
+    "arguments": [
+      "pCpuNum"
+    ],
+    "line": 82,
+    "fileName": "src/main/java/org/zstack/compute/cpuPinning/CpuPinningBasicFactory.java"
+  },
+  {
+    "raw": "Invalid cpuset [%s]",
+    "en_US": "Invalid cpuset [{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "word"
+    ],
+    "line": 58,
+    "fileName": "src/main/java/org/zstack/compute/cpuPinning/CpuRangeSet.java"
+  },
+  {
+    "raw": "there has been a host having managementIp[%s]",
+    "en_US": "there has been a host having managementIp[{0}]",
+    "zh_CN": "已经存在一个管理IP是[{0}]的物理机",
+    "arguments": [
+      "msg.getManagementIp()"
+    ],
+    "line": 71,
+    "fileName": "src/main/java/org/zstack/compute/host/HostApiInterceptor.java"
+  },
+  {
     "raw": "can not update host[uuid:%s]which is connecting or creating, please wait.",
     "en_US": "can not update host[uuid:{0}]which is connecting or creating, please wait.",
     "zh_CN": "无法更新处于连接或创建状态中的物理机[uuid:{0}]信息，请等待",
@@ -2484,16 +2461,6 @@
     "fileName": "src/main/java/org/zstack/compute/host/HostBase.java"
   },
   {
-    "raw": "there has been a host having managementIp[%s]",
-    "en_US": "there has been a host having managementIp[{0}]",
-    "zh_CN": "已经存在一个管理IP是[{0}]的物理机",
-    "arguments": [
-      "msg.getManagementIp()"
-    ],
-    "line": 224,
-    "fileName": "src/main/java/org/zstack/compute/host/HostManagerImpl.java"
-  },
-  {
     "raw": "after connecting, host[name:%s, ip:%s] returns a null os version",
     "en_US": "after connecting, host[name:{0}, ip:{1}] returns a null os version",
     "zh_CN": "在连接操作后，物理机[name:{0}, ip:{1}]没有返回操作系统版本信息",
@@ -2516,16 +2483,6 @@
       "mineVersion"
     ],
     "line": 345,
-    "fileName": "src/main/java/org/zstack/compute/host/HostManagerImpl.java"
-  },
-  {
-    "raw": "primary storage[uuid:%s] becomes disconnected, the host has no connected primary storage attached",
-    "en_US": "primary storage[uuid:{0}] becomes disconnected, the host has no connected primary storage attached",
-    "zh_CN": "主存储[uuid:{0}]失联，物理机没有关联的主存储",
-    "arguments": [
-      "d.getPrimaryStorageUuid()"
-    ],
-    "line": 496,
     "fileName": "src/main/java/org/zstack/compute/host/HostManagerImpl.java"
   },
   {
@@ -2736,7 +2693,7 @@
     "en_US": "can not find image store backup storage, unable to commit volume snapshot as image",
     "zh_CN": "",
     "arguments": [],
-    "line": 457,
+    "line": 450,
     "fileName": "src/main/java/org/zstack/compute/vm/MevocoVmInstanceBase.java"
   },
   {
@@ -2747,7 +2704,7 @@
       "inv.getInventory().getUuid()",
       "state"
     ],
-    "line": 686,
+    "line": 680,
     "fileName": "src/main/java/org/zstack/compute/vm/MevocoVmInstanceBase.java"
   },
   {
@@ -2755,7 +2712,7 @@
     "en_US": "direction must be set to in or out",
     "zh_CN": "方法必须设置in或者out",
     "arguments": [],
-    "line": 1249,
+    "line": 1243,
     "fileName": "src/main/java/org/zstack/compute/vm/MevocoVmInstanceBase.java"
   },
   {
@@ -2765,7 +2722,7 @@
     "arguments": [
       "amsg.getVmInstanceUuid()"
     ],
-    "line": 1546,
+    "line": 1540,
     "fileName": "src/main/java/org/zstack/compute/vm/MevocoVmInstanceBase.java"
   },
   {
@@ -2773,7 +2730,7 @@
     "en_US": "state is not correct while change password.",
     "zh_CN": "该状态不支持修改密码",
     "arguments": [],
-    "line": 1574,
+    "line": 1568,
     "fileName": "src/main/java/org/zstack/compute/vm/MevocoVmInstanceBase.java"
   },
   {
@@ -2834,6 +2791,14 @@
     ],
     "line": 113,
     "fileName": "src/main/java/org/zstack/compute/vm/VmImageSelectBackupStorageFlow.java"
+  },
+  {
+    "raw": "rootDiskOfferingUuid cannot be null when image mediaType is ISO",
+    "en_US": "rootDiskOfferingUuid cannot be null when image mediaType is ISO",
+    "zh_CN": "根云盘规格不能为空在镜像类型为ISO时",
+    "arguments": [],
+    "line": 504,
+    "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
     "raw": "rootVolumeOffering is needed when image media type is ISO",
@@ -3313,7 +3278,7 @@
       "cpuNum - oldCpuNum",
       "struct.alignedMemory - oldMemorySize"
     ],
-    "line": 3688,
+    "line": 3689,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
   },
   {
@@ -3335,7 +3300,7 @@
       "isoUuid",
       "self.getUuid()"
     ],
-    "line": 3908,
+    "line": 3909,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
   },
   {
@@ -3345,7 +3310,7 @@
     "arguments": [
       "self.getUuid()"
     ],
-    "line": 4516,
+    "line": 4517,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
   },
   {
@@ -3355,7 +3320,7 @@
     "arguments": [
       "l3Uuid"
     ],
-    "line": 4612,
+    "line": 4613,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceBase.java"
   },
   {
@@ -3419,6 +3384,27 @@
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceExtensionPointEmitter.java"
   },
   {
+    "raw": "only one bootMode system tag is allowed, but %d got",
+    "en_US": "only one bootMode system tag is allowed, but {0} got",
+    "zh_CN": "",
+    "arguments": [
+      "bootModeCount"
+    ],
+    "line": 1338,
+    "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
+  },
+  {
+    "raw": "[%s] specified in system tag [%s] is not a valid boot mode",
+    "en_US": "[{0}] specified in system tag [{1}] is not a valid boot mode",
+    "zh_CN": "",
+    "arguments": [
+      "bootMode",
+      "systemTag"
+    ],
+    "line": 1356,
+    "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
+  },
+  {
     "raw": "the image[uuid:%s] is not on any backup storage that has been attached to the zone[uuid:%s]",
     "en_US": "the image[uuid:{0}] is not on any backup storage that has been attached to the zone[uuid:{1}]",
     "zh_CN": "镜像[uuid:{0}]不在任何加载到区域[uuid:{1}]的镜像服务器上",
@@ -3426,7 +3412,7 @@
       "msg.getImageUuid()",
       "msg.getZoneUuid()"
     ],
-    "line": 406,
+    "line": 407,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -3437,7 +3423,7 @@
       "image.getName()",
       "image.getUuid()"
     ],
-    "line": 469,
+    "line": 470,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -3448,7 +3434,7 @@
       "image.getName()",
       "image.getUuid()"
     ],
-    "line": 509,
+    "line": 510,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -3459,7 +3445,7 @@
       "hostname",
       "tag"
     ],
-    "line": 1156,
+    "line": 1157,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -3469,7 +3455,7 @@
     "arguments": [
       "hostnameCount"
     ],
-    "line": 1168,
+    "line": 1169,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -3480,7 +3466,7 @@
       "ip",
       "sysTag"
     ],
-    "line": 1192,
+    "line": 1193,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -3491,7 +3477,7 @@
       "ip",
       "l3Uuid"
     ],
-    "line": 1207,
+    "line": 1208,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -3504,7 +3490,7 @@
       "hostname",
       "l3Uuid"
     ],
-    "line": 1230,
+    "line": 1231,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -3515,7 +3501,7 @@
       "o",
       "order"
     ],
-    "line": 1261,
+    "line": 1262,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -3525,7 +3511,7 @@
     "arguments": [
       "resourceUuid"
     ],
-    "line": 1279,
+    "line": 1280,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -3533,7 +3519,7 @@
     "en_US": "Shouldn\u0027t be more than one userdata systemTag for one vm.",
     "zh_CN": "在一个虚拟机中不能存在多个userdata的系统标签",
     "arguments": [],
-    "line": 1299,
+    "line": 1300,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -3543,30 +3529,7 @@
     "arguments": [
       "ref.getResourceUuid()"
     ],
-    "line": 1696,
-    "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
-  },
-  {
-    "raw": "the host[uuid:%s] disconnected, change the VM[uuid:%s]\u0027 state to Unknown",
-    "en_US": "the host[uuid:{0}] disconnected, change the VM[uuid:{1}]\u0027 state to Unknown",
-    "zh_CN": "物理机[uuid:{0}]断开连接，虚拟机[uuid:{1}]状态切换为Unknown",
-    "arguments": [
-      "hostUuid",
-      "vmUuid"
-    ],
-    "line": 1726,
-    "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
-  },
-  {
-    "raw": "the host[uuid:%s] disconnected, but the vm[uuid:%s] fails to change it\u0027s state to Unknown, %s",
-    "en_US": "the host[uuid:{0}] disconnected, but the vm[uuid:{1}] fails to change it\u0027s state to Unknown, {2}",
-    "zh_CN": "物理机[uuid:{0}]断开连接，但是虚拟机[uuid:{1}]切换Unknown状态失败",
-    "arguments": [
-      "hostUuid",
-      "vmUuid",
-      "reply.getError()"
-    ],
-    "line": 1723,
+    "line": 1750,
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
@@ -3689,14 +3652,6 @@
     ],
     "line": 212,
     "fileName": "src/main/java/org/zstack/compute/vm/VmMevocoApiInterceptor.java"
-  },
-  {
-    "raw": "rootDiskOfferingUuid cannot be null when image mediaType is ISO",
-    "en_US": "rootDiskOfferingUuid cannot be null when image mediaType is ISO",
-    "zh_CN": "根云盘规格不能为空在镜像类型为ISO时",
-    "arguments": [],
-    "line": 499,
-    "fileName": "src/main/java/org/zstack/compute/vm/VmQuotaOperator.java"
   },
   {
     "raw": "A strange vm[%s] was found on the host[%s], May cause problems, Please manually clean this vm",
@@ -3836,6 +3791,16 @@
     "fileName": "src/main/java/org/zstack/console/ConsoleProxyAgentTracker.java"
   },
   {
+    "raw": "operation error, because:%s",
+    "en_US": "operation error, because:{0}",
+    "zh_CN": "操作错误，因为{0}",
+    "arguments": [
+      "ret.getError()"
+    ],
+    "line": 177,
+    "fileName": "src/main/java/org/zstack/console/ConsoleProxyBase.java"
+  },
+  {
     "raw": "unable to check console proxy availability, because %s",
     "en_US": "unable to check console proxy availability, because {0}",
     "zh_CN": "无法检查控制台代理是否可用，因为{0}",
@@ -3846,13 +3811,21 @@
     "fileName": "src/main/java/org/zstack/console/ConsoleProxyBase.java"
   },
   {
+    "raw": "chrony server not configured!",
+    "en_US": "chrony server not configured!",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 165,
+    "fileName": "src/main/java/org/zstack/console/ManagementServerConsoleProxyBackend.java"
+  },
+  {
     "raw": "invalid management node UUID[%s]",
     "en_US": "invalid management node UUID[{0}]",
     "zh_CN": "非法的管理节点UUID[{0}]",
     "arguments": [
       "uuid"
     ],
-    "line": 323,
+    "line": 327,
     "fileName": "src/main/java/org/zstack/console/ManagementServerConsoleProxyBackend.java"
   },
   {
@@ -3860,7 +3833,7 @@
     "en_US": "failed to configure consoleProxyOverriddenIp",
     "zh_CN": "设置consoleProxyOverriddenIp失败",
     "arguments": [],
-    "line": 423,
+    "line": 427,
     "fileName": "src/main/java/org/zstack/console/ManagementServerConsoleProxyBackend.java"
   },
   {
@@ -3868,7 +3841,7 @@
     "en_US": "failed to reconnect console proxy",
     "zh_CN": "重连控制台代理失败",
     "arguments": [],
-    "line": 446,
+    "line": 450,
     "fileName": "src/main/java/org/zstack/console/ManagementServerConsoleProxyBackend.java"
   },
   {
@@ -4018,9 +3991,9 @@
     "zh_CN": "无法在{1}ms内返回{0}",
     "arguments": [
       "url",
-      "timeout"
+      "finalTimeout"
     ],
-    "line": 553,
+    "line": 550,
     "fileName": "src/main/java/org/zstack/core/rest/RESTFacadeImpl.java"
   },
   {
@@ -4056,14 +4029,6 @@
     ],
     "line": 28,
     "fileName": "src/main/java/org/zstack/core/webhook/WebhookApiInterceptor.java"
-  },
-  {
-    "raw": "parameters [accountUuid] only can be used by admin user!",
-    "en_US": "parameters [accountUuid] only can be used by admin user!",
-    "zh_CN": "参数[accountUuid]必须被admin用户设置",
-    "arguments": [],
-    "line": 99,
-    "fileName": "src/main/java/org/zstack/daho/core/DahoApiInterceptor.java"
   },
   {
     "raw": "expire policy: %s is not valid",
@@ -4159,6 +4124,16 @@
     "fileName": "src/main/java/org/zstack/ha/HaManagementNodeChecker.java"
   },
   {
+    "raw": "the VM[uuid:%s] volume stored location primary storage is in a state of maintenance",
+    "en_US": "the VM[uuid:{0}] volume stored location primary storage is in a state of maintenance",
+    "zh_CN": "虚拟机[{0}]云盘所在主存储处于维护状态",
+    "arguments": [
+      "vmUuid"
+    ],
+    "line": 1148,
+    "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
+  },
+  {
     "raw": "From agent[hostUuid:%s] report: it can connect primary storage[uuids:%s] again",
     "en_US": "From agent[hostUuid:{0}] report: it can connect primary storage[uuids:{1}] again",
     "zh_CN": "根据物理机[hostUuid:{0}]报告: 应该重新连接主存储",
@@ -4166,7 +4141,7 @@
       "cmd.hostUuid",
       "cmd.psUuids"
     ],
-    "line": 148,
+    "line": 168,
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
   },
   {
@@ -4177,7 +4152,7 @@
       "cmd.hostUuid",
       "cmd.psUuids"
     ],
-    "line": 143,
+    "line": 163,
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
   },
   {
@@ -4187,7 +4162,7 @@
     "arguments": [
       "newValue"
     ],
-    "line": 164,
+    "line": 201,
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
   },
   {
@@ -4195,7 +4170,7 @@
     "en_US": "there is already a HA GC job for the VM, wait it to run",
     "zh_CN": "VM已经有一个HA GC任务，等待运行",
     "arguments": [],
-    "line": 334,
+    "line": 371,
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
   },
   {
@@ -4205,7 +4180,7 @@
     "arguments": [
       "HaGlobalConfig.NEVER_STOP_VM_FAILURE_RETRY_DELAY.value(Long.class)"
     ],
-    "line": 342,
+    "line": 379,
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
   },
   {
@@ -4217,7 +4192,7 @@
       "vmInv.getName()",
       "reply.getError()"
     ],
-    "line": 625,
+    "line": 662,
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
   },
   {
@@ -4227,7 +4202,7 @@
     "arguments": [
       "vm.getHypervisorType()"
     ],
-    "line": 767,
+    "line": 804,
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
   },
   {
@@ -4237,7 +4212,7 @@
     "arguments": [
       "details"
     ],
-    "line": 784,
+    "line": 821,
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
   },
   {
@@ -4245,7 +4220,7 @@
     "en_US": "Failed to HA the VM",
     "zh_CN": "高可用VM失败",
     "arguments": [],
-    "line": 798,
+    "line": 835,
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
   },
   {
@@ -4256,7 +4231,7 @@
       "host.getUuid()",
       "host.getName()"
     ],
-    "line": 1007,
+    "line": 1044,
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
   },
   {
@@ -4268,7 +4243,7 @@
       "host.getName()",
       "errorCode"
     ],
-    "line": 1012,
+    "line": 1049,
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
   },
   {
@@ -4279,7 +4254,7 @@
       "host.getUuid()",
       "host.getName()"
     ],
-    "line": 1045,
+    "line": 1082,
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
   },
   {
@@ -4291,7 +4266,7 @@
       "host.getName()",
       "errorCode"
     ],
-    "line": 1051,
+    "line": 1088,
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
   },
   {
@@ -4304,6 +4279,14 @@
     ],
     "line": 39,
     "fileName": "src/main/java/org/zstack/ha/NeverStopVmGC.java"
+  },
+  {
+    "raw": "parameters [accountUuid] only can be used by admin user!",
+    "en_US": "parameters [accountUuid] only can be used by admin user!",
+    "zh_CN": "参数[accountUuid]必须被admin用户设置",
+    "arguments": [],
+    "line": 77,
+    "fileName": "src/main/java/org/zstack/hybrid/account/HybridAccountApiInterceptor.java"
   },
   {
     "raw": "key: [%s] already existed by accountUuid: [%s]",
@@ -4325,6 +4308,16 @@
     ],
     "line": 61,
     "fileName": "src/main/java/org/zstack/hybrid/account/HybridAccountApiInterceptor.java"
+  },
+  {
+    "raw": "%s can only be called by admin account",
+    "en_US": "{0} can only be called by admin account",
+    "zh_CN": "{0}只能被admin账户调用",
+    "arguments": [
+      "msg.getClass().getSimpleName()"
+    ],
+    "line": 27,
+    "fileName": "src/main/java/org/zstack/hybrid/backup/HybridBackupApiInterceptor.java"
   },
   {
     "raw": "regionId [%s] already created by ak [%s]",
@@ -4712,66 +4705,66 @@
   {
     "raw": "wrong virtual ID[name:%s], not existing or wrong password",
     "en_US": "wrong virtual ID[name:{0}], not existing or wrong password",
-    "zh_CN": "",
+    "zh_CN": "错误的virtual ID[名称:{0}], 密码不存在或者密码错误",
     "arguments": [
       "msg.getName()"
     ],
-    "line": 201,
+    "line": 202,
     "fileName": "src/main/java/org/zstack/iam2/IAM2ManagerImpl.java"
   },
   {
     "raw": "additional authentication failed",
     "en_US": "additional authentication failed",
-    "zh_CN": "",
+    "zh_CN": "附加认证失败",
     "arguments": [],
-    "line": 206,
+    "line": 207,
     "fileName": "src/main/java/org/zstack/iam2/IAM2ManagerImpl.java"
   },
   {
     "raw": "project[name:%s] not existing",
     "en_US": "project[name:{0}] not existing",
-    "zh_CN": "",
+    "zh_CN": "项目[name:{0}]不存在",
     "arguments": [
       "msg.getProjectName()"
     ],
-    "line": 239,
+    "line": 240,
     "fileName": "src/main/java/org/zstack/iam2/IAM2ManagerImpl.java"
   },
   {
     "raw": "wrong virtual ID[uuid:%s], not existing or wrong password",
     "en_US": "wrong virtual ID[uuid:{0}], not existing or wrong password",
-    "zh_CN": "",
+    "zh_CN": "错误的virtual ID[uuid:{0}], 密码不存在或者密码错误",
     "arguments": [
       "msg.getSession().getUserUuid()"
     ],
-    "line": 251,
+    "line": 252,
     "fileName": "src/main/java/org/zstack/iam2/IAM2ManagerImpl.java"
   },
   {
     "raw": "virtual ID[name:%s] is disabled",
     "en_US": "virtual ID[name:{0}] is disabled",
-    "zh_CN": "",
+    "zh_CN": "virtual ID[名称:{0}]不可用",
     "arguments": [
       "vid.getName()"
     ],
-    "line": 255,
+    "line": 256,
     "fileName": "src/main/java/org/zstack/iam2/IAM2ManagerImpl.java"
   },
   {
     "raw": "virtual ID[name:%s] not belonging to the project[name:%s]",
     "en_US": "virtual ID[name:{0}] not belonging to the project[name:{1}]",
-    "zh_CN": "",
+    "zh_CN": "virtual ID[名称:{0}]不属于项目[name:{1}]",
     "arguments": [
       "vid.getName()",
       "msg.getProjectName()"
     ],
-    "line": 260,
+    "line": 261,
     "fileName": "src/main/java/org/zstack/iam2/IAM2ManagerImpl.java"
   },
   {
     "raw": "organization[uuid:%s] is parent of the organization[uuid:%s], cannot set it as a child organization",
     "en_US": "organization[uuid:{0}] is parent of the organization[uuid:{1}], cannot set it as a child organization",
-    "zh_CN": "",
+    "zh_CN": "部门[uuid:{0}]是部门[uuid:{1}]的上级部门，无法被设置为子部门",
     "arguments": [
       "puuid",
       "self.getUuid()"
@@ -4782,28 +4775,28 @@
   {
     "raw": "the project[uuid: %s, name:%s] is in state of %s which disallows the operation[%s]",
     "en_US": "the project[uuid: {0}, name:{1}] is in state of {2} which disallows the operation[{3}]",
-    "zh_CN": "",
+    "zh_CN": "项目[[uuid: {0}, 名称:{1}]]是{2}状态，不允许执行[{3}]操作",
     "arguments": [
       "self.getUuid()",
       "self.getName()",
       "self.getState()",
       "msg.getClass()"
     ],
-    "line": 88,
+    "line": 90,
     "fileName": "src/main/java/org/zstack/iam2/IAM2ProjectBase.java"
   },
   {
     "raw": "only admin and the virtual ID itself can do the update",
     "en_US": "only admin and the virtual ID itself can do the update",
-    "zh_CN": "",
+    "zh_CN": "只有admin和virtual ID本身可以执行更新操作",
     "arguments": [],
-    "line": 272,
+    "line": 271,
     "fileName": "src/main/java/org/zstack/iam2/IAM2VirtualIDBase.java"
   },
   {
     "raw": "attribute name cannot be null, value[%s]",
     "en_US": "attribute name cannot be null, value[{0}]",
-    "zh_CN": "",
+    "zh_CN": "属性不能为null，输入值[{0}]",
     "arguments": [
       "attr.getValue()"
     ],
@@ -4813,7 +4806,7 @@
   {
     "raw": "attribute name[%s] exceed the max length of 2048 chars",
     "en_US": "attribute name[{0}] exceed the max length of 2048 chars",
-    "zh_CN": "",
+    "zh_CN": "属性名称[{0}]不能超过2048个字符",
     "arguments": [
       "attr.getName()"
     ],
@@ -4823,7 +4816,7 @@
   {
     "raw": "attribute[name:%s] value[%s] exceed the max length of 2048 chars",
     "en_US": "attribute[name:{0}] value[{1}] exceed the max length of 2048 chars",
-    "zh_CN": "",
+    "zh_CN": "属性[name:{0}] value[{1}]不能超过2048个字符",
     "arguments": [
       "attr.getName()",
       "attr.getValue()"
@@ -4834,7 +4827,7 @@
   {
     "raw": "admin is a reserved name, please use another name",
     "en_US": "admin is a reserved name, please use another name",
-    "zh_CN": "",
+    "zh_CN": "admin是保留名称，请使用其他名称",
     "arguments": [],
     "line": 124,
     "fileName": "src/main/java/org/zstack/iam2/api/IAM2ApiInterceptor.java"
@@ -4842,7 +4835,7 @@
   {
     "raw": "invalid name[%s], there has been a project or account with the same name",
     "en_US": "invalid name[{0}], there has been a project or account with the same name",
-    "zh_CN": "",
+    "zh_CN": "无效的名称[{0}],已经存在同名的项目或账户",
     "arguments": [
       "msg.getName()"
     ],
@@ -4852,7 +4845,7 @@
   {
     "raw": "virtual ID[uuid:%s] is project admin that cannot be removed from the project",
     "en_US": "virtual ID[uuid:{0}] is project admin that cannot be removed from the project",
-    "zh_CN": "",
+    "zh_CN": "virtual ID[uuid:{0}]是项目管理员，无法被移除",
     "arguments": [
       "attrs.get(0).getVirtualIDUuid()"
     ],
@@ -5220,13 +5213,23 @@
     "fileName": "src/main/java/org/zstack/identity/AccountBase.java"
   },
   {
+    "raw": "%s is not an API",
+    "en_US": "{0} is not an API",
+    "zh_CN": "{0}不是一个API",
+    "arguments": [
+      "apiName"
+    ],
+    "line": 392,
+    "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
+  },
+  {
     "raw": "cannot find the resource[uuid:%s]; wrong resourceUuid or the resource is admin resource",
     "en_US": "cannot find the resource[uuid:{0}]; wrong resourceUuid or the resource is admin resource",
     "zh_CN": "无法找到资源[uuid:{0}]: 错误的资源uuid或者资源是管理员资源",
     "arguments": [
       "resourceUuid"
     ],
-    "line": 205,
+    "line": 204,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -5236,7 +5239,7 @@
     "arguments": [
       "msg.getUserUuid()"
     ],
-    "line": 360,
+    "line": 359,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -5246,7 +5249,7 @@
     "arguments": [
       "msg.getAccountName()"
     ],
-    "line": 480,
+    "line": 479,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -5256,7 +5259,7 @@
     "arguments": [
       "accountUuid"
     ],
-    "line": 1175,
+    "line": 1187,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -5264,7 +5267,7 @@
     "en_US": "accountName and accountUuid cannot both be null, you must specify at least one",
     "zh_CN": "账户名和账户Uuid不能同时为空，您必须定义至少一个",
     "arguments": [],
-    "line": 1654,
+    "line": 1666,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -5275,7 +5278,7 @@
       "msg.getName()",
       "msg.getAccountUuid()"
     ],
-    "line": 1665,
+    "line": 1677,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -5286,7 +5289,7 @@
       "msg.getName()",
       "msg.getAccountUuid()"
     ],
-    "line": 1675,
+    "line": 1687,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -5296,7 +5299,7 @@
     "arguments": [
       "msg.getName()"
     ],
-    "line": 1684,
+    "line": 1696,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -5304,7 +5307,7 @@
     "en_US": "account cannot delete itself",
     "zh_CN": "账户不能删除自己",
     "arguments": [],
-    "line": 1691,
+    "line": 1703,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -5312,7 +5315,7 @@
     "en_US": "cannot delete builtin admin account.",
     "zh_CN": "",
     "arguments": [],
-    "line": 1697,
+    "line": 1709,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -5320,7 +5323,7 @@
     "en_US": "Only admin can delete account.",
     "zh_CN": "只有admin能删除账户",
     "arguments": [],
-    "line": 1703,
+    "line": 1715,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -5328,7 +5331,7 @@
     "en_US": "the current session is an account session. You need to specify the field \u0027uuid\u0027 of the user you want to update",
     "zh_CN": "当前会话是一个账户会话，你需要定义一个\u0027uuid\u0027字段来指定你要更新的用户",
     "arguments": [],
-    "line": 1711,
+    "line": 1723,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -5338,7 +5341,7 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 1726,
+    "line": 1738,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -5346,7 +5349,7 @@
     "en_US": "all is set to false, accountUuids cannot be null or empty",
     "zh_CN": "all参数被设为false时，账户uuid不能为空",
     "arguments": [],
-    "line": 1734,
+    "line": 1746,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -5354,7 +5357,7 @@
     "en_US": "toPublic is set to false, accountUuids cannot be null or empty",
     "zh_CN": "toPublic参数被设为false时，账户uuid不能为空",
     "arguments": [],
-    "line": 1742,
+    "line": 1754,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -5366,7 +5369,7 @@
       "policy.getUuid()",
       "msg.getSession().getAccountUuid()"
     ],
-    "line": 1791,
+    "line": 1803,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -5378,7 +5381,7 @@
       "user.getUuid()",
       "msg.getSession().getAccountUuid()"
     ],
-    "line": 1805,
+    "line": 1817,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -5390,7 +5393,7 @@
       "group.getUuid()",
       "msg.getSession().getAccountUuid()"
     ],
-    "line": 1809,
+    "line": 1821,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -5400,7 +5403,7 @@
     "arguments": [
       "JSONObjectUtil.toJsonString(s)"
     ],
-    "line": 1817,
+    "line": 1829,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -5410,7 +5413,7 @@
     "arguments": [
       "JSONObjectUtil.toJsonString(s)"
     ],
-    "line": 1820,
+    "line": 1832,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -5420,7 +5423,7 @@
     "arguments": [
       "JSONObjectUtil.toJsonString(s)"
     ],
-    "line": 1823,
+    "line": 1835,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -5428,7 +5431,7 @@
     "en_US": "the name of admin account cannot be updated",
     "zh_CN": "不能更改管理员账户名称",
     "arguments": [],
-    "line": 1848,
+    "line": 1860,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -5436,7 +5439,7 @@
     "en_US": "only admin account can update it\u0027s password",
     "zh_CN": "",
     "arguments": [],
-    "line": 1854,
+    "line": 1866,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -5448,7 +5451,7 @@
       "account.getName()",
       "msg.getUuid()"
     ],
-    "line": 1862,
+    "line": 1874,
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
@@ -5509,7 +5512,7 @@
       "uuid",
       "resourceType.getSimpleName()"
     ],
-    "line": 191,
+    "line": 190,
     "fileName": "src/main/java/org/zstack/identity/rbac/OperationTargetAPIRequestChecker.java"
   },
   {
@@ -5521,7 +5524,7 @@
       "resourceWithNoAccess",
       "resourceType.getSimpleName()"
     ],
-    "line": 211,
+    "line": 210,
     "fileName": "src/main/java/org/zstack/identity/rbac/OperationTargetAPIRequestChecker.java"
   },
   {
@@ -5733,7 +5736,7 @@
       "bsUuid",
       "reply.getError()"
     ],
-    "line": 487,
+    "line": 549,
     "fileName": "src/main/java/org/zstack/image/ImageManagerImpl.java"
   },
   {
@@ -5744,7 +5747,7 @@
       "name",
       "imageUuid"
     ],
-    "line": 786,
+    "line": 858,
     "fileName": "src/main/java/org/zstack/image/ImageManagerImpl.java"
   },
   {
@@ -5756,7 +5759,7 @@
       "imageUuid",
       "reason.toString()"
     ],
-    "line": 790,
+    "line": 862,
     "fileName": "src/main/java/org/zstack/image/ImageManagerImpl.java"
   },
   {
@@ -5764,7 +5767,7 @@
     "en_US": "upload session expired",
     "zh_CN": "上传session失效了",
     "arguments": [],
-    "line": 813,
+    "line": 885,
     "fileName": "src/main/java/org/zstack/image/ImageManagerImpl.java"
   },
   {
@@ -5775,7 +5778,7 @@
       "msgData.getBackupStorageUuids()",
       "JSONObjectUtil.toJsonString(errs)"
     ],
-    "line": 1304,
+    "line": 1376,
     "fileName": "src/main/java/org/zstack/image/ImageManagerImpl.java"
   },
   {
@@ -5785,7 +5788,7 @@
     "arguments": [
       "msgData.getRootVolumeUuid()"
     ],
-    "line": 1415,
+    "line": 1487,
     "fileName": "src/main/java/org/zstack/image/ImageManagerImpl.java"
   },
   {
@@ -5796,7 +5799,7 @@
       "msgData.getBackupStorageUuids()",
       "JSONObjectUtil.toJsonString(errs)"
     ],
-    "line": 1673,
+    "line": 1755,
     "fileName": "src/main/java/org/zstack/image/ImageManagerImpl.java"
   },
   {
@@ -5807,7 +5810,7 @@
       "msgData.getVolumeUuid()",
       "msgData.getBackupStorageUuids()"
     ],
-    "line": 1774,
+    "line": 1856,
     "fileName": "src/main/java/org/zstack/image/ImageManagerImpl.java"
   },
   {
@@ -6104,7 +6107,7 @@
       "getSelf().getPort()",
       "result.getExitErrorMessage()"
     ],
-    "line": 531,
+    "line": 538,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -6115,7 +6118,7 @@
       "self.getUuid()",
       "self.getStatus()"
     ],
-    "line": 573,
+    "line": 580,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -6126,7 +6129,7 @@
       "volume.getUuid()",
       "state"
     ],
-    "line": 950,
+    "line": 957,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -6137,7 +6140,7 @@
       "KVMConstant.MIN_LIBVIRT_LIVE_BLOCK_COMMIT_VERSION",
       "libvirtVersion"
     ],
-    "line": 957,
+    "line": 964,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -6148,7 +6151,7 @@
       "msg.getVmUuid()",
       "vmState"
     ],
-    "line": 1037,
+    "line": 1044,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -6162,7 +6165,7 @@
       "self.getManagementIp()",
       "ret.getError()"
     ],
-    "line": 1423,
+    "line": 1430,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -6178,7 +6181,7 @@
       "getSelf().getManagementIp()",
       "ret.getError()"
     ],
-    "line": 1501,
+    "line": 1508,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -6194,7 +6197,7 @@
       "getSelf().getManagementIp()",
       "ret.getError()"
     ],
-    "line": 1616,
+    "line": 1623,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -6208,7 +6211,7 @@
       "self.getManagementIp()",
       "e.getMessage()"
     ],
-    "line": 1674,
+    "line": 1681,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -6222,7 +6225,7 @@
       "self.getManagementIp()",
       "e.getMessage()"
     ],
-    "line": 1840,
+    "line": 1847,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -6236,7 +6239,7 @@
       "self.getManagementIp()",
       "e.getMessage()"
     ],
-    "line": 2097,
+    "line": 2106,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -6249,7 +6252,7 @@
       "context.getInventory().getUuid()",
       "context.getInventory().getManagementIp()"
     ],
-    "line": 2337,
+    "line": 2346,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -6260,7 +6263,7 @@
       "self.getUuid()",
       "ret.getHostUuid()"
     ],
-    "line": 2400,
+    "line": 2409,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -6273,7 +6276,7 @@
       "connectPath",
       "rsp.getError()"
     ],
-    "line": 2521,
+    "line": 2530,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -6281,7 +6284,7 @@
     "en_US": "host can not access any primary storage, please check network",
     "zh_CN": "物理机无法访问任何主存储，请检查网络",
     "arguments": [],
-    "line": 2578,
+    "line": 2587,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -6292,7 +6295,7 @@
       "getSelf().getPort()",
       "KVMGlobalConfig.TEST_SSH_PORT_ON_OPEN_TIMEOUT.value(Long.class)"
     ],
-    "line": 2708,
+    "line": 2717,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -6302,7 +6305,7 @@
     "arguments": [
       "checkList"
     ],
-    "line": 2763,
+    "line": 2772,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -6315,7 +6318,7 @@
       "getSelf().getPort()",
       "ret.getExitErrorMessage()"
     ],
-    "line": 2761,
+    "line": 2770,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -6328,7 +6331,7 @@
       "ret.getStderr()",
       "ret.getExitErrorMessage()"
     ],
-    "line": 2789,
+    "line": 2798,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -6341,7 +6344,7 @@
       "getSelf().getPort()",
       "ret.getExitErrorMessage()"
     ],
-    "line": 2786,
+    "line": 2795,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -6349,7 +6352,7 @@
     "en_US": "cannot find either \u0027vmx\u0027 or \u0027svm\u0027 in /proc/cpuinfo, please make sure you have enabled virtualization in your BIOS setting",
     "zh_CN": "不能发现以下任意一个  \u0027vmx\u0027 or \u0027svm\u0027 在路径 /proc/cpuinfo 里, 请检查你是否在你的BIOS设置里开启了virtualization选项",
     "arguments": [],
-    "line": 2894,
+    "line": 2938,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -6360,7 +6363,7 @@
       "self.getUuid()",
       "self.getClusterUuid()"
     ],
-    "line": 2659,
+    "line": 2668,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -6371,7 +6374,7 @@
       "self.getUuid()",
       "self.getClusterUuid()"
     ],
-    "line": 2665,
+    "line": 2674,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -6379,7 +6382,7 @@
     "en_US": "host is not in the connected status, cannot update os",
     "zh_CN": "物理机当前并不是已连接状态，不能升级操作系统",
     "arguments": [],
-    "line": 3051,
+    "line": 3095,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -6387,7 +6390,7 @@
     "en_US": "host is in the premaintenance state, cannot update os",
     "zh_CN": "物理机正处于预维护状态，不能升级操作系统",
     "arguments": [],
-    "line": 3049,
+    "line": 3093,
     "fileName": "src/main/java/org/zstack/kvm/KVMHost.java"
   },
   {
@@ -6501,7 +6504,7 @@
       "host.getManagementIp()",
       "ret.getError()"
     ],
-    "line": 90,
+    "line": 92,
     "fileName": "src/main/java/org/zstack/kvm/KvmVmSyncPingTask.java"
   },
   {
@@ -6513,7 +6516,7 @@
       "state",
       "cmd.hostUuid"
     ],
-    "line": 126,
+    "line": 128,
     "fileName": "src/main/java/org/zstack/kvm/KvmVmSyncPingTask.java"
   },
   {
@@ -6526,7 +6529,7 @@
       "cmd.hostUuid",
       "reply.getError()"
     ],
-    "line": 142,
+    "line": 144,
     "fileName": "src/main/java/org/zstack/kvm/KvmVmSyncPingTask.java"
   },
   {
@@ -6538,7 +6541,7 @@
       "host.getName()",
       "errorCode"
     ],
-    "line": 214,
+    "line": 216,
     "fileName": "src/main/java/org/zstack/kvm/KvmVmSyncPingTask.java"
   },
   {
@@ -6579,7 +6582,7 @@
       "filter",
       "e.toString()"
     ],
-    "line": 643,
+    "line": 634,
     "fileName": "src/main/java/org/zstack/ldap/LdapManagerImpl.java"
   },
   {
@@ -6589,7 +6592,7 @@
     "arguments": [
       "e.toString()"
     ],
-    "line": 619,
+    "line": 610,
     "fileName": "src/main/java/org/zstack/ldap/LdapManagerImpl.java"
   },
   {
@@ -6603,13 +6606,21 @@
     "fileName": "src/main/java/org/zstack/license/LicenseManagerImpl.java"
   },
   {
+    "raw": "Add-on license is not allowed for trial license",
+    "en_US": "Add-on license is not allowed for trial license",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 875,
+    "fileName": "src/main/java/org/zstack/license/LicenseManagerImpl.java"
+  },
+  {
     "raw": "Consult result expect to be 1, but actually %s",
     "en_US": "Consult result expect to be 1, but actually {0}",
     "zh_CN": "",
     "arguments": [
       "results.size()"
     ],
-    "line": 181,
+    "line": 198,
     "fileName": "src/main/java/org/zstack/loginControl/LoginControlManagerImpl.java"
   },
   {
@@ -6617,18 +6628,19 @@
     "en_US": "Wrong verify code",
     "zh_CN": "",
     "arguments": [],
-    "line": 216,
+    "line": 245,
     "fileName": "src/main/java/org/zstack/loginControl/LoginControlManagerImpl.java"
   },
   {
-    "raw": "%s is not an API",
-    "en_US": "{0} is not an API",
-    "zh_CN": "{0}不是一个API",
+    "raw": "can not get suitable captcha with[uuid:%s], related to resourceName[uuid:%s]",
+    "en_US": "can not get suitable captcha with[uuid:{0}], related to resourceName[uuid:{1}]",
+    "zh_CN": "",
     "arguments": [
-      "msg.getJobName()"
+      "msg.getCaptchaUuid()",
+      "msg.getResourceName()"
     ],
-    "line": 65,
-    "fileName": "src/main/java/org/zstack/longjob/LongJobApiInterceptor.java"
+    "line": 318,
+    "fileName": "src/main/java/org/zstack/loginControl/LoginControlManagerImpl.java"
   },
   {
     "raw": "cannot cancel longjob that is succeeded",
@@ -6844,7 +6856,7 @@
     "arguments": [
       "str"
     ],
-    "line": 760,
+    "line": 764,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6855,7 +6867,7 @@
       "cidr",
       "fmtCidr"
     ],
-    "line": 771,
+    "line": 775,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6865,7 +6877,7 @@
     "arguments": [
       "hostUuid"
     ],
-    "line": 790,
+    "line": 794,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6877,7 +6889,7 @@
       "distro",
       "version"
     ],
-    "line": 809,
+    "line": 813,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6887,7 +6899,7 @@
     "arguments": [
       "newValue"
     ],
-    "line": 935,
+    "line": 939,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6897,7 +6909,7 @@
     "arguments": [
       "newValue"
     ],
-    "line": 911,
+    "line": 915,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6907,7 +6919,7 @@
     "arguments": [
       "psUuid"
     ],
-    "line": 896,
+    "line": 900,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6917,7 +6929,7 @@
     "arguments": [
       "newValue"
     ],
-    "line": 932,
+    "line": 936,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6927,7 +6939,7 @@
     "arguments": [
       "newValue"
     ],
-    "line": 944,
+    "line": 948,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6939,7 +6951,7 @@
       "MevocoGlobalConfig.AIO_NATIVE.value()",
       "KVMGlobalConfig.LIBVIRT_CACHE_MODE.value()"
     ],
-    "line": 966,
+    "line": 970,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6949,7 +6961,7 @@
     "arguments": [
       "bandwidth"
     ],
-    "line": 1865,
+    "line": 1870,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6957,7 +6969,7 @@
     "en_US": "networkInboundBandwidth execeds the max value 32G bps",
     "zh_CN": "超过下行网络带宽超过最大值32G bps",
     "arguments": [],
-    "line": 1862,
+    "line": 1867,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6967,7 +6979,7 @@
     "arguments": [
       "bandwidth"
     ],
-    "line": 1877,
+    "line": 1882,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6975,7 +6987,7 @@
     "en_US": "networkOutboundBandwidth execeds the max value 32G bps",
     "zh_CN": "超过上行网络带宽超过最大值32G bps",
     "arguments": [],
-    "line": 1874,
+    "line": 1879,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6986,7 +6998,7 @@
       "volume.getUuid()",
       "vm.getUuid()"
     ],
-    "line": 2046,
+    "line": 2052,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6994,7 +7006,7 @@
     "en_US": "shareable disk only support virtio-scsi type for now",
     "zh_CN": "目前共享盘只支持virtio-scsi",
     "arguments": [],
-    "line": 2064,
+    "line": 2070,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -7004,7 +7016,7 @@
     "arguments": [
       "hostUuid"
     ],
-    "line": 2524,
+    "line": 2568,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -7016,7 +7028,7 @@
       "displayNetworkCidr",
       "hostUuid"
     ],
-    "line": 2554,
+    "line": 2598,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -7027,7 +7039,7 @@
       "hostModel",
       "clusterModel"
     ],
-    "line": 2594,
+    "line": 2638,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -7318,6 +7330,25 @@
     "fileName": "src/main/java/org/zstack/monitoring/items/vm/VmCpuUtilItem.java"
   },
   {
+    "raw": "The problem may be caused by an incorrect user name or password or email permission denied",
+    "en_US": "The problem may be caused by an incorrect user name or password or email permission denied",
+    "zh_CN": "导致操作失败的原因可能是不正确的用户名、密码或邮件访问权限不足",
+    "arguments": [],
+    "line": 36,
+    "fileName": "src/main/java/org/zstack/monitoring/media/EmailMediaFactory.java"
+  },
+  {
+    "raw": "Couldn\u0027t connect to host, port: %s, %d. The problem may be caused by an incorrect smtpServer or smtpPort",
+    "en_US": "Couldn\u0027t connect to host, port: {0}, {1}. The problem may be caused by an incorrect smtpServer or smtpPort",
+    "zh_CN": "连接{0}:{1}超时，导致原因可能是不正确的邮件服务器和邮件服务器端口",
+    "arguments": [
+      "smtpServer",
+      "smtpPort"
+    ],
+    "line": 38,
+    "fileName": "src/main/java/org/zstack/monitoring/media/EmailMediaFactory.java"
+  },
+  {
     "raw": "conflict alert rule[%s], there has been a rule[%s] with the same name",
     "en_US": "conflict alert rule[{0}], there has been a rule[{1}] with the same name",
     "zh_CN": "冲突提示规则[{0}]，这里已经存在和它一样名称的规则",
@@ -7386,6 +7417,14 @@
     "fileName": "src/main/java/org/zstack/monitoring/prometheus/PrometheusHostCpuUtilItem.java"
   },
   {
+    "raw": "Host",
+    "en_US": "Host",
+    "zh_CN": "物理机",
+    "arguments": [],
+    "line": 85,
+    "fileName": "src/main/java/org/zstack/monitoring/prometheus/PrometheusHostDiskCapacityAlertWriter.java"
+  },
+  {
     "raw": "Host Disk Capacity",
     "en_US": "Host Disk Capacity",
     "zh_CN": "物理机磁盘容量",
@@ -7410,12 +7449,39 @@
     "fileName": "src/main/java/org/zstack/monitoring/prometheus/PrometheusHostDiskCapacityAlertWriter.java"
   },
   {
-    "raw": "Host",
-    "en_US": "Host",
-    "zh_CN": "物理机",
+    "raw": "invalid type[%s], only %s are allowed",
+    "en_US": "invalid type[{0}], only {1} are allowed",
+    "zh_CN": "无效类型[{0}]，只有{1}被允许",
+    "arguments": [
+      "type",
+      "ALLOWED_TYPES"
+    ],
+    "line": 22,
+    "fileName": "src/main/java/org/zstack/monitoring/prometheus/PrometheusHostDiskCapacityItem.java"
+  },
+  {
+    "raw": "Disk IO",
+    "en_US": "Disk IO",
+    "zh_CN": "磁盘IO",
     "arguments": [],
-    "line": 77,
-    "fileName": "src/main/java/org/zstack/monitoring/prometheus/PrometheusHostNetworkIOAlertWriter.java"
+    "line": 86,
+    "fileName": "src/main/java/org/zstack/monitoring/prometheus/PrometheusHostDiskIOAlertWriter.java"
+  },
+  {
+    "raw": "Disk IO direction",
+    "en_US": "Disk IO direction",
+    "zh_CN": "磁盘IO方向",
+    "arguments": [],
+    "line": 92,
+    "fileName": "src/main/java/org/zstack/monitoring/prometheus/PrometheusHostDiskIOAlertWriter.java"
+  },
+  {
+    "raw": "Disk IO type",
+    "en_US": "Disk IO type",
+    "zh_CN": "磁盘IO类型",
+    "arguments": [],
+    "line": 93,
+    "fileName": "src/main/java/org/zstack/monitoring/prometheus/PrometheusHostDiskIOAlertWriter.java"
   },
   {
     "raw": "query failure, errorType:%s, error: %s",
@@ -7445,38 +7511,24 @@
     "fileName": "src/main/java/org/zstack/monitoring/prometheus/PrometheusVmCpuUtilAlertWriter.java"
   },
   {
-    "raw": "Disk IO",
-    "en_US": "Disk IO",
-    "zh_CN": "磁盘IO",
-    "arguments": [],
-    "line": 86,
-    "fileName": "src/main/java/org/zstack/monitoring/prometheus/PrometheusVmDiskIOAlertWriter.java"
-  },
-  {
-    "raw": "Disk IO direction",
-    "en_US": "Disk IO direction",
-    "zh_CN": "磁盘IO方向",
-    "arguments": [],
-    "line": 92,
-    "fileName": "src/main/java/org/zstack/monitoring/prometheus/PrometheusVmDiskIOAlertWriter.java"
-  },
-  {
-    "raw": "Disk IO type",
-    "en_US": "Disk IO type",
-    "zh_CN": "磁盘IO类型",
-    "arguments": [],
-    "line": 93,
-    "fileName": "src/main/java/org/zstack/monitoring/prometheus/PrometheusVmDiskIOAlertWriter.java"
-  },
-  {
-    "raw": "invalid type[%s], only %s are allowed",
-    "en_US": "invalid type[{0}], only {1} are allowed",
-    "zh_CN": "无效类型[{0}]，只有{1}被允许",
+    "raw": "invalid right value[%s], it must be a number(int, long, float, double)",
+    "en_US": "invalid right value[{0}], it must be a number(int, long, float, double)",
+    "zh_CN": "无效参数值[{0}]，他应该是一个数字(int, long, float, double)",
     "arguments": [
-      "type",
-      "ALLOWED_TYPES"
+      "expression.getConstant()"
     ],
-    "line": 19,
+    "line": 39,
+    "fileName": "src/main/java/org/zstack/monitoring/prometheus/PrometheusVmCpuUtilItem.java"
+  },
+  {
+    "raw": "invalid direction[%s], only %s are allowed",
+    "en_US": "invalid direction[{0}], only {1} are allowed",
+    "zh_CN": "无效direction[{0}]，只有{1}被允许",
+    "arguments": [
+      "dir",
+      "ALLOWED_DIRECTION"
+    ],
+    "line": 24,
     "fileName": "src/main/java/org/zstack/monitoring/prometheus/PrometheusVmDiskIOItem.java"
   },
   {
@@ -7485,6 +7537,14 @@
     "zh_CN": "内存使用率",
     "arguments": [],
     "line": 77,
+    "fileName": "src/main/java/org/zstack/monitoring/prometheus/PrometheusVmMemUtilAlertWriter.java"
+  },
+  {
+    "raw": "Virtual Machine",
+    "en_US": "Virtual Machine",
+    "zh_CN": "虚拟机器",
+    "arguments": [],
+    "line": 70,
     "fileName": "src/main/java/org/zstack/monitoring/prometheus/PrometheusVmMemUtilAlertWriter.java"
   },
   {
@@ -7532,35 +7592,6 @@
     "arguments": [],
     "line": 89,
     "fileName": "src/main/java/org/zstack/monitoring/prometheus/PrometheusVmNetworkIOAlertWriter.java"
-  },
-  {
-    "raw": "Virtual Machine",
-    "en_US": "Virtual Machine",
-    "zh_CN": "虚拟机器",
-    "arguments": [],
-    "line": 77,
-    "fileName": "src/main/java/org/zstack/monitoring/prometheus/PrometheusVmNetworkIOAlertWriter.java"
-  },
-  {
-    "raw": "invalid right value[%s], it must be a number(int, long, float, double)",
-    "en_US": "invalid right value[{0}], it must be a number(int, long, float, double)",
-    "zh_CN": "无效参数值[{0}]，他应该是一个数字(int, long, float, double)",
-    "arguments": [
-      "expression.getConstant()"
-    ],
-    "line": 22,
-    "fileName": "src/main/java/org/zstack/monitoring/prometheus/PrometheusVmNetworkIOItem.java"
-  },
-  {
-    "raw": "invalid direction[%s], only %s are allowed",
-    "en_US": "invalid direction[{0}], only {1} are allowed",
-    "zh_CN": "无效direction[{0}]，只有{1}被允许",
-    "arguments": [
-      "dir",
-      "ALLOWED_DIRECTION"
-    ],
-    "line": 18,
-    "fileName": "src/main/java/org/zstack/monitoring/prometheus/PrometheusVmNetworkIOItem.java"
   },
   {
     "raw": "invalid expression: %s, %s",
@@ -8400,6 +8431,17 @@
     "fileName": "src/main/java/org/zstack/network/service/NetworkServiceManagerImpl.java"
   },
   {
+    "raw": "guest l3Network of vm nic[uuid:%s] and vip l3Network of vip[uuid: %s] are the same network",
+    "en_US": "guest l3Network of vm nic[uuid:{0}] and vip l3Network of vip[uuid: {1}] are the same network",
+    "zh_CN": "虚拟机网卡[uuid:{0}]的客户L3网络和虚拟IP[uuid:{1}]的虚拟IP L3网络是同一个网络",
+    "arguments": [
+      "msg.getVmNicUuid()",
+      "msg.getVipUuid()"
+    ],
+    "line": 197,
+    "fileName": "src/main/java/org/zstack/network/service/eip/EipApiInterceptor.java"
+  },
+  {
     "raw": "either eipUuid or vipUuid must be set",
     "en_US": "either eipUuid or vipUuid must be set",
     "zh_CN": "eipUuid或vipUuid必须有一个被指定",
@@ -8631,8 +8673,19 @@
     "arguments": [
       "struct.getHostUuid()"
     ],
-    "line": 357,
+    "line": 359,
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatUserdataBackend.java"
+  },
+  {
+    "raw": "the vip[uuid:%s] has been occupied other network service entity[%s]",
+    "en_US": "the vip[uuid:{0}] has been occupied other network service entity[{1}]",
+    "zh_CN": "虚拟IP[uuid:{0}]已经被其他网络服务占用",
+    "arguments": [
+      "msg.getVipUuid()",
+      "useForList.toString()"
+    ],
+    "line": 111,
+    "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
     "raw": "L3 networks[uuids:%s] of the vm nics has no network service[%s] enabled",
@@ -8642,7 +8695,7 @@
       "l3Uuids",
       "LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING"
     ],
-    "line": 134,
+    "line": 133,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -8653,7 +8706,7 @@
       "existingNics",
       "msg.getListenerUuid()"
     ],
-    "line": 144,
+    "line": 143,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -8664,18 +8717,7 @@
       "msg.getLoadBalancerPort()",
       "luuid"
     ],
-    "line": 242,
-    "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
-  },
-  {
-    "raw": "conflict loadBalancerPort[%s], a vip[uuid:%s] has used that port",
-    "en_US": "conflict loadBalancerPort[{0}], a vip[uuid:{1}] has used that port",
-    "zh_CN": "负载均衡端口[{0}]冲突，虚拟IP[uuid:{1}]已经占用这个端口",
-    "arguments": [
-      "msg.getLoadBalancerPort()",
-      "TargetVipUuids"
-    ],
-    "line": 261,
+    "line": 256,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -8685,7 +8727,7 @@
     "arguments": [
       "vo.getProtocol()"
     ],
-    "line": 290,
+    "line": 283,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -8696,7 +8738,7 @@
       "msg.getCertificateUuid()",
       "msg.getListenerUuid()"
     ],
-    "line": 294,
+    "line": 287,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -8707,7 +8749,7 @@
       "msg.getCertificateUuid()",
       "msg.getListenerUuid()"
     ],
-    "line": 304,
+    "line": 297,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -8717,7 +8759,7 @@
     "arguments": [
       "msg.getVmNicUuids().get(0)"
     ],
-    "line": 1004,
+    "line": 1006,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerBase.java"
   },
   {
@@ -8730,7 +8772,7 @@
       "msg.getVmNicUuids().get(0)",
       "providerType"
     ],
-    "line": 1031,
+    "line": 1033,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerBase.java"
   },
   {
@@ -8873,28 +8915,6 @@
     ],
     "line": 507,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerManagerImpl.java"
-  },
-  {
-    "raw": "guest l3Network of vm nic[uuid:%s] and vip l3Network of vip[uuid: %s] are the same network",
-    "en_US": "guest l3Network of vm nic[uuid:{0}] and vip l3Network of vip[uuid: {1}] are the same network",
-    "zh_CN": "虚拟机网卡[uuid:{0}]的客户L3网络和虚拟IP[uuid:{1}]的虚拟IP L3网络是同一个网络",
-    "arguments": [
-      "msg.getVmNicUuid()",
-      "msg.getVipUuid()"
-    ],
-    "line": 208,
-    "fileName": "src/main/java/org/zstack/network/service/portforwarding/PortForwardingApiInterceptor.java"
-  },
-  {
-    "raw": "the vip[uuid:%s] has been occupied other network service entity[%s]",
-    "en_US": "the vip[uuid:{0}] has been occupied other network service entity[{1}]",
-    "zh_CN": "虚拟IP[uuid:{0}]已经被其他网络服务占用",
-    "arguments": [
-      "msg.getVipUuid()",
-      "useForList.toString()"
-    ],
-    "line": 183,
-    "fileName": "src/main/java/org/zstack/network/service/portforwarding/PortForwardingApiInterceptor.java"
   },
   {
     "raw": "Port forwarding rule[uuid:%s] is not in state of Enabled, current state is %s",
@@ -9315,7 +9335,7 @@
     "arguments": [
       "msg.getL3NetworkUuid()"
     ],
-    "line": 1075,
+    "line": 1093,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterManagerImpl.java"
   },
   {
@@ -9325,7 +9345,7 @@
     "arguments": [
       "msg.getL3NetworkUuid()"
     ],
-    "line": 1079,
+    "line": 1097,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterManagerImpl.java"
   },
   {
@@ -9335,7 +9355,7 @@
     "arguments": [
       "toDeleteNics.stream().map( n -\u003e n.getUuid()).collect(Collectors.toList())"
     ],
-    "line": 1483,
+    "line": 1501,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterManagerImpl.java"
   },
   {
@@ -9481,6 +9501,19 @@
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/lb/VirtualRouterLoadBalancerBackend.java"
   },
   {
+    "raw": "virtual router[name: %s, uuid: %s] failed to sync snat%s, %s",
+    "en_US": "virtual router[name: {0}, uuid: {1}] failed to sync snat{2}, {3}",
+    "zh_CN": "云路由[name: {0}, uuid: {1}]未能同步SNAT{2}，错误细节: {3}",
+    "arguments": [
+      "vr.getName()",
+      "vr.getUuid()",
+      "JSONObjectUtil.toJsonString(snatInfo)",
+      "ret.getError()"
+    ],
+    "line": 343,
+    "fileName": "src/main/java/org/zstack/network/service/virtualrouter/nat/VirtualRouterSnatBackend.java"
+  },
+  {
     "raw": "guest l3Network[uuid:%s, name:%s] needs SNAT service provided by virtual router, but public l3Network[uuid:%s] of virtual router offering[uuid: %s, name:%s] is the same to this guest l3Network",
     "en_US": "guest l3Network[uuid:{0}, name:{1}] needs SNAT service provided by virtual router, but public l3Network[uuid:{2}] of virtual router offering[uuid: {3}, name:{4}] is the same to this guest l3Network",
     "zh_CN": "用户L3网络[uuid:{0}, name:{1}]需要云路由提供的SNAT服务，但是云路由规格[uuid: {3}, name:{4}]的公共L3网络[uuid:{2}]与该客户L3网络相同",
@@ -9510,19 +9543,6 @@
     ],
     "line": 134,
     "fileName": "src/main/java/org/zstack/network/service/virtualrouter/nat/VirtualRouterSnatBackend.java"
-  },
-  {
-    "raw": "virtual router[name: %s, uuid: %s] failed to sync snat%s, %s",
-    "en_US": "virtual router[name: {0}, uuid: {1}] failed to sync snat{2}, {3}",
-    "zh_CN": "云路由[name: {0}, uuid: {1}]未能同步SNAT{2}，错误细节: {3}",
-    "arguments": [
-      "vr.getName()",
-      "vr.getUuid()",
-      "JSONObjectUtil.toJsonString(snatInfo)",
-      "ret.getError()"
-    ],
-    "line": 105,
-    "fileName": "src/main/java/org/zstack/network/service/virtualrouter/nat/VirtualRouterSyncSNATOnStartFlow.java"
   },
   {
     "raw": "failed to create port forwarding rule[vip ip: %s, private ip: %s, vip start port: %s, vip end port: %s, private start port: %s, private end port: %s], because %s",
@@ -9784,7 +9804,7 @@
       "msg.getPciDeviceUuid()",
       "msg.getVmInstanceUuid()"
     ],
-    "line": 438,
+    "line": 441,
     "fileName": "src/main/java/org/zstack/pciDevice/PciDeviceManager.java"
   },
   {
@@ -9794,7 +9814,7 @@
     "arguments": [
       "msg.getVmInstanceUuid()"
     ],
-    "line": 670,
+    "line": 673,
     "fileName": "src/main/java/org/zstack/pciDevice/PciDeviceManager.java"
   },
   {
@@ -9804,7 +9824,7 @@
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 701,
+    "line": 704,
     "fileName": "src/main/java/org/zstack/pciDevice/PciDeviceManager.java"
   },
   {
@@ -9815,7 +9835,7 @@
       "tokens.get(PciDeviceSystemTags.PCI_DEVICE_TOKEN)",
       "spec.getVmInventory().getUuid()"
     ],
-    "line": 741,
+    "line": 744,
     "fileName": "src/main/java/org/zstack/pciDevice/PciDeviceManager.java"
   },
   {
@@ -9855,11 +9875,11 @@
     "en_US": "Incorrect {0} settings, valid value is {1}",
     "zh_CN": "不正确的设置{0}，有效的值是{1}",
     "arguments": [
-      "HostAllocatorSystemTags.MINIMUM_MEMORY_USAGE_HOST_ALLOCATOR_STRATEGY_MODE_TOKEN",
+      "HostAllocatorSystemTags.MINIMUM_CPU_USAGE_HOST_ALLOCATOR_STRATEGY_MODE_TOKEN",
       "modes"
     ],
-    "line": 58,
-    "fileName": "src/main/java/org/zstack/pluginpremium/compute/allocator/MinimumMemoryUsageHostAllocatorStrategyFactory.java"
+    "line": 57,
+    "fileName": "src/main/java/org/zstack/pluginpremium/compute/allocator/MinimumCPUUsageHostAllocatorStrategyFactory.java"
   },
   {
     "raw": "resourceUuid[%s] is not a valid uuid. A valid uuid is a UUID(v4 recommended) with \u0027-\u0027 stripped. see http://en.wikipedia.org/wiki/Universally_unique_identifier for format of UUID, the regular expression ZStack uses to validate a UUID is \u0027[0-9a-f]{8}[0-9a-f]{4}[1-5][0-9a-f]{3}[89ab][0-9a-f]{3}[0-9a-f]{12}\u0027",
@@ -9870,6 +9890,14 @@
     ],
     "line": 241,
     "fileName": "src/main/java/org/zstack/portal/apimediator/ApiMediatorImpl.java"
+  },
+  {
+    "raw": "failed to HTTP call all prometheus instances",
+    "en_US": "failed to HTTP call all prometheus instances",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 116,
+    "fileName": "src/main/java/org/zstack/premium/externalservice/prometheus/MultiNodePrometheus.java"
   },
   {
     "raw": "condition name[%s] is invalid, no such field on inventory class[%s]",
@@ -10046,7 +10074,7 @@
   {
     "raw": "invalid cron expression",
     "en_US": "invalid cron expression",
-    "zh_CN": "",
+    "zh_CN": "无效的cron表达式",
     "arguments": [],
     "line": 154,
     "fileName": "src/main/java/org/zstack/scheduler/SchedulerApiInterceptor.java"
@@ -10070,7 +10098,7 @@
   {
     "raw": "snapshotMaxNumber : %s format error because %s",
     "en_US": "snapshotMaxNumber : {0} format error because {1}",
-    "zh_CN": "",
+    "zh_CN": "snapshotMaxNumber : {0} 转换类型失败，因为{1}",
     "arguments": [
       "msg.getParameters().get(SchedulerJobParameters.snapshotMax)",
       "e.getMessage()"
@@ -10085,7 +10113,7 @@
     "arguments": [
       "vm.getUuid()"
     ],
-    "line": 1042,
+    "line": 1014,
     "fileName": "src/main/java/org/zstack/scheduler/SchedulerFacadeImpl.java"
   },
   {
@@ -10095,7 +10123,7 @@
     "arguments": [
       "vm.getUuid()"
     ],
-    "line": 1035,
+    "line": 1007,
     "fileName": "src/main/java/org/zstack/scheduler/SchedulerFacadeImpl.java"
   },
   {
@@ -10273,25 +10301,6 @@
     "fileName": "src/main/java/org/zstack/sns/platform/email/SNSEmailApplicationPlatform.java"
   },
   {
-    "raw": "The problem may be caused by an incorrect user name or password or email permission denied",
-    "en_US": "The problem may be caused by an incorrect user name or password or email permission denied",
-    "zh_CN": "导致操作失败的原因可能是不正确的用户名、密码或邮件访问权限不足",
-    "arguments": [],
-    "line": 55,
-    "fileName": "src/main/java/org/zstack/sns/platform/email/SNSEmailPlatformFactory.java"
-  },
-  {
-    "raw": "Couldn\u0027t connect to host, port: %s, %d. The problem may be caused by an incorrect smtpServer or smtpPort",
-    "en_US": "Couldn\u0027t connect to host, port: {0}, {1}. The problem may be caused by an incorrect smtpServer or smtpPort",
-    "zh_CN": "连接{0}:{1}超时，导致原因可能是不正确的邮件服务器和邮件服务器端口",
-    "arguments": [
-      "smtpServer",
-      "smtpPort"
-    ],
-    "line": 57,
-    "fileName": "src/main/java/org/zstack/sns/platform/email/SNSEmailPlatformFactory.java"
-  },
-  {
     "raw": "HTTP POST failure. status: %s, body: %s",
     "en_US": "HTTP POST failure. status: {0}, body: {1}",
     "zh_CN": "HTTP POST失败，状态码: {0}, body: {1}",
@@ -10300,7 +10309,7 @@
       "rsp.getBody()"
     ],
     "line": 61,
-    "fileName": "src/main/java/org/zstack/sns/platform/system/SNSSystemHttpEndpoint.java"
+    "fileName": "src/main/java/org/zstack/sns/platform/http/SNSHttpEndpoint.java"
   },
   {
     "raw": "only HTTP endpoint can subscribe API topic, the endpoint[type:%s] is not a HTTP endpoint",
@@ -10449,129 +10458,173 @@
   {
     "raw": "missing job parameters",
     "en_US": "missing job parameters",
-    "zh_CN": "",
-    "arguments": [],
-    "line": 65,
-    "fileName": "src/main/java/org/zstack/storage/backup/CreateVolumeBackupJob.java"
-  },
-  {
-    "raw": "missing \u0027retentionType\u0027 in job parameters",
-    "en_US": "missing \u0027retentionType\u0027 in job parameters",
-    "zh_CN": "",
-    "arguments": [],
-    "line": 72,
-    "fileName": "src/main/java/org/zstack/storage/backup/CreateVolumeBackupJob.java"
-  },
-  {
-    "raw": "missing \u0027retentionValue\u0027 in job parameters",
-    "en_US": "missing \u0027retentionValue\u0027 in job parameters",
-    "zh_CN": "",
+    "zh_CN": "缺少parameters参数",
     "arguments": [],
     "line": 77,
     "fileName": "src/main/java/org/zstack/storage/backup/CreateVolumeBackupJob.java"
   },
   {
-    "raw": "missing \u0027backupStorageUuids\u0027 in job parameters",
-    "en_US": "missing \u0027backupStorageUuids\u0027 in job parameters",
-    "zh_CN": "",
+    "raw": "missing \u0027retentionType\u0027 in job parameters",
+    "en_US": "missing \u0027retentionType\u0027 in job parameters",
+    "zh_CN": "parameters中缺少retentionType参数",
     "arguments": [],
     "line": 84,
     "fileName": "src/main/java/org/zstack/storage/backup/CreateVolumeBackupJob.java"
   },
   {
+    "raw": "missing \u0027retentionValue\u0027 in job parameters",
+    "en_US": "missing \u0027retentionValue\u0027 in job parameters",
+    "zh_CN": "parameter中缺少retentionValue参数",
+    "arguments": [],
+    "line": 89,
+    "fileName": "src/main/java/org/zstack/storage/backup/CreateVolumeBackupJob.java"
+  },
+  {
+    "raw": "missing \u0027backupStorageUuids\u0027 in job parameters",
+    "en_US": "missing \u0027backupStorageUuids\u0027 in job parameters",
+    "zh_CN": "parameter中缺少backupStorageUuids参数",
+    "arguments": [],
+    "line": 96,
+    "fileName": "src/main/java/org/zstack/storage/backup/CreateVolumeBackupJob.java"
+  },
+  {
     "raw": "job parameter \u0027backupStorageUuids\u0027 is empty",
     "en_US": "job parameter \u0027backupStorageUuids\u0027 is empty",
-    "zh_CN": "",
+    "zh_CN": "parameter中backupStorageUuids为空",
     "arguments": [],
-    "line": 92,
+    "line": 104,
     "fileName": "src/main/java/org/zstack/storage/backup/CreateVolumeBackupJob.java"
   },
   {
     "raw": "unexpected backup storage uuid: %s",
     "en_US": "unexpected backup storage uuid: {0}",
-    "zh_CN": "",
+    "zh_CN": "错误的镜像服务器uuid: {0}",
     "arguments": [
       "bsUuid"
     ],
-    "line": 97,
+    "line": 109,
     "fileName": "src/main/java/org/zstack/storage/backup/CreateVolumeBackupJob.java"
   },
   {
     "raw": "current backup storage state[%s] doesn\u0027t allow to proceed message[%s], allowed states are %s",
     "en_US": "current backup storage state[{0}] doesn\u0027t allow to proceed message[{1}], allowed states are {2}",
-    "zh_CN": "",
+    "zh_CN": "当前镜像服务器状态[{0}]不能处理消息[{1}]，仅当镜像服务器处于{2}时才能处理该消息",
     "arguments": [
       "currentState",
       "msg.getMessageName()",
       "checker.getStatesForOperation(msg.getMessageName())"
     ],
-    "line": 48,
+    "line": 52,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
     "raw": "Unexpected backup storage[type:%s,uuid:%s]",
     "en_US": "Unexpected backup storage[type:{0},uuid:{1}]",
-    "zh_CN": "",
+    "zh_CN": "错误的镜像服务器[type:{0}, uuid:{1}]",
     "arguments": [
       "bsType",
       "msg.getBackupStorageUuid()"
     ],
-    "line": 121,
+    "line": 125,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
-    "raw": "volume backup[uuid:%s] is in state %s, cannot revert volume to it",
-    "en_US": "volume backup[uuid:{0}] is in state {1}, cannot revert volume to it",
-    "zh_CN": "",
+    "raw": "Can not create volume backup for shareable volume[uuid:%s]",
+    "en_US": "Can not create volume backup for shareable volume[uuid:{0}]",
+    "zh_CN": "无法给共享云盘[uuid:{0}]创建云盘备份",
     "arguments": [
-      "msg.getUuid()",
-      "state"
+      "msg.getVolumeUuid()"
     ],
     "line": 139,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
-    "raw": "original volume for backup[uuid:%s] has been deleted, cannot revert volume to it",
-    "en_US": "original volume for backup[uuid:{0}] has been deleted, cannot revert volume to it",
-    "zh_CN": "",
+    "raw": "Failed to create volume backup for volume[uuid:%s], because it is not attached to any vm",
+    "en_US": "Failed to create volume backup for volume[uuid:{0}], because it is not attached to any vm",
+    "zh_CN": "无法给云盘[uuid:{0}]创建云盘备份，因为它未加载到虚拟机上",
     "arguments": [
-      "msg.getUuid()"
+      "msg.getVolumeUuid()"
     ],
-    "line": 144,
+    "line": 143,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
-    "raw": "VM not found with volume backup[uuid:%s]",
-    "en_US": "VM not found with volume backup[uuid:{0}]",
-    "zh_CN": "",
+    "raw": "Failed to create volume backup for volume[uuid:%s], because its attached volume is not in state[%s, %s]",
+    "en_US": "Failed to create volume backup for volume[uuid:{0}], because its attached volume is not in state[{1}, {2}]",
+    "zh_CN": "无法给云盘[uuid:{0}]创建云盘备份，因为加载到的虚拟机并不处于以下状态[{1}, {2}]",
     "arguments": [
-      "msg.getUuid()"
+      "msg.getVolumeUuid()",
+      "VmInstanceState.Running.toString()",
+      "VmInstanceState.Paused.toString()"
     ],
     "line": 152,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
+    "raw": "Failed to create volume backup for volume[uuid:%s], because the vm is not in state[%s, %s]",
+    "en_US": "Failed to create volume backup for volume[uuid:{0}], because the vm is not in state[{1}, {2}]",
+    "zh_CN": "无法给云盘[uuid:{0}]创建云盘备份，因为加载到的虚拟机并不处于以下状态[{1}, {2}]",
+    "arguments": [
+      "msg.getVolumeUuid()",
+      "VmInstanceState.Running.toString()",
+      "VmInstanceState.Paused.toString()"
+    ],
+    "line": 149,
+    "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
+  },
+  {
+    "raw": "volume backup[uuid:%s] is in state %s, cannot revert volume to it",
+    "en_US": "volume backup[uuid:{0}] is in state {1}, cannot revert volume to it",
+    "zh_CN": "云盘备份[uuid:{0}]处于{1}状态，无法用于恢复云盘",
+    "arguments": [
+      "msg.getUuid()",
+      "state"
+    ],
+    "line": 165,
+    "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
+  },
+  {
+    "raw": "original volume for backup[uuid:%s] has been deleted, cannot revert volume to it",
+    "en_US": "original volume for backup[uuid:{0}] has been deleted, cannot revert volume to it",
+    "zh_CN": "云盘备份[uuid:{0}]已经被删除，无法用于恢复云盘",
+    "arguments": [
+      "msg.getUuid()"
+    ],
+    "line": 170,
+    "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
+  },
+  {
+    "raw": "VM not found with volume backup[uuid:%s]",
+    "en_US": "VM not found with volume backup[uuid:{0}]",
+    "zh_CN": "找不到和云盘备份[uuid:{0}]对应的虚拟机",
+    "arguments": [
+      "msg.getUuid()"
+    ],
+    "line": 178,
+    "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
+  },
+  {
     "raw": "VM is not in stopped state: %s",
     "en_US": "VM is not in stopped state: {0}",
-    "zh_CN": "",
+    "zh_CN": "当前虚拟机状态并不是停止状态：{0}",
     "arguments": [
       "vmState"
     ],
-    "line": 156,
+    "line": 182,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
     "raw": "No available backup storage found",
     "en_US": "No available backup storage found",
-    "zh_CN": "",
+    "zh_CN": "没有可用的镜像服务器",
     "arguments": [],
-    "line": 170,
+    "line": 196,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
     "raw": "%s",
     "en_US": "{0}",
-    "zh_CN": "",
+    "zh_CN": "{0}",
     "arguments": [
       "rsp.getError()"
     ],
@@ -10581,7 +10634,7 @@
   {
     "raw": "Operation not supported on shared volume",
     "en_US": "Operation not supported on shared volume",
-    "zh_CN": "",
+    "zh_CN": "共享云盘不支持该操作",
     "arguments": [],
     "line": 107,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupKvmBackend.java"
@@ -10589,7 +10642,7 @@
   {
     "raw": "No VM found for volume[uuid:%s]",
     "en_US": "No VM found for volume[uuid:{0}]",
-    "zh_CN": "",
+    "zh_CN": "找不到和云盘[uuid:{0}]对应的虚拟机",
     "arguments": [
       "volumeUuid"
     ],
@@ -10607,56 +10660,89 @@
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
+    "raw": "One of the backup storage[uuid: %s] is in the state of %s, can not do sync operation",
+    "en_US": "One of the backup storage[uuid: {0}] is in the state of {1}, can not do sync operation",
+    "zh_CN": "镜像服务器[uuid: {0}]处于状态{1}, 无法执行同步操作",
+    "arguments": [
+      "msg.getBackupStorageUuid()",
+      "BackupStorageState.Disabled.toString()"
+    ],
+    "line": 189,
+    "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
+  },
+  {
     "raw": "Volume backup[uuid:%s] not found on backup storage[uuid:%s]",
     "en_US": "Volume backup[uuid:{0}] not found on backup storage[uuid:{1}]",
-    "zh_CN": "",
+    "zh_CN": "在镜像服务器[uuid:{1}]上找不到云盘备份[uuid:{0}]",
     "arguments": [
       "cmsg.getBackupUuid()",
       "cmsg.getBackupStorageUuid()"
     ],
-    "line": 290,
+    "line": 299,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
     "raw": "sync task failed.",
     "en_US": "sync task failed.",
-    "zh_CN": "",
+    "zh_CN": "同步失败",
     "arguments": [],
-    "line": 493,
+    "line": 502,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
     "raw": "unexpected task status: %s",
     "en_US": "unexpected task status: {0}",
-    "zh_CN": "",
+    "zh_CN": "错误的任务状态{0}",
     "arguments": [
       "reply.getStatus()"
     ],
-    "line": 500,
+    "line": 509,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
     "raw": "volume backup[uuid:%s] not found in backup storage[uuid:%s]",
     "en_US": "volume backup[uuid:{0}] not found in backup storage[uuid:{1}]",
-    "zh_CN": "",
+    "zh_CN": "在镜像服务器[uuid:{1}]上找不到云盘备份[uuid:{0}]",
     "arguments": [
       "msg.getUuid()",
       "msg.getSrcBackupStorageUuid()"
     ],
-    "line": 659,
+    "line": 669,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
     "raw": "One of the backup storage[uuids: %s, %s] is in the state of %s, can not do sync operation",
     "en_US": "One of the backup storage[uuids: {0}, {1}] is in the state of {2}, can not do sync operation",
-    "zh_CN": "",
+    "zh_CN": "镜像服务器[uuid: {0}]处于状态{1}, 无法执行同步操作",
     "arguments": [
       "msg.getDstBackupStorageUuid()",
       "msg.getSrcBackupStorageUuid()",
       "BackupStorageState.Disabled.toString()"
     ],
-    "line": 763,
+    "line": 774,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
+  },
+  {
+    "raw": "unable to allocate backup storage specified by uuids: %s, becasue: %s",
+    "en_US": "unable to allocate backup storage specified by uuids: {0}, becasue: {1}",
+    "zh_CN": "不能给uuid列表{0}分配镜像服务器，因为{1}",
+    "arguments": [
+      "String.join(\",\", msg.getBackupStorageUuids())",
+      "errorCodes.get(0).getDetails()"
+    ],
+    "line": 254,
+    "fileName": "src/main/java/org/zstack/storage/backup/imagestore/CommitVolumeAsImageFlowChain.java"
+  },
+  {
+    "raw": "unable to commit backup storage specified by uuids: %s, becasue: %s",
+    "en_US": "unable to commit backup storage specified by uuids: {0}, becasue: {1}",
+    "zh_CN": "无法向镜像服务器[uuids:{0}]提交数据，因为: {1}",
+    "arguments": [
+      "String.join(\",\", msg.getBackupStorageUuids())",
+      "errorCodes.get(0).getDetails()"
+    ],
+    "line": 437,
+    "fileName": "src/main/java/org/zstack/storage/backup/imagestore/CommitVolumeAsImageFlowChain.java"
   },
   {
     "raw": "unable to connect to SimpleHttpBackupStorage[url:%s], because %s",
@@ -10676,7 +10762,7 @@
     "arguments": [
       "iinv.getName()"
     ],
-    "line": 288,
+    "line": 292,
     "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorage.java"
   },
   {
@@ -10684,7 +10770,7 @@
     "en_US": "No response",
     "zh_CN": "无响应",
     "arguments": [],
-    "line": 527,
+    "line": 531,
     "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorage.java"
   },
   {
@@ -10694,7 +10780,7 @@
     "arguments": [
       "ret.getError()"
     ],
-    "line": 572,
+    "line": 577,
     "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorage.java"
   },
   {
@@ -10702,7 +10788,7 @@
     "en_US": "image store [{0}] cannot add image, because it is used for backup remote",
     "zh_CN": "ImageStore[{0}]不能添加镜像，因为它已经被远程镜像使用",
     "arguments": [],
-    "line": 855,
+    "line": 860,
     "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorage.java"
   },
   {
@@ -10710,7 +10796,7 @@
     "en_US": "commercial license is required to use ImageStore",
     "zh_CN": "使用ImageStore需要商业许可证",
     "arguments": [],
-    "line": 1028,
+    "line": 1033,
     "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorage.java"
   },
   {
@@ -10721,7 +10807,7 @@
       "self.getUuid()",
       "ret.getUuid()"
     ],
-    "line": 1061,
+    "line": 1066,
     "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorage.java"
   },
   {
@@ -10823,6 +10909,17 @@
     "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorageFactory.java"
   },
   {
+    "raw": "create tmp file [%s] failed, due to: %s",
+    "en_US": "create tmp file [{0}] failed, due to: {1}",
+    "zh_CN": "创建tmp文件[{0}]失败，因为{1}",
+    "arguments": [
+      "tmpHostFile",
+      "result.getStderr()"
+    ],
+    "line": 84,
+    "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorageFactory.java"
+  },
+  {
     "raw": "ansible mkdir failed, due to: %s",
     "en_US": "ansible mkdir failed, due to: {0}",
     "zh_CN": "Ansible创建目录失败，因为{0}",
@@ -10853,17 +10950,6 @@
     "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorageFactory.java"
   },
   {
-    "raw": "create tmp file [%s] failed, due to: %s",
-    "en_US": "create tmp file [{0}] failed, due to: {1}",
-    "zh_CN": "创建tmp文件[{0}]失败，因为{1}",
-    "arguments": [
-      "tmpHostFile",
-      "result.getStderr()"
-    ],
-    "line": 347,
-    "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorageManagerImpl.java"
-  },
-  {
     "raw": "sync status failed.",
     "en_US": "sync status failed.",
     "zh_CN": "同步失败",
@@ -10878,7 +10964,7 @@
     "arguments": [
       "rsp.getError()"
     ],
-    "line": 699,
+    "line": 701,
     "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorageMetaDataMaker.java"
   },
   {
@@ -10888,7 +10974,7 @@
     "arguments": [
       "bsUuid"
     ],
-    "line": 301,
+    "line": 303,
     "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorageMetaDataMaker.java"
   },
   {
@@ -10898,7 +10984,7 @@
     "arguments": [
       "rsp.getBackupStorageMetaFileName()"
     ],
-    "line": 628,
+    "line": 630,
     "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorageMetaDataMaker.java"
   },
   {
@@ -10908,7 +10994,7 @@
     "arguments": [
       "rsp.getBackupStorageMetaFileName()"
     ],
-    "line": 479,
+    "line": 481,
     "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorageMetaDataMaker.java"
   },
   {
@@ -10918,7 +11004,7 @@
     "arguments": [
       "rsp.getBackupStorageMetaFileName()"
     ],
-    "line": 454,
+    "line": 456,
     "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorageMetaDataMaker.java"
   },
   {
@@ -10980,7 +11066,7 @@
     "arguments": [
       "rsp.getBackupStorageMetaFileName()"
     ],
-    "line": 470,
+    "line": 472,
     "fileName": "src/main/java/org/zstack/storage/backup/sftp/SftpBackupStorageMetaDataMaker.java"
   },
   {
@@ -10990,7 +11076,7 @@
     "arguments": [
       "rsp.getBackupStorageMetaFileName()"
     ],
-    "line": 331,
+    "line": 333,
     "fileName": "src/main/java/org/zstack/storage/backup/sftp/SftpBackupStorageMetaDataMaker.java"
   },
   {
@@ -11000,7 +11086,7 @@
     "arguments": [
       "rsp.getBackupStorageMetaFileName()"
     ],
-    "line": 475,
+    "line": 477,
     "fileName": "src/main/java/org/zstack/storage/backup/sftp/SftpBackupStorageMetaDataMaker.java"
   },
   {
@@ -11140,7 +11226,7 @@
       "self.getUuid()",
       "JSONObjectUtil.toJsonString(errorCodes)"
     ],
-    "line": 1097,
+    "line": 1107,
     "fileName": "src/main/java/org/zstack/storage/ceph/backup/CephBackupStorageBase.java"
   },
   {
@@ -11152,7 +11238,7 @@
       "otherCeph.getUuid()",
       "fsId"
     ],
-    "line": 1218,
+    "line": 1228,
     "fileName": "src/main/java/org/zstack/storage/ceph/backup/CephBackupStorageBase.java"
   },
   {
@@ -11160,7 +11246,7 @@
     "en_US": "unable to add mon to ceph backup storage",
     "zh_CN": "在ceph镜像服务器上添加监控节点失败",
     "arguments": [],
-    "line": 1631,
+    "line": 1641,
     "fileName": "src/main/java/org/zstack/storage/ceph/backup/CephBackupStorageBase.java"
   },
   {
@@ -11351,6 +11437,60 @@
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageMonBase.java"
   },
   {
+    "raw": "iSCSI server[ip: %s, port: %s] already exists",
+    "en_US": "iSCSI server[ip: {0}, port: {1}] already exists",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getIp()",
+      "msg.getPort()"
+    ],
+    "line": 48,
+    "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceApiInterceptor.java"
+  },
+  {
+    "raw": "iSCSI server ip: %s is not valid",
+    "en_US": "iSCSI server ip: {0} is not valid",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getIp()"
+    ],
+    "line": 53,
+    "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceApiInterceptor.java"
+  },
+  {
+    "raw": "iSCSI server[uuid: %s] already attached to cluster[uuid: %s]",
+    "en_US": "iSCSI server[uuid: {0}] already attached to cluster[uuid: {1}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getUuid()",
+      "msg.getClusterUuid()"
+    ],
+    "line": 62,
+    "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceApiInterceptor.java"
+  },
+  {
+    "raw": "iSCSI server[uuid: %s] not attached to cluster[uuid: %s]",
+    "en_US": "iSCSI server[uuid: {0}] not attached to cluster[uuid: {1}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getUuid()",
+      "msg.getClusterUuid()"
+    ],
+    "line": 72,
+    "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceApiInterceptor.java"
+  },
+  {
+    "raw": "iSCSI server[uuid: %s] still attached to cluster[uuid: %s]",
+    "en_US": "iSCSI server[uuid: {0}] still attached to cluster[uuid: {1}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getUuid()",
+      "clusterUuid"
+    ],
+    "line": 83,
+    "fileName": "src/main/java/org/zstack/storage/device/StorageDeviceApiInterceptor.java"
+  },
+  {
     "raw": "fusionstor primary storage[uuid:%s] may have been deleted.",
     "en_US": "fusionstor primary storage[uuid:{0}] may have been deleted.",
     "zh_CN": "Fusionstor主存储[uuid:{0}]可能已经被删除",
@@ -11373,7 +11513,7 @@
   {
     "raw": "do not support storage migration while shared volume[uuid: %s, name: %s] attached",
     "en_US": "do not support storage migration while shared volume[uuid: {0}, name: {1}] attached",
-    "zh_CN": "",
+    "zh_CN": "加载了共享云盘[uuid:{0}, name:{1}]不支持存储迁移",
     "arguments": [
       "volumeVO.getUuid()",
       "volumeVO.getName()"
@@ -11384,7 +11524,7 @@
   {
     "raw": "do not support live storage migration from [%s] to [%s]",
     "en_US": "do not support live storage migration from [{0}] to [{1}]",
-    "zh_CN": "",
+    "zh_CN": "不支持从[{0}]到[{1}]的在线存储迁移",
     "arguments": [
       "metric.getSourcePrimaryStorageType()",
       "metric.getDestinationPrimaryStorageType()"
@@ -11395,7 +11535,7 @@
   {
     "raw": "do not support offlive storage migration from [%s] to [%s]",
     "en_US": "do not support offlive storage migration from [{0}] to [{1}]",
-    "zh_CN": "",
+    "zh_CN": "不支持从[{0}]到[{1}]的离线存储迁移",
     "arguments": [
       "metric.getSourcePrimaryStorageType()",
       "metric.getDestinationPrimaryStorageType()"
@@ -11406,7 +11546,7 @@
   {
     "raw": "do not support storage migration from [%s] to [%s] with data volume",
     "en_US": "do not support storage migration from [{0}] to [{1}] with data volume",
-    "zh_CN": "",
+    "zh_CN": "不支持从[{0}]到[{1}]的带数据盘的存储迁移",
     "arguments": [
       "metric.getSourcePrimaryStorageType()",
       "metric.getDestinationPrimaryStorageType()"
@@ -11417,7 +11557,7 @@
   {
     "raw": "do not support storage migration from [%s] to [%s] with snapshot",
     "en_US": "do not support storage migration from [{0}] to [{1}] with snapshot",
-    "zh_CN": "",
+    "zh_CN": "不支持从[{0}]到[{1}]的存在云盘快照的存储迁移",
     "arguments": [
       "metric.getSourcePrimaryStorageType()",
       "metric.getDestinationPrimaryStorageType()"
@@ -11428,7 +11568,7 @@
   {
     "raw": "do not support storage migration from [%s] to [%s]",
     "en_US": "do not support storage migration from [{0}] to [{1}]",
-    "zh_CN": "",
+    "zh_CN": "不支持从[{0}]到[{1}]的存储迁移",
     "arguments": [
       "primaryStorageVO.getType()",
       "dstPrimaryStorageVO.getType()"
@@ -11489,7 +11629,7 @@
     "en_US": "Source PS and Destination PS must not be Disabled or Maintenance state.",
     "zh_CN": "源主存储和目标主存储必须不是不可用或者维护状态。",
     "arguments": [],
-    "line": 217,
+    "line": 216,
     "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationApiInterceptor.java"
   },
   {
@@ -11500,7 +11640,7 @@
       "msg.getVolumeUuid()",
       "msg.getDstPrimaryStorageUuid()"
     ],
-    "line": 224,
+    "line": 223,
     "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationApiInterceptor.java"
   },
   {
@@ -11510,7 +11650,7 @@
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 231,
+    "line": 230,
     "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationApiInterceptor.java"
   },
   {
@@ -11521,7 +11661,7 @@
       "msg.getVolumeUuid()",
       "srcVolume.getVmInstanceUuid()"
     ],
-    "line": 279,
+    "line": 278,
     "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationApiInterceptor.java"
   },
   {
@@ -11529,7 +11669,7 @@
     "en_US": "Cannot migrate root volume when vm instance is not stopped.",
     "zh_CN": "当虚拟机不是已停止，不能迁移根云盘。",
     "arguments": [],
-    "line": 242,
+    "line": 241,
     "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationApiInterceptor.java"
   },
   {
@@ -11537,7 +11677,7 @@
     "en_US": "Cannot migrate root volume when there are data volumes attached to the vm instance.",
     "zh_CN": "当数据云盘连接在虚拟机上时，不能迁移根云盘",
     "arguments": [],
-    "line": 253,
+    "line": 252,
     "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationApiInterceptor.java"
   },
   {
@@ -11545,7 +11685,7 @@
     "en_US": "The destination primary storage is not attached to any cluster that has the same L2 networks as source cluster.",
     "zh_CN": "目标主存储不能连接任何和源集群一样的二层网络的集群",
     "arguments": [],
-    "line": 272,
+    "line": 271,
     "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationApiInterceptor.java"
   },
   {
@@ -11556,13 +11696,13 @@
       "srcPS.getType()",
       "dstPS.getType()"
     ],
-    "line": 291,
+    "line": 290,
     "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationApiInterceptor.java"
   },
   {
     "raw": "not support vm state[%s] to do storage migration",
     "en_US": "not support vm state[{0}] to do storage migration",
-    "zh_CN": "",
+    "zh_CN": "虚拟机状态为[{0}],无法进行存储迁移",
     "arguments": [
       "vmInstanceVO.getState()"
     ],
@@ -11572,7 +11712,7 @@
   {
     "raw": "not support live storage migration yet, since vm state is [%s]",
     "en_US": "not support live storage migration yet, since vm state is [{0}]",
-    "zh_CN": "",
+    "zh_CN": "无法进行在线存储迁移，因为虚拟机状态为[{0}]",
     "arguments": [
       "liveStorageVmState"
     ],
@@ -11582,11 +11722,11 @@
   {
     "raw": "unsupported primary storage type[%s] for storage migration",
     "en_US": "unsupported primary storage type[{0}] for storage migration",
-    "zh_CN": "",
+    "zh_CN": "当前存储[类型:{0}]，不支持存储迁移",
     "arguments": [
       "srcPs.getType()"
     ],
-    "line": 656,
+    "line": 655,
     "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationBase.java"
   },
   {
@@ -11742,7 +11882,7 @@
       "self.getZoneUuid()",
       "self.getUuid()"
     ],
-    "line": 537,
+    "line": 538,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageBase.java"
   },
   {
@@ -11750,7 +11890,7 @@
     "en_US": "operation not supported",
     "zh_CN": "不支持的操作",
     "arguments": [],
-    "line": 640,
+    "line": 641,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageBase.java"
   },
   {
@@ -11760,7 +11900,7 @@
     "arguments": [
       "volumeUuid"
     ],
-    "line": 1151,
+    "line": 1152,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageBase.java"
   },
   {
@@ -11784,16 +11924,6 @@
     ],
     "line": 45,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageDeleteBitGC.java"
-  },
-  {
-    "raw": "the VM[uuid:%s] volume stored location primary storage is in a state of maintenance",
-    "en_US": "the VM[uuid:{0}] volume stored location primary storage is in a state of maintenance",
-    "zh_CN": "虚拟机[{0}]云盘所在主存储处于维护状态",
-    "arguments": [
-      "vmUuid"
-    ],
-    "line": 624,
-    "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageManagerImpl.java"
   },
   {
     "raw": "%s is invalid. %s is not a valid zstack uuid",
@@ -11823,7 +11953,7 @@
     "arguments": [
       "errs"
     ],
-    "line": 450,
+    "line": 453,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageManagerImpl.java"
   },
   {
@@ -11909,6 +12039,39 @@
     "fileName": "src/main/java/org/zstack/storage/primary/imagestore/ceph/CephPrimaryToImageStoreBackupStorageMediatorImpl.java"
   },
   {
+    "raw": "image [uuid:%s] has been deleted",
+    "en_US": "image [uuid:{0}] has been deleted",
+    "zh_CN": "镜像[uuid:{0}]已经被删除",
+    "arguments": [
+      "imageVO.getUuid()"
+    ],
+    "line": 152,
+    "fileName": "src/main/java/org/zstack/storage/primary/imagestore/fusionstor/FusionstorPrimaryStorageImageStoreBackend.java"
+  },
+  {
+    "raw": "System can\u0027t find imagestore backup Storage. Please do not set imagestore backup Storage server IP to localhost(127.*.*.*),",
+    "en_US": "System can\u0027t find imagestore backup Storage. Please do not set imagestore backup Storage server IP to localhost(127.*.*.*),",
+    "zh_CN": "系统找不到镜像仓库镜像服务器。请不要设置镜像服务器IP为localhost(127.*.*.*)",
+    "arguments": [],
+    "line": 208,
+    "fileName": "src/main/java/org/zstack/storage/primary/imagestore/local/LocalStorageKvmImageStoreBackupStorageMediatorImpl.java"
+  },
+  {
+    "raw": "%s failed to download bits from the imagestore backup storage[hostname:%s, path: %s] to the local primary storage[uuid:%s, path: %s], %s",
+    "en_US": "{0} failed to download bits from the imagestore backup storage[hostname:{1}, path: {2}] to the local primary storage[uuid:{3}, path: {4}], {5}",
+    "zh_CN": "{0}从镜像仓库镜像服务器[hostname:{1}, path: {2}]到本地主存储[uuid:{3}, path: {4}]下载失败，{5}",
+    "arguments": [
+      "operationSuggestion",
+      "greply.getHostname()",
+      "backupStorageInstallPath",
+      "pinv.getUuid()",
+      "primaryStorageInstallPath",
+      "rsp.getError()"
+    ],
+    "line": 211,
+    "fileName": "src/main/java/org/zstack/storage/primary/imagestore/local/LocalStorageKvmImageStoreBackupStorageMediatorImpl.java"
+  },
+  {
     "raw": "failed to upload bits from the local storage[uuid:%s, path:%s] to image store [hostname:%s], %s",
     "en_US": "failed to upload bits from the local storage[uuid:{0}, path:{1}] to image store [hostname:{2}], {3}",
     "zh_CN": "无法从本地存储[uuid:{0}, path:{1}]上传数据到镜像仓库[主机名:{2}]，因为{3}",
@@ -11920,6 +12083,18 @@
     ],
     "line": 272,
     "fileName": "src/main/java/org/zstack/storage/primary/imagestore/local/LocalStorageKvmImageStoreBackupStorageMediatorImpl.java"
+  },
+  {
+    "raw": "fails to create root volume[uuid:%s] from cached image[path:%s] because %s",
+    "en_US": "fails to create root volume[uuid:{0}] from cached image[path:{1}] because {2}",
+    "zh_CN": "从镜像[path:{1}]创建根云盘失败，因为{2}",
+    "arguments": [
+      "volume.getUuid()",
+      "image.getImageUuid()",
+      "rsp.getError()"
+    ],
+    "line": 210,
+    "fileName": "src/main/java/org/zstack/storage/primary/imagestore/nfs/NfsPrimaryToImageStoreBackupKVMBackend.java"
   },
   {
     "raw": "failed to download bits from the imagestore backup storage[hostname:%s, path: %s] to the nfs primary storage[uuid:%s, path: %s], %s",
@@ -12110,7 +12285,7 @@
       "resUuid",
       "uuid"
     ],
-    "line": 1360,
+    "line": 1361,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageBase.java"
   },
   {
@@ -12120,7 +12295,7 @@
     "arguments": [
       "resUuid"
     ],
-    "line": 1356,
+    "line": 1357,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageBase.java"
   },
   {
@@ -12132,7 +12307,7 @@
       "vo.getResourceName()",
       "vo.getResourceType()"
     ],
-    "line": 1353,
+    "line": 1354,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageBase.java"
   },
   {
@@ -12143,7 +12318,7 @@
       "msg.getVolumeUuid()",
       "self.getUuid()"
     ],
-    "line": 2007,
+    "line": 2008,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageBase.java"
   },
   {
@@ -12313,6 +12488,16 @@
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageFactory.java"
   },
   {
+    "raw": "cannot get root image of volume[uuid:%s], may be it create from iso",
+    "en_US": "cannot get root image of volume[uuid:{0}], may be it create from iso",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getVolume().getUuid()"
+    ],
+    "line": 1859,
+    "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageKvmBackend.java"
+  },
+  {
     "raw": "root image has been deleted, cannot reimage now",
     "en_US": "root image has been deleted, cannot reimage now",
     "zh_CN": "系统镜像已经被删除，无法重制云主机",
@@ -12424,7 +12609,7 @@
     "en_US": "no usable backend found",
     "zh_CN": "无法找到可用的NFS主存储后端",
     "arguments": [],
-    "line": 282,
+    "line": 283,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorage.java"
   },
   {
@@ -12438,7 +12623,7 @@
       "msg.getSnapshot().getUuid()",
       "msg.getSnapshot().getName()"
     ],
-    "line": 422,
+    "line": 423,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorage.java"
   },
   {
@@ -12451,7 +12636,7 @@
       "msg.getVolume().getUuid()",
       "msg.getVolume().getRootImageUuid()"
     ],
-    "line": 453,
+    "line": 454,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorage.java"
   },
   {
@@ -12464,7 +12649,7 @@
       "errorCode",
       "NfsPrimaryStorageGlobalConfig.GC_INTERVAL.value(Long.class)"
     ],
-    "line": 501,
+    "line": 502,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorage.java"
   },
   {
@@ -12475,7 +12660,7 @@
       "vol.getVmInstanceUuid()",
       "state"
     ],
-    "line": 532,
+    "line": 533,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorage.java"
   },
   {
@@ -12485,7 +12670,7 @@
     "arguments": [
       "self.getUuid()"
     ],
-    "line": 575,
+    "line": 576,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorage.java"
   },
   {
@@ -12498,7 +12683,7 @@
       "msg.getVolume().getUuid()",
       "msg.getVolume().getName()"
     ],
-    "line": 755,
+    "line": 756,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorage.java"
   },
   {
@@ -12509,7 +12694,7 @@
       "self.getUuid()",
       "self.getName()"
     ],
-    "line": 1163,
+    "line": 1164,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorage.java"
   },
   {
@@ -12520,7 +12705,7 @@
       "self.getUuid()",
       "self.getName()"
     ],
-    "line": 1280,
+    "line": 1281,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorage.java"
   },
   {
@@ -12565,16 +12750,6 @@
     ],
     "line": 363,
     "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorageFactory.java"
-  },
-  {
-    "raw": "cannot get root image of volume[uuid:%s], may be it create from iso",
-    "en_US": "cannot get root image of volume[uuid:{0}], may be it create from iso",
-    "zh_CN": "",
-    "arguments": [
-      "msg.getVolume().getUuid()"
-    ],
-    "line": 581,
-    "fileName": "src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryStorageKVMBackend.java"
   },
   {
     "raw": "unable to attach a primary storage[uuid:%s, name:%s] to cluster[uuid:%s]. Kvm host in the cluster has qemu-img with version[%s]; but the primary storage has attached to another cluster that has kvm host which has qemu-img with version[%s]. qemu-img version greater than %s is incompatible with versions less than %s, this will causes volume snapshot operation to fail. Please avoid attaching a primary storage to clusters that have different Linux distributions, in order to prevent qemu-img version mismatch",
@@ -12752,6 +12927,16 @@
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/KvmAgentCommandDispatcher.java"
   },
   {
+    "raw": "can not find volume[uuid: %s]",
+    "en_US": "can not find volume[uuid: {0}]",
+    "zh_CN": "找不到云盘[uuid: {0}]",
+    "arguments": [
+      "msg.getUuid()"
+    ],
+    "line": 104,
+    "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockApiInterceptor.java"
+  },
+  {
     "raw": "not support do live clone vm with volume on shared block primary storage",
     "en_US": "not support do live clone vm with volume on shared block primary storage",
     "zh_CN": "",
@@ -12809,7 +12994,15 @@
       "self.getUuid()",
       "self.getName()"
     ],
-    "line": 276,
+    "line": 285,
+    "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockGroupPrimaryStorageBase.java"
+  },
+  {
+    "raw": "not supported",
+    "en_US": "not supported",
+    "zh_CN": "不支持",
+    "arguments": [],
+    "line": 340,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockGroupPrimaryStorageBase.java"
   },
   {
@@ -12819,7 +13012,7 @@
     "arguments": [
       "getSelfInventory().getUuid()"
     ],
-    "line": 493,
+    "line": 502,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockGroupPrimaryStorageBase.java"
   },
   {
@@ -12831,7 +13024,7 @@
       "self.getName()",
       "future.getErrorCode()"
     ],
-    "line": 814,
+    "line": 823,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockGroupPrimaryStorageBase.java"
   },
   {
@@ -12839,8 +13032,18 @@
     "en_US": "empty migrateVolumeStructs in migrateVolumesBetweenSharedBlockGroupPrimaryStorageMsg!",
     "zh_CN": "",
     "arguments": [],
-    "line": 1013,
+    "line": 1022,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockGroupPrimaryStorageBase.java"
+  },
+  {
+    "raw": "primary storage[uuid:%s] becomes disconnected, the host has no connected primary storage attached",
+    "en_US": "primary storage[uuid:{0}] becomes disconnected, the host has no connected primary storage attached",
+    "zh_CN": "主存储[uuid:{0}]失联，物理机没有关联的主存储",
+    "arguments": [
+      "d.getPrimaryStorageUuid()"
+    ],
+    "line": 729,
+    "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockGroupPrimaryStorageFactory.java"
   },
   {
     "raw": "the value[%s] is not power of 2",
@@ -12849,7 +13052,7 @@
     "arguments": [
       "newValue"
     ],
-    "line": 98,
+    "line": 107,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockGroupPrimaryStorageFactory.java"
   },
   {
@@ -12859,7 +13062,7 @@
     "arguments": [
       "pri.getUuid()"
     ],
-    "line": 377,
+    "line": 386,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockGroupPrimaryStorageFactory.java"
   },
   {
@@ -12869,7 +13072,7 @@
     "arguments": [
       "pri.getUuid()"
     ],
-    "line": 399,
+    "line": 408,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockGroupPrimaryStorageFactory.java"
   },
   {
@@ -12883,16 +13086,6 @@
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockImageStoreBackend.java"
   },
   {
-    "raw": "operation error, because:%s",
-    "en_US": "operation error, because:{0}",
-    "zh_CN": "操作错误，因为{0}",
-    "arguments": [
-      "rsp.error"
-    ],
-    "line": 2142,
-    "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
-  },
-  {
     "raw": "the image[uuid:%s, name: %s] is not available to download on any backup storage:\\n1. check if image is in status of Deleted\\n2. check if the backup storage on which the image is shown as Ready is attached to the zone[uuid:%s]",
     "en_US": "the image[uuid:{0}, name: {1}] is not available to download on any backup storage:\\n1. check if image is in status of Deleted\\n2. check if the backup storage on which the image is shown as Ready is attached to the zone[uuid:{2}]",
     "zh_CN": "不能从镜像服务器中下载镜像[uuid:%s, name: %s]\\n1.检查镜像是否处于被删除状态\\n2.检查镜像处于就绪状态的镜像服务器是否挂载到区域[uuid:{2}]",
@@ -12901,7 +13094,7 @@
       "img.getName()",
       "self.getZoneUuid()"
     ],
-    "line": 910,
+    "line": 952,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -12911,7 +13104,7 @@
     "arguments": [
       "clusterUuid"
     ],
-    "line": 1257,
+    "line": 1299,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -12922,7 +13115,7 @@
       "vol.getVmInstanceUuid()",
       "state"
     ],
-    "line": 650,
+    "line": 692,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -12934,7 +13127,7 @@
       "volume.getVmInstanceUuid()",
       "state"
     ],
-    "line": 794,
+    "line": 836,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -12944,17 +13137,7 @@
     "arguments": [
       "backupStorageUuid"
     ],
-    "line": 1910,
-    "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
-  },
-  {
-    "raw": "can not find volume[uuid: %s]",
-    "en_US": "can not find volume[uuid: {0}]",
-    "zh_CN": "找不到云盘[uuid: {0}]",
-    "arguments": [
-      "msg.getVolumeUuid()"
-    ],
-    "line": 1572,
+    "line": 1952,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -12964,7 +13147,7 @@
     "arguments": [
       "volume.getUuid()"
     ],
-    "line": 881,
+    "line": 923,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -12974,7 +13157,7 @@
     "arguments": [
       "ret.firstAccessHostUuids"
     ],
-    "line": 1386,
+    "line": 1428,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -12982,7 +13165,7 @@
     "en_US": "can not find volume need to operate shared block group primary storage",
     "zh_CN": "找不到能进行共享块存储操作的云盘",
     "arguments": [],
-    "line": 2040,
+    "line": 2082,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -12993,7 +13176,7 @@
       "volumeInventory.getUuid()",
       "self.getUuid()"
     ],
-    "line": 2048,
+    "line": 2090,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -13003,7 +13186,7 @@
     "arguments": [
       "psUuid"
     ],
-    "line": 2057,
+    "line": 2099,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -13013,7 +13196,7 @@
     "arguments": [
       "self.getUuid()"
     ],
-    "line": 2068,
+    "line": 2110,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -13024,7 +13207,7 @@
       "spec.getVmInventory().getUuid()",
       "String.join(\",\", psUuids)"
     ],
-    "line": 2400,
+    "line": 2442,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -13035,7 +13218,7 @@
       "volumeVO.getUuid()",
       "volumeVO.getPrimaryStorageUuid()"
     ],
-    "line": 3158,
+    "line": 3205,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -13047,7 +13230,7 @@
       "volumeVO.getUuid()",
       "volumeVO.getPrimaryStorageUuid()"
     ],
-    "line": 3164,
+    "line": 3211,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -13058,7 +13241,7 @@
       "msg.getVolumeUuid()",
       "msg.getTargetPrimaryStorageUuid()"
     ],
-    "line": 3268,
+    "line": 3315,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -13069,7 +13252,7 @@
       "msg.getPrimaryStorageUuid()",
       "msg.getTargetPrimaryStorageUuid()"
     ],
-    "line": 3326,
+    "line": 3373,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -13077,7 +13260,7 @@
     "en_US": "only support full",
     "zh_CN": "",
     "arguments": [],
-    "line": 3281,
+    "line": 3328,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -13089,7 +13272,7 @@
       "msg.getPrimaryStorageUuid()",
       "msg.getTargetPrimaryStorageUuid()"
     ],
-    "line": 3309,
+    "line": 3356,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -13101,7 +13284,7 @@
       "msg.getTargetPrimaryStorageUuid()",
       "msg.getTargetPrimaryStorageUuid()"
     ],
-    "line": 3318,
+    "line": 3365,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -13111,7 +13294,7 @@
     "arguments": [
       "msg.getPrimaryStorageUuid()"
     ],
-    "line": 3370,
+    "line": 3417,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
@@ -13306,18 +13489,6 @@
     "fileName": "src/main/java/org/zstack/storage/primary/zses/ZsesPrimaryStorageFactory.java"
   },
   {
-    "raw": "fails to create root volume[uuid:%s] from cached image[path:%s] because %s",
-    "en_US": "fails to create root volume[uuid:{0}] from cached image[path:{1}] because {2}",
-    "zh_CN": "从镜像[path:{1}]创建根云盘失败，因为{2}",
-    "arguments": [
-      "volume.getUuid()",
-      "image.getImageUuid()",
-      "rsp.getError()"
-    ],
-    "line": 502,
-    "fileName": "src/main/java/org/zstack/storage/primary/zses/ZsesPrimarytoImageStoreKVMBackend.java"
-  },
-  {
     "raw": "failed to check existence of %s on nfs primary storage[uuid:%s], %s",
     "en_US": "failed to check existence of {0} on nfs primary storage[uuid:{1}], {2}",
     "zh_CN": "检查nfs主存储中是否存在{0}失败",
@@ -13327,29 +13498,6 @@
       "rsp.getError()"
     ],
     "line": 536,
-    "fileName": "src/main/java/org/zstack/storage/primary/zses/ZsesPrimarytoImageStoreKVMBackend.java"
-  },
-  {
-    "raw": "System can\u0027t find imagestore backup Storage. Please do not set imagestore backup Storage server IP to localhost(127.*.*.*),",
-    "en_US": "System can\u0027t find imagestore backup Storage. Please do not set imagestore backup Storage server IP to localhost(127.*.*.*),",
-    "zh_CN": "系统找不到镜像仓库镜像服务器。请不要设置镜像服务器IP为localhost(127.*.*.*)",
-    "arguments": [],
-    "line": 411,
-    "fileName": "src/main/java/org/zstack/storage/primary/zses/ZsesPrimarytoImageStoreKVMBackend.java"
-  },
-  {
-    "raw": "%s failed to download bits from the imagestore backup storage[hostname:%s, path: %s] to the local primary storage[uuid:%s, path: %s], %s",
-    "en_US": "{0} failed to download bits from the imagestore backup storage[hostname:{1}, path: {2}] to the local primary storage[uuid:{3}, path: {4}], {5}",
-    "zh_CN": "{0}从镜像仓库镜像服务器[hostname:{1}, path: {2}]到本地主存储[uuid:{3}, path: {4}]下载失败，{5}",
-    "arguments": [
-      "operationSuggestion",
-      "greply.getHostname()",
-      "backupStorageInstallPath",
-      "pinv.getUuid()",
-      "primaryStorageInstallPath",
-      "rsp.getError()"
-    ],
-    "line": 414,
     "fileName": "src/main/java/org/zstack/storage/primary/zses/ZsesPrimarytoImageStoreKVMBackend.java"
   },
   {
@@ -13364,14 +13512,6 @@
     ],
     "line": 467,
     "fileName": "src/main/java/org/zstack/storage/primary/zses/ZsesPrimarytoImageStoreKVMBackend.java"
-  },
-  {
-    "raw": "not supported",
-    "en_US": "not supported",
-    "zh_CN": "不支持",
-    "arguments": [],
-    "line": 52,
-    "fileName": "src/main/java/org/zstack/storage/snapshot/RevertVolumeSnapshotLongJob.java"
   },
   {
     "raw": "volume snapshot[uuid:%s] is not on primary storage, cannot be backed up",
@@ -13455,7 +13595,7 @@
       "vol.getUuid()",
       "reply.getError()"
     ],
-    "line": 333,
+    "line": 335,
     "fileName": "src/main/java/org/zstack/storage/snapshot/VolumeSnapshotManagerImpl.java"
   },
   {
@@ -13466,7 +13606,7 @@
       "primaryStorageUuid",
       "vol.getUuid()"
     ],
-    "line": 522,
+    "line": 524,
     "fileName": "src/main/java/org/zstack/storage/snapshot/VolumeSnapshotManagerImpl.java"
   },
   {
@@ -13520,7 +13660,7 @@
     "en_US": "Can\u0027t attach volume to VM, no qualified cluster",
     "zh_CN": "不能加载云盘到虚拟机上，没有可用集群",
     "arguments": [],
-    "line": 201,
+    "line": 208,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -13530,7 +13670,7 @@
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 97,
+    "line": 98,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -13540,7 +13680,7 @@
     "arguments": [
       "vol.getUuid()"
     ],
-    "line": 228,
+    "line": 235,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -13552,7 +13692,7 @@
       "ImageMediaType.DataVolumeTemplate",
       "type"
     ],
-    "line": 115,
+    "line": 116,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -13563,7 +13703,7 @@
       "img.getUuid()",
       "img.getState()"
     ],
-    "line": 119,
+    "line": 120,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -13574,7 +13714,7 @@
       "img.getUuid()",
       "img.getStatus()"
     ],
-    "line": 123,
+    "line": 124,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -13584,7 +13724,7 @@
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 135,
+    "line": 136,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -13596,7 +13736,7 @@
       "state",
       "VolumeState.Enabled"
     ],
-    "line": 142,
+    "line": 143,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -13609,7 +13749,7 @@
       "VolumeStatus.Ready",
       "VolumeStatus.NotInstantiated"
     ],
-    "line": 147,
+    "line": 148,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -13619,7 +13759,7 @@
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 154,
+    "line": 155,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -13629,7 +13769,7 @@
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 158,
+    "line": 159,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -13640,7 +13780,7 @@
       "vol.getUuid()",
       "vol.getName()"
     ],
-    "line": 163,
+    "line": 164,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -13651,7 +13791,7 @@
       "msg.getVmInstanceUuid()",
       "msg.getVolumeUuid()"
     ],
-    "line": 214,
+    "line": 221,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -13662,7 +13802,7 @@
       "vol.getUuid()",
       "vol.getName()"
     ],
-    "line": 219,
+    "line": 226,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -13672,7 +13812,7 @@
     "arguments": [
       "vol.getUuid()"
     ],
-    "line": 224,
+    "line": 231,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -13682,7 +13822,7 @@
     "arguments": [
       "vol.getUuid()"
     ],
-    "line": 232,
+    "line": 239,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -13694,7 +13834,7 @@
       "VolumeStatus.NotInstantiated",
       "vol.getStatus()"
     ],
-    "line": 237,
+    "line": 244,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -13708,7 +13848,7 @@
       "msg.getVmInstanceUuid()",
       "hvType"
     ],
-    "line": 245,
+    "line": 252,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -13721,7 +13861,7 @@
       "count",
       "msg.getVmInstanceUuid()"
     ],
-    "line": 258,
+    "line": 265,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -13731,7 +13871,7 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 270,
+    "line": 277,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -13741,7 +13881,7 @@
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 289,
+    "line": 296,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -13751,7 +13891,7 @@
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 294,
+    "line": 301,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -13761,7 +13901,7 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 308,
+    "line": 315,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeApiInterceptor.java"
   },
   {
@@ -13783,7 +13923,7 @@
       "template.getUuid()",
       "template.getName()"
     ],
-    "line": 194,
+    "line": 189,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeManagerImpl.java"
   },
   {
@@ -13794,7 +13934,7 @@
       "template.getUuid()",
       "msg.getPrimaryStorageUuid()"
     ],
-    "line": 211,
+    "line": 206,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeManagerImpl.java"
   },
   {
@@ -13804,7 +13944,7 @@
     "arguments": [
       "VolumeFactory.class.getSimpleName()"
     ],
-    "line": 711,
+    "line": 706,
     "fileName": "src/main/java/org/zstack/storage/volume/VolumeManagerImpl.java"
   },
   {
@@ -13963,7 +14103,7 @@
       "resourceType",
       "resourceUuid"
     ],
-    "line": 197,
+    "line": 207,
     "fileName": "src/main/java/org/zstack/tag/TagManagerImpl.java"
   },
   {
@@ -13974,7 +14114,7 @@
       "tag",
       "resourceType"
     ],
-    "line": 615,
+    "line": 645,
     "fileName": "src/main/java/org/zstack/tag/TagManagerImpl.java"
   },
   {
@@ -13984,84 +14124,114 @@
     "arguments": [
       "tag"
     ],
-    "line": 752,
+    "line": 787,
+    "fileName": "src/main/java/org/zstack/tag/TagManagerImpl.java"
+  },
+  {
+    "raw": "tag[%s] is only for admin",
+    "en_US": "tag[{0}] is only for admin",
+    "zh_CN": "",
+    "arguments": [
+      "tag"
+    ],
+    "line": 816,
     "fileName": "src/main/java/org/zstack/tag/TagManagerImpl.java"
   },
   {
     "raw": "ticket[uuid:%s, name:%s] can only be updated after being cancelled, current status is %s",
     "en_US": "ticket[uuid:{0}, name:{1}] can only be updated after being cancelled, current status is {2}",
-    "zh_CN": "",
+    "zh_CN": "工单[uuid:{0}, name:{1}]当前状态为{2}，不支持更新操作",
     "arguments": [
       "self.getUuid()",
       "self.getName()",
       "self.getStatus()"
     ],
-    "line": 218,
+    "line": 271,
     "fileName": "src/main/java/org/zstack/ticket/TicketBase.java"
   },
   {
     "raw": "operation denied. the operator needs to be done by account/virtual ID[uuid:%s]",
     "en_US": "operation denied. the operator needs to be done by account/virtual ID[uuid:{0}]",
-    "zh_CN": "",
+    "zh_CN": "操作无效，需要account/virtual ID[uuid:{0}]才能完成操作",
     "arguments": [
       "operator.operatorUuid"
     ],
-    "line": 272,
+    "line": 325,
     "fileName": "src/main/java/org/zstack/ticket/TicketBase.java"
+  },
+  {
+    "raw": "Ticket flow collection[uuid:%s] is invalid, contact admin to correct it",
+    "en_US": "Ticket flow collection[uuid:{0}] is invalid, contact admin to correct it",
+    "zh_CN": "当前工单流程[uuid:{0}]失效，请联系admin修复",
+    "arguments": [
+      "msg.getFlowCollectionUuid()"
+    ],
+    "line": 62,
+    "fileName": "src/main/java/org/zstack/ticket/api/TicketApiInterceptor.java"
+  },
+  {
+    "raw": "Ticket flow collection[uuid:%s] is disable, can not be used",
+    "en_US": "Ticket flow collection[uuid:{0}] is disable, can not be used",
+    "zh_CN": "工单流程[uuid:{0}]处于禁用状态，无法被使用",
+    "arguments": [
+      "msg.getFlowCollectionUuid()"
+    ],
+    "line": 67,
+    "fileName": "src/main/java/org/zstack/ticket/api/TicketApiInterceptor.java"
   },
   {
     "raw": "no accountSystemType[%s] defined in system",
     "en_US": "no accountSystemType[{0}] defined in system",
-    "zh_CN": "",
+    "zh_CN": "未定义的accountSystemType[{0}]类型",
     "arguments": [
       "msg.getAccountSystemType()"
     ],
-    "line": 30,
+    "line": 45,
     "fileName": "src/main/java/org/zstack/ticket/api/TicketApiInterceptor.java"
   },
   {
     "raw": "no default ticket flow collection found, you must specify the flowCollectionUuid or create a default ticket flow collection in system",
     "en_US": "no default ticket flow collection found, you must specify the flowCollectionUuid or create a default ticket flow collection in system",
-    "zh_CN": "",
+    "zh_CN": "找不到默认的",
     "arguments": [],
-    "line": 38,
+    "line": 53,
     "fileName": "src/main/java/org/zstack/ticket/api/TicketApiInterceptor.java"
   },
   {
     "raw": "invalid request. no API[%s] found",
     "en_US": "invalid request. no API[{0}] found",
-    "zh_CN": "",
+    "zh_CN": "无效的请求。找不到API[{0}]",
     "arguments": [
       "req.apiName"
     ],
-    "line": 50,
+    "line": 75,
     "fileName": "src/main/java/org/zstack/ticket/api/TicketApiInterceptor.java"
   },
   {
     "raw": "invalid request, cannot create API[%s] from apiBody, %s",
     "en_US": "invalid request, cannot create API[{0}] from apiBody, {1}",
-    "zh_CN": "",
+    "zh_CN": "无效的请求，无法通过apiBody创建API[{0}]，{1}",
     "arguments": [
       "clz",
       "e.getMessage()"
     ],
-    "line": 58,
+    "line": 83,
     "fileName": "src/main/java/org/zstack/ticket/api/TicketApiInterceptor.java"
   },
   {
     "raw": "one of argument of apiBody is invalid, %s",
     "en_US": "one of argument of apiBody is invalid, {0}",
-    "zh_CN": "",
+    "zh_CN": "apiBody中的某个参数无效, {0}",
     "arguments": [
       "e.getMessage()"
     ],
-    "line": 64,
+    "line": 89,
     "fileName": "src/main/java/org/zstack/ticket/api/TicketApiInterceptor.java"
   },
   {
     "raw": "operation denied. the ticket is in status of %s, cannot do the operation[%s]",
     "en_US": "operation denied. the ticket is in status of {0}, cannot do the operation[{1}]",
-    "zh_CN": "",
+    "zh_CN": "操作无效。当前工单状态为{0}，无法进行操作[{0}]",
     "arguments": [
       "this",
       "event"
@@ -14072,43 +14242,125 @@
   {
     "raw": "operation denied because the ticket submitter[uuid:%s] has been deleted, the ticket[uuid:%s, name:%s] can only be deleted now",
     "en_US": "operation denied because the ticket submitter[uuid:{0}] has been deleted, the ticket[uuid:{1}, name:{2}] can only be deleted now",
-    "zh_CN": "",
+    "zh_CN": "操作无效。因为工单的提交者[uuid:{0}]已经被删除，工单[uuid:{1}, name:{2}]仅支持删除操作",
     "arguments": [
       "ctx.getVirtualIDUuid()",
       "self.getUuid()",
       "self.getName()"
     ],
-    "line": 37,
+    "line": 41,
     "fileName": "src/main/java/org/zstack/ticket/iam2/IAM2Ticket.java"
   },
   {
     "raw": "operation denied because the project[uuid:%s] of the ticket has been deleted, the ticket[uuid:%s, name:%s] can only be deleted now",
     "en_US": "operation denied because the project[uuid:{0}] of the ticket has been deleted, the ticket[uuid:{1}, name:{2}] can only be deleted now",
-    "zh_CN": "",
+    "zh_CN": "操作无效。因为工单所属的项目[uuid:{0}]已经被删除，工单[uuid:{1}, name:{2}]仅支持删除操作",
     "arguments": [
       "ctx.getProjectUuid()",
       "self.getUuid()",
       "self.getName()"
     ],
-    "line": 42,
+    "line": 46,
+    "fileName": "src/main/java/org/zstack/ticket/iam2/IAM2Ticket.java"
+  },
+  {
+    "raw": "operation denied because flow collection[uuid:%s] it not belong the project[uuid:%s]",
+    "en_US": "operation denied because flow collection[uuid:{0}] it not belong the project[uuid:{1}]",
+    "zh_CN": "操作无效，因为流程[uuid:{0}]不属于项目[uuid:{1}]",
+    "arguments": [],
+    "line": 58,
     "fileName": "src/main/java/org/zstack/ticket/iam2/IAM2Ticket.java"
   },
   {
     "raw": "the virtual ID[uuid:%s] is not the owner of the ticket[uuid:%s, name:%s]",
     "en_US": "the virtual ID[uuid:{0}] is not the owner of the ticket[uuid:{1}, name:{2}]",
-    "zh_CN": "",
+    "zh_CN": "virtual ID[uuid:{0}]不是工单[uuid:{1}, name:{2}]的所有者",
     "arguments": [
       "msg.getSession().getUserUuid()",
       "self.getUuid()",
       "self.getName()"
     ],
-    "line": 54,
+    "line": 70,
     "fileName": "src/main/java/org/zstack/ticket/iam2/IAM2Ticket.java"
+  },
+  {
+    "raw": "approver is removed from project or deleted, flow collection changed to invalid, reject this ticket",
+    "en_US": "approver is removed from project or deleted, flow collection changed to invalid, reject this ticket",
+    "zh_CN": "审批人已经离开项目或者被删除，流程失效，因此驳回当前工单",
+    "arguments": [],
+    "line": 186,
+    "fileName": "src/main/java/org/zstack/ticket/iam2/IAM2TicketManager.java"
+  },
+  {
+    "raw": "at least one flow is needed for create flow collection",
+    "en_US": "at least one flow is needed for create flow collection",
+    "zh_CN": "创建流程时需要至少一个步骤",
+    "arguments": [],
+    "line": 74,
+    "fileName": "src/main/java/org/zstack/ticket/iam2/api/IAM2TicketApiInterceptor.java"
+  },
+  {
+    "raw": "wrong approver title %s, valid value is %s",
+    "en_US": "wrong approver title {0}, valid value is {1}",
+    "zh_CN": "错误的审批人职位{0}, 有效输入为{1}",
+    "arguments": [
+      "flow.approverTitle",
+      "approveTitles"
+    ],
+    "line": 81,
+    "fileName": "src/main/java/org/zstack/ticket/iam2/api/IAM2TicketApiInterceptor.java"
+  },
+  {
+    "raw": "can not find IAM2VirtualIDVO[uuid:%s]",
+    "en_US": "can not find IAM2VirtualIDVO[uuid:{0}]",
+    "zh_CN": "找不到对应的IAM2VirtualIDVO[uuid:{0}]",
+    "arguments": [
+      "flow.approverUuid"
+    ],
+    "line": 93,
+    "fileName": "src/main/java/org/zstack/ticket/iam2/api/IAM2TicketApiInterceptor.java"
+  },
+  {
+    "raw": "name is needed when create a flow",
+    "en_US": "name is needed when create a flow",
+    "zh_CN": "创建步骤时需要填写名称",
+    "arguments": [],
+    "line": 58,
+    "fileName": "src/main/java/org/zstack/ticket/iam2/api/IAM2TicketApiInterceptor.java"
+  },
+  {
+    "raw": "you have already created a collection for project[uuid:%s]",
+    "en_US": "you have already created a collection for project[uuid:{0}]",
+    "zh_CN": "你已经给项目[uuid:{0}]创建过流程了",
+    "arguments": [
+      "msg.getProjectUuid()"
+    ],
+    "line": 63,
+    "fileName": "src/main/java/org/zstack/ticket/iam2/api/IAM2TicketApiInterceptor.java"
+  },
+  {
+    "raw": "name cannot be null",
+    "en_US": "name cannot be null",
+    "zh_CN": "名称不能为空",
+    "arguments": [],
+    "line": 85,
+    "fileName": "src/main/java/org/zstack/ticket/iam2/api/IAM2TicketApiInterceptor.java"
+  },
+  {
+    "raw": "virtual id[uuid:%s] not belong to project[uuid:%s]",
+    "en_US": "virtual id[uuid:{0}] not belong to project[uuid:{1}]",
+    "zh_CN": "virtual id[uuid:{0}]不属于项目[uuid:{1}]",
+    "arguments": [
+      "flow.approverUuid",
+      "projectUuid"
+    ],
+    "line": 100,
+    "fileName": "src/main/java/org/zstack/ticket/iam2/api/IAM2TicketApiInterceptor.java"
   },
   {
     "raw": "two factor authenticator is not enabled",
     "en_US": "two factor authenticator is not enabled",
-    "zh_CN": "",
+    "zh_CN": "双因子认证未启用",
     "arguments": [],
     "line": 77,
     "fileName": "src/main/java/org/zstack/twoFactorAuthentication/TwoFactorAuthenticationManagerImpl.java"
@@ -14215,7 +14467,7 @@
   {
     "raw": "cannot migrate vm[uuid:%s] because there are pci devices attached",
     "en_US": "cannot migrate vm[uuid:{0}] because there are pci devices attached",
-    "zh_CN": "",
+    "zh_CN": "虚拟机[uuid:{0}]加载了pci设备无法迁移",
     "arguments": [
       "msg.getVmInstanceUuid()"
     ],
@@ -14362,7 +14614,7 @@
       "vcvo.getDomainName()",
       "ex.getMessage()"
     ],
-    "line": 2614,
+    "line": 2631,
     "fileName": "src/main/java/org/zstack/vmware/VCenterManagerImpl.java"
   },
   {
@@ -14373,7 +14625,7 @@
       "vcvo.getDomainName()",
       "ex.getMessage()"
     ],
-    "line": 2627,
+    "line": 2644,
     "fileName": "src/main/java/org/zstack/vmware/VCenterManagerImpl.java"
   },
   {
@@ -14381,7 +14633,7 @@
     "en_US": "HOST CPU/software NOT compatible",
     "zh_CN": "",
     "arguments": [],
-    "line": 3090,
+    "line": 3112,
     "fileName": "src/main/java/org/zstack/vmware/VCenterManagerImpl.java"
   },
   {
@@ -14496,7 +14748,7 @@
   {
     "raw": "dns address [%s] is already added to vpc router [uuid:%s]",
     "en_US": "dns address [{0}] is already added to vpc router [uuid:{1}]",
-    "zh_CN": "",
+    "zh_CN": "dns地址[{0}]已经添加到vpc路由[uuid:{1}]",
     "arguments": [
       "msg.getDns()",
       "msg.getUuid()"
@@ -14507,7 +14759,7 @@
   {
     "raw": "dns address [%s] is not added to vpc router [uuid:%s]",
     "en_US": "dns address [{0}] is not added to vpc router [uuid:{1}]",
-    "zh_CN": "",
+    "zh_CN": "dns地址[{0}]未添加到vpc路由[uuid:{1}]",
     "arguments": [
       "msg.getDns()",
       "msg.getUuid()"
@@ -14649,7 +14901,7 @@
     "arguments": [
       "clz.getName()"
     ],
-    "line": 123,
+    "line": 125,
     "fileName": "src/main/java/org/zstack/zwatch/ZQLReturnWithExtension.java"
   },
   {
@@ -14660,7 +14912,7 @@
       "paramName",
       "expr"
     ],
-    "line": 257,
+    "line": 259,
     "fileName": "src/main/java/org/zstack/zwatch/ZQLReturnWithExtension.java"
   },
   {
@@ -14671,7 +14923,7 @@
       "expr",
       "e.getMessage()"
     ],
-    "line": 266,
+    "line": 268,
     "fileName": "src/main/java/org/zstack/zwatch/ZQLReturnWithExtension.java"
   },
   {
@@ -14710,7 +14962,7 @@
     "en_US": "namespace[{0}] not found",
     "zh_CN": "找不到命名空间[{0}]",
     "arguments": [
-      "msg.getName()"
+      "msg.getNamespace()"
     ],
     "line": 123,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/AlarmApiInterceptor.java"
@@ -14753,7 +15005,7 @@
     "en_US": "namespace[{0}] doesn\u0027t have the metric[{1}]",
     "zh_CN": "命名空间[{0}]不包含时序数据[{1}]",
     "arguments": [
-      "msg.getName()",
+      "msg.getNamespace()",
       "msg.getMetricName()"
     ],
     "line": 129,
@@ -15123,7 +15375,7 @@
     "arguments": [
       "name"
     ],
-    "line": 134,
+    "line": 130,
     "fileName": "src/main/java/org/zstack/zwatch/influxdb/InfluxDBEventDatabaseDriver.java"
   },
   {
@@ -15134,7 +15386,7 @@
       "name",
       "namespace"
     ],
-    "line": 156,
+    "line": 152,
     "fileName": "src/main/java/org/zstack/zwatch/influxdb/InfluxDBEventDatabaseDriver.java"
   },
   {
@@ -15145,7 +15397,7 @@
       "label.getKey()",
       "InfluxEventData.ALL_TAG_NAMES"
     ],
-    "line": 388,
+    "line": 384,
     "fileName": "src/main/java/org/zstack/zwatch/influxdb/InfluxDBEventDatabaseDriver.java"
   },
   {
@@ -15156,7 +15408,7 @@
       "name.getValue()",
       "InfluxEventData.TAG_NAMESPACE"
     ],
-    "line": 412,
+    "line": 408,
     "fileName": "src/main/java/org/zstack/zwatch/influxdb/InfluxDBEventDatabaseDriver.java"
   },
   {
@@ -15198,7 +15450,7 @@
       "getName()",
       "queryObject.getMetricName()"
     ],
-    "line": 36,
+    "line": 43,
     "fileName": "src/main/java/org/zstack/zwatch/namespace/AbstractNamespace.java"
   },
   {
@@ -15210,7 +15462,7 @@
       "getName()",
       "l.getKey()"
     ],
-    "line": 42,
+    "line": 49,
     "fileName": "src/main/java/org/zstack/zwatch/namespace/AbstractNamespace.java"
   },
   {
@@ -15229,7 +15481,7 @@
       "d",
       "Platform.getManagementServerIp()"
     ],
-    "line": 29,
+    "line": 31,
     "fileName": "src/main/java/org/zstack/zwatch/namespace/SystemNamespace.java"
   }
 ]
