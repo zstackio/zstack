@@ -29,7 +29,7 @@ public class RevertVolumeFromVolumeBackupAction extends AbstractAction {
     public java.lang.String uuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String backupStrogeUuid;
+    public java.lang.String backupStorageUuid;
 
     @Param(required = false)
     public java.util.List systemTags;

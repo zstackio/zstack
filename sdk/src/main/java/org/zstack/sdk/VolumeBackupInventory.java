@@ -76,6 +76,14 @@ public class VolumeBackupInventory  {
         return this.metadata;
     }
 
+    public java.lang.String groupUuid;
+    public void setGroupUuid(java.lang.String groupUuid) {
+        this.groupUuid = groupUuid;
+    }
+    public java.lang.String getGroupUuid() {
+        return this.groupUuid;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
