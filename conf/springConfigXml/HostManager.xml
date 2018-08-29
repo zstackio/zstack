@@ -27,6 +27,7 @@
     <bean id="HostTracker" class="org.zstack.compute.host.HostTrackImpl">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
             <zstack:extension
                 interface="org.zstack.header.managementnode.ManagementNodeChangeListener" />
         </zstack:plugin>
