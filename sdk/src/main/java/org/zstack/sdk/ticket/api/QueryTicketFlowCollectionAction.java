@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class ArchiveTicketAction extends AbstractAction {
+public class QueryTicketFlowCollectionAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class ArchiveTicketAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.ticket.api.ArchiveTicketResult value;
+        public org.zstack.sdk.ticket.api.QueryTicketFlowCollectionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,23 +25,6 @@ public class ArchiveTicketAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = true)
-    public String sessionId;
-
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -51,8 +34,8 @@ public class ArchiveTicketAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.ticket.api.ArchiveTicketResult value = res.getResult(org.zstack.sdk.ticket.api.ArchiveTicketResult.class);
-        ret.value = value == null ? new org.zstack.sdk.ticket.api.ArchiveTicketResult() : value; 
+        org.zstack.sdk.ticket.api.QueryTicketFlowCollectionResult value = res.getResult(org.zstack.sdk.ticket.api.QueryTicketFlowCollectionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ticket.api.QueryTicketFlowCollectionResult() : value; 
 
         return ret;
     }
@@ -81,11 +64,11 @@ public class ArchiveTicketAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/tickets/{uuid}/actions";
+        info.httpMethod = "GET";
+        info.path = "/tickets/flow-collections";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "archiveTicket";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 
