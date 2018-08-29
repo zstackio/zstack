@@ -12,6 +12,7 @@ CREATE TABLE `LoginAttemptsVO` (
 
 CREATE TABLE `IscsiServerVO` (
   `uuid` VARCHAR(32) NOT NULL,
+  `name` VARCHAR(256) NOT NULL,
   `ip` VARCHAR(64) NOT NULL,
   `port` smallint unsigned DEFAULT 3260,
   `state` VARCHAR(32) NOT NULL,
