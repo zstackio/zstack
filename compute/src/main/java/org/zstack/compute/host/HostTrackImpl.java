@@ -14,13 +14,11 @@ import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.SysErrors;
-import org.zstack.header.exception.CloudResourceUnmanagedException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
+import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.MessageReply;
-import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -29,7 +27,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener, Component {
+public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener, Component, ManagementNodeReadyExtensionPoint {
     private final static CLogger logger = Utils.getLogger(HostTrackImpl.class);
 
     private Map<String, Tracker> trackers = new HashMap<>();
@@ -46,6 +44,11 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
     private PluginRegistry pluginRgty;
 
     private static Map<String, HostReconnectTaskFactory> hostReconnectTaskFactories = new HashMap<>();
+
+    @Override
+    public void managementNodeReady() {
+        reScanHost();
+    }
 
     enum ReconnectDecision {
         DoNothing,
@@ -322,7 +325,6 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
             }
         });
 
-        reScanHost();
         return true;
     }
 
