@@ -7,8 +7,12 @@ import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 public class HelloWorldManagerImpl extends AbstractService implements HelloWorldManager, Component {
+    private static final CLogger logger = Utils.getLogger(HelloWorldManagerImpl.class);
+
     @Autowired
     private CloudBus bus;
 
@@ -27,7 +31,19 @@ public class HelloWorldManagerImpl extends AbstractService implements HelloWorld
     }
 
     private void handleAPIMessage(APIMessage msg) {
-        bus.dealWithUnknownMessage(msg);
+        if (msg instanceof APIHelloWorldMsg) {
+            handle((APIHelloWorldMsg) msg);
+        } else {
+            bus.dealWithUnknownMessage(msg);
+        }
+    }
+
+    private void handle(APIHelloWorldMsg msg) {
+        logger.debug(String.format("say hello: %s", msg));
+
+        APIHelloWorldEvent evt = new APIHelloWorldEvent(msg.getId());
+        evt.setGreeting(msg.getGreeting());
+        bus.publish(evt);
     }
 
     @Override
