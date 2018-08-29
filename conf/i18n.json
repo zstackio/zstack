@@ -2443,11 +2443,12 @@
     "fileName": "src/main/java/org/zstack/compute/host/HostApiInterceptor.java"
   },
   {
-    "raw": "can not maintain host[uuid:%s]which is not Connected",
-    "en_US": "can not maintain host[uuid:{0}]which is not Connected",
-    "zh_CN": "只能对已连接状态的物理机[uuid:{0}]进行维护操作",
+    "raw": "can not maintain host[uuid:%s, status:%s]which is not Connected",
+    "en_US": "can not maintain host[uuid:{0}, status:{1}]which is not Connected",
+    "zh_CN": "只能对已连接状态的物理机[uuid:{0}, status:{1}]进行维护操作",
     "arguments": [
-      "msg.getHostUuid()"
+      "msg.getHostUuid()",
+      "hostStatus"
     ],
     "line": 97,
     "fileName": "src/main/java/org/zstack/compute/host/HostApiInterceptor.java"
@@ -2468,7 +2469,7 @@
       "vo.getName()",
       "vo.getManagementIp()"
     ],
-    "line": 314,
+    "line": 315,
     "fileName": "src/main/java/org/zstack/compute/host/HostManagerImpl.java"
   },
   {
@@ -2482,7 +2483,7 @@
       "vo.getManagementIp()",
       "mineVersion"
     ],
-    "line": 345,
+    "line": 346,
     "fileName": "src/main/java/org/zstack/compute/host/HostManagerImpl.java"
   },
   {
@@ -5455,11 +5456,10 @@
     "fileName": "src/main/java/org/zstack/identity/AccountManagerImpl.java"
   },
   {
-    "raw": "quota exceeding. Current account is [uuid: %s]. The resource target owner account[uuid: %s] exceeds a quota[name: %s, value: %s], Current used:%s, Request:%s. Please contact the administrator.",
-    "en_US": "quota exceeding. Current account is [uuid: {0}]. The resource target owner account[uuid: {1}] exceeds a quota[name: {2}, value: {3}], Current used:{4}, Request:{5}. Please contact the administrator.",
-    "zh_CN": "超过配额。当前账户[uuid:{0}]，目标所有者账户[uuid:{1}]的资源超过配额[名称:{2}，上限:{3}]，已用数量:{4}, 请求数量:{5}。请联系管理员。",
+    "raw": "quota exceeding.The resource owner(or target resource owner) account[uuid: %s] exceeds a quota[name: %s, value: %s], Current used:%s, Request:%s. Please contact the administrator.",
+    "en_US": "quota exceeding.The resource owner(or target resource owner) account[uuid: {0}] exceeds a quota[name: {1}, value: {2}], Current used:{3}, Request:{4}. Please contact the administrator.",
+    "zh_CN": "超过配额。当前资源所有者（或者目标所有者）账户[uuid:{0}]的资源超过配额[名称:{1}，上限:{2}]，已用数量:{3}, 请求数量:{4}。请联系管理员。",
     "arguments": [
-      "quotaCompareInfo.currentAccountUuid",
       "quotaCompareInfo.resourceTargetOwnerAccountUuid",
       "quotaCompareInfo.quotaName",
       "quotaCompareInfo.quotaValue",
@@ -5498,7 +5498,7 @@
   {
     "raw": "Login sessions hit limit of max allowed concurrent login sessions",
     "en_US": "Login sessions hit limit of max allowed concurrent login sessions",
-    "zh_CN": "",
+    "zh_CN": "登录会话数量已经达到最大值",
     "arguments": [],
     "line": 37,
     "fileName": "src/main/java/org/zstack/identity/Session.java"
@@ -5506,7 +5506,7 @@
   {
     "raw": "permission denied, the account[uuid:%s] is not the owner of the resource[uuid:%s, type:%s]",
     "en_US": "permission denied, the account[uuid:{0}] is not the owner of the resource[uuid:{1}, type:{2}]",
-    "zh_CN": "",
+    "zh_CN": "操作错误，账户[uuid:{0}]不是资源[uuid:{1}, type:{2}]的所有者",
     "arguments": [
       "rbacEntity.getApiMessage().getSession().getAccountUuid()",
       "uuid",
@@ -5518,7 +5518,7 @@
   {
     "raw": "the account[uuid:%s] has no access to the resources[uuid:%s, type:%s]",
     "en_US": "the account[uuid:{0}] has no access to the resources[uuid:{1}, type:{2}]",
-    "zh_CN": "",
+    "zh_CN": "账户[uuid:{0}]无法使用资源[uuid:{1}, type:{2}]",
     "arguments": [
       "rbacEntity.getApiMessage().getSession().getAccountUuid()",
       "resourceWithNoAccess",
@@ -5530,7 +5530,7 @@
   {
     "raw": "operation is denied by default",
     "en_US": "operation is denied by default",
-    "zh_CN": "",
+    "zh_CN": "无法执行当前操作",
     "arguments": [],
     "line": 90,
     "fileName": "src/main/java/org/zstack/identity/rbac/RBACAPIRequestChecker.java"
@@ -5538,7 +5538,7 @@
   {
     "raw": "the operation is denied by the policy[uuid:%s]",
     "en_US": "the operation is denied by the policy[uuid:{0}]",
-    "zh_CN": "",
+    "zh_CN": "当前操作被策略[uuid:{0}]拒绝",
     "arguments": [
       "p.getUuid()"
     ],
@@ -5548,7 +5548,7 @@
   {
     "raw": "the operation is denied by the policy[uuid:%s], field[%s] is not permitted to set",
     "en_US": "the operation is denied by the policy[uuid:{0}], field[{1}] is not permitted to set",
-    "zh_CN": "",
+    "zh_CN": "当前操作被策略[uuid:{0}], field[{1}]拒绝",
     "arguments": [
       "p.getUuid()",
       "fname"
@@ -6079,7 +6079,7 @@
   {
     "raw": "unable to detach a L3 network on kvm host because platform of vm[uuid: %s] is %s",
     "en_US": "unable to detach a L3 network on kvm host because platform of vm[uuid: {0}] is {1}",
-    "zh_CN": "",
+    "zh_CN": "无法从物理机卸载三层网络，因为虚拟机[uuid: {0}]的平台是{1}",
     "arguments": [
       "msg.getVmInstanceUuid()",
       "vo.getPlatform()"
@@ -6290,7 +6290,7 @@
   {
     "raw": "the host\u0027 ssh port[%s] not open after %s seconds, connect timeout",
     "en_US": "the host\u0027 ssh port[{0}] not open after {1} seconds, connect timeout",
-    "zh_CN": "",
+    "zh_CN": "物理机的ssh端口[{0}]在{1}后仍未开启，连接超时",
     "arguments": [
       "getSelf().getPort()",
       "KVMGlobalConfig.TEST_SSH_PORT_ON_OPEN_TIMEOUT.value(Long.class)"
@@ -6608,7 +6608,7 @@
   {
     "raw": "Add-on license is not allowed for trial license",
     "en_US": "Add-on license is not allowed for trial license",
-    "zh_CN": "",
+    "zh_CN": "试用版许可不支持添加附加功能许可",
     "arguments": [],
     "line": 875,
     "fileName": "src/main/java/org/zstack/license/LicenseManagerImpl.java"
@@ -6616,7 +6616,7 @@
   {
     "raw": "Consult result expect to be 1, but actually %s",
     "en_US": "Consult result expect to be 1, but actually {0}",
-    "zh_CN": "",
+    "zh_CN": "查询结果期望是1，但是实际上是{0}",
     "arguments": [
       "results.size()"
     ],
@@ -6626,7 +6626,7 @@
   {
     "raw": "Wrong verify code",
     "en_US": "Wrong verify code",
-    "zh_CN": "",
+    "zh_CN": "错误的验证码",
     "arguments": [],
     "line": 245,
     "fileName": "src/main/java/org/zstack/loginControl/LoginControlManagerImpl.java"
@@ -6634,7 +6634,7 @@
   {
     "raw": "can not get suitable captcha with[uuid:%s], related to resourceName[uuid:%s]",
     "en_US": "can not get suitable captcha with[uuid:{0}], related to resourceName[uuid:{1}]",
-    "zh_CN": "",
+    "zh_CN": "找不到和名称[uuid:{1}]对应的验证码[uuid:{0}]",
     "arguments": [
       "msg.getCaptchaUuid()",
       "msg.getResourceName()"
@@ -6759,7 +6759,7 @@
   {
     "raw": "for shareable volume, the only supported primary storage type is %s, current is %s",
     "en_US": "for shareable volume, the only supported primary storage type is {0}, current is {1}",
-    "zh_CN": "",
+    "zh_CN": "共享云盘仅支持在主存储类型为{0}的主存储上使用，当前的类型为{1}",
     "arguments": [
       "supportSharedVolumePrimaryStorage",
       "psType"
@@ -7045,7 +7045,7 @@
   {
     "raw": "can not take snapshot for volumes[%s] while volume[uuid: %s] not attached",
     "en_US": "can not take snapshot for volumes[{0}] while volume[uuid: {1}] not attached",
-    "zh_CN": "",
+    "zh_CN": "当云盘[uuid:{1}]未加载时，无法给云盘[{0}]创建快照",
     "arguments": [
       "msg.getVolumeSnapshotJobs().stream().map(CreateVolumesSnapshotsJobStruct::getVolumeUuid).collect(Collectors.toList())",
       "job.getVolumeUuid()"
@@ -7056,7 +7056,7 @@
   {
     "raw": "can not take snapshot for volumes[%s] while volume[uuid: %s] appears twice",
     "en_US": "can not take snapshot for volumes[{0}] while volume[uuid: {1}] appears twice",
-    "zh_CN": "",
+    "zh_CN": "当云盘[uuid:{1}]出现多次时，无法给云盘[{0}]创建快照",
     "arguments": [
       "msg.getVolumeSnapshotJobs().stream().map(CreateVolumesSnapshotsJobStruct::getVolumeUuid).collect(Collectors.toList())",
       "job.getVolumeUuid()"
@@ -7067,7 +7067,7 @@
   {
     "raw": "can not take snapshot for volumes[%s] attached multiple vms[%s, %s]",
     "en_US": "can not take snapshot for volumes[{0}] attached multiple vms[{1}, {2}]",
-    "zh_CN": "",
+    "zh_CN": "当云盘[uuid:{1}]加载到多个虚拟机上时，无法给云盘[{0}]创建快照",
     "arguments": [
       "msg.getVolumeSnapshotJobs().stream().map(CreateVolumesSnapshotsJobStruct::getVolumeUuid).collect(Collectors.toList())",
       "job.getVolumeUuid()",
@@ -7079,7 +7079,7 @@
   {
     "raw": "no volumes found",
     "en_US": "no volumes found",
-    "zh_CN": "",
+    "zh_CN": "找不到云盘",
     "arguments": [],
     "line": 630,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoVolumeBase.java"
@@ -9734,7 +9734,7 @@
   {
     "raw": "virtual router[uuid: %s] failed to get version because %s ",
     "en_US": "virtual router[uuid: {0}] failed to get version because {1} ",
-    "zh_CN": "",
+    "zh_CN": "获取云路由[uuid: {0}]版本失败，因为{1}",
     "arguments": [
       "vrUuid",
       "ret.getError()"
@@ -9745,7 +9745,7 @@
   {
     "raw": "virtual router[uuid: %s] doesn\u0027t have version",
     "en_US": "virtual router[uuid: {0}] doesn\u0027t have version",
-    "zh_CN": "",
+    "zh_CN": "云路由[uuid: {0}]没有版本信息",
     "arguments": [
       "vrUuid"
     ],
@@ -9982,7 +9982,7 @@
     "en_US": "cron must be set when use cron scheduler",
     "zh_CN": "当使用定时器任务时，必须设置cron",
     "arguments": [],
-    "line": 151,
+    "line": 152,
     "fileName": "src/main/java/org/zstack/scheduler/SchedulerApiInterceptor.java"
   },
   {
@@ -9990,7 +9990,7 @@
     "en_US": "cron task must follow format like this : \\\"0 0/3 17-23 * * ?\\\" ",
     "zh_CN": "定时器任务必须符合以下格式: \\\"0 0/3 17-23 * * ?\\\" ",
     "arguments": [],
-    "line": 157,
+    "line": 158,
     "fileName": "src/main/java/org/zstack/scheduler/SchedulerApiInterceptor.java"
   },
   {
@@ -9998,7 +9998,7 @@
     "en_US": "cron scheduler only need to specify cron task",
     "zh_CN": "定时调度器（Cron Scheduler）仅需要指定定时任务（Cron Task）",
     "arguments": [],
-    "line": 160,
+    "line": 161,
     "fileName": "src/main/java/org/zstack/scheduler/SchedulerApiInterceptor.java"
   },
   {
@@ -10006,7 +10006,7 @@
     "en_US": "startTime out of range",
     "zh_CN": "开始时间超出范围",
     "arguments": [],
-    "line": 134,
+    "line": 135,
     "fileName": "src/main/java/org/zstack/scheduler/SchedulerApiInterceptor.java"
   },
   {
@@ -10014,7 +10014,7 @@
     "en_US": "startTime must be positive integer or 0",
     "zh_CN": "开始时间必须是正整数或者0",
     "arguments": [],
-    "line": 130,
+    "line": 131,
     "fileName": "src/main/java/org/zstack/scheduler/SchedulerApiInterceptor.java"
   },
   {
@@ -10022,7 +10022,7 @@
     "en_US": "stopTime has been passed",
     "zh_CN": "截止时间已经过去了",
     "arguments": [],
-    "line": 146,
+    "line": 147,
     "fileName": "src/main/java/org/zstack/scheduler/SchedulerApiInterceptor.java"
   },
   {
@@ -10030,7 +10030,7 @@
     "en_US": "stopTime out of mysql timestamp range",
     "zh_CN": "定时任务停止时间超出mysql的timestamp的范围",
     "arguments": [],
-    "line": 144,
+    "line": 145,
     "fileName": "src/main/java/org/zstack/scheduler/SchedulerApiInterceptor.java"
   },
   {
@@ -10038,7 +10038,7 @@
     "en_US": "duration time out of range",
     "zh_CN": "任务需要的时间超出范围",
     "arguments": [],
-    "line": 142,
+    "line": 143,
     "fileName": "src/main/java/org/zstack/scheduler/SchedulerApiInterceptor.java"
   },
   {
@@ -10046,7 +10046,7 @@
     "en_US": "interval must be set when use simple scheduler when repeat more than once",
     "zh_CN": "当简单定时任务执行超过一次时，必须设置间隔时间",
     "arguments": [],
-    "line": 79,
+    "line": 80,
     "fileName": "src/main/java/org/zstack/scheduler/SchedulerApiInterceptor.java"
   },
   {
@@ -10057,7 +10057,7 @@
       "msg.getSchedulerJobUuid()",
       "msg.getSchedulerTriggerUuid()"
     ],
-    "line": 114,
+    "line": 115,
     "fileName": "src/main/java/org/zstack/scheduler/SchedulerApiInterceptor.java"
   },
   {
@@ -10068,7 +10068,7 @@
       "msg.getSchedulerJobUuid()",
       "msg.getSchedulerTriggerUuid()"
     ],
-    "line": 119,
+    "line": 120,
     "fileName": "src/main/java/org/zstack/scheduler/SchedulerApiInterceptor.java"
   },
   {
@@ -10076,7 +10076,7 @@
     "en_US": "invalid cron expression",
     "zh_CN": "无效的cron表达式",
     "arguments": [],
-    "line": 154,
+    "line": 155,
     "fileName": "src/main/java/org/zstack/scheduler/SchedulerApiInterceptor.java"
   },
   {
@@ -10084,7 +10084,7 @@
     "en_US": "startTime must be set for simple scheduler",
     "zh_CN": "simple类型的定时任务必须设置开始时间[startTime]",
     "arguments": [],
-    "line": 128,
+    "line": 129,
     "fileName": "src/main/java/org/zstack/scheduler/SchedulerApiInterceptor.java"
   },
   {
@@ -10092,7 +10092,7 @@
     "en_US": "schedulerInterval must be set for simple scheduler",
     "zh_CN": "simple类型的定时任务必须设置执行间隔[schedulerInterval]",
     "arguments": [],
-    "line": 138,
+    "line": 139,
     "fileName": "src/main/java/org/zstack/scheduler/SchedulerApiInterceptor.java"
   },
   {
@@ -10103,7 +10103,7 @@
       "msg.getParameters().get(SchedulerJobParameters.snapshotMax)",
       "e.getMessage()"
     ],
-    "line": 194,
+    "line": 195,
     "fileName": "src/main/java/org/zstack/scheduler/SchedulerApiInterceptor.java"
   },
   {
@@ -10113,7 +10113,7 @@
     "arguments": [
       "vm.getUuid()"
     ],
-    "line": 1014,
+    "line": 1020,
     "fileName": "src/main/java/org/zstack/scheduler/SchedulerFacadeImpl.java"
   },
   {
@@ -10123,7 +10123,7 @@
     "arguments": [
       "vm.getUuid()"
     ],
-    "line": 1007,
+    "line": 1013,
     "fileName": "src/main/java/org/zstack/scheduler/SchedulerFacadeImpl.java"
   },
   {
@@ -10460,7 +10460,7 @@
     "en_US": "missing job parameters",
     "zh_CN": "缺少parameters参数",
     "arguments": [],
-    "line": 77,
+    "line": 74,
     "fileName": "src/main/java/org/zstack/storage/backup/CreateVolumeBackupJob.java"
   },
   {
@@ -10468,7 +10468,7 @@
     "en_US": "missing \u0027retentionType\u0027 in job parameters",
     "zh_CN": "parameters中缺少retentionType参数",
     "arguments": [],
-    "line": 84,
+    "line": 81,
     "fileName": "src/main/java/org/zstack/storage/backup/CreateVolumeBackupJob.java"
   },
   {
@@ -10476,7 +10476,7 @@
     "en_US": "missing \u0027retentionValue\u0027 in job parameters",
     "zh_CN": "parameter中缺少retentionValue参数",
     "arguments": [],
-    "line": 89,
+    "line": 86,
     "fileName": "src/main/java/org/zstack/storage/backup/CreateVolumeBackupJob.java"
   },
   {
@@ -10484,7 +10484,7 @@
     "en_US": "missing \u0027backupStorageUuids\u0027 in job parameters",
     "zh_CN": "parameter中缺少backupStorageUuids参数",
     "arguments": [],
-    "line": 96,
+    "line": 93,
     "fileName": "src/main/java/org/zstack/storage/backup/CreateVolumeBackupJob.java"
   },
   {
@@ -10492,7 +10492,7 @@
     "en_US": "job parameter \u0027backupStorageUuids\u0027 is empty",
     "zh_CN": "parameter中backupStorageUuids为空",
     "arguments": [],
-    "line": 104,
+    "line": 101,
     "fileName": "src/main/java/org/zstack/storage/backup/CreateVolumeBackupJob.java"
   },
   {
@@ -10502,7 +10502,7 @@
     "arguments": [
       "bsUuid"
     ],
-    "line": 109,
+    "line": 106,
     "fileName": "src/main/java/org/zstack/storage/backup/CreateVolumeBackupJob.java"
   },
   {
@@ -10514,8 +10514,152 @@
       "msg.getMessageName()",
       "checker.getStatesForOperation(msg.getMessageName())"
     ],
-    "line": 52,
-    "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
+    "line": 45,
+    "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupApiInterceptor.java"
+  },
+  {
+    "raw": "database backup[uuid%s] has not been exported from backupStorage[uuid:%s]",
+    "en_US": "database backup[uuid{0}] has not been exported from backupStorage[uuid:{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getDatabaseBackupUuid()",
+      "msg.getBackupStorageUuid()"
+    ],
+    "line": 79,
+    "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupApiInterceptor.java"
+  },
+  {
+    "raw": "database backup[uuid%s] has been exported from backupStorage[uuid:%s]",
+    "en_US": "database backup[uuid{0}] has been exported from backupStorage[uuid:{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getDatabaseBackupUuid()",
+      "msg.getBackupStorageUuid()"
+    ],
+    "line": 93,
+    "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupApiInterceptor.java"
+  },
+  {
+    "raw": "do not allow cover database from backup",
+    "en_US": "do not allow cover database from backup",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 106,
+    "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupApiInterceptor.java"
+  },
+  {
+    "raw": "installPath and bsUrl are both need",
+    "en_US": "installPath and bsUrl are both need",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 110,
+    "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupApiInterceptor.java"
+  },
+  {
+    "raw": "databaseBackup[uuid:%s] is not Enabled and Ready",
+    "en_US": "databaseBackup[uuid:{0}] is not Enabled and Ready",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 119,
+    "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupApiInterceptor.java"
+  },
+  {
+    "raw": "illegal url[%s], correct example is ssh://username:password@hostname[:sshPort]/path",
+    "en_US": "illegal url[{0}], correct example is ssh://username:password@hostname[:sshPort]/path",
+    "zh_CN": "",
+    "arguments": [
+      "url"
+    ],
+    "line": 128,
+    "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupApiInterceptor.java"
+  },
+  {
+    "raw": "sync task failed.",
+    "en_US": "sync task failed.",
+    "zh_CN": "同步失败",
+    "arguments": [],
+    "line": 459,
+    "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupBase.java"
+  },
+  {
+    "raw": "unexpected task status: %s",
+    "en_US": "unexpected task status: {0}",
+    "zh_CN": "错误的任务状态{0}",
+    "arguments": [
+      "reply.getStatus()"
+    ],
+    "line": 466,
+    "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupBase.java"
+  },
+  {
+    "raw": "One of the backup storage[uuids: %s, %s] is in the state of %s, can not do sync operation",
+    "en_US": "One of the backup storage[uuids: {0}, {1}] is in the state of {2}, can not do sync operation",
+    "zh_CN": "镜像服务器[uuid: {0}]处于状态{1}, 无法执行同步操作",
+    "arguments": [
+      "msg.getDstBackupStorageUuid()",
+      "msg.getSrcBackupStorageUuid()",
+      "BackupStorageState.Disabled.toString()"
+    ],
+    "line": 272,
+    "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupBase.java"
+  },
+  {
+    "raw": "database backup[uuid:%s] is not Enabled and Ready",
+    "en_US": "database backup[uuid:{0}] is not Enabled and Ready",
+    "zh_CN": "",
+    "arguments": [
+      "self.getUuid()"
+    ],
+    "line": 72,
+    "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupBase.java"
+  },
+  {
+    "raw": "database backup[uuid:%s] not found in backup storage[uuid:%s]",
+    "en_US": "database backup[uuid:{0}] not found in backup storage[uuid:{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getDatabaseBackupUuid()",
+      "msg.getSrcBackupStorageUuid()"
+    ],
+    "line": 317,
+    "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupBase.java"
+  },
+  {
+    "raw": "database backup [uuid:%s] is not existed yet",
+    "en_US": "database backup [uuid:{0}] is not existed yet",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getDatabaseBackupUuid()"
+    ],
+    "line": 76,
+    "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupManagerImpl.java"
+  },
+  {
+    "raw": "database backup version is not match",
+    "en_US": "database backup version is not match",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 447,
+    "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupManagerImpl.java"
+  },
+  {
+    "raw": "cannot get free port to listen",
+    "en_US": "cannot get free port to listen",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 513,
+    "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupManagerImpl.java"
+  },
+  {
+    "raw": "database backup version[%s] is not match currently version[%s]",
+    "en_US": "database backup version[{0}] is not match currently version[{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "version",
+      "dbf.getDbVersion()"
+    ],
+    "line": 542,
+    "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupManagerImpl.java"
   },
   {
     "raw": "Unexpected backup storage[type:%s,uuid:%s]",
@@ -10523,9 +10667,9 @@
     "zh_CN": "错误的镜像服务器[type:{0}, uuid:{1}]",
     "arguments": [
       "bsType",
-      "msg.getBackupStorageUuid()"
+      "bsUuid"
     ],
-    "line": 125,
+    "line": 160,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
@@ -10535,7 +10679,7 @@
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 139,
+    "line": 181,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
@@ -10545,7 +10689,7 @@
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 143,
+    "line": 185,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
@@ -10557,7 +10701,7 @@
       "VmInstanceState.Running.toString()",
       "VmInstanceState.Paused.toString()"
     ],
-    "line": 152,
+    "line": 194,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
@@ -10569,7 +10713,39 @@
       "VmInstanceState.Running.toString()",
       "VmInstanceState.Paused.toString()"
     ],
-    "line": 149,
+    "line": 191,
+    "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
+  },
+  {
+    "raw": "Volume[uuid:%s] is not root volume",
+    "en_US": "Volume[uuid:{0}] is not root volume",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getVolumeUuid()"
+    ],
+    "line": 203,
+    "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
+  },
+  {
+    "raw": "Failed to create backups for VM[uuid:%s], because it is not in state[%s, %s]",
+    "en_US": "Failed to create backups for VM[uuid:{0}], because it is not in state[{1}, {2}]",
+    "zh_CN": "",
+    "arguments": [
+      "t.get(0)",
+      "VmInstanceState.Running.toString()",
+      "VmInstanceState.Paused.toString()"
+    ],
+    "line": 210,
+    "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
+  },
+  {
+    "raw": "No volume backup found for group uuid: %s",
+    "en_US": "No volume backup found for group uuid: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "groupUuid"
+    ],
+    "line": 224,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
@@ -10577,10 +10753,10 @@
     "en_US": "volume backup[uuid:{0}] is in state {1}, cannot revert volume to it",
     "zh_CN": "云盘备份[uuid:{0}]处于{1}状态，无法用于恢复云盘",
     "arguments": [
-      "msg.getUuid()",
+      "backupUuid",
       "state"
     ],
-    "line": 165,
+    "line": 244,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
@@ -10588,9 +10764,9 @@
     "en_US": "original volume for backup[uuid:{0}] has been deleted, cannot revert volume to it",
     "zh_CN": "云盘备份[uuid:{0}]已经被删除，无法用于恢复云盘",
     "arguments": [
-      "msg.getUuid()"
+      "backupUuid"
     ],
-    "line": 170,
+    "line": 249,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
@@ -10598,9 +10774,9 @@
     "en_US": "VM not found with volume backup[uuid:{0}]",
     "zh_CN": "找不到和云盘备份[uuid:{0}]对应的虚拟机",
     "arguments": [
-      "msg.getUuid()"
+      "backupUuid"
     ],
-    "line": 178,
+    "line": 257,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
@@ -10610,7 +10786,7 @@
     "arguments": [
       "vmState"
     ],
-    "line": 182,
+    "line": 261,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
@@ -10618,7 +10794,7 @@
     "en_US": "No available backup storage found",
     "zh_CN": "没有可用的镜像服务器",
     "arguments": [],
-    "line": 196,
+    "line": 275,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupApiInterceptor.java"
   },
   {
@@ -10628,7 +10804,7 @@
     "arguments": [
       "rsp.getError()"
     ],
-    "line": 165,
+    "line": 271,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupKvmBackend.java"
   },
   {
@@ -10636,7 +10812,7 @@
     "en_US": "Operation not supported on shared volume",
     "zh_CN": "共享云盘不支持该操作",
     "arguments": [],
-    "line": 107,
+    "line": 145,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupKvmBackend.java"
   },
   {
@@ -10646,7 +10822,17 @@
     "arguments": [
       "volumeUuid"
     ],
-    "line": 112,
+    "line": 150,
+    "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupKvmBackend.java"
+  },
+  {
+    "raw": "No VM found with root volume uuid: %s",
+    "en_US": "No VM found with root volume uuid: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "msg.getRootVolumeUuid()"
+    ],
+    "line": 329,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupKvmBackend.java"
   },
   {
@@ -10656,7 +10842,7 @@
     "arguments": [
       "hypervisorType"
     ],
-    "line": 172,
+    "line": 197,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -10667,7 +10853,7 @@
       "msg.getBackupStorageUuid()",
       "BackupStorageState.Disabled.toString()"
     ],
-    "line": 189,
+    "line": 214,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -10678,25 +10864,7 @@
       "cmsg.getBackupUuid()",
       "cmsg.getBackupStorageUuid()"
     ],
-    "line": 299,
-    "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
-  },
-  {
-    "raw": "sync task failed.",
-    "en_US": "sync task failed.",
-    "zh_CN": "同步失败",
-    "arguments": [],
-    "line": 502,
-    "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
-  },
-  {
-    "raw": "unexpected task status: %s",
-    "en_US": "unexpected task status: {0}",
-    "zh_CN": "错误的任务状态{0}",
-    "arguments": [
-      "reply.getStatus()"
-    ],
-    "line": 509,
+    "line": 319,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -10704,22 +10872,60 @@
     "en_US": "volume backup[uuid:{0}] not found in backup storage[uuid:{1}]",
     "zh_CN": "在镜像服务器[uuid:{1}]上找不到云盘备份[uuid:{0}]",
     "arguments": [
-      "msg.getUuid()",
-      "msg.getSrcBackupStorageUuid()"
+      "backupUuid",
+      "srcBackupStorageUuid"
     ],
-    "line": 669,
+    "line": 723,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
-    "raw": "One of the backup storage[uuids: %s, %s] is in the state of %s, can not do sync operation",
-    "en_US": "One of the backup storage[uuids: {0}, {1}] is in the state of {2}, can not do sync operation",
-    "zh_CN": "镜像服务器[uuid: {0}]处于状态{1}, 无法执行同步操作",
+    "raw": "No volume backups found with group uuid: %s",
+    "en_US": "No volume backups found with group uuid: {0}",
+    "zh_CN": "",
     "arguments": [
-      "msg.getDstBackupStorageUuid()",
-      "msg.getSrcBackupStorageUuid()",
-      "BackupStorageState.Disabled.toString()"
+      "groupUuid"
     ],
-    "line": 774,
+    "line": 907,
+    "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
+  },
+  {
+    "raw": "Root volume missing within group uuid: %s",
+    "en_US": "Root volume missing within group uuid: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "groupUuid"
+    ],
+    "line": 914,
+    "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
+  },
+  {
+    "raw": "Multiple root volumes found within group uuid: %s",
+    "en_US": "Multiple root volumes found within group uuid: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "groupUuid"
+    ],
+    "line": 920,
+    "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
+  },
+  {
+    "raw": "No permission to volume backups within group uuid: %s",
+    "en_US": "No permission to volume backups within group uuid: {0}",
+    "zh_CN": "",
+    "arguments": [
+      "groupUuid"
+    ],
+    "line": 932,
+    "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
+  },
+  {
+    "raw": "Volume backup[uuid:%s] not found on any backup storage",
+    "en_US": "Volume backup[uuid:{0}] not found on any backup storage",
+    "zh_CN": "",
+    "arguments": [
+      "vo.getUuid()"
+    ],
+    "line": 1069,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -10752,7 +10958,7 @@
       "url",
       "rsp.getError()"
     ],
-    "line": 199,
+    "line": 213,
     "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorage.java"
   },
   {
@@ -10762,7 +10968,7 @@
     "arguments": [
       "iinv.getName()"
     ],
-    "line": 292,
+    "line": 306,
     "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorage.java"
   },
   {
@@ -10770,7 +10976,7 @@
     "en_US": "No response",
     "zh_CN": "无响应",
     "arguments": [],
-    "line": 531,
+    "line": 558,
     "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorage.java"
   },
   {
@@ -10780,7 +10986,7 @@
     "arguments": [
       "ret.getError()"
     ],
-    "line": 577,
+    "line": 604,
     "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorage.java"
   },
   {
@@ -10788,7 +10994,7 @@
     "en_US": "image store [{0}] cannot add image, because it is used for backup remote",
     "zh_CN": "ImageStore[{0}]不能添加镜像，因为它已经被远程镜像使用",
     "arguments": [],
-    "line": 860,
+    "line": 879,
     "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorage.java"
   },
   {
@@ -10796,7 +11002,7 @@
     "en_US": "commercial license is required to use ImageStore",
     "zh_CN": "使用ImageStore需要商业许可证",
     "arguments": [],
-    "line": 1033,
+    "line": 1052,
     "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorage.java"
   },
   {
@@ -10807,7 +11013,7 @@
       "self.getUuid()",
       "ret.getUuid()"
     ],
-    "line": 1066,
+    "line": 1085,
     "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorage.java"
   },
   {
@@ -14146,7 +14352,7 @@
       "self.getName()",
       "self.getStatus()"
     ],
-    "line": 271,
+    "line": 247,
     "fileName": "src/main/java/org/zstack/ticket/TicketBase.java"
   },
   {
@@ -14156,7 +14362,7 @@
     "arguments": [
       "operator.operatorUuid"
     ],
-    "line": 325,
+    "line": 301,
     "fileName": "src/main/java/org/zstack/ticket/TicketBase.java"
   },
   {
@@ -14248,7 +14454,7 @@
       "self.getUuid()",
       "self.getName()"
     ],
-    "line": 41,
+    "line": 42,
     "fileName": "src/main/java/org/zstack/ticket/iam2/IAM2Ticket.java"
   },
   {
@@ -14260,7 +14466,7 @@
       "self.getUuid()",
       "self.getName()"
     ],
-    "line": 46,
+    "line": 47,
     "fileName": "src/main/java/org/zstack/ticket/iam2/IAM2Ticket.java"
   },
   {
@@ -14268,7 +14474,7 @@
     "en_US": "operation denied because flow collection[uuid:{0}] it not belong the project[uuid:{1}]",
     "zh_CN": "操作无效，因为流程[uuid:{0}]不属于项目[uuid:{1}]",
     "arguments": [],
-    "line": 58,
+    "line": 59,
     "fileName": "src/main/java/org/zstack/ticket/iam2/IAM2Ticket.java"
   },
   {
@@ -14280,7 +14486,7 @@
       "self.getUuid()",
       "self.getName()"
     ],
-    "line": 70,
+    "line": 71,
     "fileName": "src/main/java/org/zstack/ticket/iam2/IAM2Ticket.java"
   },
   {
@@ -14288,7 +14494,7 @@
     "en_US": "approver is removed from project or deleted, flow collection changed to invalid, reject this ticket",
     "zh_CN": "审批人已经离开项目或者被删除，流程失效，因此驳回当前工单",
     "arguments": [],
-    "line": 186,
+    "line": 193,
     "fileName": "src/main/java/org/zstack/ticket/iam2/IAM2TicketManager.java"
   },
   {
