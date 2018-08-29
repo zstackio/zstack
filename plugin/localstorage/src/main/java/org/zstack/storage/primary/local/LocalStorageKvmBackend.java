@@ -3,7 +3,6 @@ package org.zstack.storage.primary.local;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.compute.vm.ImageBackupStorageSelector;
-import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
@@ -20,7 +19,10 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.cluster.ClusterInventory;
-import org.zstack.header.core.*;
+import org.zstack.header.core.ApiTimeout;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.NopeCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.core.workflow.*;
@@ -60,7 +62,6 @@ import org.zstack.utils.path.PathUtil;
 import javax.persistence.Tuple;
 import java.io.File;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
@@ -1589,8 +1590,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             completion.fail(operr("root image has been deleted, cannot reimage now"));
             return;
         }
-        ImageInventory image = ImageInventory.valueOf(dbf.findByUuid(msg.getVolume().getRootImageUuid(), ImageVO.class));
-        if (image == null) {
+
+        if (!dbf.isExist(msg.getVolume().getRootImageUuid(), ImageVO.class)) {
             completion.fail(operr("root image has been deleted, cannot reimage now"));
             return;
         }
