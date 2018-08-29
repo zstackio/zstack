@@ -3,19 +3,19 @@ package org.zstack.header.identity.role.api;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.PolicyVO;
+import org.zstack.header.identity.StatementEffect;
 import org.zstack.header.identity.role.RoleVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.Arrays;
 import java.util.List;
-
-import static org.codehaus.groovy.runtime.InvokerHelper.asList;
 
 /**
  * Created by kayo on 2018/7/26.
  */
-@RestRequest(path = "/identities/roles/{uuid}",
+@RestRequest(path = "/identities/roles/{uuid}/actions",
         method = HttpMethod.PUT,
         isAction = true,
         responseClass = APIUpdateRoleEvent.class)
@@ -74,8 +74,12 @@ public class APIUpdateRoleMsg extends APIMessage implements RoleMessage {
         APIUpdateRoleMsg msg = new APIUpdateRoleMsg();
         msg.setUuid(uuid());
         msg.setName("role-1");
-        msg.setPolicyUuids(asList(uuid()));
-        msg.setStatements(asList("statement for test"));
+        msg.setPolicyUuids(Arrays.asList(uuid()));
+        PolicyStatement policy = new PolicyStatement();
+        policy.setEffect(StatementEffect.Allow);
+        policy.setName("test role");
+        policy.setActions(Arrays.asList("org.zstack.header.identity.role.api.APIUpdateRoleMsg"));
+        msg.setStatements(Arrays.asList(new PolicyStatement()));
         msg.setDescription("role for test");
 
         return msg;
