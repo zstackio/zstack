@@ -9,24 +9,8 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>ceph</artifactId>
-    <dependencies>
-        <dependency>
-            <groupId>org.zstack</groupId>
-            <artifactId>kvm</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.zstack</groupId>
-            <artifactId>sftpBackupStorage</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.zstack</groupId>
-            <artifactId>storage</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-    </dependencies>
+    <artifactId>helloworld</artifactId>
+
 
     <build>
         <plugins>
