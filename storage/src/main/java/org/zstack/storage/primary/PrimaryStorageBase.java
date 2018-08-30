@@ -327,6 +327,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((GetPrimaryStorageFolderListMsg) msg);
         } else if (msg instanceof AskInstallPathForNewSnapshotMsg) {
             handle((AskInstallPathForNewSnapshotMsg) msg);
+        } else if ((msg instanceof SyncPrimaryStorageCapacityMsg)) {
+            handle((SyncPrimaryStorageCapacityMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -644,6 +646,34 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     private void handle(final APISyncPrimaryStorageCapacityMsg msg) {
         final APISyncPrimaryStorageCapacityEvent evt = new APISyncPrimaryStorageCapacityEvent(msg.getId());
 
+        SyncPrimaryStorageCapacityMsg smsg = new SyncPrimaryStorageCapacityMsg();
+        smsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+        bus.makeTargetServiceIdByResourceUuid(smsg, PrimaryStorageConstant.SERVICE_ID, smsg.getPrimaryStorageUuid());
+        bus.send(smsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    evt.setSuccess(false);
+                    evt.setError(reply.getError());
+                    bus.publish(evt);
+                    return;
+                }
+
+                SyncPrimaryStorageCapacityReply reply1 = reply.castReply();
+                if (!reply1.isSuccess()) {
+                    evt.setSuccess(false);
+                    evt.setError(reply1.getError());
+                } else {
+                    evt.setInventory(reply1.getInventory());
+                }
+                bus.publish(evt);
+            }
+        });
+    }
+
+    private void handle(final SyncPrimaryStorageCapacityMsg msg) {
+        SyncPrimaryStorageCapacityReply reply = new SyncPrimaryStorageCapacityReply();
+
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("sync-capacity-of-primary-storage-%s", self.getUuid()));
         chain.then(new ShareFlow() {
@@ -732,8 +762,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                     public void handle(Map data) {
                         writeToDb();
                         self = dbf.reload(self);
-                        evt.setInventory(getSelfInventory());
-                        bus.publish(evt);
+                        reply.setInventory(getSelfInventory());
+                        bus.reply(msg, reply);
                     }
 
                     private void writeToDb() {
@@ -754,8 +784,9 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                 error(new FlowErrorHandler(msg) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        evt.setError(errCode);
-                        bus.publish(evt);
+                        reply.setSuccess(false);
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
                     }
                 });
             }

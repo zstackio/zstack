@@ -67,7 +67,7 @@
     "en_US": "no identity zones can be used now",
     "zh_CN": "没有可用区能使用",
     "arguments": [],
-    "line": 3224,
+    "line": 3225,
     "fileName": "src/main/java/org/zstack/aliyun/core/AliyunSdkImpl.java"
   },
   {
@@ -77,7 +77,7 @@
     "arguments": [
       "request.getRegionId()"
     ],
-    "line": 3359,
+    "line": 3360,
     "fileName": "src/main/java/org/zstack/aliyun/core/AliyunSdkImpl.java"
   },
   {
@@ -395,7 +395,7 @@
       "msg.getImageUuid()",
       "msg.getDataCenterUuid()"
     ],
-    "line": 345,
+    "line": 346,
     "fileName": "src/main/java/org/zstack/aliyun/image/EcsImageManagerImpl.java"
   },
   {
@@ -4105,7 +4105,7 @@
       "self.getName()",
       "self.getUuid()"
     ],
-    "line": 128,
+    "line": 136,
     "fileName": "src/main/java/org/zstack/ha/HaKvmWorker.java"
   },
   {
@@ -4113,7 +4113,7 @@
     "en_US": "no HaHostChecker found, cannot do HA",
     "zh_CN": "找不到HaHostChecker，无法执行HA",
     "arguments": [],
-    "line": 135,
+    "line": 143,
     "fileName": "src/main/java/org/zstack/ha/HaKvmWorker.java"
   },
   {
@@ -5478,7 +5478,7 @@
       "quotaName",
       "quotaValue"
     ],
-    "line": 111,
+    "line": 110,
     "fileName": "src/main/java/org/zstack/identity/QuotaUtil.java"
   },
   {
@@ -5492,7 +5492,7 @@
       "currentUsed",
       "request"
     ],
-    "line": 118,
+    "line": 117,
     "fileName": "src/main/java/org/zstack/identity/QuotaUtil.java"
   },
   {
@@ -6856,7 +6856,7 @@
     "arguments": [
       "str"
     ],
-    "line": 764,
+    "line": 768,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6867,7 +6867,7 @@
       "cidr",
       "fmtCidr"
     ],
-    "line": 775,
+    "line": 779,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6877,7 +6877,7 @@
     "arguments": [
       "hostUuid"
     ],
-    "line": 794,
+    "line": 798,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6889,7 +6889,7 @@
       "distro",
       "version"
     ],
-    "line": 813,
+    "line": 817,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6899,7 +6899,7 @@
     "arguments": [
       "newValue"
     ],
-    "line": 939,
+    "line": 943,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6909,7 +6909,7 @@
     "arguments": [
       "newValue"
     ],
-    "line": 915,
+    "line": 919,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6919,7 +6919,7 @@
     "arguments": [
       "psUuid"
     ],
-    "line": 900,
+    "line": 904,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6929,7 +6929,7 @@
     "arguments": [
       "newValue"
     ],
-    "line": 936,
+    "line": 940,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6939,7 +6939,7 @@
     "arguments": [
       "newValue"
     ],
-    "line": 948,
+    "line": 952,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6951,7 +6951,7 @@
       "MevocoGlobalConfig.AIO_NATIVE.value()",
       "KVMGlobalConfig.LIBVIRT_CACHE_MODE.value()"
     ],
-    "line": 970,
+    "line": 974,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6961,7 +6961,7 @@
     "arguments": [
       "bandwidth"
     ],
-    "line": 1870,
+    "line": 1874,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6969,7 +6969,7 @@
     "en_US": "networkInboundBandwidth execeds the max value 32G bps",
     "zh_CN": "超过下行网络带宽超过最大值32G bps",
     "arguments": [],
-    "line": 1867,
+    "line": 1871,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6979,7 +6979,7 @@
     "arguments": [
       "bandwidth"
     ],
-    "line": 1882,
+    "line": 1886,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6987,7 +6987,7 @@
     "en_US": "networkOutboundBandwidth execeds the max value 32G bps",
     "zh_CN": "超过上行网络带宽超过最大值32G bps",
     "arguments": [],
-    "line": 1879,
+    "line": 1883,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6998,7 +6998,7 @@
       "volume.getUuid()",
       "vm.getUuid()"
     ],
-    "line": 2052,
+    "line": 2056,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -7006,7 +7006,7 @@
     "en_US": "shareable disk only support virtio-scsi type for now",
     "zh_CN": "目前共享盘只支持virtio-scsi",
     "arguments": [],
-    "line": 2070,
+    "line": 2074,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -7016,7 +7016,7 @@
     "arguments": [
       "hostUuid"
     ],
-    "line": 2568,
+    "line": 2572,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -7028,7 +7028,7 @@
       "displayNetworkCidr",
       "hostUuid"
     ],
-    "line": 2598,
+    "line": 2602,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -7039,7 +7039,7 @@
       "hostModel",
       "clusterModel"
     ],
-    "line": 2638,
+    "line": 2648,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -8573,7 +8573,7 @@
       "vm.getUuid()",
       "vm.getName()"
     ],
-    "line": 1155,
+    "line": 1162,
     "fileName": "src/main/java/org/zstack/network/service/eip/EipManagerImpl.java"
   },
   {
@@ -10631,7 +10631,7 @@
     "arguments": [
       "msg.getDatabaseBackupUuid()"
     ],
-    "line": 76,
+    "line": 73,
     "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupManagerImpl.java"
   },
   {
@@ -10639,7 +10639,7 @@
     "en_US": "database backup version is not match",
     "zh_CN": "",
     "arguments": [],
-    "line": 447,
+    "line": 452,
     "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupManagerImpl.java"
   },
   {
@@ -10647,7 +10647,7 @@
     "en_US": "cannot get free port to listen",
     "zh_CN": "",
     "arguments": [],
-    "line": 513,
+    "line": 518,
     "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupManagerImpl.java"
   },
   {
@@ -10658,7 +10658,7 @@
       "version",
       "dbf.getDbVersion()"
     ],
-    "line": 542,
+    "line": 547,
     "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupManagerImpl.java"
   },
   {
@@ -10842,7 +10842,7 @@
     "arguments": [
       "hypervisorType"
     ],
-    "line": 197,
+    "line": 196,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -10853,7 +10853,7 @@
       "msg.getBackupStorageUuid()",
       "BackupStorageState.Disabled.toString()"
     ],
-    "line": 214,
+    "line": 213,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -10864,7 +10864,7 @@
       "cmsg.getBackupUuid()",
       "cmsg.getBackupStorageUuid()"
     ],
-    "line": 319,
+    "line": 318,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -10875,7 +10875,7 @@
       "backupUuid",
       "srcBackupStorageUuid"
     ],
-    "line": 723,
+    "line": 722,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -10885,7 +10885,7 @@
     "arguments": [
       "groupUuid"
     ],
-    "line": 907,
+    "line": 906,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -10895,7 +10895,7 @@
     "arguments": [
       "groupUuid"
     ],
-    "line": 914,
+    "line": 913,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -10905,7 +10905,7 @@
     "arguments": [
       "groupUuid"
     ],
-    "line": 920,
+    "line": 919,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -10915,7 +10915,7 @@
     "arguments": [
       "groupUuid"
     ],
-    "line": 932,
+    "line": 931,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -10925,7 +10925,7 @@
     "arguments": [
       "vo.getUuid()"
     ],
-    "line": 1069,
+    "line": 1068,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -11912,7 +11912,7 @@
     "arguments": [
       "vmInstanceVO.getState()"
     ],
-    "line": 394,
+    "line": 485,
     "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationBase.java"
   },
   {
@@ -11922,7 +11922,19 @@
     "arguments": [
       "liveStorageVmState"
     ],
-    "line": 366,
+    "line": 457,
+    "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationBase.java"
+  },
+  {
+    "raw": "there are not enough capacity for vm[uuid: %s] storage migration, required capacity(include image cache): %s, current available physical capacity: %s",
+    "en_US": "there are not enough capacity for vm[uuid: {0}] storage migration, required capacity(include image cache): {1}, current available physical capacity: {2}",
+    "zh_CN": "对虚拟机[uuid: {0}]存储迁移需要目标主存储具有至少{1}的空余容量（容量计算包含镜像cache），但现在只有{2}的空余容量",
+    "arguments": [
+      "msg.getVmInstanceUuid()",
+      "size",
+      "dstPrimaryStorageVO.getCapacity().getAvailablePhysicalCapacity()"
+    ],
+    "line": 446,
     "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationBase.java"
   },
   {
@@ -11932,7 +11944,7 @@
     "arguments": [
       "srcPs.getType()"
     ],
-    "line": 655,
+    "line": 746,
     "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationBase.java"
   },
   {
@@ -12088,7 +12100,7 @@
       "self.getZoneUuid()",
       "self.getUuid()"
     ],
-    "line": 538,
+    "line": 540,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageBase.java"
   },
   {
@@ -12096,7 +12108,7 @@
     "en_US": "operation not supported",
     "zh_CN": "不支持的操作",
     "arguments": [],
-    "line": 641,
+    "line": 643,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageBase.java"
   },
   {
@@ -12106,7 +12118,7 @@
     "arguments": [
       "volumeUuid"
     ],
-    "line": 1152,
+    "line": 1183,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageBase.java"
   },
   {
@@ -12700,7 +12712,7 @@
     "arguments": [
       "msg.getVolume().getUuid()"
     ],
-    "line": 1859,
+    "line": 1860,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageKvmBackend.java"
   },
   {
@@ -12708,7 +12720,7 @@
     "en_US": "root image has been deleted, cannot reimage now",
     "zh_CN": "系统镜像已经被删除，无法重制云主机",
     "arguments": [],
-    "line": 1594,
+    "line": 1595,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageKvmBackend.java"
   },
   {
@@ -13512,13 +13524,38 @@
       "zoneUuid",
       "zoneUuid"
     ],
-    "line": 137,
+    "line": 138,
+    "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/migration/SblkToSblkMigrateVolumeFlow.java"
+  },
+  {
+    "raw": "there are not enough capacity for volume[uuid: %s] storage migration, required capacity: %s, current available physical capacity: %s",
+    "en_US": "there are not enough capacity for volume[uuid: {0}] storage migration, required capacity: {1}, current available physical capacity: {2}",
+    "zh_CN": "对云盘[uuid: {0}]存储迁移需要目标主存储具有至少{1}的空余容量，但现在只有{2}的空余容量",
+    "arguments": [
+      "volumeUuid",
+      "volumeVO.getActualSize()",
+      "dstPsInv.getAvailablePhysicalCapacity()"
+    ],
+    "line": 206,
+    "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/migration/SblkToSblkMigrateVolumeFlow.java"
+  },
+  {
+    "raw": "there are not enough capacity for image[uuid: %s] download while volume[uuid: %s] storage migration, required capacity: %s, current available physical capacity: %s",
+    "en_US": "there are not enough capacity for image[uuid: {0}] download while volume[uuid: {1}] storage migration, required capacity: {2}, current available physical capacity: {3}",
+    "zh_CN": "对云盘[uuid: {0}]存储迁移需要目标主存储具有至少{1}的空余容量来下载镜像cache，但现在只有{2}的空余容量",
+    "arguments": [
+      "image.getUuid()",
+      "volumeUuid",
+      "image.getActualSize()",
+      "dstPsInv.getAvailablePhysicalCapacity()"
+    ],
+    "line": 160,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/migration/SblkToSblkMigrateVolumeFlow.java"
   },
   {
     "raw": "data on source ps[uuid: %s] has been discarded, not support rollback",
     "en_US": "data on source ps[uuid: {0}] has been discarded, not support rollback",
-    "zh_CN": "",
+    "zh_CN": "源主存储[uuid:{0}]上的数据已经被清理，无法回滚",
     "arguments": [
       "srcPsUuid"
     ],
@@ -14352,7 +14389,7 @@
       "self.getName()",
       "self.getStatus()"
     ],
-    "line": 247,
+    "line": 248,
     "fileName": "src/main/java/org/zstack/ticket/TicketBase.java"
   },
   {
@@ -14362,7 +14399,7 @@
     "arguments": [
       "operator.operatorUuid"
     ],
-    "line": 301,
+    "line": 302,
     "fileName": "src/main/java/org/zstack/ticket/TicketBase.java"
   },
   {
