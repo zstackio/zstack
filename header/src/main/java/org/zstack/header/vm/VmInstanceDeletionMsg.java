@@ -7,7 +7,7 @@ import org.zstack.header.message.DeletionMessage;
 public class VmInstanceDeletionMsg extends DeletionMessage implements VmInstanceMessage, ReleaseResourceMessage {
     private String vmInstanceUuid;
     private String deletionPolicy;
-    private boolean ignoreResourceReleaseFailure;
+    private boolean ignoreResourceReleaseFailure = false;
 
     public String getDeletionPolicy() {
         return deletionPolicy;

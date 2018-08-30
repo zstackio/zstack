@@ -66,6 +66,8 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
     protected static final int OP_MIGRATE = 1;
     protected static final int OP_DELETION = 2;
 
+    private static final List<String> ignoreReleaseResourceFailIssuers = Arrays.asList(HostVO.class.getSimpleName(), PrimaryStorageVO.class.getSimpleName());
+
     protected int toDeleteOpCode(CascadeAction action) {
         if (PrimaryStorageVO.class.getSimpleName().equals(action.getParentIssuer())) {
             return OP_DELETION;
@@ -207,6 +209,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
                             @Override
                             public VmInstanceDeletionMsg call(VmInstanceVO arg) {
                                 VmInstanceDeletionMsg msg = new VmInstanceDeletionMsg();
+                                msg.setIgnoreResourceReleaseFailure(true);
                                 msg.setVmInstanceUuid(arg.getUuid());
                                 bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, arg.getUuid());
                                 return msg;
@@ -458,9 +461,8 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
                             return;
                         }
 
-                        boolean ignoreResourceReleaseFailure = Arrays.asList(
-                                HostVO.class.getSimpleName(), PrimaryStorageVO.class.getSimpleName()
-                        ).contains(action.getParentIssuer());
+                        boolean ignoreResourceReleaseFailure = ignoreReleaseResourceFailIssuers.contains(action.getParentIssuer()) ||
+                                ignoreReleaseResourceFailIssuers.contains(action.getRootIssuer());
 
                         List<VmInstanceDeletionMsg> msgs = CollectionUtils.transformToList(apvmToDelete, new Function<VmInstanceDeletionMsg, ApplianceVmInventory>() {
                             @Override
