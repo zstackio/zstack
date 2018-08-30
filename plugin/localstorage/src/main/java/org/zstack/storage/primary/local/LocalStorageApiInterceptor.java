@@ -1,6 +1,7 @@
 package org.zstack.storage.primary.local;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.compute.vm.IsoOperator;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
@@ -126,9 +127,9 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
                     throw new ApiMessageInterceptionException(argerr("the volume[uuid:%s] is not in status of Ready, cannot migrate it", msg.getVolumeUuid()));
                 }
 
-                //5.confirm that the data volume has detach the vm and the root volume will migrate to appropriate cluster.
+                //5.confirm that the data volume and iso has detach the vm and the root volume will migrate to appropriate cluster.
                 if (vol.getType() == VolumeType.Data && vol.getVmInstanceUuid() != null) {
-                    throw new ApiMessageInterceptionException(argerr("the data volume[uuid:%s, name: %s] is still attached on the VM[uuid:%s]. Please detach" +
+                    throw new ApiMessageInterceptionException(argerr("the data volume[uuid:%s, name: %s] is still attached to the VM[uuid:%s]. Please detach" +
                             " it before migration", vol.getUuid(), vol.getName(), vol.getVmInstanceUuid()));
                 } else if (vol.getType() == VolumeType.Root) {
                     VmInstanceState vmstate = Q.New(VmInstanceVO.class)
@@ -145,6 +146,12 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
                     if (count != 0) {
                         throw new ApiMessageInterceptionException(operr("the volume[uuid:%s] is the root volume of the vm[uuid:%s]. Currently the vm still" +
                                 " has %s data volumes attached, please detach them before migration", vol.getUuid(), vol.getVmInstanceUuid(), count));
+                    }
+
+                    if (IsoOperator.isIsoAttachedToVm(vol.getVmInstanceUuid())) {
+                        throw new ApiMessageInterceptionException(operr("the volume[uuid:%s] is the root volume of the vm[uuid:%s]. Currently the vm still" +
+                                " has ISO attached, please detach it before migration", vol.getUuid(), vol.getVmInstanceUuid()));
+
                     }
 
                     String clusterUuid = Q.New(HostVO.class).select(HostVO_.clusterUuid)
