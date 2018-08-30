@@ -69,6 +69,8 @@ public interface KVMConstant {
 
     String KVM_HOST_ADDONS = "kvmHostAddons";
 
+    String HOST_PASSTHROUGH = "host-passthrough";
+
     enum KvmVmState {
         NoState,
         Running,
