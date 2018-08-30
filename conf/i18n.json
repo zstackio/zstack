@@ -8721,6 +8721,22 @@
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
+    "raw": "udp port 53 is used by dns daemon",
+    "en_US": "udp port 53 is used by dns daemon",
+    "zh_CN": "udp端口53已经被dns进程使用",
+    "arguments": [],
+    "line": 261,
+    "fileName": "src/zstack/./plugin/loadBalancer/src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
+  },
+  {
+    "raw": "tcp port 22, 7272 is used by vrouter",
+    "en_US": "tcp port 22, 7272 is used by vrouter",
+    "zh_CN": "tcp端口22,7272已经被vrouter管理进程进程使用",
+    "arguments": [],
+    "line": 274,
+    "fileName": "src/zstack/./plugin/loadBalancer/src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
+  },
+  {
     "raw": "loadbalancer listener with type %s does not need certificate",
     "en_US": "loadbalancer listener with type {0} does not need certificate",
     "zh_CN": "[{0}]类型证书不需要证书",
