@@ -14,6 +14,7 @@ import org.zstack.header.storage.primary.ImageCacheVO
 import org.zstack.header.storage.primary.ImageCacheVO_
 import org.zstack.header.storage.primary.PrimaryStorageConstant
 import org.zstack.sdk.GetVolumeCapabilitiesAction
+import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.LocalStorageMigrateVolumeAction
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VolumeInventory
@@ -76,6 +77,7 @@ class MigrateVolumeCase extends SubCase {
             testMigrateRootVolumeWhenImageDeletedAndHaveNoBackingFile()
             testMigrateRootVolumeWhenImageDeletedAndHaveNoBackingFileRollback()
             testMigrateRootVolumeWhenImageDeletedAndGetBaseImageFail()
+            testMigrateVmAttachedISO()
             testMigrateVolumeWhenPsIsMaintainFailure()
         }
     }
@@ -252,6 +254,23 @@ class MigrateVolumeCase extends SubCase {
         coldOrLiveMigrateVmToHost(dstHostUuid)
 
         env.cleanSimulatorHandlers()
+    }
+
+    void testMigrateVmAttachedISO(){
+        String dstHostUuid = kvm1.inventory.uuid
+        def iso = env.inventoryByName("test-iso") as ImageInventory
+        attachIsoToVmInstance {
+            isoUuid = iso.uuid
+            vmInstanceUuid = vm.uuid
+        }
+        expect(AssertionError){
+            coldOrLiveMigrateVmToHost(dstHostUuid)
+        }
+
+        detachIsoFromVmInstance {
+            vmInstanceUuid = vm.uuid
+        }
+        coldOrLiveMigrateVmToHost(dstHostUuid)
     }
 
     void testMigrateVolumeWhenPsIsMaintainFailure() {
