@@ -3,6 +3,7 @@ package org.zstack.core.cloudbus;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.jmx.JmxFacade;
 import org.zstack.header.Component;
 import org.zstack.header.apimediator.ApiMediatorConstant;
 import org.zstack.header.message.*;
@@ -25,6 +26,9 @@ public class CloudBusJMX implements Component, BeforeSendMessageInterceptor,
 
     @Autowired
     private CloudBus bus;
+
+    @Autowired
+    private JmxFacade jmxf;
 
     class Bundle {
         Long startTime;
@@ -55,6 +59,8 @@ public class CloudBusJMX implements Component, BeforeSendMessageInterceptor,
                 messageStartTime.invalidateAll();
             }
         });
+
+        jmxf.registerBean("CloudBus", this);
 
         return true;
     }
