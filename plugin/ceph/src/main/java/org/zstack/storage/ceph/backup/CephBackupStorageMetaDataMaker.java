@@ -24,6 +24,7 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -48,8 +49,9 @@ public class CephBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
     @Transactional
     protected String getAllImageInventories(ImageInventory img, String bsUuid) {
         String allImageInventories = null;
-        String sql = "select img from ImageVO img where uuid in (select imageUuid from ImageBackupStorageRefVO ref where ref.backupStorageUuid= :bsUuid)";
+        String sql = "select img from ImageVO img where img.status = :status and uuid in (select imageUuid from ImageBackupStorageRefVO ref where ref.backupStorageUuid= :bsUuid)";
         TypedQuery<ImageVO> q = dbf.getEntityManager().createQuery(sql, ImageVO.class);
+        q.setParameter("status", ImageStatus.Ready);
         if (img != null ) {
             q.setParameter("bsUuid", getBackupStorageUuidFromImageInventory(img));
         } else {
@@ -83,6 +85,11 @@ public class CephBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
         for ( String metadata : metadatas) {
             if (metadata.contains("backupStorageRefs")) {
                 ImageInventory imageInventory = JSONObjectUtil.toObject(metadata, ImageInventory.class);
+
+                if (!imageInventory.getStatus().equals(ImageStatus.Ready.toString())) {
+                    continue;
+                }
+
                 for ( ImageBackupStorageRefInventory ref : imageInventory.getBackupStorageRefs()) {
                     ImageBackupStorageRefVO backupStorageRefVO = new ImageBackupStorageRefVO();
                     backupStorageRefVO.setStatus(ImageStatus.valueOf(ref.getStatus()));
