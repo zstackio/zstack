@@ -31,6 +31,8 @@ import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -223,6 +225,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                         vo.setState(LongJobState.Succeeded);
                         if (vo.getJobResult() == null || vo.getJobResult().isEmpty())
                             vo.setJobResult("Succeeded");
+                        vo.setLastOpDate(Timestamp.valueOf(LocalDateTime.now()));
                         dbf.update(vo);
                         logger.info(String.format("successfully run longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
                     }
@@ -233,6 +236,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                         vo.setState(LongJobState.Failed);
                         if (vo.getJobResult() == null || vo.getJobResult().isEmpty())
                             vo.setJobResult("Failed : " + errorCode.toString());
+                        vo.setLastOpDate(Timestamp.valueOf(LocalDateTime.now()));
                         dbf.update(vo);
                         logger.info(String.format("failed to run longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
                     }
