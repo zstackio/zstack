@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.host.MigrateNetworkExtensionPoint;
+import org.zstack.compute.vm.IsoOperator;
 import org.zstack.compute.vm.VmAllocatePrimaryStorageFlow;
 import org.zstack.compute.vm.VmAllocatePrimaryStorageForAttachingDiskFlow;
 import org.zstack.compute.vm.VmMigrateOnHypervisorFlow;
@@ -886,6 +887,11 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         if (!ImagePlatform.Linux.toString().equals(vm.getPlatform())) {
             throw new OperationFailureException(operr("unable to live migrate vm[uuid:%s] with local storage." +
                     " Only linux guest is supported. Current platform is [%s]", vm.getUuid(), vm.getPlatform()));
+        }
+
+        if (IsoOperator.isIsoAttachedToVm(vm.getUuid())) {
+            throw new OperationFailureException(operr("unable to live migrate vm[uuid:%s] with ISO on local storage." +
+                    " Need detach all ISO first.", vm.getUuid()));
         }
     }
 
