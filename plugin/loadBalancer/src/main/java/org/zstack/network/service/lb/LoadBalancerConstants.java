@@ -33,6 +33,10 @@ public class LoadBalancerConstants {
     public static final String LB_PROTOCOL_HTTP = "http";
     public static final String LB_PROTOCOL_HTTPS = "https";
 
+    public static final int DNS_PORT = 53;
+    public static final int SSH_PORT = 22;
+    public static final int ZVR_PORT = 7272;
+
     static {
         BALANCE_ALGORITHMS.add(BALANCE_ALGORITHM_ROUND_ROBIN);
         BALANCE_ALGORITHMS.add(BALANCE_ALGORITHM_LEAST_CONN);

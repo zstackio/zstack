@@ -255,6 +255,24 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
         if (luuid != null) {
             throw new ApiMessageInterceptionException(argerr("conflict loadBalancerPort[%s], a listener[uuid:%s] has used that port", msg.getLoadBalancerPort(), luuid));
         }
+
+        /* udp port 53 can not be used */
+        if (msg.getProtocol().equals(LoadBalancerConstants.LB_PROTOCOL_UDP) && msg.getLoadBalancerPort() == LoadBalancerConstants.DNS_PORT) {
+            throw new ApiMessageInterceptionException(argerr("udp port 53 is used by dns daemon"));
+        }
+
+        /* tcp port 22, 7272 can not be used on vrouter public vip */
+        LoadBalancerVO loadBalancerVO = Q.New(LoadBalancerVO.class).eq(LoadBalancerVO_.uuid, msg.getLoadBalancerUuid()).find();
+        VipVO vipVO = Q.New(VipVO.class).eq(VipVO_.uuid, loadBalancerVO.getVipUuid()).find();
+        VipUseForList useForList = new VipUseForList(vipVO.getUseFor());
+        boolean isTcpProto = msg.getProtocol().equals(LoadBalancerConstants.LB_PROTOCOL_TCP)
+                || msg.getProtocol().equals(LoadBalancerConstants.LB_PROTOCOL_HTTP)
+                || msg.getProtocol().equals(LoadBalancerConstants.LB_PROTOCOL_HTTPS);
+        boolean isTcpReservePort = msg.getLoadBalancerPort() == LoadBalancerConstants.SSH_PORT
+                || msg.getLoadBalancerPort() == LoadBalancerConstants.ZVR_PORT;
+        if (isTcpProto && isTcpReservePort && useForList.isIncluded(useForList.SNAT_NETWORK_SERVICE_TYPE)) {
+            throw new ApiMessageInterceptionException(argerr("tcp port 22, 7272 is used by vrouter"));
+        }
     }
 
     private void validate(APIDeleteLoadBalancerListenerMsg msg) {
