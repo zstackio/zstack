@@ -23,6 +23,8 @@ import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.NeedQuotaCheckMessage;
+import org.zstack.header.network.l2.L2NetworkClusterRefVO;
+import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
@@ -155,39 +157,44 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                 .select(L3NetworkVO_.zoneUuid)
                 .eq(L3NetworkVO_.uuid, vip.getL3NetworkUuid())
                 .findValue();
+        L3NetworkVO l3Vo = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, vip.getL3NetworkUuid()).find();
+        String clusterUuid = Q.New(L2NetworkClusterRefVO.class).eq(L2NetworkClusterRefVO_.l2NetworkUuid, l3Vo.getL2NetworkUuid())
+                .select(L2NetworkClusterRefVO_.clusterUuid).findValue();
 
         List<String> l3Uuids;
 
         if (providerType != null) {
             // the eip is created on the backend
             l3Uuids = SQL.New("select l3.uuid" +
-                    " from L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO np" +
+                    " from L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO np, L2NetworkClusterRefVO l2ref" +
                     " where l3.system = :system" +
                     " and l3.uuid != :vipL3NetworkUuid" +
                     " and l3.uuid = ref.l3NetworkUuid" +
                     " and ref.networkServiceType = :nsType" +
                     " and l3.zoneUuid = :zoneUuid" +
                     " and np.uuid = ref.networkServiceProviderUuid" +
-                    " and np.type = :npType")
+                    " and np.type = :npType and l3.l2NetworkUuid = l2ref.l2NetworkUuid and l2ref.clusterUuid = :clusterUuid")
                     .param("system", false)
                     .param("zoneUuid", zoneUuid)
                     .param("nsType", EipConstant.EIP_NETWORK_SERVICE_TYPE)
                     .param("npType", providerType)
                     .param("vipL3NetworkUuid", vip.getL3NetworkUuid())
+                    .param("clusterUuid", clusterUuid)
                     .list();
         } else {
             // the eip is not created on the backend
             l3Uuids = SQL.New("select l3.uuid" +
-                    " from L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref" +
+                    " from L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref, L2NetworkClusterRefVO l2ref" +
                     " where l3.system = :system" +
                     " and l3.uuid != :vipL3NetworkUuid" +
                     " and l3.uuid = ref.l3NetworkUuid" +
                     " and ref.networkServiceType = :nsType" +
-                    " and l3.zoneUuid = :zoneUuid")
+                    " and l3.zoneUuid = :zoneUuid and l3.l2NetworkUuid = l2ref.l2NetworkUuid and l2ref.clusterUuid = :clusterUuid")
                     .param("system", false)
                     .param("zoneUuid", zoneUuid)
                     .param("nsType", EipConstant.EIP_NETWORK_SERVICE_TYPE)
                     .param("vipL3NetworkUuid", vip.getL3NetworkUuid())
+                    .param("clusterUuid", clusterUuid)
                     .list();
         }
 

@@ -12,6 +12,7 @@ import org.zstack.network.service.userdata.UserdataConstant
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
 import org.zstack.sdk.EipInventory
 import org.zstack.sdk.L3NetworkInventory
+import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VmNicInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.testlib.EnvSpec
@@ -84,8 +85,28 @@ class GetCandidateVmNicsForEipInVirtualRouterCase extends SubCase{
                     attachL2Network("l2-flat")
                 }
 
+                cluster {
+                    name = "cluster-1"
+                    hypervisorType = "KVM"
+
+                    kvm {
+                        name = "kvm"
+                        managementIp = "127.0.0.2"
+                        username = "root"
+                        password = "password"
+                    }
+
+                    attachPrimaryStorage("local-1")
+                    attachL2Network("l2-vlan-100")
+                }
+
                 localPrimaryStorage {
                     name = "local"
+                    url = "/local_ps"
+                }
+
+                localPrimaryStorage {
+                    name = "local-1"
                     url = "/local_ps"
                 }
 
@@ -165,6 +186,39 @@ class GetCandidateVmNicsForEipInVirtualRouterCase extends SubCase{
                     }
                 }
 
+                l2VlanNetwork {
+                    name = "l2-vlan-100"
+                    physicalInterface = "eth0"
+                    vlan = 100
+
+                    l3Network {
+                        name = "l3-2"
+
+                        service {
+                            provider = FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING
+                            types = [NetworkServiceType.DHCP.toString(), EipConstant.EIP_NETWORK_SERVICE_TYPE, UserdataConstant.USERDATA_TYPE_STRING]
+                        }
+
+                        ip {
+                            startIp = "192.168.200.10"
+                            endIp = "192.168.200.100"
+                            netmask = "255.255.255.0"
+                            gateway = "192.168.200.1"
+                        }
+                    }
+
+                    l3Network {
+                        name = "pubL3-1"
+                        category = "Public"
+                        ip {
+                            startIp = "11.168.200.10"
+                            endIp = "11.168.200.100"
+                            netmask = "255.255.255.0"
+                            gateway = "11.168.200.1"
+                        }
+                    }
+                }
+
                 attachBackupStorage("sftp")
 
                 eip {
@@ -175,6 +229,11 @@ class GetCandidateVmNicsForEipInVirtualRouterCase extends SubCase{
                 eip {
                     name = "eip2"
                     useVip("fakePubL3")
+                }
+
+                eip {
+                    name = "eip3"
+                    useVip("pubL3-1")
                 }
 
                 virtualRouterOffering {
@@ -200,6 +259,13 @@ class GetCandidateVmNicsForEipInVirtualRouterCase extends SubCase{
                 useL3Networks("flatL3")
                 useInstanceOffering("instanceOffering")
             }
+
+            vm {
+                name = "vmInCluster-2"
+                useImage("image")
+                useL3Networks("l3-2")
+                useInstanceOffering("instanceOffering")
+            }
         }
     }
 
@@ -213,6 +279,7 @@ class GetCandidateVmNicsForEipInVirtualRouterCase extends SubCase{
     void testGetCandidateVmNicsForEipInVirtualRouter(){
         def eip = env.inventoryByName("eip1") as EipInventory
         def eip2 = env.inventoryByName("eip2") as EipInventory
+        def eip3 = env.inventoryByName("eip3") as EipInventory
         def pubL3 = env.inventoryByName("pubL3") as L3NetworkInventory
         def fakePubL3 = env.inventoryByName("fakePubL3") as L3NetworkInventory
 
@@ -240,6 +307,17 @@ class GetCandidateVmNicsForEipInVirtualRouterCase extends SubCase{
             eipUuid = eip2.uuid
         } as List<VmNicInventory>
         assert nics3.size() == 2
+
+        //vmInCluster-2 should be listed
+        VmInstanceInventory vm = queryVmInstance {
+            conditions=["name=vmInCluster-2"]
+        }[0]
+
+        def nics4 = getEipAttachableVmNics {
+            eipUuid = eip3.uuid
+        } as List<VmNicInventory>
+        assert nics4.size() == 1
+        assert nics4.get(0).uuid == vm.getVmNics().get(0).uuid
     }
 
     @Override
