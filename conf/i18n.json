@@ -11211,9 +11211,9 @@
     "fileName": "src/main/java/org/zstack/storage/ceph/CephApiInterceptor.java"
   },
   {
-    "raw": "The problem may be caused by an incorrect user name or password or SSH port",
-    "en_US": "The problem may be caused by an incorrect user name or password or SSH port",
-    "zh_CN": "该问题可能是由不正确的用户名、密码或者SSH端口引起的",
+    "raw": "The problem may be caused by an incorrect user name or password or SSH port or unstable network environment",
+    "en_US": "The problem may be caused by an incorrect user name or password or SSH port or unstable network environment",
+    "zh_CN": "该问题可能是由不正确的用户名、密码、SSH端口或者不稳定的网络环境引起的",
     "arguments": [],
     "line": 54,
     "fileName": "src/main/java/org/zstack/storage/ceph/CephMonBase.java"
