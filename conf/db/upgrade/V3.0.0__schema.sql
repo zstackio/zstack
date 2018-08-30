@@ -123,3 +123,5 @@ CREATE TABLE IF NOT EXISTS `DatabaseBackupStorageRefVO` (
 ALTER TABLE DatabaseBackupStorageRefVO ADD CONSTRAINT fkDatabaseBackupStorageRefVOBackupStorageEO FOREIGN KEY (backupStorageUuid) REFERENCES BackupStorageEO (uuid) ON DELETE CASCADE;
 ALTER TABLE DatabaseBackupStorageRefVO ADD CONSTRAINT fkDatabaseBackupStorageRefVODatabaseBackupVO FOREIGN KEY (databaseBackupUuid) REFERENCES DatabaseBackupVO (uuid) ON DELETE CASCADE;
 
+ALTER TABLE EcsImageVO ADD COLUMN `osName` varchar(32) DEFAULT NULL;
+
