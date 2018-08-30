@@ -543,7 +543,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     @SyncThread
     public void nodeLeft(String nodeId) {
         logger.debug(String.format("Management node[uuid:%s] left, node[uuid:%s] starts to take over hosts", nodeId, Platform.getManagementServerId()));
-        loadHost();
+        loadHost(true);
     }
 
     @Override
@@ -583,11 +583,11 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     }
 
 
-    private void loadHost() {
+    private void loadHost(boolean skipConnected) {
         Bucket hosts = getHostManagedByUs();
         List<String> connected = hosts.get(0);
         List<String> disconnected = hosts.get(1);
-        List<String> hostsToLoad = new ArrayList<String>();
+        List<String> hostsToLoad = new ArrayList<>();
 
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             hostsToLoad.addAll(connected);
@@ -604,6 +604,10 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
 
         if (hostsToLoad.isEmpty()) {
             return;
+        }
+
+        if (skipConnected) {
+            hostsToLoad.removeAll(connected);
         }
 
         String serviceId = bus.makeLocalServiceId(HostConstant.SERVICE_ID);
@@ -648,7 +652,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     @AsyncThread
     public void managementNodeReady() {
         logger.debug(String.format("Management node[uuid:%s] joins, start loading host...", Platform.getManagementServerId()));
-        loadHost();
+        loadHost(false);
     }
 
     @Override
