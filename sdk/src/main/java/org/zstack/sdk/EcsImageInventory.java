@@ -92,6 +92,14 @@ public class EcsImageInventory  {
         return this.format;
     }
 
+    public java.lang.String osName;
+    public void setOsName(java.lang.String osName) {
+        this.osName = osName;
+    }
+    public java.lang.String getOsName() {
+        return this.osName;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
