@@ -11,8 +11,8 @@ import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.Component;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
+import org.zstack.header.managementnode.ManagementNodeInventory;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.storage.primary.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -65,20 +65,20 @@ public class ImageCacheGarbageCollector implements Component, ManagementNodeChan
     }
     
     @Override
-    public void nodeJoin(String nodeId) {
+    public void nodeJoin(ManagementNodeInventory inv) {
         startGarbageCollectionThread();
     }
 
     @Override
-    public void nodeLeft(String nodeId) {
+    public void nodeLeft(ManagementNodeInventory inv) {
     }
 
     @Override
-    public void iAmDead(String nodeId) {
+    public void iAmDead(ManagementNodeInventory inv) {
     }
 
     @Override
-    public void iJoin(String nodeId) {
+    public void iJoin(ManagementNodeInventory inv) {
     }
 
     @Transactional

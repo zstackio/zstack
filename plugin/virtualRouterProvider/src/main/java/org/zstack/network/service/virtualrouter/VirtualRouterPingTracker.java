@@ -10,11 +10,11 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.tacker.PingTracker;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
+import org.zstack.header.managementnode.ManagementNodeInventory;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceState;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -99,22 +99,22 @@ public class VirtualRouterPingTracker extends PingTracker implements ManagementN
     }
 
     @Override
-    public void nodeJoin(String nodeId) {
+    public void nodeJoin(ManagementNodeInventory inv) {
         trackOurs();
     }
 
     @Override
-    public void nodeLeft(String nodeId) {
+    public void nodeLeft(ManagementNodeInventory inv) {
         trackOurs();
     }
 
     @Override
-    public void iAmDead(String nodeId) {
+    public void iAmDead(ManagementNodeInventory inv) {
 
     }
 
     @Override
-    public void iJoin(String nodeId) {
+    public void iJoin(ManagementNodeInventory inv) {
     }
 
     @Override
