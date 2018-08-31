@@ -67,7 +67,7 @@
     "en_US": "no identity zones can be used now",
     "zh_CN": "没有可用区能使用",
     "arguments": [],
-    "line": 3224,
+    "line": 3225,
     "fileName": "src/main/java/org/zstack/aliyun/core/AliyunSdkImpl.java"
   },
   {
@@ -77,7 +77,7 @@
     "arguments": [
       "request.getRegionId()"
     ],
-    "line": 3359,
+    "line": 3360,
     "fileName": "src/main/java/org/zstack/aliyun/core/AliyunSdkImpl.java"
   },
   {
@@ -395,7 +395,7 @@
       "msg.getImageUuid()",
       "msg.getDataCenterUuid()"
     ],
-    "line": 345,
+    "line": 346,
     "fileName": "src/main/java/org/zstack/aliyun/image/EcsImageManagerImpl.java"
   },
   {
@@ -1929,7 +1929,7 @@
     "en_US": "verb must contain \u0027::\u0027!",
     "zh_CN": "",
     "arguments": [],
-    "line": 154,
+    "line": 155,
     "fileName": "src/main/java/org/zstack/cloudformation/template/CloudFormationCreator.java"
   },
   {
@@ -1940,7 +1940,7 @@
       "t[0]",
       "last.getClass().getName()"
     ],
-    "line": 195,
+    "line": 196,
     "fileName": "src/main/java/org/zstack/cloudformation/template/CloudFormationCreator.java"
   },
   {
@@ -1950,7 +1950,7 @@
     "arguments": [
       "value"
     ],
-    "line": 219,
+    "line": 220,
     "fileName": "src/main/java/org/zstack/cloudformation/template/CloudFormationCreator.java"
   },
   {
@@ -1958,7 +1958,7 @@
     "en_US": "cannot find resource of properties set before!",
     "zh_CN": "",
     "arguments": [],
-    "line": 281,
+    "line": 282,
     "fileName": "src/main/java/org/zstack/cloudformation/template/CloudFormationCreator.java"
   },
   {
@@ -1966,7 +1966,7 @@
     "en_US": "Some actions are invalid",
     "zh_CN": "",
     "arguments": [],
-    "line": 357,
+    "line": 358,
     "fileName": "src/main/java/org/zstack/cloudformation/template/CloudFormationCreator.java"
   },
   {
@@ -4105,7 +4105,7 @@
       "self.getName()",
       "self.getUuid()"
     ],
-    "line": 128,
+    "line": 136,
     "fileName": "src/main/java/org/zstack/ha/HaKvmWorker.java"
   },
   {
@@ -4113,7 +4113,7 @@
     "en_US": "no HaHostChecker found, cannot do HA",
     "zh_CN": "找不到HaHostChecker，无法执行HA",
     "arguments": [],
-    "line": 135,
+    "line": 143,
     "fileName": "src/main/java/org/zstack/ha/HaKvmWorker.java"
   },
   {
@@ -5478,7 +5478,7 @@
       "quotaName",
       "quotaValue"
     ],
-    "line": 111,
+    "line": 110,
     "fileName": "src/main/java/org/zstack/identity/QuotaUtil.java"
   },
   {
@@ -5492,7 +5492,7 @@
       "currentUsed",
       "request"
     ],
-    "line": 118,
+    "line": 117,
     "fileName": "src/main/java/org/zstack/identity/QuotaUtil.java"
   },
   {
@@ -8573,7 +8573,7 @@
       "vm.getUuid()",
       "vm.getName()"
     ],
-    "line": 1155,
+    "line": 1162,
     "fileName": "src/main/java/org/zstack/network/service/eip/EipManagerImpl.java"
   },
   {
@@ -10647,7 +10647,7 @@
     "arguments": [
       "msg.getDatabaseBackupUuid()"
     ],
-    "line": 76,
+    "line": 73,
     "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupManagerImpl.java"
   },
   {
@@ -10655,7 +10655,7 @@
     "en_US": "database backup version is not match",
     "zh_CN": "",
     "arguments": [],
-    "line": 447,
+    "line": 452,
     "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupManagerImpl.java"
   },
   {
@@ -10663,7 +10663,7 @@
     "en_US": "cannot get free port to listen",
     "zh_CN": "",
     "arguments": [],
-    "line": 513,
+    "line": 518,
     "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupManagerImpl.java"
   },
   {
@@ -10674,7 +10674,7 @@
       "version",
       "dbf.getDbVersion()"
     ],
-    "line": 542,
+    "line": 547,
     "fileName": "src/main/java/org/zstack/storage/backup/DatabaseBackupManagerImpl.java"
   },
   {
@@ -10858,7 +10858,7 @@
     "arguments": [
       "hypervisorType"
     ],
-    "line": 197,
+    "line": 196,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -10869,7 +10869,7 @@
       "msg.getBackupStorageUuid()",
       "BackupStorageState.Disabled.toString()"
     ],
-    "line": 214,
+    "line": 213,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -10880,7 +10880,7 @@
       "cmsg.getBackupUuid()",
       "cmsg.getBackupStorageUuid()"
     ],
-    "line": 319,
+    "line": 318,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -10891,7 +10891,7 @@
       "backupUuid",
       "srcBackupStorageUuid"
     ],
-    "line": 723,
+    "line": 722,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -10901,7 +10901,7 @@
     "arguments": [
       "groupUuid"
     ],
-    "line": 907,
+    "line": 906,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -10911,7 +10911,7 @@
     "arguments": [
       "groupUuid"
     ],
-    "line": 914,
+    "line": 913,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -10921,7 +10921,7 @@
     "arguments": [
       "groupUuid"
     ],
-    "line": 920,
+    "line": 919,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -10931,7 +10931,7 @@
     "arguments": [
       "groupUuid"
     ],
-    "line": 932,
+    "line": 931,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -10941,7 +10941,7 @@
     "arguments": [
       "vo.getUuid()"
     ],
-    "line": 1069,
+    "line": 1068,
     "fileName": "src/main/java/org/zstack/storage/backup/VolumeBackupManagerImpl.java"
   },
   {
@@ -11186,7 +11186,7 @@
     "arguments": [
       "rsp.getError()"
     ],
-    "line": 701,
+    "line": 710,
     "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorageMetaDataMaker.java"
   },
   {
@@ -11196,7 +11196,7 @@
     "arguments": [
       "bsUuid"
     ],
-    "line": 303,
+    "line": 312,
     "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorageMetaDataMaker.java"
   },
   {
@@ -11206,7 +11206,7 @@
     "arguments": [
       "rsp.getBackupStorageMetaFileName()"
     ],
-    "line": 630,
+    "line": 639,
     "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorageMetaDataMaker.java"
   },
   {
@@ -11216,7 +11216,7 @@
     "arguments": [
       "rsp.getBackupStorageMetaFileName()"
     ],
-    "line": 481,
+    "line": 490,
     "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorageMetaDataMaker.java"
   },
   {
@@ -11226,7 +11226,7 @@
     "arguments": [
       "rsp.getBackupStorageMetaFileName()"
     ],
-    "line": 456,
+    "line": 465,
     "fileName": "src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorageMetaDataMaker.java"
   },
   {
@@ -11288,7 +11288,7 @@
     "arguments": [
       "rsp.getBackupStorageMetaFileName()"
     ],
-    "line": 472,
+    "line": 479,
     "fileName": "src/main/java/org/zstack/storage/backup/sftp/SftpBackupStorageMetaDataMaker.java"
   },
   {
@@ -11298,7 +11298,7 @@
     "arguments": [
       "rsp.getBackupStorageMetaFileName()"
     ],
-    "line": 333,
+    "line": 340,
     "fileName": "src/main/java/org/zstack/storage/backup/sftp/SftpBackupStorageMetaDataMaker.java"
   },
   {
@@ -11308,7 +11308,7 @@
     "arguments": [
       "rsp.getBackupStorageMetaFileName()"
     ],
-    "line": 477,
+    "line": 484,
     "fileName": "src/main/java/org/zstack/storage/backup/sftp/SftpBackupStorageMetaDataMaker.java"
   },
   {
@@ -11740,7 +11740,7 @@
       "volumeVO.getUuid()",
       "volumeVO.getName()"
     ],
-    "line": 110,
+    "line": 107,
     "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationApiInterceptor.java"
   },
   {
@@ -11751,7 +11751,7 @@
       "metric.getSourcePrimaryStorageType()",
       "metric.getDestinationPrimaryStorageType()"
     ],
-    "line": 126,
+    "line": 123,
     "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationApiInterceptor.java"
   },
   {
@@ -11762,7 +11762,7 @@
       "metric.getSourcePrimaryStorageType()",
       "metric.getDestinationPrimaryStorageType()"
     ],
-    "line": 132,
+    "line": 129,
     "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationApiInterceptor.java"
   },
   {
@@ -11773,7 +11773,7 @@
       "metric.getSourcePrimaryStorageType()",
       "metric.getDestinationPrimaryStorageType()"
     ],
-    "line": 137,
+    "line": 134,
     "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationApiInterceptor.java"
   },
   {
@@ -11784,7 +11784,7 @@
       "metric.getSourcePrimaryStorageType()",
       "metric.getDestinationPrimaryStorageType()"
     ],
-    "line": 142,
+    "line": 139,
     "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationApiInterceptor.java"
   },
   {
@@ -11795,7 +11795,7 @@
       "primaryStorageVO.getType()",
       "dstPrimaryStorageVO.getType()"
     ],
-    "line": 150,
+    "line": 147,
     "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationApiInterceptor.java"
   },
   {
@@ -11803,7 +11803,7 @@
     "en_US": "Source BS and Destination BS cannot be the same.",
     "zh_CN": "源镜像服务器和目标镜像服务器不能相同",
     "arguments": [],
-    "line": 161,
+    "line": 158,
     "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationApiInterceptor.java"
   },
   {
@@ -11811,7 +11811,7 @@
     "en_US": "Source BS and Destination BS must not be Disabled.",
     "zh_CN": "源镜像服务器和目标镜像服务器必须不是不可用。",
     "arguments": [],
-    "line": 169,
+    "line": 166,
     "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationApiInterceptor.java"
   },
   {
@@ -11821,7 +11821,7 @@
     "arguments": [
       "msg.getImageUuid()"
     ],
-    "line": 176,
+    "line": 173,
     "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationApiInterceptor.java"
   },
   {
@@ -11832,7 +11832,7 @@
       "msg.getImageUuid()",
       "msg.getSrcBackupStorageUuid()"
     ],
-    "line": 187,
+    "line": 184,
     "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationApiInterceptor.java"
   },
   {
@@ -11843,7 +11843,7 @@
       "srcBS.getType()",
       "dstBS.getType()"
     ],
-    "line": 196,
+    "line": 193,
     "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationApiInterceptor.java"
   },
   {
@@ -11851,7 +11851,7 @@
     "en_US": "Source PS and Destination PS must not be Disabled or Maintenance state.",
     "zh_CN": "源主存储和目标主存储必须不是不可用或者维护状态。",
     "arguments": [],
-    "line": 216,
+    "line": 213,
     "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationApiInterceptor.java"
   },
   {
@@ -11862,7 +11862,7 @@
       "msg.getVolumeUuid()",
       "msg.getDstPrimaryStorageUuid()"
     ],
-    "line": 223,
+    "line": 220,
     "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationApiInterceptor.java"
   },
   {
@@ -11872,7 +11872,7 @@
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 230,
+    "line": 227,
     "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationApiInterceptor.java"
   },
   {
@@ -11883,7 +11883,7 @@
       "msg.getVolumeUuid()",
       "srcVolume.getVmInstanceUuid()"
     ],
-    "line": 278,
+    "line": 275,
     "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationApiInterceptor.java"
   },
   {
@@ -11891,7 +11891,7 @@
     "en_US": "Cannot migrate root volume when vm instance is not stopped.",
     "zh_CN": "当虚拟机不是已停止，不能迁移根云盘。",
     "arguments": [],
-    "line": 241,
+    "line": 238,
     "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationApiInterceptor.java"
   },
   {
@@ -11899,7 +11899,7 @@
     "en_US": "Cannot migrate root volume when there are data volumes attached to the vm instance.",
     "zh_CN": "当数据云盘连接在虚拟机上时，不能迁移根云盘",
     "arguments": [],
-    "line": 252,
+    "line": 249,
     "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationApiInterceptor.java"
   },
   {
@@ -11907,7 +11907,7 @@
     "en_US": "The destination primary storage is not attached to any cluster that has the same L2 networks as source cluster.",
     "zh_CN": "目标主存储不能连接任何和源集群一样的二层网络的集群",
     "arguments": [],
-    "line": 271,
+    "line": 268,
     "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationApiInterceptor.java"
   },
   {
@@ -11918,7 +11918,7 @@
       "srcPS.getType()",
       "dstPS.getType()"
     ],
-    "line": 290,
+    "line": 287,
     "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationApiInterceptor.java"
   },
   {
@@ -11928,7 +11928,7 @@
     "arguments": [
       "vmInstanceVO.getState()"
     ],
-    "line": 394,
+    "line": 487,
     "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationBase.java"
   },
   {
@@ -11938,7 +11938,19 @@
     "arguments": [
       "liveStorageVmState"
     ],
-    "line": 366,
+    "line": 459,
+    "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationBase.java"
+  },
+  {
+    "raw": "there are not enough capacity for vm[uuid: %s] storage migration, required capacity(include image cache): %s, current available physical capacity: %s",
+    "en_US": "there are not enough capacity for vm[uuid: {0}] storage migration, required capacity(include image cache): {1}, current available physical capacity: {2}",
+    "zh_CN": "对虚拟机[uuid: {0}]存储迁移需要目标主存储具有至少{1}的空余容量（容量计算包含镜像cache），但现在只有{2}的空余容量",
+    "arguments": [
+      "msg.getVmInstanceUuid()",
+      "size",
+      "dstPrimaryStorageVO.getCapacity().getAvailablePhysicalCapacity()"
+    ],
+    "line": 446,
     "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationBase.java"
   },
   {
@@ -11948,7 +11960,7 @@
     "arguments": [
       "srcPs.getType()"
     ],
-    "line": 655,
+    "line": 748,
     "fileName": "src/main/java/org/zstack/storage/migration/StorageMigrationBase.java"
   },
   {
@@ -12104,7 +12116,7 @@
       "self.getZoneUuid()",
       "self.getUuid()"
     ],
-    "line": 538,
+    "line": 540,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageBase.java"
   },
   {
@@ -12112,7 +12124,7 @@
     "en_US": "operation not supported",
     "zh_CN": "不支持的操作",
     "arguments": [],
-    "line": 641,
+    "line": 643,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageBase.java"
   },
   {
@@ -12122,7 +12134,7 @@
     "arguments": [
       "volumeUuid"
     ],
-    "line": 1152,
+    "line": 1183,
     "fileName": "src/main/java/org/zstack/storage/primary/PrimaryStorageBase.java"
   },
   {
@@ -12352,7 +12364,7 @@
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 89,
+    "line": 90,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageApiInterceptor.java"
   },
   {
@@ -12363,7 +12375,7 @@
       "msg.getVolumeUuid()",
       "msg.getDestHostUuid()"
     ],
-    "line": 94,
+    "line": 95,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageApiInterceptor.java"
   },
   {
@@ -12373,7 +12385,7 @@
     "arguments": [
       "msg.getPrimaryStorageUuid()"
     ],
-    "line": 100,
+    "line": 101,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageApiInterceptor.java"
   },
   {
@@ -12383,7 +12395,7 @@
     "arguments": [
       "ref.getPrimaryStorageUuid()"
     ],
-    "line": 104,
+    "line": 105,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageApiInterceptor.java"
   },
   {
@@ -12395,7 +12407,7 @@
       "ref.getPrimaryStorageUuid()",
       "msg.getVolumeUuid()"
     ],
-    "line": 113,
+    "line": 114,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageApiInterceptor.java"
   },
   {
@@ -12408,7 +12420,7 @@
       "physicalThreshold",
       "refVO.getAvailablePhysicalCapacity()"
     ],
-    "line": 119,
+    "line": 120,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageApiInterceptor.java"
   },
   {
@@ -12418,7 +12430,7 @@
     "arguments": [
       "msg.getVolumeUuid()"
     ],
-    "line": 126,
+    "line": 127,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageApiInterceptor.java"
   },
   {
@@ -12430,7 +12442,7 @@
       "vol.getVmInstanceUuid()",
       "vmstate"
     ],
-    "line": 138,
+    "line": 139,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageApiInterceptor.java"
   },
   {
@@ -12442,7 +12454,18 @@
       "vol.getVmInstanceUuid()",
       "count"
     ],
-    "line": 146,
+    "line": 147,
+    "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageApiInterceptor.java"
+  },
+  {
+    "raw": "the volume[uuid:%s] is the root volume of the vm[uuid:%s]. Currently the vm still has ISO attached, please detach it before migration",
+    "en_US": "the volume[uuid:{0}] is the root volume of the vm[uuid:{1}]. Currently the vm still has ISO attached, please detach it before migration",
+    "zh_CN": "",
+    "arguments": [
+      "vol.getUuid()",
+      "vol.getVmInstanceUuid()"
+    ],
+    "line": 152,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageApiInterceptor.java"
   },
   {
@@ -12454,19 +12477,19 @@
       "clusterUuid",
       "vol.getVmInstanceUuid()"
     ],
-    "line": 170,
+    "line": 177,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageApiInterceptor.java"
   },
   {
-    "raw": "the data volume[uuid:%s, name: %s] is still attached on the VM[uuid:%s]. Please detach it before migration",
-    "en_US": "the data volume[uuid:{0}, name: {1}] is still attached on the VM[uuid:{2}]. Please detach it before migration",
-    "zh_CN": "数据云盘[uuid:{0}, 名称: {1}]仍然挂载在云主机[uuid:{2}]上，请在迁移前卸载",
+    "raw": "the data volume[uuid:%s, name: %s] is still attached to the VM[uuid:%s]. Please detach it before migration",
+    "en_US": "the data volume[uuid:{0}, name: {1}] is still attached to the VM[uuid:{2}]. Please detach it before migration",
+    "zh_CN": "",
     "arguments": [
       "vol.getUuid()",
       "vol.getName()",
       "vol.getVmInstanceUuid()"
     ],
-    "line": 131,
+    "line": 132,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageApiInterceptor.java"
   },
   {
@@ -12476,7 +12499,7 @@
     "arguments": [
       "msg.getUrl()"
     ],
-    "line": 184,
+    "line": 191,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageApiInterceptor.java"
   },
   {
@@ -12605,7 +12628,7 @@
       "hvType",
       "bsType"
     ],
-    "line": 272,
+    "line": 273,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageFactory.java"
   },
   {
@@ -12615,7 +12638,7 @@
     "arguments": [
       "spec.getVmInventory().getHypervisorType()"
     ],
-    "line": 357,
+    "line": 358,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageFactory.java"
   },
   {
@@ -12630,7 +12653,7 @@
       "volume.getUuid()",
       "dataHost"
     ],
-    "line": 573,
+    "line": 574,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageFactory.java"
   },
   {
@@ -12642,7 +12665,7 @@
       "vol.getUuid()",
       "vol.getPrimaryStorageUuid()"
     ],
-    "line": 801,
+    "line": 802,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageFactory.java"
   },
   {
@@ -12654,7 +12677,7 @@
       "vm.getName()",
       "psuuid"
     ],
-    "line": 843,
+    "line": 844,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageFactory.java"
   },
   {
@@ -12664,7 +12687,7 @@
     "arguments": [
       "vm.getUuid()"
     ],
-    "line": 882,
+    "line": 883,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageFactory.java"
   },
   {
@@ -12675,7 +12698,17 @@
       "vm.getUuid()",
       "vm.getPlatform()"
     ],
-    "line": 887,
+    "line": 888,
+    "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageFactory.java"
+  },
+  {
+    "raw": "unable to live migrate vm[uuid:%s] with ISO on local storage. Need detach all ISO first.",
+    "en_US": "unable to live migrate vm[uuid:{0}] with ISO on local storage. Need detach all ISO first.",
+    "zh_CN": "",
+    "arguments": [
+      "vm.getUuid()"
+    ],
+    "line": 893,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageFactory.java"
   },
   {
@@ -12685,7 +12718,7 @@
     "arguments": [
       "vm.getUuid()"
     ],
-    "line": 911,
+    "line": 917,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageFactory.java"
   },
   {
@@ -12695,7 +12728,7 @@
     "arguments": [
       "LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.getTagFormat()"
     ],
-    "line": 959,
+    "line": 965,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageFactory.java"
   },
   {
@@ -12706,7 +12739,7 @@
       "hostUuid",
       "msg.getPrimaryStorageUuid()"
     ],
-    "line": 969,
+    "line": 975,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageFactory.java"
   },
   {
@@ -12716,7 +12749,7 @@
     "arguments": [
       "msg.getVolume().getUuid()"
     ],
-    "line": 1859,
+    "line": 1860,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageKvmBackend.java"
   },
   {
@@ -12724,7 +12757,7 @@
     "en_US": "root image has been deleted, cannot reimage now",
     "zh_CN": "系统镜像已经被删除，无法重制云主机",
     "arguments": [],
-    "line": 1594,
+    "line": 1595,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageKvmBackend.java"
   },
   {
@@ -13528,7 +13561,32 @@
       "zoneUuid",
       "zoneUuid"
     ],
-    "line": 137,
+    "line": 138,
+    "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/migration/SblkToSblkMigrateVolumeFlow.java"
+  },
+  {
+    "raw": "there are not enough capacity for volume[uuid: %s] storage migration, required capacity: %s, current available physical capacity: %s",
+    "en_US": "there are not enough capacity for volume[uuid: {0}] storage migration, required capacity: {1}, current available physical capacity: {2}",
+    "zh_CN": "对云盘[uuid: {0}]存储迁移需要目标主存储具有至少{1}的空余容量，但现在只有{2}的空余容量",
+    "arguments": [
+      "volumeUuid",
+      "volumeVO.getActualSize()",
+      "dstPsInv.getAvailablePhysicalCapacity()"
+    ],
+    "line": 206,
+    "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/migration/SblkToSblkMigrateVolumeFlow.java"
+  },
+  {
+    "raw": "there are not enough capacity for image[uuid: %s] download while volume[uuid: %s] storage migration, required capacity: %s, current available physical capacity: %s",
+    "en_US": "there are not enough capacity for image[uuid: {0}] download while volume[uuid: {1}] storage migration, required capacity: {2}, current available physical capacity: {3}",
+    "zh_CN": "对云盘[uuid: {0}]存储迁移需要目标主存储具有至少{1}的空余容量来下载镜像cache，但现在只有{2}的空余容量",
+    "arguments": [
+      "image.getUuid()",
+      "volumeUuid",
+      "image.getActualSize()",
+      "dstPsInv.getAvailablePhysicalCapacity()"
+    ],
+    "line": 160,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/migration/SblkToSblkMigrateVolumeFlow.java"
   },
   {
@@ -14368,7 +14426,7 @@
       "self.getName()",
       "self.getStatus()"
     ],
-    "line": 247,
+    "line": 248,
     "fileName": "src/main/java/org/zstack/ticket/TicketBase.java"
   },
   {
@@ -14378,7 +14436,7 @@
     "arguments": [
       "operator.operatorUuid"
     ],
-    "line": 301,
+    "line": 302,
     "fileName": "src/main/java/org/zstack/ticket/TicketBase.java"
   },
   {
@@ -14836,7 +14894,7 @@
       "vcvo.getDomainName()",
       "ex.getMessage()"
     ],
-    "line": 2631,
+    "line": 2632,
     "fileName": "src/main/java/org/zstack/vmware/VCenterManagerImpl.java"
   },
   {
@@ -14847,7 +14905,23 @@
       "vcvo.getDomainName()",
       "ex.getMessage()"
     ],
-    "line": 2644,
+    "line": 2645,
+    "fileName": "src/main/java/org/zstack/vmware/VCenterManagerImpl.java"
+  },
+  {
+    "raw": "Missing destination host uuid.",
+    "en_US": "Missing destination host uuid.",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 3093,
+    "fileName": "src/main/java/org/zstack/vmware/VCenterManagerImpl.java"
+  },
+  {
+    "raw": "Destination host is not ESX host.",
+    "en_US": "Destination host is not ESX host.",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 3098,
     "fileName": "src/main/java/org/zstack/vmware/VCenterManagerImpl.java"
   },
   {
@@ -14855,7 +14929,7 @@
     "en_US": "HOST CPU/software NOT compatible",
     "zh_CN": "",
     "arguments": [],
-    "line": 3112,
+    "line": 3123,
     "fileName": "src/main/java/org/zstack/vmware/VCenterManagerImpl.java"
   },
   {
