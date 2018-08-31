@@ -12,6 +12,14 @@ public class EventSubscriptionInventory  {
         return this.uuid;
     }
 
+    public java.lang.String name;
+    public void setName(java.lang.String name) {
+        this.name = name;
+    }
+    public java.lang.String getName() {
+        return this.name;
+    }
+
     public java.lang.String namespace;
     public void setNamespace(java.lang.String namespace) {
         this.namespace = namespace;
