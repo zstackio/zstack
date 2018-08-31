@@ -3,12 +3,14 @@ package org.zstack.test.integration.networkservice.provider.virtualrouter.loadba
 import org.springframework.http.HttpEntity
 import org.zstack.appliancevm.ApplianceVmVO
 import org.zstack.core.db.DatabaseFacade
+import org.zstack.core.db.Q
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.lb.LoadBalancerConstants
 import org.zstack.network.service.lb.LoadBalancerVO
 import org.zstack.network.service.portforwarding.PortForwardingConstant
 import org.zstack.network.service.vip.VipVO
+import org.zstack.network.service.vip.VipVO_
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO
@@ -16,12 +18,17 @@ import org.zstack.network.service.virtualrouter.vyos.VyosConstants
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.LoadBalancerInventory
 import org.zstack.sdk.LoadBalancerListenerInventory
+import org.zstack.sdk.VirtualRouterVmInventory
 import org.zstack.sdk.VmInstanceInventory
+import org.zstack.sdk.VmNicInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
+
+import java.util.stream.Collectors
+
 /**
  * Created by heathhose on 17-5-5.
  */
@@ -190,6 +197,44 @@ class VirtualRouterLoadBalancerUDPCase extends SubCase{
         LoadBalancerInventory lb = env.inventoryByName("lb")
         VipVO vip = dbFindByUuid(lb.getVipUuid(),VipVO.class)
 
+        expect (AssertionError.class) {
+            createLoadBalancerListener {
+                protocol = "udp"
+                loadBalancerUuid = lb.uuid
+                loadBalancerPort = 53
+                instancePort = 10000
+                name = "test-listener"
+            }
+        }
+
+        VirtualRouterVmInventory vr = queryVirtualRouterVm {}[0]
+        VmNicInventory pubNic = vr.getVmNics().stream().filter{nic -> nic.l3NetworkUuid == vr.getPublicNetworkUuid()}.collect(Collectors.toList()) [0]
+        VipVO pubVip = Q.New(VipVO.class).list().stream().filter{ v -> v.ip == pubNic.ip}.collect(Collectors.toList()) [0]
+
+        LoadBalancerInventory lb2 = createLoadBalancer {
+            name = "test-lb-2"
+            vipUuid = pubVip.uuid
+        }
+
+        expect (AssertionError.class) {
+            createLoadBalancerListener {
+                protocol = "tcp"
+                loadBalancerUuid = lb2.uuid
+                loadBalancerPort = 22
+                instancePort = 22
+                name = "test-listener-1"
+            }
+        }
+
+        expect (AssertionError.class) {
+            createLoadBalancerListener {
+                protocol = "tcp"
+                loadBalancerUuid = lb2.uuid
+                loadBalancerPort = 7272
+                instancePort = 7272
+                name = "test-listener-1"
+            }
+        }
 
         LoadBalancerListenerInventory listener = createLoadBalancerListener {
             protocol = "udp"
