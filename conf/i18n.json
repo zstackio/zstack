@@ -6856,7 +6856,7 @@
     "arguments": [
       "str"
     ],
-    "line": 764,
+    "line": 768,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6867,7 +6867,7 @@
       "cidr",
       "fmtCidr"
     ],
-    "line": 775,
+    "line": 779,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6877,7 +6877,7 @@
     "arguments": [
       "hostUuid"
     ],
-    "line": 794,
+    "line": 798,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6889,7 +6889,7 @@
       "distro",
       "version"
     ],
-    "line": 813,
+    "line": 817,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6899,7 +6899,7 @@
     "arguments": [
       "newValue"
     ],
-    "line": 939,
+    "line": 943,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6909,7 +6909,7 @@
     "arguments": [
       "newValue"
     ],
-    "line": 915,
+    "line": 919,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6919,7 +6919,7 @@
     "arguments": [
       "psUuid"
     ],
-    "line": 900,
+    "line": 904,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6929,7 +6929,7 @@
     "arguments": [
       "newValue"
     ],
-    "line": 936,
+    "line": 940,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6939,7 +6939,7 @@
     "arguments": [
       "newValue"
     ],
-    "line": 948,
+    "line": 952,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6951,7 +6951,7 @@
       "MevocoGlobalConfig.AIO_NATIVE.value()",
       "KVMGlobalConfig.LIBVIRT_CACHE_MODE.value()"
     ],
-    "line": 970,
+    "line": 974,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6961,7 +6961,7 @@
     "arguments": [
       "bandwidth"
     ],
-    "line": 1870,
+    "line": 1874,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6969,7 +6969,7 @@
     "en_US": "networkInboundBandwidth execeds the max value 32G bps",
     "zh_CN": "超过下行网络带宽超过最大值32G bps",
     "arguments": [],
-    "line": 1867,
+    "line": 1871,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6979,7 +6979,7 @@
     "arguments": [
       "bandwidth"
     ],
-    "line": 1882,
+    "line": 1886,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6987,7 +6987,7 @@
     "en_US": "networkOutboundBandwidth execeds the max value 32G bps",
     "zh_CN": "超过上行网络带宽超过最大值32G bps",
     "arguments": [],
-    "line": 1879,
+    "line": 1883,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -6998,7 +6998,7 @@
       "volume.getUuid()",
       "vm.getUuid()"
     ],
-    "line": 2052,
+    "line": 2056,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -7006,7 +7006,7 @@
     "en_US": "shareable disk only support virtio-scsi type for now",
     "zh_CN": "目前共享盘只支持virtio-scsi",
     "arguments": [],
-    "line": 2070,
+    "line": 2074,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -7016,7 +7016,7 @@
     "arguments": [
       "hostUuid"
     ],
-    "line": 2568,
+    "line": 2572,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -7028,7 +7028,7 @@
       "displayNetworkCidr",
       "hostUuid"
     ],
-    "line": 2598,
+    "line": 2602,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -7039,7 +7039,7 @@
       "hostModel",
       "clusterModel"
     ],
-    "line": 2638,
+    "line": 2648,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   },
   {
@@ -8726,7 +8726,7 @@
     "zh_CN": "udp端口53已经被dns进程使用",
     "arguments": [],
     "line": 261,
-    "fileName": "src/zstack/./plugin/loadBalancer/src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
+    "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
     "raw": "tcp port 22, 7272 is used by vrouter",
@@ -8734,7 +8734,7 @@
     "zh_CN": "tcp端口22,7272已经被vrouter管理进程进程使用",
     "arguments": [],
     "line": 274,
-    "fileName": "src/zstack/./plugin/loadBalancer/src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
+    "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
     "raw": "loadbalancer listener with type %s does not need certificate",
@@ -8743,7 +8743,7 @@
     "arguments": [
       "vo.getProtocol()"
     ],
-    "line": 283,
+    "line": 301,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -8754,7 +8754,7 @@
       "msg.getCertificateUuid()",
       "msg.getListenerUuid()"
     ],
-    "line": 287,
+    "line": 305,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -8765,7 +8765,7 @@
       "msg.getCertificateUuid()",
       "msg.getListenerUuid()"
     ],
-    "line": 297,
+    "line": 315,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -12483,7 +12483,7 @@
   {
     "raw": "the data volume[uuid:%s, name: %s] is still attached to the VM[uuid:%s]. Please detach it before migration",
     "en_US": "the data volume[uuid:{0}, name: {1}] is still attached to the VM[uuid:{2}]. Please detach it before migration",
-    "zh_CN": "",
+    "zh_CN": "数据云盘[uuid:{0}, 名称: {1}]仍然挂载在云主机[uuid:{2}]上，请在迁移前卸载",
     "arguments": [
       "vol.getUuid()",
       "vol.getName()",
@@ -13194,7 +13194,7 @@
   {
     "raw": "not support do live clone vm with volume on shared block primary storage",
     "en_US": "not support do live clone vm with volume on shared block primary storage",
-    "zh_CN": "",
+    "zh_CN": "目前暂时不支持SharedBlock主存储上虚拟机在线整机克隆，请在暂停或关机后克隆",
     "arguments": [],
     "line": 72,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockApiInterceptor.java"
@@ -13223,7 +13223,7 @@
   {
     "raw": "shared volume[uuid: %s] on shared block group primary storage can not resize",
     "en_US": "shared volume[uuid: {0}] on shared block group primary storage can not resize",
-    "zh_CN": "",
+    "zh_CN": "SharedBlock主存储上的共享云盘[uuid: {1}]暂时不支持扩容",
     "arguments": [
       "msg.getUuid()"
     ],
@@ -13233,7 +13233,7 @@
   {
     "raw": "shared volume[uuid: %s] on shared block group primary storage has attached to not stopped vm instances[uuids: %s]",
     "en_US": "shared volume[uuid: {0}] on shared block group primary storage has attached to not stopped vm instances[uuids: {1}]",
-    "zh_CN": "",
+    "zh_CN": "SharedBlock存储上的共享云盘[uuid: {0}]加载到了不是停止状态的虚拟机[uuid: {1}]，请先从虚拟机卸载或将虚拟机停止",
     "arguments": [
       "volumeUuid",
       "notStoppedVmUuids"
@@ -13303,7 +13303,7 @@
   {
     "raw": "the value[%s] is not power of 2",
     "en_US": "the value[{0}] is not power of 2",
-    "zh_CN": "",
+    "zh_CN": "输入值[{0}]不是2的幂次",
     "arguments": [
       "newValue"
     ],
@@ -13398,7 +13398,7 @@
   {
     "raw": "not support online merge snapshot for shareable volume[uuid: %s] on sharedblock",
     "en_US": "not support online merge snapshot for shareable volume[uuid: {0}] on sharedblock",
-    "zh_CN": "",
+    "zh_CN": "不支持对共享块存储上的共享云盘[uuid: {1}]做在线合并快照，请关机或卸载后操作",
     "arguments": [
       "volume.getUuid()"
     ],
@@ -13437,7 +13437,7 @@
   {
     "raw": "can not find qualified kvm host for shared block group primary storage[uuid: %s]",
     "en_US": "can not find qualified kvm host for shared block group primary storage[uuid: {0}]",
-    "zh_CN": "",
+    "zh_CN": "无法找到满足条件的物理机来对共享块存储[uuid: {0}]进行操作",
     "arguments": [
       "psUuid"
     ],
@@ -13468,7 +13468,7 @@
   {
     "raw": "can not find any available host to resize volume[uuid: %s] on shared block group primary storage[uuid: %s]",
     "en_US": "can not find any available host to resize volume[uuid: {0}] on shared block group primary storage[uuid: {1}]",
-    "zh_CN": "",
+    "zh_CN": "无法找到合适的物理机来对共享块存储[uuid: {1}]上的云盘[uuid: {0}]执行扩容",
     "arguments": [
       "volumeVO.getUuid()",
       "volumeVO.getPrimaryStorageUuid()"
@@ -13479,7 +13479,7 @@
   {
     "raw": "the host[uuid: %s] running on is not available to resize volume[uuid: %s] on shared block group primary storage[uuid: %s]",
     "en_US": "the host[uuid: {0}] running on is not available to resize volume[uuid: {1}] on shared block group primary storage[uuid: {2}]",
-    "zh_CN": "",
+    "zh_CN": "共享块存储[uuid: {2}]上的云盘[uuid : {1}]运行在物理机[uuid : {0}]上，但状态无法执行扩容操作",
     "arguments": [
       "struct.getVmHostUuid()",
       "volumeVO.getUuid()",
@@ -13491,7 +13491,7 @@
   {
     "raw": "can not find any available host to take snapshot for volume[uuid: %s] on shared block group primary storage[uuid: %s]",
     "en_US": "can not find any available host to take snapshot for volume[uuid: {0}] on shared block group primary storage[uuid: {1}]",
-    "zh_CN": "",
+    "zh_CN": "无法找到合适的物理机来对共享块存储[uuid : {1}]上的云盘[uuid: {0}]执行快照操作",
     "arguments": [
       "msg.getVolumeUuid()",
       "msg.getTargetPrimaryStorageUuid()"
@@ -13502,7 +13502,7 @@
   {
     "raw": "can not find hosts both connect to primary storage[uuid: %s] and primary storage[uuid: %s]",
     "en_US": "can not find hosts both connect to primary storage[uuid: {0}] and primary storage[uuid: {1}]",
-    "zh_CN": "",
+    "zh_CN": "无法找到同时连接主存储[uuid: {0}]和主存储[uuid: {1}]的物理机",
     "arguments": [
       "msg.getPrimaryStorageUuid()",
       "msg.getTargetPrimaryStorageUuid()"
@@ -13513,7 +13513,7 @@
   {
     "raw": "only support full",
     "en_US": "only support full",
-    "zh_CN": "",
+    "zh_CN": "共享块存储目前只支持全量快照",
     "arguments": [],
     "line": 3328,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
@@ -13521,7 +13521,7 @@
   {
     "raw": "can not find any available host to migrate volume[uuid: %s] between shared block group primary storage[uuid: %s] and [uuid: %s]",
     "en_US": "can not find any available host to migrate volume[uuid: {0}] between shared block group primary storage[uuid: {1}] and [uuid: {2}]",
-    "zh_CN": "",
+    "zh_CN": "无法找到合适的物理机来将云盘[uuid: {0}]在共享块存储[uuid : {1}]和共享块存储[uuid: {2}]之间迁移",
     "arguments": [
       "msg.getMigrateVolumeStructs().get(0).volumeUuid",
       "msg.getPrimaryStorageUuid()",
@@ -13531,9 +13531,9 @@
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockKvmBackend.java"
   },
   {
-    "raw": "can not find any available host to take snapshot for volume[uuid: %s] on shared block group primary storage[uuid: %s] and [uuid: %s]",
-    "en_US": "can not find any available host to take snapshot for volume[uuid: {0}] on shared block group primary storage[uuid: {1}] and [uuid: {2}]",
-    "zh_CN": "",
+    "raw": "can not find any available host to migrate for volume[uuid: %s] on shared block group primary storage[uuid: %s] and [uuid: %s]",
+    "en_US": "can not find any available host to migrate for volume[uuid: {0}] on shared block group primary storage[uuid: {1}] and [uuid: {2}]",
+    "zh_CN": "无法找到合适的物理机来将云盘[uuid: {0}]在共享块存储[uuid : {1}]和共享块存储[uuid: {2}]之间迁移",
     "arguments": [
       "msg.getMigrateVolumeStructs().get(0).volumeUuid",
       "msg.getTargetPrimaryStorageUuid()",
@@ -13545,7 +13545,7 @@
   {
     "raw": "cannot find any connected host to perform the operation, it seems all KVM hosts attached with the shared block group storage[uuid:%s] are disconnected",
     "en_US": "cannot find any connected host to perform the operation, it seems all KVM hosts attached with the shared block group storage[uuid:{0}] are disconnected",
-    "zh_CN": "",
+    "zh_CN": "无法找到任何已连接的物理机来执行操作，所有连接共享块存储[uuid: {1}]的物理机均处于失联状态",
     "arguments": [
       "msg.getPrimaryStorageUuid()"
     ],
