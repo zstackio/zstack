@@ -44,10 +44,11 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
+import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import static org.zstack.utils.ExceptionDSL.throwableSafe;
 
@@ -92,63 +93,65 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
     private ManagementNodeChangeListener nodeLifeCycle = new ManagementNodeChangeListener() {
         @Override
-        public void nodeJoin(String nodeId) {
+        public void nodeJoin(ManagementNodeInventory inv) {
+            final String nodeId = inv.getUuid();
             if (destinationMaker.getManagementNodesInHashRing().contains(nodeId)) {
                 logger.debug(String.format("the management node[uuid:%s] is already in our hash ring, ignore this node-join call", nodeId));
                 return;
             }
 
             ManagementNodeChangeListener l = (ManagementNodeChangeListener) destinationMaker;
-            l.nodeJoin(nodeId);
+            l.nodeJoin(inv);
 
             CollectionUtils.safeForEach(lifeCycleExtension, new ForEachFunction<ManagementNodeChangeListener>() {
                 @Override
                 public void run(ManagementNodeChangeListener arg) {
-                    arg.nodeJoin(nodeId);
+                    arg.nodeJoin(inv);
                 }
             });
         }
 
         @Override
-        public void nodeLeft(String nodeId) {
+        public void nodeLeft(ManagementNodeInventory inv) {
+            final String nodeId = inv.getUuid();
             if (!destinationMaker.getManagementNodesInHashRing().contains(nodeId)) {
                 logger.debug(String.format("the management node[uuid:%s] is not in our hash ring, ignore this node-left call", nodeId));
                 return;
             }
 
             ManagementNodeChangeListener l = (ManagementNodeChangeListener) destinationMaker;
-            l.nodeLeft(nodeId);
+            l.nodeLeft(inv);
 
             CollectionUtils.safeForEach(lifeCycleExtension, new ForEachFunction<ManagementNodeChangeListener>() {
                 @Override
                 public void run(ManagementNodeChangeListener arg) {
-                    arg.nodeLeft(nodeId);
+                    arg.nodeLeft(inv);
                 }
             });
         }
 
         @Override
-        public void iAmDead(String nodeId) {
+        public void iAmDead(ManagementNodeInventory inv) {
             ManagementNodeChangeListener l = (ManagementNodeChangeListener) destinationMaker;
-            l.iAmDead(nodeId);
+            l.iAmDead(inv);
 
             CollectionUtils.safeForEach(lifeCycleExtension, new ForEachFunction<ManagementNodeChangeListener>() {
                 @Override
                 public void run(ManagementNodeChangeListener arg) {
-                    arg.iAmDead(nodeId);
+                    arg.iAmDead(inv);
                 }
             });
         }
 
         @Override
-        public void iJoin(String nodeId) {
+        public void iJoin(ManagementNodeInventory inv) {
             ManagementNodeChangeListener l = (ManagementNodeChangeListener) destinationMaker;
-            l.iJoin(nodeId);
+            l.iJoin(inv);
 
             CollectionUtils.safeForEach(lifeCycleExtension, new ForEachFunction<ManagementNodeChangeListener>() {
                 @Override
                 public void run(ManagementNodeChangeListener arg) {
-                    arg.iJoin(nodeId);
+                    arg.iJoin(inv);
                 }
             });
         }
@@ -298,9 +301,9 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
             ManagementNodeLifeCycleData d = (ManagementNodeLifeCycleData) data;
 
             if (LifeCycle.NodeJoin.toString().equals(d.getLifeCycle())) {
-                nodeLifeCycle.nodeJoin(d.getNodeUuid());
+                nodeLifeCycle.nodeJoin(d.getInventory());
             } else if (LifeCycle.NodeLeft.toString().equals(d.getLifeCycle())) {
-                nodeLifeCycle.nodeLeft(d.getNodeUuid());
+                nodeLifeCycle.nodeLeft(d.getInventory());
             } else {
                 throw new CloudRuntimeException(String.format("unknown lifecycle[%s]", d.getLifeCycle()));
             }
@@ -468,7 +471,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
                 @Override
                 public void run(FlowTrigger trigger, Map data) {
-                    nodeLifeCycle.iJoin(node().getUuid());
+                    nodeLifeCycle.iJoin(ManagementNodeInventory.valueOf(node));
                     trigger.next();
                 }
             }).then(new NoRollbackFlow() {
@@ -636,7 +639,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
             @AsyncThread
             private void nodeDie(ManagementNodeVO n) {
                 logger.debug("Node " + n.getUuid() + " has gone because its heartbeat stopped");
-                nodeLifeCycle.nodeLeft(n.getUuid());
+                nodeLifeCycle.nodeLeft(ManagementNodeInventory.valueOf(n));
 
                 ManagementNodeLifeCycleData d = new ManagementNodeLifeCycleData();
                 d.setInventory(ManagementNodeInventory.valueOf(n));
@@ -681,7 +684,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 List<ManagementNodeVO> all = heartBeatDBSource.jdbc.query(sql, new BeanPropertyRowMapper(ManagementNodeVO.class));
                 suspects.clear();
 
-                List<String> nodesInDb = new ArrayList<String>();
+                List<ManagementNodeVO> nodesInDb = new ArrayList<>();
                 for (ManagementNodeVO vo : all) {
                     if (!StringDSL.isZStackUuid(vo.getUuid())) {
                         logger.warn(String.format("found a weird management node, it's UUID not a ZStack uuid, delete it. %s",
@@ -690,7 +693,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                         continue;
                     }
 
-                    nodesInDb.add(vo.getUuid());
+                    nodesInDb.add(vo);
 
                     if (vo.getUuid().equals(node().getUuid())) {
                         continue;
@@ -708,26 +711,30 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
                 // When a node is dying, we may not receive the the dead notification because the message bus may be also dead
                 // at that moment. By checking if the node UUID is still in our hash ring, we know what nodes should be kicked out
+                Set<String> nodeUuidsInDb = nodesInDb.stream().map(ManagementNodeVO::getUuid).collect(Collectors.toSet());
                 for (String ourNode : destinationMaker.getManagementNodesInHashRing()) {
-                    if (!nodesInDb.contains(ourNode)) {
+                    if (!nodeUuidsInDb.contains(ourNode)) {
                         logger.warn(String.format("found that a management node[uuid:%s] had no heartbeat in database but still in our hash ring," +
                                 "notify that it's dead", ourNode));
-                        nodeLifeCycle.nodeLeft(ourNode);
+                        ManagementNodeVO nodeVO = dbf.findByUuid(ourNode, ManagementNodeVO.class);
+                        if (nodeVO != null) {
+                            nodeLifeCycle.nodeLeft(ManagementNodeInventory.valueOf(nodeVO));
+                        }
                     }
                 }
 
                 // check if any node missing in our hash ring
-                nodesInDb.forEach(nuuid -> {
-                    if (nuuid.equals(node().getUuid())) {
+                nodesInDb.forEach(n -> {
+                    if (n.getUuid().equals(node().getUuid())) {
                         return;
                     }
 
-                    if (!destinationMaker.getManagementNodesInHashRing().contains(nuuid)) {
+                    if (!destinationMaker.getManagementNodesInHashRing().contains(n.getUuid())) {
                         new Runnable() {
                             @Override
                             @AsyncThread
                             public void run() {
-                                nodeLifeCycle.nodeJoin(nuuid);
+                                nodeLifeCycle.nodeJoin(ManagementNodeInventory.valueOf(n));
                             }
                         }.run();
                     }
@@ -885,7 +892,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
             @ExceptionSafe
             private void iAmDead() {
-                nodeLifeCycle.iAmDead(node().getUuid());
+                nodeLifeCycle.iAmDead(ManagementNodeInventory.valueOf(node()));
             }
 
             @ExceptionSafe

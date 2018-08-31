@@ -28,6 +28,7 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudConfigureFailException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
+import org.zstack.header.managementnode.ManagementNodeInventory;
 import org.zstack.header.message.*;
 import org.zstack.header.search.APISearchMessage;
 import org.zstack.header.search.APISearchReply;
@@ -128,21 +129,21 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     }
 
     @Override
-    public void nodeJoin(String nodeId) {
+    public void nodeJoin(ManagementNodeInventory inv) {
     }
 
     @Override
-    public void nodeLeft(String nodeId) {
-        tracker.managementNodeLeft(nodeId);
+    public void nodeLeft(ManagementNodeInventory inv) {
+        tracker.managementNodeLeft(inv.getUuid());
     }
 
     @Override
-    public void iAmDead(String nodeId) {
-        tracker.managementNodeLeft(nodeId);
+    public void iAmDead(ManagementNodeInventory inv) {
+        tracker.managementNodeLeft(inv.getUuid());
     }
 
     @Override
-    public void iJoin(String nodeId) {
+    public void iJoin(ManagementNodeInventory inv) {
     }
 
 

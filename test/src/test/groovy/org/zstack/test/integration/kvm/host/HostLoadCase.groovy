@@ -9,6 +9,7 @@ import org.zstack.header.host.ConnectHostMsg
 import org.zstack.header.host.HostStatus
 import org.zstack.header.host.HostVO
 import org.zstack.header.host.HostVO_
+import org.zstack.header.managementnode.ManagementNodeInventory
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.sdk.HostInventory
@@ -106,7 +107,10 @@ class HostLoadCase extends SubCase {
 
         pingFailure = false
 
-        mgr.nodeLeft(Platform.getUuid())
+        def inv = new ManagementNodeInventory()
+        inv.setUuid(Platform.getUuid())
+        inv.setHostName("localhost")
+        mgr.nodeLeft(inv)
 
         waitHostConnected(kvm1.uuid)
 
