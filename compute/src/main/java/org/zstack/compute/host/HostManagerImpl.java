@@ -27,6 +27,7 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
+import org.zstack.header.managementnode.ManagementNodeInventory;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -536,18 +537,18 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     }
 
     @Override
-    public void nodeJoin(String nodeId) {
+    public void nodeJoin(ManagementNodeInventory inv) {
     }
 
     @Override
     @SyncThread
-    public void nodeLeft(String nodeId) {
-        logger.debug(String.format("Management node[uuid:%s] left, node[uuid:%s] starts to take over hosts", nodeId, Platform.getManagementServerId()));
+    public void nodeLeft(ManagementNodeInventory inv) {
+        logger.debug(String.format("Management node[uuid:%s] left, node[uuid:%s] starts to take over hosts", inv.getUuid(), Platform.getManagementServerId()));
         loadHost(true);
     }
 
     @Override
-    public void iAmDead(String nodeId) {
+    public void iAmDead(ManagementNodeInventory inv) {
     }
 
     private Bucket getHostManagedByUs() {
@@ -635,7 +636,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     }
 
     @Override
-    public void iJoin(String nodeId) {
+    public void iJoin(ManagementNodeInventory inv) {
     }
 
 

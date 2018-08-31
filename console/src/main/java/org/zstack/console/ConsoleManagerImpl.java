@@ -8,8 +8,6 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
@@ -24,7 +22,8 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.identity.SessionLogoutExtensionPoint;
-import org.zstack.header.managementnode.*;
+import org.zstack.header.managementnode.ManagementNodeChangeListener;
+import org.zstack.header.managementnode.ManagementNodeInventory;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.vm.*;
@@ -258,42 +257,34 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
     }
 
     @Transactional
-    private void deleteConsoleProxyByManagementNode(ManagementNodeVO managementNode) {
-        String managementHostName = managementNode.getHostName();
+    private void deleteConsoleProxyByManagementNode(ManagementNodeInventory inv) {
+        String managementHostName = inv.getHostName();
         String sql = "delete from ConsoleProxyVO q where q.proxyHostname = :managementHostName";
         Query q = dbf.getEntityManager().createQuery(sql);
         q.setParameter("managementHostName", managementHostName);
         q.executeUpdate();
     }
 
-    public void cleanupNode(String nodeId) {
-        logger.debug(String.format("Management node[uuid:%s] left, will clean the record in ConsoleProxyVO", nodeId));
-        SimpleQuery<ManagementNodeVO> query = dbf.createQuery(ManagementNodeVO.class);
-        query.add(ManagementNodeVO_.uuid, SimpleQuery.Op.EQ, nodeId);
-        ManagementNodeVO managementNode = query.find();
-        if (managementNode == null) {
-            logger.debug("Cannot find management node: " + nodeId + ", it may have been deleted");
-            return;
-        }
-
-        deleteConsoleProxyByManagementNode(managementNode);
+    public void cleanupNode(ManagementNodeInventory inv) {
+        logger.debug(String.format("Management node[uuid:%s] left, will clean the record in ConsoleProxyVO", inv.getUuid()));
+        deleteConsoleProxyByManagementNode(inv);
     }
 
     @Override
-    public void nodeLeft(String nodeId) {
-        cleanupNode(nodeId);
+    public void nodeLeft(ManagementNodeInventory inv) {
+        cleanupNode(inv);
     }
 
     @Override
-    public void iAmDead(String nodeId) {
-        cleanupNode(nodeId);
+    public void iAmDead(ManagementNodeInventory inv) {
+        cleanupNode(inv);
     }
 
     @Override
-    public void nodeJoin(String nodeId) {
+    public void nodeJoin(ManagementNodeInventory inv) {
     }
 
     @Override
-    public void iJoin(String nodeId) {
+    public void iJoin(ManagementNodeInventory inv) {
     }
 }

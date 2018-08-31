@@ -19,6 +19,7 @@ import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
+import org.zstack.header.managementnode.ManagementNodeInventory;
 import org.zstack.header.message.Event;
 import org.zstack.utils.Bucket;
 import org.zstack.utils.DebugUtils;
@@ -152,20 +153,20 @@ public class JobQueueFacadeImpl2 implements JobQueueFacade, CloudBusEventListene
     }
 
     @Override
-    public void nodeJoin(String nodeId) {
+    public void nodeJoin(ManagementNodeInventory inv) {
     }
 
     @Override
-    public void nodeLeft(String nodeId) {
-        takeOverJobs(nodeId);
+    public void nodeLeft(ManagementNodeInventory inv) {
+        takeOverJobs(inv.getUuid());
     }
 
     @Override
-    public void iAmDead(String nodeId) {
+    public void iAmDead(ManagementNodeInventory inv) {
     }
 
     @Override
-    public void iJoin(String nodeId) {
+    public void iJoin(ManagementNodeInventory inv) {
     }
 
     private interface JobWrapper {
