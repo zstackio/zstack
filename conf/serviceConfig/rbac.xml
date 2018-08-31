@@ -8,6 +8,10 @@
     </message>
 
     <message>
+        <name>org.zstack.header.identity.role.api.APIUpdateRoleMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.header.identity.role.api.APIDeleteRoleMsg</name>
     </message>
 
