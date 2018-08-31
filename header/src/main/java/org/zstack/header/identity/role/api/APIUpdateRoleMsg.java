@@ -22,7 +22,7 @@ import java.util.List;
 public class APIUpdateRoleMsg extends APIMessage implements RoleMessage {
     @APIParam(resourceType = RoleVO.class)
     private String uuid;
-    @APIParam(maxLength = 255)
+    @APIParam(maxLength = 255, required = false)
     private String name;
     @APIParam(maxLength = 2048, required = false)
     private String description;
