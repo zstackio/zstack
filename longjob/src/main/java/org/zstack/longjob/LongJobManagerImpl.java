@@ -22,6 +22,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.identity.APIDeleteAccountEvent;
 import org.zstack.header.longjob.*;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
+import org.zstack.header.managementnode.ManagementNodeInventory;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -280,24 +281,23 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
     }
 
     @Override
-    public void nodeJoin(String nodeId) {
+    public void nodeJoin(ManagementNodeInventory inv) {
 
     }
 
     @Override
-    public void nodeLeft(String nodeId) {
-        logger.debug(String.format("Management node[uuid:%s] left, node[uuid:%s] starts to take over longjobs", nodeId, Platform.getManagementServerId()));
+    public void nodeLeft(ManagementNodeInventory inv) {
+        logger.debug(String.format("Management node[uuid:%s] left, node[uuid:%s] starts to take over longjobs", inv.getUuid(), Platform.getManagementServerId()));
         takeOverLongJob();
     }
 
     @Override
-    public void iAmDead(String nodeId) {
+    public void iAmDead(ManagementNodeInventory inv) {
 
     }
 
     @Override
-    public void iJoin(String nodeId) {
-
+    public void iJoin(ManagementNodeInventory inv) {
     }
 
     private void takeOverLongJob() {

@@ -6,6 +6,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
+import org.zstack.header.managementnode.ManagementNodeInventory;
 import org.zstack.header.managementnode.ManagementNodeVO;
 import org.zstack.utils.hash.ApacheHash;
 import org.zstack.utils.hash.ConsistentHash;
@@ -26,26 +27,27 @@ public class ResourceDestinationMakerImpl implements ManagementNodeChangeListene
     private DatabaseFacade dbf;
 
     @Override
-    public void nodeJoin(String nodeId) {
-        ManagementNodeVO vo = dbf.findByUuid(nodeId, ManagementNodeVO.class);
-        nodeHash.add(nodeId);
-        nodes.put(vo.getUuid(), new NodeInfo(vo));
+    public void nodeJoin(ManagementNodeInventory inv) {
+        nodeHash.add(inv.getUuid());
+        nodes.put(inv.getUuid(), new NodeInfo(inv));
     }
 
     @Override
-    public void nodeLeft(String nodeId) {
+    public void nodeLeft(ManagementNodeInventory inv) {
+        String nodeId = inv.getUuid();
         nodeHash.remove(nodeId);
         nodes.remove(nodeId);
     }
 
     @Override
-    public void iAmDead(String nodeId) {
+    public void iAmDead(ManagementNodeInventory inv) {
+        String nodeId = inv.getUuid();
         nodeHash.remove(nodeId);
         nodes.remove(nodeId);
     }
 
     @Override
-    public void iJoin(String nodeId) {
+    public void iJoin(ManagementNodeInventory inv) {
         List<ManagementNodeVO> lst = Q.New(ManagementNodeVO.class).list();
         lst.forEach((ManagementNodeVO node) -> {
             nodeHash.add(node.getUuid());

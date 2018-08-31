@@ -22,6 +22,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
+import org.zstack.header.managementnode.ManagementNodeInventory;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -553,14 +554,14 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     }
 
     @Override
-    public void nodeJoin(String nodeId) {
+    public void nodeJoin(ManagementNodeInventory inv) {
         logger.debug(String.format("management node[uuid:%s] join, node[uuid:%s] starts taking over primary storage...",
-                nodeId, Platform.getManagementServerId()));
+                inv.getUuid(), Platform.getManagementServerId()));
         loadPrimaryStorage();
     }
 
     @Override
-    public void nodeLeft(String nodeId) {
+    public void nodeLeft(ManagementNodeInventory inv) {
 
     }
 
@@ -598,12 +599,12 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     }
 
     @Override
-    public void iAmDead(String nodeId) {
+    public void iAmDead(ManagementNodeInventory inv) {
 
     }
 
     @Override
-    public void iJoin(String nodeId) {
+    public void iJoin(ManagementNodeInventory inv) {
     }
 
     @AsyncThread

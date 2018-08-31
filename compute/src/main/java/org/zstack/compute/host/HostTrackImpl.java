@@ -17,6 +17,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
+import org.zstack.header.managementnode.ManagementNodeInventory;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.MessageReply;
 import org.zstack.utils.Utils;
@@ -279,22 +280,22 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
     }
 
     @Override
-    public void nodeJoin(String nodeId) {
+    public void nodeJoin(ManagementNodeInventory inv) {
         reScanHost();
     }
 
     @Override
-    public void nodeLeft(String nodeId) {
+    public void nodeLeft(ManagementNodeInventory inv) {
         reScanHost();
     }
 
     @Override
-    public void iAmDead(String nodeId) {
+    public void iAmDead(ManagementNodeInventory inv) {
 
     }
 
     @Override
-    public void iJoin(String nodeId) {
+    public void iJoin(ManagementNodeInventory inv) {
 
     }
 

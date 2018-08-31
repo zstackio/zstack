@@ -1,5 +1,6 @@
 package org.zstack.core.cloudbus;
 
+import org.zstack.header.managementnode.ManagementNodeInventory;
 import org.zstack.header.managementnode.ManagementNodeVO;
 
 import java.util.Collection;
@@ -18,6 +19,11 @@ public interface ResourceDestinationMaker {
         NodeInfo(ManagementNodeVO vo) {
             nodeUuid = vo.getUuid();
             nodeIP = vo.getHostName();
+        }
+
+        NodeInfo(ManagementNodeInventory inv) {
+            nodeUuid = inv.getUuid();
+            nodeIP = inv.getHostName();
         }
 
         public String getNodeUuid() {

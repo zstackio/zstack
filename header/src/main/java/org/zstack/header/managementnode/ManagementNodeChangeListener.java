@@ -2,11 +2,11 @@ package org.zstack.header.managementnode;
 
 
 public interface ManagementNodeChangeListener {
-    void nodeJoin(String nodeId);
+    void nodeJoin(ManagementNodeInventory inv);
 
-    void nodeLeft(String nodeId);
+    void nodeLeft(ManagementNodeInventory inv);
 
-    void iAmDead(String nodeId);
+    void iAmDead(ManagementNodeInventory inv);
 
-    void iJoin(String nodeId);
+    void iJoin(ManagementNodeInventory inv);
 }
