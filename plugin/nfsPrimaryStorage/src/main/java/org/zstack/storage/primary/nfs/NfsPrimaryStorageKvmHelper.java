@@ -1,6 +1,7 @@
 package org.zstack.storage.primary.nfs;
 
 import org.zstack.header.image.ImageInventory;
+import org.zstack.header.storage.primary.ImageCacheInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.volume.VolumeInventory;
@@ -66,7 +67,11 @@ public class NfsPrimaryStorageKvmHelper {
     public static String makeDownloadImageJobName(ImageInventory iminv, PrimaryStorageInventory pinv) {
         return String.format("download-image-%s-to-pri-%s", iminv.getUuid(), pinv.getUuid());
     }
-    
+
+    public static String makeCopyImageCacheJobName(ImageCacheInventory cacheInv, PrimaryStorageInventory srcPs, PrimaryStorageInventory dstPs) {
+        return String.format("copy-cache-of-image-%s-from-pri-%s-to-pri-%s", cacheInv.getImageUuid(), srcPs.getUuid(), dstPs.getUuid());
+    }
+
     public static String makeJobOwnerName(PrimaryStorageInventory pinv) {
         return "NfsPrimaryStorage-" + pinv.getUuid();
     }
