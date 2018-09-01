@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Configuration status="warn">
+<Configuration status="warn" monitorInterval="30">
     <Appenders>
         <RollingFile name="RollingFile" fileName="${sys:catalina.home}/logs/management-server.log"
                      filePattern="${sys:catalina.home}/logs/management-server-%d{yyyy-MM-dd}-%i.log.gz">
@@ -68,6 +68,8 @@
         <Logger name="org.zstack" level="debug"/>
 
         <Logger name="org.zstack.utils" level="trace"/>
+
+        <Logger name="org.zstack.utils.HTTP" level="debug"/>
 
         <Logger name="org.zstack.core.rest" level="trace"/>
 
