@@ -546,10 +546,14 @@ public class Platform {
     }
 
     public static String getManagementServerIp() {
-        if (managementServerIp != null) {
-            return managementServerIp;
+        if (managementServerIp == null) {
+            managementServerIp = getManagementServerIpInternal();
         }
 
+        return managementServerIp;
+    }
+
+    private static String getManagementServerIpInternal() {
         String ip = System.getProperty("management.server.ip");
         if (ip != null) {
             logger.info(String.format("get management IP[%s] from Java property[management.server.ip]", ip));
@@ -595,8 +599,7 @@ public class Platform {
         }
 
         logger.info(String.format("get management IP[%s] from default route[/sbin/ip route]", ip));
-        managementServerIp = ip;
-        return managementServerIp;
+        return ip;
     }
 
     public static String toI18nString(String code, Object... args) {
