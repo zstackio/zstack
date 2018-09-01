@@ -712,12 +712,12 @@ public class NfsPrimaryStorageKVMBackendCommands {
     public static class UpdateMountPointRsp extends NfsPrimaryStorageAgentResponse {
     }
 
-    public static class NfsToNfsMigrateVolumeCmd extends NfsPrimaryStorageAgentCommand implements HasThreadContext {
-        public String srcVolumeFolderPath;
-        public String dstVolumeFolderPath;
+    public static class NfsToNfsMigrateBitsCmd extends NfsPrimaryStorageAgentCommand implements HasThreadContext {
+        public String srcFolderPath;
+        public String dstFolderPath;
     }
 
-    public static class NfsToNfsMigrateVolumeRsp extends NfsPrimaryStorageAgentResponse {
+    public static class NfsToNfsMigrateBitsRsp extends NfsPrimaryStorageAgentResponse {
 
     }
 

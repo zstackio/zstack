@@ -27,7 +27,7 @@ public interface NfsPrimaryStorageBackend {
 
     void handle(PrimaryStorageInventory inv, GetVolumeRootImageUuidFromPrimaryStorageMsg msg, ReturnValueCompletion<GetVolumeRootImageUuidFromPrimaryStorageReply> completion);
 
-    void handle(PrimaryStorageInventory inv, NfsToNfsMigrateVolumeMsg msg, ReturnValueCompletion<NfsToNfsMigrateVolumeReply> completion);
+    void handle(PrimaryStorageInventory inv, NfsToNfsMigrateBitsMsg msg, ReturnValueCompletion<NfsToNfsMigrateBitsReply> completion);
 
     void handle(PrimaryStorageInventory inv, NfsRebaseVolumeBackingFileMsg msg, ReturnValueCompletion<NfsRebaseVolumeBackingFileReply> completion);
 
