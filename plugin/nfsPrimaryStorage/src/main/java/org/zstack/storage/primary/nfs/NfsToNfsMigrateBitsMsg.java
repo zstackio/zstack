@@ -6,10 +6,10 @@ import org.zstack.header.storage.primary.PrimaryStorageMessage;
 /**
  * Created by GuoYi on 10/19/17.
  */
-public class NfsToNfsMigrateVolumeMsg extends NeedReplyMessage implements PrimaryStorageMessage {
+public class NfsToNfsMigrateBitsMsg extends NeedReplyMessage implements PrimaryStorageMessage {
     private String hostUuid;
-    private String srcVolumeFolderPath;
-    private String dstVolumeFolderPath;
+    private String srcFolderPath;
+    private String dstFolderPath;
     private String primaryStorageUuid;
 
     public String getHostUuid() {
@@ -20,20 +20,20 @@ public class NfsToNfsMigrateVolumeMsg extends NeedReplyMessage implements Primar
         this.hostUuid = hostUuid;
     }
 
-    public String getSrcVolumeFolderPath() {
-        return srcVolumeFolderPath;
+    public String getSrcFolderPath() {
+        return srcFolderPath;
     }
 
-    public void setSrcVolumeFolderPath(String srcVolumeFolderPath) {
-        this.srcVolumeFolderPath = srcVolumeFolderPath;
+    public void setSrcFolderPath(String srcFolderPath) {
+        this.srcFolderPath = srcFolderPath;
     }
 
-    public String getDstVolumeFolderPath() {
-        return dstVolumeFolderPath;
+    public String getDstFolderPath() {
+        return dstFolderPath;
     }
 
-    public void setDstVolumeFolderPath(String dstVolumeFolderPath) {
-        this.dstVolumeFolderPath = dstVolumeFolderPath;
+    public void setDstFolderPath(String dstFolderPath) {
+        this.dstFolderPath = dstFolderPath;
     }
 
     public void setPrimaryStorageUuid(String primaryStorageUuid) {

@@ -5,5 +5,5 @@ import org.zstack.header.message.MessageReply;
 /**
  * Created by GuoYi on 10/19/17.
  */
-public class NfsToNfsMigrateVolumeReply extends MessageReply {
+public class NfsToNfsMigrateBitsReply extends MessageReply {
 }
