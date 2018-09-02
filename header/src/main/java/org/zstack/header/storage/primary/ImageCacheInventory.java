@@ -3,13 +3,14 @@ package org.zstack.header.storage.primary;
 import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.search.Inventory;
 
+import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
 @Inventory(mappingVOClass = ImageCacheVO.class)
 @PythonClassInventory
-public class ImageCacheInventory {
+public class ImageCacheInventory implements Serializable {
     private long id;
     private String primaryStorageUuid;
     private String imageUuid;
