@@ -98,7 +98,8 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
             if (metadata.contains("backupStorageRefs")) {
                 ImageInventory imageInventory = JSONObjectUtil.toObject(metadata, ImageInventory.class);
 
-                if (!imageInventory.getStatus().equals(ImageStatus.Ready.toString())) {
+                if (!imageInventory.getStatus().equals(ImageStatus.Ready.toString())
+                        || imageVOs.stream().anyMatch(image -> image.getUuid().equals(imageInventory.getUuid()))) {
                     continue;
                 }
 
