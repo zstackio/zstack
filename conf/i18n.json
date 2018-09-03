@@ -3534,11 +3534,25 @@
     "fileName": "src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
-    "raw": "The operation only allows on user vm ",
-    "en_US": "The operation only allows on user vm ",
-    "zh_CN": "该操作只能在用户虚拟机上进行",
+    "raw": "The operation only allows on user vm",
+    "en_US": "The operation only allows on user vm",
+    "zh_CN": "",
     "arguments": [],
-    "line": 84,
+    "line": 83,
+    "fileName": "src/main/java/org/zstack/compute/vm/VmMevocoApiInterceptor.java"
+  },
+  {
+    "raw": "there are not enough capacity for full vm clone to vm[uuid: %s], volumes[uuid: %s] on primary storage[uuid: %s] required: %s bytes, current available capacity is %s bytes",
+    "en_US": "there are not enough capacity for full vm clone to vm[uuid: {0}], volumes[uuid: {1}] on primary storage[uuid: {2}] required: {3} bytes, current available capacity is {4} bytes",
+    "zh_CN": "没有足够的空间对虚拟机[uuid: {0}]做整机克隆，主存储[uuid: {2}]上的云盘[uuid: {1}]共需要[{3}]字节的空间，目前主存储的可用空间为[{4}]字节",
+    "arguments": [
+      "msg.getVmInstanceUuid()",
+      "volumeVOS.stream().map(VolumeVO::getUuid).collect(Collectors.toList())",
+      "primaryStorageUuid",
+      "totalCapacity - snapshotsCapacity",
+      "primaryStorageVO.getCapacity().getAvailableCapacity()"
+    ],
+    "line": 113,
     "fileName": "src/main/java/org/zstack/compute/vm/VmMevocoApiInterceptor.java"
   },
   {
@@ -3548,7 +3562,15 @@
     "arguments": [
       "msg.getVmNicUuid()"
     ],
-    "line": 78,
+    "line": 127,
+    "fileName": "src/main/java/org/zstack/compute/vm/VmMevocoApiInterceptor.java"
+  },
+  {
+    "raw": "The operation only allows on user vm ",
+    "en_US": "The operation only allows on user vm ",
+    "zh_CN": "该操作只能在用户虚拟机上进行",
+    "arguments": [],
+    "line": 133,
     "fileName": "src/main/java/org/zstack/compute/vm/VmMevocoApiInterceptor.java"
   },
   {
@@ -3558,7 +3580,7 @@
     "arguments": [
       "vmInstanceVO.getUuid()"
     ],
-    "line": 89,
+    "line": 138,
     "fileName": "src/main/java/org/zstack/compute/vm/VmMevocoApiInterceptor.java"
   },
   {
@@ -3568,7 +3590,7 @@
     "arguments": [
       "msg.getVmInstanceUuid()"
     ],
-    "line": 105,
+    "line": 154,
     "fileName": "src/main/java/org/zstack/compute/vm/VmMevocoApiInterceptor.java"
   },
   {
@@ -3576,7 +3598,7 @@
     "en_US": "do not change vm image when it\u0027s not stopped",
     "zh_CN": "当虚拟机不是已停止不能修改虚拟机镜像",
     "arguments": [],
-    "line": 117,
+    "line": 166,
     "fileName": "src/main/java/org/zstack/compute/vm/VmMevocoApiInterceptor.java"
   },
   {
@@ -3586,7 +3608,7 @@
     "arguments": [
       "msg.getVmInstanceUuid()"
     ],
-    "line": 134,
+    "line": 183,
     "fileName": "src/main/java/org/zstack/compute/vm/VmMevocoApiInterceptor.java"
   },
   {
@@ -3596,7 +3618,7 @@
     "arguments": [
       "msg.getVmInstanceUuid()"
     ],
-    "line": 151,
+    "line": 200,
     "fileName": "src/main/java/org/zstack/compute/vm/VmMevocoApiInterceptor.java"
   },
   {
@@ -3607,7 +3629,7 @@
       "msg.getVmInstanceUuid()",
       "msg.getImageUuid()"
     ],
-    "line": 170,
+    "line": 219,
     "fileName": "src/main/java/org/zstack/compute/vm/VmMevocoApiInterceptor.java"
   },
   {
@@ -3615,7 +3637,7 @@
     "en_US": "either uuid or account or password must be set",
     "zh_CN": "uuid或者账户或者密码需要被设置",
     "arguments": [],
-    "line": 181,
+    "line": 230,
     "fileName": "src/main/java/org/zstack/compute/vm/VmMevocoApiInterceptor.java"
   },
   {
@@ -3625,7 +3647,7 @@
     "arguments": [
       "msg.getDirection()"
     ],
-    "line": 189,
+    "line": 238,
     "fileName": "src/main/java/org/zstack/compute/vm/VmMevocoApiInterceptor.java"
   },
   {
@@ -3633,7 +3655,7 @@
     "en_US": "Monitor number must be 1 or 2 or 4.",
     "zh_CN": "监听器数量必须是1、2或4",
     "arguments": [],
-    "line": 195,
+    "line": 244,
     "fileName": "src/main/java/org/zstack/compute/vm/VmMevocoApiInterceptor.java"
   },
   {
@@ -3641,7 +3663,7 @@
     "en_US": "outboundBandwidth and inboundBandwidth must be set at lease one.",
     "zh_CN": "上行带宽和下行带宽至少有一个需要被设置",
     "arguments": [],
-    "line": 203,
+    "line": 252,
     "fileName": "src/main/java/org/zstack/compute/vm/VmMevocoApiInterceptor.java"
   },
   {
@@ -3651,7 +3673,7 @@
     "arguments": [
       "msg.getUuid()"
     ],
-    "line": 212,
+    "line": 261,
     "fileName": "src/main/java/org/zstack/compute/vm/VmMevocoApiInterceptor.java"
   },
   {
@@ -4098,6 +4120,19 @@
     "fileName": "src/main/java/org/zstack/ha/HaKvmHostSiblingChecker.java"
   },
   {
+    "raw": "(%d/%d) start HaHostChecker %s: predict time is [%d] seconds",
+    "en_US": "({0}/{1}) start HaHostChecker {2}: predict time is [{3}] seconds",
+    "zh_CN": "",
+    "arguments": [
+      "checkers.indexOf(checker) + 1",
+      "checkers.size()",
+      "checker.getClass().getSimpleName()",
+      "s.getMaxTimes() * s.getInterval()"
+    ],
+    "line": 79,
+    "fileName": "src/main/java/org/zstack/ha/HaKvmWorker.java"
+  },
+  {
     "raw": "cannot find the host of the vm[name:%s, uuid:%s], hostUuid is null",
     "en_US": "cannot find the host of the vm[name:{0}, uuid:{1}], hostUuid is null",
     "zh_CN": "找不到vm[name:{0}, uuid:{1}]的物理机, 因为hostUuid为null",
@@ -4105,7 +4140,7 @@
       "self.getName()",
       "self.getUuid()"
     ],
-    "line": 136,
+    "line": 135,
     "fileName": "src/main/java/org/zstack/ha/HaKvmWorker.java"
   },
   {
@@ -4113,7 +4148,7 @@
     "en_US": "no HaHostChecker found, cannot do HA",
     "zh_CN": "找不到HaHostChecker，无法执行HA",
     "arguments": [],
-    "line": 143,
+    "line": 142,
     "fileName": "src/main/java/org/zstack/ha/HaKvmWorker.java"
   },
   {
@@ -4131,7 +4166,7 @@
     "arguments": [
       "vmUuid"
     ],
-    "line": 1148,
+    "line": 1176,
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
   },
   {
@@ -4142,7 +4177,7 @@
       "cmd.hostUuid",
       "cmd.psUuids"
     ],
-    "line": 168,
+    "line": 169,
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
   },
   {
@@ -4153,7 +4188,7 @@
       "cmd.hostUuid",
       "cmd.psUuids"
     ],
-    "line": 163,
+    "line": 164,
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
   },
   {
@@ -4163,7 +4198,7 @@
     "arguments": [
       "newValue"
     ],
-    "line": 201,
+    "line": 202,
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
   },
   {
@@ -4171,7 +4206,7 @@
     "en_US": "there is already a HA GC job for the VM, wait it to run",
     "zh_CN": "VM已经有一个HA GC任务，等待运行",
     "arguments": [],
-    "line": 371,
+    "line": 372,
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
   },
   {
@@ -4181,19 +4216,72 @@
     "arguments": [
       "HaGlobalConfig.NEVER_STOP_VM_FAILURE_RETRY_DELAY.value(Long.class)"
     ],
-    "line": 379,
+    "line": 380,
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
   },
   {
-    "raw": "unable to HA start the VM[uuid:%s, name:%s], %s",
-    "en_US": "unable to HA start the VM[uuid:{0}, name:{1}], {2}",
-    "zh_CN": "无法通过HA机制启动VM[uuid:{0}, name:{1}], 错误原因: {2}",
+    "raw": "HA is successfully completed",
+    "en_US": "HA is successfully completed",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 855,
+    "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
+  },
+  {
+    "raw": "Failed to HA the VM",
+    "en_US": "Failed to HA the VM",
+    "zh_CN": "高可用VM失败",
+    "arguments": [],
+    "line": 863,
+    "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
+  },
+  {
+    "raw": "vm stopped unexpectedly, double check state",
+    "en_US": "vm stopped unexpectedly, double check state",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 764,
+    "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
+  },
+  {
+    "raw": "cannot determine VM[%s] status on host[%s], try to start it",
+    "en_US": "cannot determine VM[{0}] status on host[{1}], try to start it",
+    "zh_CN": "",
     "arguments": [
-      "vmInv.getUuid()",
-      "vmInv.getName()",
-      "reply.getError()"
+      "vmUuid",
+      "hostUuid"
     ],
-    "line": 662,
+    "line": 773,
+    "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
+  },
+  {
+    "raw": "vm state is stopped, try to start it",
+    "en_US": "vm state is stopped, try to start it",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 784,
+    "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
+  },
+  {
+    "raw": "VM[%s] is running on host[%s]",
+    "en_US": "VM[{0}] is running on host[{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "vmUuid",
+      "hostUuid"
+    ],
+    "line": 790,
+    "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
+  },
+  {
+    "raw": "VM[%s] is paused on host[%s]",
+    "en_US": "VM[{0}] is paused on host[{1}]",
+    "zh_CN": "",
+    "arguments": [
+      "vmUuid",
+      "hostUuid"
+    ],
+    "line": 803,
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
   },
   {
@@ -4203,25 +4291,7 @@
     "arguments": [
       "vm.getHypervisorType()"
     ],
-    "line": 804,
-    "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
-  },
-  {
-    "raw": "VM HA is not needed, reason is %s",
-    "en_US": "VM HA is not needed, reason is {0}",
-    "zh_CN": "不需要VM HA，原因是{0}",
-    "arguments": [
-      "details"
-    ],
-    "line": 821,
-    "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
-  },
-  {
-    "raw": "Failed to HA the VM",
-    "en_US": "Failed to HA the VM",
-    "zh_CN": "高可用VM失败",
-    "arguments": [],
-    "line": 835,
+    "line": 832,
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
   },
   {
@@ -4232,7 +4302,7 @@
       "host.getUuid()",
       "host.getName()"
     ],
-    "line": 1044,
+    "line": 1072,
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
   },
   {
@@ -4244,7 +4314,7 @@
       "host.getName()",
       "errorCode"
     ],
-    "line": 1049,
+    "line": 1077,
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
   },
   {
@@ -4255,7 +4325,7 @@
       "host.getUuid()",
       "host.getName()"
     ],
-    "line": 1082,
+    "line": 1110,
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
   },
   {
@@ -4267,8 +4337,32 @@
       "host.getName()",
       "errorCode"
     ],
-    "line": 1088,
+    "line": 1116,
     "fileName": "src/main/java/org/zstack/ha/HaManagerImpl.java"
+  },
+  {
+    "raw": "[HA Worker]: the success ratio[%s] below the threshold[%s], the host[uuid:%s] is judged as dead, errors are %s. Start HA all the vms on this host before",
+    "en_US": "[HA Worker]: the success ratio[{0}] below the threshold[{1}], the host[uuid:{2}] is judged as dead, errors are {3}. Start HA all the vms on this host before",
+    "zh_CN": "",
+    "arguments": [
+      "ratio",
+      "threshold",
+      "hostUuid",
+      "errors"
+    ],
+    "line": 49,
+    "fileName": "src/main/java/org/zstack/ha/HostCheckResult.java"
+  },
+  {
+    "raw": "[HA worker]: all host checkers are finished and the success ratio is %s that is greater than the threshold[%s]; no HA need for the vms on this host before. Please wait for the host reconnected",
+    "en_US": "[HA worker]: all host checkers are finished and the success ratio is {0} that is greater than the threshold[{1}]; no HA need for the vms on this host before. Please wait for the host reconnected",
+    "zh_CN": "",
+    "arguments": [
+      "ratio",
+      "threshold"
+    ],
+    "line": 46,
+    "fileName": "src/main/java/org/zstack/ha/HostCheckResult.java"
   },
   {
     "raw": "Never stop vm GC[uuid:%s] executed over %s times, you can use DeleteGCJob to cancel it",
@@ -4278,7 +4372,31 @@
       "this.getUuid()",
       "HaGlobalConfig.NEVER_STOP_VM_NOTIFICATION_RETRY_TIMES.value(Integer.class).toString()"
     ],
-    "line": 39,
+    "line": 42,
+    "fileName": "src/main/java/org/zstack/ha/NeverStopVmGC.java"
+  },
+  {
+    "raw": "VM state is not running, try to start it",
+    "en_US": "VM state is not running, try to start it",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 62,
+    "fileName": "src/main/java/org/zstack/ha/NeverStopVmGC.java"
+  },
+  {
+    "raw": "VM is started successfully",
+    "en_US": "VM is started successfully",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 77,
+    "fileName": "src/main/java/org/zstack/ha/NeverStopVmGC.java"
+  },
+  {
+    "raw": "Failed to start the NeverStop VM",
+    "en_US": "Failed to start the NeverStop VM",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 74,
     "fileName": "src/main/java/org/zstack/ha/NeverStopVmGC.java"
   },
   {
