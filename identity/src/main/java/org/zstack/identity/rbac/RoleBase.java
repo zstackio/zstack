@@ -73,12 +73,13 @@ public class RoleBase implements Role {
     }
 
     private void handle(APIUpdateRoleMsg msg) {
-        new SQLBatch() {
+        APIUpdateRoleEvent evt = new APIUpdateRoleEvent(msg.getId());
+        RoleInventory inv = new SQLBatchWithReturn<RoleInventory>() {
             @Override
-            protected void scripts() {
+            protected RoleInventory scripts() {
                 boolean updated = false;
 
-                self = reload(self);
+                self = findByUuid(self.getUuid(), RoleVO.class);
 
                 if (msg.getName() != null) {
                     self.setName(msg.getName());
@@ -88,6 +89,11 @@ public class RoleBase implements Role {
                 if (msg.getDescription() != null) {
                     self.setDescription(msg.getDescription());
                     updated = true;
+                }
+
+                if (updated) {
+                    merge(self);
+                    self = reload(self);
                 }
 
                 if (msg.getStatements() != null) {
@@ -100,7 +106,6 @@ public class RoleBase implements Role {
                         pvo.setStatement(JSONObjectUtil.toJsonString(s));
                         persist(pvo);
                     });
-                    updated = true;
                 }
 
                 if (msg.getPolicyUuids() != null) {
@@ -112,16 +117,15 @@ public class RoleBase implements Role {
                         ref.setRoleUuid(msg.getRoleUuid());
                         persist(ref);
                     });
-                    updated = true;
                 }
 
-                if (updated) {
-                    merge(self);
-                    flush();
-                }
+                flush();
+                self = reload(self);
+                return RoleInventory.valueOf(self);
             }
         }.execute();
-
+        evt.setInventory(inv);
+        bus.publish(evt);
     }
 
     private void handle(APIChangeRoleStateMsg msg) {
