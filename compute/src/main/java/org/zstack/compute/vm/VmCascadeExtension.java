@@ -300,8 +300,8 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 }
                 StopVmInstanceMsg msg = new StopVmInstanceMsg();
                 msg.setVmInstanceUuid(inv.getInventory().getUuid());
-                msg.setGcOnFailure(ignoreResourceReleaseFailure);
-                msg.setIgnoreResourceReleaseFailure(true);
+                msg.setGcOnFailure(true);
+                msg.setIgnoreResourceReleaseFailure(ignoreResourceReleaseFailure);
                 bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, inv.getInventory().getUuid());
                 msgs.add(msg);
             }
@@ -358,30 +358,13 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 @Override
                 public void done() {
                     if (ZoneVO.class.getSimpleName().equals(action.getRootIssuer())) {
-                        new SQLBatch() {
-                            @Override
-                            protected void scripts() {
-                                sql(VmInstanceVO.class)
-                                        .in(VmInstanceVO_.uuid, vminvs
-                                                .stream()
-                                                .map(vm -> vm.getInventory().getUuid())
-                                                .collect(Collectors.toList()))
-                                        .delete();
-
-                                List<String> vmNicUuids = vminvs.stream().map(vm -> vm.getInventory().getVmNics()).flatMap(List::stream).collect(Collectors.toList())
-                                        .stream().map(VmNicInventory::getUuid).collect(Collectors.toList());
-                                if (!vmNicUuids.isEmpty()) {
-                                    sql(VmNicVO.class)
-                                            .in(VmNicVO_.uuid, vmNicUuids)
-                                            .delete();
-                                    sql(AccountResourceRefVO.class)
-                                            .in(AccountResourceRefVO_.resourceUuid, vmNicUuids)
-                                            .eq(AccountResourceRefVO_.resourceType, VmNicVO.class.getSimpleName())
-                                            .delete();
-                                }
-                            }
-                        }.execute();
-
+                        dbf.removeByPrimaryKeys(vminvs.stream().map(vm -> vm.getInventory().getVmNics())
+                                        .flatMap(List::stream).map(VmNicInventory::getUuid)
+                                        .collect(Collectors.toList()),
+                                VmNicVO.class);
+                        dbf.removeByPrimaryKeys(vminvs.stream().map(p -> p.getInventory().getUuid())
+                                        .collect(Collectors.toList()),
+                                VmInstanceVO.class);
                     }
 
                     completion.success();
