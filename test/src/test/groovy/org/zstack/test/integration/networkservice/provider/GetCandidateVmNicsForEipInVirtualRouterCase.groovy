@@ -10,7 +10,9 @@ import org.zstack.network.service.lb.LoadBalancerConstants
 import org.zstack.network.service.portforwarding.PortForwardingConstant
 import org.zstack.network.service.userdata.UserdataConstant
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
+import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.EipInventory
+import org.zstack.sdk.L2NetworkInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VmNicInventory
@@ -282,6 +284,8 @@ class GetCandidateVmNicsForEipInVirtualRouterCase extends SubCase{
         def eip3 = env.inventoryByName("eip3") as EipInventory
         def pubL3 = env.inventoryByName("pubL3") as L3NetworkInventory
         def fakePubL3 = env.inventoryByName("fakePubL3") as L3NetworkInventory
+        def l2Flat = env.inventoryByName("l2-flat") as L2NetworkInventory
+        def cluster_1 = env.inventoryByName("cluster-1") as ClusterInventory
 
         //vmInVirtualRouter vmInFlat should be listed.
         def nics = getEipAttachableVmNics {
@@ -318,6 +322,24 @@ class GetCandidateVmNicsForEipInVirtualRouterCase extends SubCase{
         } as List<VmNicInventory>
         assert nics4.size() == 1
         assert nics4.get(0).uuid == vm.getVmNics().get(0).uuid
+
+        attachL2NetworkToCluster {
+            l2NetworkUuid = l2Flat.uuid
+            clusterUuid = cluster_1.uuid
+        }
+
+        //vmInCluster-2 should be listed
+        VmInstanceInventory vm_flat = queryVmInstance {
+            conditions=["name=vmInFlat"]
+        }[0]
+
+        def nics5 = getEipAttachableVmNics {
+            eipUuid = eip3.uuid
+        } as List<VmNicInventory>
+        assert nics5.size() == 2
+        assert nics5.get(0).uuid == vm.getVmNics().get(0).uuid || nics5.get(0).uuid == vm_flat.getVmNics().get(0).uuid
+        assert nics5.get(1).uuid == vm.getVmNics().get(0).uuid || nics5.get(1).uuid == vm_flat.getVmNics().get(0).uuid
+        assert nics5.get(0).uuid != nics5.get(1).uuid
     }
 
     @Override

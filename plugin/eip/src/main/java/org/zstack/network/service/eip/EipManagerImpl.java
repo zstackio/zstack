@@ -158,8 +158,8 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                 .eq(L3NetworkVO_.uuid, vip.getL3NetworkUuid())
                 .findValue();
         L3NetworkVO l3Vo = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, vip.getL3NetworkUuid()).find();
-        String clusterUuid = Q.New(L2NetworkClusterRefVO.class).eq(L2NetworkClusterRefVO_.l2NetworkUuid, l3Vo.getL2NetworkUuid())
-                .select(L2NetworkClusterRefVO_.clusterUuid).findValue();
+        List<String> clusterUuids = Q.New(L2NetworkClusterRefVO.class).eq(L2NetworkClusterRefVO_.l2NetworkUuid, l3Vo.getL2NetworkUuid())
+                .select(L2NetworkClusterRefVO_.clusterUuid).listValues();
 
         List<String> l3Uuids;
 
@@ -173,13 +173,13 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                     " and ref.networkServiceType = :nsType" +
                     " and l3.zoneUuid = :zoneUuid" +
                     " and np.uuid = ref.networkServiceProviderUuid" +
-                    " and np.type = :npType and l3.l2NetworkUuid = l2ref.l2NetworkUuid and l2ref.clusterUuid = :clusterUuid")
+                    " and np.type = :npType and l3.l2NetworkUuid = l2ref.l2NetworkUuid and l2ref.clusterUuid in :clusterUuids")
                     .param("system", false)
                     .param("zoneUuid", zoneUuid)
                     .param("nsType", EipConstant.EIP_NETWORK_SERVICE_TYPE)
                     .param("npType", providerType)
                     .param("vipL3NetworkUuid", vip.getL3NetworkUuid())
-                    .param("clusterUuid", clusterUuid)
+                    .param("clusterUuids", clusterUuids)
                     .list();
         } else {
             // the eip is not created on the backend
@@ -189,12 +189,12 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                     " and l3.uuid != :vipL3NetworkUuid" +
                     " and l3.uuid = ref.l3NetworkUuid" +
                     " and ref.networkServiceType = :nsType" +
-                    " and l3.zoneUuid = :zoneUuid and l3.l2NetworkUuid = l2ref.l2NetworkUuid and l2ref.clusterUuid = :clusterUuid")
+                    " and l3.zoneUuid = :zoneUuid and l3.l2NetworkUuid = l2ref.l2NetworkUuid and l2ref.clusterUuid in :clusterUuids")
                     .param("system", false)
                     .param("zoneUuid", zoneUuid)
                     .param("nsType", EipConstant.EIP_NETWORK_SERVICE_TYPE)
                     .param("vipL3NetworkUuid", vip.getL3NetworkUuid())
-                    .param("clusterUuid", clusterUuid)
+                    .param("clusterUuids", clusterUuids)
                     .list();
         }
 
