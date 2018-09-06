@@ -96,6 +96,14 @@
 	</config>
 
 	<config>
+		<name>additionalQmp</name>
+		<description>add an additional qmp socket, disable may cause some features can not work</description>
+		<category>vm</category>
+		<defaultValue>true</defaultValue>
+		<type>java.lang.Boolean</type>
+	</config>
+
+	<config>
 		<category>vm</category>
 		<name>vmPortOff</name>
 		<description>Disable VMWare io port emulation</description>

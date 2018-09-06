@@ -79,4 +79,6 @@ public class VmSystemTags {
 
     public static String BOOT_MODE_TOKEN = "bootMode";
     public static PatternedSystemTag BOOT_MODE = new PatternedSystemTag(String.format("bootMode::{%s}", BOOT_MODE_TOKEN), VmInstanceVO.class);
+
+    public static PatternedSystemTag ADDITIONAL_QMP_ADDED = new PatternedSystemTag("additionalQmp", VmInstanceVO.class);
 }
