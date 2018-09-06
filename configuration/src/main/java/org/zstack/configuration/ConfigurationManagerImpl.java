@@ -793,9 +793,13 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
     }
 
     public void generateApiJsonTemplate(String exportPath, List<String> basePkgs) throws IOException {
+        String pythonApisDir = System.getProperty("pythonApisDir");
+        if (pythonApisDir == null) {
+            pythonApisDir = System.getProperty("user.home");
+        }
         generatedPythonClassName = new HashSet<>();
         if (exportPath == null) {
-            exportPath = PathUtil.join(System.getProperty("user.home"), "zstack-python-template");
+            exportPath = PathUtil.join(pythonApisDir, "zstack-python-template");
         }
         if (basePkgs == null || basePkgs.isEmpty()) {
             basePkgs = new ArrayList<>(1);
