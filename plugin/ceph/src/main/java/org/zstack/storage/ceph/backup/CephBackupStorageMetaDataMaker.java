@@ -2,6 +2,7 @@ package org.zstack.storage.ceph.backup;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
@@ -82,20 +83,23 @@ public class CephBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
         List<ImageVO>  imageVOs = new ArrayList<ImageVO>();
         List<ImageBackupStorageRefVO> backupStorageRefVOs = new ArrayList<ImageBackupStorageRefVO>();
         String[] metadatas =  imagesMetadata.split("\n");
+        List<String> importedUuids = new ArrayList<>();
         for ( String metadata : metadatas) {
             if (metadata.contains("backupStorageRefs")) {
                 ImageInventory imageInventory = JSONObjectUtil.toObject(metadata, ImageInventory.class);
 
                 if (!imageInventory.getStatus().equals(ImageStatus.Ready.toString())
-                        || imageVOs.stream().anyMatch(image -> image.getUuid().equals(imageInventory.getUuid()))) {
+                        || importedUuids.stream().anyMatch(uuid -> uuid.equals(imageInventory.getUuid()))) {
                     continue;
                 }
 
+                importedUuids.add(imageInventory.getUuid());
+                String imageUuid = Platform.getUuid();
                 for ( ImageBackupStorageRefInventory ref : imageInventory.getBackupStorageRefs()) {
                     ImageBackupStorageRefVO backupStorageRefVO = new ImageBackupStorageRefVO();
                     backupStorageRefVO.setStatus(ImageStatus.valueOf(ref.getStatus()));
                     backupStorageRefVO.setInstallPath(ref.getInstallPath());
-                    backupStorageRefVO.setImageUuid(ref.getImageUuid());
+                    backupStorageRefVO.setImageUuid(imageUuid);
                     backupStorageRefVO.setBackupStorageUuid(backupStorageUuid);
                     backupStorageRefVO.setCreateDate(ref.getCreateDate());
                     backupStorageRefVO.setLastOpDate(ref.getLastOpDate());
@@ -118,7 +122,7 @@ public class CephBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
                 imageVO.setSystem(imageInventory.isSystem());
                 imageVO.setType(imageInventory.getType());
                 imageVO.setUrl(imageInventory.getUrl());
-                imageVO.setUuid(imageInventory.getUuid());
+                imageVO.setUuid(imageUuid);
                 imageVO.setCreateDate(imageInventory.getCreateDate());
                 imageVO.setLastOpDate(imageInventory.getLastOpDate());
                 imageVO.setAccountUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
