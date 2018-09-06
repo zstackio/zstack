@@ -169,4 +169,8 @@
     <message>
         <name>org.zstack.header.identity.APIRenewSessionMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.identity.APICreateAccessKeyMsg</name>
+    </message>
 </service>

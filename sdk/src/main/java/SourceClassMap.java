@@ -98,6 +98,7 @@ public class SourceClassMap {
 			put("org.zstack.header.hybrid.network.vpn.VpcVpnIkeConfigStruct", "org.zstack.sdk.VpcVpnIkeConfigStruct");
 			put("org.zstack.header.hybrid.network.vpn.VpcVpnIpSecConfigInventory", "org.zstack.sdk.VpcVpnIpSecConfigInventory");
 			put("org.zstack.header.hybrid.network.vpn.VpcVpnIpSecConfigStruct", "org.zstack.sdk.VpcVpnIpSecConfigStruct");
+			put("org.zstack.header.identity.AccessKeyInventory", "org.zstack.sdk.AccessKeyInventory");
 			put("org.zstack.header.identity.AccountInventory", "org.zstack.sdk.AccountInventory");
 			put("org.zstack.header.identity.AccountResourceRefInventory", "org.zstack.sdk.AccountResourceRefInventory");
 			put("org.zstack.header.identity.PolicyInventory", "org.zstack.sdk.PolicyInventory");
@@ -323,6 +324,7 @@ public class SourceClassMap {
 
     public final static HashMap<String, String> dstToSrcMapping = new HashMap() {
         {
+			put("org.zstack.sdk.AccessKeyInventory", "org.zstack.header.identity.AccessKeyInventory");
 			put("org.zstack.sdk.AccountInventory", "org.zstack.header.identity.AccountInventory");
 			put("org.zstack.sdk.AccountResourceRefInventory", "org.zstack.header.identity.AccountResourceRefInventory");
 			put("org.zstack.sdk.ActionStruct", "org.zstack.cloudformation.template.struct.ActionStruct");
