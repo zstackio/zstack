@@ -10,4 +10,6 @@ import org.zstack.core.GlobalPropertyDefinition;
 public class PortalGlobalProperty {
     @GlobalProperty(name = "ManagementNode.maxHeartbeatFailure", defaultValue = "5")
     public static int MAX_HEARTBEAT_FAILURE;
+    @GlobalProperty(name = "ManagementNode.heartbeat.jdbcNetworkTimeout", defaultValue = "5")
+    public static int HEART_BEAT_QUERY_TIMEOUT;
 }
