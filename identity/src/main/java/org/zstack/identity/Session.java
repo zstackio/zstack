@@ -61,7 +61,7 @@ public class Session {
         }
 
         Long finalExtendPeriod = extendPeriod;
-        return new SQLBatchWithReturn<SessionInventory>() {
+        SessionInventory session = new SQLBatchWithReturn<SessionInventory>() {
             @Transactional(readOnly = true)
             private Timestamp getCurrentSqlDate() {
                 Query query = databaseFacade.getEntityManager().createNativeQuery("select current_timestamp()");
@@ -79,6 +79,12 @@ public class Session {
                return s;
             }
         }.execute();
+
+        for (RenewSessionExtensionPoint ext : Platform.getComponentLoader().getPluginRegistry().getExtensionList(RenewSessionExtensionPoint.class)) {
+            ext.renewSession(uuid, session.getExpiredDate());
+        }
+
+        return session;
     }
 
     public static void logout(String uuid) {
