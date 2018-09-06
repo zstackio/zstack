@@ -863,9 +863,18 @@ public class KVMAgentCommands {
         private boolean vmPortOff;
         private String vmCpuModel;
         private boolean emulateHyperV;
+        private boolean additionalQmp;
         private boolean isApplianceVm;
         private String systemSerialNumber;
         private String bootMode;
+
+        public boolean isAdditionalQmp() {
+            return additionalQmp;
+        }
+
+        public void setAdditionalQmp(boolean additionalQmp) {
+            this.additionalQmp = additionalQmp;
+        }
 
         public String getBootMode() {
             return bootMode;

@@ -34,4 +34,6 @@ public class VmGlobalConfig {
     public static GlobalConfig VM_PORT_OFF = new GlobalConfig(CATEGORY, "vmPortOff");
     @GlobalConfigValidation(validValues = {"true", "false"})
     public static GlobalConfig EMULATE_HYPERV = new GlobalConfig(CATEGORY, "emulateHyperV");
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    public static GlobalConfig ADDITIONAL_QMP = new GlobalConfig(CATEGORY, "additionalQmp");
 }
