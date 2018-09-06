@@ -5,6 +5,7 @@ import org.zstack.core.db.DatabaseFacade
 import org.zstack.header.managementnode.ManagementNodeState
 import org.zstack.header.managementnode.ManagementNodeVO
 import org.zstack.portal.managementnode.ManagementNodeGlobalConfig
+import org.zstack.portal.managementnode.PortalGlobalProperty
 import org.zstack.test.integration.kvm.Env
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
@@ -33,7 +34,10 @@ class ManagementNodeHeartbeatCase extends SubCase{
     void test() {
         env.create {
             ManagementNodeGlobalConfig.NODE_HEARTBEAT_INTERVAL.updateValue(1)
+            int old = PortalGlobalProperty.MAX_HEARTBEAT_FAILURE
+            PortalGlobalProperty.MAX_HEARTBEAT_FAILURE = 1
             testHeartbeat()
+            PortalGlobalProperty.MAX_HEARTBEAT_FAILURE = old
         }
     }
 
