@@ -40,9 +40,9 @@
         <property name="connectionCustomizerClassName" value="org.zstack.core.db.TransactionIsolationLevelSetter" />
         <property name="maxIdleTime" value="${DbFacadeDataSource.maxIdleTime:3600}"/>
         <property name="numHelperThreads" value="${DbFacadeDataSource.numHelperThreads:15}" />
-        <property name="testConnectionOnCheckout" value="${DbFacadeDataSource.testConnectionOnCheckout:false}"/>
         <property name="acquireIncrement" value="50" />
-        <property name="preferredTestQuery" value="SELECT 1"/>
+        <property name="testConnectionOnCheckout" value="${DbFacadeDataSource.testConnectionOnCheckout:true}"/>
+        <property name="connectionTesterClassName" value="${DbFacadeDataSource.connectionTesterClassName:org.zstack.core.db.C3p0ConnectionTester}"/>
     </bean>
     
     <bean id="RESTApiEntityManagerFactory"
