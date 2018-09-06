@@ -59,7 +59,7 @@ import static org.zstack.utils.CollectionDSL.list;
 
 public class AccountManagerImpl extends AbstractService implements AccountManager, PrepareDbInitialValueExtensionPoint,
         SoftDeleteEntityExtensionPoint, HardDeleteEntityExtensionPoint,
-        ApiMessageInterceptor, ApiNotificationFactoryExtensionPoint {
+        ApiMessageInterceptor, ApiNotificationFactoryExtensionPoint, RenewSessionExtensionPoint {
     private static final CLogger logger = Utils.getLogger(AccountManagerImpl.class);
 
     @Autowired
@@ -1889,5 +1889,13 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
     public Map<String, SessionInventory> getSessionsCopy() {
         return new HashMap<>(sessions);
+    }
+
+    @Override
+    public void renewSession(String sessionUuid, Timestamp expireTime) {
+        SessionInventory session = sessions.get(sessionUuid);
+        if (session != null) {
+            session.setExpiredDate(expireTime);
+        }
     }
 }
