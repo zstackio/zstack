@@ -45,8 +45,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -572,10 +571,13 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
         private SingleConnectionDataSource source;
         JdbcTemplate jdbc;
         AtomicBoolean destroyed = new AtomicBoolean(false);
+        private ExecutorService connectionTimeoutExecutor;
 
         public HeartBeatDBSource() {
             try {
+                connectionTimeoutExecutor = Executors.newFixedThreadPool(3);
                 conn = dbf.getExtraDataSource().getConnection();
+                conn.setNetworkTimeout(connectionTimeoutExecutor, (int) TimeUnit.SECONDS.toMillis(PortalGlobalProperty.HEART_BEAT_QUERY_TIMEOUT));
                 source = new SingleConnectionDataSource(conn, true);
                 jdbc = new JdbcTemplate(source);
             } catch (SQLException e) {
@@ -595,6 +597,8 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
             } catch (SQLException e) {
                 throw new CloudRuntimeException(e);
             }
+
+            connectionTimeoutExecutor.shutdown();
         }
     }
 
@@ -609,7 +613,10 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
         }
 
         heartBeatTask = thdf.submit(new Task<Void>() {
-            private List<ManagementNodeVO> suspects = new ArrayList<ManagementNodeVO>();
+            // WARNING: NO dbf(DatabaseFacade) used in this task,
+            // you MUST USE heartBeatDBSource for any database operation
+
+            private List<ManagementNodeVO> suspects = new ArrayList<>();
 
             @Override
             public String getName() {
@@ -631,9 +638,11 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 }
             }
 
-            private int deleteNode(String uuid) {
+            private int deleteNode(ManagementNodeVO vo) {
                 String sql = "delete from ManagementNodeVO where uuid = ?";
-                return heartBeatDBSource.jdbc.update(sql, uuid);
+                int ret = heartBeatDBSource.jdbc.update(sql, vo.getUuid());
+                logger.debug(String.format("deleted management node[uuid:%s, ip:%s]'s heartbeat from database, ret:%s", vo.getUuid(), vo.getHostName(), ret));
+                return ret;
             }
 
             @AsyncThread
@@ -660,10 +669,8 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                         continue;
                     }
 
-                    int ret = deleteNode(n.getUuid());
-                    if (ret > 0) {
-                        nodeDie(n);
-                    }
+                    deleteNode(n);
+                    nodeDie(n);
                 }
             }
 
@@ -679,6 +686,10 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 }
             }
 
+            private Timestamp getCurrentSqlTime() {
+                return heartBeatDBSource.jdbc.queryForObject("select current_timestamp()", Timestamp.class);
+            }
+
             private void checkAllNodesHealth() {
                 String sql = "select * from ManagementNodeVO where state = 'RUNNING'";
                 List<ManagementNodeVO> all = heartBeatDBSource.jdbc.query(sql, new BeanPropertyRowMapper(ManagementNodeVO.class));
@@ -689,7 +700,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                     if (!StringDSL.isZStackUuid(vo.getUuid())) {
                         logger.warn(String.format("found a weird management node, it's UUID not a ZStack uuid, delete it. %s",
                                 JSONObjectUtil.toJsonString(ManagementNodeInventory.valueOf(vo))));
-                        dbf.remove(vo);
+                        deleteNode(vo);
                         continue;
                     }
 
@@ -699,9 +710,9 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                         continue;
                     }
 
-                    Timestamp curr = dbf.getCurrentSqlTime();
+                    Timestamp curr = getCurrentSqlTime();
                     Timestamp lastHeartbeat = vo.getHeartBeat();
-                    long end = lastHeartbeat.getTime() + TimeUnit.SECONDS.toMillis(2 * ManagementNodeGlobalConfig.NODE_HEARTBEAT_INTERVAL.value(Integer.class));
+                    long end = lastHeartbeat.getTime() + TimeUnit.SECONDS.toMillis(PortalGlobalProperty.MAX_HEARTBEAT_FAILURE * ManagementNodeGlobalConfig.NODE_HEARTBEAT_INTERVAL.value(Integer.class));
                     if (end < curr.getTime()) {
                         suspects.add(vo);
                         logger.warn(String.format("management node[uuid:%s, hostname: %s]'s heart beat has stopped for %s secs, add it in suspicious list",
@@ -709,19 +720,27 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                     }
                 }
 
+                Set<String> nodeUuidsInDb = nodesInDb.stream().map(ManagementNodeVO::getUuid).collect(Collectors.toSet());
+
                 // When a node is dying, we may not receive the the dead notification because the message bus may be also dead
                 // at that moment. By checking if the node UUID is still in our hash ring, we know what nodes should be kicked out
-                Set<String> nodeUuidsInDb = nodesInDb.stream().map(ManagementNodeVO::getUuid).collect(Collectors.toSet());
-                for (String ourNode : destinationMaker.getManagementNodesInHashRing()) {
-                    if (!nodeUuidsInDb.contains(ourNode)) {
+                destinationMaker.getManagementNodesInHashRing().forEach(nodeUuid -> {
+                    if (!nodeUuidsInDb.contains(nodeUuid)) {
                         logger.warn(String.format("found that a management node[uuid:%s] had no heartbeat in database but still in our hash ring," +
-                                "notify that it's dead", ourNode));
-                        ManagementNodeVO nodeVO = dbf.findByUuid(ourNode, ManagementNodeVO.class);
+                                "notify that it's dead", nodeUuid));
+                        ManagementNodeVO nodeVO = getNode(nodeUuid);
+                        ManagementNodeInventory inv;
                         if (nodeVO != null) {
-                            nodeLifeCycle.nodeLeft(ManagementNodeInventory.valueOf(nodeVO));
+                            inv = ManagementNodeInventory.valueOf(nodeVO);
+                        } else {
+                            inv = new ManagementNodeInventory();
+                            inv.setUuid(nodeUuid);
+                            inv.setHostName(destinationMaker.getNodeInfo(nodeUuid).getNodeIP());
                         }
+
+                        nodeLifeCycle.nodeLeft(inv);
                     }
-                }
+                });
 
                 // check if any node missing in our hash ring
                 nodesInDb.forEach(n -> {
@@ -743,69 +762,97 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
             @Override
             public Void call() {
-                int heartbeatFailure = 0;
-
                 while (true) {
                     try {
                         if (!amIalive()) {
                             logger.warn(String.format("cannot find my[uuid:%s] heartbeat in database, quit process", node().getUuid()));
-                            stop();
-                            return null;
-                        } else {
-                            updateHeartbeat();
-                            checkAllNodesHealth();
-                            fenceSuspects();
+                            // this stops the management node
+                            break;
                         }
 
-                        heartbeatFailure = 0;
+                        logger.debug("Xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+
+                        updateHeartbeat();
+                        checkAllNodesHealth();
+                        fenceSuspects();
                     } catch (Throwable t) {
-                        heartbeatFailure++;
-
-                        if (heartbeatFailure > PortalGlobalProperty.MAX_HEARTBEAT_FAILURE) {
-                            logger.warn(String.format("the heartbeat has failed %s times that is greater than the max allowed value[%s]," +
-                                    " quit process", heartbeatFailure, PortalGlobalProperty.MAX_HEARTBEAT_FAILURE));
-                            stop();
-                            return null;
-                        }
-
-                        boolean databaseError = false;
-
-                        logger.warn(String.format("an error happened when doing heartbeat, %s, it's going to recover", t.getMessage()));
-
-                        try {
-                            heartBeatDBSource.jdbc.queryForObject("select 1", Integer.class);
-                        } catch (Throwable t1) {
-                            logger.warn(String.format("cannot communicate to the database, it's most likely the DB stopped or rebooted;" +
-                                    "try creating a new database connection. %s", t1.getMessage()), t1);
-                            databaseError = true;
-                        }
-
-                        if (databaseError) {
-                            if (heartBeatDBSource != null) {
-                                heartBeatDBSource.destroy();
-                            }
-
-                            try {
-                                heartBeatDBSource = new HeartBeatDBSource();
-                            } catch (Throwable t1) {
-                                logger.warn(String.format("unable to create a database connection, %s, will try it later", t1.getMessage()), t1);
-                            }
-                        } else {
-                            logger.warn("unhandled exception happened", t);
+                        if (handleHeartbeatFailure(t)) {
+                            // this stops the management node
+                            break;
                         }
                     }
 
-                    try {
-                        TimeUnit.SECONDS.sleep(ManagementNodeGlobalConfig.NODE_HEARTBEAT_INTERVAL.value(Long.class));
-                    } catch (InterruptedException ie) {
-                    }
+                    sleepAHeartbeatInterval();
 
                     if (heartBeatTask.isCancelled()) {
-                        break;
+                        // the heartbeat task may be cancelled by the heartbeat interval change,
+                        // just return, don't break, otherwise it stops the management node
+                        return null;
                     }
                 }
 
+                stop();
                 return null;
+            }
+
+            private void sleepAHeartbeatInterval() {
+                try {
+                    TimeUnit.SECONDS.sleep(ManagementNodeGlobalConfig.NODE_HEARTBEAT_INTERVAL.value(Long.class));
+                } catch (InterruptedException ie) {
+                }
+            }
+
+            private HeartBeatDBSource newHeartBeatDBSource() {
+                if (heartBeatDBSource != null) {
+                    heartBeatDBSource.destroy();
+                }
+
+                heartBeatDBSource = new HeartBeatDBSource();
+                return heartBeatDBSource;
+            }
+
+            private boolean handleHeartbeatFailure(Throwable t) {
+                logger.warn(String.format("we meet a database heartbeat failure caused by[%s], try to handle it", t.getMessage()));
+
+                int heartbeatFailureTimes = 0;
+
+                while (true) {
+                    if (heartbeatFailureTimes > PortalGlobalProperty.MAX_HEARTBEAT_FAILURE) {
+                        logger.warn(String.format("the heartbeat has failed %s times that is greater than the max allowed value[%s]," +
+                                " quit process", heartbeatFailureTimes, PortalGlobalProperty.MAX_HEARTBEAT_FAILURE), t);
+                        return true;
+                    }
+
+                    heartbeatFailureTimes ++;
+
+                    boolean databaseError = false;
+                    logger.warn(String.format("the database heartbeat has failed %s times, we will try to recover the connection %s times", heartbeatFailureTimes, PortalGlobalProperty.MAX_HEARTBEAT_FAILURE - heartbeatFailureTimes));
+
+                    try {
+                        heartBeatDBSource.jdbc.queryForObject("select 1", Integer.class);
+                    } catch (Throwable t1) {
+                        logger.warn(String.format("cannot communicate to the database, it's most likely the DB stopped or rebooted;" +
+                                "try creating a new database connection. %s", t1.getMessage()), t1);
+                        databaseError = true;
+                    }
+
+                    if (!databaseError) {
+                        logger.debug("it seems the database connection failure recovers, continue heartbeat");
+                        break;
+                    }
+
+                    try {
+                        heartBeatDBSource = newHeartBeatDBSource();
+                        logger.debug("the database heartbeat connection is successfully re-created");
+                        break;
+                    } catch (Throwable t1) {
+                        logger.warn(String.format("unable to create a database connection, %s, will try it later", t1.getMessage()), t1);
+                    }
+
+                    sleepAHeartbeatInterval();
+                }
+
+                return false;
             }
         });
 
