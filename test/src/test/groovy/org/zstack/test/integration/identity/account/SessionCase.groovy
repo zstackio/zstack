@@ -95,6 +95,9 @@ class SessionCase extends SubCase {
         /* suppose 30 seconds error */
         assert sess2.expiredDate.getTime() >= now.getTime() + TimeUnit.SECONDS.toMillis(3600)
         assert sess2.expiredDate.getTime() <= now.getTime() + TimeUnit.SECONDS.toMillis(3630L)
+
+        assert acntMgr.getSessionsCopy().get(sess2.uuid).expiredDate.getTime() >= now.getTime() + TimeUnit.SECONDS.toMillis(3600)
+        assert acntMgr.getSessionsCopy().get(sess2.uuid).expiredDate.getTime() <= now.getTime() + TimeUnit.SECONDS.toMillis(3630L)
     }
 
     void testRenewSessionFail() {
