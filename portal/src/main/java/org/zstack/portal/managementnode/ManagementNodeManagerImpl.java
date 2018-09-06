@@ -770,7 +770,9 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                             break;
                         }
 
-                        logger.debug("Xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+                        if (logger.isTraceEnabled()) {
+                            logger.trace("heartbeat is ticketing ...");
+                        }
 
                         updateHeartbeat();
                         checkAllNodesHealth();
