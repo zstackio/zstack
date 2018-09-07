@@ -280,6 +280,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             handle((APIRenewSessionMsg) msg);
         } else if (msg instanceof APICreateAccessKeyMsg) {
             handle((APICreateAccessKeyMsg) msg);
+        } else if (msg instanceof APILogInByAccessKeyMsg) {
+            handle((APILogInByAccessKeyMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -529,6 +531,13 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         }
 
         reply.setInventory(getSession(vo.getUuid(), vo.getUuid()));
+        bus.reply(msg, reply);
+    }
+
+    private void handle(APILogInByAccessKeyMsg msg) {
+        APILogInReply reply = new APILogInReply();
+
+        reply.setInventory(getSession(msg.getSession().getAccountUuid(), msg.getSession().getUserUuid()));
         bus.reply(msg, reply);
     }
 

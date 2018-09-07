@@ -46,6 +46,10 @@
     <message>
         <name>org.zstack.header.identity.APILogInByUserMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.identity.APILogInByAccessKeyMsg</name>
+    </message>
     
     <message>
         <name>org.zstack.header.identity.APILogOutMsg</name>
