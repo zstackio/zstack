@@ -87,6 +87,32 @@ class IpRangeCase extends SubCase {
             gateway = "192.168.101.1"
             netmask = "255.255.255.0"
         }
+
+        L3NetworkInventory l3_3 = createL3Network {
+            name = "l3-3"
+            l2NetworkUuid = l3_1.l2NetworkUuid
+            category = L3NetworkCategory.Private
+        }
+
+        addIpRange {
+            name = "ipr-5"
+            l3NetworkUuid = l3_3.getUuid()
+            startIp = "10.0.1.101"
+            endIp = "10.0.1.200"
+            gateway = "10.0.1.1"
+            netmask = "255.0.0.0"
+        }
+
+        expect (AssertionError.class) {
+            addIpRange {
+                name = "ipr-6"
+                l3NetworkUuid = l3_3.getUuid()
+                startIp = "10.0.2.101"
+                endIp = "10.0.2.200"
+                gateway = "10.0.2.1"
+                netmask = "255.0.0.0"
+            }
+        }
     }
 }
 

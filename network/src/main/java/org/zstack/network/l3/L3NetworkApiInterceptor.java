@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -20,6 +21,7 @@ import org.zstack.header.network.l3.*;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
 import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
@@ -324,6 +326,14 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
         long gw = NetworkUtils.ipv4StringToLong(ipr.getGateway());
         if (startip <= gw && gw <= endip) {
             throw new ApiMessageInterceptionException(argerr("gateway[%s] can not be part of range[%s, %s]", ipr.getGateway(), ipr.getStartIp(), ipr.getEndIp()));
+        }
+
+        /* ipranges of same l3 network must have same gateway */
+        List<IpRangeVO> l3IpRanges = Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, ipr.getL3NetworkUuid()).list();
+        for (IpRangeVO r : l3IpRanges) {
+            if (!r.getGateway().equals(ipr.getGateway())) {
+                throw new ApiMessageInterceptionException(argerr("new add ip range gateway %s is different from old gateway %s", ipr.getGateway(), r.getGateway()));
+            }
         }
 
         String cidr = ipr.toSubnetUtils().getInfo().getCidrSignature();
