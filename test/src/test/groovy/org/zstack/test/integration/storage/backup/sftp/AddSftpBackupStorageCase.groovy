@@ -1,8 +1,9 @@
 package org.zstack.test.integration.storage.backup.sftp
 
+import org.zstack.core.Platform
 import org.zstack.core.db.Q
-import org.zstack.header.image.ImageVO
-import org.zstack.header.image.ImageVO_
+import org.zstack.header.image.ImageBackupStorageRefVO
+import org.zstack.header.image.ImageBackupStorageRefVO_
 import org.zstack.sdk.AddSftpBackupStorageAction
 import org.zstack.storage.backup.sftp.SftpBackupStorageCommands
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant
@@ -58,6 +59,7 @@ class AddSftpBackupStorageCase extends SubCase {
 
     void testImportImageFlagWhenAddBS() {
         def imageUuid = "a603e80ea18f424f8a5f00371d484537"
+        def bsUuid = Platform.getUuid()
 
         // same uuid occurs in metadata will be filtered out
         env.simulator(SftpBackupStorageConstant.GET_IMAGES_METADATA) {
@@ -82,10 +84,20 @@ class AddSftpBackupStorageCase extends SubCase {
             hostname = "hostname"
             url = "/data"
             importImages = true
+            resourceUuid = bsUuid
         }
 
+        // same image uuid will be filter when restore image meta data
+        // restored image will use a new uuid
         retryInSecs {
-            assert Q.New(ImageVO.class).eq(ImageVO_.uuid, imageUuid).isExists()
+            assert Q.New(ImageBackupStorageRefVO.class).eq(ImageBackupStorageRefVO_.backupStorageUuid, bsUuid).count() == 1
+            String nImageUuid = Q.New(ImageBackupStorageRefVO.class).select(ImageBackupStorageRefVO_.imageUuid).eq(ImageBackupStorageRefVO_.backupStorageUuid, bsUuid).findValue()
+
+            if (nImageUuid == null) {
+                assert false
+            }
+
+            assert !nImageUuid.equals(imageUuid)
         }
     }
 
