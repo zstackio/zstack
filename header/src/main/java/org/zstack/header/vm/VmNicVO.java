@@ -47,8 +47,10 @@ public class VmNicVO extends ResourceVO implements OwnedByAccount {
     private String gateway;
 
     @Column
-    @Index
     private String mac;
+
+    @Column
+    private String hypervisorType;
 
     @Column
     private String metaData;
@@ -115,6 +117,14 @@ public class VmNicVO extends ResourceVO implements OwnedByAccount {
 
     public void setMac(String mac) {
         this.mac = mac;
+    }
+
+    public String getHypervisorType() {
+        return hypervisorType;
+    }
+
+    public void setHypervisorType(String hypervisorType) {
+        this.hypervisorType = hypervisorType;
     }
 
     public String getL3NetworkUuid() {
