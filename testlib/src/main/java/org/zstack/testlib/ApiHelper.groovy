@@ -5498,6 +5498,33 @@ trait ApiHelper {
     }
 
 
+    def createVxlanVtep(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateVxlanVtepAction.class) Closure c) {
+        def a = new org.zstack.sdk.CreateVxlanVtepAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def createWebhook(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateWebhookAction.class) Closure c) {
         def a = new org.zstack.sdk.CreateWebhookAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
