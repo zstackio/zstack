@@ -1159,7 +1159,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
             @Override
             public void validateSystemTagInCreateMessage(APICreateMessage cmsg) {
-                final APICreateVmInstanceMsg msg = (APICreateVmInstanceMsg) cmsg;
+                final NewVmInstanceMessage msg = (NewVmInstanceMessage) cmsg;
 
                 int hostnameCount = 0;
                 for (String sysTag : msg.getSystemTags()) {
