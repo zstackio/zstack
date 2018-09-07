@@ -43,6 +43,7 @@ public class GlobalConfig {
     private volatile String value;
     private boolean linked;
     private transient List<GlobalConfigUpdateExtensionPoint> updateExtensions = new ArrayList<>();
+    private transient List<GlobalConfigBeforeUpdateExtensionPoint> beforeUpdateExtensions = new ArrayList<>();
     private transient List<GlobalConfigValidatorExtensionPoint> validators = new ArrayList<>();
     private transient List<GlobalConfigUpdateExtensionPoint> localUpdateExtensions = new ArrayList<>();
     private GlobalConfigDef configDef;
@@ -104,8 +105,10 @@ public class GlobalConfig {
         validators = new ArrayList<>();
         updateExtensions = new ArrayList<>();
         localUpdateExtensions = new ArrayList<>();
+        beforeUpdateExtensions = new ArrayList<>();
 
         updateExtensions.addAll(g.getUpdateExtensions());
+        beforeUpdateExtensions.addAll(g.getBeforeUpdateExtensions());
         localUpdateExtensions.addAll(g.getLocalUpdateExtensions());
         validators.addAll(g.getValidators());
         configDef = g.getConfigDef();
@@ -133,6 +136,10 @@ public class GlobalConfig {
 
     public void installUpdateExtension(GlobalConfigUpdateExtensionPoint ext) {
         updateExtensions.add(ext);
+    }
+
+    public void installBeforeUpdateExtension(GlobalConfigBeforeUpdateExtensionPoint ext) {
+        beforeUpdateExtensions.add(ext);
     }
 
     public void installValidateExtension(GlobalConfigValidatorExtensionPoint ext) {
@@ -219,7 +226,7 @@ public class GlobalConfig {
         ng.setValue(old.value());
         ng.setCategory(old.getCategory());
         ng.setDescription(old.getDescription());
-        ng.setDefaultValue(ng.getDefaultValue());
+        ng.setDefaultValue(old.getDefaultValue());
         ng.setValidatorRegularExpression(old.getValidatorRegularExpression());
         return ng;
     }
@@ -292,6 +299,14 @@ public class GlobalConfig {
         q.add(GlobalConfigVO_.name, Op.EQ, name);
         GlobalConfigVO vo = q.find();
         final GlobalConfig origin = valueOf(vo);
+
+        for (GlobalConfigBeforeUpdateExtensionPoint ext : beforeUpdateExtensions) {
+            try {
+                ext.beforeUpdateExtensionPoint(origin, newValue);
+            } catch (Throwable t) {
+                logger.warn(String.format("unhandled exception when calling %s", ext.getClass()), t);
+            }
+        }
 
         value = newValue;
 
@@ -377,6 +392,10 @@ public class GlobalConfig {
 
     public List<GlobalConfigUpdateExtensionPoint> getUpdateExtensions() {
         return updateExtensions;
+    }
+
+    public List<GlobalConfigBeforeUpdateExtensionPoint> getBeforeUpdateExtensions() {
+        return beforeUpdateExtensions;
     }
 
     public List<GlobalConfigUpdateExtensionPoint> getLocalUpdateExtensions() {
