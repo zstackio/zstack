@@ -1,29 +1,27 @@
 package org.zstack.core.encrypt;
 
-import org.apache.commons.codec.binary.Base64;
-import org.dom4j.io.STAXEventReader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.convert.PasswordConverter;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.header.AbstractService;
-import org.zstack.header.core.encrypt.APIUpdateEncryptKeyEvent;
-import org.zstack.header.core.encrypt.APIUpdateEncryptKeyMsg;
-import org.zstack.header.core.encrypt.ENCRYPT;
-import org.zstack.header.core.encrypt.ENCRYPTParam;
+import org.zstack.header.core.DisableEncryptMsg;
+import org.zstack.header.core.encrypt.*;
 import org.zstack.header.message.Message;
-import org.zstack.header.volume.VolumeType;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.*;
+import javax.persistence.Convert;
+import javax.persistence.Query;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.security.Key;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Created by mingjian.deng on 16/12/28.
@@ -32,9 +30,10 @@ public class EncryptManagerImpl extends AbstractService {
     private static final CLogger logger = Utils.getLogger(EncryptManagerImpl.class);
     @Autowired
     private CloudBus bus;
-
     @Autowired
     private DatabaseFacade dbf;
+
+
 
     @Override
     public boolean start() {
