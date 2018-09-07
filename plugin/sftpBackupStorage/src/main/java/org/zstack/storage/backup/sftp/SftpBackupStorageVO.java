@@ -1,5 +1,6 @@
 package org.zstack.storage.backup.sftp;
 
+import org.zstack.core.convert.PasswordConverter;
 import org.zstack.header.storage.backup.BackupStorageEO;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.tag.AutoDeleteTag;
@@ -9,6 +10,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
+import javax.persistence.Convert;
 
 @Entity
 @Table
@@ -22,6 +24,7 @@ public class SftpBackupStorageVO extends BackupStorageVO {
     @Column
     private String username;
     @Column
+    @Convert(converter = PasswordConverter.class)
     private String password;
     @Column
     private int sshPort;
