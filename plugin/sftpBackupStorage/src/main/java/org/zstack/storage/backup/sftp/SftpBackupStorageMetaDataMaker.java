@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -100,6 +101,17 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
 
                 if (!imageInventory.getStatus().equals(ImageStatus.Ready.toString())
                         || imageVOs.stream().anyMatch(image -> image.getUuid().equals(imageInventory.getUuid()))) {
+                    continue;
+                }
+
+                if ((long) SQL.New("select count(*) from ImageEO where uuid = :imageUuid")
+                        .param("imageUuid", imageInventory.getUuid())
+                        .find() > 0) {
+                    SQL.New("update ImageEO set status = :status, " +
+                            "deleted = null where uuid = :imageUuid")
+                            .param("status", ImageStatus.Ready)
+                            .param("imageUuid", imageInventory.getUuid())
+                            .execute();
                     continue;
                 }
 
