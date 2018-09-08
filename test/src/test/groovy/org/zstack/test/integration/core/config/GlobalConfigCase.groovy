@@ -46,6 +46,7 @@ class GlobalConfigCase extends SubCase {
             testBooleanValidator()
             testBorderValue()
             testImageGlobalConfig()
+            testResetGlobalConfig()
         }
     }
 
@@ -130,5 +131,26 @@ class GlobalConfigCase extends SubCase {
                 value = 0
             }
         }
+    }
+
+    void testResetGlobalConfig(){
+        updateGlobalConfig {
+            category = KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.category
+            name = KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.name
+            value = 10
+        }
+
+        GlobalConfigInventory gci = queryGlobalConfig {
+            conditions = ["category=${KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.category}","name=${KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.name}"]
+        }[0]
+        assert KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.value(int.class) == 10
+        
+
+        resetGlobalConfig {}
+
+        gci = queryGlobalConfig {
+            conditions = ["category=${KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.category}","name=${KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.name}"]
+        }[0]
+        assert KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.value(int.class) == 0
     }
 }
