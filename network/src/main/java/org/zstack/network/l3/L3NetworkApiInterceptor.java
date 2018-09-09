@@ -328,14 +328,6 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(argerr("gateway[%s] can not be part of range[%s, %s]", ipr.getGateway(), ipr.getStartIp(), ipr.getEndIp()));
         }
 
-        /* ipranges of same l3 network must have same gateway */
-        List<IpRangeVO> l3IpRanges = Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, ipr.getL3NetworkUuid()).list();
-        for (IpRangeVO r : l3IpRanges) {
-            if (!r.getGateway().equals(ipr.getGateway())) {
-                throw new ApiMessageInterceptionException(argerr("new add ip range gateway %s is different from old gateway %s", ipr.getGateway(), r.getGateway()));
-            }
-        }
-
         String cidr = ipr.toSubnetUtils().getInfo().getCidrSignature();
         L3NetworkVO l3Vo = dbf.findByUuid(ipr.getL3NetworkUuid(), L3NetworkVO.class);
         List<String> l3Uuids = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.l2NetworkUuid, l3Vo.getL2NetworkUuid()).select(L3NetworkVO_.uuid).listValues();
@@ -357,6 +349,14 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
                 throw new ApiMessageInterceptionException(argerr("multiple CIDR on the same L3 network is not allowed. There has been a IP" +
                                 " range[uuid:%s, CIDR:%s], the new IP range[CIDR:%s] is not in the CIDR with the existing one",
                         r.getUuid(), rcidr, cidr));
+            }
+        }
+
+        /* ipranges of same l3 network must have same gateway */
+        List<IpRangeVO> l3IpRanges = Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, ipr.getL3NetworkUuid()).list();
+        for (IpRangeVO r : l3IpRanges) {
+            if (!r.getGateway().equals(ipr.getGateway())) {
+                throw new ApiMessageInterceptionException(argerr("new add ip range gateway %s is different from old gateway %s", ipr.getGateway(), r.getGateway()));
             }
         }
     }
