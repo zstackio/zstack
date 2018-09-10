@@ -89,6 +89,7 @@ public class APIQueryApplianceVmReply extends APIQueryReply {
         nic.setL3NetworkUuid(defaultL3Uuid);
         nic.setNetmask("255.255.255.0");
         nic.setMac("00:0c:29:bd:99:fc");
+        nic.setHypervisorType("KVM");
         nic.setUsedIpUuid(uuid());
         nic.setUuid(uuid());
         vm.setVmNics(asList(nic));

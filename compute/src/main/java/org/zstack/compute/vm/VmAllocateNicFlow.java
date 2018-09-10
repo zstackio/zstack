@@ -20,7 +20,6 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.vm.*;
 import org.zstack.identity.Account;
-import org.zstack.identity.AccountManager;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
@@ -30,6 +29,7 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
 
+import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.taskProgress;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -87,17 +87,24 @@ public class VmAllocateNicFlow implements Flow {
                         nic.setL3NetworkUuid(areply.getIpInventory().getL3NetworkUuid());
 
                         assert nic.getL3NetworkUuid() != null;
-                        String customMac = new MacOperator().getMac(spec.getVmInventory().getUuid(), nic.getL3NetworkUuid());
+                        MacOperator mo = new MacOperator();
+                        String customMac = mo.getMac(spec.getVmInventory().getUuid(), nic.getL3NetworkUuid());
                         if (customMac != null){
-                            new MacOperator().deleteCustomMacSystemTag(spec.getVmInventory().getUuid(), nic.getL3NetworkUuid(), customMac);
+                            mo.deleteCustomMacSystemTag(spec.getVmInventory().getUuid(), nic.getL3NetworkUuid(), customMac);
                             nic.setMac(customMac.toLowerCase());
                         } else {
                             nic.setMac(NetworkUtils.generateMacWithDeviceId((short) deviceId));
                         }
+                        nic.setHypervisorType(spec.getDestHost().getHypervisorType());
                         nic.setDeviceId(deviceId);
                         nic.setNetmask(areply.getIpInventory().getNetmask());
                         nic.setGateway(areply.getIpInventory().getGateway());
                         nic.setInternalName(VmNicVO.generateNicInternalName(spec.getVmInventory().getInternalId(), nic.getDeviceId()));
+                        if (mo.checkDuplicateMac(nic.getHypervisorType(), nic.getMac())) {
+                            trigger.fail(operr("Duplicate mac address [%s]", nic.getMac()));
+                            return;
+                        }
+
                         spec.getDestNics().add(nic);
                     } else {
                         err = r.getError();
@@ -144,6 +151,7 @@ public class VmAllocateNicFlow implements Flow {
                                 vo.setVmInstanceUuid(nic.getVmInstanceUuid());
                                 vo.setDeviceId(nic.getDeviceId());
                                 vo.setMac(nic.getMac());
+                                vo.setHypervisorType(nic.getHypervisorType());
                                 vo.setNetmask(nic.getNetmask());
                                 vo.setGateway(nic.getGateway());
                                 vo.setInternalName(nic.getInternalName());

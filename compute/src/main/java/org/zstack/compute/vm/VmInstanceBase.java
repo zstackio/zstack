@@ -1748,11 +1748,13 @@ public class VmInstanceBase extends AbstractVmInstance {
                                 .set(VmNicVO_.vmInstanceUuid, self.getUuid())
                                 .set(VmNicVO_.deviceId, deviceId)
                                 .set(VmNicVO_.internalName, internalName)
+                                .set(VmNicVO_.hypervisorType, spec.getVmInventory().getHypervisorType())
                                 .update();
 
                         vmNicVO.setVmInstanceUuid(self.getUuid());
                         vmNicVO.setDeviceId(deviceId);
                         vmNicVO.setInternalName(internalName);
+                        vmNicVO.setHypervisorType(spec.getVmInventory().getHypervisorType());
                         spec.getDestNics().add(VmNicInventory.valueOf(vmNicVO));
 
                         trigger.next();
