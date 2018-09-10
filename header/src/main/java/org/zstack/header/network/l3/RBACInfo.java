@@ -29,7 +29,7 @@ public class RBACInfo implements RBACDescription {
     @Override
     public void globalReadableResources() {
         globalReadableResourceBuilder()
-                .resources(L3NetworkVO.class)
+                .resources(L3NetworkVO.class, UsedIpVO.class)
                 .build();
     }
 }

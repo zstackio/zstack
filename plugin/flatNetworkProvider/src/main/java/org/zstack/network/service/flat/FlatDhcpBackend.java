@@ -22,7 +22,6 @@ import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
-import org.zstack.header.allocator.HostAllocatorStrategyFactory;
 import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -47,7 +46,10 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.TagUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6Constants;
+import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Tuple;
@@ -113,7 +115,8 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             vmDefaultL3.put(t.get(0, String.class), t.get(1, String.class));
         }
 
-        sql = "select nic from VmNicVO nic, L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO provider where nic.l3NetworkUuid = l3.uuid" +
+        sql = "select nic from VmNicVO nic, L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO provider, UsedIpVO ip" +
+                " where nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = l3.uuid" +
                 " and ref.l3NetworkUuid = l3.uuid and ref.networkServiceProviderUuid = provider.uuid " +
                 " and ref.networkServiceType = :dhcpType " +
                 " and provider.type = :ptype and nic.vmInstanceUuid in (:vmUuids) group by nic.uuid";
@@ -127,12 +130,13 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             return null;
         }
 
-        List<String> l3Uuids = CollectionUtils.transformToList(nics, new Function<String, VmNicVO>() {
-            @Override
-            public String call(VmNicVO arg) {
-                return arg.getL3NetworkUuid();
+        List<String> l3Uuids = new ArrayList<>();
+        for (VmNicVO nic : nics) {
+            for (UsedIpVO ip : nic.getUsedIps()) {
+                l3Uuids.add(ip.getL3NetworkUuid());
             }
-        });
+        }
+        l3Uuids = l3Uuids.stream().distinct().collect(Collectors.toList());
 
         sql = "select t.tag, l3.uuid from SystemTagVO t, L3NetworkVO l3 where t.resourceType = :ttype and t.tag like :tag" +
                 " and t.resourceUuid = l3.l2NetworkUuid and l3.uuid in (:l3Uuids)";
@@ -170,42 +174,50 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
         List<DhcpInfo> dhcpInfoList = new ArrayList<DhcpInfo>();
         for (VmNicVO nic : nics) {
-            if (nic.getIp() == null) {
-                continue;
-            }
-            DhcpInfo info = new DhcpInfo();
-            info.bridgeName = KVMSystemTags.L2_BRIDGE_NAME.getTokenByTag(bridgeNames.get(nic.getL3NetworkUuid()), KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
-            info.namespaceName = makeNamespaceName(
-                    info.bridgeName,
-                    nic.getL3NetworkUuid()
-            );
-            DebugUtils.Assert(info.bridgeName != null, "bridge name cannot be null");
-            info.mtu = new MtuGetter().getMtu(nic.getL3NetworkUuid());
-            info.mac = nic.getMac();
-            info.netmask = nic.getNetmask();
-            info.isDefaultL3Network = nic.getL3NetworkUuid().equals(vmDefaultL3.get(nic.getVmInstanceUuid()));
-            info.ip = nic.getIp();
-            info.gateway = nic.getGateway();
+            for (UsedIpVO ip : nic.getUsedIps()) {
 
-            L3NetworkVO l3 = l3Map.get(nic.getL3NetworkUuid());
-            info.dnsDomain = l3.getDnsDomain();
-            info.dns = getL3NetworkDns(nic.getL3NetworkUuid());
+                DhcpInfo info = new DhcpInfo();
+                info.bridgeName = KVMSystemTags.L2_BRIDGE_NAME.getTokenByTag(bridgeNames.get(nic.getL3NetworkUuid()), KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
+                info.namespaceName = makeNamespaceName(
+                        info.bridgeName,
+                        ip.getL3NetworkUuid()
+                );
+                DebugUtils.Assert(info.bridgeName != null, "bridge name cannot be null");
+                info.mtu = new MtuGetter().getMtu(ip.getL3NetworkUuid());
+                info.mac = nic.getMac();
+                info.netmask = ip.getNetmask();
+                info.isDefaultL3Network = ip.getL3NetworkUuid().equals(vmDefaultL3.get(nic.getVmInstanceUuid()));
+                info.ip = ip.getIp();
+                info.gateway = ip.getGateway();
+                info.ipVersion = ip.getIpVersion();
 
-            if (info.isDefaultL3Network) {
-                info.hostname = hostnames.get(nic.getVmInstanceUuid());
-                if (info.hostname == null && nic.getIp() != null) {
-                    info.hostname = nic.getIp().replaceAll("\\.", "-");
+                L3NetworkVO l3 = l3Map.get(ip.getL3NetworkUuid());
+                info.dnsDomain = l3.getDnsDomain();
+                info.dns = getL3NetworkDns(ip.getL3NetworkUuid());
+                info.firstIp = NetworkUtils.getSmallestIp(l3.getIpRanges().stream().map(r -> r.getStartIp()).collect(Collectors.toList()));
+                info.endIp = NetworkUtils.getBiggesttIp(l3.getIpRanges().stream().map(r -> r.getEndIp()).collect(Collectors.toList()));
+                info.prefixLength = l3.getIpRanges().stream().findAny().get().getPrefixLen();
+
+                if (info.isDefaultL3Network) {
+                    info.hostname = hostnames.get(nic.getVmInstanceUuid());
+                    if (info.hostname == null && ip.getIp() != null) {
+                        if (ip.getIpVersion() == IPv6Constants.IPv4) {
+                            info.hostname = ip.getIp().replaceAll("\\.", "-");
+                        } else {
+                            info.hostname = IPv6NetworkUtils.ipv6AddessToHostname(ip.getIp());
+                        }
+                    }
+
+                    if (info.dnsDomain != null) {
+                        info.hostname = String.format("%s.%s", info.hostname, info.dnsDomain);
+                    }
                 }
 
-                if (info.dnsDomain != null) {
-                    info.hostname = String.format("%s.%s", info.hostname, info.dnsDomain);
-                }
+                info.l3NetworkUuid = l3.getUuid();
+                info.hostRoutes = getL3NetworkHostRoute(ip.getL3NetworkUuid());
+
+                dhcpInfoList.add(info);
             }
-
-            info.l3NetworkUuid = l3.getUuid();
-            info.hostRoutes = getL3NetworkHostRoute(nic.getL3NetworkUuid());
-
-            dhcpInfoList.add(info);
         }
 
         return dhcpInfoList;
@@ -280,11 +292,12 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
     @Deferred
     public UsedIpInventory allocateDhcpIp(String l3Uuid) {
+        L3NetworkVO l3 = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3Uuid).find();
         UsedIpInventory ip = l3NetworkDhcpServerIp.get(l3Uuid);
         if (ip != null) {
             return ip;
         }
-        L3NetworkVO l3 = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3Uuid).find();
+
         if (!isProvidedbyMe(L3NetworkInventory.valueOf(l3))) {
             return null;
         }
@@ -323,7 +336,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         creator.inherent = true;
         creator.setTagByTokens(
                 map(
-                        e(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN, ip.getIp()),
+                        e(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN, IPv6NetworkUtils.ipv6AddessToTagValue(ip.getIp())),
                         e(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_UUID_TOKEN, ip.getUuid())
                 )
         );
@@ -353,6 +366,9 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                     reply.setIp(ip.getIp());
                     reply.setNetmask(ip.getNetmask());
                     reply.setUsedIpUuid(ip.getUuid());
+                    IpRangeVO ipr = dbf.findByUuid(ip.getIpRangeUuid(), IpRangeVO.class);
+                    reply.setIpr(IpRangeInventory.valueOf(ipr));
+                    reply.setUsedIp(ip);
                 }
                 bus.reply(msg, reply);
             }
@@ -441,29 +457,38 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         cmd.bridgeName = brName;
         cmd.namespaceName = makeNamespaceName(brName, inventory.getUuid());
 
-        new KvmCommandSender(huuids).send(cmd, DHCP_DELETE_NAMESPACE_PATH, wrapper -> {
-            DeleteNamespaceRsp rsp = wrapper.getResponse(DeleteNamespaceRsp.class);
-            return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
-        }, new SteppingSendCallback<KvmResponseWrapper>() {
-            @Override
-            public void success(KvmResponseWrapper w) {
-                logger.debug(String.format("successfully deleted namespace for L3 network[uuid:%s, name:%s] on the " +
-                        "KVM host[uuid:%s]", inventory.getUuid(), inventory.getName(), getHostUuid()));
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                if (!errorCode.isError(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE)) {
-                    return;
+        new While<>(huuids).all((huuid, comp) -> {
+            new KvmCommandSender(huuid).send(cmd, DHCP_DELETE_NAMESPACE_PATH, wrapper -> {
+                DeleteNamespaceRsp rsp = wrapper.getResponse(DeleteNamespaceRsp.class);
+                return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
+            }, new SteppingSendCallback<KvmResponseWrapper>() {
+                @Override
+                public void success(KvmResponseWrapper w) {
+                    logger.debug(String.format("successfully deleted namespace for L3 network[uuid:%s, name:%s] on the " +
+                            "KVM host[uuid:%s]", inventory.getUuid(), inventory.getName(), getHostUuid()));
                 }
 
-                FlatDHCPDeleteNamespaceGC gc = new FlatDHCPDeleteNamespaceGC();
-                gc.hostUuid = getHostUuid();
-                gc.command = cmd;
-                gc.NAME = String.format("gc-namespace-on-host-%s", getHostUuid());
-                gc.submit();
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    if (!errorCode.isError(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE)) {
+                        return;
+                    }
+
+                    FlatDHCPDeleteNamespaceGC gc = new FlatDHCPDeleteNamespaceGC();
+                    gc.hostUuid = getHostUuid();
+                    gc.command = cmd;
+                    gc.NAME = String.format("gc-namespace-on-host-%s", getHostUuid());
+                    gc.submit();
+                }
+            });
+            comp.done();
+        }).run(new NoErrorCompletion(new NopeCompletion()){
+            @Override
+            public void done() {
+
             }
         });
+
     }
 
     private List<DhcpInfo> getVmDhcpInfo(VmInstanceInventory vm) {
@@ -472,7 +497,8 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
     @Transactional(readOnly = true)
     private List<DhcpInfo> getVmDhcpInfo(VmInstanceInventory vm, String l3Uuid) {
-        String sql = "select nic from VmNicVO nic, L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO provider where nic.l3NetworkUuid = l3.uuid" +
+        String sql = "select nic from VmNicVO nic, L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO provider, UsedIpVO ip" +
+                " where nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = l3.uuid" +
                 " and ref.l3NetworkUuid = l3.uuid and ref.networkServiceProviderUuid = provider.uuid " +
                 " and ref.networkServiceType = :dhcpType " +
                 " and provider.type = :ptype and nic.vmInstanceUuid = :vmUuid group by nic.uuid";
@@ -484,19 +510,20 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         List<VmNicVO> nics = nq.getResultList();
 
         if (l3Uuid != null) {
-            nics = nics.stream().filter(nic -> nic.getL3NetworkUuid().equals(l3Uuid)).collect(Collectors.toList());
+            nics = nics.stream().filter(nic -> nic.getUsedIps().stream().map(ip -> ip.getL3NetworkUuid()).collect(Collectors.toList()).contains(l3Uuid)).collect(Collectors.toList());
         }
 
         if (nics.isEmpty()) {
             return new ArrayList<>();
         }
 
-        List<String> l3Uuids = CollectionUtils.transformToList(nics, new Function<String, VmNicVO>() {
-            @Override
-            public String call(VmNicVO arg) {
-                return arg.getL3NetworkUuid();
+        List<String> l3Uuids = new ArrayList<>();
+        for (VmNicVO nic : nics) {
+            for (UsedIpVO ip : nic.getUsedIps()) {
+                l3Uuids.add(ip.getL3NetworkUuid());
             }
-        });
+        }
+        l3Uuids = l3Uuids.stream().distinct().collect(Collectors.toList());
 
         sql = "select t.tag, l3.uuid from SystemTagVO t, L3NetworkVO l3 where t.resourceType = :ttype and t.tag like :tag" +
                 " and t.resourceUuid = l3.l2NetworkUuid and l3.uuid in (:l3Uuids)";
@@ -533,41 +560,48 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
         List<DhcpInfo> dhcpInfoList = new ArrayList<DhcpInfo>();
         for (VmNicVO nic : nics) {
-            if (nic.getIp() == null) {
-                continue;
-            }
-            DhcpInfo info = new DhcpInfo();
-            info.bridgeName = KVMSystemTags.L2_BRIDGE_NAME.getTokenByTag(bridgeNames.get(nic.getL3NetworkUuid()), KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
-            info.namespaceName = makeNamespaceName(
-                    info.bridgeName,
-                    nic.getL3NetworkUuid()
-            );
-            DebugUtils.Assert(info.bridgeName != null, "bridge name cannot be null");
-            info.mac = nic.getMac();
-            info.netmask = nic.getNetmask();
-            info.isDefaultL3Network = nic.getL3NetworkUuid().equals(vm.getDefaultL3NetworkUuid());
-            info.ip = nic.getIp();
-            info.gateway = nic.getGateway();
+            for (UsedIpVO ip : nic.getUsedIps()) {
+                DhcpInfo info = new DhcpInfo();
+                info.bridgeName = KVMSystemTags.L2_BRIDGE_NAME.getTokenByTag(bridgeNames.get(ip.getL3NetworkUuid()), KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
+                info.namespaceName = makeNamespaceName(
+                        info.bridgeName,
+                        ip.getL3NetworkUuid()
+                );
+                DebugUtils.Assert(info.bridgeName != null, "bridge name cannot be null");
+                info.mac = nic.getMac();
+                info.netmask = ip.getNetmask();
+                info.isDefaultL3Network = ip.getL3NetworkUuid().equals(vm.getDefaultL3NetworkUuid());
+                info.ip = ip.getIp();
+                info.ipVersion = ip.getIpVersion();
+                info.gateway = ip.getGateway();
 
-            L3NetworkVO l3 = l3Map.get(nic.getL3NetworkUuid());
-            info.dnsDomain = l3.getDnsDomain();
-            info.dns = getL3NetworkDns(nic.getL3NetworkUuid());
+                L3NetworkVO l3 = l3Map.get(ip.getL3NetworkUuid());
+                info.dnsDomain = l3.getDnsDomain();
+                info.dns = getL3NetworkDns(ip.getL3NetworkUuid());
+                info.firstIp = NetworkUtils.getSmallestIp(l3.getIpRanges().stream().map(r -> r.getStartIp()).collect(Collectors.toList()));
+                info.endIp = NetworkUtils.getBiggesttIp(l3.getIpRanges().stream().map(r -> r.getEndIp()).collect(Collectors.toList()));
+                info.prefixLength = l3.getIpRanges().stream().findAny().get().getPrefixLen();
 
-            if (info.isDefaultL3Network) {
-                info.hostname = hostnames.get(nic.getVmInstanceUuid());
-                if (info.hostname == null && nic.getIp() != null) {
-                    info.hostname = nic.getIp().replaceAll("\\.", "-");
+                if (info.isDefaultL3Network) {
+                    info.hostname = hostnames.get(nic.getVmInstanceUuid());
+                    if (info.hostname == null && ip.getIp() != null) {
+                        if (ip.getIpVersion() == IPv6Constants.IPv4) {
+                            info.hostname = ip.getIp().replaceAll("\\.", "-");
+                        } else {
+                            info.hostname = IPv6NetworkUtils.ipv6AddessToHostname(ip.getIp());
+                        }
+                    }
+
+                    if (info.dnsDomain != null) {
+                        info.hostname = String.format("%s.%s", info.hostname, info.dnsDomain);
+                    }
                 }
 
-                if (info.dnsDomain != null) {
-                    info.hostname = String.format("%s.%s", info.hostname, info.dnsDomain);
-                }
+                info.l3NetworkUuid = l3.getUuid();
+                info.hostRoutes = getL3NetworkHostRoute(ip.getL3NetworkUuid());
+
+                dhcpInfoList.add(info);
             }
-
-            info.l3NetworkUuid = l3.getUuid();
-            info.hostRoutes = getL3NetworkHostRoute(nic.getL3NetworkUuid());
-
-            dhcpInfoList.add(info);
         }
 
         return dhcpInfoList;
@@ -821,7 +855,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     public void afterDeleteIpRange(IpRangeInventory ipRange) {
         UsedIpInventory dhcpIp = getDHCPServerIP(ipRange.getL3NetworkUuid());
 
-        if (dhcpIp != null && NetworkUtils.isIpv4InRange(dhcpIp.getIp(), ipRange.getStartIp(), ipRange.getEndIp())) {
+        if (dhcpIp != null && NetworkUtils.isInRange(dhcpIp.getIp(), ipRange.getStartIp(), ipRange.getEndIp())) {
             deleteDhcpServerIp(dhcpIp);
             logger.debug(String.format("delete DHCP IP[%s] of the flat network[uuid:%s] as the IP range[uuid:%s] is deleted",
                     dhcpIp.getIp(), ipRange.getL3NetworkUuid(), ipRange.getUuid()));
@@ -886,7 +920,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         // make sure the Flat DHCP acquired DHCP server IP before starting VMs,
         // otherwise it may not be able to get IP when lots of VMs start concurrently
         // because the logic of VM acquiring IP is ahead flat DHCP acquiring IP
-        for (L3NetworkInventory l3 : spec.getL3Networks()) {
+        for (L3NetworkInventory l3 :VmNicSpec.getL3NetworkInventoryOfSpec(spec.getL3Networks())) {
             List<String> serviceTypes = l3.getNetworkServiceTypesFromProvider(providerUuid);
             if (serviceTypes.contains(NetworkServiceType.DHCP.toString())) {
                 allocateDhcpIp(l3.getUuid());
@@ -900,9 +934,14 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     }
 
     public static class DhcpInfo {
+        public int ipVersion;
+        public String raMode;
         public String ip;
         public String mac;
         public String netmask;
+        public String firstIp;
+        public String endIp;
+        public Integer prefixLength;
         public String gateway;
         public String hostname;
         public boolean isDefaultL3Network;
@@ -936,6 +975,9 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         public String dhcpServerIp;
         public String dhcpNetmask;
         public String namespaceName;
+        public Integer prefixLen;
+        public Integer ipVersion;
+        public String addressMode;
     }
 
     public static class PrepareDhcpRsp extends KVMAgentCommands.AgentResponse {
@@ -980,7 +1022,8 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             dns = new ArrayList<String>();
         }
 
-        if (FlatNetwordProviderGlobalConfig.ALLOW_DEFAULT_DNS.value(Boolean.class)) {
+        L3NetworkVO l3VO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3NetworkUuid).find();
+        if (FlatNetwordProviderGlobalConfig.ALLOW_DEFAULT_DNS.value(Boolean.class) && l3VO.getIpVersion() == IPv6Constants.IPv4) {
             UsedIpInventory dhcpIp = getDHCPServerIP(l3NetworkUuid);
             if (dhcpIp != null) {
                 dns.add(dhcpIp.getIp());
@@ -1022,7 +1065,14 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 if (arg.getIp() == null) {
                     return null;
                 }
+
+                if ((arg.getIpVersion() == IPv6Constants.IPv6) && (IPv6Constants.SLAAC.equals(arg.getRaMode()))) {
+                    return null;
+                }
+
                 DhcpInfo info = new DhcpInfo();
+                info.ipVersion = arg.getIpVersion();
+                info.raMode = arg.getRaMode();
                 info.dnsDomain = arg.getDnsDomain();
                 info.gateway = arg.getGateway();
                 info.hostname = arg.getHostname();
@@ -1030,7 +1080,11 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
                 if (info.isDefaultL3Network) {
                     if (info.hostname == null && arg.getIp() != null) {
-                        info.hostname = arg.getIp().replaceAll("\\.", "-");
+                        if (info.ipVersion == IPv6Constants.IPv4) {
+                            info.hostname = arg.getIp().replaceAll("\\.", "-");
+                        } else {
+                            info.hostname = IPv6NetworkUtils.ipv6AddessToHostname(arg.getIp());
+                        }
                     }
 
                     if (info.dnsDomain != null) {
@@ -1040,6 +1094,9 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
                 info.ip = arg.getIp();
                 info.netmask = arg.getNetmask();
+                info.firstIp = arg.getFirstIp();
+                info.endIp = arg.getEndIP();
+                info.prefixLength = arg.getPrefixLength();
                 info.mac = arg.getMac();
                 info.dns = getL3NetworkDns(arg.getL3Network().getUuid());
                 info.l3NetworkUuid = arg.getL3Network().getUuid();
@@ -1083,6 +1140,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 chain.then(new ShareFlow() {
                     String dhcpServerIp;
                     String dhcpNetmask;
+                    Integer prefixLen;
 
                     @Override
                     public void setup() {
@@ -1103,6 +1161,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                                             FlatDhcpAcquireDhcpServerIpReply r = reply.castReply();
                                             dhcpServerIp = r.getIp();
                                             dhcpNetmask = r.getNetmask();
+                                            prefixLen = r.getIpr().getPrefixLen();
                                             trigger.next();
                                         }
                                     }
@@ -1122,6 +1181,11 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                                 cmd.namespaceName = i.namespaceName;
                                 cmd.dhcpServerIp = dhcpServerIp;
                                 cmd.dhcpNetmask = dhcpNetmask;
+                                cmd.prefixLen = prefixLen;
+                                cmd.ipVersion = i.ipVersion;
+
+                                List<IpRangeVO> rangeVOS = Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, l3Uuid).list();
+                                cmd.addressMode = rangeVOS.get(0).getAddressMode();
 
                                 KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                                 msg.setHostUuid(hostUuid);

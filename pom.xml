@@ -89,6 +89,11 @@
                 <version>2.1</version>
             </dependency>
             <dependency>
+                <groupId>com.googlecode.java-ipv6</groupId>
+                <artifactId>java-ipv6</artifactId>
+                <version>0.17</version>
+            </dependency>
+            <dependency>
                 <groupId>com.rabbitmq</groupId>
                 <artifactId>amqp-client</artifactId>
                 <version>3.3.5</version>

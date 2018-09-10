@@ -9,7 +9,7 @@ import java.util.List;
  */
 public class InstantiateVmFromNewCreatedStruct {
     private List<String> dataDiskOfferingUuids;
-    private List<String> l3NetworkUuids;
+    private List<VmNicSpec> l3NetworkUuids;
     private String rootDiskOfferingUuid;
     private String primaryStorageUuidForRootVolume;
     private String primaryStorageUuidForDataVolume;
@@ -45,11 +45,11 @@ public class InstantiateVmFromNewCreatedStruct {
         this.dataDiskOfferingUuids = dataDiskOfferingUuids;
     }
 
-    public List<String> getL3NetworkUuids() {
+    public List<VmNicSpec> getL3NetworkUuids() {
         return l3NetworkUuids;
     }
 
-    public void setL3NetworkUuids(List<String> l3NetworkUuids) {
+    public void setL3NetworkUuids(List<VmNicSpec> l3NetworkUuids) {
         this.l3NetworkUuids = l3NetworkUuids;
     }
 

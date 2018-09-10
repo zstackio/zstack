@@ -12,12 +12,14 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO_;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
 import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO;
 import org.zstack.utils.gson.JSONObjectUtil;
+import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.NetworkUtils;
 
 import static org.zstack.core.Platform.argerr;
@@ -53,6 +55,8 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
             validate((APIDeleteVmNicFromSecurityGroupMsg) msg);
         } else if (msg instanceof APIDetachSecurityGroupFromL3NetworkMsg) {
             validate((APIDetachSecurityGroupFromL3NetworkMsg) msg);
+        } if (msg instanceof APICreateSecurityGroupMsg) {
+            validate((APICreateSecurityGroupMsg) msg);
         }
 
         return msg;
@@ -121,6 +125,14 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
         if (!nq.isExists()) {
             throw new ApiMessageInterceptionException(argerr("the L3 network[uuid:%s] doesn't have the network service type[%s] enabled", msg.getL3NetworkUuid(), SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE));
         }
+
+        L3NetworkVO l3Vo = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
+        SecurityGroupVO sgVo = dbf.findByUuid(msg.getSecurityGroupUuid(), SecurityGroupVO.class);
+        if (l3Vo != null && sgVo != null && sgVo.getIpVersion() != l3Vo.getIpVersion()) {
+            throw new ApiMessageInterceptionException(argerr("the L3 network[uuid:%s] ipVersion [%d] is different from securityGroup [uuid:%s] ipVersion [%d]",
+                    msg.getL3NetworkUuid(), l3Vo.getIpVersion(), msg.getSecurityGroupUuid(), sgVo.getIpVersion()));
+
+        }
     }
 
     private void validate(APIAddVmNicToSecurityGroupMsg msg) {
@@ -142,7 +154,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
 
     @Transactional(readOnly = true)
     private void checkIfVmNicFromAttachedL3Networks(String securityGroupUuid, List<String> uuids) {
-        String sql = "select nic.uuid from SecurityGroupL3NetworkRefVO ref, VmNicVO nic where ref.l3NetworkUuid = nic.l3NetworkUuid" +
+        String sql = "select nic.uuid from SecurityGroupL3NetworkRefVO ref, VmNicVO nic, UsedIpVO ip where ref.l3NetworkUuid = ip.l3NetworkUuid and ip.vmNicUuid = nic.uuid " +
                 " and ref.securityGroupUuid = :sgUuid and nic.uuid in (:nicUuids)";
         TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("nicUuids", uuids);
@@ -195,6 +207,8 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIAddSecurityGroupRuleMsg msg) {
+        SecurityGroupVO sgVo = dbf.findByUuid(msg.getSecurityGroupUuid(), SecurityGroupVO.class);
+
         // Basic check
         for (SecurityGroupRuleAO ao : msg.getRules()) {
             if (ao.getType() == null) {
@@ -258,9 +272,17 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
                 }
             }
 
+            if (ao.getIpVersion() == null) {
+                ao.setIpVersion(IPv6Constants.IPv4);
+            }
 
-            if (ao.getAllowedCidr() != null && !NetworkUtils.isCidr(ao.getAllowedCidr())) {
+            if (ao.getAllowedCidr() != null && !NetworkUtils.isCidr(ao.getAllowedCidr(), ao.getIpVersion())) {
                 throw new ApiMessageInterceptionException(argerr("invalid CIDR[%s]. rule dump: %s", ao.getAllowedCidr(), JSONObjectUtil.toJsonString(ao)));
+            }
+
+            if (sgVo.getIpVersion() != ao.getIpVersion()) {
+                throw new ApiMessageInterceptionException(argerr("security group rule ipVersion [%d] is different from security group version [%d]",
+                        sgVo.getIpVersion(), ao.getIpVersion()));
             }
         }
 
@@ -309,8 +331,28 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
             ao.setEndPort(end);
 
             if (ao.getAllowedCidr() == null) {
-                ao.setAllowedCidr(SecurityGroupConstant.WORLD_OPEN_CIDR);
+                if (ao.getIpVersion() == IPv6Constants.IPv4) {
+                    ao.setAllowedCidr(SecurityGroupConstant.WORLD_OPEN_CIDR);
+                } else {
+                    ao.setAllowedCidr(SecurityGroupConstant.WORLD_OPEN_CIDR_IPV6);
+                }
             }
+        }
+
+        if (msg.getRemoteSecurityGroupUuids() != null) {
+            for (String rsgUuid : msg.getRemoteSecurityGroupUuids()) {
+                SecurityGroupVO rsgVo = dbf.findByUuid(rsgUuid, SecurityGroupVO.class);
+                if (rsgVo.getIpVersion() != sgVo.getIpVersion()) {
+                    throw new ApiMessageInterceptionException(argerr("remote security group ipVersion [%d] is different from security group version [%d]",
+                            rsgVo.getIpVersion(), sgVo.getIpVersion()));
+                }
+            }
+        }
+    }
+
+    private void validate(APICreateSecurityGroupMsg msg) {
+        if (msg.getIpVersion() == null) {
+            msg.setIpVersion(IPv6Constants.IPv4);
         }
     }
 }

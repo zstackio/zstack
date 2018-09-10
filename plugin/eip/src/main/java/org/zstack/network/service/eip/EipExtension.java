@@ -7,13 +7,12 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.l3.UsedIpInventory;
+import org.zstack.header.network.l3.UsedIpVO;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceType;
-import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
-import org.zstack.header.vm.VmInstanceSpec;
-import org.zstack.header.vm.VmNicInventory;
-import org.zstack.header.vm.VmNicVO;
 import org.zstack.network.service.AbstractNetworkServiceExtension;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
@@ -21,11 +20,13 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.function.FunctionNoArg;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  */
@@ -63,16 +64,16 @@ public class EipExtension extends AbstractNetworkServiceExtension implements Com
         vq.setParameter("uuid", vo.getVipUuid());
         VipVO vipvo = vq.getSingleResult();
 
-        EipStruct struct = new EipStruct();
-        struct.setNic(VmNicInventory.valueOf(nicvo));
-        struct.setVip(VipInventory.valueOf(vipvo));
-        struct.setEip(EipInventory.valueOf(vo));
+        UsedIpInventory guestIp = eipMgr.getEipGuestIp(vo.getUuid());
+        EipStruct struct = eipMgr.generateEipStruct(VmNicInventory.valueOf(nicvo), VipInventory.valueOf(vipvo), EipInventory.valueOf(vo), guestIp);
+
         struct.setSnatInboundTraffic(EipGlobalConfig.SNAT_INBOUND_TRAFFIC.value(Boolean.class));
         return struct;
     }
 
     private Map<String, List<EipStruct>> workOutEipStruct(VmInstanceSpec spec) {
-        Map<NetworkServiceProviderType, List<L3NetworkInventory>> map = getNetworkServiceProviderMap(EipConstant.EIP_TYPE, spec.getL3Networks());
+        Map<NetworkServiceProviderType, List<L3NetworkInventory>> map = getNetworkServiceProviderMap(EipConstant.EIP_TYPE,
+                VmNicSpec.getL3NetworkInventoryOfSpec(spec.getL3Networks()));
         Map<String, List<EipStruct>> ret = new HashMap<String, List<EipStruct>>();
         for (Map.Entry<NetworkServiceProviderType, List<L3NetworkInventory>> e : map.entrySet()) {
             List<EipStruct> structs = new ArrayList<EipStruct>();
@@ -80,8 +81,19 @@ public class EipExtension extends AbstractNetworkServiceExtension implements Com
                 final VmNicInventory nic = CollectionUtils.find(spec.getDestNics(), new Function<VmNicInventory, VmNicInventory>() {
                     @Override
                     public VmNicInventory call(VmNicInventory arg) {
-                        if (arg.getL3NetworkUuid().equals(l3.getUuid())) {
-                            return arg;
+                        if (arg.getUsedIps() != null && !arg.getUsedIps().isEmpty()) {
+                            for (UsedIpInventory ip : arg.getUsedIps()) {
+                                if (ip.getL3NetworkUuid().equals(l3.getUuid())) {
+                                    return arg;
+                                }
+                            }
+                        } else {
+                            VmNicVO nic = dbf.findByUuid(arg.getUuid(), VmNicVO.class);
+                            for (UsedIpVO ip : nic.getUsedIps()) {
+                                if (ip.getL3NetworkUuid().equals(l3.getUuid())) {
+                                    return arg;
+                                }
+                            }
                         }
                         return null;
                     }
@@ -91,7 +103,7 @@ public class EipExtension extends AbstractNetworkServiceExtension implements Com
                     @Override
                     @Transactional
                     public List<EipVO> call() {
-                        String sql = "select eip from EipVO eip, VmNicVO nic where nic.l3NetworkUuid = :l3uuid and nic.uuid = eip.vmNicUuid and nic.uuid = :nicUuid";
+                        String sql = "select eip from EipVO eip, VmNicVO nic, UsedIpVO ip where nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = :l3uuid and nic.uuid = eip.vmNicUuid and nic.uuid = :nicUuid";
                         Query q = dbf.getEntityManager().createQuery(sql);
                         q.setParameter("l3uuid", l3.getUuid());
                         q.setParameter("nicUuid", nic.getUuid());

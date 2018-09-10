@@ -16,10 +16,14 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmNicHelper;
+import org.zstack.header.vm.VmNicSpec;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmAllocateHostForAbnormallyStartedVmFlow implements Flow {
@@ -45,7 +49,7 @@ public class VmAllocateHostForAbnormallyStartedVmFlow implements Flow {
         msg.setRequiredPrimaryStorageUuid(spec.getVmInventory().getRootVolume().getPrimaryStorageUuid());
         msg.setVmOperation(spec.getCurrentVmOperation().toString());
         msg.setAllocatorStrategy(HostAllocatorConstant.DESIGNATED_HOST_ALLOCATOR_STRATEGY_TYPE);
-        msg.setL3NetworkUuids(CollectionUtils.transformToList(spec.getL3Networks(), new Function<String, L3NetworkInventory>() {
+        msg.setL3NetworkUuids(CollectionUtils.transformToList(VmNicSpec.getL3NetworkInventoryOfSpec(spec.getL3Networks()), new Function<String, L3NetworkInventory>() {
             @Override
             public String call(L3NetworkInventory arg) {
                 return arg.getUuid();

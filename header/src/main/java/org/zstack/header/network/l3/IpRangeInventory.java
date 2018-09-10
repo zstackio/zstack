@@ -7,7 +7,7 @@ import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.search.Inventory;
 import org.zstack.utils.gson.JSONObjectUtil;
-import org.zstack.utils.network.NetworkUtils;
+import org.zstack.utils.network.*;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
@@ -75,6 +75,13 @@ public class IpRangeInventory implements Serializable {
     private String gateway;
 
     private String networkCidr;
+
+    private Integer ipVersion;
+
+    private String addressMode;
+
+    private Integer prefixLen;
+
     /**
      * @desc the time this resource gets created
      */
@@ -97,6 +104,10 @@ public class IpRangeInventory implements Serializable {
         inv.setUuid(vo.getUuid());
         inv.setLastOpDate(vo.getLastOpDate());
         inv.setNetworkCidr(vo.getNetworkCidr());
+        inv.setIpVersion(vo.getIpVersion());
+        inv.setAddressMode(vo.getAddressMode());
+        inv.setPrefixLen(vo.getPrefixLen());
+
         return inv;
     }
 
@@ -196,6 +207,30 @@ public class IpRangeInventory implements Serializable {
         this.lastOpDate = lastOpDate;
     }
 
+    public int getIpVersion() {
+        return ipVersion;
+    }
+
+    public String getAddressMode() {
+        return addressMode;
+    }
+
+    public void setAddressMode(String addressMode) {
+        this.addressMode = addressMode;
+    }
+
+    public void setIpVersion(Integer ipVersion) {
+        this.ipVersion = ipVersion;
+    }
+
+    public Integer getPrefixLen() {
+        return prefixLen;
+    }
+
+    public void setPrefixLen(Integer prefixLen) {
+        this.prefixLen = prefixLen;
+    }
+
     @Override
     public String toString() {
         return JSONObjectUtil.toJsonString(this);
@@ -213,6 +248,7 @@ public class IpRangeInventory implements Serializable {
         SubnetUtils su = new SubnetUtils(msg.getGateway(), msg.getNetmask());
         ipr.setNetworkCidr(su.getInfo().getCidrSignature());
         ipr.setUuid(msg.getResourceUuid());
+        ipr.setIpVersion(IPv6Constants.IPv4);
         return ipr;
     }
 
@@ -234,6 +270,45 @@ public class IpRangeInventory implements Serializable {
         ipr.setNetmask(subnet.getNetmask());
         ipr.setL3NetworkUuid(msg.getL3NetworkUuid());
         ipr.setUuid(msg.getResourceUuid());
+        ipr.setIpVersion(IPv6Constants.IPv4);
+        return ipr;
+    }
+
+    public static IpRangeInventory fromMessage(APIAddIpv6RangeByNetworkCidrMsg msg) {
+        IpRangeInventory ipr = new IpRangeInventory();
+        ipr.setNetworkCidr(IPv6NetworkUtils.getFormalCidrOfNetworkCidr(msg.getNetworkCidr()));
+        ipr.setName(msg.getName());
+        ipr.setDescription(msg.getDescription());
+
+        ipr.setAddressMode(msg.getAddressMode());
+        ipr.setStartIp(IPv6NetworkUtils.getStartIpOfNetworkCidr(msg.getNetworkCidr()));
+        ipr.setEndIp(IPv6NetworkUtils.getEndIpOfNetworkCidr(msg.getNetworkCidr()));
+        ipr.setNetmask(IPv6NetworkUtils.getFormalNetmaskOfNetworkCidr(msg.getNetworkCidr()));
+        ipr.setGateway(IPv6NetworkUtils.getGatewayOfNetworkCidr(msg.getNetworkCidr()));
+        ipr.setL3NetworkUuid(msg.getL3NetworkUuid());
+        ipr.setUuid(msg.getResourceUuid());
+        ipr.setIpVersion(IPv6Constants.IPv6);
+        ipr.setPrefixLen(IPv6NetworkUtils.getPrefixLenOfNetworkCidr(msg.getNetworkCidr()));
+
+        return ipr;
+    }
+
+    public static IpRangeInventory fromMessage(APIAddIpv6RangeMsg msg) {
+        IpRangeInventory ipr = new IpRangeInventory();
+        ipr.setNetworkCidr(IPv6NetworkUtils.getNetworkCidrOfIpRange(msg.getStartIp(), msg.getPrefixLen()));
+        ipr.setName(msg.getName());
+        ipr.setDescription(msg.getDescription());
+
+        ipr.setAddressMode(msg.getAddressMode());
+        ipr.setStartIp(msg.getStartIp());
+        ipr.setEndIp(msg.getEndIp());
+        ipr.setNetmask(IPv6NetworkUtils.getFormalNetmaskOfNetworkCidr(msg.getPrefixLen()));
+        ipr.setGateway(IPv6NetworkUtils.getIpv6AddressCanonicalString(msg.getGateway()));
+        ipr.setPrefixLen(msg.getPrefixLen());
+        ipr.setL3NetworkUuid(msg.getL3NetworkUuid());
+        ipr.setUuid(msg.getResourceUuid());
+        ipr.setIpVersion(IPv6Constants.IPv6);
+
         return ipr;
     }
 

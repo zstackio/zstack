@@ -15,6 +15,8 @@ import org.zstack.header.network.service.NetworkServiceProviderInventory;
 import org.zstack.header.network.service.NetworkServiceProviderVO;
 import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmNicHelper;
+import org.zstack.header.vm.VmNicSpec;
 import org.zstack.network.service.AbstractNetworkServiceExtension;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -22,7 +24,9 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Created by frank on 10/13/2015.
@@ -67,7 +71,8 @@ public class UserdataExtension extends AbstractNetworkServiceExtension implement
     }
 
     private NetworkServiceProviderInventory findProvider(final VmInstanceSpec spec) {
-        L3NetworkInventory defaultL3 = CollectionUtils.find(spec.getL3Networks(), new Function<L3NetworkInventory, L3NetworkInventory>() {
+        L3NetworkInventory defaultL3 = CollectionUtils.find(VmNicSpec.getL3NetworkInventoryOfSpec(spec.getL3Networks()),
+                new Function<L3NetworkInventory, L3NetworkInventory>() {
             @Override
             public L3NetworkInventory call(L3NetworkInventory arg) {
                 return arg.getUuid().equals(spec.getVmInventory().getDefaultL3NetworkUuid()) ? arg : null;
@@ -94,7 +99,8 @@ public class UserdataExtension extends AbstractNetworkServiceExtension implement
 
     @Override
     public void applyNetworkService(final VmInstanceSpec servedVm, Map<String, Object> data, Completion completion) {
-        L3NetworkInventory defaultL3 = CollectionUtils.find(servedVm.getL3Networks(), new Function<L3NetworkInventory, L3NetworkInventory>() {
+        L3NetworkInventory defaultL3 = CollectionUtils.find(VmNicSpec.getL3NetworkInventoryOfSpec(servedVm.getL3Networks()),
+                new Function<L3NetworkInventory, L3NetworkInventory>() {
             @Override
             public L3NetworkInventory call(L3NetworkInventory arg) {
                 return arg.getUuid().equals(servedVm.getVmInventory().getDefaultL3NetworkUuid()) ? arg : null;
@@ -130,7 +136,8 @@ public class UserdataExtension extends AbstractNetworkServiceExtension implement
             return;
         }
 
-        L3NetworkInventory defaultL3 = CollectionUtils.find(servedVm.getL3Networks(), new Function<L3NetworkInventory, L3NetworkInventory>() {
+        L3NetworkInventory defaultL3 = CollectionUtils.find(VmNicSpec.getL3NetworkInventoryOfSpec(servedVm.getL3Networks()),
+                new Function<L3NetworkInventory, L3NetworkInventory>() {
             @Override
             public L3NetworkInventory call(L3NetworkInventory arg) {
                 return arg.getUuid().equals(servedVm.getVmInventory().getDefaultL3NetworkUuid()) ? arg : null;

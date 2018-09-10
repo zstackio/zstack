@@ -20,6 +20,7 @@
                 <value>org.zstack.compute.vm.VmAllocatePrimaryStorageFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateVolumeFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateNicFlow</value>
+                <value>org.zstack.compute.vm.VmAttachL3NetworkToNicFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateResourcePreFlow</value>
                 <value>org.zstack.compute.vm.VmCreateOnHypervisorFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateResourcePostFlow</value>
@@ -150,5 +151,12 @@
     </bean>
 
     <bean id="VmInstanceDeletionPolicyManager" class="org.zstack.compute.vm.VmInstanceDeletionPolicyManagerImpl" />
+
+    <bean id="VmNicManager" class="org.zstack.compute.vm.VmNicManagerImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.compute.vm.VmNicManager" />
+            <zstack:extension interface="org.zstack.compute.vm.VmNicExtensionPoint" />
+        </zstack:plugin>
+    </bean>
 
 </beans>

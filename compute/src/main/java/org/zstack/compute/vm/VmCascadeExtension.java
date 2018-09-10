@@ -30,10 +30,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.L2NetworkDetachStruct;
 import org.zstack.header.network.l2.L2NetworkVO;
-import org.zstack.header.network.l3.IpRangeInventory;
-import org.zstack.header.network.l3.IpRangeVO;
-import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
@@ -131,51 +128,132 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
         }
     }
 
+    class VmNicDetachResult {
+        List<DetachNicFromVmMsg> dmsgs;
+        List<DetachIpAddressFromVmNicMsg> nicMsgs;
+    }
+
     @Transactional(readOnly = true)
-    private List<DetachNicFromVmMsg> getVmNicDetachMsgs(List<L2NetworkDetachStruct> structs) {
+    private VmNicDetachResult getVmNicDetachMsgs(List<L2NetworkDetachStruct> structs) {
         List<DetachNicFromVmMsg> dmsgs  = new ArrayList<>();
+        List<DetachIpAddressFromVmNicMsg> nicMsgs  = new ArrayList<>();
 
         for (L2NetworkDetachStruct s : structs) {
-            String sql = "select vm.uuid, nic.uuid from VmInstanceVO vm, VmNicVO nic, L3NetworkVO l3"
+            String sql = "select vm.uuid, nic.uuid, ip.uuid from VmInstanceVO vm, VmNicVO nic, L3NetworkVO l3, UsedIpVO ip"
                     + " where vm.clusterUuid = :clusterUuid"
                     + " and l3.l2NetworkUuid = :l2NetworkUuid"
-                    + " and nic.l3NetworkUuid = l3.uuid "
+                    + " and nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = l3.uuid "
                     + " and nic.vmInstanceUuid = vm.uuid";
             TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
             q.setParameter("clusterUuid", s.getClusterUuid());
             q.setParameter("l2NetworkUuid", s.getL2NetworkUuid());
-            dmsgs.addAll(q.getResultList().stream().map((t) -> {
-                DetachNicFromVmMsg msg = new DetachNicFromVmMsg();
-                msg.setVmInstanceUuid(t.get(0, String.class));
-                msg.setVmNicUuid(t.get(1, String.class));
-                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, msg.getVmInstanceUuid());
-                return msg;
-            }).collect(Collectors.toList()));
+            List<Tuple> result = q.getResultList();
+            Map<String, List<String>> nicIpMap = new HashMap<>();
+            for (Tuple t : result) {
+                String nicUuid = t.get(1, String.class);
+                String ipUuid = t.get(2, String.class);
+                List<String> l3Uuids = nicIpMap.get(nicUuid);
+                if (l3Uuids == null) {
+                    l3Uuids = new ArrayList<>();
+                    nicIpMap.put(nicUuid, l3Uuids);
+                }
+                l3Uuids.add(ipUuid);
+            }
+
+            for (Map.Entry<String, List<String>> entry : nicIpMap.entrySet()) {
+                String nicUuid = entry.getKey();
+                List<String> ipUuids = entry.getValue();
+                VmNicVO nicVO = dbf.findByUuid(nicUuid, VmNicVO.class);
+                if (VmNicHelper.nicIncludeAllIps(VmNicInventory.valueOf(nicVO), ipUuids)) {
+                    DetachNicFromVmMsg msg = new DetachNicFromVmMsg();
+                    msg.setVmInstanceUuid(nicVO.getVmInstanceUuid());
+                    msg.setVmNicUuid(nicUuid);
+                    bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, msg.getVmInstanceUuid());
+                    dmsgs.add(msg);
+                } else {
+                    for (String ipUuid : ipUuids) {
+                        DetachIpAddressFromVmNicMsg nicMsg = new DetachIpAddressFromVmNicMsg();
+                        nicMsg.setVmNicUuid(nicUuid);
+                        nicMsg.setId(ipUuid);
+                        bus.makeTargetServiceIdByResourceUuid(nicMsg, VmInstanceConstant.SERVICE_ID, nicVO.getVmInstanceUuid());
+                        nicMsgs.add(nicMsg);
+                    }
+                }
+            }
         }
 
-        return dmsgs;
+        VmNicDetachResult result = new VmNicDetachResult();
+        result.dmsgs = dmsgs;
+        result.nicMsgs = nicMsgs;
+        return result;
     }
 
-    private void handleL2NetworkDetach(CascadeAction action, final Completion completion) {
-        List<L2NetworkDetachStruct> structs = action.getParentIssuerContext();
-        final List<DetachNicFromVmMsg> dmsgs = getVmNicDetachMsgs(structs);
-        if (dmsgs.isEmpty()) {
+    private void detachVmNicCascade(List<DetachNicFromVmMsg> msgs, boolean deleteFromDb, final NoErrorCompletion completion) {
+        if (msgs.isEmpty()) {
+            completion.done();
+            return;
+        }
+
+        List<String> vmNicUuids = new ArrayList<String>();
+        new While<>(msgs).all((msg, compl) -> bus.send(msg, new CloudBusCallBack(compl) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    N.New(VmInstanceVO.class, msg.getVmInstanceUuid()).warn_("unable to detach a nic[uuid:%s] from the vm[uuid:%s], %s",
+                            msg.getVmNicUuid(), msg.getVmInstanceUuid(), reply.getError());
+                    logger.warn(String.format("failed to detach nic[uuid:%s] from the vm[uuid:%s], %s",
+                            msg.getVmNicUuid(), msg.getVmInstanceUuid(), reply.getError()));
+                } else {
+                    vmNicUuids.add(msg.getVmNicUuid());
+                }
+                compl.done();
+            }
+        })).run(new NoErrorCompletion(completion) {
+            @Override
+            public void done() {
+                if (!vmNicUuids.isEmpty() && deleteFromDb) {
+                    UpdateQuery q = UpdateQuery.New(AccountResourceRefVO.class)
+                            .condAnd(AccountResourceRefVO_.resourceUuid, Op.IN, vmNicUuids)
+                            .condAnd(AccountResourceRefVO_.resourceType, Op.EQ, VmNicVO.class.getSimpleName());
+                    q.delete();
+                }
+
+                completion.done();
+            }
+        });
+    }
+
+    private void detachIpFromVmNicCascade(List<DetachIpAddressFromVmNicMsg> msgs, final Completion completion) {
+        if (msgs.isEmpty()) {
             completion.success();
             return;
         }
 
-        bus.send(dmsgs, 20, new CloudBusListCallBack(completion) {
+        new While<>(msgs).all((msg, compl) -> bus.send(msg, new CloudBusCallBack(compl) {
             @Override
-            public void run(List<MessageReply> replies) {
-                for (MessageReply r : replies) {
-                    if (!r.isSuccess()) {
-                        DetachNicFromVmMsg msg = dmsgs.get(replies.indexOf(r));
-                        logger.warn(String.format("failed to stop vm[uuid:%s] for l2Network detached, %s." +
-                                " However, detaching will go on", msg.getVmInstanceUuid(), r.getError()));
-                    }
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    logger.warn(String.format("failed to detach ip[uuid:%s] from vmNic [uuid:%s], %s." +
+                            " However, detaching will go on", msg.getUsedIpUuid(), msg.getVmNicUuid(), reply.getError()));
                 }
-
+                compl.done();
+            }
+        })).run(new NoErrorCompletion(completion) {
+            @Override
+            public void done() {
                 completion.success();
+            }
+        });
+    }
+
+    private void handleL2NetworkDetach(CascadeAction action, final Completion completion) {
+        List<L2NetworkDetachStruct> structs = action.getParentIssuerContext();
+        final VmNicDetachResult result = getVmNicDetachMsgs(structs);
+
+        detachVmNicCascade(result.dmsgs, false, new NoErrorCompletion(completion) {
+            @Override
+            public void done() {
+                detachIpFromVmNicCascade(result.nicMsgs, completion);
             }
         });
     }
@@ -377,6 +455,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
             });
         } else if (op == OP_DETACH_NIC) {
             final List<DetachNicFromVmMsg> msgs = new ArrayList<>();
+            final List<DetachIpAddressFromVmNicMsg> nicMsgs = new ArrayList<>();
             List<L3NetworkInventory> l3s = new ArrayList<>();
             if (IpRangeVO.class.getSimpleName().equals(action.getParentIssuer()) &&
                     IpRangeVO.class.getSimpleName().equals(action.getRootIssuer())) {
@@ -391,6 +470,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 l3s = action.getParentIssuerContext();
             }
 
+            List<String> l3Uuids = l3s.stream().map(l3inv -> l3inv.getUuid()).collect(Collectors.toList());
             for (VmDeletionStruct vm : vminvs) {
                 for (L3NetworkInventory l3 : l3s) {
                     VmNicInventory nic = vm.getInventory().findNic(l3.getUuid());
@@ -398,40 +478,31 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                         continue;
                     }
 
-                    DetachNicFromVmMsg msg = new DetachNicFromVmMsg();
-                    msg.setVmInstanceUuid(vm.getInventory().getUuid());
-                    msg.setVmNicUuid(nic.getUuid());
-                    bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vm.getInventory().getUuid());
-                    msgs.add(msg);
+                    if (VmNicHelper.includeAllNicL3s(nic, l3Uuids)) {
+                        DetachNicFromVmMsg msg = new DetachNicFromVmMsg();
+                        msg.setVmInstanceUuid(vm.getInventory().getUuid());
+                        msg.setVmNicUuid(nic.getUuid());
+                        bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vm.getInventory().getUuid());
+                        msgs.add(msg);
+                    } else {
+                        for (UsedIpInventory ip : nic.getUsedIps()) {
+                            if (l3Uuids.contains(ip.getL3NetworkUuid())) {
+                                DetachIpAddressFromVmNicMsg nicMsg = new DetachIpAddressFromVmNicMsg();
+                                nicMsg.setVmNicUuid(nic.getUuid());
+                                nicMsg.setUsedIpUuid(ip.getUuid());
+                                bus.makeTargetServiceIdByResourceUuid(nicMsg, VmInstanceConstant.SERVICE_ID, nic.getVmInstanceUuid());
+                                nicMsgs.add(nicMsg);
+                            }
+                        }
+                    }
                 }
             }
 
-            bus.send(msgs, new CloudBusListCallBack(completion) {
+            boolean deleteFromDb = action.getParentIssuer().equals(L3NetworkVO.class.getSimpleName());
+            detachVmNicCascade(msgs, deleteFromDb, new NoErrorCompletion(completion) {
                 @Override
-                public void run(List<MessageReply> replies) {
-                    List<String> vmNicUuids = new ArrayList<String>();
-
-                    for (MessageReply r : replies) {
-                        DetachNicFromVmMsg msg = msgs.get(replies.indexOf(r));
-                        if (!r.isSuccess()) {
-                            N.New(VmInstanceVO.class, msg.getVmInstanceUuid()).warn_("unable to detach a nic[uuid:%s] from the vm[uuid:%s], %s", msg.getVmNicUuid(), msg.getVmInstanceUuid(), r.getError());
-                            logger.warn(String.format("failed to detach nic[uuid:%s] from the vm[uuid:%s], %s",
-                                    msg.getVmNicUuid(), msg.getVmInstanceUuid(), r.getError()));
-                        } else {
-                            vmNicUuids.add(msg.getVmNicUuid());
-                        }
-                    }
-
-                    if (action.getParentIssuer().equals(L3NetworkVO.class.getSimpleName())) {
-                        if (!vmNicUuids.isEmpty()) {
-                            UpdateQuery q = UpdateQuery.New(AccountResourceRefVO.class)
-                                    .condAnd(AccountResourceRefVO_.resourceUuid, Op.IN, vmNicUuids)
-                                    .condAnd(AccountResourceRefVO_.resourceType, Op.EQ, VmNicVO.class.getSimpleName());
-                            q.delete();
-                        }
-                    }
-
-                    completion.success();
+                public void done() {
+                    detachIpFromVmNicCascade(nicMsgs, completion);
                 }
             });
         }
@@ -593,11 +664,11 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 @Override
                 @Transactional(readOnly = true)
                 public List<VmInstanceVO> call() {
-                    String sql = "select vm from VmInstanceVO vm, L3NetworkVO l3, VmNicVO nic" +
+                    String sql = "select vm from VmInstanceVO vm, L3NetworkVO l3, VmNicVO nic, UsedIpVO ip" +
                             " where vm.type = :vmType" +
                             " and vm.uuid = nic.vmInstanceUuid" +
                             " and vm.state in (:vmStates)" +
-                            " and nic.l3NetworkUuid = l3.uuid" +
+                            " and nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = l3.uuid" +
                             " and l3.uuid in (:uuids)" +
                             " group by vm.uuid";
                     TypedQuery<VmInstanceVO> q = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
@@ -631,7 +702,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                             " where vm.type = :vmType" +
                             " and vm.uuid = nic.vmInstanceUuid" +
                             " and vm.state in (:vmStates)" +
-                            " and nic.usedIpUuid = ip.uuid" +
+                            " and nic.uuid = ip.vmNicUuid" +
                             " and ip.ipRangeUuid = ipr.uuid" +
                             " and ipr.uuid in (:uuids)" +
                             " group by vm.uuid";

@@ -12,6 +12,7 @@ public class SecurityGroupVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<SecurityGroupVO, String> description;
     public static volatile SingularAttribute<SecurityGroupVO, SecurityGroupState> state;
     public static volatile SingularAttribute<SecurityGroupVO, Long> internalId;
+    public static volatile SingularAttribute<SecurityGroupVO, Integer> ipVersion;
     public static volatile SingularAttribute<SecurityGroupVO, Timestamp> createDate;
     public static volatile SingularAttribute<SecurityGroupVO, Timestamp> lastOpDate;
 }

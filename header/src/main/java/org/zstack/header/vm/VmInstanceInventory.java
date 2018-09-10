@@ -6,6 +6,7 @@ import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.image.ImageInventory;
+import org.zstack.header.network.l3.UsedIpInventory;
 import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.rest.APINoSee;
@@ -319,7 +320,10 @@ public class VmInstanceInventory implements Serializable, Cloneable {
         return CollectionUtils.find(vmNics, new Function<VmNicInventory, VmNicInventory>() {
             @Override
             public VmNicInventory call(VmNicInventory arg) {
-                return l3Uuid.equals(arg.getL3NetworkUuid()) ? arg : null;
+                if (VmNicHelper.isL3AttachedToVmNic(arg, l3Uuid)) {
+                    return arg;
+                }
+                return null;
             }
         });
     }

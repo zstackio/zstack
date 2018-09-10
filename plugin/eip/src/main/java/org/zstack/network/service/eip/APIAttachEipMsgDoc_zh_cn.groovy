@@ -24,7 +24,7 @@ doc {
 
 				column {
 					name "eipUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "弹性IP UUID"
 					location "url"
 					type "String"
@@ -34,12 +34,22 @@ doc {
 				}
 				column {
 					name "vmNicUuid"
-					enclosedIn ""
+					enclosedIn "params"
 					desc "云主机网卡UUID"
 					location "url"
 					type "String"
 					optional false
 					since "0.6"
+					
+				}
+				column {
+					name "usedIpUuid"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "3.1"
 					
 				}
 				column {

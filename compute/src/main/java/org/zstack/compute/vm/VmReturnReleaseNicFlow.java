@@ -9,8 +9,12 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.network.l3.L3NetworkConstant;
 import org.zstack.header.network.l3.ReturnIpMsg;
+import org.zstack.header.network.l3.UsedIpInventory;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
+import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
+import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +22,8 @@ import java.util.Map;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmReturnReleaseNicFlow extends NoRollbackFlow {
+    private static final CLogger logger = Utils.getLogger(VmReturnReleaseNicFlow.class);
+
     @Autowired
     protected DatabaseFacade dbf;
     @Autowired
@@ -35,10 +41,10 @@ public class VmReturnReleaseNicFlow extends NoRollbackFlow {
 
         List<ReturnIpMsg> msgs = new ArrayList<ReturnIpMsg>(spec.getVmInventory().getVmNics().size());
         for (VmNicInventory nic : spec.getVmInventory().getVmNics()) {
-            if (nic.getUsedIpUuid() != null) {
+            for (UsedIpInventory ip : nic.getUsedIps()) {
                 ReturnIpMsg msg = new ReturnIpMsg();
-                msg.setL3NetworkUuid(nic.getL3NetworkUuid());
-                msg.setUsedIpUuid(nic.getUsedIpUuid());
+                msg.setL3NetworkUuid(ip.getL3NetworkUuid());
+                msg.setUsedIpUuid(ip.getUuid());
                 bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, nic.getL3NetworkUuid());
                 msgs.add(msg);
             }

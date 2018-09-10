@@ -1,5 +1,8 @@
 package org.zstack.utils.network;
 
+import com.googlecode.ipv6.IPv6Address;
+import com.googlecode.ipv6.IPv6AddressRange;
+import com.googlecode.ipv6.IPv6Network;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.net.util.SubnetUtils;
 import org.zstack.utils.DebugUtils;
@@ -15,6 +18,7 @@ import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class NetworkUtils {
     private static final CLogger logger = Utils.getLogger(NetworkUtils.class);
@@ -85,9 +89,30 @@ public class NetworkUtils {
     }
 
     public static boolean isCidr(String cidr) {
-        Pattern pattern = Pattern.compile("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(\\d|[1-2]\\d|3[0-2]))$");
-        Matcher matcher = pattern.matcher(cidr);
-        return matcher.find();
+        try {
+            IPv6Network.fromString(cidr);
+            return true;
+        } catch (Exception e) {
+            Pattern pattern = Pattern.compile("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(\\d|[1-2]\\d|3[0-2]))$");
+            Matcher matcher = pattern.matcher(cidr);
+            return matcher.find();
+        }
+    }
+
+    public static boolean isCidr(String cidr, int ipVersion) {
+        if (ipVersion == IPv6Constants.IPv4) {
+            Pattern pattern = Pattern.compile("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(\\d|[1-2]\\d|3[0-2]))$");
+            Matcher matcher = pattern.matcher(cidr);
+            return matcher.find();
+        } else if(ipVersion == IPv6Constants.IPv6) {
+            try {
+                IPv6Network.fromString(cidr);
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+        }
+        return false;
     }
 
     public static long bytesToLong(byte[] bytes) {
@@ -298,10 +323,16 @@ public class NetworkUtils {
     }
 
     public static int getTotalIpInRange(String startIp, String endIp) {
-        validateIpRange(startIp, endIp);
-        long s = ipv4StringToLong(startIp);
-        long e = ipv4StringToLong(endIp);
-        return (int) (e - s + 1);
+        if (isIpv4Address(startIp)) {
+            validateIpRange(startIp, endIp);
+            long s = ipv4StringToLong(startIp);
+            long e = ipv4StringToLong(endIp);
+            return (int) (e - s + 1);
+        } else if (IPv6NetworkUtils.isIpv6Address(startIp)) {
+            return (int)IPv6NetworkUtils.getIpv6RangeSize(startIp, endIp);
+        } else {
+            throw new IllegalArgumentException(String.format("%s is not a valid ipv4 address or valid ipv6 address", startIp));
+        }
     }
 
     public static int getTotalIpInCidr(String cidr) {
@@ -424,6 +455,33 @@ public class NetworkUtils {
             if (!usedIps.contains(ip)) {
                 res.add(ip);
             }
+
+            if (res.size() >= limit) {
+                break;
+            }
+        }
+
+        return res;
+    }
+
+    public static List<String> getFreeIpv6InRange(String startIp, String endIp, List<String> usedIps, int limit, String start) {
+        IPv6Address s = IPv6Address.fromString(startIp);
+        IPv6Address e = IPv6Address.fromString(endIp);
+        IPv6Address f = IPv6Address.fromString(start);
+        IPv6AddressRange range = IPv6AddressRange.fromFirstAndLast(s, e);
+
+        List<String> res = new ArrayList<String>();
+        while (s.compareTo(e) <= 0) {
+            if (s.compareTo(f) <= 0) {
+                s = s.add(1);
+                continue;
+            }
+            if (usedIps.contains(s.toString())) {
+                s = s.add(1);
+                continue;
+            }
+            res.add(s.toString());
+            s = s.add(1);
 
             if (res.size() >= limit) {
                 break;
@@ -656,6 +714,54 @@ public class NetworkUtils {
         sb.append(String.valueOf(longIP & 0x000000FF));
 
         return sb.toString();
+    }
+
+    public static boolean isInRange(String ip, String startIp, String endIp) {
+        if (isIpv4Address(ip)) {
+            return isIpv4InRange(ip, startIp, endIp);
+        } else if (IPv6NetworkUtils.isIpv6Address(ip)) {
+            return IPv6NetworkUtils.isIpv6InRange(ip, startIp, endIp);
+        } else {
+            throw new IllegalArgumentException(String.format("%s is not a valid ipv4 address or valid ipv6 address", ip));
+        }
+    }
+
+    public static String getSmallestIp(List<String> ips) {
+        if (isIpv4Address(ips.get(0))) {
+            List<Long> addresses = ips.stream().map(ip -> ipToLong(ip)).collect(Collectors.toList());
+            addresses.sort(Long::compareTo);
+            return longToIP(addresses.get(0));
+        } else {
+            List<IPv6Address> addresses = ips.stream().map(ip -> IPv6Address.fromString(ip)).collect(Collectors.toList());
+            addresses.sort(IPv6Address::compareTo);
+            return addresses.get(0).toString();
+        }
+    }
+
+    public static String getBiggesttIp(List<String> ips) {
+        int length = ips.size();
+        if (isIpv4Address(ips.get(0))) {
+            List<Long> addresses = ips.stream().map(ip -> ipToLong(ip)).collect(Collectors.toList());
+            addresses.sort(Long::compareTo);
+            return longToIP(addresses.get(length -1));
+        } else {
+            List<IPv6Address> addresses = ips.stream().map(ip -> IPv6Address.fromString(ip)).collect(Collectors.toList());
+            addresses.sort(IPv6Address::compareTo);
+            return addresses.get(length -1).toString();
+        }
+    }
+
+    public static Integer getIpversion(String ip) {
+        if (isIpv4Address(ip)) {
+            return IPv6Constants.IPv4;
+        } else {
+            try {
+                IPv6Address.fromString(ip);
+                return IPv6Constants.IPv6;
+            } catch (Exception e) {
+                throw e;
+            }
+        }
     }
 }
 

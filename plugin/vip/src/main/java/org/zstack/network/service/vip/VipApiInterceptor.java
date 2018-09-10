@@ -12,6 +12,9 @@ import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l3.IpAllocatorType;
+import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.utils.network.IPv6Constants;
+import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -47,8 +50,17 @@ public class VipApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (msg.getRequiredIp() != null) {
-            if (!NetworkUtils.isIpv4Address(msg.getRequiredIp())) {
-                throw new ApiMessageInterceptionException(argerr("requiredIp[%s] is not in valid IPv4 mediaType", msg.getRequiredIp()));
+            L3NetworkVO l3NetworkVO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
+            if (l3NetworkVO.getIpVersion() == IPv6Constants.IPv4) {
+                if (!NetworkUtils.isIpv4Address(msg.getRequiredIp())) {
+                    throw new ApiMessageInterceptionException(argerr("requiredIp[%s] is not in valid IPv4 mediaType", msg.getRequiredIp()));
+                }
+            } else {
+                if (!IPv6NetworkUtils.isIpv6UnicastAddress(msg.getRequiredIp())) {
+                    if (!NetworkUtils.isIpv4Address(msg.getRequiredIp())) {
+                        throw new ApiMessageInterceptionException(argerr("requiredIp[%s] is not in valid IPv6 mediaType", msg.getRequiredIp()));
+                    }
+                }
             }
 
             SimpleQuery<VipVO> q = dbf.createQuery(VipVO.class);

@@ -12,10 +12,12 @@ import org.zstack.header.network.service.NetworkServiceSnatBackend;
 import org.zstack.header.network.service.SnatStruct;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicSpec;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created with IntelliJ IDEA.
@@ -103,7 +105,8 @@ public class SnatExtension extends AbstractNetworkServiceExtension implements Co
 
     private Map<NetworkServiceSnatBackend, List<SnatStruct>> workoutSnat(VmInstanceSpec spec) {
         Map<NetworkServiceSnatBackend, List<SnatStruct>> map = new HashMap<NetworkServiceSnatBackend, List<SnatStruct>>();
-        Map<NetworkServiceProviderType, List<L3NetworkInventory>> providerMap = getNetworkServiceProviderMap(NetworkServiceType.SNAT, spec.getL3Networks());
+        Map<NetworkServiceProviderType, List<L3NetworkInventory>> providerMap = getNetworkServiceProviderMap(NetworkServiceType.SNAT,
+                VmNicSpec.getL3NetworkInventoryOfSpec(spec.getL3Networks()));
 
         for (Map.Entry<NetworkServiceProviderType, List<L3NetworkInventory>> e : providerMap.entrySet()) {
             NetworkServiceProviderType ptype = e.getKey();

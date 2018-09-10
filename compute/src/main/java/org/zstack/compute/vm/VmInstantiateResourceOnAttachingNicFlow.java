@@ -11,12 +11,13 @@ import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.vm.InstantiateResourceOnAttachingNicExtensionPoint;
-import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.*;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 /**
  * Created by frank on 7/18/2015.
@@ -30,7 +31,7 @@ public class VmInstantiateResourceOnAttachingNicFlow implements Flow {
     public void run(FlowTrigger trigger, Map data) {
         Iterator<InstantiateResourceOnAttachingNicExtensionPoint> it = pluginRgty.getExtensionList(InstantiateResourceOnAttachingNicExtensionPoint.class).iterator();
         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-        L3NetworkInventory l3 = spec.getL3Networks().get(0);
+        L3NetworkInventory l3 = VmNicSpec.getL3NetworkInventoryOfSpec(spec.getL3Networks()).get(0);
         instantiateResource(it, spec, l3, trigger);
     }
 
@@ -58,7 +59,7 @@ public class VmInstantiateResourceOnAttachingNicFlow implements Flow {
     public void rollback(FlowRollback trigger, Map data) {
         Iterator<InstantiateResourceOnAttachingNicExtensionPoint> it = pluginRgty.getExtensionList(InstantiateResourceOnAttachingNicExtensionPoint.class).iterator();
         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-        L3NetworkInventory l3 = spec.getL3Networks().get(0);
+        L3NetworkInventory l3 = VmNicSpec.getL3NetworkInventoryOfSpec(spec.getL3Networks()).get(0);
         releaseResource(it, spec, l3, trigger);
     }
 

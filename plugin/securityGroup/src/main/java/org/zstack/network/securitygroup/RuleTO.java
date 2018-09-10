@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.List;
 
 public class RuleTO {
+    private int ipVersion;
     private String protocol;
     private String type;
     private int startPort;
@@ -12,7 +13,15 @@ public class RuleTO {
     private String securityGroupUuid;
     private String remoteGroupUuid;
     private List<String> remoteGroupVmIps;
-    
+
+    public int getIpVersion() {
+        return ipVersion;
+    }
+
+    public void setIpVersion(int ipVersion) {
+        this.ipVersion = ipVersion;
+    }
+
     public String getProtocol() {
         return protocol;
     }
@@ -72,19 +81,21 @@ public class RuleTO {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
+        sb.append(String.format("ipVersion: %s,", this.ipVersion));
         sb.append(String.format("type: %s,", this.type));
         sb.append(String.format("protocol: %s,", this.protocol));
         sb.append(String.format("startPort: %s,", this.startPort));
         sb.append(String.format("endPort: %s,", this.endPort));
-        sb.append(String.format("allowedCidr: %s", this.allowedCidr));
-        sb.append(String.format("securityGroupUuid: %s", this.securityGroupUuid));
-        sb.append(String.format("remoteGroupUuid: %s", this.remoteGroupUuid));
+        sb.append(String.format("allowedCidr: %s,", this.allowedCidr));
+        sb.append(String.format("securityGroupUuid: %s,", this.securityGroupUuid));
+        sb.append(String.format("remoteGroupUuid: %s,", this.remoteGroupUuid));
         sb.append(String.format("remoteGroupVmIps: %s", this.remoteGroupVmIps));
         return sb.toString();
     }
     
     public String toFullString() {
         StringBuilder sb = new StringBuilder();
+        sb.append(String.format("ipVersion: %s,", this.ipVersion));
         sb.append(String.format("type: %s,", this.type));
         sb.append(String.format("protocol: %s,", this.protocol));
         sb.append(String.format("startPort: %s,", this.startPort));

@@ -28,6 +28,14 @@ public class SecurityGroupRuleInventory  {
         return this.type;
     }
 
+    public java.lang.Integer ipVersion;
+    public void setIpVersion(java.lang.Integer ipVersion) {
+        this.ipVersion = ipVersion;
+    }
+    public java.lang.Integer getIpVersion() {
+        return this.ipVersion;
+    }
+
     public java.lang.Integer startPort;
     public void setStartPort(java.lang.Integer startPort) {
         this.startPort = startPort;
