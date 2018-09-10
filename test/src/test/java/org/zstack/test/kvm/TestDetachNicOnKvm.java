@@ -21,6 +21,7 @@ import org.zstack.test.storage.backup.sftp.TestSftpBackupStorageDeleteImage2;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import java.math.BigInteger;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -60,7 +61,7 @@ public class TestDetachNicOnKvm {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
 
         APIGetIpAddressCapacityReply ipcap = api.getIpAddressCapacityByAll();
-        long avail1 = ipcap.getAvailableCapacity();
+        BigInteger avail1 = ipcap.getAvailableCapacity();
 
         vm = api.attachNic(vm.getUuid(), l3.getUuid());
         Assert.assertEquals(4, vm.getVmNics().size());
@@ -72,9 +73,10 @@ public class TestDetachNicOnKvm {
 
         TimeUnit.SECONDS.sleep(3);
         ipcap = api.getIpAddressCapacityByAll();
-        long avail2 = ipcap.getAvailableCapacity();
+        BigInteger avail2 = ipcap.getAvailableCapacity();
 
         Assert.assertEquals(avail1, avail2);
+        Assert.assertTrue(avail1.compareTo(avail2) == 0);
 
         String l3Uuid = nic.getL3NetworkUuid();
         nic = vm.findNic(l3Uuid);

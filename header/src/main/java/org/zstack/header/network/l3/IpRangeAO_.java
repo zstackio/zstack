@@ -16,6 +16,9 @@ public class IpRangeAO_ extends ResourceVO_ {
     public static volatile SingularAttribute<IpRangeAO, String> netmask;
     public static volatile SingularAttribute<IpRangeAO, String> networkCidr;
     public static volatile SingularAttribute<IpRangeAO, String> gateway;
+    public static volatile SingularAttribute<IpRangeAO, Integer> ipVersion;
+    public static volatile SingularAttribute<IpRangeAO, String> addressMode;
+    public static volatile SingularAttribute<IpRangeAO, Integer> prefixLen;
     public static volatile SingularAttribute<IpRangeAO, Timestamp> lastOpDate;
     public static volatile SingularAttribute<IpRangeAO, Timestamp> createDate;
 }

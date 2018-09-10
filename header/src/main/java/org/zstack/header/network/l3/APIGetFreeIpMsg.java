@@ -32,7 +32,7 @@ public class APIGetFreeIpMsg extends APISyncCallMessage implements L3NetworkMess
     @APIParam(resourceType = IpRangeVO.class, required = false, checkAccount = true)
     private String ipRangeUuid;
     @APIParam(required = false)
-    private String start = "0.0.0.0";
+    private String start;
 
     private int limit = 100;
 

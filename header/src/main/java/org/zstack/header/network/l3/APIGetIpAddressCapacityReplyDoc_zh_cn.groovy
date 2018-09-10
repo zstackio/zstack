@@ -1,6 +1,8 @@
 package org.zstack.header.network.l3
 
 import org.zstack.header.errorcode.ErrorCode
+import java.math.BigInteger
+import java.math.BigInteger
 import org.zstack.header.errorcode.ErrorCode
 
 doc {
@@ -18,13 +20,13 @@ doc {
 	field {
 		name "totalCapacity"
 		desc "IP地址容量"
-		type "long"
+		type "BigInteger"
 		since "0.6"
 	}
 	field {
 		name "availableCapacity"
 		desc "可用IP地址容量"
-		type "long"
+		type "BigInteger"
 		since "0.6"
 	}
 	field {

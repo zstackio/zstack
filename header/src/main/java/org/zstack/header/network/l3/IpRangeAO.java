@@ -45,6 +45,15 @@ public class IpRangeAO extends ResourceVO {
     private String networkCidr;
 
     @Column
+    private Integer ipVersion;
+
+    @Column
+    private Integer prefixLen;
+
+    @Column
+    private String addressMode;
+
+    @Column
     private Timestamp createDate;
 
     @Column
@@ -138,5 +147,29 @@ public class IpRangeAO extends ResourceVO {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
+    }
+
+    public Integer getIpVersion() {
+        return ipVersion;
+    }
+
+    public void setIpVersion(Integer ipVersion) {
+        this.ipVersion = ipVersion;
+    }
+
+    public String getAddressMode() {
+        return addressMode;
+    }
+
+    public void setAddressMode(String addressMode) {
+        this.addressMode = addressMode;
+    }
+
+    public Integer getPrefixLen() {
+        return prefixLen;
+    }
+
+    public void setPrefixLen(Integer prefixLen) {
+        this.prefixLen = prefixLen;
     }
 }

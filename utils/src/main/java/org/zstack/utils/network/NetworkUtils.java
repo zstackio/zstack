@@ -1,5 +1,8 @@
 package org.zstack.utils.network;
 
+import com.googlecode.ipv6.IPv6Address;
+import com.googlecode.ipv6.IPv6AddressRange;
+import com.googlecode.ipv6.IPv6Network;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.net.util.SubnetUtils;
 import org.zstack.utils.DebugUtils;
@@ -10,6 +13,7 @@ import org.zstack.utils.data.Pair;
 import org.zstack.utils.logging.CLogger;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -424,6 +428,33 @@ public class NetworkUtils {
             if (!usedIps.contains(ip)) {
                 res.add(ip);
             }
+
+            if (res.size() >= limit) {
+                break;
+            }
+        }
+
+        return res;
+    }
+
+    public static List<String> getFreeIpv6InRange(String startIp, String endIp, List<String> usedIps, int limit, String start) {
+        IPv6Address s = IPv6Address.fromString(startIp);
+        IPv6Address e = IPv6Address.fromString(endIp);
+        IPv6Address f = IPv6Address.fromString(start);
+        IPv6AddressRange range = IPv6AddressRange.fromFirstAndLast(s, e);
+
+        List<String> res = new ArrayList<String>();
+        while (s.compareTo(e) <= 0) {
+            if (s.compareTo(f) <= 0) {
+                s = s.add(1);
+                continue;
+            }
+            if (usedIps.contains(s.toString())) {
+                s = s.add(1);
+                continue;
+            }
+            res.add(s.toString());
+            s = s.add(1);
 
             if (res.size() >= limit) {
                 break;

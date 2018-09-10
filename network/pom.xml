@@ -43,6 +43,11 @@
           <artifactId>tag</artifactId>
           <version>${project.version}</version>
       </dependency>
+      <dependency>
+          <groupId>com.googlecode.java-ipv6</groupId>
+          <artifactId>java-ipv6</artifactId>
+          <version>0.17</version>
+      </dependency>
   </dependencies>
   
  <build>

@@ -399,7 +399,11 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((GetVmStartingCandidateClustersHostsMsg) msg);
         } else if (msg instanceof MigrateVmInnerMsg) {
             handle((MigrateVmInnerMsg) msg);
-        }else {
+        } else if (msg instanceof AddL3NetworkToVmNicMsg) {
+            handle((AddL3NetworkToVmNicMsg) msg);
+        } else if (msg instanceof DeleteL3NetworkFromVmNicMsg) {
+            handle((DeleteL3NetworkFromVmNicMsg) msg);
+        } else {
             VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
             if (ext != null) {
                 VmInstance v = ext.getVmInstance(self);
@@ -625,7 +629,13 @@ public class VmInstanceBase extends AbstractVmInstance {
         final VmNicVO targetNic = CollectionUtils.find(self.getVmNics(), new Function<VmNicVO, VmNicVO>() {
             @Override
             public VmNicVO call(VmNicVO arg) {
-                return l3Uuid.equals(arg.getL3NetworkUuid()) ? arg : null;
+                for (UsedIpVO ip : arg.getUsedIps()) {
+                    if (ip.getL3NetworkUuid().equals(arg.getL3NetworkUuid())) {
+                        return arg;
+                    }
+                }
+
+                return null;
             }
         });
 
@@ -639,11 +649,15 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         final UsedIpInventory oldIp = new UsedIpInventory();
-        oldIp.setIp(targetNic.getIp());
-        oldIp.setGateway(targetNic.getGateway());
-        oldIp.setNetmask(targetNic.getNetmask());
-        oldIp.setL3NetworkUuid(targetNic.getL3NetworkUuid());
-        oldIp.setUuid(targetNic.getUsedIpUuid());
+        for (UsedIpVO ipvo : targetNic.getUsedIps()) {
+            if (ipvo.getL3NetworkUuid().equals(targetNic.getL3NetworkUuid())) {
+                oldIp.setIp(ipvo.getIp());
+                oldIp.setGateway(ipvo.getGateway());
+                oldIp.setNetmask(ipvo.getNetmask());
+                oldIp.setL3NetworkUuid(ipvo.getL3NetworkUuid());
+                oldIp.setUuid(ipvo.getUuid());
+            }
+        }
 
         final FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("change-vm-ip-to-%s-l3-%s-vm-%s", ip, l3Uuid, self.getUuid()));
@@ -670,6 +684,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                                 } else {
                                     AllocateIpReply r = reply.castReply();
                                     newIp = r.getIpInventory();
+                                    for (VmNicExtensionPoint ext : pluginRgty.getExtensionList(VmNicExtensionPoint.class)) {
+                                        ext.afterAddIpAddress(targetNic.getUuid(), newIp.getUuid());
+                                    }
                                     trigger.next();
                                 }
                             }
@@ -699,6 +716,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                         targetNic.setGateway(newIp.getGateway());
                         targetNic.setNetmask(newIp.getNetmask());
                         targetNic.setIp(newIp.getIp());
+                        targetNic.setIpVersion(newIp.getIpVersion());
                         dbf.update(targetNic);
                         trigger.next();
                     }
@@ -714,6 +732,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                         rmsg.setL3NetworkUuid(targetNic.getL3NetworkUuid());
                         bus.makeTargetServiceIdByResourceUuid(rmsg, L3NetworkConstant.SERVICE_ID, targetNic.getL3NetworkUuid());
                         bus.send(rmsg);
+                        for (VmNicExtensionPoint ext : pluginRgty.getExtensionList(VmNicExtensionPoint.class)) {
+                            ext.afterDelIpAddress(targetNic.getUuid(), oldIpUuid);
+                        }
                         trigger.next();
                     }
                 });
@@ -1234,6 +1255,116 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public String getName() {
                 return "nic-detach";
+            }
+        });
+    }
+
+    private void handle(final AddL3NetworkToVmNicMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                final AddL3NetworkToVmNicReply reply = new AddL3NetworkToVmNicReply();
+
+                refreshVO();
+
+                final ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
+                if (allowed != null) {
+                    reply.setError(allowed);
+                    bus.reply(msg, reply);
+                    chain.next();
+                    return;
+                }
+
+                VmNicVO vmNicVO = dbf.findByUuid(msg.getVmNicUuid(), VmNicVO.class);
+                final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.AttachNic);
+                spec.setDestNics(list(VmNicInventory.valueOf(vmNicVO)));
+                L3NetworkVO l3Vo = dbf.findByUuid(msg.getNewL3Uuid(), L3NetworkVO.class);
+                spec.setL3Networks(asList(L3NetworkInventory.valueOf(l3Vo)));
+
+                FlowChain fchain = FlowChainBuilder.newSimpleFlowChain();
+                fchain.setName(String.format("update-vmNic-%s-to-backend", msg.getVmInstanceUuid()));
+                fchain.getData().put(Params.VmInstanceSpec.toString(), spec);
+                fchain.then(new VmInstantiateResourceOnAttachingNicFlow());
+                fchain.done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        self = dbf.reload(self);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                }).error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                }).start();
+            }
+
+            @Override
+            public String getName() {
+                return "update-vmNic-to-backend";
+            }
+        });
+    }
+
+    private void handle(final DeleteL3NetworkFromVmNicMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                final DeleteL3NetworkFromVmNicReply reply = new DeleteL3NetworkFromVmNicReply();
+
+                refreshVO();
+
+                final ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
+                if (allowed != null) {
+                    reply.setError(allowed);
+                    bus.reply(msg, reply);
+                    chain.next();
+                    return;
+                }
+
+                VmNicVO vmNicVO = dbf.findByUuid(msg.getVmNicUuid(), VmNicVO.class);
+                final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.AttachNic);
+                spec.setDestNics(list(VmNicInventory.valueOf(vmNicVO)));
+                L3NetworkVO l3Vo = dbf.findByUuid(msg.getNewL3Uuid(), L3NetworkVO.class);
+                spec.setL3Networks(asList(L3NetworkInventory.valueOf(l3Vo)));
+
+                FlowChain fchain = FlowChainBuilder.newSimpleFlowChain();
+                fchain.setName(String.format("update-vmNic-%s-to-backend", msg.getVmInstanceUuid()));
+                fchain.getData().put(Params.VmInstanceSpec.toString(), spec);
+                fchain.then(new VmReleaseResourceOnDetachingNicFlow());
+                fchain.done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        self = dbf.reload(self);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                }).error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                }).start();
+            }
+
+            @Override
+            public String getName() {
+                return "update-vmNic-to-backend";
             }
         });
     }
@@ -4947,12 +5078,12 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         spec.setDestNics(inv.getVmNics());
-        List<String> l3Uuids = CollectionUtils.transformToList(inv.getVmNics(), new Function<String, VmNicInventory>() {
-            @Override
-            public String call(VmNicInventory arg) {
-                return arg.getL3NetworkUuid();
+        List<String> l3Uuids = new ArrayList<>();
+        for (VmNicInventory nic : inv.getVmNics()) {
+            for (UsedIpInventory ip : nic.getUsedIps()) {
+                l3Uuids.add(ip.getL3NetworkUuid());
             }
-        });
+        }
         spec.setL3Networks(L3NetworkInventory.valueOf(dbf.listByPrimaryKeys(l3Uuids, L3NetworkVO.class)));
 
         String huuid = inv.getHostUuid() == null ? inv.getLastHostUuid() : inv.getHostUuid();

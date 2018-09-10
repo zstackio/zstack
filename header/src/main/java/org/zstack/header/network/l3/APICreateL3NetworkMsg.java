@@ -11,6 +11,7 @@ import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.tag.TagResourceType;
+import org.zstack.utils.network.IPv6Constants;
 
 /**
  * @api create l3Network
@@ -76,6 +77,9 @@ public class APICreateL3NetworkMsg extends APICreateMessage implements APIAudito
     @APIParam(required = false, validValues = {"Public", "Private", "System"})
     private String category = L3NetworkCategory.Private.toString();
 
+    @APIParam(required = false, validValues = {"4", "6"})
+    private Integer ipVersion;
+
     private boolean system;
 
     private String dnsDomain;
@@ -134,6 +138,14 @@ public class APICreateL3NetworkMsg extends APICreateMessage implements APIAudito
 
     public void setCategory(String category) {
         this.category = category;
+    }
+
+    public Integer getIpVersion() {
+        return ipVersion;
+    }
+
+    public void setIpVersion(Integer ipVersion) {
+        this.ipVersion = ipVersion;
     }
 
     public static APICreateL3NetworkMsg __example__() {

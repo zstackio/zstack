@@ -79,6 +79,18 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="RandomIpv6AllocatorStrategy" class="org.zstack.network.l3.RandomIpv6AllocatorStrategy">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.network.l3.IpAllocatorStrategy"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="FirstAvailableIpv6AllocatorStrategy" class="org.zstack.network.l3.FirstAvailableIpv6AllocatorStrategy">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.network.l3.IpAllocatorStrategy"/>
+        </zstack:plugin>
+    </bean>
+
     <bean id="NetworkServiceManager"
           class="org.zstack.network.service.NetworkServiceManagerImpl">
         <zstack:plugin>

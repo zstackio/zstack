@@ -9,6 +9,7 @@ import org.zstack.header.network.l3.L3NetworkInventory;
  * To change this template use File | Settings | File Templates.
  */
 public class DhcpStruct {
+    private int    ipVersion;
     private String ip;
     private String mac;
     private String netmask;
@@ -18,10 +19,13 @@ public class DhcpStruct {
     private boolean isDefaultL3Network;
     private String dnsDomain;
     private Integer mtu;
+    private String  raMode;
+    private String  networkCidr;
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("[");
+        sb.append(String.format("version: %d,", ipVersion));
         sb.append(String.format("ip: %s,", ip));
         sb.append(String.format("mac: %s,", mac));
         sb.append(String.format("netmask: %s,", netmask));
@@ -31,6 +35,8 @@ public class DhcpStruct {
         sb.append(String.format("dnsDomain: %s", dnsDomain));
         sb.append(String.format("isDefaultL3Network: %s", isDefaultL3Network));
         sb.append(String.format("mtu: %s", mtu));
+        sb.append(String.format("raMode: %s", raMode));
+        sb.append(String.format("networkCidr: %s", networkCidr));
         sb.append("]");
         return sb.toString();
     }
@@ -107,4 +113,27 @@ public class DhcpStruct {
         this.mtu = mtu;
     }
 
+    public int getIpVersion() {
+        return ipVersion;
+    }
+
+    public void setIpVersion(int ipVersion) {
+        this.ipVersion = ipVersion;
+    }
+
+    public String getRaMode() {
+        return raMode;
+    }
+
+    public void setRaMode(String raMode) {
+        this.raMode = raMode;
+    }
+
+    public String getNetworkCidr() {
+        return networkCidr;
+    }
+
+    public void setNetworkCidr(String networkCidr) {
+        this.networkCidr = networkCidr;
+    }
 }

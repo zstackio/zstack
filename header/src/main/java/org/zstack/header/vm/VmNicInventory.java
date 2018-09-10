@@ -1,6 +1,7 @@
 package org.zstack.header.vm;
 
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.l3.UsedIpInventory;
 import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.rest.APINoSee;
@@ -30,6 +31,8 @@ public class VmNicInventory implements Serializable {
     private String netmask;
     private String gateway;
     private String metaData;
+    private Integer ipVersion;
+    private List<UsedIpInventory> usedIps;
     @APINoSee
     private String internalName;
     private Integer deviceId;
@@ -51,6 +54,9 @@ public class VmNicInventory implements Serializable {
         inv.setMetaData(vo.getMetaData());
         inv.setNetmask(vo.getNetmask());
         inv.setGateway(vo.getGateway());
+        inv.setIpVersion(vo.getIpVersion());
+        inv.setUsedIps(UsedIpInventory.valueOf(vo.getUsedIps()));
+
         return inv;
     }
 
@@ -164,5 +170,21 @@ public class VmNicInventory implements Serializable {
 
     public void setInternalName(String internalName) {
         this.internalName = internalName;
+    }
+
+    public Integer getIpVersion() {
+        return ipVersion;
+    }
+
+    public void setIpVersion(Integer ipVersion) {
+        this.ipVersion = ipVersion;
+    }
+
+    public List<UsedIpInventory> getUsedIps() {
+        return usedIps;
+    }
+
+    public void setUsedIps(List<UsedIpInventory> usedIps) {
+        this.usedIps = usedIps;
     }
 }
