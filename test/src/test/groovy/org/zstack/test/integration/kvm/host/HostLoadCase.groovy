@@ -18,6 +18,8 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.gson.JSONObjectUtil
 
+import java.util.concurrent.TimeUnit
+
 class HostLoadCase extends SubCase {
     EnvSpec env
 
@@ -121,6 +123,53 @@ class HostLoadCase extends SubCase {
         cleanup()
     }
 
+    void testConnectedHostNotReconnectWhenNodeReady() {
+        HostInventory kvm1 = env.inventoryByName("kvm1")
+        HostInventory kvm2 = env.inventoryByName("kvm2")
+
+        boolean pingFailure = true
+        env.simulator(KVMConstant.KVM_PING_PATH) { HttpEntity<String> e, EnvSpec espec ->
+            KVMAgentCommands.PingCmd cmd = JSONObjectUtil.toObject(e.getBody(), KVMAgentCommands.PingCmd.class)
+
+            def rsp = new KVMAgentCommands.PingResponse()
+            if (cmd.hostUuid == kvm1.uuid && pingFailure) {
+                rsp.success = false
+                rsp.error = "on purpose"
+            } else {
+                rsp.hostUuid = cmd.hostUuid
+            }
+
+            return rsp
+        }
+
+        waitHostDisconnected(kvm1.uuid)
+
+        HostManagerImpl mgr = bean(HostManagerImpl.class)
+
+        boolean kvm1Connected = false
+        boolean kvm2Connected = false
+        def cleanup = notifyWhenReceivedMessage(ConnectHostMsg.class) { ConnectHostMsg msg ->
+            if (msg.getHostUuid() == kvm1.uuid) {
+                kvm1Connected = true
+            }
+
+            if (msg.getHostUuid() == kvm2.uuid) {
+                kvm2Connected = true
+            }
+        }
+
+        mgr.managementNodeReady()
+
+        pingFailure = false
+        waitHostConnected(kvm1.uuid)
+
+        assert kvm1Connected
+        // kvm2 is in status of Connected, which should not be reconnected
+        assert !kvm2Connected
+
+        cleanup()
+    }
+
     @Override
     void test() {
         env.create {
@@ -130,6 +179,7 @@ class HostLoadCase extends SubCase {
             HostGlobalConfig.AUTO_RECONNECT_ON_ERROR.updateValue(false)
 
             testConnectedHostNotReconnectWhenNodeLeft()
+            testConnectedHostNotReconnectWhenNodeReady()
         }
     }
 }
