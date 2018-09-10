@@ -16,10 +16,7 @@ import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.jsonlabel.JsonLabel;
-import org.zstack.core.notification.N;
-import org.zstack.core.thread.AsyncThread;
-import org.zstack.core.thread.CancelablePeriodicTask;
-import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.thread.*;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
 import org.zstack.header.allocator.AllocateHostDryRunReply;
@@ -33,10 +30,7 @@ import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.configuration.DiskOfferingVO_;
 import org.zstack.header.configuration.InstanceOfferingVO;
-import org.zstack.header.core.FutureCompletion;
-import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.NopeNoErrorCompletion;
-import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -69,6 +63,7 @@ import org.zstack.header.zone.ZoneInventory;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
+import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.tag.TagManager;
@@ -162,6 +157,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
     private HostAllocatorManager hostAllocatorMgr;
     @Autowired
     protected VmInstanceExtensionPointEmitter extEmitter;
+    @Autowired
+    protected L3NetworkManager l3nm;
 
     @Override
     @MessageSafe
@@ -216,6 +213,10 @@ public class VmInstanceManagerImpl extends AbstractService implements
             handle((APICreateVmNicMsg) msg);
         } else if (msg instanceof APIDeleteVmNicMsg) {
             handle((APIDeleteVmNicMsg) msg);
+        } else if (msg instanceof APIAttachL3NetworkToVmNicMsg) {
+            handle((APIAttachL3NetworkToVmNicMsg) msg);
+        } else if (msg instanceof APIDetachIpAddressFromVmNicMsg) {
+            handle((APIDetachIpAddressFromVmNicMsg) msg);
         } else if (msg instanceof APIGetCandidateZonesClustersHostsForCreatingVmMsg) {
             handle((APIGetCandidateZonesClustersHostsForCreatingVmMsg) msg);
         } else if (msg instanceof APIGetCandidatePrimaryStoragesForCreatingVmMsg) {
@@ -680,9 +681,12 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
+                int deviceId = 1;
+                String mac = NetworkUtils.generateMacWithDeviceId((short) deviceId);
                 AllocateIpMsg allocateIpMsg = new AllocateIpMsg();
                 allocateIpMsg.setRequiredIp(msg.getIp());
                 allocateIpMsg.setL3NetworkUuid(msg.getL3NetworkUuid());
+                l3nm.updateIpAllocationMsg(allocateIpMsg, mac);
                 bus.makeTargetServiceIdByResourceUuid(allocateIpMsg, L3NetworkConstant.SERVICE_ID, msg.getL3NetworkUuid());
 
                 bus.send(allocateIpMsg, new CloudBusCallBack(msg) {
@@ -694,17 +698,18 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         }
 
                         AllocateIpReply areply = reply.castReply();
-                        int deviceId = 1;
+
                         nic.setUuid(Platform.getUuid());
                         nic.setIp(areply.getIpInventory().getIp());
                         nic.setUsedIpUuid(areply.getIpInventory().getUuid());
                         nic.setL3NetworkUuid(areply.getIpInventory().getL3NetworkUuid());
 
                         assert nic.getL3NetworkUuid() != null;
-                        nic.setMac(NetworkUtils.generateMacWithDeviceId((short) deviceId));
+                        nic.setMac(mac);
                         nic.setDeviceId(deviceId);
                         nic.setNetmask(areply.getIpInventory().getNetmask());
                         nic.setGateway(areply.getIpInventory().getGateway());
+                        nic.setIpVersion(areply.getIpInventory().getIpVersion());
 
                         trigger.next();
                     }
@@ -727,6 +732,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 vo.setGateway(nic.getGateway());
                 vo.setInternalName(nic.getInternalName());
                 vo.setAccountUuid(msg.getSession().getAccountUuid());
+                vo.setIpVersion(nic.getIpVersion());
 
                 int tries = 5;
                 while (tries-- > 0) {
@@ -737,6 +743,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                                 persist(vo);
                             }
                         }.execute();
+                        break;
                     } catch (JpaSystemException e) {
                         if (e.getRootCause() instanceof MySQLIntegrityConstraintViolationException &&
                                 e.getRootCause().getMessage().contains("Duplicate entry")) {
@@ -1012,39 +1019,224 @@ public class VmInstanceManagerImpl extends AbstractService implements
         });
     }
 
+    private void doDeleteVmNic(VmNicInventory nic, Completion completion) {
+        thdf.chainSubmit(new ChainTask(completion) {
+            @Override
+            public String getSyncSignature() {
+                return getVmNicSyncSignature(nic);
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                if (nic.getVmInstanceUuid() == null) {
+                    List<ReturnIpMsg> msgs = new ArrayList<>();
+                    for (UsedIpInventory ip : nic.getUsedIps()) {
+                        ReturnIpMsg returnIpMsg = new ReturnIpMsg();
+                        returnIpMsg.setUsedIpUuid(ip.getUuid());
+                        returnIpMsg.setL3NetworkUuid(ip.getL3NetworkUuid());
+                        msgs.add(returnIpMsg);
+                    }
+                    new While<>(msgs).all((msg, com) -> bus.send(msg, new CloudBusCallBack(com) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (!reply.isSuccess()) {
+                                logger.warn(String.format("failed to return ip address[uuid: %d]", msg.getUsedIpUuid()));
+                            }
+                            com.done();
+                        }
+                    })).run(new NopeNoErrorCompletion() {
+                        @Override
+                        public void done() {
+                            dbf.removeByPrimaryKey(nic.getUuid(), VmNicVO.class);
+                            completion.success();
+                        }
+                    });
+
+                    return;
+                }
+
+                DetachNicFromVmMsg detachNicFromVmMsg = new DetachNicFromVmMsg();
+                detachNicFromVmMsg.setVmInstanceUuid(nic.getVmInstanceUuid());
+                detachNicFromVmMsg.setVmNicUuid(nic.getUuid());
+                bus.makeTargetServiceIdByResourceUuid(detachNicFromVmMsg, VmInstanceConstant.SERVICE_ID, nic.getVmInstanceUuid());
+                bus.send(detachNicFromVmMsg, new CloudBusCallBack(completion) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            completion.fail(reply.getError());
+                        } else {
+                            completion.success();
+                        }
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("delete-vmNic-%s", nic.getUuid());
+            }
+        });
+    }
+
     private void handle(final APIDeleteVmNicMsg msg) {
         APIDeleteVmNicEvent evt = new APIDeleteVmNicEvent(msg.getId());
 
-        VmNicVO nic = dbf.findByUuid(msg.getUuid(), VmNicVO.class);
-        if (nic.getVmInstanceUuid() == null) {
-            ReturnIpMsg returnIpMsg = new ReturnIpMsg();
-            returnIpMsg.setUsedIpUuid(nic.getUsedIpUuid());
-            returnIpMsg.setL3NetworkUuid(nic.getL3NetworkUuid());
-            bus.makeTargetServiceIdByResourceUuid(returnIpMsg, L3NetworkConstant.SERVICE_ID, nic.getL3NetworkUuid());
-            bus.send(returnIpMsg, new CloudBusCallBack(msg) {
-                @Override
-                public void run(MessageReply reply) {
-                    if (reply.isSuccess()) {
-                        dbf.removeByPrimaryKey(nic.getUuid(), VmNicVO.class);
-                    } else {
-                        evt.setError(reply.getError());
-                    }
-                    bus.publish(evt);
-                }
-            });
-            return;
-        }
-
-        DetachNicFromVmMsg detachNicFromVmMsg = new DetachNicFromVmMsg();
-        detachNicFromVmMsg.setVmInstanceUuid(nic.getVmInstanceUuid());
-        detachNicFromVmMsg.setVmNicUuid(nic.getUuid());
-        bus.makeTargetServiceIdByResourceUuid(detachNicFromVmMsg, VmInstanceConstant.SERVICE_ID, nic.getVmInstanceUuid());
-        bus.send(detachNicFromVmMsg, new CloudBusCallBack(msg) {
+        VmNicVO nicVO = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getUuid()).find();
+        doDeleteVmNic(VmNicInventory.valueOf(nicVO), new Completion(msg) {
             @Override
-            public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    evt.setError(reply.getError());
+            public void success() {
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                evt.setError(errorCode);
+                bus.publish(evt);
+            }
+        });
+    }
+
+    private String getVmNicSyncSignature(VmNicInventory nic) {
+        return String.format("vmNi-%s", nic.getUuid());
+    }
+
+    private void doAttachL3ToNic(final VmNicInventory nic, final String l3Uuid, final Completion completion) {
+        thdf.chainSubmit(new ChainTask(completion) {
+            @Override
+            public String getSyncSignature() {
+                return getVmNicSyncSignature(nic);
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                VmInstanceVO vmVo = null;
+
+                L3NetworkVO l3Vo = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3Uuid).find();
+                FlowChain flowChain = FlowChainBuilder.newSimpleFlowChain();
+                flowChain.setName(String.format("attach-l3-network-%s-to-nic-%s", l3Uuid, nic.getUuid()));
+                flowChain.getData().put(VmInstanceConstant.Params.VmNicInventory.toString(), nic);
+                flowChain.getData().put(VmInstanceConstant.Params.L3NetworkInventory.toString(), L3NetworkInventory.valueOf(l3Vo));
+                if (nic.getVmInstanceUuid() != null) {
+                    vmVo = dbf.findByUuid(nic.getVmInstanceUuid(), VmInstanceVO.class);
+                    flowChain.getData().put(VmInstanceConstant.Params.vmInventory.toString(), VmInstanceInventory.valueOf(vmVo));
                 }
+                flowChain.then(new VmPreAllocateNicIpFlow());
+                flowChain.then(new VmNicAllocateIpFlow());
+                flowChain.then(new AddL3NetworkToVmNicFlow());
+                flowChain.done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        completion.success();
+                    }
+                }).error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        completion.fail(errCode);
+                    }
+                }).start();
+
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return String.format("attach-l3-network-%s-to-nic-%s", l3Uuid, nic.getUuid());
+            }
+        });
+    }
+
+
+    private void handle(final APIAttachL3NetworkToVmNicMsg msg) {
+        final APIAttachL3NetworkToVmNicEvent evt = new APIAttachL3NetworkToVmNicEvent(msg.getId());
+        VmNicVO vmNicVO = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find();
+
+        doAttachL3ToNic(VmNicInventory.valueOf(vmNicVO), msg.getL3NetworkUuid(), new Completion(msg) {
+            @Override
+            public void success() {
+                VmNicVO vmNicVO = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find();
+                evt.setInventory(VmNicInventory.valueOf(vmNicVO));
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                evt.setError(errorCode);
+                bus.publish(evt);
+            }
+        });
+    }
+
+    private void doDetachIpAddressFromNic(final VmNicInventory nic, final UsedIpInventory usedIp, final Completion completion) {
+        thdf.chainSubmit(new ChainTask(completion) {
+            @Override
+            public String getSyncSignature() {
+                return getVmNicSyncSignature(nic);
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                /* detach last ip, will delete the nic */
+                if (nic.getUsedIps().size() <= 1) {
+                    doDeleteVmNic(nic, completion);
+                    chain.next();
+                    return;
+                }
+
+                VmInstanceVO vmVo = null;
+                if (nic.getVmInstanceUuid() != null) {
+                    vmVo = dbf.findByUuid(nic.getVmInstanceUuid(), VmInstanceVO.class);
+                }
+
+                FlowChain flowChain = FlowChainBuilder.newSimpleFlowChain();
+                flowChain.setName(String.format("detach-ip-%s-from-nic-%s", usedIp.getIp(), nic.getUuid()));
+                flowChain.getData().put(VmInstanceConstant.Params.VmNicInventory.toString(), nic);
+                flowChain.getData().put(VmInstanceConstant.Params.UsedIPInventory.toString(), usedIp);
+                if (vmVo != null) {
+                    flowChain.getData().put(VmInstanceConstant.Params.vmInventory.toString(), VmInstanceInventory.valueOf(vmVo));
+                    flowChain.then(new DeleteL3NetworkFromVmNicFlow());
+                    flowChain.then(new VmChangeDefaultL3NetworkFlow());
+                }
+                flowChain.then(new VmNicReturnIpFlow());
+                flowChain.done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        completion.success();
+                    }
+                }).error(new FlowErrorHandler(completion) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        completion.fail(errCode);
+                    }
+                }).start();
+
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return String.format("detach-usedIp-%s-to-nic-%s", usedIp.getIp(), nic.getUuid());
+            }
+        });
+    }
+
+    private void handle(final APIDetachIpAddressFromVmNicMsg msg) {
+        final APIDetachIpAddressFromVmNicEvent evt = new APIDetachIpAddressFromVmNicEvent(msg.getId());
+
+        VmNicVO vmNicVO = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find();
+        UsedIpVO ipVO = Q.New(UsedIpVO.class).eq(UsedIpVO_.uuid, msg.getUsedIpUuid()).find();
+        doDetachIpAddressFromNic(VmNicInventory.valueOf(vmNicVO), UsedIpInventory.valueOf(ipVO), new Completion(msg) {
+            @Override
+            public void success() {
+                VmNicVO vmNicVO = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find();
+                if (vmNicVO != null) {
+                    evt.setInventory(VmNicInventory.valueOf(vmNicVO));
+                }
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                evt.setError(errorCode);
                 bus.publish(evt);
             }
         });

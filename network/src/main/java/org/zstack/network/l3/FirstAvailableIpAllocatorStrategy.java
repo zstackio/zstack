@@ -7,7 +7,10 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
+import java.math.BigInteger;
 import java.util.List;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 public class FirstAvailableIpAllocatorStrategy extends AbstractIpAllocatorStrategy{
     private static final CLogger logger = Utils.getLogger(FirstAvailableIpAllocatorStrategy.class);
@@ -19,8 +22,9 @@ public class FirstAvailableIpAllocatorStrategy extends AbstractIpAllocatorStrate
     }
     
     private String allocateIp(IpRangeVO vo) {
-        List<Long> used = l3NwMgr.getUsedIpInRange(vo.getUuid());
-        String ret = NetworkUtils.findFirstAvailableIpv4Address(vo.getStartIp(), vo.getEndIp(), used.toArray(new Long[used.size()]));
+        List<BigInteger> used = l3NwMgr.getUsedIpInRange(vo);
+        List<Long> usedIP = used.stream().map(u -> u.longValue()).collect(Collectors.toList());
+        String ret = NetworkUtils.findFirstAvailableIpv4Address(vo.getStartIp(), vo.getEndIp(), usedIP.toArray(new Long[usedIP.size()]));
         return ret;
     }
     

@@ -1085,8 +1085,8 @@ public class Api implements CloudBusEventListener {
         throwExceptionIfNeed(res.error);
 
         APIGetIpAddressCapacityReply reply = new APIGetIpAddressCapacityReply();
-        reply.setTotalCapacity(res.value.totalCapacity);
-        reply.setAvailableCapacity(res.value.availableCapacity);
+    //    reply.setTotalCapacity(res.value.totalCapacity);
+    //    reply.setAvailableCapacity(res.value.availableCapacity);
         return reply;
     }
 
@@ -1102,8 +1102,8 @@ public class Api implements CloudBusEventListener {
         throwExceptionIfNeed(res.error);
 
         APIGetIpAddressCapacityReply reply = new APIGetIpAddressCapacityReply();
-        reply.setTotalCapacity(res.value.totalCapacity);
-        reply.setAvailableCapacity(res.value.availableCapacity);
+   //     reply.setTotalCapacity(res.value.totalCapacity);
+   //     reply.setAvailableCapacity(res.value.availableCapacity);
         return reply;
     }
 

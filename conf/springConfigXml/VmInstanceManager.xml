@@ -150,4 +150,11 @@
 
     <bean id="VmInstanceDeletionPolicyManager" class="org.zstack.compute.vm.VmInstanceDeletionPolicyManagerImpl" />
 
+    <bean id="VmNicManager" class="org.zstack.compute.vm.VmNicManagerImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.compute.vm.VmNicManager" />
+            <zstack:extension interface="org.zstack.compute.vm.VmNicExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
 </beans>

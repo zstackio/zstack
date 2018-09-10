@@ -87,6 +87,9 @@ public class SecurityGroupInventory {
      * - Disabled
      */
     private String state;
+
+    private Integer ipVersion;
+
     /**
      * @desc the time this resource gets created
      */
@@ -121,6 +124,7 @@ public class SecurityGroupInventory {
     protected SecurityGroupInventory(SecurityGroupVO vo) {
         this.setUuid(vo.getUuid());
         this.setName(vo.getName());
+        this.setIpVersion(vo.getIpVersion());
         this.setInternalId(vo.getInternalId());
         this.setDescription(vo.getDescription());
         this.setCreateDate(vo.getCreateDate());
@@ -216,5 +220,13 @@ public class SecurityGroupInventory {
 
     public void setState(String state) {
         this.state = state;
+    }
+
+    public Integer getIpVersion() {
+        return ipVersion;
+    }
+
+    public void setIpVersion(Integer ipVersion) {
+        this.ipVersion = ipVersion;
     }
 }

@@ -16,6 +16,10 @@ public interface L3NetworkConstant {
     public static final String FIRST_AVAILABLE_IP_ALLOCATOR_STRATEGY = "FirstAvailableIpAllocatorStrategy";
     @PythonClass
     public static final String RANDOM_IP_ALLOCATOR_STRATEGY = "RandomIpAllocatorStrategy";
+    @PythonClass
+    public static final String FIRST_AVAILABLE_IPV6_ALLOCATOR_STRATEGY = "FirstAvailableIpv6AllocatorStrategy";
+    @PythonClass
+    public static final String RANDOM_IPV6_ALLOCATOR_STRATEGY = "RandomIpv6AllocatorStrategy";
 
     public static final String VROUTER_CREATE_EVENT_PATH = "/vrouter/create/event/path";
 

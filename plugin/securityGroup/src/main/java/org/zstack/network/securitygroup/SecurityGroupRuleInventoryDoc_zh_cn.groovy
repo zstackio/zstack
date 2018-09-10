@@ -2,6 +2,7 @@ package org.zstack.network.securitygroup
 
 import java.lang.Integer
 import java.lang.Integer
+import java.lang.Integer
 import java.sql.Timestamp
 import java.sql.Timestamp
 
@@ -26,6 +27,12 @@ doc {
 		desc "流量类型"
 		type "String"
 		since "0.6"
+	}
+	field {
+		name "ipVersion"
+		desc "ip协议号"
+		type "Integer"
+		since "3.1"
 	}
 	field {
 		name "startPort"
@@ -54,6 +61,12 @@ doc {
 	field {
 		name "allowedCidr"
 		desc "允许的CIDR,根据流量类型的不同, 允许的CIDR有不同的含义,如果流量类型是Ingress, 允许的CIDR是允许访问虚拟机网卡的源CIDR,如果流量类型是Egress, 允许的CIDR是允许从虚拟机网卡离开并到达的目的地CIDR"
+		type "String"
+		since "0.6"
+	}
+	field {
+		name "remoteSecurityGroupUuid"
+		desc ""
 		type "String"
 		since "0.6"
 	}

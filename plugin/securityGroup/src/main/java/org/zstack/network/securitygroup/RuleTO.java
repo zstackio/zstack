@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.List;
 
 public class RuleTO {
+    private int ipVersion;
     private String protocol;
     private String type;
     private int startPort;
@@ -12,7 +13,15 @@ public class RuleTO {
     private String securityGroupUuid;
     private String remoteGroupUuid;
     private List<String> remoteGroupVmIps;
-    
+
+    public int getIpVersion() {
+        return ipVersion;
+    }
+
+    public void setIpVersion(int ipVersion) {
+        this.ipVersion = ipVersion;
+    }
+
     public String getProtocol() {
         return protocol;
     }
@@ -72,6 +81,7 @@ public class RuleTO {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
+        sb.append(String.format("ipVersion: %s,", this.ipVersion));
         sb.append(String.format("type: %s,", this.type));
         sb.append(String.format("protocol: %s,", this.protocol));
         sb.append(String.format("startPort: %s,", this.startPort));
@@ -85,6 +95,7 @@ public class RuleTO {
     
     public String toFullString() {
         StringBuilder sb = new StringBuilder();
+        sb.append(String.format("ipVersion: %s,", this.ipVersion));
         sb.append(String.format("type: %s,", this.type));
         sb.append(String.format("protocol: %s,", this.protocol));
         sb.append(String.format("startPort: %s,", this.startPort));

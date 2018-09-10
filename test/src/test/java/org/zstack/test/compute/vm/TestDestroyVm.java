@@ -21,6 +21,7 @@ import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.deployer.Deployer;
 
+import java.math.BigInteger;
 import java.util.concurrent.TimeUnit;
 
 /**

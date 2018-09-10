@@ -1,18 +1,20 @@
 package org.zstack.header.vm;
 
 import org.zstack.header.identity.OwnedByAccount;
-import org.zstack.header.vo.EntityGraph;
+import org.zstack.header.vo.*;
 import org.zstack.header.network.l3.L3NetworkEO;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.UsedIpVO;
-import org.zstack.header.vo.BaseResource;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.Index;
-import org.zstack.header.vo.ResourceVO;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table
@@ -47,6 +49,9 @@ public class VmNicVO extends ResourceVO implements OwnedByAccount {
     private String gateway;
 
     @Column
+    private Integer ipVersion;
+
+    @Column
     private String mac;
 
     @Column
@@ -67,6 +72,10 @@ public class VmNicVO extends ResourceVO implements OwnedByAccount {
     @Column
     private Timestamp lastOpDate;
 
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinColumn(name = "vmNicUuid", insertable = false, updatable = false)
+    @NoView
+    private Set<UsedIpVO> usedIps = new HashSet<>();
 
     @Transient
     private String accountUuid;
@@ -193,5 +202,21 @@ public class VmNicVO extends ResourceVO implements OwnedByAccount {
 
     public static String generateNicInternalName(long vmInternalId, long nicDeviceId) {
         return String.format("vnic%s.%s", vmInternalId, nicDeviceId);
+    }
+
+    public Integer getIpVersion() {
+        return ipVersion;
+    }
+
+    public void setIpVersion(Integer ipVersion) {
+        this.ipVersion = ipVersion;
+    }
+
+    public Set<UsedIpVO> getUsedIps() {
+        return usedIps;
+    }
+
+    public void setUsedIps(Set<UsedIpVO> usedIps) {
+        this.usedIps = usedIps;
     }
 }

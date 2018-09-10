@@ -14,6 +14,7 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.vm.*;
+import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -33,6 +34,9 @@ public class VmAllocateNicForStartingVmFlow implements Flow {
     protected CloudBus bus;
     @Autowired
     protected ErrorFacade errf;
+    @Autowired
+    protected L3NetworkManager l3nm;
+
     private static CLogger logger = Utils.getLogger(VmAllocateNicForStartingVmFlow.class);
 
     @Override
@@ -73,14 +77,15 @@ public class VmAllocateNicForStartingVmFlow implements Flow {
             @Override
             public AllocateIpMsg call(VmNicInventory arg) {
                 AllocateIpMsg msg = new AllocateIpMsg();
+                msg.setL3NetworkUuid(arg.getL3NetworkUuid());
+                msg.setAllocateStrategy(spec.getIpAllocatorStrategy());
 
                 String staticIp = vmStaticIps.get(arg.getL3NetworkUuid());
                 if (staticIp != null) {
                     msg.setRequiredIp(staticIp);
+                } else {
+                    l3nm.updateIpAllocationMsg(msg, arg.getMac());
                 }
-
-                msg.setL3NetworkUuid(arg.getL3NetworkUuid());
-                msg.setAllocateStrategy(spec.getIpAllocatorStrategy());
                 bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, arg.getL3NetworkUuid());
                 return msg;
             }

@@ -120,6 +120,10 @@ public class APIAddSecurityGroupRuleMsg extends APIMessage {
          * - Egress
          */
         private String type;
+
+        @APIParam(required = false, validValues = {"4", "6"})
+        private Integer ipVersion;
+
         /**
          * @desc
          * start port
@@ -186,6 +190,14 @@ public class APIAddSecurityGroupRuleMsg extends APIMessage {
 
         public void setAllowedCidr(String allowedCidr) {
             this.allowedCidr = allowedCidr;
+        }
+
+        public Integer getIpVersion() {
+            return ipVersion;
+        }
+
+        public void setIpVersion(Integer ipVersion) {
+            this.ipVersion = ipVersion;
         }
     }
 

@@ -4,6 +4,7 @@ import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EO;
 import org.zstack.header.vo.EntityGraph;
+import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Entity;
@@ -21,7 +22,11 @@ import javax.persistence.Transient;
 )
 public class IpRangeVO extends IpRangeAO implements OwnedByAccount {
     public int size() {
-        return NetworkUtils.getTotalIpInRange(getStartIp(), getEndIp());
+        if (getIpVersion() == IPv6Constants.IPv4) {
+            return NetworkUtils.getTotalIpInRange(getStartIp(), getEndIp());
+        } else {
+            return 0;
+        }
     }
 
     @Transient
