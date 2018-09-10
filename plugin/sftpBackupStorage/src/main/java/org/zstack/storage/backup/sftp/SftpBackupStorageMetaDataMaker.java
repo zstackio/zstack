@@ -104,6 +104,18 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
                     continue;
                 }
 
+                for (ImageBackupStorageRefInventory ref : imageInventory.getBackupStorageRefs()) {
+                    ImageBackupStorageRefVO backupStorageRefVO = new ImageBackupStorageRefVO();
+                    backupStorageRefVO.setStatus(ImageStatus.valueOf(ref.getStatus()));
+                    backupStorageRefVO.setInstallPath(ref.getInstallPath());
+                    backupStorageRefVO.setImageUuid(ref.getImageUuid());
+                    backupStorageRefVO.setBackupStorageUuid(backupStorageUuid);
+                    backupStorageRefVO.setCreateDate(ref.getCreateDate());
+                    backupStorageRefVO.setLastOpDate(ref.getLastOpDate());
+                    backupStorageRefVOs.add(backupStorageRefVO);
+                }
+
+                // should persis refs
                 if ((long) SQL.New("select count(*) from ImageEO where uuid = :imageUuid")
                         .param("imageUuid", imageInventory.getUuid())
                         .find() > 0) {
@@ -115,16 +127,6 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
                     continue;
                 }
 
-                for (ImageBackupStorageRefInventory ref : imageInventory.getBackupStorageRefs()) {
-                    ImageBackupStorageRefVO backupStorageRefVO = new ImageBackupStorageRefVO();
-                    backupStorageRefVO.setStatus(ImageStatus.valueOf(ref.getStatus()));
-                    backupStorageRefVO.setInstallPath(ref.getInstallPath());
-                    backupStorageRefVO.setImageUuid(ref.getImageUuid());
-                    backupStorageRefVO.setBackupStorageUuid(backupStorageUuid);
-                    backupStorageRefVO.setCreateDate(ref.getCreateDate());
-                    backupStorageRefVO.setLastOpDate(ref.getLastOpDate());
-                    backupStorageRefVOs.add(backupStorageRefVO);
-                }
                 ImageVO imageVO = new ImageVO();
                 imageVO.setActualSize(imageInventory.getActualSize());
                 imageVO.setDescription(imageInventory.getDescription());
