@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class DetachAutoScalingTemplateFromGroupAction extends AbstractAction {
+public class UpdateAutoScalingRuleAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class DetachAutoScalingTemplateFromGroupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DetachAutoScalingTemplateFromGroupResult value;
+        public org.zstack.sdk.UpdateAutoScalingRuleResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,10 +26,16 @@ public class DetachAutoScalingTemplateFromGroupAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String templateUuid;
+    public java.lang.String uuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String groupUuid;
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,900L}, noTrim = false)
+    public java.lang.Long cooldown;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -54,8 +60,8 @@ public class DetachAutoScalingTemplateFromGroupAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DetachAutoScalingTemplateFromGroupResult value = res.getResult(org.zstack.sdk.DetachAutoScalingTemplateFromGroupResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DetachAutoScalingTemplateFromGroupResult() : value; 
+        org.zstack.sdk.UpdateAutoScalingRuleResult value = res.getResult(org.zstack.sdk.UpdateAutoScalingRuleResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateAutoScalingRuleResult() : value; 
 
         return ret;
     }
@@ -84,11 +90,11 @@ public class DetachAutoScalingTemplateFromGroupAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/autoscaling/template/{uuid}/groups/{groupUuid}";
+        info.httpMethod = "PUT";
+        info.path = "/autoscaling/rules/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "updateAutoScalingRule";
         return info;
     }
 

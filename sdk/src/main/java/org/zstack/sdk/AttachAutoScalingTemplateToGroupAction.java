@@ -88,7 +88,7 @@ public class AttachAutoScalingTemplateToGroupAction extends AbstractAction {
         info.path = "/autoscaling/template/{uuid}/groups/{groupUuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "null";
+        info.parameterName = "params";
         return info;
     }
 

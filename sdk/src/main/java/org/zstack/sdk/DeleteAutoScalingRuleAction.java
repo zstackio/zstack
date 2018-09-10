@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class DeleteAutoScalingProfileAction extends AbstractAction {
+public class DeleteAutoScalingRuleAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class DeleteAutoScalingProfileAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteAutoScalingProfileResult value;
+        public org.zstack.sdk.DeleteAutoScalingRuleResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -54,8 +54,8 @@ public class DeleteAutoScalingProfileAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteAutoScalingProfileResult value = res.getResult(org.zstack.sdk.DeleteAutoScalingProfileResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteAutoScalingProfileResult() : value; 
+        org.zstack.sdk.DeleteAutoScalingRuleResult value = res.getResult(org.zstack.sdk.DeleteAutoScalingRuleResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteAutoScalingRuleResult() : value; 
 
         return ret;
     }
@@ -85,7 +85,7 @@ public class DeleteAutoScalingProfileAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
-        info.path = "/autoscaling/profiles/{uuid}";
+        info.path = "/autoscaling/rules/{uuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";

@@ -1,9 +1,9 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.AutoScalingProfileState;
-import org.zstack.sdk.AutoScalingProfileStatus;
+import org.zstack.sdk.AutoScalingRuleState;
+import org.zstack.sdk.AutoScalingRuleStatus;
 
-public class AutoScalingProfileInventory  {
+public class AutoScalingRuleInventory  {
 
     public java.lang.String type;
     public void setType(java.lang.String type) {
@@ -29,19 +29,19 @@ public class AutoScalingProfileInventory  {
         return this.cooldown;
     }
 
-    public AutoScalingProfileState state;
-    public void setState(AutoScalingProfileState state) {
+    public AutoScalingRuleState state;
+    public void setState(AutoScalingRuleState state) {
         this.state = state;
     }
-    public AutoScalingProfileState getState() {
+    public AutoScalingRuleState getState() {
         return this.state;
     }
 
-    public AutoScalingProfileStatus status;
-    public void setStatus(AutoScalingProfileStatus status) {
+    public AutoScalingRuleStatus status;
+    public void setStatus(AutoScalingRuleStatus status) {
         this.status = status;
     }
-    public AutoScalingProfileStatus getStatus() {
+    public AutoScalingRuleStatus getStatus() {
         return this.status;
     }
 
@@ -85,12 +85,20 @@ public class AutoScalingProfileInventory  {
         return this.uuid;
     }
 
-    public java.util.List attachedGroups;
-    public void setAttachedGroups(java.util.List attachedGroups) {
-        this.attachedGroups = attachedGroups;
+    public java.lang.String scalingGroupUuid;
+    public void setScalingGroupUuid(java.lang.String scalingGroupUuid) {
+        this.scalingGroupUuid = scalingGroupUuid;
     }
-    public java.util.List getAttachedGroups() {
-        return this.attachedGroups;
+    public java.lang.String getScalingGroupUuid() {
+        return this.scalingGroupUuid;
+    }
+
+    public java.util.List ruleTriggers;
+    public void setRuleTriggers(java.util.List ruleTriggers) {
+        this.ruleTriggers = ruleTriggers;
+    }
+    public java.util.List getRuleTriggers() {
+        return this.ruleTriggers;
     }
 
 }

@@ -12,7 +12,7 @@ public class CreateAutoScalingVmTemplateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateAutoScalingVmTemplateResult value;
+        public org.zstack.sdk.CreateAutoScalingTemplateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,11 +25,11 @@ public class CreateAutoScalingVmTemplateAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String vmInstanceName;
 
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
+    public java.lang.String vmInstanceDescription;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String vmInstanceOfferingUuid;
@@ -41,7 +41,7 @@ public class CreateAutoScalingVmTemplateAction extends AbstractAction {
     public java.util.List l3NetworkUuids;
 
     @Param(required = false, validValues = {"UserVm","ApplianceVm"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type = "UserVm";
+    public java.lang.String vmInstanceType = "UserVm";
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String rootDiskOfferingUuid;
@@ -50,10 +50,10 @@ public class CreateAutoScalingVmTemplateAction extends AbstractAction {
     public java.util.List dataDiskOfferingUuids;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String zoneUuid;
+    public java.lang.String vmInstanceZoneUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String clusterUuid;
+    public java.lang.String vmInstanceClusterUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String hostUuid;
@@ -64,8 +64,17 @@ public class CreateAutoScalingVmTemplateAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String defaultL3NetworkUuid;
 
-    @Param(required = false, validValues = {"InstantStart","JustCreate","CreateStopped"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"InstantStart","CreateStopped"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String strategy = "InstantStart";
+
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
+
+    @Param(required = false)
+    public java.lang.String type;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
@@ -93,8 +102,8 @@ public class CreateAutoScalingVmTemplateAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateAutoScalingVmTemplateResult value = res.getResult(org.zstack.sdk.CreateAutoScalingVmTemplateResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateAutoScalingVmTemplateResult() : value; 
+        org.zstack.sdk.CreateAutoScalingTemplateResult value = res.getResult(org.zstack.sdk.CreateAutoScalingTemplateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateAutoScalingTemplateResult() : value; 
 
         return ret;
     }
@@ -124,10 +133,10 @@ public class CreateAutoScalingVmTemplateAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/autoscaling/groups/vmtemplate";
+        info.path = "/autoscaling/vmtemplate";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

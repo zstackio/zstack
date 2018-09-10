@@ -31,8 +31,23 @@ public class CreateAutoScalingGroupAction extends AbstractAction {
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = true, validValues = {"VM_INSTANCE_GROUP"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type;
+    @Param(required = true, validValues = {"VmInstance"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String scalingResourceType;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,2147483647L}, noTrim = false)
+    public java.lang.Integer minResourceSize;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,2147483647L}, noTrim = false)
+    public java.lang.Integer maxResourceSize;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,2147483647L}, noTrim = false)
+    public java.lang.Long defaultCooldown;
+
+    @Param(required = true, validValues = {"OldestInstance","NewestInstance","OldestScalingConfiguration"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String removalPolicy;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public boolean defaultEnable = false;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
@@ -94,7 +109,7 @@ public class CreateAutoScalingGroupAction extends AbstractAction {
         info.path = "/autoscaling/groups";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

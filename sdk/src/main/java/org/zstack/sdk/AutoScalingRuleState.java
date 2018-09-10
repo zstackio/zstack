@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-public enum AutoScalingProfileState {
+public enum AutoScalingRuleState {
 	Enabled,
 	Disabled,
 }

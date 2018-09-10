@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AttachAutoScalingProfileToGroupAction extends AbstractAction {
+public class CreateAutoScalingGroupAddingNewInstanceRuleAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AttachAutoScalingProfileToGroupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AttachAutoScalingProfileToGroupResult value;
+        public org.zstack.sdk.CreateAutoScalingRuleResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,11 +25,29 @@ public class AttachAutoScalingProfileToGroupAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    @Param(required = true, validValues = {"QuantityChangeInCapacity","PercentChangeInCapacity","TotalCapacity"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String adjustmentType;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,9223372036854775807L}, noTrim = false)
+    public java.lang.Integer adjustmentValue;
+
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String groupUuid;
+    public java.lang.String autoScalingGroupUuid;
+
+    @Param(required = false)
+    public java.lang.String type;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,2147483647L}, noTrim = false)
+    public java.lang.Long cooldown;
+
+    @Param(required = false)
+    public java.lang.String resourceUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -54,8 +72,8 @@ public class AttachAutoScalingProfileToGroupAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AttachAutoScalingProfileToGroupResult value = res.getResult(org.zstack.sdk.AttachAutoScalingProfileToGroupResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AttachAutoScalingProfileToGroupResult() : value; 
+        org.zstack.sdk.CreateAutoScalingRuleResult value = res.getResult(org.zstack.sdk.CreateAutoScalingRuleResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateAutoScalingRuleResult() : value; 
 
         return ret;
     }
@@ -85,10 +103,10 @@ public class AttachAutoScalingProfileToGroupAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/autoscaling/profiles/{uuid}/groups/{groupUuid}";
+        info.path = "/autoscaling/rules/adding-new-instance";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "null";
+        info.parameterName = "params";
         return info;
     }
 

@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateAutoScalingProfileAction extends AbstractAction {
+public class DeleteAutoScalingGroupInstanceAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateAutoScalingProfileAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateAutoScalingProfileResult value;
+        public org.zstack.sdk.DeleteAutoScalingGroupInstanceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,19 +26,10 @@ public class UpdateAutoScalingProfileAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    public java.lang.String instanceUuid;
 
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,900L}, noTrim = false)
-    public java.lang.Long cooldown;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public org.zstack.sdk.AutoScalingProfileState state;
+    @Param(required = false)
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -63,8 +54,8 @@ public class UpdateAutoScalingProfileAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateAutoScalingProfileResult value = res.getResult(org.zstack.sdk.UpdateAutoScalingProfileResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateAutoScalingProfileResult() : value; 
+        org.zstack.sdk.DeleteAutoScalingGroupInstanceResult value = res.getResult(org.zstack.sdk.DeleteAutoScalingGroupInstanceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteAutoScalingGroupInstanceResult() : value; 
 
         return ret;
     }
@@ -93,11 +84,11 @@ public class UpdateAutoScalingProfileAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/autoscaling/profiles/{uuid}";
+        info.httpMethod = "DELETE";
+        info.path = "/autoscaling/groups/instances/{instanceUuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "updateAutoScalingProfile";
+        info.parameterName = "";
         return info;
     }
 

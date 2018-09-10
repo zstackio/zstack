@@ -2,15 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class AutoScalingTemplateInventory  {
-
-    public java.lang.String uuid;
-    public void setUuid(java.lang.String uuid) {
-        this.uuid = uuid;
-    }
-    public java.lang.String getUuid() {
-        return this.uuid;
-    }
+public class AutoScalingRuleTriggerInventory  {
 
     public java.lang.String name;
     public void setName(java.lang.String name) {
@@ -20,12 +12,12 @@ public class AutoScalingTemplateInventory  {
         return this.name;
     }
 
-    public java.lang.String description;
-    public void setDescription(java.lang.String description) {
-        this.description = description;
+    public java.lang.String uuid;
+    public void setUuid(java.lang.String uuid) {
+        this.uuid = uuid;
     }
-    public java.lang.String getDescription() {
-        return this.description;
+    public java.lang.String getUuid() {
+        return this.uuid;
     }
 
     public java.lang.String type;
@@ -36,20 +28,28 @@ public class AutoScalingTemplateInventory  {
         return this.type;
     }
 
+    public java.lang.String ruleUuid;
+    public void setRuleUuid(java.lang.String ruleUuid) {
+        this.ruleUuid = ruleUuid;
+    }
+    public java.lang.String getRuleUuid() {
+        return this.ruleUuid;
+    }
+
+    public java.lang.String description;
+    public void setDescription(java.lang.String description) {
+        this.description = description;
+    }
+    public java.lang.String getDescription() {
+        return this.description;
+    }
+
     public java.lang.String state;
     public void setState(java.lang.String state) {
         this.state = state;
     }
     public java.lang.String getState() {
         return this.state;
-    }
-
-    public java.util.List systemTags;
-    public void setSystemTags(java.util.List systemTags) {
-        this.systemTags = systemTags;
-    }
-    public java.util.List getSystemTags() {
-        return this.systemTags;
     }
 
     public java.sql.Timestamp createDate;

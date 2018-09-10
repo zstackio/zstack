@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class QueryAutoScalingProfileAction extends QueryAction {
+public class QueryAutoScalingGroupActivityAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class QueryAutoScalingProfileAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.QueryAutoScalingProfileResult value;
+        public org.zstack.sdk.QueryAutoScalingGroupActivityResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -34,8 +34,8 @@ public class QueryAutoScalingProfileAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.QueryAutoScalingProfileResult value = res.getResult(org.zstack.sdk.QueryAutoScalingProfileResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QueryAutoScalingProfileResult() : value; 
+        org.zstack.sdk.QueryAutoScalingGroupActivityResult value = res.getResult(org.zstack.sdk.QueryAutoScalingGroupActivityResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryAutoScalingGroupActivityResult() : value; 
 
         return ret;
     }
@@ -65,7 +65,7 @@ public class QueryAutoScalingProfileAction extends QueryAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/autoscaling/profiles";
+        info.path = "/autoscaling/groups/activities";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

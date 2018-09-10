@@ -4,6 +4,30 @@ package org.zstack.sdk;
 
 public class AutoScalingVmTemplateInventory extends org.zstack.sdk.AutoScalingTemplateInventory {
 
+    public java.lang.String vmInstanceName;
+    public void setVmInstanceName(java.lang.String vmInstanceName) {
+        this.vmInstanceName = vmInstanceName;
+    }
+    public java.lang.String getVmInstanceName() {
+        return this.vmInstanceName;
+    }
+
+    public java.lang.String vmInstanceType;
+    public void setVmInstanceType(java.lang.String vmInstanceType) {
+        this.vmInstanceType = vmInstanceType;
+    }
+    public java.lang.String getVmInstanceType() {
+        return this.vmInstanceType;
+    }
+
+    public java.lang.String vmInstanceDescription;
+    public void setVmInstanceDescription(java.lang.String vmInstanceDescription) {
+        this.vmInstanceDescription = vmInstanceDescription;
+    }
+    public java.lang.String getVmInstanceDescription() {
+        return this.vmInstanceDescription;
+    }
+
     public java.lang.String vmInstanceOfferingUuid;
     public void setVmInstanceOfferingUuid(java.lang.String vmInstanceOfferingUuid) {
         this.vmInstanceOfferingUuid = vmInstanceOfferingUuid;
@@ -28,14 +52,6 @@ public class AutoScalingVmTemplateInventory extends org.zstack.sdk.AutoScalingTe
         return this.l3NetworkUuids;
     }
 
-    public java.lang.String type;
-    public void setType(java.lang.String type) {
-        this.type = type;
-    }
-    public java.lang.String getType() {
-        return this.type;
-    }
-
     public java.lang.String rootDiskOfferingUuid;
     public void setRootDiskOfferingUuid(java.lang.String rootDiskOfferingUuid) {
         this.rootDiskOfferingUuid = rootDiskOfferingUuid;
@@ -52,20 +68,20 @@ public class AutoScalingVmTemplateInventory extends org.zstack.sdk.AutoScalingTe
         return this.dataDiskOfferingUuids;
     }
 
-    public java.lang.String zoneUuid;
-    public void setZoneUuid(java.lang.String zoneUuid) {
-        this.zoneUuid = zoneUuid;
+    public java.lang.String vmInstanceZoneUuid;
+    public void setVmInstanceZoneUuid(java.lang.String vmInstanceZoneUuid) {
+        this.vmInstanceZoneUuid = vmInstanceZoneUuid;
     }
-    public java.lang.String getZoneUuid() {
-        return this.zoneUuid;
+    public java.lang.String getVmInstanceZoneUuid() {
+        return this.vmInstanceZoneUuid;
     }
 
-    public java.lang.String clusterUuid;
-    public void setClusterUuid(java.lang.String clusterUuid) {
-        this.clusterUuid = clusterUuid;
+    public java.lang.String vmInstanceClusterUuid;
+    public void setVmInstanceClusterUuid(java.lang.String vmInstanceClusterUuid) {
+        this.vmInstanceClusterUuid = vmInstanceClusterUuid;
     }
-    public java.lang.String getClusterUuid() {
-        return this.clusterUuid;
+    public java.lang.String getVmInstanceClusterUuid() {
+        return this.vmInstanceClusterUuid;
     }
 
     public java.lang.String hostUuid;

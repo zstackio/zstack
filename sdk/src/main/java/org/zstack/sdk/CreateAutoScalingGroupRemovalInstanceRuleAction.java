@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateAutoScalingLoadBalanceScalingProfileAction extends AbstractAction {
+public class CreateAutoScalingGroupRemovalInstanceRuleAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateAutoScalingLoadBalanceScalingProfileAction extends AbstractAc
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateAutoScalingProfileResult value;
+        public org.zstack.sdk.CreateAutoScalingRuleResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,35 +25,29 @@ public class CreateAutoScalingLoadBalanceScalingProfileAction extends AbstractAc
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Long maxCapacity;
+    @Param(required = true, validValues = {"QuantityChangeInCapacity","PercentChangeInCapacity","TotalCapacity"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String adjustmentType;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Long minCapacity;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,9223372036854775807L}, noTrim = false)
+    public java.lang.Integer adjustmentValue;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Long initialCapacity;
+    @Param(required = true, validValues = {"OldestInstance","NewestInstance","OldestScalingConfiguration"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String removalPolicy;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Long scalingStep;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public org.zstack.sdk.ScaleInStrategy scaleInStrategy;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = true, validValues = {"HorizontalScalingProfile","AlarmProfile","HealthProfile","LoadBalanceProfile"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String autoScalingGroupUuid;
+
+    @Param(required = false)
     public java.lang.String type;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,900L}, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,2147483647L}, noTrim = false)
     public java.lang.Long cooldown;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public org.zstack.sdk.AutoScalingProfileState state;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
@@ -81,8 +75,8 @@ public class CreateAutoScalingLoadBalanceScalingProfileAction extends AbstractAc
             return ret;
         }
         
-        org.zstack.sdk.CreateAutoScalingProfileResult value = res.getResult(org.zstack.sdk.CreateAutoScalingProfileResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateAutoScalingProfileResult() : value; 
+        org.zstack.sdk.CreateAutoScalingRuleResult value = res.getResult(org.zstack.sdk.CreateAutoScalingRuleResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateAutoScalingRuleResult() : value; 
 
         return ret;
     }
@@ -112,10 +106,10 @@ public class CreateAutoScalingLoadBalanceScalingProfileAction extends AbstractAc
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/autoscaling/profiles/loadbalance";
+        info.path = "/autoscaling/rules/removal-instance";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

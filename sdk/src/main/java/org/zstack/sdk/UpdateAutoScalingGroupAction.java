@@ -34,6 +34,15 @@ public class UpdateAutoScalingGroupAction extends AbstractAction {
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,2147483647L}, noTrim = false)
+    public java.lang.Integer minResourceSize;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,2147483647L}, noTrim = false)
+    public java.lang.Integer maxResourceSize;
+
+    @Param(required = false, validValues = {"OldestInstance","NewestInstance","OldestScalingConfiguration"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String removalPolicy;
+
     @Param(required = false)
     public java.util.List systemTags;
 

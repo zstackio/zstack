@@ -28,9 +28,6 @@ public class DeleteAutoScalingGroupAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean deletePolicies = false;
-
     @Param(required = false)
     public java.lang.String deleteMode = "Permissive";
 

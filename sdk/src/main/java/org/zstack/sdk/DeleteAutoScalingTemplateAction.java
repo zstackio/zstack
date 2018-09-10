@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateAutoScalingProfileAction extends AbstractAction {
+public class DeleteAutoScalingTemplateAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateAutoScalingProfileAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateAutoScalingProfileResult value;
+        public org.zstack.sdk.DeleteAutoScalingTemplateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,23 +25,11 @@ public class CreateAutoScalingProfileAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = true, validValues = {"HorizontalScalingProfile","AlarmProfile","HealthProfile","LoadBalanceProfile"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,900L}, noTrim = false)
-    public java.lang.Long cooldown;
-
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public org.zstack.sdk.AutoScalingProfileState state;
+    public java.lang.String uuid;
 
     @Param(required = false)
-    public java.lang.String resourceUuid;
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -66,8 +54,8 @@ public class CreateAutoScalingProfileAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateAutoScalingProfileResult value = res.getResult(org.zstack.sdk.CreateAutoScalingProfileResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateAutoScalingProfileResult() : value; 
+        org.zstack.sdk.DeleteAutoScalingTemplateResult value = res.getResult(org.zstack.sdk.DeleteAutoScalingTemplateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteAutoScalingTemplateResult() : value; 
 
         return ret;
     }
@@ -96,8 +84,8 @@ public class CreateAutoScalingProfileAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/autoscaling/profiles";
+        info.httpMethod = "DELETE";
+        info.path = "/autoscaling/template/{uuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";

@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class DetachAutoScalingTemplateFromGroupAction extends AbstractAction {
+public class ChangeAutoScalingGroupStateAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class DetachAutoScalingTemplateFromGroupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DetachAutoScalingTemplateFromGroupResult value;
+        public org.zstack.sdk.ChangeAutoScalingGroupStateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,10 +26,10 @@ public class DetachAutoScalingTemplateFromGroupAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String templateUuid;
+    public java.lang.String uuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String groupUuid;
+    @Param(required = true, validValues = {"enable","disable"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String stateEvent;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -54,8 +54,8 @@ public class DetachAutoScalingTemplateFromGroupAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DetachAutoScalingTemplateFromGroupResult value = res.getResult(org.zstack.sdk.DetachAutoScalingTemplateFromGroupResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DetachAutoScalingTemplateFromGroupResult() : value; 
+        org.zstack.sdk.ChangeAutoScalingGroupStateResult value = res.getResult(org.zstack.sdk.ChangeAutoScalingGroupStateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ChangeAutoScalingGroupStateResult() : value; 
 
         return ret;
     }
@@ -84,11 +84,11 @@ public class DetachAutoScalingTemplateFromGroupAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/autoscaling/template/{uuid}/groups/{groupUuid}";
+        info.httpMethod = "PUT";
+        info.path = "/autoscaling/groups/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "changeAutoScalingGroupState";
         return info;
     }
 

@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.sdk.zwatch.alarm;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class DeleteAutoScalingVmTemplateAction extends AbstractAction {
+public class UpdateAlarmLabelAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class DeleteAutoScalingVmTemplateAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteAutoScalingVmTemplateResult value;
+        public org.zstack.sdk.zwatch.alarm.UpdateAlarmLabelResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -28,8 +28,14 @@ public class DeleteAutoScalingVmTemplateAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = false)
-    public java.lang.String deleteMode = "Permissive";
+    @Param(required = true, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String key;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String value;
+
+    @Param(required = true, validValues = {"Regex","Equal"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String operator;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -54,8 +60,8 @@ public class DeleteAutoScalingVmTemplateAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteAutoScalingVmTemplateResult value = res.getResult(org.zstack.sdk.DeleteAutoScalingVmTemplateResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteAutoScalingVmTemplateResult() : value; 
+        org.zstack.sdk.zwatch.alarm.UpdateAlarmLabelResult value = res.getResult(org.zstack.sdk.zwatch.alarm.UpdateAlarmLabelResult.class);
+        ret.value = value == null ? new org.zstack.sdk.zwatch.alarm.UpdateAlarmLabelResult() : value; 
 
         return ret;
     }
@@ -84,11 +90,11 @@ public class DeleteAutoScalingVmTemplateAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/autoscaling/groups/vmtemplate/{uuid}";
+        info.httpMethod = "PUT";
+        info.path = "/zwatch/alarms/labels/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "updateAlarmLabel";
         return info;
     }
 

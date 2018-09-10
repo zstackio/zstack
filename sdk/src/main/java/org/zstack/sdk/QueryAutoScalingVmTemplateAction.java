@@ -65,7 +65,7 @@ public class QueryAutoScalingVmTemplateAction extends QueryAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/autoscaling/groups/vmtemplate";
+        info.path = "/autoscaling/vmtemplate";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

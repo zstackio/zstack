@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateAutoScalingHorizontalScalingProfileAction extends AbstractAction {
+public class UpdateAutoScalingGroupAddingNewInstanceRuleAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateAutoScalingHorizontalScalingProfileAction extends AbstractAct
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateAutoScalingProfileResult value;
+        public org.zstack.sdk.UpdateAutoScalingRuleResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,20 +25,14 @@ public class CreateAutoScalingHorizontalScalingProfileAction extends AbstractAct
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Long maxCapacity;
+    @Param(required = false, validValues = {"QuantityChangeInCapacity","PercentChangeInCapacity","TotalCapacity"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String adjustmentType;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,9223372036854775807L}, noTrim = false)
+    public java.lang.Integer adjustmentValue;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Long minCapacity;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Long initialCapacity;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Long scalingStep;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public org.zstack.sdk.ScaleInStrategy scaleInStrategy;
+    public java.lang.String uuid;
 
     @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
@@ -46,17 +40,8 @@ public class CreateAutoScalingHorizontalScalingProfileAction extends AbstractAct
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = true, validValues = {"HorizontalScalingProfile","AlarmProfile","HealthProfile","LoadBalanceProfile"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,900L}, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,900L}, noTrim = false)
     public java.lang.Long cooldown;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public org.zstack.sdk.AutoScalingProfileState state;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -81,8 +66,8 @@ public class CreateAutoScalingHorizontalScalingProfileAction extends AbstractAct
             return ret;
         }
         
-        org.zstack.sdk.CreateAutoScalingProfileResult value = res.getResult(org.zstack.sdk.CreateAutoScalingProfileResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateAutoScalingProfileResult() : value; 
+        org.zstack.sdk.UpdateAutoScalingRuleResult value = res.getResult(org.zstack.sdk.UpdateAutoScalingRuleResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateAutoScalingRuleResult() : value; 
 
         return ret;
     }
@@ -111,11 +96,11 @@ public class CreateAutoScalingHorizontalScalingProfileAction extends AbstractAct
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/autoscaling/profiles/horzontal";
+        info.httpMethod = "PUT";
+        info.path = "/autoscaling/rules/adding-new-instance/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "updateAutoScalingGroupAddingNewInstanceRule";
         return info;
     }
 
