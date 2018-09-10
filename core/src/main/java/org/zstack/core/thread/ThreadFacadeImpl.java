@@ -220,6 +220,11 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
         return dpq.chainSubmit(task);
     }
 
+    @Override
+    public boolean isChainTaskRunning(String signature) {
+        return dpq.isChainTaskRunning(signature);
+    }
+
     public static interface TimeoutTaskReceipt {
         boolean cancel();
     }
