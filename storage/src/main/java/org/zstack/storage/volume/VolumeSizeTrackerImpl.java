@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
 import org.zstack.core.thread.PeriodicTask;
@@ -19,6 +20,7 @@ import org.zstack.utils.logging.CLogger;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class VolumeSizeTrackerImpl implements VolumeSizeTracker, Component {
     private final static CLogger logger = Utils.getLogger(VolumeSizeTrackerImpl.class);
@@ -27,6 +29,8 @@ public class VolumeSizeTrackerImpl implements VolumeSizeTracker, Component {
     private Set<String> volumeInTracking = Collections.synchronizedSet(new HashSet<>());
     private Future<Void> trackerThread = null;
 
+    @Autowired
+    private ResourceDestinationMaker destMaker;
     @Autowired
     private PluginRegistry pluginRgty;
     @Autowired
@@ -58,7 +62,9 @@ public class VolumeSizeTrackerImpl implements VolumeSizeTracker, Component {
     @Override
     public void reScanVolume() {
         volumeUuids.clear();
-        volumeUuids.addAll(getNeedRefreshSizeVolumeUuids());
+        volumeUuids.addAll(getNeedRefreshSizeVolumeUuids().stream()
+                .filter(it -> destMaker.isManagedByUs(it))
+                .collect(Collectors.toList()));
     }
 
     @Override
