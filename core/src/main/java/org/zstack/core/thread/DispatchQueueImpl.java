@@ -423,4 +423,11 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
         }
         return ret;
     }
+
+    @Override
+    public boolean isChainTaskRunning(String signature) {
+        synchronized (chainTasks) {
+            return chainTasks.containsKey(signature);
+        }
+    }
 }

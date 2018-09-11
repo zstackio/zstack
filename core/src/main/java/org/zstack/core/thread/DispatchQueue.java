@@ -11,4 +11,6 @@ public interface DispatchQueue {
     Map<String, SyncTaskStatistic> getSyncTaskStatistics();
 
     Map<String, ChainTaskStatistic> getChainTaskStatistics();
+
+    boolean isChainTaskRunning(String signature);
 }
