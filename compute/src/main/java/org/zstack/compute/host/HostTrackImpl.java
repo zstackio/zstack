@@ -108,15 +108,9 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
             }
 
             HostState state = t.get(0, HostState.class);
-            HostStatus status = t.get(1, HostStatus.class);
 
             if (state == HostState.PreMaintenance || state == HostState.Maintenance) {
                 logger.debug(String.format("host[uuid:%s] is in state of %s, not tracking it this time", uuid, state));
-                continueToRunThisTimer();
-                return;
-            }
-            if (status == HostStatus.Connecting) {
-                logger.debug(String.format("host[uuid:%s] is in status of %s, not tracking it this time", uuid, status));
                 continueToRunThisTimer();
                 return;
             }

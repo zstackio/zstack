@@ -11,7 +11,9 @@ public interface ThreadFacade extends Component {
     <T> Future<T> syncSubmit(SyncTask<T> task);
     
     Future<Void> chainSubmit(ChainTask task);
-    
+
+    boolean isChainTaskRunning(String signature);
+
     Future<Void> submitPeriodicTask(PeriodicTask task, long delay);
     
     Future<Void> submitPeriodicTask(PeriodicTask task);
