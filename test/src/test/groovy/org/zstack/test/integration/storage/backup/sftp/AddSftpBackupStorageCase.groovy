@@ -1,5 +1,6 @@
 package org.zstack.test.integration.storage.backup.sftp
 
+import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
 import org.zstack.header.image.ImageVO
 import org.zstack.header.image.ImageVO_
@@ -8,6 +9,7 @@ import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.sdk.AddSftpBackupStorageAction
 import org.zstack.sdk.ImageInventory
+import org.zstack.sdk.VmInstanceInventory
 import org.zstack.storage.backup.sftp.SftpBackupStorageCommands
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
@@ -150,7 +152,27 @@ class AddSftpBackupStorageCase extends SubCase {
     void test() {
         env.create {
             addDevicePathBSFailure()
+            testCreateTemplateWillRecordMetadate()
             testImportImageFlagWhenAddBS()
+        }
+    }
+
+    void testCreateTemplateWillRecordMetadate() {
+        def vm = env.inventoryByName("vm") as VmInstanceInventory
+
+        def called = false
+        env.afterSimulator(SftpBackupStorageConstant.DUMP_IMAGE_METADATA_TO_FILE) { rsp, HttpEntity<String> e ->
+            called = true
+            return new SftpBackupStorageCommands.DumpImageInfoToMetaDataFileRsp()
+        }
+
+        createRootVolumeTemplateFromRootVolume {
+            name = "image-name"
+            rootVolumeUuid = vm.rootVolumeUuid
+        } as ImageInventory
+
+        retryInSecs {
+            assert called
         }
     }
 
