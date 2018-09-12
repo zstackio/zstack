@@ -31,7 +31,8 @@ import java.util.List;
 /**
  * Created by Mei Lei <meilei007@gmail.com> on 11/3/16.
  */
-public class CephBackupStorageMetaDataMaker implements AddImageExtensionPoint, AddBackupStorageExtensionPoint, ExpungeImageExtensionPoint {
+public class CephBackupStorageMetaDataMaker implements AddImageExtensionPoint, AddBackupStorageExtensionPoint, ExpungeImageExtensionPoint,
+        CreateTemplateExtensionPoint {
     private static final CLogger logger = Utils.getLogger(CephBackupStorageMetaDataMaker.class);
 
     @Autowired
@@ -233,11 +234,7 @@ public class CephBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
 
     }
 
-    @Override
-    public void afterAddImage(ImageInventory img) {
-        if (!getBackupStorageTypeFromImageInventory(img).equals(CephConstants.CEPH_BACKUP_STORAGE_TYPE)) {
-            return;
-        }
+    private void bakeImageToMetadata(ImageInventory img) {
         SimpleQuery<CephBackupStorageVO> query = dbf.createQuery(CephBackupStorageVO.class);
         query.add(CephBackupStorageVO_.uuid, SimpleQuery.Op.EQ, getBackupStorageUuidFromImageInventory(img));
         CephBackupStorageVO cephBackupStorageVO = query.find();
@@ -259,7 +256,15 @@ public class CephBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
                 }
             }
         });
+    }
 
+    @Override
+    public void afterAddImage(ImageInventory img) {
+        if (!getBackupStorageTypeFromImageInventory(img).equals(CephConstants.CEPH_BACKUP_STORAGE_TYPE)) {
+            return;
+        }
+
+        bakeImageToMetadata(img);
     }
 
     @Override
@@ -353,4 +358,12 @@ public class CephBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
 
     }
 
+    @Override
+    public void afterCreateTemplate(ImageInventory inv) {
+        if (!getBackupStorageTypeFromImageInventory(inv).equals(CephConstants.CEPH_BACKUP_STORAGE_TYPE)) {
+            return;
+        }
+
+        bakeImageToMetadata(inv);
+    }
 }
