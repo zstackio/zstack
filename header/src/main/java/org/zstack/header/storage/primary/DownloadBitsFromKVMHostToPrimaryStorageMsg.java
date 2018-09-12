@@ -6,17 +6,26 @@ import org.zstack.header.message.NeedReplyMessage;
  * Created by GuoYi on 8/26/18.
  */
 public class DownloadBitsFromKVMHostToPrimaryStorageMsg extends NeedReplyMessage implements PrimaryStorageMessage {
-    private String hostUuid;
+    private String srcHostUuid;
     private String hostInstallPath;
     private String primaryStorageUuid;
     private String primaryStorageInstallPath;
+    private String destHostUuid;
 
-    public String getHostUuid() {
-        return hostUuid;
+    public String getDestHostUuid() {
+        return destHostUuid;
     }
 
-    public void setHostUuid(String hostUuid) {
-        this.hostUuid = hostUuid;
+    public void setDestHostUuid(String destHostUuid) {
+        this.destHostUuid = destHostUuid;
+    }
+
+    public String getSrcHostUuid() {
+        return srcHostUuid;
+    }
+
+    public void setSrcHostUuid(String srcHostUuid) {
+        this.srcHostUuid = srcHostUuid;
     }
 
     public String getHostInstallPath() {
