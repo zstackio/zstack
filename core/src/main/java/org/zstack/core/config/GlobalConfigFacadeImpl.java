@@ -59,6 +59,8 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
             handle((APIListGlobalConfigMsg) msg);
         } else if (msg instanceof APIGetGlobalConfigMsg) {
             handle((APIGetGlobalConfigMsg) msg);
+        } else if (msg instanceof APIResetGlobalConfigMsg) {
+            handle((APIResetGlobalConfigMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -92,6 +94,18 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
 
         reply.setInventories(invs);
         bus.reply(msg, reply);
+    }
+
+    private void handle(APIResetGlobalConfigMsg msg) {
+        APIResetGlobalConfigEvent evt = new APIResetGlobalConfigEvent(msg.getId());
+
+        for(GlobalConfig globalConfig: allConfigs.values()) {
+                globalConfig.updateValue(globalConfig.getDefaultValue());
+        }
+        evt.setSuccess(true);
+        logger.info(String.format("Reset all the system global configurations."));
+
+        bus.publish(evt);
     }
 
     private void handle(APIUpdateGlobalConfigMsg msg) {
