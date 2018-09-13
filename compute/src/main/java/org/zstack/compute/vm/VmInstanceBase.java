@@ -162,7 +162,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         final VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
         VmInstanceSpec spec = buildSpecFromInventory(inv, VmOperation.Destroy);
         if (msg instanceof ReleaseResourceMessage) {
-            spec.setIgnoreResourceReleaseFailure(((ReleaseResourceMessage) msg).ignoreResourceReleaseFailure());
+            spec.setIgnoreResourceReleaseFailure(((ReleaseResourceMessage) msg).isIgnoreResourceReleaseFailure());
         }
 
         self = changeVmStateInDb(VmInstanceStateEvent.destroying);
@@ -4727,7 +4727,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     StopVmInstanceMsg smsg = new StopVmInstanceMsg();
                     smsg.setVmInstanceUuid(self.getUuid());
                     smsg.setGcOnFailure(true);
-                    smsg.setType(StopVmType.cold);
+                    smsg.setType(StopVmType.cold.toString());
                     stopVm(smsg, new Completion(trigger) {
                         @Override
                         public void success() {
@@ -5167,7 +5167,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         if (msg instanceof ReleaseResourceMessage) {
-            spec.setIgnoreResourceReleaseFailure(((ReleaseResourceMessage) msg).ignoreResourceReleaseFailure());
+            spec.setIgnoreResourceReleaseFailure(((ReleaseResourceMessage) msg).isIgnoreResourceReleaseFailure());
         }
 
         final VmInstanceState originState = self.getState();
