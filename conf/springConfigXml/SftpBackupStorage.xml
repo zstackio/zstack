@@ -36,11 +36,12 @@
 
   <bean id="SftpBackupStorageMetaDataMaker"
     class="org.zstack.storage.backup.sftp.SftpBackupStorageMetaDataMaker">
-    <zstack:plugin>
-      <zstack:extension interface="org.zstack.header.image.AddImageExtensionPoint"/>
-      <zstack:extension interface="org.zstack.header.image.ExpungeImageExtensionPoint"/>
-      <zstack:extension interface="org.zstack.header.storage.backup.AddBackupStorageExtensionPoint"/>
-    </zstack:plugin>
+	  <zstack:plugin>
+		  <zstack:extension interface="org.zstack.header.image.AddImageExtensionPoint"/>
+		  <zstack:extension interface="org.zstack.header.image.ExpungeImageExtensionPoint"/>
+		  <zstack:extension interface="org.zstack.header.storage.backup.AddBackupStorageExtensionPoint"/>
+		  <zstack:extension interface="org.zstack.header.image.CreateTemplateExtensionPoint"/>
+	  </zstack:plugin>
   </bean>
 
   <bean id="SftpBackupStorageDumpMetadataInfo"
