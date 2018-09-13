@@ -7,7 +7,6 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.NoJsonSchema;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.volume.VolumeInventory;
@@ -487,7 +486,7 @@ public class VmInstanceSpec implements Serializable {
         this.srcHost = srcHost;
     }
 
-    public boolean ignoreResourceReleaseFailure() {
+    public boolean isIgnoreResourceReleaseFailure() {
         return ignoreResourceReleaseFailure;
     }
 
