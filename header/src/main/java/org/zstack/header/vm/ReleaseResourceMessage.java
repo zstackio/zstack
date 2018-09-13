@@ -1,5 +1,5 @@
 package org.zstack.header.vm;
 
 public interface ReleaseResourceMessage {
-    boolean ignoreResourceReleaseFailure();
+    boolean isIgnoreResourceReleaseFailure();
 }
