@@ -239,6 +239,8 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
             handle((ReconnectConsoleProxyMsg) msg);
         } else if (msg instanceof PingConsoleProxyAgentMsg) {
             handle((PingConsoleProxyAgentMsg) msg);
+        } else if (msg instanceof UpdateConsoleProxyAgentMsg) {
+            handle((UpdateConsoleProxyAgentMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -371,6 +373,27 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
     private void handle(APIUpdateConsoleProxyAgentMsg msg) {
         final APIUpdateConsoleProxyAgentEvent evt = new APIUpdateConsoleProxyAgentEvent(msg.getId());
 
+        UpdateConsoleProxyAgentMsg umsg = new UpdateConsoleProxyAgentMsg();
+        umsg.setUuid(msg.getUuid());
+        umsg.setConsoleProxyOverriddenIp(msg.getConsoleProxyOverriddenIp());
+        bus.makeServiceIdByManagementNodeId(umsg, ConsoleConstants.SERVICE_ID, msg.getUuid());
+        bus.send(umsg, new CloudBusCallBack(evt) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    bus.publish(evt);
+                } else {
+                    UpdateConsoleProxyAgentReply rly = reply.castReply();
+                    evt.setError(rly.getError());
+                    bus.publish(evt);
+                }
+            }
+        });
+    }
+
+    private void handle(UpdateConsoleProxyAgentMsg msg) {
+        final UpdateConsoleProxyAgentReply reply = new UpdateConsoleProxyAgentReply();
+
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("update-console-proxy-agent-%s", msg.getUuid()));
         chain.then(new ShareFlow() {
@@ -461,16 +484,16 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                     @Override
                     public void handle(Map data) {
                         vo = dbf.reload(vo);
-                        evt.setInventory(ConsoleProxyAgentInventory.valueOf(vo));
-                        bus.publish(evt);
+                        reply.setInventory(ConsoleProxyAgentInventory.valueOf(vo));
+                        bus.reply(msg, reply);
                     }
                 });
 
                 error(new FlowErrorHandler(msg) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        evt.setError(errCode);
-                        bus.publish(evt);
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
                     }
                 });
             }
