@@ -1557,6 +1557,14 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                         InnerEvent innerEvent = new InnerEvent();
                         imageVO = dbf.reload(imageVO);
                         ImageInventory iinv = ImageInventory.valueOf(imageVO);
+
+                        CollectionUtils.safeForEach(pluginRgty.getExtensionList(CreateTemplateExtensionPoint.class), new ForEachFunction<CreateTemplateExtensionPoint>() {
+                            @Override
+                            public void run(CreateTemplateExtensionPoint ext) {
+                                ext.afterCreateTemplate(iinv);
+                            }
+                        });
+
                         innerEvent.inv = iinv;
                         logger.warn(String.format("successfully create template[uuid:%s] from root volume[uuid:%s]", iinv.getUuid(), msgData.getRootVolumeUuid()));
                         innerEvent.reply(evt);
@@ -1878,7 +1886,16 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     public void handle(Map data) {
                         reportProgress(parentStage.getEnd().toString());
                         InnerEvent innerEvent = new InnerEvent();
-                        innerEvent.inv = ImageInventory.valueOf(image);
+
+                        ImageInventory inv = ImageInventory.valueOf(image);
+                        CollectionUtils.safeForEach(pluginRgty.getExtensionList(CreateTemplateExtensionPoint.class), new ForEachFunction<CreateTemplateExtensionPoint>() {
+                            @Override
+                            public void run(CreateTemplateExtensionPoint ext) {
+                                ext.afterCreateTemplate(inv);
+                            }
+                        });
+
+                        innerEvent.inv = inv;
                         innerEvent.reply(evt);
                     }
                 });

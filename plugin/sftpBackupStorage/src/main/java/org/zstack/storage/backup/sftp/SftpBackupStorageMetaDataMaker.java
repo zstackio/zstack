@@ -38,7 +38,8 @@ import static org.zstack.core.Platform.operr;
 /**
  * Created by Mei Lei <meilei007@gmail.com> on 11/3/16.
  */
-public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, AddBackupStorageExtensionPoint, ExpungeImageExtensionPoint {
+public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, AddBackupStorageExtensionPoint, ExpungeImageExtensionPoint,
+        CreateTemplateExtensionPoint {
     private static final CLogger logger = Utils.getLogger(SftpBackupStorageMetaDataMaker.class);
     @Autowired
     protected RESTFacade restf;
@@ -276,12 +277,7 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
 
     }
 
-    @Override
-    public void afterAddImage(ImageInventory img) {
-        if (!getBackupStorageTypeFromImageInventory(img).equals(SftpBackupStorageConstant.SFTP_BACKUP_STORAGE_TYPE)) {
-            return;
-        }
-
+    private void bakeImageToMetadata(ImageInventory img) {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
 
         chain.setName("add-image-metadata-to-backupStorage-file");
@@ -393,6 +389,15 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
             }
 
         }).start();
+    }
+
+    @Override
+    public void afterAddImage(ImageInventory img) {
+        if (!getBackupStorageTypeFromImageInventory(img).equals(SftpBackupStorageConstant.SFTP_BACKUP_STORAGE_TYPE)) {
+            return;
+        }
+
+        bakeImageToMetadata(img);
     }
 
     @Override
@@ -571,4 +576,12 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
 
     }
 
+    @Override
+    public void afterCreateTemplate(ImageInventory inv) {
+        if (!getBackupStorageTypeFromImageInventory(inv).equals(SftpBackupStorageConstant.SFTP_BACKUP_STORAGE_TYPE)) {
+            return;
+        }
+
+        bakeImageToMetadata(inv);
+    }
 }
