@@ -16,7 +16,6 @@ import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.jsonlabel.JsonLabel;
-import org.zstack.core.notification.N;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
@@ -33,7 +32,6 @@ import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.configuration.DiskOfferingVO_;
 import org.zstack.header.configuration.InstanceOfferingVO;
-import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeNoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -905,6 +903,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
         smsg.setPrimaryStorageUuidForDataVolume(msg.getPrimaryStorageUuidForDataVolume());
         smsg.setStrategy(msg.getStrategy());
         smsg.setTimeout(msg.getTimeout());
+        smsg.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());
+        smsg.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
         bus.makeTargetServiceIdByResourceUuid(smsg, VmInstanceConstant.SERVICE_ID, vo.getUuid());
         bus.send(smsg, new CloudBusCallBack(smsg) {
             @Override
@@ -974,6 +974,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
         cmsg.setType(msg.getType());
         cmsg.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
         cmsg.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
+        cmsg.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());
+        cmsg.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
 
         cmsg.setClusterUuid(msg.getClusterUuid());
         cmsg.setHostUuid(msg.getHostUuid());

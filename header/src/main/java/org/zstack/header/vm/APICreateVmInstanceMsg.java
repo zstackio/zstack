@@ -159,9 +159,14 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
 
     private String defaultL3NetworkUuid;
 
-
     @APIParam(required = false, validValues = {"InstantStart", "JustCreate", "CreateStopped"})
     private String strategy = VmCreationStrategy.InstantStart.toString();
+
+    @APIParam(required = false)
+    private List<String> rootVolumeSystemTags;
+
+    @APIParam(required = false)
+    private List<String> dataVolumeSystemTags;
 
     public String getStrategy() {
         return strategy;
@@ -273,6 +278,22 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
 
     public void setPrimaryStorageUuidForRootVolume(String primaryStorageUuidForRootVolume) {
         this.primaryStorageUuidForRootVolume = primaryStorageUuidForRootVolume;
+    }
+
+    public List<String> getRootVolumeSystemTags() {
+        return rootVolumeSystemTags;
+    }
+
+    public void setRootVolumeSystemTags(List<String> rootVolumeSystemTags) {
+        this.rootVolumeSystemTags = rootVolumeSystemTags;
+    }
+
+    public List<String> getDataVolumeSystemTags() {
+        return dataVolumeSystemTags;
+    }
+
+    public void setDataVolumeSystemTags(List<String> dataVolumeSystemTags) {
+        this.dataVolumeSystemTags = dataVolumeSystemTags;
     }
 
     public static APICreateVmInstanceMsg __example__() {

@@ -27,6 +27,7 @@ public class VmInstanceSpec implements Serializable {
         private long size;
         private String diskOfferingUuid;
         private boolean isVolumeCreated;
+        private List<String> tags;
 
         public boolean isVolumeCreated() {
             return isVolumeCreated;
@@ -70,6 +71,14 @@ public class VmInstanceSpec implements Serializable {
 
         public void setSize(long size) {
             this.size = size;
+        }
+
+        public List<String> getTags() {
+            return tags;
+        }
+
+        public void setTags(List<String> tags) {
+            this.tags = tags;
         }
     }
 
@@ -199,6 +208,9 @@ public class VmInstanceSpec implements Serializable {
     private String consolePassword;
     private VmAccountPreference accountPerference;
     private boolean createPaused;
+
+    private List<String> rootVolumeSystemTags;
+    private List<String> dataVolumeSystemTags;
 
     public String getVDIMonitorNumber() {
         return VDIMonitorNumber == null ? "1" : VDIMonitorNumber;
@@ -492,5 +504,29 @@ public class VmInstanceSpec implements Serializable {
 
     public void setIgnoreResourceReleaseFailure(boolean ignoreResourceReleaseFailure) {
         this.ignoreResourceReleaseFailure = ignoreResourceReleaseFailure;
+    }
+
+    public V2VConversionSpec getV2vSpec() {
+        return v2vSpec;
+    }
+
+    public void setV2vSpec(V2VConversionSpec v2vSpec) {
+        this.v2vSpec = v2vSpec;
+    }
+
+    public List<String> getRootVolumeSystemTags() {
+        return rootVolumeSystemTags;
+    }
+
+    public void setRootVolumeSystemTags(List<String> rootVolumeSystemTags) {
+        this.rootVolumeSystemTags = rootVolumeSystemTags;
+    }
+
+    public List<String> getDataVolumeSystemTags() {
+        return dataVolumeSystemTags;
+    }
+
+    public void setDataVolumeSystemTags(List<String> dataVolumeSystemTags) {
+        this.dataVolumeSystemTags = dataVolumeSystemTags;
     }
 }

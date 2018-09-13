@@ -30,6 +30,7 @@ import org.zstack.utils.function.Function;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.progress.ProgressReportService.taskProgress;
 
@@ -63,6 +64,7 @@ public class VmAllocateVolumeFlow implements Flow {
                 msg.setName("ROOT-for-" + spec.getVmInventory().getName());
                 msg.setDescription(String.format("Root volume for VM[uuid:%s]", spec.getVmInventory().getUuid()));
                 msg.setRootImageUuid(spec.getImageSpec().getInventory().getUuid());
+                msg.setSystemTags(spec.getRootVolumeSystemTags());
                 if (ImageMediaType.ISO.toString().equals(spec.getImageSpec().getInventory().getMediaType())) {
                     msg.setFormat(VolumeFormat.getVolumeFormatByMasterHypervisorType(spec.getDestHost().getHypervisorType()).toString());
                 } else {
@@ -73,6 +75,7 @@ public class VmAllocateVolumeFlow implements Flow {
                 msg.setName(String.format("DATA-for-%s", spec.getVmInventory().getName()));
                 msg.setDescription(String.format("DataVolume-%s", spec.getVmInventory().getUuid()));
                 msg.setFormat(VolumeFormat.getVolumeFormatByMasterHypervisorType(spec.getDestHost().getHypervisorType()).toString());
+                msg.setSystemTags(spec.getDataVolumeSystemTags());
             }
 
             msg.setDiskOfferingUuid(vspec.getDiskOfferingUuid());
@@ -81,6 +84,7 @@ public class VmAllocateVolumeFlow implements Flow {
             msg.setVmInstanceUuid(spec.getVmInventory().getUuid());
             msg.setVolumeType(vspec.isRoot() ? VolumeType.Root.toString() : VolumeType.Data.toString());
             msg.setAccountUuid(accountUuid);
+
             bus.makeLocalServiceId(msg, VolumeConstant.SERVICE_ID);
             msgs.add(msg);
         }
