@@ -92,4 +92,12 @@ public class LicenseInventory  {
         return this.expired;
     }
 
+    public java.lang.String managementNodeUuid;
+    public void setManagementNodeUuid(java.lang.String managementNodeUuid) {
+        this.managementNodeUuid = managementNodeUuid;
+    }
+    public java.lang.String getManagementNodeUuid() {
+        return this.managementNodeUuid;
+    }
+
 }
