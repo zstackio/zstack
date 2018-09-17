@@ -157,6 +157,8 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             }
         }.execute();
 
+        tagMgr.createNonInherentSystemTags(msg.getSystemTags(), vvo.getUuid(), VolumeVO.class.getSimpleName());
+
         new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(null, VolumeInventory.valueOf(vvo));
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
