@@ -1,6 +1,7 @@
 package org.zstack.header.host;
 
 import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.utils.form.Param;
 
 /**
  * Created by david on 9/12/16.
@@ -8,7 +9,9 @@ import org.zstack.header.message.NeedReplyMessage;
 public class AddHostMsg extends NeedReplyMessage implements AddHostMessage {
     private String name;
     private String description;
+    @Param
     private String managementIp;
+    @Param
     private String clusterUuid;
     private String accountUuid;
     private String resourceUuid;

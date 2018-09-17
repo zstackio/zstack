@@ -63,7 +63,7 @@ import org.zstack.header.tag.TagResourceType;
         parameterName = "params",
         responseClass = APIAddHostEvent.class
 )
-public class APIAddKVMHostMsg extends APIAddHostMsg {
+public class APIAddKVMHostMsg extends APIAddHostMsg implements AddKVMHostMessage {
     /**
      * @desc user name used for ssh login.
      * Max length of 255 characters
@@ -85,18 +85,25 @@ public class APIAddKVMHostMsg extends APIAddHostMsg {
     @APIParam(numberRange = {1, 65535}, required = false)
     private int sshPort = 22;
 
+    @Override
     public String getUsername() {
         return username;
     }
+
     public void setUsername(String username) {
         this.username = username;
     }
+
+    @Override
     public String getPassword() {
         return password;
     }
+
     public void setPassword(String password) {
         this.password = password;
     }
+
+    @Override
     public int getSshPort() {
         return sshPort;
     }
