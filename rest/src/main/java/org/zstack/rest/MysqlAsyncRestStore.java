@@ -13,6 +13,7 @@ import org.zstack.core.db.UpdateQuery;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.Component;
+import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
@@ -48,6 +49,7 @@ public class MysqlAsyncRestStore implements AsyncRestApiStore, Component {
     private Future cleanupThread;
 
     @Override
+    @ExceptionSafe
     public void save(RequestData d) {
         AsyncRestVO vo = new AsyncRestVO();
         vo.setUuid(d.apiMessage.getId());

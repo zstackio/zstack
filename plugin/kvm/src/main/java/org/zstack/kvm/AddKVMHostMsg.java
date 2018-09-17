@@ -1,0 +1,40 @@
+package org.zstack.kvm;
+
+import org.zstack.header.host.AddHostMsg;
+import org.zstack.utils.form.Param;
+
+public class AddKVMHostMsg extends AddHostMsg implements AddKVMHostMessage{
+    @Param
+    private String username;
+    @Param
+    private String password;
+    @Param(numberRange = {1, 65535}, required = false)
+    private int sshPort = 22;
+
+    @Override
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    @Override
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    @Override
+    public int getSshPort() {
+        return sshPort;
+    }
+
+    public void setSshPort(int sshPort) {
+        this.sshPort = sshPort;
+    }
+}
