@@ -7,6 +7,6 @@ import org.zstack.core.GlobalPropertyDefinition;
  */
 @GlobalPropertyDefinition
 public class ConsoleGlobalProperty {
-    @GlobalProperty(name="ConsoleProxy.agentPackageName", defaultValue = "consoleproxy-3.0.0.tar.gz")
+    @GlobalProperty(name="ConsoleProxy.agentPackageName", defaultValue = "consoleproxy-3.1.0.tar.gz")
     public static String AGENT_PACKAGE_NAME;
 }
