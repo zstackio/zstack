@@ -163,12 +163,121 @@ public class VmInstanceSpec implements Serializable {
         }
     }
 
+    public static class V2VConversionSpec implements Serializable {
+        private String v2vType;
+        private String srcVmUrl;
+        private String srcVmName;
+        private String dstVmUuid;
+        private String storagePath;
+        private String conversionHostUuid;
+        private String hostUuid;
+        private Long rootVolumeActualSize;
+        private Long rootVolumeVirtualSize;
+        private List<Long> dataVolumeActualSizes;
+        private List<Long> dataVolumeVirtualSizes;
+        private String bootMode;
+
+        public String getV2vType() {
+            return v2vType;
+        }
+
+        public void setV2vType(String v2vType) {
+            this.v2vType = v2vType;
+        }
+
+        public String getSrcVmUrl() {
+            return srcVmUrl;
+        }
+
+        public void setSrcVmUrl(String srcVmUrl) {
+            this.srcVmUrl = srcVmUrl;
+        }
+
+        public String getSrcVmName() {
+            return srcVmName;
+        }
+
+        public void setSrcVmName(String srcVmName) {
+            this.srcVmName = srcVmName;
+        }
+
+        public String getDstVmUuid() {
+            return dstVmUuid;
+        }
+
+        public void setDstVmUuid(String dstVmUuid) {
+            this.dstVmUuid = dstVmUuid;
+        }
+
+        public String getStoragePath() {
+            return storagePath;
+        }
+
+        public void setStoragePath(String storagePath) {
+            this.storagePath = storagePath;
+        }
+
+        public String getConversionHostUuid() {
+            return conversionHostUuid;
+        }
+
+        public void setConversionHostUuid(String conversionHostUuid) {
+            this.conversionHostUuid = conversionHostUuid;
+        }
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public Long getRootVolumeActualSize() {
+            return rootVolumeActualSize;
+        }
+
+        public void setRootVolumeActualSize(Long rootVolumeActualSize) {
+            this.rootVolumeActualSize = rootVolumeActualSize;
+        }
+
+        public Long getRootVolumeVirtualSize() {
+            return rootVolumeVirtualSize;
+        }
+
+        public void setRootVolumeVirtualSize(Long rootVolumeVirtualSize) {
+            this.rootVolumeVirtualSize = rootVolumeVirtualSize;
+        }
+
+        public List<Long> getDataVolumeActualSizes() {
+            return dataVolumeActualSizes;
+        }
+
+        public void setDataVolumeActualSizes(List<Long> dataVolumeActualSizes) {
+            this.dataVolumeActualSizes = dataVolumeActualSizes;
+        }
+
+        public List<Long> getDataVolumeVirtualSizes() {
+            return dataVolumeVirtualSizes;
+        }
+
+        public void setDataVolumeVirtualSizes(List<Long> dataVolumeVirtualSizes) {
+            this.dataVolumeVirtualSizes = dataVolumeVirtualSizes;
+        }
+
+        public String getBootMode() {
+            return bootMode;
+        }
+
+        public void setBootMode(String bootMode) {
+            this.bootMode = bootMode;
+        }
+    }
+
     private VmInstanceInventory vmInventory;
     private List<L3NetworkInventory> l3Networks;
     private List<DiskOfferingInventory> dataDiskOfferings;
     private DiskOfferingInventory rootDiskOffering;
-    private Long rootVolumeSize;
-    private List<Long> dataVolumeSizes;
     private String hostAllocatorStrategy;
     private String ipAllocatorStrategy;
     private Message message;
@@ -201,6 +310,7 @@ public class VmInstanceSpec implements Serializable {
     private String consolePassword;
     private VmAccountPreference accountPerference;
     private boolean createPaused;
+    private V2VConversionSpec v2vSpec;
 
     public String getVDIMonitorNumber() {
         return VDIMonitorNumber == null ? "1" : VDIMonitorNumber;
@@ -352,22 +462,6 @@ public class VmInstanceSpec implements Serializable {
         this.rootDiskOffering = rootDiskOffering;
     }
 
-    public Long getRootVolumeSize() {
-        return rootVolumeSize;
-    }
-
-    public void setRootVolumeSize(Long rootVolumeSize) {
-        this.rootVolumeSize = rootVolumeSize;
-    }
-
-    public List<Long> getDataVolumeSizes() {
-        return dataVolumeSizes;
-    }
-
-    public void setDataVolumeSizes(List<Long> dataVolumeSizes) {
-        this.dataVolumeSizes = dataVolumeSizes;
-    }
-
     public String getHostAllocatorStrategy() {
         return hostAllocatorStrategy;
     }
@@ -510,5 +604,13 @@ public class VmInstanceSpec implements Serializable {
 
     public void setIgnoreResourceReleaseFailure(boolean ignoreResourceReleaseFailure) {
         this.ignoreResourceReleaseFailure = ignoreResourceReleaseFailure;
+    }
+
+    public V2VConversionSpec getV2vSpec() {
+        return v2vSpec;
+    }
+
+    public void setV2vSpec(V2VConversionSpec v2vSpec) {
+        this.v2vSpec = v2vSpec;
     }
 }

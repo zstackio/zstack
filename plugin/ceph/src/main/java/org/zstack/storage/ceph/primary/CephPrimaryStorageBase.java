@@ -3134,8 +3134,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         DownloadBitsFromKVMHostToPrimaryStorageReply reply = new DownloadBitsFromKVMHostToPrimaryStorageReply();
 
         GetKVMHostDownloadCredentialMsg gmsg = new GetKVMHostDownloadCredentialMsg();
-        gmsg.setHostUuid(msg.getHostUuid());
-        bus.makeTargetServiceIdByResourceUuid(gmsg, HostConstant.SERVICE_ID, msg.getHostUuid());
+        gmsg.setHostUuid(msg.getSrcHostUuid());
+        bus.makeTargetServiceIdByResourceUuid(gmsg, HostConstant.SERVICE_ID, msg.getSrcHostUuid());
         bus.send(gmsg, new CloudBusCallBack(reply) {
             @Override
             public void run(MessageReply rly) {
@@ -3157,10 +3157,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     @Override
                     public void success(AgentResponse returnValue) {
                         if (returnValue.isSuccess()) {
-                            logger.info(String.format("successfully downloaded bits %s from kvm host %s to primary storage %s", cmd.getBackupStorageInstallPath(), msg.getHostUuid(), msg.getPrimaryStorageUuid()));
+                            logger.info(String.format("successfully downloaded bits %s from kvm host %s to primary storage %s", cmd.getBackupStorageInstallPath(), msg.getSrcHostUuid(), msg.getPrimaryStorageUuid()));
                             bus.reply(msg, reply);
                         } else {
-                            logger.error(String.format("failed to download bits %s from kvm host %s to primary storage %s", cmd.getBackupStorageInstallPath(), msg.getHostUuid(), msg.getPrimaryStorageUuid()));
+                            logger.error(String.format("failed to download bits %s from kvm host %s to primary storage %s", cmd.getBackupStorageInstallPath(), msg.getSrcHostUuid(), msg.getPrimaryStorageUuid()));
                             reply.setError(Platform.operr("operation error, because:%s", returnValue.getError()));
                             bus.reply(msg, reply);
                         }
@@ -3168,7 +3168,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        logger.error(String.format("failed to download bits %s from kvm host %s to primary storage %s", cmd.getBackupStorageInstallPath(), msg.getHostUuid(), msg.getPrimaryStorageUuid()));
+                        logger.error(String.format("failed to download bits %s from kvm host %s to primary storage %s", cmd.getBackupStorageInstallPath(), msg.getSrcHostUuid(), msg.getPrimaryStorageUuid()));
                         reply.setError(errorCode);
                         bus.reply(msg, reply);
                     }
