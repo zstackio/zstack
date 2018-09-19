@@ -9,10 +9,7 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SQLBatch;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ThreadFacade;
@@ -189,7 +186,6 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         }
 
 
-
         for (String url : cmsg.getMonUrls()) {
             CephPrimaryStorageMonVO mvo = new CephPrimaryStorageMonVO();
             MonUri uri = new MonUri(url);
@@ -227,29 +223,20 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
 
     @Override
     public void update(String fsid, final long total, final long avail, List<CephPoolCapacity> poolCapacities) {
-        String sql = "select cap from PrimaryStorageCapacityVO cap, CephPrimaryStorageVO pri where pri.uuid = cap.uuid and pri.fsid = :fsid";
-        TypedQuery<PrimaryStorageCapacityVO> q = dbf.getEntityManager().createQuery(sql, PrimaryStorageCapacityVO.class);
-        q.setParameter("fsid", fsid);
-        PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(q);
-        updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
-            @Override
-            public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
-                if (cap.getTotalCapacity() == 0 && cap.getAvailableCapacity() == 0) {
-                    // init
-                    cap.setTotalCapacity(total);
-                    cap.setAvailableCapacity(avail);
-                }
-
-                cap.setTotalPhysicalCapacity(total);
-                cap.setAvailablePhysicalCapacity(avail);
-
-                return cap;
-            }
-        });
-
-        if (poolCapacities == null || poolCapacities.isEmpty()) {
+        CephPrimaryStorageVO cephPs = SQL.New("select pri from CephPrimaryStorageVO pri where pri.fsid = :fsid",CephPrimaryStorageVO.class)
+                .param("fsid", fsid)
+                .find();
+        if (cephPs == null) {
             return;
         }
+
+        if (poolCapacities == null) {
+            return;
+        }
+
+        List<String> poolNames = new ArrayList<>();
+        List<Long> poolTotalCapacities = new ArrayList<>();
+        List<Long> poolAvailableCapacities = new ArrayList<>();
 
         new SQLBatch() {
             @Override
@@ -258,25 +245,55 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
                         " where pool.primaryStorageUuid = ps.uuid and ps.fsid = :fsid", CephPrimaryStoragePoolVO.class)
                         .param("fsid", fsid)
                         .list();
-                if (pools == null || pools.isEmpty()) {
-                    return;
+                if (pools == null) {
+                    pools = new ArrayList<>();
                 }
 
                 for (CephPrimaryStoragePoolVO poolVO : pools) {
-
-                    if (!poolCapacities.stream().anyMatch((e) -> e.getName().equals(poolVO.getPoolName()))) {
+                    if (!poolCapacities.stream().anyMatch((e) -> poolVO.getPoolName().equals(e.getName()))) {
+                        if (poolNames.contains(poolVO.getPoolName())) {
+                            continue;
+                        }
+                        poolNames.add(poolVO.getPoolName());
+                        poolAvailableCapacities.add(poolVO.getAvailableCapacity());
+                        poolTotalCapacities.add(poolVO.getAvailableCapacity() + poolVO.getUsedCapacity());
                         continue;
                     }
 
                     CephPoolCapacity poolCapacity = poolCapacities.stream()
-                            .filter(e -> e.getName().equals(poolVO.getPoolName()))
+                            .filter(e -> poolVO.getPoolName().equals(e.getName()))
                             .findAny().get();
+
+                    if (!poolNames.contains(poolVO.getPoolName())) {
+                        poolNames.add(poolVO.getPoolName());
+                        poolAvailableCapacities.add(poolCapacity.getAvailableCapacity());
+                        poolTotalCapacities.add(poolCapacity.getAvailableCapacity() + poolCapacity.getUsedCapacity());
+                    }
 
                     poolVO.setAvailableCapacity(poolCapacity.getAvailableCapacity());
                     poolVO.setReplicatedSize(poolCapacity.getReplicatedSize());
                     poolVO.setUsedCapacity(poolCapacity.getUsedCapacity());
                     dbf.getEntityManager().merge(poolVO);
                 }
+
+                long psTotalPhysicalCapacity = poolTotalCapacities.stream().mapToLong(Long::longValue).sum();
+                long psAvailablePhysicalCapacity = poolAvailableCapacities.stream().mapToLong(Long::longValue).sum();
+
+                PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(cephPs.getUuid());
+                updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
+                    @Override
+                    public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
+                        if (cap.getTotalCapacity() == 0 && cap.getAvailableCapacity() == 0) {
+                            // init
+                            cap.setAvailableCapacity(psTotalPhysicalCapacity);
+                        }
+                        cap.setTotalCapacity(psTotalPhysicalCapacity);
+                        cap.setTotalPhysicalCapacity(psTotalPhysicalCapacity);
+                        cap.setAvailablePhysicalCapacity(psAvailablePhysicalCapacity);
+
+                        return cap;
+                    }
+                });
             }
         }.execute();
     }
