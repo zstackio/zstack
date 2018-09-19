@@ -58,7 +58,7 @@ public class VmAllocateVolumeFlow implements Flow {
         for (VolumeSpec vspec : volumeSpecs) {
             CreateVolumeMsg msg = new CreateVolumeMsg();
             Set<String> tags = new HashSet<>();
-            if (vspec != null) {
+            if (vspec != null && vspec.getTags() != null) {
                 tags.addAll(vspec.getTags());
             }
             if (vspec.isRoot()) {
@@ -66,7 +66,9 @@ public class VmAllocateVolumeFlow implements Flow {
                 msg.setName("ROOT-for-" + spec.getVmInventory().getName());
                 msg.setDescription(String.format("Root volume for VM[uuid:%s]", spec.getVmInventory().getUuid()));
                 msg.setRootImageUuid(spec.getImageSpec().getInventory().getUuid());
-                tags.addAll(spec.getRootVolumeSystemTags());
+                if (spec.getRootVolumeSystemTags() != null) {
+                    tags.addAll(spec.getRootVolumeSystemTags());
+                }
                 if (ImageMediaType.ISO.toString().equals(spec.getImageSpec().getInventory().getMediaType())) {
                     msg.setFormat(VolumeFormat.getVolumeFormatByMasterHypervisorType(spec.getDestHost().getHypervisorType()).toString());
                 } else {
@@ -77,7 +79,9 @@ public class VmAllocateVolumeFlow implements Flow {
                 msg.setName(String.format("DATA-for-%s", spec.getVmInventory().getName()));
                 msg.setDescription(String.format("DataVolume-%s", spec.getVmInventory().getUuid()));
                 msg.setFormat(VolumeFormat.getVolumeFormatByMasterHypervisorType(spec.getDestHost().getHypervisorType()).toString());
-                tags.addAll(spec.getDataVolumeSystemTags());
+                if (spec.getDataVolumeSystemTags() != null) {
+                    tags.addAll(spec.getDataVolumeSystemTags());
+                }
             }
 
             msg.setSystemTags(new ArrayList<>(tags));
