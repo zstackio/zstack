@@ -237,7 +237,8 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 for (HostRuleTO hto : toRemove) {
                     hto.setActionCodeForAllSecurityGroupRuleTOs(SecurityGroupRuleTO.ACTION_CODE_DELETE_CHAIN);
                 }
-                ret.addAll(toRemove);
+                //ret.addAll(toRemove);
+                ret = mergeMultiHostRuleTO(ret, toRemove);
             }
 
             return ret;
@@ -301,6 +302,12 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 }
 
                 for (SecurityGroupRuleVO r : rules) {
+                    if ( r.getRemoteSecurityGroupUuid() != null) {
+                        SecurityGroupVO remoteSg = Q.New(SecurityGroupVO.class).eq(SecurityGroupVO_.uuid, r.getRemoteSecurityGroupUuid()).in(SecurityGroupVO_.state, sgStates).find();
+                        if (remoteSg == null) {
+                            continue;
+                        }
+                    }
                     RuleTO rto = new RuleTO();
                     rto.setAllowedCidr(r.getAllowedCidr());
                     rto.setEndPort(r.getEndPort());
@@ -327,10 +334,11 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         private List<RuleTO> calculateSecurityGroupBaseRule(List<String> sgUuids, String l3Uuid){
             List<RuleTO> rules = new ArrayList<>();
             for(String sgUuid : sgUuids){
-                String sql = "select r from SecurityGroupRuleVO r where r.securityGroupUuid = :sgUuid" +
-                        " and r.remoteSecurityGroupUuid is not null";
+                String sql = "select r from SecurityGroupRuleVO r,SecurityGroupVO sg  where r.securityGroupUuid = :sgUuid" +
+                        " and r.remoteSecurityGroupUuid is not null and r.remoteSecurityGroupUuid = sg.uuid and sg.state in (:sgStates)";
                 TypedQuery<SecurityGroupRuleVO> q = dbf.getEntityManager().createQuery(sql, SecurityGroupRuleVO.class);
                 q.setParameter("sgUuid", sgUuid);
+                q.setParameter("sgStates", sgStates);
                 List<SecurityGroupRuleVO> remoteRules = q.getResultList();
 
                 for(SecurityGroupRuleVO r : remoteRules){
@@ -755,15 +763,22 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             }
             dbf.updateCollection(rvos);
 
+
+            List<String> sgUuids = Q.New(SecurityGroupRuleVO.class).select(SecurityGroupRuleVO_.securityGroupUuid).eq(SecurityGroupRuleVO_.remoteSecurityGroupUuid, msg.getUuid()).listValues();
+            sgUuids.add(msg.getUuid());
             RuleCalculator cal = new RuleCalculator();
-            cal.securityGroupUuids = asList(msg.getUuid());
+            cal.securityGroupUuids = sgUuids;
             cal.vmStates = asList(VmInstanceState.Running);
             List<HostRuleTO> htos = cal.calculate();
             for (HostRuleTO hto : htos) {
                 hto.setRefreshHost(true);
             }
-            applyRules(htos);
 
+            applyRules(htos);
+            HostSecurityGroupMembersTO groupMemberTO = cal.returnHostSecurityGroupMember(msg.getUuid());
+            if (!groupMemberTO.getHostUuids().isEmpty()) {
+                updateGroupMembers(groupMemberTO);
+            }
         } else {
             List<SecurityGroupRuleVO> rvos = Q.New(SecurityGroupRuleVO.class).eq(SecurityGroupRuleVO_.securityGroupUuid, msg.getUuid()).list();
             for (SecurityGroupRuleVO rvo : rvos) {
@@ -891,9 +906,19 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             applyRules(htos);
         }
 
+        List<String> sgUuids = Q.New(SecurityGroupRuleVO.class).select(SecurityGroupRuleVO_.securityGroupUuid).eq(SecurityGroupRuleVO_.remoteSecurityGroupUuid, uuid).listValues();
+        RuleCalculator rcal = new RuleCalculator();
+        rcal.securityGroupUuids = sgUuids;
+        rcal.vmStates = asList(VmInstanceState.Running);
+        List<HostRuleTO> rhtos = rcal.calculate();
+        for (HostRuleTO hto : rhtos) {
+            hto.setRefreshHost(true);
+        }
+
+        applyRules(rhtos);
         HostSecurityGroupMembersTO groupMemberTO = cal.returnHostSecurityGroupMember(uuid);
         if(!groupMemberTO.getHostUuids().isEmpty()){
-            groupMemberTO.getGroupMembersTO().setActionCode(ACTION_CODE_DELETE_GROUP);
+            //groupMemberTO.getGroupMembersTO().setActionCode(ACTION_CODE_DELETE_GROUP);
             updateGroupMembers(groupMemberTO);
         }
     }
