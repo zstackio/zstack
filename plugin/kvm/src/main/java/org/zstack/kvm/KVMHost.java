@@ -16,10 +16,7 @@ import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
-import org.zstack.core.ansible.AnsibleGlobalProperty;
-import org.zstack.core.ansible.AnsibleRunner;
-import org.zstack.core.ansible.SshChronyConfigChecker;
-import org.zstack.core.ansible.SshFileMd5Checker;
+import org.zstack.core.ansible.*;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
@@ -103,6 +100,8 @@ public class KVMHost extends HostBase implements Host {
     private PluginRegistry pluginRegistry;
     @Autowired
     private ThreadFacade thdf;
+    @Autowired
+    private AnsibleFacade asf;
 
     private KVMHostContext context;
 
@@ -415,9 +414,22 @@ public class KVMHost extends HostBase implements Host {
             handle((PauseVmOnHypervisorMsg) msg);
         } else if (msg instanceof ResumeVmOnHypervisorMsg) {
             handle((ResumeVmOnHypervisorMsg) msg);
+        } else if (msg instanceof GetKVMHostDownloadCredentialMsg) {
+            handle((GetKVMHostDownloadCredentialMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(GetKVMHostDownloadCredentialMsg msg) {
+        final GetKVMHostDownloadCredentialReply reply = new GetKVMHostDownloadCredentialReply();
+
+        String key = asf.getPrivateKey();
+        reply.setHostname(getSelf().getManagementIp());
+        reply.setUsername(getSelf().getUsername());
+        reply.setSshPort(getSelf().getPort());
+        reply.setSshKey(key);
+        bus.reply(msg, reply);
     }
 
     private void handle(final IncreaseVmCpuMsg msg) {

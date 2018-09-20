@@ -90,6 +90,7 @@ public class APIRecoverVmInstanceEvent extends APIEvent {
         nic.setDeviceId(0);
         nic.setL3NetworkUuid(defaultL3Uuid);
         nic.setMac("00:0c:29:bd:99:fc");
+        nic.setHypervisorType("KVM");
         nic.setUuid(uuid());
         vm.setVmNics(asList(nic));
 
