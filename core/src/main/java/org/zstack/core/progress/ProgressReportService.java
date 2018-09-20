@@ -11,6 +11,7 @@ import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.*;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.progress.ProgressCommands.ProgressReportCmd;
+import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
@@ -37,6 +38,8 @@ import static java.util.Collections.min;
 import static org.codehaus.groovy.runtime.InvokerHelper.asList;
 
 import static org.zstack.core.Platform.toI18nString;
+import static org.zstack.header.Constants.THREAD_CONTEXT_API;
+import static org.zstack.header.Constants.THREAD_CONTEXT_TASK_NAME;
 
 import javax.persistence.Query;
 
@@ -422,6 +425,53 @@ public class ProgressReportService extends AbstractService implements Management
 
         logger.debug(String.format("report progress is : %s", fmt));
         taskProgress(TaskType.Progress, fmt);
+    }
+
+    public void reportProgress(String begin, String end, int intervalSec) {
+        thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask() {
+            int beginPercent = new Double(begin).intValue();
+            int endPercent = new Double(end).intValue();
+            String apiId = ThreadContext.get(THREAD_CONTEXT_API);
+            String taskName = ThreadContext.get(THREAD_CONTEXT_TASK_NAME);
+
+            @Override
+            public boolean run() {
+                // get current progress
+                String currentPercent = SQL.New("SELECT content FROM TaskProgressVO" +
+                        " WHERE apiId = :apiId" +
+                        " ORDER BY CAST(content AS int) DESC")
+                        .param("apiId", apiId)
+                        .limit(1)
+                        .find();
+
+                if (beginPercent >= endPercent) {
+                    return true;
+                } else if (endPercent <= new Double(currentPercent).intValue()) {
+                    return true;
+                } else {
+                    ThreadContext.put(THREAD_CONTEXT_API, apiId);
+                    ThreadContext.put(THREAD_CONTEXT_TASK_NAME, taskName);
+                    ProgressReportService.reportProgress(String.valueOf(beginPercent));
+                    beginPercent += 1;
+                    return false;
+                }
+            }
+
+            @Override
+            public TimeUnit getTimeUnit() {
+                return TimeUnit.SECONDS;
+            }
+
+            @Override
+            public long getInterval() {
+                return intervalSec;
+            }
+
+            @Override
+            public String getName() {
+                return "report-progress-one-step-at-a-time";
+            }
+        });
     }
 
     public static TaskProgressRange markTaskStage(TaskProgressRange exactStage) {

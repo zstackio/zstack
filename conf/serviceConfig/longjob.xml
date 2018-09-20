@@ -16,4 +16,7 @@
         <name>org.zstack.header.longjob.APIQueryLongJobMsg</name>
         <serviceId>query</serviceId>
     </message>
+    <message>
+        <name>org.zstack.header.longjob.APIRerunLongJobMsg</name>
+    </message>
 </service>

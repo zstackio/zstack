@@ -65,6 +65,10 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
                     if (vo.getType() == VolumeType.Data) {
                         vo.setDeviceId(getNextDeviceId());
                         vo.setActualSize(0L);
+                    } else if (spec.getV2vSpec() != null) {
+                        // instantiate root volume when v2v
+                        vo.setDeviceId(0);
+                        vo.setActualSize(spec.getV2vSpec().getRootVolumeActualSize());
                     } else {
                         vo.setActualSize(spec.getImageSpec().getInventory().getActualSize());
                     }
@@ -112,7 +116,7 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
 
         ImageSpec image = spec.getImageSpec();
         InstantiateVolumeMsg rmsg;
-        if (ImageMediaType.RootVolumeTemplate.toString().equals(image.getInventory().getMediaType())) {
+        if (image.getInventory() != null && ImageMediaType.RootVolumeTemplate.toString().equals(image.getInventory().getMediaType())) {
             rmsg = new InstantiateRootVolumeMsg();
             ((InstantiateRootVolumeMsg)rmsg).setTemplateSpec(image);
         } else {
