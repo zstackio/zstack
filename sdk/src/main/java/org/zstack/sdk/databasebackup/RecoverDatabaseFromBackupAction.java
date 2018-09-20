@@ -1,8 +1,9 @@
 package org.zstack.sdk.databasebackup;
 
+import org.zstack.sdk.*;
+
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class RecoverDatabaseFromBackupAction extends AbstractAction {
 
@@ -36,9 +37,6 @@ public class RecoverDatabaseFromBackupAction extends AbstractAction {
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String mysqlRootPassword;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.Map extParams;
 
     @Param(required = false)
     public java.util.List systemTags;
