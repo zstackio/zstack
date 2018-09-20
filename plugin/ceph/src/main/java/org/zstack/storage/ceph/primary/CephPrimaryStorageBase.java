@@ -939,6 +939,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         // it's file path on kvm host actually
         private String backupStorageInstallPath;
         private String primaryStorageInstallPath;
+        private Long bandWidth;
 
         public String getHostname() {
             return hostname;
@@ -986,6 +987,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         public void setPrimaryStorageInstallPath(String primaryStorageInstallPath) {
             this.primaryStorageInstallPath = primaryStorageInstallPath;
+        }
+
+        public Long getBandWidth() {
+            return bandWidth;
+        }
+
+        public void setBandWidth(Long bandWidth) {
+            this.bandWidth = bandWidth;
         }
     }
 
@@ -3153,6 +3162,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 cmd.setSshPort(grly.getSshPort());
                 cmd.setBackupStorageInstallPath(msg.getHostInstallPath());
                 cmd.setPrimaryStorageInstallPath(msg.getPrimaryStorageInstallPath());
+                cmd.setBandWidth(msg.getBandWidth());
                 httpCall(DOWNLOAD_BITS_FROM_KVM_HOST_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(reply) {
                     @Override
                     public void success(AgentResponse returnValue) {
