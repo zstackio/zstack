@@ -931,6 +931,73 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
     }
 
+    public static class DownloadBitsFromKVMHostCmd extends AgentCommand {
+        private String hostname;
+        private String username;
+        private String sshKey;
+        private int sshPort;
+        // it's file path on kvm host actually
+        private String backupStorageInstallPath;
+        private String primaryStorageInstallPath;
+        private Long bandWidth;
+
+        public String getHostname() {
+            return hostname;
+        }
+
+        public void setHostname(String hostname) {
+            this.hostname = hostname;
+        }
+
+        public String getUsername() {
+            return username;
+        }
+
+        public void setUsername(String username) {
+            this.username = username;
+        }
+
+        public String getSshKey() {
+            return sshKey;
+        }
+
+        public void setSshKey(String sshKey) {
+            this.sshKey = sshKey;
+        }
+
+        public int getSshPort() {
+            return sshPort;
+        }
+
+        public void setSshPort(int sshPort) {
+            this.sshPort = sshPort;
+        }
+
+        public String getBackupStorageInstallPath() {
+            return backupStorageInstallPath;
+        }
+
+        public void setBackupStorageInstallPath(String backupStorageInstallPath) {
+            this.backupStorageInstallPath = backupStorageInstallPath;
+        }
+
+        public String getPrimaryStorageInstallPath() {
+            return primaryStorageInstallPath;
+        }
+
+        public void setPrimaryStorageInstallPath(String primaryStorageInstallPath) {
+            this.primaryStorageInstallPath = primaryStorageInstallPath;
+        }
+
+        public Long getBandWidth() {
+            return bandWidth;
+        }
+
+        public void setBandWidth(Long bandWidth) {
+            this.bandWidth = bandWidth;
+        }
+    }
+
     public static class SnapInfo implements Comparable<SnapInfo> {
         long id;
         String name;
@@ -993,6 +1060,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String CEPH_TO_CEPH_MIGRATE_VOLUME_PATH = "/ceph/primarystorage/volume/migrate";
     public static final String CEPH_TO_CEPH_MIGRATE_VOLUME_SNAPSHOT_PATH = "/ceph/primarystorage/volume/snapshot/migrate";
     public static final String GET_VOLUME_SNAPINFOS_PATH = "/ceph/primarystorage/volume/getsnapinfos";
+    public static final String DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/ceph/primarystorage/kvmhost/download";
 
     private final Map<String, BackupStorageMediator> backupStorageMediators = new HashMap<String, BackupStorageMediator>();
 
@@ -3039,6 +3107,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((CephToCephMigrateVolumeSnapshotMsg) msg);
         } else if (msg instanceof GetVolumeSnapshotInfoMsg) {
             handle((GetVolumeSnapshotInfoMsg) msg);
+        } else if (msg instanceof DownloadBitsFromKVMHostToPrimaryStorageMsg) {
+            handle((DownloadBitsFromKVMHostToPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -3067,6 +3137,54 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public boolean isExisting() {
             return existing;
         }
+    }
+
+    private void handle(DownloadBitsFromKVMHostToPrimaryStorageMsg msg) {
+        DownloadBitsFromKVMHostToPrimaryStorageReply reply = new DownloadBitsFromKVMHostToPrimaryStorageReply();
+
+        GetKVMHostDownloadCredentialMsg gmsg = new GetKVMHostDownloadCredentialMsg();
+        gmsg.setHostUuid(msg.getSrcHostUuid());
+        bus.makeTargetServiceIdByResourceUuid(gmsg, HostConstant.SERVICE_ID, msg.getSrcHostUuid());
+        bus.send(gmsg, new CloudBusCallBack(reply) {
+            @Override
+            public void run(MessageReply rly) {
+                if (!rly.isSuccess()) {
+                    reply.setError(rly.getError());
+                    bus.reply(msg, reply);
+                    return;
+                }
+
+                GetKVMHostDownloadCredentialReply grly = rly.castReply();
+                DownloadBitsFromKVMHostCmd cmd = new DownloadBitsFromKVMHostCmd();
+                cmd.setHostname(grly.getHostname());
+                cmd.setUsername(grly.getUsername());
+                cmd.setSshKey(grly.getSshKey());
+                cmd.setSshPort(grly.getSshPort());
+                cmd.setBackupStorageInstallPath(msg.getHostInstallPath());
+                cmd.setPrimaryStorageInstallPath(msg.getPrimaryStorageInstallPath());
+                cmd.setBandWidth(msg.getBandWidth());
+                httpCall(DOWNLOAD_BITS_FROM_KVM_HOST_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(reply) {
+                    @Override
+                    public void success(AgentResponse returnValue) {
+                        if (returnValue.isSuccess()) {
+                            logger.info(String.format("successfully downloaded bits %s from kvm host %s to primary storage %s", cmd.getBackupStorageInstallPath(), msg.getSrcHostUuid(), msg.getPrimaryStorageUuid()));
+                            bus.reply(msg, reply);
+                        } else {
+                            logger.error(String.format("failed to download bits %s from kvm host %s to primary storage %s", cmd.getBackupStorageInstallPath(), msg.getSrcHostUuid(), msg.getPrimaryStorageUuid()));
+                            reply.setError(Platform.operr("operation error, because:%s", returnValue.getError()));
+                            bus.reply(msg, reply);
+                        }
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        logger.error(String.format("failed to download bits %s from kvm host %s to primary storage %s", cmd.getBackupStorageInstallPath(), msg.getSrcHostUuid(), msg.getPrimaryStorageUuid()));
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                    }
+                });
+            }
+        });
     }
 
     private void handle(DeleteImageCacheOnPrimaryStorageMsg msg) {

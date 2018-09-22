@@ -4,7 +4,7 @@
     <parent>
         <artifactId>zstack</artifactId>
         <groupId>org.zstack</groupId>
-        <version>3.0.0</version>
+        <version>3.1.0</version>
         <relativePath>..</relativePath>
     </parent>
     <artifactId>build</artifactId>
@@ -342,6 +342,11 @@
                 <dependency>
                     <groupId>org.zstack</groupId>
                     <artifactId>aliyun-proxy</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>v2v</artifactId>
                     <version>${project.version}</version>
                 </dependency>
             </dependencies>

@@ -20,7 +20,6 @@ import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.identity.Account;
-import org.zstack.identity.AccountManager;
 import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Query;
@@ -64,6 +63,7 @@ public class ApplianceVmAllocateNicFlow implements Flow {
         inv.setMetaData(nicSpec.getMetaData());
         inv.setInternalName(VmNicVO.generateNicInternalName(vmSpec.getVmInventory().getInternalId(), inv.getDeviceId()));
         inv.setMac(NetworkUtils.generateMacWithDeviceId((short) inv.getDeviceId()));
+        inv.setHypervisorType(vmSpec.getVmInventory().getHypervisorType());
 
         if (nicSpec.getIp() == null) {
             String strategy = nicSpec.getAllocatorStrategy() == null ? L3NetworkConstant.RANDOM_IP_ALLOCATOR_STRATEGY : nicSpec.getAllocatorStrategy();
@@ -124,6 +124,7 @@ public class ApplianceVmAllocateNicFlow implements Flow {
                     nvo.setIp(nic.getIp());
                     nvo.setL3NetworkUuid(nic.getL3NetworkUuid());
                     nvo.setMac(nic.getMac());
+                    nvo.setHypervisorType(nic.getHypervisorType());
                     nvo.setUsedIpUuid(nic.getUsedIpUuid());
                     nvo.setGateway(nic.getGateway());
                     nvo.setNetmask(nic.getNetmask());
