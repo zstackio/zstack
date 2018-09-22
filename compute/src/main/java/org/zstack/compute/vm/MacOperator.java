@@ -6,20 +6,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.tag.SystemTagVO;
-import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
 import org.zstack.tag.PatternedSystemTag;
-import org.zstack.tag.SystemTag;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.math.BigInteger;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
@@ -95,8 +92,12 @@ public class MacOperator {
         if (isMulticastMac(lowercaseMac)){
             throw new OperationFailureException(operr("Expected unicast mac address, found multicast MAC address [%s]", mac));
         }
-        if (Q.New(VmNicVO.class).eq(VmNicVO_.mac, lowercaseMac).isExists()) {
-            throw new OperationFailureException(operr("Duplicate mac address [%s]", lowercaseMac));
-        }
+    }
+
+    public boolean checkDuplicateMac(String hypervisorType, String mac) {
+        return Q.New(VmNicVO.class)
+                .eq(VmNicVO_.hypervisorType, hypervisorType)
+                .eq(VmNicVO_.mac, mac.toLowerCase())
+                .isExists();
     }
 }

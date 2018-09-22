@@ -161,11 +161,13 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
         return true;
     }
 
-    @Transactional
-    public void clean() {
-        String sql = "delete from ConsoleProxyVO";
-        Query q = dbf.getEntityManager().createQuery(sql);
-        q.executeUpdate();
+    private void clean() {
+        try {
+            final String ip = Platform.getManagementServerIp();
+            deleteConsoleProxyByManagementNode(ip);
+        } catch (Throwable th) {
+            logger.warn("clean up console proxy failed", th);
+        }
     }
 
     @Override
@@ -257,8 +259,7 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
     }
 
     @Transactional
-    private void deleteConsoleProxyByManagementNode(ManagementNodeInventory inv) {
-        String managementHostName = inv.getHostName();
+    private void deleteConsoleProxyByManagementNode(final String managementHostName) {
         String sql = "delete from ConsoleProxyVO q where q.proxyHostname = :managementHostName";
         Query q = dbf.getEntityManager().createQuery(sql);
         q.setParameter("managementHostName", managementHostName);
@@ -267,7 +268,7 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
 
     public void cleanupNode(ManagementNodeInventory inv) {
         logger.debug(String.format("Management node[uuid:%s] left, will clean the record in ConsoleProxyVO", inv.getUuid()));
-        deleteConsoleProxyByManagementNode(inv);
+        deleteConsoleProxyByManagementNode(inv.getHostName());
     }
 
     @Override

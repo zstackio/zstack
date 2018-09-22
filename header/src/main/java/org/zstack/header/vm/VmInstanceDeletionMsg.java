@@ -26,7 +26,7 @@ public class VmInstanceDeletionMsg extends DeletionMessage implements VmInstance
     }
 
     @Override
-    public boolean ignoreResourceReleaseFailure() {
+    public boolean isIgnoreResourceReleaseFailure() {
         return ignoreResourceReleaseFailure;
     }
 

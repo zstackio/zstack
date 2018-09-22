@@ -11,7 +11,7 @@ import org.zstack.header.message.NeedReplyMessage;
 public class StopVmInstanceMsg extends NeedReplyMessage implements VmInstanceMessage, StopVmMessage, ReleaseResourceMessage {
     private String vmInstanceUuid;
     private boolean gcOnFailure;
-    private StopVmType type = StopVmType.grace;
+    private String type = StopVmType.grace.toString();
     private boolean ignoreResourceReleaseFailure;
 
     public boolean isGcOnFailure() {
@@ -31,17 +31,17 @@ public class StopVmInstanceMsg extends NeedReplyMessage implements VmInstanceMes
         this.vmInstanceUuid = vmInstanceUuid;
     }
 
-    public void setType(StopVmType type) {
+    public void setType(String type) {
         this.type = type;
     }
 
     @Override
     public String getType() {
-        return type.toString();
+        return type;
     }
 
     @Override
-    public boolean ignoreResourceReleaseFailure() {
+    public boolean isIgnoreResourceReleaseFailure() {
         return ignoreResourceReleaseFailure;
     }
 
