@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Arrays.asList;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 import static org.zstack.utils.StringDSL.s;
@@ -196,7 +195,7 @@ public class GlobalConfig {
     }
 
     public <T> T value(Class<T> clz) {
-        return TypeUtils.stringToValue(value, clz);
+        return TypeUtils.stringToValue(value(), clz);
     }
 
     public <T> T defaultValue(Class<T> clz) {
@@ -219,7 +218,7 @@ public class GlobalConfig {
         ng.setValue(old.value());
         ng.setCategory(old.getCategory());
         ng.setDescription(old.getDescription());
-        ng.setDefaultValue(ng.getDefaultValue());
+        ng.setDefaultValue(old.getDefaultValue());
         ng.setValidatorRegularExpression(old.getValidatorRegularExpression());
         return ng;
     }
