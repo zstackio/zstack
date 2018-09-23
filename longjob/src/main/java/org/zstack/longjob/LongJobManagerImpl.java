@@ -26,7 +26,6 @@ import org.zstack.header.managementnode.ManagementNodeInventory;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
-import org.zstack.identity.AccountManager;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
@@ -56,8 +55,6 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
     private ThreadFacade thdf;
     @Autowired
     private TagManager tagMgr;
-    @Autowired
-    private AccountManager acntMgr;
     @Autowired
     private transient ResourceDestinationMaker destinationMaker;
 
@@ -392,7 +389,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                 for (LongJobVO vo : vos) {
                     if (destinationMaker.isManagedByUs(vo.getUuid())) {
                         vo.setManagementNodeUuid(Platform.getManagementServerId());
-                        vo = doLoadLongJob(vo);
+                        doLoadLongJob(vo);
                         merge(vo);
                     }
                 }
@@ -400,7 +397,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         }.execute();
     }
 
-    private LongJobVO doLoadLongJob(LongJobVO vo) {
+    private void doLoadLongJob(LongJobVO vo) {
         if (vo.getState() == LongJobState.Waiting) {
             // launch the waiting jobs
             ThreadContext.put(Constants.THREAD_CONTEXT_API, vo.getApiId());
@@ -429,8 +426,6 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             vo.setJobResult("Failed because management node restarted.");
             vo.setState(LongJobState.Failed);
         }
-
-        return vo;
     }
 
     @Override
