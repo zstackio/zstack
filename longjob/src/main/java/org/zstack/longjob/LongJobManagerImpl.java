@@ -372,7 +372,19 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         new SQLBatch() {
             @Override
             protected void scripts() {
-                List<LongJobVO> vos = Q.New(LongJobVO.class).isNull(LongJobVO_.managementNodeUuid).list();
+                List<LongJobVO> vos = Q.New(LongJobVO.class)
+                        .notNull(LongJobVO_.managementNodeUuid)
+                        .eq(LongJobVO_.state, LongJobState.Running)
+                        .list();
+                vos.forEach(vo -> {
+                    if (destinationMaker.isManagedByUs(vo.getUuid())) {
+                        vo.setJobResult("Failed because management node restarted.");
+                        vo.setState(LongJobState.Failed);
+                        merge(vo);
+                    }
+                });
+
+                vos = Q.New(LongJobVO.class).isNull(LongJobVO_.managementNodeUuid).list();
                 if (vos.isEmpty()) {
                     return;
                 }
