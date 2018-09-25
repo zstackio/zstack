@@ -28,6 +28,7 @@
     <bean id="KVMHostFactory" class="org.zstack.kvm.KVMHostFactory">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.host.HypervisorFactory" />
+            <zstack:extension interface="org.zstack.header.host.HypervisorMessageFactory" />
             <zstack:extension interface="org.zstack.header.Component" />
             <zstack:extension interface="org.zstack.header.Service" />
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
