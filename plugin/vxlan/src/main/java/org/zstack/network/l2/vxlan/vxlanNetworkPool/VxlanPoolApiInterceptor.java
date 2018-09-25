@@ -9,11 +9,16 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.APIMessage;
+import org.zstack.network.l2.vxlan.vtep.APICreateVxlanVtepMsg;
+import org.zstack.network.l2.vxlan.vtep.VtepVO;
+import org.zstack.network.l2.vxlan.vtep.VtepVO_;
 import org.zstack.network.l2.vxlan.vxlanNetwork.APICreateL2VxlanNetworkMsg;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.List;
+
+import static org.zstack.core.Platform.argerr;
 
 /**
  * Created by weiwang on 02/05/2017.
@@ -31,8 +36,19 @@ public class VxlanPoolApiInterceptor implements ApiMessageInterceptor {
             validate((APICreateL2VxlanNetworkMsg) msg);
         } else if (msg instanceof  APIDeleteVniRangeMsg) {
             validate((APIDeleteVniRangeMsg) msg);
+        } else if (msg instanceof APICreateVxlanVtepMsg) {
+            validate((APICreateVxlanVtepMsg) msg);
         }
         return msg;
+    }
+
+    private void validate(APICreateVxlanVtepMsg msg) {
+        long count = Q.New(VtepVO.class).eq(VtepVO_.hostUuid, msg.getHostUuid()).eq(VtepVO_.poolUuid, msg.getPoolUuid()).count();
+        if (count > 0) {
+            throw new ApiMessageInterceptionException(argerr("vxlan vtep address for host [uuid : %s] and pool [uuid : %s] pair already existed",
+                            msg.getHostUuid(), msg.getPoolUuid())
+            );
+        }
     }
 
     private void validate(APIDeleteVniRangeMsg msg) {

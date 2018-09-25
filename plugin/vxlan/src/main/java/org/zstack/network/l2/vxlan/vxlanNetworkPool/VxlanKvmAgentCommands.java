@@ -193,6 +193,7 @@ public class VxlanKvmAgentCommands {
 
     public static class CheckVxlanCidrCmd extends AgentCommand {
         private String cidr;
+        private String vtepip;
 
         public String getPhysicalInterfaceName() {
             return physicalInterfaceName;
@@ -210,6 +211,14 @@ public class VxlanKvmAgentCommands {
 
         public void setCidr(String cidr) {
             this.cidr = cidr;
+        }
+
+        public String getVtepip() {
+            return vtepip;
+        }
+
+        public void setVtepip(String vtepip) {
+            this.vtepip = vtepip;
         }
     }
 
