@@ -58,6 +58,11 @@ public class ConsoleProxyBase implements ConsoleProxy {
         final String targetHostname = uri.getHost();
         final int targetPort = uri.getPort();
 
+        if (targetHostname == null || targetPort < 0) {
+            completion.fail(operr("establish VNC: unexpected uri: %s", uri.toString()));
+            return;
+        }
+
         int idleTimeout = ConsoleGlobalConfig.PROXY_IDLE_TIMEOUT.value(Integer.class);
         int tokenTimeout = ConsoleGlobalConfig.VNC_TOKEN_TIMEOUT.value(Integer.class);
 

@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Arrays.asList;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 import static org.zstack.utils.StringDSL.s;
@@ -203,7 +202,7 @@ public class GlobalConfig {
     }
 
     public <T> T value(Class<T> clz) {
-        return TypeUtils.stringToValue(value, clz);
+        return TypeUtils.stringToValue(value(), clz);
     }
 
     public <T> T defaultValue(Class<T> clz) {
