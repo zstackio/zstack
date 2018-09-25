@@ -20,10 +20,10 @@ import org.zstack.kvm.KVMAgentCommands.GetVncPortResponse;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.operr;
-
 import java.net.URI;
 import java.net.URISyntaxException;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created with IntelliJ IDEA.
@@ -71,6 +71,11 @@ public class KVMConsoleHypervisorBackend implements ConsoleHypervisorBackend {
                 GetVncPortResponse rsp = kreply.toResponse(GetVncPortResponse.class);
                 if (!rsp.isSuccess()) {
                     complete.fail(operr("operation error, because:%s", rsp.getError()));
+                    return;
+                }
+
+                if (rsp.getPort() < 0) {
+                    complete.fail(operr("unexpected VNC port number[%d] for VM [uuid:%s]", rsp.getPort(), vm.getUuid()));
                     return;
                 }
 
