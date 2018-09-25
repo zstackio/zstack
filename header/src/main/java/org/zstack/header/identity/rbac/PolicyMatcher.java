@@ -10,7 +10,7 @@ public class PolicyMatcher {
     public boolean match(String policy, String path) {
         policy = policy.replaceAll("\\.", "/");
         path = path.replaceAll("\\.", "/");
-        return matcher.match(policy, path);
+        return matcher.match(policy, path) || path.endsWith(policy);
     }
 
     public String returnPrecisePattern(String path, String p1, String p2) {
