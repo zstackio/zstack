@@ -31,7 +31,7 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
     }
 
     protected boolean isMatch(String as) {
-        String ap = PolicyUtils.apiNamePatternFromAction(as);
+        String ap = PolicyUtils.apiNamePatternFromAction(as, true);
         return policyMatcher.match(ap, rbacEntity.getApiMessage().getClass().getName());
     }
 
