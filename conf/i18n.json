@@ -7927,6 +7927,17 @@
     "fileName": "src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/KVMRealizeL2VxlanNetworkPoolBackend.java"
   },
   {
+    "raw": "vxlan vtep address for host [uuid : %s] and pool [uuid : %s] pair already existed",
+    "en_US": "vxlan vtep address for host [uuid : {0}] and pool [uuid : {1}] pair already existed",
+    "zh_CN": "物理机[uuid : {0}]在vxlan资源池[uuid : {1}]中隧道端点地址已经配置",
+    "arguments": [
+      "msg.getHostUuid()",
+      "msg.getPoolUuid()"
+    ],
+    "line": 48,
+    "fileName": "src/zstack/./plugin/vxlan/src/main/java/org/zstack/network/l2/vxlan/vxlanNetworkPool/VxlanPoolApiInterceptor.java"
+  },
+  {
     "raw": "you must update system and category both",
     "en_US": "you must update system and category both",
     "zh_CN": "必须同时更行system属性和category属性",

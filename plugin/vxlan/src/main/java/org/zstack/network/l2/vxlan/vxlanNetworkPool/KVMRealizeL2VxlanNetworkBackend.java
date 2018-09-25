@@ -14,6 +14,7 @@ import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
@@ -35,6 +36,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant.*;
@@ -155,6 +157,10 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
                 if (!poolVO.getPhysicalInterface().isEmpty()) {
                     cmd.setPhysicalInterfaceName(poolVO.getPhysicalInterface());
                 }
+                VtepVO vtep = Q.New(VtepVO.class).eq(VtepVO_.poolUuid, l2vxlan.getPoolUuid()).eq(VtepVO_.hostUuid, hostUuid).find();
+                if (vtep != null) {
+                    cmd.setVtepip(vtep.getVtepIp());
+                }
 
                 KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                 msg.setHostUuid(hostUuid);
@@ -192,15 +198,34 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
         }).then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                List<String> vtepIps = Q.New(VtepVO.class).select(VtepVO_.vtepIp).eq(VtepVO_.poolUuid, l2vxlan.getPoolUuid()).listValues();
-                if (vtepIps.contains(data.get(VTEP_IP))) {
+                List<VtepVO> vtepVOS = Q.New(VtepVO.class)
+                        .eq(VtepVO_.poolUuid, l2vxlan.getPoolUuid())
+                        .eq(VtepVO_.hostUuid, hostUuid)
+                        .list();
+
+                if (vtepVOS == null || vtepVOS.isEmpty()) {
+                    /* vtep is not created, no action here */
+                } else if (vtepVOS.size() > 1) {
+                    /* more than 1 vtep, shoult not happen */
+                    throw new CloudRuntimeException(String.format("multiple vteps[ips: %s] found on host[uuid: %s]",
+                            vtepVOS.stream().map(v -> v.getVtepIp()).collect(Collectors.toSet()), hostUuid));
+                } else if (vtepVOS.get(0).getVtepIp().equals(data.get(VTEP_IP))) {
+                    /* vtep is already created */
+                    logger.debug(String.format(
+                            "vtep[ip:%s] from host[uuid:%s] for l2 vxlan network pool[uuid:%s] checks successfully",
+                            vtepVOS.get(0).getVtepIp(), hostUuid, l2Network.getUuid()));
                     data.put(NEED_POPULATE, false);
                     trigger.next();
                     return;
                 } else {
-                    data.put(NEED_POPULATE, true);
+                    /* remove old vtep */
+                    logger.debug(String.format(
+                            "remove deprecated vtep[ip:%s] from host[uuid:%s] for l2 vxlan network pool[uuid:%s]",
+                            vtepVOS.get(0).getVtepIp(), hostUuid, l2Network.getUuid()));
+                    dbf.remove(vtepVOS.get(0));
                 }
 
+                data.put(NEED_POPULATE, true);
                 CreateVtepMsg cmsg = new CreateVtepMsg();
                 cmsg.setPoolUuid(l2vxlan.getPoolUuid());
                 cmsg.setClusterUuid(clusterUuid);

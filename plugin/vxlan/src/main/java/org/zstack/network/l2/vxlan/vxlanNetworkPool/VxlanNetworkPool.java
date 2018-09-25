@@ -14,6 +14,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -27,6 +28,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
+import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.network.l2.L2NetworkExtensionPointEmitter;
 import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.network.l2.L2NoVlanNetwork;
@@ -41,7 +43,9 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
+import static org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant.VXLAN_KVM_POPULATE_FDB_L2VXLAN_NETWORKS_PATH;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -68,6 +72,8 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
     protected ErrorFacade errf;
     @Autowired
     private TagManager tagMgr;
+    @Autowired
+    private ApiTimeoutManager timeoutMgr;
 
     private Map<String, VniAllocatorStrategy> vniAllocatorStrategies = Collections.synchronizedMap(new HashMap<String, VniAllocatorStrategy>());
 
@@ -116,11 +122,65 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
             handle((CreateVtepMsg) msg);
         } else if (msg instanceof DeleteVtepMsg) {
             handle((DeleteVtepMsg) msg);
+        } else if (msg instanceof PopulateVtepPeersMsg){
+            handle((PopulateVtepPeersMsg) msg);
         } else if (msg instanceof L2NetworkMessage) {
             superHandle((L2NetworkMessage) msg);
-        } else {
+        }  else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(final PopulateVtepPeersMsg msg) {
+        final PopulateVtepPeersReply reply = new PopulateVtepPeersReply();
+
+        List<VtepVO> vteps = Q.New(VtepVO.class).eq(VtepVO_.poolUuid, msg.getPoolUuid()).list();
+        if (vteps == null || vteps.size() <= 1) {
+            logger.debug("no need to populate fdb since there are only one vtep or less");
+            bus.reply(msg, reply);
+            return;
+        }
+
+        List<String> vxlanNetworkUuids = Q.New(VxlanNetworkVO.class)
+                .select(VxlanNetworkVO_.uuid)
+                .eq(VxlanNetworkVO_.poolUuid, msg.getPoolUuid())
+                .listValues();
+
+        new While<>(vteps).all((vtep, completion1) -> {
+            Set<String> peers = vteps.stream()
+                    .map(v -> v.getVtepIp())
+                    .collect(Collectors.toSet());
+            peers.remove(vtep.getVtepIp());
+
+            logger.info(String.format("populate fdb to vtep[ip:%s] for vxlan network pool %s with vxlan network[uuids:%s] to host[uuid:%s]",
+                    vtep.getVtepIp(), msg.getPoolUuid(), vxlanNetworkUuids, vtep.getHostUuid()));
+
+            VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd cmd = new VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd();
+            cmd.setPeers(new ArrayList<>(peers));
+            cmd.setNetworkUuids(vxlanNetworkUuids);
+
+            KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
+            kmsg.setHostUuid(vtep.getHostUuid());
+            kmsg.setCommand(cmd);
+            kmsg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
+            kmsg.setPath(VXLAN_KVM_POPULATE_FDB_L2VXLAN_NETWORKS_PATH);
+            kmsg.setNoStatusCheck(true);
+            bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, vtep.getHostUuid());
+            bus.send(kmsg, new CloudBusCallBack(completion1) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        logger.warn(reply.getError().toString());
+                    }
+                    completion1.done();
+                }
+            });
+        }).run(new NoErrorCompletion() {
+            @Override
+            public void done() {
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void handle(final PrepareL2NetworkOnHostMsg msg) {
@@ -229,11 +289,40 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
             handle((APIDetachL2NetworkFromClusterMsg) msg);
         } else if (msg instanceof APIDeleteVniRangeMsg) {
             handle((APIDeleteVniRangeMsg) msg);
+        } else if (msg instanceof APICreateVxlanVtepMsg) {
+            handle((APICreateVxlanVtepMsg) msg);
         } else if (msg instanceof L2NetworkMessage) {
             superHandle((L2NetworkMessage) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(final APICreateVxlanVtepMsg msg) {
+        APICreateVxlanVtepEvent evt = new APICreateVxlanVtepEvent(msg.getId());
+        HostVO host = Q.New(HostVO.class).eq(HostVO_.uuid, msg.getHostUuid()).find();
+
+        VtepVO vtep = new VtepVO();
+        vtep.setUuid(Platform.getUuid());
+        vtep.setClusterUuid(host.getClusterUuid());
+        vtep.setHostUuid(msg.getHostUuid());
+        vtep.setPoolUuid(msg.getPoolUuid());
+        vtep.setPort(VxlanNetworkPoolConstant.VXLAN_PORT);
+        vtep.setType(VxlanNetworkPoolConstant.KVM_VXLAN_TYPE);
+        vtep.setVtepIp(msg.getVtepIp());
+
+        vtep = dbf.persistAndRefresh(vtep);
+        evt.setInventory(VtepInventory.valueOf(vtep));
+
+        PopulateVtepPeersMsg pmsg = new PopulateVtepPeersMsg();
+        pmsg.setPoolUuid(msg.getPoolUuid());
+        bus.makeTargetServiceIdByResourceUuid(pmsg, L2NetworkConstant.SERVICE_ID, msg.getPoolUuid());
+        bus.send(pmsg, new CloudBusCallBack(msg){
+            @Override
+            public void run(MessageReply reply) {
+                bus.publish(evt);
+            }
+        });
     }
 
     private void handle(final APIDetachL2NetworkFromClusterMsg msg) {
