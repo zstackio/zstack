@@ -21,6 +21,7 @@ import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.deployer.Deployer;
 
+import java.math.BigInteger;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -98,7 +99,8 @@ public class TestDestroyVm {
         Assert.assertNotNull(vm1.getRootVolume());
         APIGetIpAddressCapacityReply ipcount1 = api.getIpAddressCapacityByAll();
 
-        Assert.assertEquals(ipcount.getAvailableCapacity() + vm1.getVmNics().size(), ipcount1.getAvailableCapacity());
+        Assert.assertTrue(ipcount.getAvailableCapacity().add(new BigInteger(String.format("%d", vm1.getVmNics().size())))
+                .compareTo(ipcount1.getAvailableCapacity()) == 0);
 
         for (VmNicVO nic : vmvo1.getVmNics()) {
             Assert.assertNull(nic.getUsedIpUuid());

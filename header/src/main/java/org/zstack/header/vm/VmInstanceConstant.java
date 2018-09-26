@@ -20,7 +20,11 @@ public interface VmInstanceConstant {
         DeletionPolicy,
         AttachingIsoInventory,
         DetachingIsoUuid,
-        ReleaseNicAfterDetachNic
+        ReleaseNicAfterDetachNic,
+        VmNicInventory,
+        L3NetworkInventory,
+        UsedIPInventory,
+        vmInventory,
     }
 
     enum VmOperation {

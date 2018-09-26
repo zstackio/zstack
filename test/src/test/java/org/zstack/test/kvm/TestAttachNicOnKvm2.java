@@ -21,6 +21,8 @@ import org.zstack.test.storage.backup.sftp.TestSftpBackupStorageDeleteImage2;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import java.math.BigInteger;
+
 /**
  * 1. attach a nic to vm
  * 2. make attaching fails
@@ -58,7 +60,7 @@ public class TestAttachNicOnKvm2 {
         VmInstanceInventory vm = deployer.vms.get("TestVm");
 
         APIGetIpAddressCapacityReply r = api.getIpAddressCapacityByAll();
-        long avail = r.getAvailableCapacity();
+        BigInteger avail = r.getAvailableCapacity();
 
         config.attachNicSuccess = false;
         try {
@@ -68,6 +70,7 @@ public class TestAttachNicOnKvm2 {
 
         r = api.getIpAddressCapacityByAll();
         Assert.assertEquals(avail, r.getAvailableCapacity());
+        Assert.assertTrue(avail.compareTo(r.getAvailableCapacity()) == 0);
 
         VmInstanceVO vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
         Assert.assertEquals(3, vmvo.getVmNics().size());

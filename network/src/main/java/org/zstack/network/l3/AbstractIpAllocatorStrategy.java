@@ -1,5 +1,7 @@
 package org.zstack.network.l3;
 
+import com.googlecode.ipv6.IPv6Address;
+import com.googlecode.ipv6.IPv6Network;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
@@ -64,5 +66,39 @@ public abstract class AbstractIpAllocatorStrategy implements IpAllocatorStrategy
         }
 
         return l3NwMgr.reserveIp(IpRangeInventory.valueOf(ipr), msg.getRequiredIp());
+    }
+
+    protected UsedIpInventory allocateRequiredIpv6(IpAllocateMessage msg) {
+        SimpleQuery<IpRangeVO> q = dbf.createQuery(IpRangeVO.class);
+        q.add(IpRangeVO_.l3NetworkUuid, SimpleQuery.Op.EQ, msg.getL3NetworkUuid());
+        List<IpRangeVO> iprs = q.list();
+        IPv6Address address = IPv6Address.fromString(msg.getRequiredIp());
+
+        IpRangeVO ipr = CollectionUtils.find(iprs, new Function<IpRangeVO, IpRangeVO>() {
+            @Override
+            public IpRangeVO call(IpRangeVO arg) {
+                IPv6Network network = IPv6Network.fromString(arg.getNetworkCidr());
+                if (network.contains(address)) {
+                    return arg;
+                } else {
+                    return null;
+                }
+            }
+        });
+
+        if (ipr == null) {
+            L3NetworkVO l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid()).find();
+            if (l3NetworkVO.getType().equals(L3NetworkConstant.L3_BASIC_NETWORK_TYPE)) {
+                throw new OperationFailureException(errf.instantiateErrorCode(L3Errors.ALLOCATE_IP_ERROR,
+                        String.format("cannot find ip range that has ip[%s] in l3Network[uuid:%s]", msg.getRequiredIp(), msg.getL3NetworkUuid())
+                ));
+            }
+        }
+
+        for (AfterAllocateRequiredIpExtensionPoint extp : pluginRgty.getExtensionList(AfterAllocateRequiredIpExtensionPoint.class)) {
+            ipr = extp.afterAllocateRequiredIp(msg, ipr, iprs);
+        }
+
+        return l3NwMgr.reserveIp(IpRangeInventory.valueOf(ipr), address);
     }
 }

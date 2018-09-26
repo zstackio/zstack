@@ -124,6 +124,7 @@ import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -1085,8 +1086,8 @@ public class Api implements CloudBusEventListener {
         throwExceptionIfNeed(res.error);
 
         APIGetIpAddressCapacityReply reply = new APIGetIpAddressCapacityReply();
-        reply.setTotalCapacity(res.value.totalCapacity);
-        reply.setAvailableCapacity(res.value.availableCapacity);
+        reply.setTotalCapacity(new BigInteger(String.format("%d", res.value.totalCapacity)));
+        reply.setAvailableCapacity(new BigInteger(String.format("%d", res.value.availableCapacity)));
         return reply;
     }
 
@@ -1102,8 +1103,8 @@ public class Api implements CloudBusEventListener {
         throwExceptionIfNeed(res.error);
 
         APIGetIpAddressCapacityReply reply = new APIGetIpAddressCapacityReply();
-        reply.setTotalCapacity(res.value.totalCapacity);
-        reply.setAvailableCapacity(res.value.availableCapacity);
+        reply.setTotalCapacity(new BigInteger(String.format("%d", res.value.totalCapacity)));
+        reply.setAvailableCapacity(new BigInteger(String.format("%d", res.value.availableCapacity)));
         return reply;
     }
 

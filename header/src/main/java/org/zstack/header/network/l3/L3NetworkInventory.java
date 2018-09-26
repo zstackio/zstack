@@ -111,6 +111,8 @@ public class L3NetworkInventory implements Serializable {
 
     private String category;
 
+    private Integer ipVersion;
+
     /**
      * @desc the time this resource gets created
      */
@@ -163,6 +165,7 @@ public class L3NetworkInventory implements Serializable {
         inv.setNetworkServices(NetworkServiceL3NetworkRefInventory.valueOf(vo.getNetworkServices()));
         inv.setCategory(vo.getCategory().toString());
         inv.setHostRoute(L3NetworkHostRouteInventory.valueOf(vo.getHostRoutes()));
+        inv.setIpVersion(vo.getIpVersion());
         return inv;
     }
 
@@ -336,5 +339,13 @@ public class L3NetworkInventory implements Serializable {
 
     public void setHostRoute(List<L3NetworkHostRouteInventory> hostRoute) {
         this.hostRoute = hostRoute;
+    }
+
+    public Integer getIpVersion() {
+        return ipVersion;
+    }
+
+    public void setIpVersion(Integer ipVersion) {
+        this.ipVersion = ipVersion;
     }
 }

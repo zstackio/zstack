@@ -1,5 +1,8 @@
 package org.zstack.header.network.l3;
 
+import com.googlecode.ipv6.IPv6Address;
+import com.googlecode.ipv6.IPv6Network;
+import com.googlecode.ipv6.IPv6NetworkMask;
 import org.apache.commons.net.util.SubnetUtils;
 import org.apache.commons.net.util.SubnetUtils.SubnetInfo;
 import org.zstack.header.configuration.PythonClassInventory;
@@ -7,9 +10,12 @@ import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.search.Inventory;
 import org.zstack.utils.gson.JSONObjectUtil;
-import org.zstack.utils.network.NetworkUtils;
+import org.zstack.utils.network.*;
 
+import javax.persistence.Column;
 import java.io.Serializable;
+import java.net.Inet6Address;
+import java.net.InetAddress;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -75,6 +81,13 @@ public class IpRangeInventory implements Serializable {
     private String gateway;
 
     private String networkCidr;
+
+    private Integer ipVersion;
+
+    private String addressMode;
+
+    private Integer prefixLen;
+
     /**
      * @desc the time this resource gets created
      */
@@ -97,6 +110,9 @@ public class IpRangeInventory implements Serializable {
         inv.setUuid(vo.getUuid());
         inv.setLastOpDate(vo.getLastOpDate());
         inv.setNetworkCidr(vo.getNetworkCidr());
+        inv.setIpVersion(vo.getIpVersion());
+        inv.setAddressMode(vo.getAddressMode());
+
         return inv;
     }
 
@@ -196,6 +212,30 @@ public class IpRangeInventory implements Serializable {
         this.lastOpDate = lastOpDate;
     }
 
+    public int getIpVersion() {
+        return ipVersion;
+    }
+
+    public String getAddressMode() {
+        return addressMode;
+    }
+
+    public void setAddressMode(String addressMode) {
+        this.addressMode = addressMode;
+    }
+
+    public void setIpVersion(Integer ipVersion) {
+        this.ipVersion = ipVersion;
+    }
+
+    public Integer getPrefixLen() {
+        return prefixLen;
+    }
+
+    public void setPrefixLen(Integer prefixLen) {
+        this.prefixLen = prefixLen;
+    }
+
     @Override
     public String toString() {
         return JSONObjectUtil.toJsonString(this);
@@ -213,6 +253,7 @@ public class IpRangeInventory implements Serializable {
         SubnetUtils su = new SubnetUtils(msg.getGateway(), msg.getNetmask());
         ipr.setNetworkCidr(su.getInfo().getCidrSignature());
         ipr.setUuid(msg.getResourceUuid());
+        ipr.setIpVersion(IPv6Constants.IPv4);
         return ipr;
     }
 
@@ -234,6 +275,54 @@ public class IpRangeInventory implements Serializable {
         ipr.setNetmask(subnet.getNetmask());
         ipr.setL3NetworkUuid(msg.getL3NetworkUuid());
         ipr.setUuid(msg.getResourceUuid());
+        ipr.setIpVersion(IPv6Constants.IPv4);
+        return ipr;
+    }
+
+    public static IpRangeInventory fromMessage(APIAddIpv6RangeByNetworkCidrMsg msg) {
+        IPv6Network network = IPv6Network.fromString(msg.getNetworkCidr());
+        IpRangeInventory ipr = new IpRangeInventory();
+        ipr.setNetworkCidr(msg.getNetworkCidr());
+        ipr.setName(msg.getName());
+        ipr.setDescription(msg.getDescription());
+
+        ipr.setAddressMode(msg.getAddressMode());
+        if (msg.getAddressMode().equals(IPv6Constants.Stateful_DHCP)) {
+            ipr.setStartIp(network.getFirst().add(2).toString());
+        } else {
+
+            ipr.setStartIp(network.getFirst().add(1).toString());
+        }
+        ipr.setEndIp(network.getLast().subtract(1).toString());
+        ipr.setNetmask("");
+        ipr.setGateway("");
+        ipr.setL3NetworkUuid(msg.getL3NetworkUuid());
+        ipr.setUuid(msg.getResourceUuid());
+        ipr.setIpVersion(IPv6Constants.IPv6);
+        ipr.setPrefixLen(network.getNetmask().asPrefixLength());
+
+        return ipr;
+    }
+
+    public static IpRangeInventory fromMessage(APIAddIpv6RangeMsg msg) {
+        IPv6Address start = IPv6Address.fromString(msg.getStartIp());
+
+        IPv6Network network = IPv6Network.fromAddressAndMask(start, IPv6NetworkMask.fromPrefixLength(msg.getPrefixLen()));
+        IpRangeInventory ipr = new IpRangeInventory();
+        ipr.setNetworkCidr(network.toString());
+        ipr.setName(msg.getName());
+        ipr.setDescription(msg.getDescription());
+
+        ipr.setAddressMode(msg.getAddressMode());
+        ipr.setStartIp(msg.getStartIp());
+        ipr.setEndIp(msg.getEndIp());
+        ipr.setNetmask("");
+        ipr.setGateway("");
+        ipr.setPrefixLen(msg.getPrefixLen());
+        ipr.setL3NetworkUuid(msg.getL3NetworkUuid());
+        ipr.setUuid(msg.getResourceUuid());
+        ipr.setIpVersion(IPv6Constants.IPv6);
+
         return ipr;
     }
 

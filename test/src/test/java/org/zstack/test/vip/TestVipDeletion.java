@@ -19,6 +19,7 @@ import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
 import org.zstack.test.deployer.Deployer;
 
+import java.math.BigInteger;
 import java.util.Arrays;
 
 /**
@@ -63,20 +64,20 @@ public class TestVipDeletion {
     public void test() throws ApiSenderException {
         L3NetworkInventory pubL3 = deployer.l3Networks.get("PublicNetwork");
         APIGetIpAddressCapacityReply reply = api.getIpAddressCapacity(null, Arrays.asList(pubL3.getUuid()), null);
-        long originCapacity = reply.getAvailableCapacity();
+        BigInteger originCapacity = reply.getAvailableCapacity();
         VipInventory vip = api.acquireIp(pubL3.getUuid());
         reply = api.getIpAddressCapacity(null, Arrays.asList(pubL3.getUuid()), null);
-        long afterCapacity = reply.getAvailableCapacity();
-        Assert.assertEquals(originCapacity - 1, afterCapacity);
+        BigInteger afterCapacity = reply.getAvailableCapacity();
+        Assert.assertTrue(originCapacity.subtract(BigInteger.ONE).compareTo(afterCapacity) == 0);
         api.releaseIp(vip.getUuid());
         reply = api.getIpAddressCapacity(null, Arrays.asList(pubL3.getUuid()), null);
         afterCapacity = reply.getAvailableCapacity();
-        Assert.assertEquals(originCapacity, afterCapacity);
+        Assert.assertTrue(originCapacity.compareTo(afterCapacity) == 0);
 
         EipInventory eip = deployer.eips.get("eip");
         api.releaseIp(eip.getVipUuid());
         reply = api.getIpAddressCapacity(null, Arrays.asList(pubL3.getUuid()), null);
         afterCapacity = reply.getAvailableCapacity();
-        Assert.assertEquals(originCapacity + 1, afterCapacity);
+        Assert.assertTrue(originCapacity.add(BigInteger.ONE).compareTo(afterCapacity) == 0);
     }
 }

@@ -1,5 +1,6 @@
 package org.zstack.header.network.l3
 
+import java.lang.Integer
 import java.sql.Timestamp
 import java.sql.Timestamp
 
@@ -60,6 +61,18 @@ doc {
 		desc ""
 		type "String"
 		since "0.6"
+	}
+	field {
+		name "ipVersion"
+		desc "ip协议号"
+		type "Integer"
+		since "3.1"
+	}
+	field {
+		name "addressMode"
+		desc "IPv6地址分配模式"
+		type "String"
+		since "3.1"
 	}
 	field {
 		name "createDate"

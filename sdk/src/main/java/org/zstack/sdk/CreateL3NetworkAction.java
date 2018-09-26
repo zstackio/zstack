@@ -40,6 +40,9 @@ public class CreateL3NetworkAction extends AbstractAction {
     @Param(required = false, validValues = {"Public","Private","System"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String category = "Private";
 
+    @Param(required = false, validValues = {"4","6"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Integer ipVersion;
+
     @Param(required = false)
     public boolean system = false;
 
