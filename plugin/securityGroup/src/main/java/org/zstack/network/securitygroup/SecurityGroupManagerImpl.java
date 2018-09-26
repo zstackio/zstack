@@ -770,9 +770,6 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             cal.securityGroupUuids = sgUuids;
             cal.vmStates = asList(VmInstanceState.Running);
             List<HostRuleTO> htos = cal.calculate();
-            for (HostRuleTO hto : htos) {
-                hto.setRefreshHost(true);
-            }
 
             applyRules(htos);
             HostSecurityGroupMembersTO groupMemberTO = cal.returnHostSecurityGroupMember(msg.getUuid());
@@ -911,14 +908,11 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         rcal.securityGroupUuids = sgUuids;
         rcal.vmStates = asList(VmInstanceState.Running);
         List<HostRuleTO> rhtos = rcal.calculate();
-        for (HostRuleTO hto : rhtos) {
-            hto.setRefreshHost(true);
-        }
 
         applyRules(rhtos);
         HostSecurityGroupMembersTO groupMemberTO = cal.returnHostSecurityGroupMember(uuid);
         if(!groupMemberTO.getHostUuids().isEmpty()){
-            //groupMemberTO.getGroupMembersTO().setActionCode(ACTION_CODE_DELETE_GROUP);
+            groupMemberTO.getGroupMembersTO().setActionCode(ACTION_CODE_DELETE_GROUP);
             updateGroupMembers(groupMemberTO);
         }
     }
