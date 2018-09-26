@@ -424,7 +424,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     }
 
     @Override
-    public void beforeStartVmOnKvm(KVMHostInventory host, VmInstanceSpec spec, StartVmCmd cmd) throws KVMException {
+    public void beforeStartVmOnKvm(KVMHostInventory host, VmInstanceSpec spec, StartVmCmd cmd) {
         cmd.setRootVolume(convertVolumeToCephIfNeeded(spec.getDestRootVolume(), cmd.getRootVolume()));
 
         List<VolumeTO> dtos = new ArrayList<VolumeTO>();
