@@ -41,11 +41,13 @@ import org.zstack.utils.form.Form;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
-import static org.zstack.utils.CollectionUtils.distinctByKey;
 
 public class KVMHostFactory extends AbstractService implements HypervisorFactory, Component,
         ManagementNodeReadyExtensionPoint, MaxDataVolumeNumberExtensionPoint, HypervisorMessageFactory {
@@ -93,10 +95,10 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         pluginRgty.getExtensionList(FormTagExtensionPoint.class).forEach(it -> extensionTagMappers.putAll(it.getTagMappers(AddKVMHostMsg.class)));
 
         Form<AddKVMHostMsg> form = Form.New(AddKVMHostMsg.class, content)
-                .addConvert("managementIps", IpRangeSet::listAllIps, AddHostMsg::setManagementIp);
+                .addConverter("hostIps", IpRangeSet::listAllIps, AddHostMsg::setManagementIp);
 
         extensionTagMappers.forEach((columnName, builder) ->
-                form.addConvert(columnName, (it, value) -> it.addSystemTag(builder.call(value))));
+                form.addConverter(columnName, (it, value) -> it.addSystemTag(builder.call(value))));
 
         List<AddKVMHostMsg> msgs;
         try {
@@ -106,8 +108,8 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
             throw new OperationFailureException(operr("fail to load host info from file. %s", e.getMessage()));
         }
 
-        return msgs.stream().filter(distinctByKey(AddKVMHostMsg::getManagementIp))
-                .peek(it -> it.setName((StringUtils.isEmpty(it.getName()) ? "HOST-" : it.getName()) + it.getManagementIp()))
+        return msgs.stream().peek(it -> it.setName((StringUtils.isEmpty(it.getName()) ? "HOST" : it.getName()) +
+                "-" + it.getManagementIp()))
                 .collect(Collectors.toList());
     }
 

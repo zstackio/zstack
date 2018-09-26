@@ -8,6 +8,7 @@ import org.zstack.utils.TypeUtils;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Form<T> {
     private final Class<T> clz;
@@ -35,18 +36,18 @@ public class Form<T> {
         return new Form<>(clazz, base64Content);
     }
 
-    public Form<T> addConvert(String column, Extender extender, Consumer<T> consumer) {
+    public Form<T> addConverter(String column, Extender extender, Consumer<T> consumer) {
         columnExtender.put(column, extender);
         columnConsumer.put(column, consumer);
         return this;
     }
 
-    public Form<T> addConvert(String column, Consumer<T> consumer) {
+    public Form<T> addConverter(String column, Consumer<T> consumer) {
         columnConsumer.put(column, consumer);
         return this;
     }
 
-    public List<T> load() throws Exception {
+    public List<T> load() throws IOException {
         List<T> results = new ArrayList<>();
 
         FormReader reader = getFormReader(getReaderType());
@@ -58,17 +59,31 @@ public class Form<T> {
         produceParamCheck();
 
         String[] record;
+        int line = 0;
+        Map<Integer, String> lineErrorInfo = new TreeMap<>();
         while ((record = reader.nextRecord()) != null) {
+            line++;
             if (record.length == 0) {
                 continue;
             }
 
-            if (columnExtender.isEmpty()) {
-                results.add(loadObject(record));
-            } else {
-                results.addAll(new ExtendRecordLoader(record).loadExtendRecord());
+            try {
+                if (columnExtender.isEmpty()) {
+                    results.add(loadObject(record));
+                } else {
+                    results.addAll(new ExtendRecordLoader(record).loadExtendRecord());
+                }
+            } catch (Exception e) {
+                lineErrorInfo.put(line, e.getMessage());
             }
         }
+
+        if (!lineErrorInfo.isEmpty()) {
+            throw new IllegalArgumentException(String.join("\n", lineErrorInfo.entrySet().stream()
+                    .map(e -> String.format("line %d: %s", e.getKey(), e.getValue()))
+                    .collect(Collectors.toList())));
+        }
+
         return results;
     }
 
