@@ -372,8 +372,9 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         new SQLBatch() {
             @Override
             protected void scripts() {
+                // check long jobs using same uuid with current node
                 List<LongJobVO> vos = Q.New(LongJobVO.class)
-                        .notNull(LongJobVO_.managementNodeUuid)
+                        .eq(LongJobVO_.managementNodeUuid, Platform.getManagementServerId())
                         .eq(LongJobVO_.state, LongJobState.Running)
                         .list();
                 vos.forEach(vo -> {
