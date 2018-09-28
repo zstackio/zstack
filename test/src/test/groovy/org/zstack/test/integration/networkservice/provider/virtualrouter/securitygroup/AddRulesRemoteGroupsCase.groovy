@@ -229,7 +229,7 @@ class AddRulesRemoteGroupsCase extends SubCase{
             stateEvent = "disable"
         }
 
-        boolean called = false
+        boolean called
         KVMAgentCommands.ApplySecurityGroupRuleCmd cmd
         APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO rulex = returnRandomRule()
         env.simulator(KVMSecurityGroupBackend.SECURITY_GROUP_APPLY_RULE_PATH ){ HttpEntity<String> e ->
