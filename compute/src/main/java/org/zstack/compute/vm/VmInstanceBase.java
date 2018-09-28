@@ -4287,6 +4287,15 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         final VolumeInventory volume = msg.getVolume();
+        VolumeVO vvo = dbf.findByUuid(volume.getUuid(), VolumeVO.class);
+        if (vvo.getVmInstanceUuid() == null) {
+            // the volume is already detached, skip the bellow actions
+            extEmitter.afterDetachVolume(getSelfInventory(), volume);
+            bus.reply(msg, reply);
+            completion.done();
+            return;
+        }
+
         extEmitter.preDetachVolume(getSelfInventory(), volume);
         extEmitter.beforeDetachVolume(getSelfInventory(), volume);
 
@@ -4312,6 +4321,10 @@ public class VmInstanceBase extends AbstractVmInstance {
                     extEmitter.failedToDetachVolume(getSelfInventory(), volume, r.getError());
                 } else {
                     extEmitter.afterDetachVolume(getSelfInventory(), volume);
+
+                    // update Volumevo before exit message queue
+                    vvo.setVmInstanceUuid(null);
+                    dbf.updateAndRefresh(vvo);
                 }
 
                 bus.reply(msg, reply);
