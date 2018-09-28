@@ -223,32 +223,34 @@ class AddRulesRemoteGroupsCase extends SubCase{
     }
 
     void testChangeState(String sgUuid){
+        boolean called = false
 
         changeSecurityGroupState {
             uuid = sgUuid
             stateEvent = "disable"
         }
 
-        boolean called
         KVMAgentCommands.ApplySecurityGroupRuleCmd cmd
         APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO rulex = returnRandomRule()
         env.simulator(KVMSecurityGroupBackend.SECURITY_GROUP_APPLY_RULE_PATH ){ HttpEntity<String> e ->
-            called = true
             cmd = JSONObjectUtil.toObject(e.getBody(), KVMAgentCommands.ApplySecurityGroupRuleCmd.class)
+            List<SecurityGroupRuleTO> ruleTOs = cmd.getRuleTOs()
+            ruleTOs.each {
+                if (sgUuid == it.getRules().get(0).securityGroupUuid ) {
+                    called = true
+                }
+            }
             return new KVMAgentCommands.ApplySecurityGroupRuleResponse()
         }
-        called = false
         addSecurityGroupRule {
             rules = [rulex]
             securityGroupUuid = sgUuid
         }
-
         retryInSecs {
+            List<SecurityGroupRuleVO> rules = Q.New(SecurityGroupRuleVO.class).eq(SecurityGroupRuleVO_.securityGroupUuid, sgUuid).list()
+            assert rules.get(0).state == SecurityGroupRuleState.Disabled
             assert !called
         }
-        List<SecurityGroupRuleVO> rules = Q.New(SecurityGroupRuleVO.class).eq(SecurityGroupRuleVO_.securityGroupUuid, sgUuid).list()
-        assert  rules.get(0).state == SecurityGroupRuleState.Disabled
-
         changeSecurityGroupState {
             uuid = sgUuid
             stateEvent = "enable"
@@ -259,16 +261,13 @@ class AddRulesRemoteGroupsCase extends SubCase{
         APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO rulexx = returnRandomRule()
 
         addSecurityGroupRule {
-            delegate.rules = [rulexx]
+            rules = [rulexx]
             securityGroupUuid = sgUuid
         }
-
         retryInSecs {
-            assert called
-            assert cmd != null
-            assert sgUuid == cmd.getRuleTOs().get(0).getRules().get(0).securityGroupUuid
-            rules = Q.New(SecurityGroupRuleVO.class).eq(SecurityGroupRuleVO_.securityGroupUuid, sgUuid).list()
+            List<SecurityGroupRuleVO> rules = Q.New(SecurityGroupRuleVO.class).eq(SecurityGroupRuleVO_.securityGroupUuid, sgUuid).list()
             assert rules.get(0).state == SecurityGroupRuleState.Enabled
+            assert called
         }
     }
 
