@@ -150,24 +150,19 @@ class SnapshotMaxIncrementalCase extends SubCase {
         int expectedTreeCount = ((100 + 1) + MaxIncrementalSnapshot) / (MaxIncrementalSnapshot + 1)
         assert Q.New(VolumeSnapshotTreeVO.class).count() == expectedTreeCount
 
-        final CountDownLatch latch = new CountDownLatch(100)
+        def threads = []
         for (String suuid: uuids){
             def targetUuid = suuid
-            new Thread(new Runnable() {
-                @Override
-                void run() {
-                    try {
-                        deleteVolumeSnapshot {
-                            uuid = targetUuid
-                        }
-                    }finally {
-                        latch.countDown()
-                    }
+            def thread = Thread.start {
+                deleteVolumeSnapshot {
+                    uuid = targetUuid
                 }
-            }).start()
+            }
+
+            threads.add(thread)
         }
 
-        latch.await(20, TimeUnit.SECONDS)
+        threads.each { it -> it.join() }
 
         assert Q.New(VolumeSnapshotVO.class).count() == 0
         assert Q.New(VolumeSnapshotTreeVO.class).count() == 0
