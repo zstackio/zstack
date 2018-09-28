@@ -4,6 +4,14 @@ import org.zstack.sdk.ErrorCode;
 
 public class AddHostFromFileResult  {
 
+    public java.lang.String ip;
+    public void setIp(java.lang.String ip) {
+        this.ip = ip;
+    }
+    public java.lang.String getIp() {
+        return this.ip;
+    }
+
     public boolean success;
     public void setSuccess(boolean success) {
         this.success = success;

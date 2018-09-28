@@ -88,7 +88,7 @@ public class SourceClassMap {
 			put("org.zstack.header.datacenter.DataCenterProperty", "org.zstack.sdk.DataCenterProperty");
 			put("org.zstack.header.errorcode.ErrorCode", "org.zstack.sdk.ErrorCode");
 			put("org.zstack.header.errorcode.ErrorCodeList", "org.zstack.sdk.ErrorCodeList");
-			put("org.zstack.header.host.APIAddHostFromConfigFileEvent$AddHostFromFileResult", "org.zstack.sdk.AddHostFromFileResult");
+			put("org.zstack.header.host.AddHostFromFileResult", "org.zstack.sdk.AddHostFromFileResult");
 			put("org.zstack.header.host.HostInventory", "org.zstack.sdk.HostInventory");
 			put("org.zstack.header.hybrid.network.eip.HybridEipAddressInventory", "org.zstack.sdk.HybridEipAddressInventory");
 			put("org.zstack.header.hybrid.network.eip.HybridEipStatus", "org.zstack.sdk.HybridEipStatus");
@@ -327,7 +327,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.AccountInventory", "org.zstack.header.identity.AccountInventory");
 			put("org.zstack.sdk.AccountResourceRefInventory", "org.zstack.header.identity.AccountResourceRefInventory");
 			put("org.zstack.sdk.ActionStruct", "org.zstack.cloudformation.template.struct.ActionStruct");
-			put("org.zstack.sdk.AddHostFromFileResult", "org.zstack.header.host.APIAddHostFromConfigFileEvent$AddHostFromFileResult");
+			put("org.zstack.sdk.AddHostFromFileResult", "org.zstack.header.host.AddHostFromFileResult");
 			put("org.zstack.sdk.AffinityGroupInventory", "org.zstack.header.affinitygroup.AffinityGroupInventory");
 			put("org.zstack.sdk.AffinityGroupUsageInventory", "org.zstack.header.affinitygroup.AffinityGroupUsageInventory");
 			put("org.zstack.sdk.AlertInventory", "org.zstack.monitoring.AlertInventory");

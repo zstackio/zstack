@@ -25,7 +25,7 @@ public class CsvReader implements FormReader {
 
     public CsvReader(String base64Content) {
         String content = new String(Base64.getDecoder().decode(base64Content), Charset.forName("utf-8"));
-        List<String[]> records = getRecords(content);
+        List<String[]> records = getRecords(content.replaceFirst("\\uFEFF", ""));
         recordIterator = records.iterator();
         header = recordIterator.next();
     }
