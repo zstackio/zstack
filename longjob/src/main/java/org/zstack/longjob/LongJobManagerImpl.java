@@ -264,7 +264,6 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                         vo.setState(LongJobState.Succeeded);
                         if (vo.getJobResult() == null || vo.getJobResult().isEmpty())
                             vo.setJobResult("Succeeded");
-                        vo.setLastOpDate(Timestamp.valueOf(LocalDateTime.now()));
                         dbf.update(vo);
                         logger.info(String.format("successfully run longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
                     }
@@ -275,7 +274,6 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                         vo.setState(LongJobState.Failed);
                         if (vo.getJobResult() == null || vo.getJobResult().isEmpty())
                             vo.setJobResult("Failed : " + errorCode.toString());
-                        vo.setLastOpDate(Timestamp.valueOf(LocalDateTime.now()));
                         dbf.update(vo);
                         logger.info(String.format("failed to run longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
                     }
@@ -424,8 +422,10 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             vo.setState(LongJobState.Running);
         } else if (vo.getState() == LongJobState.Running) {
             // set running jobs to error
-            vo.setJobResult("Failed because management node restarted.");
-            vo.setState(LongJobState.Failed);
+            ThreadContext.put(Constants.THREAD_CONTEXT_API, vo.getApiId());
+            LongJob job = longJobFactory.getLongJob(vo.getJobName());
+            ThreadContext.put(Constants.THREAD_CONTEXT_TASK_NAME, job.getClass().toString());
+            job.resume(vo);
         }
     }
 
