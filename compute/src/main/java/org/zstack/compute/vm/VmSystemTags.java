@@ -81,4 +81,10 @@ public class VmSystemTags {
     public static PatternedSystemTag BOOT_MODE = new PatternedSystemTag(String.format("bootMode::{%s}", BOOT_MODE_TOKEN), VmInstanceVO.class);
 
     public static PatternedSystemTag ADDITIONAL_QMP_ADDED = new PatternedSystemTag("additionalQmp", VmInstanceVO.class);
+
+    public static final String VM_MACHINE_TYPE_TOKEN = "vmMachineType";
+    public static PatternedSystemTag VM_MACHINE_TYPE = new PatternedSystemTag(
+            String.format("vmMachineType::{%s}", VM_MACHINE_TYPE_TOKEN),
+            VmInstanceVO.class
+    );
 }

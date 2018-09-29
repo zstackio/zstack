@@ -867,6 +867,15 @@ public class KVMAgentCommands {
         private boolean isApplianceVm;
         private String systemSerialNumber;
         private String bootMode;
+        private String machineType;
+
+        public String getMachineType() {
+            return machineType;
+        }
+
+        public void setMachineType(String machineType) {
+            this.machineType = machineType;
+        }
 
         public boolean isAdditionalQmp() {
             return additionalQmp;

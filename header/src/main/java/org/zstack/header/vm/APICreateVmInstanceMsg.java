@@ -163,6 +163,17 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
     @APIParam(required = false, validValues = {"InstantStart", "JustCreate", "CreateStopped"})
     private String strategy = VmCreationStrategy.InstantStart.toString();
 
+    @APIParam(required = false, validValues = {"pc", "q35"})
+    private String machineType = VmMachineType.pc.toString();
+
+    public String getMachineType() {
+        return machineType;
+    }
+
+    public void setMachineType(String machineType) {
+        this.machineType = machineType;
+    }
+
     public String getStrategy() {
         return strategy;
     }

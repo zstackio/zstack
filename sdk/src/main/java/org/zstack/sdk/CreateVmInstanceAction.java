@@ -67,6 +67,9 @@ public class CreateVmInstanceAction extends AbstractAction {
     @Param(required = false, validValues = {"InstantStart","JustCreate","CreateStopped"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String strategy = "InstantStart";
 
+    @Param(required = false, validValues = {"pc","q35"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String machineType = "pc";
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 

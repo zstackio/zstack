@@ -193,6 +193,16 @@ doc {
 					values ("InstantStart","JustCreate","CreateStopped")
 					
 				}
+				column {
+					name "machineType"
+					enclosedIn ""
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "3.1.0"
+					values ("pc","q35")
+				}
 			}
         }
 

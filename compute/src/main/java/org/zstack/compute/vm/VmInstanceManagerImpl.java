@@ -70,12 +70,10 @@ import org.zstack.header.zone.ZoneVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.search.SearchQuery;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.ObjectUtils;
-import org.zstack.utils.TagUtils;
-import org.zstack.utils.Utils;
+import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -92,7 +90,9 @@ import java.util.stream.Collectors;
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionDSL.map;
 
 public class VmInstanceManagerImpl extends AbstractService implements
         VmInstanceManager,
@@ -854,9 +854,22 @@ public class VmInstanceManagerImpl extends AbstractService implements
         vo = new SQLBatchWithReturn<VmInstanceVO>() {
             @Override
             protected VmInstanceVO scripts() {
+                // database: VmInstanceVO
                 finalVo.setAccountUuid(msg.getAccountUuid());
                 factory.createVmInstance(finalVo, msg);
-                return reload(finalVo);
+                reload(finalVo);
+
+                // systemTag: VmInstanceVO / vmMachineType::{pc|q35}
+                if (cmsg instanceof APICreateVmInstanceMsg) {
+                    APICreateVmInstanceMsg origMsg = (APICreateVmInstanceMsg)cmsg;
+                    SystemTagCreator creator = VmSystemTags.VM_MACHINE_TYPE.newSystemTagCreator(finalVo.getUuid());
+                    creator.setTagByTokens(map(e(VmSystemTags.VM_MACHINE_TYPE_TOKEN, origMsg.getMachineType())));
+                    creator.inherent = false;
+                    creator.recreate = true;
+                    creator.create();
+                }
+
+                return finalVo;
             }
         }.execute();
 
