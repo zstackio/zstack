@@ -3,25 +3,18 @@ package org.zstack.test.integration.kvm.vm
 import org.springframework.http.HttpEntity
 import org.zstack.compute.vm.VmSystemTags
 import org.zstack.core.cloudbus.CloudBusGlobalConfig
-import org.zstack.core.cloudbus.CloudBusGlobalProperty
 import org.zstack.header.vm.VmCreationStrategy
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
-import org.zstack.sdk.CreateVmInstanceAction
-import org.zstack.sdk.DiskOfferingInventory
-import org.zstack.sdk.ImageInventory
-import org.zstack.sdk.InstanceOfferingInventory
-import org.zstack.sdk.L3NetworkInventory
-import org.zstack.sdk.VmInstanceInventory
+import org.zstack.sdk.*
 import org.zstack.test.integration.kvm.Env
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.testlib.VmSpec
 import org.zstack.utils.gson.JSONObjectUtil
-
 /**
  * Created by xing5 on 2017/2/22.
  */
@@ -148,7 +141,7 @@ test a VM's start/stop/reboot/destroy/recover operations
 
         //TODO: test socketNum, cpuOnSocket
         assert cmd.rootVolume.installPath == vmvo.rootVolume.installPath
-        assert cmd.useVirtio
+        assert cmd.rootVolume.useVirtio
         vmvo.vmNics.each { nic ->
             KVMAgentCommands.NicTO to = cmd.nics.find { nic.mac == it.mac }
             assert to != null: "unable to find the nic[mac:${nic.mac}]"

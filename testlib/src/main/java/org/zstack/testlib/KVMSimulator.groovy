@@ -76,6 +76,10 @@ class KVMSimulator implements Simulator {
             return new KVMAgentCommands.DetachNicRsp()
         }
 
+        spec.simulator(KVMConstant.KVM_UPDATE_NIC_PATH) {
+            return new KVMAgentCommands.UpdateNicRsp()
+        }
+
         spec.simulator(KVMConstant.KVM_ATTACH_ISO_PATH) {
             return new KVMAgentCommands.AttachIsoRsp()
         }
