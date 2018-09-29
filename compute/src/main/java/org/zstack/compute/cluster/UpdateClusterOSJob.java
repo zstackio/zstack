@@ -33,7 +33,7 @@ public class UpdateClusterOSJob implements LongJob {
     public void start(LongJobVO job, Completion completion) {
         UpdateClusterOSMsg msg = JSONObjectUtil.toObject(job.getJobData(), UpdateClusterOSMsg.class);
         bus.makeLocalServiceId(msg, ClusterConstant.SERVICE_ID);
-        bus.send(msg, new CloudBusCallBack(null) {
+        bus.send(msg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
                 UpdateClusterOSReply rly = reply.castReply();

@@ -31,7 +31,7 @@ public class CreateDataVolumeTemplateFromVolumeLongJob implements LongJob {
     public void start(LongJobVO job, Completion completion) {
         CreateDataVolumeTemplateFromVolumeMsg msg = JSONObjectUtil.toObject(job.getJobData(), CreateDataVolumeTemplateFromVolumeMsg.class);
         bus.makeLocalServiceId(msg, ImageConstant.SERVICE_ID);
-        bus.send(msg, new CloudBusCallBack(null) {
+        bus.send(msg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {

@@ -41,6 +41,7 @@ import org.zstack.utils.form.Form;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -91,26 +92,29 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
 
     @Override
     public List<AddHostMsg> buildMessageFromFile(String content) {
+        try {
+            return loadMsgFromFile(content).stream()
+                    .peek(it -> it.setName((StringUtils.isEmpty(it.getName()) ? "HOST" : it.getName()) + "-" + it.getManagementIp()))
+                    .collect(Collectors.toList());
+        } catch (IOException e) {
+            logger.error(e.getMessage(), e);
+            throw new OperationFailureException(operr("fail to load host info from file. because\n%s", e.getMessage()));
+        }
+    }
+
+    private List<AddKVMHostMsg> loadMsgFromFile(String content) throws IOException {
         Map<String, Function<String, String>> extensionTagMappers = new HashMap<>();
         pluginRgty.getExtensionList(FormTagExtensionPoint.class).forEach(it -> extensionTagMappers.putAll(it.getTagMappers(AddKVMHostMsg.class)));
 
         Form<AddKVMHostMsg> form = Form.New(AddKVMHostMsg.class, content)
-                .addConverter("hostIps", IpRangeSet::listAllIps, AddHostMsg::setManagementIp);
+                .addHeaderConverter(head -> (head.matches(".*\\(.*\\).*") ? head.split("[()]")[1] : head)
+                        .replaceAll("\\*", ""))
+                .addColumnConverter("managementIps", IpRangeSet::listAllIps, AddHostMsg::setManagementIp);
 
         extensionTagMappers.forEach((columnName, builder) ->
-                form.addConverter(columnName, (it, value) -> it.addSystemTag(builder.call(value))));
+                form.addColumnConverter(columnName, (it, value) -> it.addSystemTag(builder.call(value))));
 
-        List<AddKVMHostMsg> msgs;
-        try {
-            msgs = form.load();
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-            throw new OperationFailureException(operr("fail to load host info from file. %s", e.getMessage()));
-        }
-
-        return msgs.stream().peek(it -> it.setName((StringUtils.isEmpty(it.getName()) ? "HOST" : it.getName()) +
-                "-" + it.getManagementIp()))
-                .collect(Collectors.toList());
+        return form.load();
     }
 
     @Override
