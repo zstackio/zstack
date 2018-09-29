@@ -211,6 +211,16 @@ doc {
 					since "3.0"
 					
 				}
+				column {
+					name "machineType"
+					enclosedIn ""
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "3.1.0"
+					values ("pc","q35")
+				}
 			}
         }
 

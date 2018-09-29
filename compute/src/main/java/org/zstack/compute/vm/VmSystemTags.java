@@ -116,4 +116,10 @@ public class VmSystemTags {
             String.format("v2vVmCdroms::{%s}", V2V_VM_CDROMS_TOKEN),
             VmInstanceVO.class
     );
+
+    public static final String VM_MACHINE_TYPE_TOKEN = "vmMachineType";
+    public static PatternedSystemTag VM_MACHINE_TYPE = new PatternedSystemTag(
+            String.format("vmMachineType::{%s}", VM_MACHINE_TYPE_TOKEN),
+            VmInstanceVO.class
+    );
 }

@@ -979,6 +979,7 @@ public class KVMAgentCommands {
         private String systemSerialNumber;
         private String bootMode;
         private boolean fromForeignHypervisor;
+        private String machineType;
 
         public boolean isFromForeignHypervisor() {
             return fromForeignHypervisor;
@@ -986,6 +987,14 @@ public class KVMAgentCommands {
 
         public void setFromForeignHypervisor(boolean fromForeignHypervisor) {
             this.fromForeignHypervisor = fromForeignHypervisor;
+        }
+
+        public String getMachineType() {
+            return machineType;
+        }
+
+        public void setMachineType(String machineType) {
+            this.machineType = machineType;
         }
 
         public boolean isAdditionalQmp() {
