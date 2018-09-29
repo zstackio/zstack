@@ -62,9 +62,7 @@ public class ProcessFinder {
                 if (count == words.length) {
                     return p.pid;
                 }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            } catch (IOException ignore) {}
         }
 
         return null;
