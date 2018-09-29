@@ -56,7 +56,7 @@ public class TestForm {
 
     private void testExcel() throws Exception {
         List<TestClass> results = Form.New(TestClass.class, createExcelContent())
-                .addConverter("test", it -> Arrays.asList(it.split(",")), TestClass::setValue)
+                .addColumnConverter("test", it -> Arrays.asList(it.split(",")), TestClass::setValue)
                 .load();
         assert results.size() == 4;
         assert results.get(0).aBoolean && results.get(1).aBoolean;
@@ -67,7 +67,7 @@ public class TestForm {
 
     private void testCsv() throws Exception {
         List<TestClass> results = Form.New(TestClass.class, createCsvContent())
-                .addConverter("test", it -> Arrays.asList(it.split(",")), TestClass::setValue)
+                .addColumnConverter("test", it -> Arrays.asList(it.split(",")), TestClass::setValue)
                 .load();
         assert results.size() == 4;
         assert results.get(0).aBoolean && results.get(1).aBoolean;
@@ -78,7 +78,7 @@ public class TestForm {
 
     private void testOtherCsv() throws Exception {
         List<TestClass> results = Form.New(TestClass.class, createOtherCsv())
-                .addConverter("test", it -> Arrays.asList(it.split("\\|")), TestClass::setValue)
+                .addColumnConverter("test", it -> Arrays.asList(it.split("\\|")), TestClass::setValue)
                 .load();
         assert results.size() == 4;
         assert results.get(0).aBoolean && results.get(1).aBoolean;
@@ -110,7 +110,7 @@ public class TestForm {
         }
         assert failure;
 
-        csv = "trimValue,noTrimValue,number\naa,aa,4\n,,\n";
+        csv = "trimValue,noTrimValue,number\naa,aa,4\n , , \n";
         failure = false;
         try {
             Form.New(TestClass2.class, encodeToBase64(csv)).load();
@@ -119,7 +119,7 @@ public class TestForm {
         }
         assert failure;
 
-        csv = "trimValue,noTrimValue,number\naa , aa";
+        csv = "trimValue,noTrimValue,number\naa , aa\n,,\n";
         List<TestClass2> results = Form.New(TestClass2.class, encodeToBase64(csv)).load();
         assert results.get(0).trimValue.equals("aa");
         assert results.get(0).noTrimValue.equals(" aa");
