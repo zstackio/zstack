@@ -25,6 +25,8 @@ public class VirtualRouterGlobalConfig {
     @GlobalConfigValidation
     public static GlobalConfig SSH_PORT = new GlobalConfig(CATEGORY, "ssh.port");
     @GlobalConfigValidation
+    public static GlobalConfig SSH_LOGIN_PASSWORD = new GlobalConfig(CATEGORY, "ssh.passwordAuth");
+    @GlobalConfigValidation
     public static GlobalConfig VYOS_PASSWORD = new GlobalConfig(CATEGORY, "vrouter.password");
     @GlobalConfigValidation
     public static GlobalConfig VYOS_ECHO_TIMEOUT = new GlobalConfig(CATEGORY, "vrouter.echoTimeout");
