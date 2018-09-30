@@ -259,6 +259,9 @@ public class KVMAgentCommands {
         private String libvirtVersion;
         private String hvmCpuFlag;
         private String cpuModelName;
+        private String cpuGHz;
+        private String hostCpuModelName;
+        private String systemProductName;
         private List<String> ipAddresses;
 
         public String getOsDistribution() {
@@ -323,6 +326,18 @@ public class KVMAgentCommands {
 
         public void setCpuModelName(String cpuModelName) {
             this.cpuModelName = cpuModelName;
+        }
+
+        public String getCpuGHz() {
+            return cpuGHz;
+        }
+
+        public String getHostCpuModelName() {
+            return hostCpuModelName;
+        }
+
+        public String getSystemProductName() {
+            return systemProductName;
         }
     }
 
