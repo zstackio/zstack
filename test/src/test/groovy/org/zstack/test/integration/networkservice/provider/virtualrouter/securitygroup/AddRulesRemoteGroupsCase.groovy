@@ -7,13 +7,19 @@ import org.zstack.header.Constants
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMSecurityGroupBackend
 import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg
+import org.zstack.network.securitygroup.APIChangeSecurityGroupStateMsg
 import org.zstack.network.securitygroup.SecurityGroupMembersTO
 import org.zstack.network.securitygroup.SecurityGroupRuleProtocolType
+import org.zstack.network.securitygroup.SecurityGroupRuleState
 import org.zstack.network.securitygroup.SecurityGroupRuleTO
 import org.zstack.network.securitygroup.SecurityGroupRuleType
+import org.zstack.network.securitygroup.SecurityGroupRuleVO
+import org.zstack.network.securitygroup.SecurityGroupRuleVO_
+import org.zstack.network.securitygroup.SecurityGroupVO
 import org.zstack.network.securitygroup.VmNicSecurityGroupRefVO
 import org.zstack.network.securitygroup.VmNicSecurityGroupRefVO_
 import org.zstack.sdk.AddSecurityGroupRuleAction
+import org.zstack.sdk.ChangeSecurityGroupStateAction
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.SecurityGroupInventory
 import org.zstack.sdk.VmInstanceInventory
@@ -89,6 +95,7 @@ class AddRulesRemoteGroupsCase extends SubCase{
             testDeleteSecurityGroup(sg3.uuid, [host1.uuid, host2.uuid, host3.uuid])
 
             testAddDuplicateRule(sg1.uuid, sg2.uuid)
+            testChangeState(sg1.uuid)
         }
     }
 
@@ -212,6 +219,55 @@ class AddRulesRemoteGroupsCase extends SubCase{
         addSecurityGroupRule {
             rules = [rule2]
             securityGroupUuid = sgUuid
+        }
+    }
+
+    void testChangeState(String sgUuid){
+        boolean called = false
+
+        changeSecurityGroupState {
+            uuid = sgUuid
+            stateEvent = "disable"
+        }
+
+        KVMAgentCommands.ApplySecurityGroupRuleCmd cmd
+        APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO rulex = returnRandomRule()
+        env.simulator(KVMSecurityGroupBackend.SECURITY_GROUP_APPLY_RULE_PATH ){ HttpEntity<String> e ->
+            cmd = JSONObjectUtil.toObject(e.getBody(), KVMAgentCommands.ApplySecurityGroupRuleCmd.class)
+            List<SecurityGroupRuleTO> ruleTOs = cmd.getRuleTOs()
+            ruleTOs.each {
+                if (sgUuid == it.getRules().get(0).securityGroupUuid ) {
+                    called = true
+                }
+            }
+            return new KVMAgentCommands.ApplySecurityGroupRuleResponse()
+        }
+        addSecurityGroupRule {
+            rules = [rulex]
+            securityGroupUuid = sgUuid
+        }
+        retryInSecs {
+            List<SecurityGroupRuleVO> rules = Q.New(SecurityGroupRuleVO.class).eq(SecurityGroupRuleVO_.securityGroupUuid, sgUuid).list()
+            assert rules.get(0).state == SecurityGroupRuleState.Disabled
+            assert !called
+        }
+        changeSecurityGroupState {
+            uuid = sgUuid
+            stateEvent = "enable"
+        }
+
+
+        called = false
+        APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO rulexx = returnRandomRule()
+
+        addSecurityGroupRule {
+            rules = [rulexx]
+            securityGroupUuid = sgUuid
+        }
+        retryInSecs {
+            List<SecurityGroupRuleVO> rules = Q.New(SecurityGroupRuleVO.class).eq(SecurityGroupRuleVO_.securityGroupUuid, sgUuid).list()
+            assert rules.get(0).state == SecurityGroupRuleState.Enabled
+            assert called
         }
     }
 
