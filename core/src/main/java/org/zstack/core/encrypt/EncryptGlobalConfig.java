@@ -1,6 +1,7 @@
 package org.zstack.core.encrypt;
 
 import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigDef;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
 
@@ -15,4 +16,8 @@ public class EncryptGlobalConfig {
 
     @GlobalConfigValidation
     public static GlobalConfig ENCRYPT_ALGORITHM = new GlobalConfig(CATEGORY, "encrypt.algorithm");
+
+    @GlobalConfigDef(defaultValue = "false", type = Boolean.class, description = "enable encrypt host " +
+            "password to database")
+    public static GlobalConfig ENABLE_PASSWORD_ENCRYPT = new GlobalConfig(CATEGORY, "enable.password.encrypt");
 }

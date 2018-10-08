@@ -24,10 +24,17 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="EncryptFacade" class="org.zstack.core.encrypt.EncryptFacadeImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component"/>
+        </zstack:plugin>
+    </bean>
+
     <bean id="EncryptApiInterceptor" class="org.zstack.core.encrypt.EncryptApiInterceptor">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
         </zstack:plugin>
     </bean>
 
+    <bean id="PasswordConvert" class="org.zstack.core.convert.PasswordConverter" />
 </beans>
