@@ -54,6 +54,8 @@ public class LongJobApiInterceptor implements ApiMessageInterceptor, Component {
             validate((APICancelLongJobMsg) msg);
         } else if (msg instanceof APIDeleteLongJobMsg) {
             validate((APIDeleteLongJobMsg) msg);
+        } else if (msg instanceof APIRerunLongJobMsg) {
+            validate((APIRerunLongJobMsg) msg);
         }
 
         return msg;
@@ -143,6 +145,17 @@ public class LongJobApiInterceptor implements ApiMessageInterceptor, Component {
 
         if (state != LongJobState.Succeeded && state != LongJobState.Canceled && state != LongJobState.Failed) {
             throw new ApiMessageInterceptionException(argerr("delete longjob only when it's succeeded, canceled, or failed"));
+        }
+    }
+
+    private void validate(APIRerunLongJobMsg msg) {
+        LongJobState state = Q.New(LongJobVO.class)
+                .select(LongJobVO_.state)
+                .eq(LongJobVO_.uuid, msg.getUuid())
+                .findValue();
+
+        if (state != LongJobState.Succeeded && state != LongJobState.Canceled && state != LongJobState.Failed) {
+            throw new ApiMessageInterceptionException(argerr("rerun longjob only when it's succeeded, canceled, or failed"));
         }
     }
 

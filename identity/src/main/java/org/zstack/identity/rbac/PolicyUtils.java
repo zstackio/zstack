@@ -8,6 +8,20 @@ public class PolicyUtils {
     }
 
     public static String apiNamePatternFromAction(String action) {
-        return action.split(":")[0];
+        return apiNamePatternFromAction(action, false);
+    }
+
+    public static String apiNamePatternFromAction(String action, boolean oldPolicy) {
+        if (!oldPolicy) {
+            return action.split(":")[0];
+        }
+
+        String[] splited = action.split(":");
+
+        if (splited.length != 2) {
+            return splited[0];
+        } else {
+            return splited[1];
+        }
     }
 }

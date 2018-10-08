@@ -9,8 +9,11 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.*;
+import org.zstack.core.defer.Defer;
+import org.zstack.core.defer.Deferred;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.progress.ProgressCommands.ProgressReportCmd;
+import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
@@ -26,19 +29,17 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.Query;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static java.util.Collections.max;
-import static java.util.Collections.min;
 import static org.codehaus.groovy.runtime.InvokerHelper.asList;
-
 import static org.zstack.core.Platform.toI18nString;
-
-import javax.persistence.Query;
+import static org.zstack.header.Constants.THREAD_CONTEXT_API;
+import static org.zstack.header.Constants.THREAD_CONTEXT_TASK_NAME;
 
 
 /**
@@ -56,6 +57,11 @@ public class ProgressReportService extends AbstractService implements Management
     private ThreadFacade thdf;
     @Autowired
     private CloudBus bus;
+
+    private class ThreadContextMapSaved {
+        public Map<String, String> contextMap = new HashMap<>();
+        public ThreadContext.ContextStack contextStack;
+    }
 
     private int DELETE_DELAY = 300;
 
@@ -109,6 +115,18 @@ public class ProgressReportService extends AbstractService implements Management
         return DELETE_DELAY;
     }
 
+    private Runnable saveThreadContext() {
+        ThreadContextMapSaved savedThread = new ThreadContextMapSaved();
+        savedThread.contextMap = ThreadContext.getContext();
+        savedThread.contextStack = ThreadContext.cloneStack();
+
+        return () -> {
+            ThreadContext.clearAll();
+            ThreadContext.putAll(savedThread.contextMap);
+            ThreadContext.setStack(savedThread.contextStack.asList());
+        };
+    }
+
     private void setThreadContext(ProgressReportCmd cmd) {
         ThreadContext.clearAll();
         if (cmd.getThreadContextMap() != null) {
@@ -123,7 +141,10 @@ public class ProgressReportService extends AbstractService implements Management
     public boolean start() {
         restf.registerSyncHttpCallHandler(ProgressConstants.PROGRESS_REPORT_PATH, ProgressReportCmd.class, new SyncHttpCallHandler<ProgressReportCmd>() {
             @Override
+            @Deferred
             public String handleSyncHttpCall(ProgressReportCmd cmd) {
+                Runnable cleanup = saveThreadContext();
+                Defer.defer(cleanup);
                 setThreadContext(cmd);
                 logger.debug(String.format("report progress is : %s", cmd.getProgress()));
                 taskProgress(TaskType.Progress, cmd.getProgress());
@@ -422,6 +443,53 @@ public class ProgressReportService extends AbstractService implements Management
 
         logger.debug(String.format("report progress is : %s", fmt));
         taskProgress(TaskType.Progress, fmt);
+    }
+
+    public void reportProgress(String begin, String end, int intervalSec) {
+        thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask() {
+            int beginPercent = new Double(begin).intValue();
+            int endPercent = new Double(end).intValue();
+            String apiId = ThreadContext.get(THREAD_CONTEXT_API);
+            String taskName = ThreadContext.get(THREAD_CONTEXT_TASK_NAME);
+
+            @Override
+            public boolean run() {
+                // get current progress
+                String currentPercent = SQL.New("SELECT content FROM TaskProgressVO" +
+                        " WHERE apiId = :apiId" +
+                        " ORDER BY CAST(content AS int) DESC")
+                        .param("apiId", apiId)
+                        .limit(1)
+                        .find();
+
+                if (beginPercent >= endPercent) {
+                    return true;
+                } else if (endPercent <= new Double(currentPercent).intValue()) {
+                    return true;
+                } else {
+                    ThreadContext.put(THREAD_CONTEXT_API, apiId);
+                    ThreadContext.put(THREAD_CONTEXT_TASK_NAME, taskName);
+                    ProgressReportService.reportProgress(String.valueOf(beginPercent));
+                    beginPercent += 1;
+                    return false;
+                }
+            }
+
+            @Override
+            public TimeUnit getTimeUnit() {
+                return TimeUnit.SECONDS;
+            }
+
+            @Override
+            public long getInterval() {
+                return intervalSec;
+            }
+
+            @Override
+            public String getName() {
+                return "report-progress-one-step-at-a-time";
+            }
+        });
     }
 
     public static TaskProgressRange markTaskStage(TaskProgressRange exactStage) {

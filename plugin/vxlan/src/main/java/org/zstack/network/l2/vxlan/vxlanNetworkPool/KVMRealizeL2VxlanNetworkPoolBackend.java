@@ -87,6 +87,10 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
                 if (!l2Network.getPhysicalInterface().isEmpty()) {
                     cmd.setPhysicalInterfaceName(l2Network.getPhysicalInterface());
                 }
+                VtepVO vtep = Q.New(VtepVO.class).eq(VtepVO_.poolUuid, vxlanPool.getUuid()).eq(VtepVO_.hostUuid, hostUuid).find();
+                if (vtep != null) {
+                    cmd.setVtepip(vtep.getVtepIp());
+                }
 
                 KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                 msg.setHostUuid(hostUuid);

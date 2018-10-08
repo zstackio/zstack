@@ -16,6 +16,7 @@ public class VmNicVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<VmNicVO, String> gateway;
     public static volatile SingularAttribute<VmNicVO, String> ip;
     public static volatile SingularAttribute<VmNicVO, String> mac;
+    public static volatile SingularAttribute<VmNicVO, String> hypervisorType;
     public static volatile SingularAttribute<VmNicVO, String> metaData;
     public static volatile SingularAttribute<VmNicVO, Integer> deviceId;
     public static volatile SingularAttribute<VmNicVO, Timestamp> createDate;
