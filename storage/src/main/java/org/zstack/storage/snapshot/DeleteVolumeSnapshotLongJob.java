@@ -34,7 +34,7 @@ public class DeleteVolumeSnapshotLongJob implements LongJob {
         msg.setVolumeUuid(apiMessage.getSnapshotUuid());
         msg.setSnapshotUuid(apiMessage.getSnapshotUuid());
         bus.makeLocalServiceId(msg, VolumeSnapshotConstant.SERVICE_ID);
-        bus.send(msg, new CloudBusCallBack(null) {
+        bus.send(msg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
