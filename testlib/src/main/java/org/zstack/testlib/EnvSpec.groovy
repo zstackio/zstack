@@ -58,7 +58,6 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-
 /**
  * Created by xing5 on 2017/2/12.
  */
@@ -138,6 +137,7 @@ class EnvSpec implements Node, ApiHelper {
             [CreateEmailMediaAction.metaClass, CreateEmailMediaAction.Result.metaClass, DeleteMediaAction.class],
             [SubmitLongJobAction.metaClass, SubmitLongJobAction.Result.metaClass, DeleteLongJobAction.class],
             [UpdateClusterOSAction.metaClass, UpdateClusterOSAction.Result.metaClass, DeleteLongJobAction.class],
+            [BatchCreateBaremetalChassisAction.metaClass, BatchCreateBaremetalChassisAction.Result.metaClass, DeleteLongJobAction.class],
             [AddSharedBlockGroupPrimaryStorageAction.metaClass, AddSharedBlockGroupPrimaryStorageAction.Result.metaClass, DeletePrimaryStorageAction.class],
     ]
 
