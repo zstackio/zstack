@@ -487,6 +487,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
         }
 
         private void httpSend() {
+            buildSchema(msg);
             String ip = destMaker.getNodeInfo(managementNodeId).getNodeIP();
             httpSend(ip);
         }
@@ -495,8 +496,6 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
             String url = CloudBusGlobalProperty.HTTP_CONTEXT_PATH.isEmpty() ? String.format("http://%s:%s%s",
                     ip, CloudBusGlobalProperty.HTTP_PORT, HTTP_BASE_URL) : String.format("http://%s:%s/%s/%s",
                     ip, CloudBusGlobalProperty.HTTP_PORT, CloudBusGlobalProperty.HTTP_CONTEXT_PATH, HTTP_BASE_URL);
-
-            msg.putHeaderEntry("schema", new JsonSchemaBuilder(msg).build());
 
             HttpHeaders headers = new HttpHeaders();
             HttpEntity<String> req = new HttpEntity<>(CloudBusGson.toJson(msg), headers);
@@ -533,7 +532,16 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
             }
         }
 
+        private void buildSchema(Message msg) {
+            try {
+                msg.putHeaderEntry(CloudBus.HEADER_SCHEMA, new JsonSchemaBuilder(msg).build());
+            } catch (Exception e) {
+                throw new CloudRuntimeException(e);
+            }
+        }
+
         private void eventSend() {
+            buildSchema(msg);
             localSend();
             destMaker.getAllNodeInfo().forEach(node -> {
                 if (!node.getNodeUuid().equals(Platform.getManagementServerId())) {

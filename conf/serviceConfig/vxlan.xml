@@ -16,6 +16,10 @@
     </message>
 
     <message>
+        <name>org.zstack.network.l2.vxlan.vtep.APICreateVxlanVtepMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.network.l2.vxlan.vxlanNetworkPool.APIQueryL2VxlanNetworkPoolMsg</name>
         <serviceId>query</serviceId>
     </message>
