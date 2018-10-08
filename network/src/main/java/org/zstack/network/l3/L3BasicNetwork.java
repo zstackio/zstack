@@ -37,6 +37,7 @@ import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Tuple;
@@ -122,6 +123,9 @@ public class L3BasicNetwork implements L3Network {
                 vo.setStartIp(ipr.getStartIp());
                 vo.setNetworkCidr(ipr.getNetworkCidr());
                 vo.setAccountUuid(msg.getSession().getAccountUuid());
+                vo.setIpVersion(ipr.getIpVersion());
+                vo.setAddressMode(ipr.getAddressMode());
+                vo.setPrefixLen(ipr.getPrefixLen());
                 dbf.getEntityManager().persist(vo);
                 dbf.getEntityManager().flush();
                 dbf.getEntityManager().refresh(vo);
@@ -257,10 +261,21 @@ public class L3BasicNetwork implements L3Network {
         bus.reply(msg, reply);
     }
 
+    private IpAllocatorType getIpAllocatorType(AllocateIpMsg msg) {
+        if (msg.getAllocatorStrategy() != null) {
+            return IpAllocatorType.valueOf(msg.getAllocatorStrategy());
+        }
 
+        L3NetworkVO l3Vo = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid()).find();
+        if (l3Vo.getIpVersion() == IPv6Constants.IPv4) {
+            return RandomIpAllocatorStrategy.type;
+        }
+
+        return RandomIpv6AllocatorStrategy.type;
+    }
 
     private void handle(AllocateIpMsg msg) {
-        IpAllocatorType strategyType = msg.getAllocatorStrategy() == null ? RandomIpAllocatorStrategy.type : IpAllocatorType.valueOf(msg.getAllocatorStrategy());
+        IpAllocatorType strategyType = getIpAllocatorType(msg);
         IpAllocatorStrategy ias = l3NwMgr.getIpAllocatorStrategy(strategyType);
         AllocateIpReply reply = new AllocateIpReply();
         UsedIpInventory ip = ias.allocateIp(msg);
@@ -297,6 +312,10 @@ public class L3BasicNetwork implements L3Network {
             handle((APIChangeL3NetworkStateMsg) msg);
         } else if (msg instanceof APIAddIpRangeByNetworkCidrMsg) {
             handle((APIAddIpRangeByNetworkCidrMsg) msg);
+        } else if (msg instanceof APIAddIpv6RangeByNetworkCidrMsg) {
+            handle((APIAddIpv6RangeByNetworkCidrMsg) msg);
+        } else if (msg instanceof APIAddIpv6RangeMsg) {
+            handle((APIAddIpv6RangeMsg) msg);
         } else if (msg instanceof APIUpdateL3NetworkMsg) {
             handle((APIUpdateL3NetworkMsg) msg);
         } else if (msg instanceof APIGetFreeIpMsg) {
@@ -335,7 +354,7 @@ public class L3BasicNetwork implements L3Network {
                 break;
             }
 
-            if (NetworkUtils.isIpv4InRange(ip, sip, eip)) {
+            if (NetworkUtils.isInRange(ip, sip, eip)) {
                 inRange = true;
                 break;
             }
@@ -443,7 +462,12 @@ public class L3BasicNetwork implements L3Network {
 
         List<String> used = q.listValue();
 
-        List<String> spareIps = NetworkUtils.getFreeIpInRange(ipr.getStartIp(), ipr.getEndIp(), used, limit, start);
+        List<String> spareIps = new ArrayList<>();
+        if (ipr.getIpVersion() == IPv6Constants.IPv6) {
+            spareIps.addAll(NetworkUtils.getFreeIpv6InRange(ipr.getStartIp(), ipr.getEndIp(), used, limit, start));
+        } else {
+            spareIps.addAll(NetworkUtils.getFreeIpInRange(ipr.getStartIp(), ipr.getEndIp(), used, limit, start));
+        }
         return CollectionUtils.transformToList(spareIps, new Function<FreeIpInventory, String>() {
             @Override
             public FreeIpInventory call(String arg) {
@@ -517,6 +541,22 @@ public class L3BasicNetwork implements L3Network {
         IpRangeInventory ipr = IpRangeInventory.fromMessage(msg);
         ipr = createIpRange(msg, ipr);
         APIAddIpRangeByNetworkCidrEvent evt = new APIAddIpRangeByNetworkCidrEvent(msg.getId());
+        evt.setInventory(ipr);
+        bus.publish(evt);
+    }
+
+    private void handle(APIAddIpv6RangeByNetworkCidrMsg msg) {
+        IpRangeInventory ipr = IpRangeInventory.fromMessage(msg);
+        ipr = createIpRange(msg, ipr);
+        APIAddIpRangeByNetworkCidrEvent evt = new APIAddIpRangeByNetworkCidrEvent(msg.getId());
+        evt.setInventory(ipr);
+        bus.publish(evt);
+    }
+
+    private void handle(APIAddIpv6RangeMsg msg) {
+        IpRangeInventory ipr = IpRangeInventory.fromMessage(msg);
+        ipr = createIpRange(msg, ipr);
+        APIAddIpRangeEvent evt = new APIAddIpRangeEvent(msg.getId());
         evt.setInventory(ipr);
         bus.publish(evt);
     }

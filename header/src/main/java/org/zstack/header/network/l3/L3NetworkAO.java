@@ -41,6 +41,9 @@ public class L3NetworkAO extends ResourceVO {
     private String dnsDomain;
 
     @Column
+    private Integer ipVersion;
+
+    @Column
     private Timestamp createDate;
 
     @Column
@@ -141,5 +144,13 @@ public class L3NetworkAO extends ResourceVO {
 
     public void setCategory(L3NetworkCategory category) {
         this.category = category;
+    }
+
+    public Integer getIpVersion() {
+        return ipVersion;
+    }
+
+    public void setIpVersion(Integer ipVersion) {
+        this.ipVersion = ipVersion;
     }
 }

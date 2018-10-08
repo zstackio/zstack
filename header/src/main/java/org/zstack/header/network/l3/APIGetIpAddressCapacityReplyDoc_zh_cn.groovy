@@ -1,7 +1,6 @@
 package org.zstack.header.network.l3
 
 import org.zstack.header.errorcode.ErrorCode
-import org.zstack.header.errorcode.ErrorCode
 
 doc {
 
@@ -26,6 +25,12 @@ doc {
 		desc "可用IP地址容量"
 		type "long"
 		since "0.6"
+	}
+	field {
+		name "usedIpAddressNumber"
+		desc ""
+		type "Long"
+		since "3.1"
 	}
 	field {
 		name "success"

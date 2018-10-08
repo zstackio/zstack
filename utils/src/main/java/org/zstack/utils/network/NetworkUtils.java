@@ -1,5 +1,8 @@
 package org.zstack.utils.network;
 
+import com.googlecode.ipv6.IPv6Address;
+import com.googlecode.ipv6.IPv6AddressRange;
+import com.googlecode.ipv6.IPv6Network;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.net.util.SubnetUtils;
 import org.zstack.utils.DebugUtils;
@@ -85,9 +88,30 @@ public class NetworkUtils {
     }
 
     public static boolean isCidr(String cidr) {
-        Pattern pattern = Pattern.compile("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(\\d|[1-2]\\d|3[0-2]))$");
-        Matcher matcher = pattern.matcher(cidr);
-        return matcher.find();
+        try {
+            IPv6Network.fromString(cidr);
+            return true;
+        } catch (Exception e) {
+            Pattern pattern = Pattern.compile("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(\\d|[1-2]\\d|3[0-2]))$");
+            Matcher matcher = pattern.matcher(cidr);
+            return matcher.find();
+        }
+    }
+
+    public static boolean isCidr(String cidr, int ipVersion) {
+        if (ipVersion == IPv6Constants.IPv4) {
+            Pattern pattern = Pattern.compile("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(\\d|[1-2]\\d|3[0-2]))$");
+            Matcher matcher = pattern.matcher(cidr);
+            return matcher.find();
+        } else if(ipVersion == IPv6Constants.IPv6) {
+            try {
+                IPv6Network.fromString(cidr);
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+        }
+        return false;
     }
 
     public static long bytesToLong(byte[] bytes) {
@@ -433,6 +457,33 @@ public class NetworkUtils {
         return res;
     }
 
+    public static List<String> getFreeIpv6InRange(String startIp, String endIp, List<String> usedIps, int limit, String start) {
+        IPv6Address s = IPv6Address.fromString(startIp);
+        IPv6Address e = IPv6Address.fromString(endIp);
+        IPv6Address f = IPv6Address.fromString(start);
+        IPv6AddressRange range = IPv6AddressRange.fromFirstAndLast(s, e);
+
+        List<String> res = new ArrayList<String>();
+        while (s.compareTo(e) <= 0) {
+            if (s.compareTo(f) <= 0) {
+                s = s.add(1);
+                continue;
+            }
+            if (usedIps.contains(s.toString())) {
+                s = s.add(1);
+                continue;
+            }
+            res.add(s.toString());
+            s = s.add(1);
+
+            if (res.size() >= limit) {
+                break;
+            }
+        }
+
+        return res;
+    }
+
     public static List<String> getAllMac() {
         try {
             List<String> macs = new ArrayList<String>();
@@ -656,6 +707,16 @@ public class NetworkUtils {
         sb.append(String.valueOf(longIP & 0x000000FF));
 
         return sb.toString();
+    }
+
+    public static boolean isInRange(String ip, String startIp, String endIp) {
+        if (isIpv4Address(ip)) {
+            return isIpv4InRange(ip, startIp, endIp);
+        } else if (IPv6NetworkUtils.isIpv6Address(ip)) {
+            return IPv6NetworkUtils.isIpv6InRange(ip, startIp, endIp);
+        } else {
+            throw new IllegalArgumentException(String.format("%s is not a valid ipv4 address or valid ipv6 address", ip));
+        }
     }
 }
 

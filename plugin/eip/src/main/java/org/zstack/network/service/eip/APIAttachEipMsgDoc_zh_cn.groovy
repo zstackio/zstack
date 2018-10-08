@@ -43,6 +43,16 @@ doc {
 					
 				}
 				column {
+					name "usedIpUuid"
+					enclosedIn ""
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "3.1"
+					
+				}
+				column {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"

@@ -1,6 +1,8 @@
 package org.zstack.header.vm
 
 import java.lang.Integer
+import org.zstack.header.network.l3.UsedIpInventory
+import java.lang.Integer
 import java.sql.Timestamp
 import java.sql.Timestamp
 
@@ -55,6 +57,20 @@ doc {
 		desc ""
 		type "String"
 		since "0.6"
+	}
+	field {
+		name "ipVersion"
+		desc ""
+		type "Integer"
+		since "0.6"
+	}
+	ref {
+		name "usedIps"
+		path "org.zstack.header.vm.VmNicInventory.usedIps"
+		desc "null"
+		type "List"
+		since "0.6"
+		clz UsedIpInventory.class
 	}
 	field {
 		name "deviceId"

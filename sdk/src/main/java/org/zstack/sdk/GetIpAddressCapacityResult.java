@@ -19,4 +19,12 @@ public class GetIpAddressCapacityResult {
         return this.availableCapacity;
     }
 
+    public long usedIpAddressNumber;
+    public void setUsedIpAddressNumber(long usedIpAddressNumber) {
+        this.usedIpAddressNumber = usedIpAddressNumber;
+    }
+    public long getUsedIpAddressNumber() {
+        return this.usedIpAddressNumber;
+    }
+
 }

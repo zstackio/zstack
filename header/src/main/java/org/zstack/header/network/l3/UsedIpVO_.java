@@ -9,10 +9,12 @@ public class UsedIpVO_ {
     public static volatile SingularAttribute<UsedIpVO, String> uuid;
     public static volatile SingularAttribute<UsedIpVO, String> ipRangeUuid;
     public static volatile SingularAttribute<UsedIpVO, String> l3NetworkUuid;
+    public static volatile SingularAttribute<UsedIpVO, Integer> ipVersion;
     public static volatile SingularAttribute<UsedIpVO, String> ip;
     public static volatile SingularAttribute<UsedIpVO, String> usedFor;
     public static volatile SingularAttribute<UsedIpVO, String> metaData;
     public static volatile SingularAttribute<UsedIpVO, Long> ipInLong;
+    public static volatile SingularAttribute<UsedIpVO, String> vmNicUuid;
     public static volatile SingularAttribute<UsedIpVO, Timestamp> createDate;
     public static volatile SingularAttribute<UsedIpVO, Timestamp> lastOpDate;
 }

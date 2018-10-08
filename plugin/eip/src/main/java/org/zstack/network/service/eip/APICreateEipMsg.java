@@ -6,6 +6,7 @@ import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.network.l3.UsedIpVO;
 import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
@@ -86,6 +87,12 @@ public class APICreateEipMsg extends APICreateMessage implements APIAuditor {
     @APIParam(required = false, resourceType = VmNicVO.class, checkAccount = true, operationTarget = true)
     private String vmNicUuid;
 
+    /**
+     * @desc vm nic ip. See :ref:`UsedIpInventory`
+     */
+    @APIParam(required = false, resourceType = UsedIpVO.class, checkAccount = true, operationTarget = true)
+    private String usedIpUuid;
+
     public String getVipUuid() {
         return vipUuid;
     }
@@ -117,7 +124,15 @@ public class APICreateEipMsg extends APICreateMessage implements APIAuditor {
     public void setDescription(String description) {
         this.description = description;
     }
- 
+
+    public String getUsedIpUuid() {
+        return usedIpUuid;
+    }
+
+    public void setUsedIpUuid(String usedIpUuid) {
+        this.usedIpUuid = usedIpUuid;
+    }
+
     public static APICreateEipMsg __example__() {
         APICreateEipMsg msg = new APICreateEipMsg();
 

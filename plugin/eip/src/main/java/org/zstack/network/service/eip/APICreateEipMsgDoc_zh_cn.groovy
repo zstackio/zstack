@@ -63,6 +63,16 @@ doc {
 					
 				}
 				column {
+					name "usedIpUuid"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "3.1"
+					
+				}
+				column {
 					name "resourceUuid"
 					enclosedIn "params"
 					desc "资源UUID。若指定，云主机会使用该字段值作为UUID"

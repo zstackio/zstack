@@ -25,6 +25,9 @@ public class SecurityGroupRuleVO extends ResourceVO {
     @Column
     @Enumerated(EnumType.STRING)
     private SecurityGroupRuleType type;
+
+    @Column
+    private Integer ipVersion;
     
     @Column
     private int startPort;
@@ -136,5 +139,13 @@ public class SecurityGroupRuleVO extends ResourceVO {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
+    }
+
+    public Integer getIpVersion() {
+        return ipVersion;
+    }
+
+    public void setIpVersion(Integer ipVersion) {
+        this.ipVersion = ipVersion;
     }
 }

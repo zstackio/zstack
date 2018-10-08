@@ -1,5 +1,6 @@
 package org.zstack.network.securitygroup
 
+import java.lang.Integer
 import java.sql.Timestamp
 import java.sql.Timestamp
 import org.zstack.network.securitygroup.SecurityGroupRuleInventory
@@ -31,6 +32,12 @@ doc {
 		desc ""
 		type "String"
 		since "0.6"
+	}
+	field {
+		name "ipVersion"
+		desc "ip协议号"
+		type "Integer"
+		since "3.1"
 	}
 	field {
 		name "createDate"

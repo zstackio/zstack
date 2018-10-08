@@ -1,14 +1,20 @@
 package org.zstack.header.network.l3;
 
 import org.zstack.header.rest.APINoSee;
+import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicVO;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 public class UsedIpInventory implements Serializable {
     private String uuid;
     private String ipRangeUuid;
     private String l3NetworkUuid;
+    private Integer ipVersion;
     private String ip;
     private String netmask;
     private String gateway;
@@ -16,6 +22,7 @@ public class UsedIpInventory implements Serializable {
     @APINoSee
     private String metaData;
     private long ipInLong;
+    private String vmNicUuid;
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
@@ -23,6 +30,7 @@ public class UsedIpInventory implements Serializable {
         UsedIpInventory inv = new UsedIpInventory();
         inv.setCreateDate(vo.getCreateDate());
         inv.setUuid(vo.getUuid());
+        inv.setIpVersion(vo.getIpVersion());
         inv.setIp(vo.getIp());
         inv.setIpInLong(vo.getIpInLong());
         inv.setIpRangeUuid(vo.getIpRangeUuid());
@@ -30,9 +38,18 @@ public class UsedIpInventory implements Serializable {
         inv.setGateway(vo.getGateway());
         inv.setNetmask(vo.getNetmask());
         inv.setUsedFor(vo.getUsedFor());
+        inv.setVmNicUuid(vo.getVmNicUuid());
         inv.setMetaData(vo.getMetaData());
         inv.setLastOpDate(vo.getLastOpDate());
         return inv;
+    }
+
+    public static List<UsedIpInventory> valueOf(Collection<UsedIpVO> vos) {
+        List<UsedIpInventory> invs = new ArrayList<UsedIpInventory>(vos.size());
+        for (UsedIpVO vo : vos) {
+            invs.add(UsedIpInventory.valueOf(vo));
+        }
+        return invs;
     }
 
     public String getUuid() {
@@ -121,5 +138,21 @@ public class UsedIpInventory implements Serializable {
 
     public void setMetaData(String metaData) {
         this.metaData = metaData;
+    }
+
+    public Integer getIpVersion() {
+        return ipVersion;
+    }
+
+    public void setIpVersion(Integer ipVersion) {
+        this.ipVersion = ipVersion;
+    }
+
+    public String getVmNicUuid() {
+        return vmNicUuid;
+    }
+
+    public void setVmNicUuid(String vmNicUuid) {
+        this.vmNicUuid = vmNicUuid;
     }
 }

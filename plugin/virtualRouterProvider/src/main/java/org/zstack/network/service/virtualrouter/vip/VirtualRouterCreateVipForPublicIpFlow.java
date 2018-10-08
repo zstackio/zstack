@@ -53,7 +53,7 @@ public class VirtualRouterCreateVipForPublicIpFlow implements Flow {
         IpRangeInventory ips = null;
         List<IpRangeVO> ipRanges = Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, nic.getL3NetworkUuid()).list();
         for (IpRangeVO range : ipRanges){
-            if (NetworkUtils.isIpv4InRange(nic.getIp(), range.getStartIp(), range.getEndIp())){
+            if (NetworkUtils.isInRange(nic.getIp(), range.getStartIp(), range.getEndIp())){
                 ips = IpRangeInventory.valueOf(range);
                 break;
             }

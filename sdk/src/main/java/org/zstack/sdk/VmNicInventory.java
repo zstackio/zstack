@@ -76,6 +76,22 @@ public class VmNicInventory  {
         return this.metaData;
     }
 
+    public java.lang.Integer ipVersion;
+    public void setIpVersion(java.lang.Integer ipVersion) {
+        this.ipVersion = ipVersion;
+    }
+    public java.lang.Integer getIpVersion() {
+        return this.ipVersion;
+    }
+
+    public java.util.List usedIps;
+    public void setUsedIps(java.util.List usedIps) {
+        this.usedIps = usedIps;
+    }
+    public java.util.List getUsedIps() {
+        return this.usedIps;
+    }
+
     public java.lang.Integer deviceId;
     public void setDeviceId(java.lang.Integer deviceId) {
         this.deviceId = deviceId;
