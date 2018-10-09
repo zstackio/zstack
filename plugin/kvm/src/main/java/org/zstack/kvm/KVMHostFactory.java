@@ -96,7 +96,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
             return loadMsgFromFile(content).stream()
                     .peek(it -> it.setName((StringUtils.isEmpty(it.getName()) ? "HOST" : it.getName()) + "-" + it.getManagementIp()))
                     .collect(Collectors.toList());
-        } catch (IOException e) {
+        } catch (Exception e) {
             logger.error(e.getMessage(), e);
             throw new OperationFailureException(operr("fail to load host info from file. because\n%s", e.getMessage()));
         }
