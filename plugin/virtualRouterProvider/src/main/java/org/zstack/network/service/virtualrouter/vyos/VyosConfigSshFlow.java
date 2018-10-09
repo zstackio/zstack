@@ -33,11 +33,11 @@ import java.util.concurrent.TimeUnit;
 import static org.zstack.core.Platform.operr;
 
 /**
- * Created by xing5 on 2016/10/31.
+ * Created by zhanyong.miao 2018/10/08
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class VyosDeployAgentFlow extends NoRollbackFlow {
-    private static final CLogger logger = Utils.getLogger(VyosDeployAgentFlow.class);
+public class VyosConfigSshFlow extends NoRollbackFlow {
+    private static final CLogger logger = Utils.getLogger(VyosConfigSshFlow.class);
 
     @Autowired
     private AnsibleFacade asf;
@@ -56,12 +56,6 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
         }
 
         boolean isReconnect = Boolean.valueOf((String) data.get(Params.isReconnect.toString()));
-
-        if (!isReconnect && !ApplianceVmGlobalConfig.DEPLOY_AGENT_ON_START.value(Boolean.class)) {
-            // no need to deploy agent
-            trigger.next();
-            return;
-        }
 
         String mgmtNicIp;
         if (!isReconnect) {
@@ -104,7 +98,7 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
                     }
 
                     if (NetworkUtils.isRemotePortOpen(mgmtNicIp, 22, 2000)) {
-                        deployAgent();
+                        configAgentSsh();
                         return true;
                     } else {
                         return false;
@@ -115,26 +109,21 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
                 }
             }
 
-            private void deployAgent() {
-                String script = "sudo bash /home/vyos/zvrboot.bin\n" +
-                        "sudo bash /home/vyos/zvr.bin\n" +
-                        "sudo bash /etc/init.d/zstack-virtualrouteragent restart\n";
-                
-                new Ssh().setTimeout(300).scp(
-                        PathUtil.findFileOnClassPath("ansible/zvr/zvr.bin", true).getAbsolutePath(),
-                        "/home/vyos/zvr.bin"
-                ).scp(
-                        PathUtil.findFileOnClassPath("ansible/zvr/zvrboot.bin", true).getAbsolutePath(),
-                        "/home/vyos/zvrboot.bin"
-                ).scp(
-                        PathUtil.findFileOnClassPath("ansible/zvr/version", true).getAbsolutePath(),
-                        "/home/vyos/zvr/version"
-                ).setPrivateKey(asf.getPrivateKey()).setUsername("vyos").setHostname(mgmtNicIp).setPort(22).runErrorByExceptionAndClose();
-
+            private void configAgentSsh() {
+                Boolean  passwordAuth = VirtualRouterGlobalConfig.SSH_LOGIN_PASSWORD.value(Boolean.class);
+                String script;
+                if (passwordAuth == false) {
+                    script = "sudo sed -i \"/PasswordAuthentication /c PasswordAuthentication no\" /etc/ssh/sshd_config\n"+
+                            "sudo service ssh restart\n";
+                } else {
+                    script = " sudo sed -i \"/PasswordAuthentication /c PasswordAuthentication yes\" /etc/ssh/sshd_config\n"+
+                            "sudo service ssh restart\n";
+                }
                 new Ssh().shell( script
                 ).setTimeout(300).setPrivateKey(asf.getPrivateKey()).setUsername("vyos").setHostname(mgmtNicIp).setPort(22).runErrorByExceptionAndClose();
-
+                
                 trigger.next();
+
             }
 
             @Override
@@ -149,7 +138,7 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
 
             @Override
             public String getName() {
-                return VyosDeployAgentFlow.class.getName();
+                return VyosConfigSshFlow.class.getName();
             }
         });
     }
