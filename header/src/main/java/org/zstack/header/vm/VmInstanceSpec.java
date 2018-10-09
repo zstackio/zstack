@@ -176,6 +176,7 @@ public class VmInstanceSpec implements Serializable {
         private List<Long> dataVolumeActualSizes;
         private List<Long> dataVolumeVirtualSizes;
         private String bootMode;
+        private String longJobUuid;
 
         public String getV2vType() {
             return v2vType;
@@ -271,6 +272,14 @@ public class VmInstanceSpec implements Serializable {
 
         public void setBootMode(String bootMode) {
             this.bootMode = bootMode;
+        }
+
+        public String getLongJobUuid() {
+            return longJobUuid;
+        }
+
+        public void setLongJobUuid(String longJobUuid) {
+            this.longJobUuid = longJobUuid;
         }
     }
 
