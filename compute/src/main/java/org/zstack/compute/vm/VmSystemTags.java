@@ -81,4 +81,7 @@ public class VmSystemTags {
     public static PatternedSystemTag BOOT_MODE = new PatternedSystemTag(String.format("bootMode::{%s}", BOOT_MODE_TOKEN), VmInstanceVO.class);
 
     public static PatternedSystemTag ADDITIONAL_QMP_ADDED = new PatternedSystemTag("additionalQmp", VmInstanceVO.class);
+
+    public static String CLEAN_TRAFFIC_TOKEN = "cleanTraffic";
+    public static PatternedSystemTag CLEAN_TRAFFIC = new PatternedSystemTag(String.format("cleanTraffic::{%s}", CLEAN_TRAFFIC_TOKEN), VmInstanceVO.class);
 }

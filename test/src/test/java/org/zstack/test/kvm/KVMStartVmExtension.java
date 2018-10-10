@@ -3,7 +3,6 @@ package org.zstack.test.kvm;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.kvm.KVMAgentCommands.StartVmCmd;
-import org.zstack.kvm.KVMException;
 import org.zstack.kvm.KVMHostInventory;
 import org.zstack.kvm.KVMStartVmExtensionPoint;
 
@@ -14,7 +13,7 @@ public class KVMStartVmExtension implements KVMStartVmExtensionPoint {
 
     @Override
     public void beforeStartVmOnKvm(KVMHostInventory host,
-                                   VmInstanceSpec order, StartVmCmd cmd) throws KVMException {
+                                   VmInstanceSpec order, StartVmCmd cmd) {
         beforeCalled = true;
     }
 
