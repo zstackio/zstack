@@ -145,7 +145,7 @@ class Ipv6AddressAllocationCase extends SubCase {
         }
 
         List<VmNicInventory> nics = new ArrayList<>()
-        for (int i = 0; i< 13; i++) {
+        for (int i = 0; i< 14; i++) {
             VmNicInventory nic = createVmNic {
                 l3NetworkUuid = l3_private_ipv6.uuid
             }
@@ -159,7 +159,7 @@ class Ipv6AddressAllocationCase extends SubCase {
         }
 
         List<String> ips = nics.stream().distinct().collect(Collectors.toList())
-        assert ips.size() == 13
+        assert ips.size() == 14
 
         for (VmNicInventory nic : nics) {
             deleteVmNic {

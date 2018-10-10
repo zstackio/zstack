@@ -157,6 +157,23 @@ class Ipv6RangeCase extends SubCase {
             addressMode = IPv6Constants.Stateful_DHCP
         }
 
+        L3NetworkInventory l3_private_ipv6 = createL3Network {
+            category = "Private"
+            l2NetworkUuid = l2.uuid
+            name = "private-ipv6"
+            ipVersion = 6
+        }
+
+        addIpv6Range {
+            name = "ipr-6-single-address"
+            l3NetworkUuid = l3_private_ipv6.getUuid()
+            startIp = "2003:2002::2160"
+            endIp = "2003:2002::2160"
+            gateway = "2003:2002::2"
+            prefixLen = 64
+            addressMode = IPv6Constants.Stateful_DHCP
+        }
+
         expect(AssertionError.class) {
             addIpv6Range {
                 name = "ipr-6"

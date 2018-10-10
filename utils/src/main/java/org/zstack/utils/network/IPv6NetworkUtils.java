@@ -234,7 +234,7 @@ public class IPv6NetworkUtils {
 
     public static String getEndIpOfNetworkCidr(String cidr) {
         IPv6Network network = IPv6Network.fromString(cidr);
-        return network.getLast().subtract(1).toString();
+        return network.getLast().toString();
     }
 
     public static String getGatewayOfNetworkCidr(String cidr) {

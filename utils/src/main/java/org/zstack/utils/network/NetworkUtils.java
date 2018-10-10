@@ -322,10 +322,16 @@ public class NetworkUtils {
     }
 
     public static int getTotalIpInRange(String startIp, String endIp) {
-        validateIpRange(startIp, endIp);
-        long s = ipv4StringToLong(startIp);
-        long e = ipv4StringToLong(endIp);
-        return (int) (e - s + 1);
+        if (isIpv4Address(startIp)) {
+            validateIpRange(startIp, endIp);
+            long s = ipv4StringToLong(startIp);
+            long e = ipv4StringToLong(endIp);
+            return (int) (e - s + 1);
+        } else if (IPv6NetworkUtils.isIpv6Address(startIp)) {
+            return (int)IPv6NetworkUtils.getIpv6RangeSize(startIp, endIp);
+        } else {
+            throw new IllegalArgumentException(String.format("%s is not a valid ipv4 address or valid ipv6 address", startIp));
+        }
     }
 
     public static int getTotalIpInCidr(String cidr) {
