@@ -201,4 +201,8 @@ public class PathUtil {
             throw new RuntimeException(e.getMessage());
         }
     }
+
+    public static boolean moveFile(String source, String target) {
+        return new File(source).renameTo(new File(target));
+    }
 }
