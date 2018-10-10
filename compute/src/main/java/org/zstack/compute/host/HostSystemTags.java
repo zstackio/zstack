@@ -28,4 +28,14 @@ public class HostSystemTags {
 
     public static String EXTRA_IPS_TOKEN = "extraips";
     public static PatternedSystemTag EXTRA_IPS = new PatternedSystemTag(String.format("extraips::{%s}", EXTRA_IPS_TOKEN), HostVO.class);
+
+    public static final String HOST_CPU_MODEL_NAME_TOKEN = "hostCpuModelName";
+    public static PatternedSystemTag HOST_CPU_MODEL_NAME = new PatternedSystemTag(String.format("hostCpuModelName::{%s}", HOST_CPU_MODEL_NAME_TOKEN), HostVO.class);
+
+    public static final String SYSTEM_PRODUCT_NAME_TOKEN = "systemProductName";
+    public static PatternedSystemTag SYSTEM_PRODUCT_NAME = new PatternedSystemTag(String.format("systemProductName::{%s}", SYSTEM_PRODUCT_NAME_TOKEN), HostVO.class);
+
+    public static final String CPU_GHZ_TOKEN = "cpuGHz";
+    public static PatternedSystemTag CPU_GHZ = new PatternedSystemTag(String.format("cpuGHz::{%s}", CPU_GHZ_TOKEN), HostVO.class);
+
 }
