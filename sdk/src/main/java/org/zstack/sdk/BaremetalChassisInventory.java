@@ -44,6 +44,14 @@ public class BaremetalChassisInventory  {
         return this.clusterUuid;
     }
 
+    public java.lang.String pxeServerUuid;
+    public void setPxeServerUuid(java.lang.String pxeServerUuid) {
+        this.pxeServerUuid = pxeServerUuid;
+    }
+    public java.lang.String getPxeServerUuid() {
+        return this.pxeServerUuid;
+    }
+
     public java.lang.String ipmiAddress;
     public void setIpmiAddress(java.lang.String ipmiAddress) {
         this.ipmiAddress = ipmiAddress;
