@@ -145,6 +145,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
 
         public void setError(String error) {
+            this.success = false;
             this.error = error;
         }
 
