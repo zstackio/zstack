@@ -331,7 +331,11 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
             ao.setEndPort(end);
 
             if (ao.getAllowedCidr() == null) {
-                ao.setAllowedCidr(SecurityGroupConstant.WORLD_OPEN_CIDR);
+                if (ao.getIpVersion() == IPv6Constants.IPv4) {
+                    ao.setAllowedCidr(SecurityGroupConstant.WORLD_OPEN_CIDR);
+                } else {
+                    ao.setAllowedCidr(SecurityGroupConstant.WORLD_OPEN_CIDR_IPV6);
+                }
             }
         }
 

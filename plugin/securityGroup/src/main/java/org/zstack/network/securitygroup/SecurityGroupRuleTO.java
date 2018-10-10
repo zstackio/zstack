@@ -14,8 +14,8 @@ public class SecurityGroupRuleTO {
     private String egressDefaultPolicy;
     private String vmNicUuid;
     private String vmNicMac;
-    /* TODO: shixin.ruan, vmnic can have multiple ip address */
-    private String vmNicIp;
+    private List<String> vmNicIp;
+    private List<String> vmNicIpv6;
     private List<RuleTO> securityGroupBaseRules;
     private String actionCode = ACTION_CODE_APPLY_RULE;
 
@@ -27,12 +27,20 @@ public class SecurityGroupRuleTO {
         this.vmNicMac = vmNicMac;
     }
 
-    public String getVmNicIp() {
+    public List<String> getVmNicIp() {
         return vmNicIp;
     }
 
-    public void setVmNicIp(String vmNicIp) {
+    public void setVmNicIp(List<String> vmNicIp) {
         this.vmNicIp = vmNicIp;
+    }
+
+    public List<String> getVmNicIpv6() {
+        return vmNicIpv6;
+    }
+
+    public void setVmNicIpv6(List<String> vmNicIpv6) {
+        this.vmNicIpv6 = vmNicIpv6;
     }
 
     public String getActionCode() {
