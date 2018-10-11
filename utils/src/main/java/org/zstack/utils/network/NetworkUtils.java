@@ -18,6 +18,7 @@ import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class NetworkUtils {
     private static final CLogger logger = Utils.getLogger(NetworkUtils.class);
@@ -722,6 +723,31 @@ public class NetworkUtils {
             return IPv6NetworkUtils.isIpv6InRange(ip, startIp, endIp);
         } else {
             throw new IllegalArgumentException(String.format("%s is not a valid ipv4 address or valid ipv6 address", ip));
+        }
+    }
+
+    public static String getSmallestIp(List<String> ips) {
+        if (isIpv4Address(ips.get(0))) {
+            List<Long> addresses = ips.stream().map(ip -> ipToLong(ip)).collect(Collectors.toList());
+            addresses.sort(Long::compareTo);
+            return longToIP(addresses.get(0));
+        } else {
+            List<IPv6Address> addresses = ips.stream().map(ip -> IPv6Address.fromString(ip)).collect(Collectors.toList());
+            addresses.sort(IPv6Address::compareTo);
+            return addresses.get(0).toString();
+        }
+    }
+
+    public static String getBiggesttIp(List<String> ips) {
+        int length = ips.size();
+        if (isIpv4Address(ips.get(0))) {
+            List<Long> addresses = ips.stream().map(ip -> ipToLong(ip)).collect(Collectors.toList());
+            addresses.sort(Long::compareTo);
+            return longToIP(addresses.get(length -1));
+        } else {
+            List<IPv6Address> addresses = ips.stream().map(ip -> IPv6Address.fromString(ip)).collect(Collectors.toList());
+            addresses.sort(IPv6Address::compareTo);
+            return addresses.get(length -1).toString();
         }
     }
 }

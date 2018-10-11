@@ -51,6 +51,7 @@ class IPv6DhcpCase extends SubCase {
         L3NetworkInventory l3 = env.inventoryByName("l3")
         InstanceOfferingInventory offering = env.inventoryByName("instanceOffering")
         ImageInventory image = env.inventoryByName("image1")
+        HostInventory host = env.inventoryByName("kvm")
 
         FlatDhcpBackend.ApplyDhcpCmd cmd = null
         env.afterSimulator(FlatDhcpBackend.APPLY_DHCP_PATH) { rsp, HttpEntity<String> e1 ->
@@ -72,7 +73,8 @@ class IPv6DhcpCase extends SubCase {
         assert dhcpInfo.l3NetworkUuid == l3_statefull.uuid
         assert dhcpInfo.ip == nic.ip
         assert dhcpInfo.mac == nic.mac
-        assert dhcpInfo.networkCidr == ipr.getNetworkCidr()
+        assert dhcpInfo.firstIp == ipr.getStartIp()
+        assert dhcpInfo.endIp == ipr.getEndIp()
         assert dhcpInfo.ipVersion == nic.getIpVersion()
 
         cmd = null
@@ -98,7 +100,8 @@ class IPv6DhcpCase extends SubCase {
         assert dhcpInfo.l3NetworkUuid == ip2.l3NetworkUuid
         assert dhcpInfo.ip == ip2.ip
         assert dhcpInfo.mac == nic.mac
-        assert dhcpInfo.networkCidr == ipr.networkCidr
+        assert dhcpInfo.firstIp == ipr.getStartIp()
+        assert dhcpInfo.endIp == ipr.getEndIp()
         assert dhcpInfo.ipVersion == ip2.ipVersion
 
         cmd = null
@@ -112,6 +115,7 @@ class IPv6DhcpCase extends SubCase {
             vmNicUuid = nic.uuid
             l3NetworkUuid = l3.uuid
         }
+
         vm = queryVmInstance {
             conditions=["uuid=${vm.uuid}".toString()]
         } [0]
@@ -120,7 +124,7 @@ class IPv6DhcpCase extends SubCase {
         for (UsedIpInventory ip : nic.getUsedIps()) {
             if (ip.l3NetworkUuid == l3.uuid) {
                 ip3 = ip
-                break;
+                break
             }
         }
         ipr = l3.getIpRanges().get(0)
@@ -130,8 +134,17 @@ class IPv6DhcpCase extends SubCase {
         assert dhcpInfo.l3NetworkUuid == ip3.l3NetworkUuid
         assert dhcpInfo.ip == ip3.ip
         assert dhcpInfo.mac == nic.mac
-        assert dhcpInfo.networkCidr == ipr.networkCidr
+        assert dhcpInfo.firstIp == ipr.getStartIp()
+        assert dhcpInfo.endIp == ipr.getEndIp()
         assert dhcpInfo.ipVersion == ip3.ipVersion
+
+        rebootVmInstance {
+            uuid = vm.uuid
+        }
+
+        reconnectHost {
+            uuid = host.uuid
+        }
 
         FlatDhcpBackend.ReleaseDhcpCmd rcmd = null
         env.afterSimulator(FlatDhcpBackend.RELEASE_DHCP_PATH) { rsp, HttpEntity<String> e1 ->

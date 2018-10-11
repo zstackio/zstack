@@ -20,7 +20,9 @@ public class DhcpStruct {
     private String dnsDomain;
     private Integer mtu;
     private String  raMode;
-    private String  networkCidr;
+    private String  firstIp;
+    private String  endIP;
+    private Integer prefixLength;
 
     @Override
     public String toString() {
@@ -36,7 +38,9 @@ public class DhcpStruct {
         sb.append(String.format("isDefaultL3Network: %s", isDefaultL3Network));
         sb.append(String.format("mtu: %s", mtu));
         sb.append(String.format("raMode: %s", raMode));
-        sb.append(String.format("networkCidr: %s", networkCidr));
+        sb.append(String.format("firstIp: %s", firstIp));
+        sb.append(String.format("endIP: %s", endIP));
+        sb.append(String.format("prefixLength: %s", prefixLength));
         sb.append("]");
         return sb.toString();
     }
@@ -129,11 +133,27 @@ public class DhcpStruct {
         this.raMode = raMode;
     }
 
-    public String getNetworkCidr() {
-        return networkCidr;
+    public String getFirstIp() {
+        return firstIp;
     }
 
-    public void setNetworkCidr(String networkCidr) {
-        this.networkCidr = networkCidr;
+    public void setFirstIp(String firstIp) {
+        this.firstIp = firstIp;
+    }
+
+    public String getEndIP() {
+        return endIP;
+    }
+
+    public void setEndIP(String endIP) {
+        this.endIP = endIP;
+    }
+
+    public Integer getPrefixLength() {
+        return prefixLength;
+    }
+
+    public void setPrefixLength(Integer prefixLength) {
+        this.prefixLength = prefixLength;
     }
 }

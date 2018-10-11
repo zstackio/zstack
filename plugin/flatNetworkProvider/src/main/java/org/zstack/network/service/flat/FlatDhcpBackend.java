@@ -3,7 +3,6 @@ package org.zstack.network.service.flat;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.VmSystemTags;
-import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
@@ -46,7 +45,6 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.TagUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
@@ -193,6 +191,9 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 L3NetworkVO l3 = l3Map.get(ip.getL3NetworkUuid());
                 info.dnsDomain = l3.getDnsDomain();
                 info.dns = getL3NetworkDns(ip.getL3NetworkUuid());
+                info.firstIp = NetworkUtils.getSmallestIp(l3.getIpRanges().stream().map(r -> r.getStartIp()).collect(Collectors.toList()));
+                info.endIp = NetworkUtils.getBiggesttIp(l3.getIpRanges().stream().map(r -> r.getEndIp()).collect(Collectors.toList()));
+                info.prefixLength = l3.getIpRanges().stream().findAny().get().getPrefixLen();
 
                 if (info.isDefaultL3Network) {
                     info.hostname = hostnames.get(nic.getVmInstanceUuid());
@@ -559,6 +560,9 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 L3NetworkVO l3 = l3Map.get(ip.getL3NetworkUuid());
                 info.dnsDomain = l3.getDnsDomain();
                 info.dns = getL3NetworkDns(ip.getL3NetworkUuid());
+                info.firstIp = NetworkUtils.getSmallestIp(l3.getIpRanges().stream().map(r -> r.getStartIp()).collect(Collectors.toList()));
+                info.endIp = NetworkUtils.getBiggesttIp(l3.getIpRanges().stream().map(r -> r.getEndIp()).collect(Collectors.toList()));
+                info.prefixLength = l3.getIpRanges().stream().findAny().get().getPrefixLen();
 
                 if (info.isDefaultL3Network) {
                     info.hostname = hostnames.get(nic.getVmInstanceUuid());
@@ -917,7 +921,9 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         public String ip;
         public String mac;
         public String netmask;
-        public String networkCidr;
+        public String firstIp;
+        public String endIp;
+        public Integer prefixLength;
         public String gateway;
         public String hostname;
         public boolean isDefaultL3Network;
@@ -1069,7 +1075,9 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
                 info.ip = arg.getIp();
                 info.netmask = arg.getNetmask();
-                info.networkCidr = arg.getNetworkCidr();
+                info.firstIp = arg.getFirstIp();
+                info.endIp = arg.getEndIP();
+                info.prefixLength = arg.getPrefixLength();
                 info.mac = arg.getMac();
                 info.dns = getL3NetworkDns(arg.getL3Network().getUuid());
                 info.l3NetworkUuid = arg.getL3Network().getUuid();

@@ -31,9 +31,12 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
+import org.zstack.utils.network.IPv6NetworkUtils;
+import org.zstack.utils.network.NetworkUtils;
 
 import javax.json.Json;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created with IntelliJ IDEA.
@@ -178,7 +181,9 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
             struct.setNetmask(ip.getNetmask());
             struct.setMtu(new MtuGetter().getMtu(l3.getUuid()));
             struct.setRaMode(l3.getIpRanges().get(0).getAddressMode());
-            struct.setNetworkCidr(ipr.getNetworkCidr());
+            struct.setFirstIp(NetworkUtils.getSmallestIp(l3.getIpRanges().stream().map(r -> r.getStartIp()).collect(Collectors.toList())));
+            struct.setEndIP(NetworkUtils.getBiggesttIp(l3.getIpRanges().stream().map(r -> r.getEndIp()).collect(Collectors.toList())));
+            struct.setPrefixLength(l3.getIpRanges().get(0).getPrefixLen());
             res.add(struct);
         }
 
