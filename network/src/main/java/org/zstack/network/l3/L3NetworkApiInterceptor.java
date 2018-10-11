@@ -237,6 +237,10 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             }
         }
 
+        if (!ipr.getAddressMode().equals(IPv6Constants.Stateful_DHCP) && ipr.getPrefixLen() != IPv6Constants.IPV6_STATELESS_PREFIX_LEN) {
+            throw new ApiMessageInterceptionException(argerr("ipv6 prefix length must be %d for Stateless-DHCP or SLAAC", IPv6Constants.IPV6_STATELESS_PREFIX_LEN));
+        }
+
         List<String> l3Uuids = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.l2NetworkUuid, l3Vo.getL2NetworkUuid()).select(L3NetworkVO_.uuid).listValues();
         SimpleQuery<IpRangeVO> q = dbf.createQuery(IpRangeVO.class);
         q.add(IpRangeVO_.l3NetworkUuid, Op.IN, l3Uuids);

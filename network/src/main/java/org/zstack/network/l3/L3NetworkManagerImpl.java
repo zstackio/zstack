@@ -242,6 +242,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
 
         reply.setTotalCapacity(ret.total);
         reply.setAvailableCapacity(ret.avail);
+        reply.setUsedIpAddressNumber(ret.used);
         bus.reply(msg, reply);
     }
 

@@ -10,6 +10,8 @@ public class IPv6Constants {
     public static final String Stateless_DHCP = "Stateless-DHCP";
     public static final String Stateful_DHCP = "Stateful-DHCP";
 
+    public static final int IPV6_STATELESS_PREFIX_LEN = 64;
+
     public static final int IPV6_PREFIX_LEN_MAX = 127;
     public static final int IPV6_PREFIX_LEN_MIN = 8;
 

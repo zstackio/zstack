@@ -116,6 +116,7 @@ class Ipv6GetFreeIpCase extends SubCase {
         res1 = getIpAddressCapacity { l3NetworkUuids=[l3_pub_ipv6.uuid] }
         assert res1.totalCapacity.intValue() == 34
         assert res1.availableCapacity.intValue() == 14
+        assert res1.usedIpAddressNumber == 20
 
         L3NetworkInventory l3_pub_ipv6_1 = createL3Network {
             category = "Public"
@@ -134,18 +135,18 @@ class Ipv6GetFreeIpCase extends SubCase {
         freeIps = getFreeIpOfL3Network {
             l3NetworkUuid = l3_pub_ipv6_1.uuid
         }
-        assert freeIps.size() == 13
+        assert freeIps.size() == 14
         freeIps = getFreeIpOfIpRange {
             ipRangeUuid = ipr.uuid
         }
-        assert freeIps.size() == 13
+        assert freeIps.size() == 14
 
         res1 = getIpAddressCapacity { l3NetworkUuids=[l3_pub_ipv6_1.uuid] }
         res2 = getIpAddressCapacity { ipRangeUuids=[ipr.uuid] }
-        assert res1.totalCapacity.intValue() == 13
-        assert res1.availableCapacity.intValue() == 13
-        assert res2.totalCapacity.intValue() == 13
-        assert res2.availableCapacity.intValue() == 13
+        assert res1.totalCapacity.intValue() == 14
+        assert res1.availableCapacity.intValue() == 14
+        assert res2.totalCapacity.intValue() == 14
+        assert res2.availableCapacity.intValue() == 14
 
         for (VmNicInventory nic : nics) {
             deleteVmNic {
