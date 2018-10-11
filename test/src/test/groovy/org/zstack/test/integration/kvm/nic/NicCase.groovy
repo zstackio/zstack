@@ -4,6 +4,7 @@ import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
 import org.zstack.core.thread.AsyncThread
 import org.zstack.header.image.ImagePlatform
+import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmInstanceVO_
 import org.zstack.header.vm.VmNicVO
@@ -40,20 +41,20 @@ class NicCase extends SubCase {
 
     @Override
     void environment() {
-        env = Env.oneVmBasicEnv()
+          env = Env.oneVmTwoL3NetworkLocalEnv()
     }
 
     @Override
     void test() {
         env.create {
             testDetachNicConcurrently()
-            testDetachNicOfNotParaVirtualizationVm()
+            testDetachNicFromVm()
         }
     }
 
     void testDetachNicConcurrently() {
         VmInstanceInventory vm = env.inventoryByName("vm")
-        L3NetworkInventory l3NetworkInventory = env.inventoryByName("l3")
+        L3NetworkInventory l3NetworkInventory = env.inventoryByName("l3-1")
 
         GetIpAddressCapacityResult result = getIpAddressCapacity {
             l3NetworkUuids = [l3NetworkInventory.uuid]
@@ -72,7 +73,7 @@ class NicCase extends SubCase {
                         AttachL3NetworkToVmAction action = new AttachL3NetworkToVmAction()
                         action.vmInstanceUuid = vm.uuid
                         action.l3NetworkUuid = l3NetworkInventory.uuid
-                        action.sessionId = loginAsAdmin()
+                        action.sessionId = adminSession()
 
                         AttachL3NetworkToVmAction.Result ret = action.call()
                         if (ret.error != null) {
@@ -99,7 +100,7 @@ class NicCase extends SubCase {
                     try {
                         DetachL3NetworkFromVmAction action = new DetachL3NetworkFromVmAction()
                         action.vmNicUuid = l3NetworkInventory.uuid
-                        action.sessionId = loginAsAdmin()
+                        action.sessionId = adminSession()
 
                         DetachL3NetworkFromVmAction.Result ret = action.call()
                         if (ret.error != null) {
@@ -123,23 +124,73 @@ class NicCase extends SubCase {
         assert result.availableCapacity == result2.availableCapacity
     }
 
-    void testDetachNicOfNotParaVirtualizationVm() {
-        L3NetworkInventory l3 = env.inventoryByName("l3")
-        ImageSpec image = env.specByName("image1")
+    void testDetachNicFromVm() {
+        L3NetworkInventory l3 = env.inventoryByName("pubL3")
+        ImageSpec image = env.specByName("image")
         InstanceOfferingSpec instanceOffering = env.specByName("instanceOffering")
 
-        VmInstanceInventory vm = createVmInstance {
-            name = "vm"
-            imageUuid = image.inventory.uuid
-            l3NetworkUuids = [l3.uuid]
-            instanceOfferingUuid = instanceOffering.inventory.uuid
-        }
+        for (imagePlatform in ImagePlatform.values()) {
+            VmInstanceInventory vm = createVmInstance {
+                name = "vm-${imagePlatform.toString()}"
+                imageUuid = image.inventory.uuid
+                l3NetworkUuids = [l3.uuid]
+                instanceOfferingUuid = instanceOffering.inventory.uuid
+            }
 
-        SQL.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm.uuid).set(VmInstanceVO_.platform, ImagePlatform.Other.toString()).update()
+            SQL.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm.uuid).set(VmInstanceVO_.platform, imagePlatform.toString()).update()
 
-        expect(AssertionError.class) {
+            assert vm.getVmNics().size() == 1
+            
             detachL3NetworkFromVm {
                 vmNicUuid = vm.getVmNics().get(0).uuid
+            }
+
+            vm = queryVmInstance {
+                conditions = ["uuid=${vm.uuid}"]
+            }[0]
+            assert vm.getVmNics().size() == 0
+
+            attachL3NetworkToVm {
+                l3NetworkUuid = l3.uuid
+                vmInstanceUuid = vm.uuid
+            }
+
+            vm = queryVmInstance {
+                conditions = ["uuid=${vm.uuid}"]
+            }[0]
+            assert vm.getVmNics().size() == 1
+
+            stopVmInstance {
+                uuid = vm.uuid
+            }
+
+            vm = queryVmInstance {
+                conditions = ["uuid=${vm.uuid}"]
+            }[0]
+            assert VmInstanceState.Stopped.toString() == vm.getState()
+            assert vm.getVmNics().size() == 1
+
+            detachL3NetworkFromVm {
+                vmNicUuid = vm.getVmNics().get(0).uuid
+            }
+
+            vm = queryVmInstance {
+                conditions = ["uuid=${vm.uuid}"]
+            }[0]
+            assert vm.getVmNics().size() == 0
+
+            destroyVmInstance {
+                uuid = vm.uuid
+            }
+
+            vm = queryVmInstance {
+                conditions = ["uuid=${vm.uuid}"]
+            }[0]
+            assert VmInstanceState.Destroyed.toString() == vm.getState()
+            assert vm.getVmNics().size() == 0
+
+            expungeVmInstance{
+                uuid = vm.uuid
             }
         }
     }
