@@ -7236,7 +7236,7 @@
   {
     "raw": "only enterprise account can update global config [name:%s]",
     "en_US": "only enterprise account can update global config [name:{0}]",
-    "zh_CN": "只有企业用户可以上传全局设置[name:{0}]",
+    "zh_CN": "只有企业用户可以更新全局设置[name:{0}]",
     "arguments": [
       "getName()"
     ],
