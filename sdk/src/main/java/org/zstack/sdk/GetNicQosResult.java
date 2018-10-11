@@ -19,4 +19,20 @@ public class GetNicQosResult {
         return this.inboundBandwidth;
     }
 
+    public long outboundBandwidthUpthreshold;
+    public void setOutboundBandwidthUpthreshold(long outboundBandwidthUpthreshold) {
+        this.outboundBandwidthUpthreshold = outboundBandwidthUpthreshold;
+    }
+    public long getOutboundBandwidthUpthreshold() {
+        return this.outboundBandwidthUpthreshold;
+    }
+
+    public long inboundBandwidthUpthreshold;
+    public void setInboundBandwidthUpthreshold(long inboundBandwidthUpthreshold) {
+        this.inboundBandwidthUpthreshold = inboundBandwidthUpthreshold;
+    }
+    public long getInboundBandwidthUpthreshold() {
+        return this.inboundBandwidthUpthreshold;
+    }
+
 }
