@@ -127,6 +127,7 @@ public class KVMHost extends HostBase implements Host {
     private String hostFactPath;
     private String attachIsoPath;
     private String detachIsoPath;
+    private String updateNicPath;
     private String checkVmStatePath;
     private String getConsolePortPath;
     private String onlineIncreaseCpuPath;
@@ -222,6 +223,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_DETACH_ISO_PATH);
         detachIsoPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_UPDATE_NIC_PATH);
+        updateNicPath = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_VM_CHECK_STATE);
@@ -382,6 +387,8 @@ public class KVMHost extends HostBase implements Host {
             handle((DetachVolumeFromVmOnHypervisorMsg) msg);
         } else if (msg instanceof VmAttachNicOnHypervisorMsg) {
             handle((VmAttachNicOnHypervisorMsg) msg);
+        } else if (msg instanceof VmUpdateNicOnHypervisorMsg) {
+            handle((VmUpdateNicOnHypervisorMsg) msg);
         } else if (msg instanceof MigrateVmOnHypervisorMsg) {
             handle((MigrateVmOnHypervisorMsg) msg);
         } else if (msg instanceof TakeSnapshotOnHypervisorMsg) {
@@ -1391,6 +1398,71 @@ public class KVMHost extends HostBase implements Host {
         });
     }
 
+    private void handle(final VmUpdateNicOnHypervisorMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return id;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                updateNic(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("update-nic-on-kvm-%s", self.getUuid());
+            }
+
+            @Override
+            protected int getSyncLevel() {
+                return getHostSyncLevel();
+            }
+        });
+    }
+
+    private void updateNic(VmUpdateNicOnHypervisorMsg msg, NoErrorCompletion completion) {
+        checkStateAndStatus();
+        final VmUpdateNicOnHypervisorReply reply = new VmUpdateNicOnHypervisorReply();
+
+        List<VmNicVO> nics = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, msg.getVmInstanceUuid()).list();
+
+        UpdateNicCmd cmd = new UpdateNicCmd();
+        cmd.setVmInstanceUuid(msg.getVmInstanceUuid());
+        cmd.setNics(VmNicInventory.valueOf(nics).stream().map(this::completeNicInfo).collect(Collectors.toList()));
+
+        KVMHostInventory inv = (KVMHostInventory) getSelfInventory();
+        for (KVMPreUpdateNicExtensionPoint ext : pluginRgty.getExtensionList(KVMPreUpdateNicExtensionPoint.class)) {
+            ext.preUpdateNic(inv, cmd);
+        }
+
+        new Http<>(updateNicPath, cmd, AttachNicResponse.class).call(new ReturnValueCompletion<AttachNicResponse>(msg, completion) {
+            @Override
+            public void success(AttachNicResponse ret) {
+                if (!ret.isSuccess()) {
+                    reply.setError(operr("failed to update nic[vm:%s] on kvm host[uuid:%s, ip:%s]," +
+                                    "because %s", msg.getVmInstanceUuid(), self.getUuid(), self.getManagementIp(), ret.getError()));
+                }
+
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+        });
+    }
+
     private void handle(final VmAttachNicOnHypervisorMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
@@ -1974,7 +2046,8 @@ public class KVMHost extends HostBase implements Host {
             String platform = q.findValue();
 
             to.setUseVirtio(ImagePlatform.valueOf(platform).isParaVirtualization());
-            if (!(nic.getIp().isEmpty() || nic.getIp() == null) && VmGlobalConfig.VM_CLEAN_TRAFFIC.value(Boolean.class)) {
+            String tagValue = VmSystemTags.CLEAN_TRAFFIC.getTokenByResourceUuid(nic.getVmInstanceUuid(), VmSystemTags.CLEAN_TRAFFIC_TOKEN);
+            if (Boolean.valueOf(tagValue) || (tagValue == null && VmGlobalConfig.VM_CLEAN_TRAFFIC.value(Boolean.class))) {
                 to.setIp(nic.getIp());
             }
         }
@@ -2031,7 +2104,6 @@ public class KVMHost extends HostBase implements Host {
         cmd.setCpuSpeed(spec.getVmInventory().getCpuSpeed());
         cmd.setMemory(spec.getVmInventory().getMemorySize());
         cmd.setMaxMemory(self.getCapacity().getTotalPhysicalMemory());
-        cmd.setUseVirtio(virtio);
         cmd.setClock(ImagePlatform.isType(platform, ImagePlatform.Windows, ImagePlatform.WindowsVirtio) ? "localtime" : "utc");
         cmd.setVideoType(VmGlobalConfig.VM_VIDEO_TYPE.value(String.class));
         cmd.setInstanceOfferingOnlineChange(VmSystemTags.INSTANCEOFFERING_ONLIECHANGE.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmSystemTags.INSTANCEOFFERING_ONLINECHANGE_TOKEN) != null);
@@ -2080,7 +2152,7 @@ public class KVMHost extends HostBase implements Host {
         List<NicTO> nics = new ArrayList<>(spec.getDestNics().size());
         for (VmNicInventory nic : spec.getDestNics()) {
             NicTO to = completeNicInfo(nic);
-            if (!spec.getVmInventory().getType().equals(VmInstanceConstant.USER_VM_TYPE) && VmGlobalConfig.VM_CLEAN_TRAFFIC.value(Boolean.class)) {
+            if (!spec.getVmInventory().getType().equals(VmInstanceConstant.USER_VM_TYPE)) {
                 to.setIp("");
             }
             nics.add(to);
@@ -2113,14 +2185,7 @@ public class KVMHost extends HostBase implements Host {
 
         addons(spec, cmd);
         KVMHostInventory khinv = KVMHostInventory.valueOf(getSelf());
-        try {
-            extEmitter.beforeStartVmOnKvm(khinv, spec, cmd);
-        } catch (KVMException e) {
-            ErrorCode err = operr("failed to start vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s], because %s",
-                    spec.getVmInventory().getUuid(), spec.getVmInventory().getName(),
-                    self.getUuid(), self.getManagementIp(), e.getMessage());
-            throw new OperationFailureException(err);
-        }
+        extEmitter.beforeStartVmOnKvm(khinv, spec, cmd);
 
         extEmitter.addOn(khinv, spec, cmd);
 
