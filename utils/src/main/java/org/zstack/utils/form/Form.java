@@ -3,6 +3,7 @@ package org.zstack.utils.form;
 import org.apache.commons.lang.StringUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.FieldUtils;
+import org.zstack.utils.StringDSL;
 import org.zstack.utils.TypeUtils;
 
 import java.io.IOException;
@@ -190,6 +191,10 @@ public class Form<T> {
                 if (val < low || val > high) {
                     errorSb.append(String.format("field[%s] must be in range of [%s, %s].", f.getName(), low, high));
                 }
+            }
+
+            if (value != null && value instanceof String && param.resourceType() != Object.class && !StringDSL.isZStackUuid(((String) value).trim())) {
+                errorSb.append(String.format("field[%s] is not a valid uuid.", f.getName()));
             }
         }
 

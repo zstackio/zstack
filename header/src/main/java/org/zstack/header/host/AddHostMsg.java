@@ -1,5 +1,6 @@
 package org.zstack.header.host;
 
+import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.utils.form.Param;
 
@@ -11,7 +12,7 @@ public class AddHostMsg extends NeedReplyMessage implements AddHostMessage {
     private String description;
     @Param
     private String managementIp;
-    @Param
+    @Param(resourceType = ClusterVO.class)
     private String clusterUuid;
     private String accountUuid;
     private String resourceUuid;

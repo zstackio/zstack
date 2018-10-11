@@ -11,4 +11,6 @@ public @interface Param {
     boolean noTrim() default false;
 
     long[] numberRange() default {};
+
+    Class resourceType() default Object.class;
 }
