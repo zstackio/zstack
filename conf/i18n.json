@@ -7234,9 +7234,9 @@
     "fileName": "src/main/java/org/zstack/mevoco/MevocoVolumeBase.java"
   },
   {
-    "raw": "only enterprise account can update global config [name:%s]",
-    "en_US": "only enterprise account can update global config [name:{0}]",
-    "zh_CN": "只有企业用户可以更新全局设置[name:{0}]",
+    "raw": "the current version of license does not support modifying this global config [name:%s]",
+    "en_US": "the current version of license does not support modifying this global config  [name:{0}]",
+    "zh_CN": "当前license版本不支持修改此全局设置[name:{0}]",
     "arguments": [
       "getName()"
     ],
