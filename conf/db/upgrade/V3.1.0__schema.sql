@@ -1,4 +1,5 @@
 ALTER TABLE `AlarmVO`  ADD COLUMN `type` varchar(32) NOT NULL;
+UPDATE `AlarmVO` SET `type` = 'Any';
 
 CREATE TABLE IF NOT EXISTS `V2VConversionCacheVO` (
     `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
@@ -13,4 +14,3 @@ CREATE TABLE IF NOT EXISTS `V2VConversionCacheVO` (
     `createDate` timestamp,
     PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
