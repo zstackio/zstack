@@ -42,8 +42,8 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.host.MigrateVmOnHypervisorMsg.StorageMigrationPolicy;
-import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.image.ImageBootMode;
+import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -60,6 +60,7 @@ import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.KVMConstant.KvmVmState;
+import org.zstack.tag.SystemTag;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
@@ -127,6 +128,7 @@ public class KVMHost extends HostBase implements Host {
     private String hostFactPath;
     private String attachIsoPath;
     private String detachIsoPath;
+    private String updateNicPath;
     private String checkVmStatePath;
     private String getConsolePortPath;
     private String onlineIncreaseCpuPath;
@@ -222,6 +224,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_DETACH_ISO_PATH);
         detachIsoPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_UPDATE_NIC_PATH);
+        updateNicPath = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_VM_CHECK_STATE);
@@ -382,6 +388,8 @@ public class KVMHost extends HostBase implements Host {
             handle((DetachVolumeFromVmOnHypervisorMsg) msg);
         } else if (msg instanceof VmAttachNicOnHypervisorMsg) {
             handle((VmAttachNicOnHypervisorMsg) msg);
+        } else if (msg instanceof VmUpdateNicOnHypervisorMsg) {
+            handle((VmUpdateNicOnHypervisorMsg) msg);
         } else if (msg instanceof MigrateVmOnHypervisorMsg) {
             handle((MigrateVmOnHypervisorMsg) msg);
         } else if (msg instanceof TakeSnapshotOnHypervisorMsg) {
@@ -1391,6 +1399,71 @@ public class KVMHost extends HostBase implements Host {
         });
     }
 
+    private void handle(final VmUpdateNicOnHypervisorMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return id;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                updateNic(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("update-nic-on-kvm-%s", self.getUuid());
+            }
+
+            @Override
+            protected int getSyncLevel() {
+                return getHostSyncLevel();
+            }
+        });
+    }
+
+    private void updateNic(VmUpdateNicOnHypervisorMsg msg, NoErrorCompletion completion) {
+        checkStateAndStatus();
+        final VmUpdateNicOnHypervisorReply reply = new VmUpdateNicOnHypervisorReply();
+
+        List<VmNicVO> nics = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, msg.getVmInstanceUuid()).list();
+
+        UpdateNicCmd cmd = new UpdateNicCmd();
+        cmd.setVmInstanceUuid(msg.getVmInstanceUuid());
+        cmd.setNics(VmNicInventory.valueOf(nics).stream().map(this::completeNicInfo).collect(Collectors.toList()));
+
+        KVMHostInventory inv = (KVMHostInventory) getSelfInventory();
+        for (KVMPreUpdateNicExtensionPoint ext : pluginRgty.getExtensionList(KVMPreUpdateNicExtensionPoint.class)) {
+            ext.preUpdateNic(inv, cmd);
+        }
+
+        new Http<>(updateNicPath, cmd, AttachNicResponse.class).call(new ReturnValueCompletion<AttachNicResponse>(msg, completion) {
+            @Override
+            public void success(AttachNicResponse ret) {
+                if (!ret.isSuccess()) {
+                    reply.setError(operr("failed to update nic[vm:%s] on kvm host[uuid:%s, ip:%s]," +
+                                    "because %s", msg.getVmInstanceUuid(), self.getUuid(), self.getManagementIp(), ret.getError()));
+                }
+
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+        });
+    }
+
     private void handle(final VmAttachNicOnHypervisorMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
@@ -1974,7 +2047,8 @@ public class KVMHost extends HostBase implements Host {
             String platform = q.findValue();
 
             to.setUseVirtio(ImagePlatform.valueOf(platform).isParaVirtualization());
-            if (!(nic.getIp().isEmpty() || nic.getIp() == null) && VmGlobalConfig.VM_CLEAN_TRAFFIC.value(Boolean.class)) {
+            String tagValue = VmSystemTags.CLEAN_TRAFFIC.getTokenByResourceUuid(nic.getVmInstanceUuid(), VmSystemTags.CLEAN_TRAFFIC_TOKEN);
+            if (Boolean.valueOf(tagValue) || (tagValue == null && VmGlobalConfig.VM_CLEAN_TRAFFIC.value(Boolean.class))) {
                 to.setIp(nic.getIp());
             }
         }
@@ -2031,7 +2105,6 @@ public class KVMHost extends HostBase implements Host {
         cmd.setCpuSpeed(spec.getVmInventory().getCpuSpeed());
         cmd.setMemory(spec.getVmInventory().getMemorySize());
         cmd.setMaxMemory(self.getCapacity().getTotalPhysicalMemory());
-        cmd.setUseVirtio(virtio);
         cmd.setClock(ImagePlatform.isType(platform, ImagePlatform.Windows, ImagePlatform.WindowsVirtio) ? "localtime" : "utc");
         cmd.setVideoType(VmGlobalConfig.VM_VIDEO_TYPE.value(String.class));
         cmd.setInstanceOfferingOnlineChange(VmSystemTags.INSTANCEOFFERING_ONLIECHANGE.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmSystemTags.INSTANCEOFFERING_ONLINECHANGE_TOKEN) != null);
@@ -2080,7 +2153,7 @@ public class KVMHost extends HostBase implements Host {
         List<NicTO> nics = new ArrayList<>(spec.getDestNics().size());
         for (VmNicInventory nic : spec.getDestNics()) {
             NicTO to = completeNicInfo(nic);
-            if (!spec.getVmInventory().getType().equals(VmInstanceConstant.USER_VM_TYPE) && VmGlobalConfig.VM_CLEAN_TRAFFIC.value(Boolean.class)) {
+            if (!spec.getVmInventory().getType().equals(VmInstanceConstant.USER_VM_TYPE)) {
                 to.setIp("");
             }
             nics.add(to);
@@ -2113,14 +2186,7 @@ public class KVMHost extends HostBase implements Host {
 
         addons(spec, cmd);
         KVMHostInventory khinv = KVMHostInventory.valueOf(getSelf());
-        try {
-            extEmitter.beforeStartVmOnKvm(khinv, spec, cmd);
-        } catch (KVMException e) {
-            ErrorCode err = operr("failed to start vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s], because %s",
-                    spec.getVmInventory().getUuid(), spec.getVmInventory().getName(),
-                    self.getUuid(), self.getManagementIp(), e.getMessage());
-            throw new OperationFailureException(err);
-        }
+        extEmitter.beforeStartVmOnKvm(khinv, spec, cmd);
 
         extEmitter.addOn(khinv, spec, cmd);
 
@@ -2555,9 +2621,7 @@ public class KVMHost extends HostBase implements Host {
                     logger.debug(String.format("kvm host[OS:%s, uuid:%s, name:%s, ip:%s] supports live snapshot with libvirt[version:%s], qemu[version:%s]",
                             hostOS, self.getUuid(), self.getName(), self.getManagementIp(), rsp.getLibvirtVersion(), rsp.getQemuVersion()));
 
-                    SystemTagCreator creator = HostSystemTags.LIVE_SNAPSHOT.newSystemTagCreator(self.getUuid());
-                    creator.recreate = true;
-                    creator.create();
+                    recreateNonInherentTag(HostSystemTags.LIVE_SNAPSHOT);
                 } else {
                     HostSystemTags.LIVE_SNAPSHOT.deleteInherentTag(self.getUuid());
                 }
@@ -2631,22 +2695,28 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void createHostVersionSystemTags(String distro, String release, String version) {
-        SystemTagCreator creator = HostSystemTags.OS_DISTRIBUTION.newSystemTagCreator(self.getUuid());
-        creator.inherent = true;
-        creator.recreate = true;
-        creator.setTagByTokens(map(e(HostSystemTags.OS_DISTRIBUTION_TOKEN, distro)));
-        creator.create();
+        recreateInherentTag(HostSystemTags.OS_DISTRIBUTION, HostSystemTags.OS_DISTRIBUTION_TOKEN, distro);
+        recreateInherentTag(HostSystemTags.OS_RELEASE, HostSystemTags.OS_RELEASE_TOKEN, release);
+        recreateInherentTag(HostSystemTags.OS_VERSION, HostSystemTags.OS_VERSION_TOKEN, version);
+    }
 
-        creator = HostSystemTags.OS_RELEASE.newSystemTagCreator(self.getUuid());
-        creator.inherent = true;
-        creator.recreate = true;
-        creator.setTagByTokens(map(e(HostSystemTags.OS_RELEASE_TOKEN, release)));
-        creator.create();
+    private void recreateNonInherentTag(SystemTag tag, String token, String value) {
+        recreateTag(tag, token, value, false);
+    }
 
-        creator = HostSystemTags.OS_VERSION.newSystemTagCreator(self.getUuid());
-        creator.inherent = true;
+    private void recreateNonInherentTag(SystemTag tag) {
+        recreateTag(tag, null, null, false);
+    }
+
+    private void recreateInherentTag(SystemTag tag, String token, String value) {
+        recreateTag(tag, token, value, true);
+    }
+    
+    private void recreateTag(SystemTag tag, String token, String value, boolean inherent) {
+        SystemTagCreator creator = tag.newSystemTagCreator(self.getUuid());
+        Optional.ofNullable(token).ifPresent(it -> creator.setTagByTokens(Collections.singletonMap(token, value)));
+        creator.inherent = inherent;
         creator.recreate = true;
-        creator.setTagByTokens(map(e(HostSystemTags.OS_VERSION_TOKEN, version)));
         creator.create();
     }
 
@@ -2654,27 +2724,16 @@ public class KVMHost extends HostBase implements Host {
     public void connectHook(final ConnectHostInfo info, final Completion complete) {
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             if (info.isNewAdded()) {
-                SystemTagCreator creator;
                 createHostVersionSystemTags("zstack", "kvmSimulator", "0.1");
                 if (null == KVMSystemTags.LIBVIRT_VERSION.getTokenByResourceUuid(self.getUuid(), KVMSystemTags.LIBVIRT_VERSION_TOKEN)) {
-                    creator = KVMSystemTags.LIBVIRT_VERSION.newSystemTagCreator(self.getUuid());
-                    creator.inherent = true;
-                    creator.setTagByTokens(map(e(KVMSystemTags.LIBVIRT_VERSION_TOKEN, "1.2.9")));
-                    creator.create();
+                    recreateInherentTag(KVMSystemTags.LIBVIRT_VERSION, KVMSystemTags.LIBVIRT_VERSION_TOKEN, "1.2.9");
                 }
-
                 if (null == KVMSystemTags.QEMU_IMG_VERSION.getTokenByResourceUuid(self.getUuid(), KVMSystemTags.QEMU_IMG_VERSION_TOKEN)) {
-                    creator = KVMSystemTags.QEMU_IMG_VERSION.newSystemTagCreator(self.getUuid());
-                    creator.inherent = true;
-                    creator.setTagByTokens(map(e(KVMSystemTags.QEMU_IMG_VERSION_TOKEN, "2.0.0")));
-                    creator.create();
-                }
+                    recreateInherentTag(KVMSystemTags.QEMU_IMG_VERSION, KVMSystemTags.QEMU_IMG_VERSION_TOKEN, "2.0.0");
 
+                }
                 if (null == KVMSystemTags.CPU_MODEL_NAME.getTokenByResourceUuid(self.getUuid(), KVMSystemTags.CPU_MODEL_NAME_TOKEN)) {
-                    creator = KVMSystemTags.CPU_MODEL_NAME.newSystemTagCreator(self.getUuid());
-                    creator.setTagByTokens(map(e(KVMSystemTags.CPU_MODEL_NAME_TOKEN, "Broadwell")));
-                    creator.inherent = true;
-                    creator.create();
+                    recreateInherentTag(KVMSystemTags.CPU_MODEL_NAME, KVMSystemTags.CPU_MODEL_NAME_TOKEN, "Broadwell");
                 }
 
                 if (!checkQemuLibvirtVersionOfHost()) {
@@ -2955,40 +3014,25 @@ public class KVMHost extends HostBase implements Host {
                                     // create system tags of os::version etc
                                     createHostVersionSystemTags(ret.getOsDistribution(), ret.getOsRelease(), ret.getOsVersion());
 
-                                    SystemTagCreator creator = KVMSystemTags.QEMU_IMG_VERSION.newSystemTagCreator(self.getUuid());
-                                    creator.setTagByTokens(map(e(KVMSystemTags.QEMU_IMG_VERSION_TOKEN, ret.getQemuImgVersion())));
-                                    creator.recreate = true;
-                                    creator.create();
-
-                                    creator = KVMSystemTags.LIBVIRT_VERSION.newSystemTagCreator(self.getUuid());
-                                    creator.setTagByTokens(map(e(KVMSystemTags.LIBVIRT_VERSION_TOKEN, ret.getLibvirtVersion())));
-                                    creator.recreate = true;
-                                    creator.create();
-
-                                    creator = KVMSystemTags.HVM_CPU_FLAG.newSystemTagCreator(self.getUuid());
-                                    creator.setTagByTokens(map(e(KVMSystemTags.HVM_CPU_FLAG_TOKEN, ret.getHvmCpuFlag())));
-                                    creator.recreate = true;
-                                    creator.create();
-
-                                    creator = KVMSystemTags.CPU_MODEL_NAME.newSystemTagCreator(self.getUuid());
-                                    creator.setTagByTokens(map(e(KVMSystemTags.CPU_MODEL_NAME_TOKEN, ret.getCpuModelName())));
-                                    creator.recreate = true;
-                                    creator.create();
+                                    recreateNonInherentTag(KVMSystemTags.QEMU_IMG_VERSION, KVMSystemTags.QEMU_IMG_VERSION_TOKEN, ret.getQemuImgVersion());
+                                    recreateNonInherentTag(KVMSystemTags.LIBVIRT_VERSION, KVMSystemTags.LIBVIRT_VERSION_TOKEN, ret.getLibvirtVersion());
+                                    recreateNonInherentTag(KVMSystemTags.HVM_CPU_FLAG, KVMSystemTags.HVM_CPU_FLAG_TOKEN, ret.getHvmCpuFlag());
+                                    recreateNonInherentTag(KVMSystemTags.CPU_MODEL_NAME, KVMSystemTags.CPU_MODEL_NAME_TOKEN, ret.getCpuModelName());
+                                    recreateInherentTag(HostSystemTags.HOST_CPU_MODEL_NAME, HostSystemTags.HOST_CPU_MODEL_NAME_TOKEN, ret.getHostCpuModelName());
+                                    recreateInherentTag(HostSystemTags.CPU_GHZ, HostSystemTags.CPU_GHZ_TOKEN, ret.getCpuGHz());
+                                    recreateInherentTag(HostSystemTags.SYSTEM_PRODUCT_NAME, HostSystemTags.SYSTEM_PRODUCT_NAME_TOKEN, ret.getSystemProductName());
 
                                     if (ret.getLibvirtVersion().compareTo(KVMConstant.MIN_LIBVIRT_VIRTIO_SCSI_VERSION) >= 0) {
-                                        creator = KVMSystemTags.VIRTIO_SCSI.newSystemTagCreator(self.getUuid());
-                                        creator.recreate = true;
-                                        creator.create();
+                                        recreateNonInherentTag(KVMSystemTags.VIRTIO_SCSI);
                                     }
+
+
 
                                     List<String> ips = ret.getIpAddresses();
                                     if (ips != null) {
                                         ips.remove(self.getManagementIp());
                                         if (!ips.isEmpty()) {
-                                            creator = HostSystemTags.EXTRA_IPS.newSystemTagCreator(self.getUuid());
-                                            creator.setTagByTokens(map(e(HostSystemTags.EXTRA_IPS_TOKEN, StringUtils.join(ips, ","))));
-                                            creator.recreate = true;
-                                            creator.create();
+                                            recreateNonInherentTag(HostSystemTags.EXTRA_IPS, HostSystemTags.EXTRA_IPS_TOKEN, StringUtils.join(ips, ","));
                                         } else {
                                             HostSystemTags.EXTRA_IPS.delete(self.getUuid());
                                         }

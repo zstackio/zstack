@@ -1365,10 +1365,22 @@ public class VmInstanceManagerImpl extends AbstractService implements
         VmSystemTags.BOOT_MODE.installValidator(validator);
     }
 
+    private void installCleanTrafficValidator() {
+        VmSystemTags.CLEAN_TRAFFIC.installValidator((resourceUuid, resourceType, systemTag) -> {
+            String vmType = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, resourceUuid).select(VmInstanceVO_.type).findValue();
+            if (!VmInstanceConstant.USER_VM_TYPE.equals(vmType)) {
+                throw new ApiMessageInterceptionException(argerr(
+                        "clean traffic is not supported for vm type [%s]", vmType)
+                );
+            }
+        });
+    }
+
     private void installSystemTagValidator() {
         installHostnameValidator();
         installUserdataValidator();
         installBootModeValidator();
+        installCleanTrafficValidator();
     }
 
     @Override
