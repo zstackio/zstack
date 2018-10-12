@@ -392,6 +392,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         vo.setName(msg.getName());
         vo.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
         vo.setSize(msg.getSize());
+        vo.setActualSize(msg.getActualSize());
         vo.setVmInstanceUuid(msg.getVmInstanceUuid());
         vo.setFormat(msg.getFormat());
         vo.setStatus(VolumeStatus.NotInstantiated);
