@@ -750,5 +750,18 @@ public class NetworkUtils {
             return addresses.get(length -1).toString();
         }
     }
+
+    public static Integer getIpversion(String ip) {
+        if (isIpv4Address(ip)) {
+            return IPv6Constants.IPv4;
+        } else {
+            try {
+                IPv6Address.fromString(ip);
+                return IPv6Constants.IPv6;
+            } catch (Exception e) {
+                throw e;
+            }
+        }
+    }
 }
 

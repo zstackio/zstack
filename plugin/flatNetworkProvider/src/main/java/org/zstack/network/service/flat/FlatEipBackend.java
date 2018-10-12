@@ -46,6 +46,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -591,11 +592,21 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         to.nicUuid = struct.getNic().getUuid();
         to.nicName = struct.getNic().getInternalName();
         to.nicMac = struct.getNic().getMac();
-        to.nicIp = struct.getIp().getIp();
-        to.nicNetmask = struct.getIp().getNetmask();
-        to.nicGateway = struct.getIp().getGateway();
-        to.ipVersion = struct.getIp().getIpVersion();
-        to.nicPrefixLen = struct.getRange().getPrefixLen();
+        if (struct.getGuestIp() != null) {
+            /* for attachEip */
+            to.nicIp = struct.getGuestIp().getIp();
+            to.nicNetmask = struct.getGuestIp().getNetmask();
+            to.nicGateway = struct.getGuestIp().getGateway();
+            to.ipVersion = struct.getGuestIp().getIpVersion();
+        } else {
+            /* for detachEip */
+            to.nicIp = struct.getEip().getGuestIp();
+            to.ipVersion = NetworkUtils.getIpversion(to.nicIp);
+        }
+        if (struct.getGuestIpRange() != null) {
+            /* when delete eip, no need nicPrefixLen */
+            to.nicPrefixLen = struct.getGuestIpRange().getPrefixLen();
+        }
         to.vip = struct.getVip().getIp();
         to.vipGateway = struct.getVip().getGateway();
         to.vipNetmask = struct.getVip().getNetmask();

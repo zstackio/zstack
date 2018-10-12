@@ -12,8 +12,8 @@ public class EipStruct {
     private VmNicInventory nic;
     private VipInventory vip;
     private boolean snatInboundTraffic;
-    private UsedIpInventory ip;
-    private IpRangeInventory range;
+    private UsedIpInventory guestIp;
+    private IpRangeInventory guestIpRange;
 
     public boolean isSnatInboundTraffic() {
         return snatInboundTraffic;
@@ -47,19 +47,19 @@ public class EipStruct {
         this.vip = vip;
     }
 
-    public UsedIpInventory getIp() {
-        return ip;
+    public UsedIpInventory getGuestIp() {
+        return guestIp;
     }
 
-    public void setIp(UsedIpInventory ip) {
-        this.ip = ip;
+    public void setGuestIp(UsedIpInventory guestIp) {
+        this.guestIp = guestIp;
     }
 
-    public IpRangeInventory getRange() {
-        return range;
+    public IpRangeInventory getGuestIpRange() {
+        return guestIpRange;
     }
 
-    public void setRange(IpRangeInventory range) {
-        this.range = range;
+    public void setGuestIpRange(IpRangeInventory guestIpRange) {
+        this.guestIpRange = guestIpRange;
     }
 }

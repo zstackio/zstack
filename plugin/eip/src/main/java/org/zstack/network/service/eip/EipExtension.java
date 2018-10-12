@@ -23,6 +23,7 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.function.FunctionNoArg;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Query;
@@ -81,10 +82,18 @@ public class EipExtension extends AbstractNetworkServiceExtension implements Com
                 final VmNicInventory nic = CollectionUtils.find(spec.getDestNics(), new Function<VmNicInventory, VmNicInventory>() {
                     @Override
                     public VmNicInventory call(VmNicInventory arg) {
-                        VmNicVO nic = dbf.findByUuid(arg.getUuid(), VmNicVO.class);
-                        for (UsedIpVO ip : nic.getUsedIps()) {
-                            if (ip.getL3NetworkUuid().equals(l3.getUuid())) {
-                                return arg;
+                        if (arg.getUsedIps() != null && !arg.getUsedIps().isEmpty()) {
+                            for (UsedIpInventory ip : arg.getUsedIps()) {
+                                if (ip.getL3NetworkUuid().equals(l3.getUuid())) {
+                                    return arg;
+                                }
+                            }
+                        } else {
+                            VmNicVO nic = dbf.findByUuid(arg.getUuid(), VmNicVO.class);
+                            for (UsedIpVO ip : nic.getUsedIps()) {
+                                if (ip.getL3NetworkUuid().equals(l3.getUuid())) {
+                                    return arg;
+                                }
                             }
                         }
                         return null;

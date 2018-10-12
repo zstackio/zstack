@@ -1,13 +1,21 @@
 package org.zstack.test.integration.network.l3network.ipv6
 
+import org.zstack.header.network.service.NetworkServiceType
+import org.zstack.network.service.eip.EipConstant
+import org.zstack.sdk.ImageInventory
+import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.L2NetworkInventory
 import org.zstack.sdk.L3NetworkInventory
+import org.zstack.sdk.NetworkServiceProviderInventory
+import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.test.integration.network.NetworkTest
 import org.zstack.test.integration.network.l3network.Env
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.network.IPv6Constants
+
+import static java.util.Arrays.asList
 
 
 /**
@@ -39,6 +47,7 @@ class Ipv6RangeCase extends SubCase {
             testAttachIpv6RangeOverLap()
             testAttachIpv6CidrOverLap()
             testAttachIpv6RangeAddressMode()
+            testIpv6RangeWith2Ips()
         }
     }
 
@@ -300,6 +309,56 @@ class Ipv6RangeCase extends SubCase {
                 gateway = "2004:2001::2"
                 prefixLen = 64
                 addressMode = IPv6Constants.SLAAC
+            }
+        }
+    }
+
+    void testIpv6RangeWith2Ips() {
+        L2NetworkInventory l2 = env.inventoryByName("l2")
+        InstanceOfferingInventory offering = env.inventoryByName("instanceOffering")
+        ImageInventory image = env.inventoryByName("image1")
+
+        L3NetworkInventory l3_ipv6 = createL3Network {
+            category = "Private"
+            l2NetworkUuid = l2.uuid
+            name = "2-ips"
+            ipVersion = 6
+        }
+
+        def flatProvider = queryNetworkServiceProvider {
+            delegate.conditions = ["type=Flat"]
+        }[0] as NetworkServiceProviderInventory
+
+        def netServices = ["${flatProvider.uuid}":["DHCP", "DNS", "Eip"]]
+        attachNetworkServiceToL3Network {
+            l3NetworkUuid = l3_ipv6.uuid
+            networkServices = netServices
+        }
+
+        addIpv6Range {
+            name = "ipr-2-ips"
+            l3NetworkUuid = l3_ipv6.getUuid()
+            startIp = "2004:2001::0002"
+            endIp = "2004:2001::0003"
+            gateway = "2004:2001::1"
+            prefixLen = 64
+            addressMode = IPv6Constants.Stateful_DHCP
+        }
+
+        VmInstanceInventory vm1 = createVmInstance {
+            name = "vm-1"
+            instanceOfferingUuid = offering.uuid
+            imageUuid = image.uuid
+            l3NetworkUuids = asList(l3_ipv6.uuid)
+        }
+
+        /* no free ip now */
+        expect(AssertionError.class) {
+            VmInstanceInventory vm2 = createVmInstance {
+                name = "vm-2"
+                instanceOfferingUuid = offering.uuid
+                imageUuid = image.uuid
+                l3NetworkUuids = asList(l3_ipv6.uuid)
             }
         }
     }

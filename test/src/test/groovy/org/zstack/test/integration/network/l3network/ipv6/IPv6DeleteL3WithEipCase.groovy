@@ -32,11 +32,11 @@ class IPv6DeleteL3WithEipCase extends SubCase {
     @Override
     void test() {
         env.create {
-            testDeleteL3()
+            testDeleteL3WithEip()
         }
     }
 
-    void testDeleteL3() {
+    void testDeleteL3WithEip() {
         L3NetworkInventory l3_statefull = env.inventoryByName("l3-Statefull-DHCP")
         L3NetworkInventory l3_statefull_1 = env.inventoryByName("l3-Statefull-DHCP-1")
         L3NetworkInventory l3 = env.inventoryByName("l3")
