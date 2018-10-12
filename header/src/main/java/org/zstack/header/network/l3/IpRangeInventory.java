@@ -276,7 +276,7 @@ public class IpRangeInventory implements Serializable {
 
     public static IpRangeInventory fromMessage(APIAddIpv6RangeByNetworkCidrMsg msg) {
         IpRangeInventory ipr = new IpRangeInventory();
-        ipr.setNetworkCidr(msg.getNetworkCidr());
+        ipr.setNetworkCidr(IPv6NetworkUtils.getFormalCidrOfNetworkCidr(msg.getNetworkCidr()));
         ipr.setName(msg.getName());
         ipr.setDescription(msg.getDescription());
 
