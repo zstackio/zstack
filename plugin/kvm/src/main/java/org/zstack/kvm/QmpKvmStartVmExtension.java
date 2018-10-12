@@ -16,7 +16,7 @@ public class QmpKvmStartVmExtension implements KVMStartVmExtensionPoint {
 
     @Override
     public void beforeStartVmOnKvm(KVMHostInventory host,
-                                   VmInstanceSpec order, KVMAgentCommands.StartVmCmd cmd) throws KVMException {
+                                   VmInstanceSpec order, KVMAgentCommands.StartVmCmd cmd) {
         if (VmSystemTags.ADDITIONAL_QMP_ADDED.getTag(order.getVmInventory().getUuid(), VmInstanceVO.class) != null) {
             VmSystemTags.ADDITIONAL_QMP_ADDED.delete(order.getVmInventory().getUuid(), VmInstanceVO.class);
         }

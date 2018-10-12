@@ -130,6 +130,44 @@ public class KVMAgentCommands {
 
     }
 
+    public static class UpdateNicCmd extends AgentCommand implements VmAddOnsCmd {
+        private String vmInstanceUuid;
+        private List<KVMAgentCommands.NicTO> nics;
+        private Map<String, Object> addons = new HashMap<>();
+
+        public List<NicTO> getNics() {
+            return nics;
+        }
+
+        public void setNics(List<NicTO> nics) {
+            this.nics = nics;
+        }
+
+        public Map<String, Object> getAddons() {
+            if (addons == null) {
+                addons = new HashMap<>();
+            }
+            return addons;
+        }
+
+        public void setAddons(Map<String, Object> addons) {
+            this.addons = addons;
+        }
+
+        @Override
+        public String getVmInstanceUuid() {
+            return vmInstanceUuid;
+        }
+
+        public void setVmInstanceUuid(String vmInstanceUuid) {
+            this.vmInstanceUuid = vmInstanceUuid;
+        }
+    }
+
+    public static class UpdateNicRsp extends AgentResponse {
+
+    }
+
     public static class ConnectCmd extends AgentCommand {
         private String hostUuid;
         private String sendCommandUrl;
@@ -259,6 +297,9 @@ public class KVMAgentCommands {
         private String libvirtVersion;
         private String hvmCpuFlag;
         private String cpuModelName;
+        private String cpuGHz;
+        private String hostCpuModelName;
+        private String systemProductName;
         private List<String> ipAddresses;
 
         public String getOsDistribution() {
@@ -323,6 +364,18 @@ public class KVMAgentCommands {
 
         public void setCpuModelName(String cpuModelName) {
             this.cpuModelName = cpuModelName;
+        }
+
+        public String getCpuGHz() {
+            return cpuGHz;
+        }
+
+        public String getHostCpuModelName() {
+            return hostCpuModelName;
+        }
+
+        public String getSystemProductName() {
+            return systemProductName;
         }
     }
 
@@ -827,8 +880,13 @@ public class KVMAgentCommands {
         public String hostManagementIp;
     }
 
+    public interface VmAddOnsCmd {
+        Map<String, Object> getAddons();
+        String getVmInstanceUuid();
+    }
+
     @ApiTimeout(apiClasses = {APICreateVmInstanceMsg.class})
-    public static class StartVmCmd extends AgentCommand {
+    public static class StartVmCmd extends AgentCommand implements VmAddOnsCmd {
         private String vmInstanceUuid;
         private long vmInternalId;
         private String vmName;
@@ -846,7 +904,6 @@ public class KVMAgentCommands {
         private List<NicTO> nics;
         private long timeout;
         private Map<String, Object> addons;
-        private boolean useVirtio;
         private String consoleMode;
         private boolean instanceOfferingOnlineChange;
         private String nestedVirtualization;
@@ -1084,14 +1141,6 @@ public class KVMAgentCommands {
             this.bootIso = bootIso;
         }
 
-        public boolean isUseVirtio() {
-            return useVirtio;
-        }
-
-        public void setUseVirtio(boolean useVirtio) {
-            this.useVirtio = useVirtio;
-        }
-
         public String getConsoleMode() {
             return consoleMode;
         }
@@ -1148,6 +1197,7 @@ public class KVMAgentCommands {
             this.timeout = timeout;
         }
 
+        @Override
         public String getVmInstanceUuid() {
             return vmInstanceUuid;
         }
@@ -1164,6 +1214,7 @@ public class KVMAgentCommands {
             this.vmInternalId = vmInternalId;
         }
 
+        @Override
         public Map<String, Object> getAddons() {
             if (addons == null) {
                 addons = new HashMap<>();

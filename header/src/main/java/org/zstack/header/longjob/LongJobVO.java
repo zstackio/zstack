@@ -62,6 +62,11 @@ public class LongJobVO extends ResourceVO implements OwnedByAccount {
         this.accountUuid = accountUuid;
     }
 
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
+    }
+
     public String getName() {
         return name;
     }

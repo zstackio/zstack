@@ -9,4 +9,8 @@ import org.zstack.header.longjob.LongJobVO;
 public interface LongJob {
     void start(LongJobVO job, Completion completion);
     void cancel(LongJobVO job, Completion completion);
+    default void resume(LongJobVO job) {
+        job.setJobResult("Failed because management node restarted.");
+        job.setState(LongJobState.Failed);
+    }
 }

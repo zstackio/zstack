@@ -1,10 +1,9 @@
-package org.zstack.heder.storage.volume.backup;
+package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
-public class CreateVmBackupAction extends AbstractAction {
+public class SetVmCleanTrafficAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +11,7 @@ public class CreateVmBackupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.heder.storage.volume.backup.CreateVmBackupResult value;
+        public org.zstack.sdk.SetVmCleanTrafficResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,31 +25,10 @@ public class CreateVmBackupAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String rootVolumeUuid;
+    public java.lang.String uuid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String backupStorageUuid;
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Long volumeReadBandwidth;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Long volumeWriteBandwidth;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Long networkReadBandwidth;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Long networkWriteBandwidth;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
+    public boolean enable;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -75,8 +53,8 @@ public class CreateVmBackupAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.heder.storage.volume.backup.CreateVmBackupResult value = res.getResult(org.zstack.heder.storage.volume.backup.CreateVmBackupResult.class);
-        ret.value = value == null ? new org.zstack.heder.storage.volume.backup.CreateVmBackupResult() : value; 
+        org.zstack.sdk.SetVmCleanTrafficResult value = res.getResult(org.zstack.sdk.SetVmCleanTrafficResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SetVmCleanTrafficResult() : value;
 
         return ret;
     }
@@ -105,11 +83,11 @@ public class CreateVmBackupAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/volumes/{rootVolumeUuid}/vm-backups";
+        info.httpMethod = "PUT";
+        info.path = "/vm-instances/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "setVmCleanTraffic";
         return info;
     }
 

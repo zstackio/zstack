@@ -1,15 +1,11 @@
 package org.zstack.kvm;
 
-import org.zstack.header.core.encrypt.DECRYPT;
-import org.zstack.header.core.encrypt.ENCRYPTParam;
+import org.zstack.core.convert.PasswordConverter;
 import org.zstack.header.host.HostEO;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.vo.EO;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.PrimaryKeyJoinColumn;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 @Entity
 @Table
@@ -20,7 +16,7 @@ public class KVMHostVO extends HostVO {
     private String username;
     
     @Column
-    @ENCRYPTParam
+    @Convert(converter = PasswordConverter.class)
     private String password;
 
     @Column
@@ -41,15 +37,14 @@ public class KVMHostVO extends HostVO {
         this.username = username;
     }
 
-    @DECRYPT
     public String getPassword() {
         return password;
     }
 
-//    @ENCRYPT
     public void setPassword(String password) {
         this.password = password;
     }
+
     public Integer getPort() {
         return port;
     }

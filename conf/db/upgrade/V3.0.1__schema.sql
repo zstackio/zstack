@@ -17,3 +17,5 @@ ALTER TABLE `zstack`.`VmNicVO` DROP INDEX `mac`;
 ALTER TABLE `zstack`.`VmNicVO` ADD COLUMN `hypervisorType` varchar(64) DEFAULT NULL;
 ALTER TABLE `zstack`.`VmNicVO` ADD CONSTRAINT `ukVmNicVO` UNIQUE (`hypervisorType`,`mac`);
 UPDATE `zstack`.`VmNicVO` nic INNER JOIN `zstack`.`VmInstanceVO` vm ON nic.vmInstanceUuid = vm.uuid SET nic.hypervisorType = vm.hypervisorType WHERE nic.vmInstanceUuid IS NOT NULL;
+
+ALTER TABLE `zstack`.`BaremetalImageCacheVO` MODIFY `md5sum` varchar(255) DEFAULT NULL;
