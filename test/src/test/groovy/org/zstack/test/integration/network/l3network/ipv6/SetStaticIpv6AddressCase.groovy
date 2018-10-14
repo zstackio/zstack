@@ -1,6 +1,7 @@
 package org.zstack.test.integration.network.l3network.ipv6
 
 import com.googlecode.ipv6.IPv6Address
+import org.zstack.compute.vm.StaticIpOperator
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.L3NetworkInventory
@@ -12,6 +13,7 @@ import org.zstack.test.integration.network.NetworkTest
 import org.zstack.test.integration.network.l3network.Env
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
+import org.zstack.utils.network.IPv6NetworkUtils
 
 /**
  * Created by shixin on 2018/09/10.
@@ -39,6 +41,7 @@ class SetStaticIpv6AddressCase extends SubCase {
     void test() {
         env.create {
             testCreateVmOfPrivateIPv6Network()
+            testCreateVmWithStaticIpv6()
         }
     }
 
@@ -121,6 +124,49 @@ class SetStaticIpv6AddressCase extends SubCase {
                 assert false
             }
         }
+    }
+
+    void testCreateVmWithStaticIpv6() {
+        L3NetworkInventory l3_statefull = env.inventoryByName("l3-Statefull-DHCP")
+        InstanceOfferingInventory offering = env.inventoryByName("instanceOffering")
+        ImageInventory image = env.inventoryByName("image1")
+
+        String static_ip = "2001:2003--10"
+        VmInstanceInventory vm = createVmInstance {
+            name = "vm"
+            instanceOfferingUuid = offering.uuid
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3_statefull.uuid]
+            defaultL3NetworkUuid = l3_statefull.uuid
+            systemTags = [String.format("staticIp::%s::%s", l3_statefull.uuid, static_ip)]
+        }
+        vm = queryVmInstance {
+            conditions=["uuid=${vm.uuid}"]
+        } [0]
+        VmNicInventory nic = vm.getVmNics().get(0)
+        assert nic.usedIps.size() == 1
+        UsedIpInventory ip6 = nic.getUsedIps().get(0)
+        assert ip6.ip == IPv6NetworkUtils.ipv6TagValueToAddress(static_ip)
+        Map<String, String> ips = new StaticIpOperator().getStaticIpbyVmUuid(vm.uuid)
+        assert ips.get(l3_statefull.uuid) == IPv6NetworkUtils.ipv6TagValueToAddress(static_ip)
+
+        deleteVmStaticIp {
+            vmInstanceUuid = vm.uuid
+            l3NetworkUuid = l3_statefull.uuid
+        }
+        ips = new StaticIpOperator().getStaticIpbyVmUuid(vm.uuid)
+        assert ips.get(l3_statefull.uuid) == null
+
+        rebootVmInstance {
+            uuid = vm.uuid
+        }
+        vm = queryVmInstance {
+            conditions=["uuid=${vm.uuid}"]
+        } [0]
+        nic = vm.getVmNics().get(0)
+        assert nic.usedIps.size() == 1
+        ip6 = nic.getUsedIps().get(0)
+        assert ip6.ip == IPv6NetworkUtils.ipv6TagValueToAddress(static_ip)
     }
 }
 

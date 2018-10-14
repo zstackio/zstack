@@ -74,6 +74,8 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6Constants;
+import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Tuple;
@@ -1381,9 +1383,18 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 }
 
                 String ip = token.get(VmSystemTags.STATIC_IP_TOKEN);
-                if (!NetworkUtils.isIpv4Address(ip)) {
-                    throw new ApiMessageInterceptionException(argerr("%s is not a valid IPv4 address. Please correct your system tag[%s] of static IP",
-                            ip, sysTag));
+                L3NetworkVO l3NetworkVO = dbf.findByUuid(l3Uuid, L3NetworkVO.class);
+                if (l3NetworkVO.getIpVersion() == IPv6Constants.IPv4) {
+                    if (!NetworkUtils.isIpv4Address(ip)) {
+                        throw new ApiMessageInterceptionException(argerr("%s is not a valid IPv4 address. Please correct your system tag[%s] of static IP",
+                                ip, sysTag));
+                    }
+                } else {
+                    ip = IPv6NetworkUtils.ipv6TagValueToAddress(ip);
+                    if (!IPv6NetworkUtils.isIpv6Address(ip)) {
+                        throw new ApiMessageInterceptionException(argerr("%s is not a valid IPv6 address. Please correct your system tag[%s] of static IP",
+                                ip, sysTag));
+                    }
                 }
 
                 CheckIpAvailabilityMsg cmsg = new CheckIpAvailabilityMsg();
