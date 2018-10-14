@@ -133,12 +133,14 @@ class IPv6SecurityGroupCase extends SubCase {
         L3NetworkInventory l3 = env.inventoryByName("l3")
         InstanceOfferingInventory offering = env.inventoryByName("instanceOffering")
         ImageInventory image = env.inventoryByName("image1")
+        HostInventory host = env.inventoryByName("kvm-1")
 
         VmInstanceInventory vm = createVmInstance {
             name = "vm-eip"
             instanceOfferingUuid = offering.uuid
             imageUuid = image.uuid
             l3NetworkUuids = asList(l3_statefull.uuid)
+            hostUuid = host.uuid
         }
         VmNicInventory nic = vm.getVmNics()[0]
         attachL3NetworkToVmNic {
@@ -164,7 +166,7 @@ class IPv6SecurityGroupCase extends SubCase {
     }
 
     void testSecurityGroupApplyNetworkServices() {
-        HostInventory host = env.inventoryByName("kvm")
+        HostInventory host = env.inventoryByName("kvm-1")
 
         VmInstanceInventory vm = queryVmInstance {
             conditions = ["name=vm-eip"]

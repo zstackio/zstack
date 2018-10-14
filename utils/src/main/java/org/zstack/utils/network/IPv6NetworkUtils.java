@@ -278,6 +278,10 @@ public class IPv6NetworkUtils {
         return ip.replace("::", "--");
     }
 
+    public static String ipv6AddessToHostname(String ip) {
+        return ip.replace("::", "--").replace(":", "-");
+    }
+
     public static String ipv6TagValueToAddress(String tag) {
         return tag.replace("--", "::");
     }

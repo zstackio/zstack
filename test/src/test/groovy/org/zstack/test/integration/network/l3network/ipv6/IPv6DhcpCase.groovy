@@ -51,7 +51,7 @@ class IPv6DhcpCase extends SubCase {
         L3NetworkInventory l3 = env.inventoryByName("l3")
         InstanceOfferingInventory offering = env.inventoryByName("instanceOffering")
         ImageInventory image = env.inventoryByName("image1")
-        HostInventory host = env.inventoryByName("kvm")
+        HostInventory host = env.inventoryByName("kvm-1")
 
         FlatDhcpBackend.ApplyDhcpCmd cmd = null
         env.afterSimulator(FlatDhcpBackend.APPLY_DHCP_PATH) { rsp, HttpEntity<String> e1 ->

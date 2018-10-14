@@ -168,8 +168,8 @@ class Env {
                     hypervisorType = "KVM"
 
                     kvm {
-                        name = "kvm"
-                        managementIp = "localhost"
+                        name = "kvm-1"
+                        managementIp = "127.0.0.1"
                         username = "root"
                         password = "password"
                         totalCpu = 40
@@ -177,13 +177,23 @@ class Env {
 
                     }
 
-                    attachPrimaryStorage("local")
+                    kvm {
+                        name = "kvm-2"
+                        managementIp = "127.0.0.2"
+                        username = "root"
+                        password = "password"
+                        totalCpu = 40
+                        totalMem = SizeUnit.GIGABYTE.toByte(32)
+
+                    }
+
+                    attachPrimaryStorage("nfs")
                     attachL2Network("l2")
                 }
 
-                localPrimaryStorage {
-                    name = "local"
-                    url = "/local_ps"
+                nfsPrimaryStorage {
+                    name = "nfs"
+                    url = "localhost:/nfs"
                 }
 
                 l2NoVlanNetwork {
@@ -305,6 +315,55 @@ class Env {
                             endIp = "192.168.101.100"
                             netmask = "255.255.255.0"
                             gateway = "192.168.101.1"
+                        }
+
+                        service {
+                            provider = FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE
+                            types = [NetworkServiceType.DHCP.toString(), NetworkServiceType.DNS.toString(), EipConstant.EIP_NETWORK_SERVICE_TYPE]
+                        }
+
+                        service {
+                            provider = SecurityGroupConstant.SECURITY_GROUP_PROVIDER_TYPE
+                            types = [SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE]
+                        }
+                    }
+                }
+
+                l2VlanNetwork {
+                    name = "vlan-200"
+                    physicalInterface = "eth0"
+                    vlan = 200
+
+                    l3Network {
+                        name = "l3-vlan-ipv6"
+                        ipVersion = 6
+
+                        ipv6 {
+                            name = "ipv6-SLAAC"
+                            networkCidr = "3001:2001::/64"
+                            addressMode = "SLAAC"
+                        }
+
+                        service {
+                            provider = FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE
+                            types = [NetworkServiceType.DHCP.toString(), NetworkServiceType.DNS.toString(), EipConstant.EIP_NETWORK_SERVICE_TYPE]
+                        }
+
+                        service {
+                            provider = SecurityGroupConstant.SECURITY_GROUP_PROVIDER_TYPE
+                            types = [SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE]
+                        }
+                    }
+
+                    l3Network {
+                        name = "l3-vlan-ipv4"
+                        category = "Public"
+
+                        ip {
+                            startIp = "193.168.101.10"
+                            endIp = "193.168.101.100"
+                            netmask = "255.255.255.0"
+                            gateway = "193.168.101.1"
                         }
 
                         service {

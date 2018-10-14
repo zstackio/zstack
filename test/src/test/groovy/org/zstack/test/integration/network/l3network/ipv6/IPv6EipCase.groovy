@@ -46,12 +46,14 @@ class IPv6EipCase extends SubCase {
         L3NetworkInventory l3_1 = env.inventoryByName("l3-1")
         InstanceOfferingInventory offering = env.inventoryByName("instanceOffering")
         ImageInventory image = env.inventoryByName("image1")
+        HostInventory host = env.inventoryByName("kvm-1")
 
         VmInstanceInventory vm = createVmInstance {
             name = "vm-eip"
             instanceOfferingUuid = offering.uuid
             imageUuid = image.uuid
             l3NetworkUuids = asList(l3_statefull.uuid)
+            hostUuid = host.uuid
         }
         VmNicInventory nic = vm.getVmNics()[0]
         attachL3NetworkToVmNic {
@@ -73,9 +75,26 @@ class IPv6EipCase extends SubCase {
             }
         }
 
+        expect(AssertionError.class) {
+            VipInventory vip6 = createVip {
+                name = "vip6"
+                l3NetworkUuid = l3_statefull_1.uuid
+                requiredIp = "192.168.2.1"
+            }
+        }
+
+        expect(AssertionError.class) {
+            VipInventory vip4 = createVip {
+                name = "vip4"
+                l3NetworkUuid = l3_1.uuid
+                requiredIp = "2001:2004::2004"
+            }
+        }
+
         VipInventory vip6 = createVip {
             name = "vip6"
             l3NetworkUuid = l3_statefull_1.uuid
+            requiredIp = "2001:2004::2004"
         }
 
         VipInventory vip4 = createVip {
@@ -123,7 +142,7 @@ class IPv6EipCase extends SubCase {
     }
 
     void testIPv6EipApplyNetworkService() {
-        HostInventory host = env.inventoryByName("kvm")
+        HostInventory host = env.inventoryByName("kvm-1")
 
         VmInstanceInventory vm = queryVmInstance {
             conditions=["name=vm-eip"]
