@@ -6,4 +6,8 @@ public interface Flow {
     void run(FlowTrigger trigger, Map data);
 
     void rollback(FlowRollback trigger, Map data);
+
+    default boolean skip(Map data) {
+        return false;
+    }
 }

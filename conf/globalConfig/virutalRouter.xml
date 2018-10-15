@@ -49,6 +49,13 @@
         <type>java.lang.Integer</type>
     </config>
     <config>
+        <name>ssh.passwordAuth</name>
+        <description>A boolean value, if true,the ssh of the virtual router supports the password authentication, otherwise it just supports the publickey authentication.</description>
+        <defaultValue>false</defaultValue>
+        <category>virtualRouter</category>
+        <type>java.lang.Boolean</type>
+    </config>
+    <config>
         <name>vrouter.password</name>
         <description>The password for vrouter vm</description>
         <defaultValue>vrouter12#</defaultValue>
