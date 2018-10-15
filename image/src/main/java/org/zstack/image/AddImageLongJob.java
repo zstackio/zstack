@@ -33,7 +33,7 @@ public class AddImageLongJob implements LongJob {
     public void start(LongJobVO job, Completion completion) {
         AddImageMsg msg = JSONObjectUtil.toObject(job.getJobData(), AddImageMsg.class);
         bus.makeLocalServiceId(msg, ImageConstant.SERVICE_ID);
-        bus.send(msg, new CloudBusCallBack(null) {
+        bus.send(msg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {

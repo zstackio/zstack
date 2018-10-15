@@ -83,7 +83,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     private EventFacade evtf;
 
     private Map<Class, HostBaseExtensionFactory> hostBaseExtensionFactories = new HashMap<>();
-
+    private List<HostExtensionManager> hostExtensionManagers = new ArrayList<>();
 
     private Map<String, HypervisorFactory> hypervisorFactories = Collections.synchronizedMap(new HashMap<String, HypervisorFactory>());
     private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<Class>();
@@ -163,7 +163,11 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     @Override
     @MessageSafe
     public void handleMessage(Message msg) {
-        if (msg instanceof APIMessage) {
+        HostExtensionManager extensionManager = hostExtensionManagers.stream().filter(it -> it.getMessageClasses()
+                .stream().anyMatch(clz -> clz.isAssignableFrom(msg.getClass()))).findFirst().orElse(null);
+        if (extensionManager != null) {
+            extensionManager.handleMessage(msg);
+        } else if (msg instanceof APIMessage) {
             handleApiMessage((APIMessage) msg);
         } else {
             handleLocalMessage(msg);
@@ -249,6 +253,8 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
 
         if (msg instanceof APIAddHostMsg) {
             tagMgr.createTagsFromAPICreateMessage((APIAddHostMsg)msg, vo.getUuid(), HostVO.class.getSimpleName());
+        } else if (msg instanceof AddHostMsg) {
+            tagMgr.createTags(((AddHostMsg) msg).getSystemTags(), ((AddHostMsg) msg).getUserTags(), vo.getUuid(), HostVO.class.getSimpleName());
         }
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
@@ -468,6 +474,8 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                 hostBaseExtensionFactories.put(clz, ext);
             }
         }
+
+        hostExtensionManagers.addAll(pluginRgty.getExtensionList(HostExtensionManager.class));
 
     }
 
