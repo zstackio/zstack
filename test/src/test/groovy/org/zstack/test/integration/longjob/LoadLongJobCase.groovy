@@ -1,7 +1,6 @@
 package org.zstack.test.integration.longjob
 
 import com.google.gson.Gson
-import org.zstack.core.cloudbus.ResourceDestinationMaker
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
 import org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeMsg
@@ -9,17 +8,11 @@ import org.zstack.header.longjob.LongJobState
 import org.zstack.header.longjob.LongJobVO
 import org.zstack.header.longjob.LongJobVO_
 import org.zstack.longjob.LongJobManager
-import org.zstack.sdk.BackupStorageInventory
-import org.zstack.sdk.DiskOfferingInventory
-import org.zstack.sdk.KVMHostInventory
-import org.zstack.sdk.LongJobInventory
-import org.zstack.sdk.PrimaryStorageInventory
-import org.zstack.sdk.VolumeInventory
+import org.zstack.sdk.*
 import org.zstack.test.integration.ZStackTest
 import org.zstack.test.integration.storage.Env
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
-
 /**
  * Created by kayo on 2018/4/23.
  */
@@ -28,6 +21,8 @@ class LoadLongJobCase extends SubCase {
     Gson gson
     VolumeInventory dataVolume
     BackupStorageInventory bs
+    LongJobInventory jobInv
+    LongJobManager longJobManager
 
     @Override
     void clean() {
@@ -48,7 +43,9 @@ class LoadLongJobCase extends SubCase {
     void test() {
         env.create {
             gson = new Gson()
+            longJobManager = bean(LongJobManager.class)
             testSubmitLongJobCase()
+            testLoadWaitingJob()
         }
     }
 
@@ -71,7 +68,7 @@ class LoadLongJobCase extends SubCase {
         msg.volumeUuid = dataVolume.uuid
         msg.backupStorageUuids = [bs.uuid]
 
-        LongJobInventory jobInv = submitLongJob {
+        jobInv = submitLongJob {
             jobName = msg.getClass().getSimpleName()
             jobData = gson.toJson(msg)
         } as LongJobInventory
@@ -89,8 +86,6 @@ class LoadLongJobCase extends SubCase {
                 .set(LongJobVO_.managementNodeUuid, null)
                 .update()
 
-        def longJobManager = bean(LongJobManager.class)
-
         longJobManager.loadLongJob()
 
         List<LongJobVO> vos = Q.New(LongJobVO.class).notNull(LongJobVO_.managementNodeUuid).list()
@@ -99,6 +94,23 @@ class LoadLongJobCase extends SubCase {
 
         for (LongJobVO vo : vos) {
             assert vo.getState() == LongJobState.Failed
+        }
+    }
+
+    void testLoadWaitingJob() {
+        SQL.New(LongJobVO.class).eq(LongJobVO_.uuid, jobInv.uuid)
+                .set(LongJobVO_.managementNodeUuid, null)
+                .set(LongJobVO_.state, LongJobState.Waiting)
+                .update()
+
+        longJobManager.loadLongJob()
+
+        List<LongJobVO> vos = Q.New(LongJobVO.class).notNull(LongJobVO_.managementNodeUuid).list()
+
+        assert vos.size() == 1
+
+        for (LongJobVO vo : vos) {
+            assert vo.getState() == LongJobState.Running
         }
     }
 }

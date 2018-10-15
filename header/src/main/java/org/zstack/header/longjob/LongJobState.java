@@ -5,6 +5,7 @@ package org.zstack.header.longjob;
  */
 public enum LongJobState {
     Waiting,
+    Suspended,
     Running,
     Succeeded,
     Canceling,

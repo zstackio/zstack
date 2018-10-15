@@ -8,15 +8,14 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SQLBatch;
+import org.zstack.core.db.*;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.timeout.ApiTimeoutExtensionPoint;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Constants;
+import org.zstack.header.core.AsyncBackup;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.identity.APIDeleteAccountEvent;
@@ -254,30 +253,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                 ThreadContext.put(Constants.THREAD_CONTEXT_API, vo.getApiId());
                 LongJob job = longJobFactory.getLongJob(vo.getJobName());
                 ThreadContext.put(Constants.THREAD_CONTEXT_TASK_NAME, job.getClass().toString());
-                job.start(vo, new Completion(msg) {
-                    LongJobVO vo = dbf.findByUuid(msg.getJobUuid(), LongJobVO.class);
-
-                    @Override
-                    public void success() {
-                        reportProgress("100");
-                        vo = dbf.reload(vo);
-                        vo.setState(LongJobState.Succeeded);
-                        if (vo.getJobResult() == null || vo.getJobResult().isEmpty())
-                            vo.setJobResult("Succeeded");
-                        dbf.update(vo);
-                        logger.info(String.format("successfully run longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        vo = dbf.reload(vo);
-                        vo.setState(LongJobState.Failed);
-                        if (vo.getJobResult() == null || vo.getJobResult().isEmpty())
-                            vo.setJobResult("Failed : " + errorCode.toString());
-                        dbf.update(vo);
-                        logger.info(String.format("failed to run longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
-                    }
-                });
+                doStartJob(job, vo, msg);
 
                 reply.setInventory(LongJobInventory.valueOf(vo));
                 logger.info(String.format("longjob [uuid:%s, name:%s] has been started", vo.getUuid(), vo.getName()));
@@ -289,6 +265,37 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             @Override
             public String getName() {
                 return getSyncSignature();
+            }
+        });
+    }
+
+    private void doStartJob(LongJob job, LongJobVO vo, AsyncBackup async) {
+        String longJobUuid = vo.getUuid();
+        job.start(vo, new Completion(async) {
+
+            @Override
+            public void success() {
+                reportProgress("100");
+                LongJobVO vo = dbf.findByUuid(longJobUuid, LongJobVO.class);
+                vo.setState(LongJobState.Succeeded);
+                if (vo.getJobResult() == null || vo.getJobResult().isEmpty()) {
+                    vo.setJobResult("Succeeded");
+                }
+                dbf.update(vo);
+                logger.info(String.format("successfully run longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                LongJobVO vo = dbf.findByUuid(longJobUuid, LongJobVO.class);
+                if (vo.getState() != LongJobState.Suspended) {
+                    vo.setState(LongJobState.Failed);
+                }
+                if (vo.getJobResult() == null || vo.getJobResult().isEmpty()) {
+                    vo.setJobResult("Failed : " + errorCode.toString());
+                }
+                dbf.update(vo);
+                logger.info(String.format("failed to run longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
             }
         });
     }
@@ -364,9 +371,9 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
 
     @Override
     public void loadLongJob() {
-        new SQLBatch() {
+        List<LongJobVO> managedByUsJobs = new SQLBatchWithReturn< List<LongJobVO>>() {
             @Override
-            protected void scripts() {
+            protected List<LongJobVO> scripts() {
                 // check long jobs using same uuid with current node
                 List<LongJobVO> vos = Q.New(LongJobVO.class)
                         .eq(LongJobVO_.managementNodeUuid, Platform.getManagementServerId())
@@ -381,19 +388,17 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                 });
 
                 vos = Q.New(LongJobVO.class).isNull(LongJobVO_.managementNodeUuid).list();
-                if (vos.isEmpty()) {
-                    return;
-                }
+                vos.removeIf(it -> !destinationMaker.isManagedByUs(it.getUuid()));
+                vos.forEach(it -> {
+                    it.setManagementNodeUuid(Platform.getManagementServerId());
+                    merge(it);
+                });
 
-                for (LongJobVO vo : vos) {
-                    if (destinationMaker.isManagedByUs(vo.getUuid())) {
-                        vo.setManagementNodeUuid(Platform.getManagementServerId());
-                        doLoadLongJob(vo);
-                        merge(vo);
-                    }
-                }
+                return vos;
             }
         }.execute();
+
+        managedByUsJobs.forEach(this::doLoadLongJob);
     }
 
     private void doLoadLongJob(LongJobVO vo) {
@@ -402,30 +407,16 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             ThreadContext.put(Constants.THREAD_CONTEXT_API, vo.getApiId());
             LongJob job = longJobFactory.getLongJob(vo.getJobName());
             ThreadContext.put(Constants.THREAD_CONTEXT_TASK_NAME, job.getClass().toString());
-            job.start(vo, new Completion(null) {
-                @Override
-                public void success() {
-                    reportProgress("100");
-                    vo.setState(LongJobState.Succeeded);
-                    dbf.update(vo);
-                    logger.info(String.format("successfully run longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
-                }
-
-                @Override
-                public void fail(ErrorCode errorCode) {
-                    vo.setState(LongJobState.Failed);
-                    dbf.update(vo);
-                    logger.info(String.format("failed to run longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
-                }
-            });
-
-            vo.setState(LongJobState.Running);
-        } else if (vo.getState() == LongJobState.Running) {
+            doStartJob(job, vo, null);
+            SQL.New(LongJobVO.class).eq(LongJobVO_.uuid, vo.getUuid()).set(LongJobVO_.state, LongJobState.Running).update();
+        } else if (vo.getState() == LongJobState.Running || vo.getState() == LongJobState.Suspended) {
             // set running jobs to error
             ThreadContext.put(Constants.THREAD_CONTEXT_API, vo.getApiId());
             LongJob job = longJobFactory.getLongJob(vo.getJobName());
             ThreadContext.put(Constants.THREAD_CONTEXT_TASK_NAME, job.getClass().toString());
+            logger.info(String.format("start to resume longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
             job.resume(vo);
+            dbf.update(vo);
         }
     }
 

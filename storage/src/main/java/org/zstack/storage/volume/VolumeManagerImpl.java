@@ -33,6 +33,7 @@ import org.zstack.header.storage.backup.BackupStorageStatus;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
 import org.zstack.header.volume.APIGetVolumeFormatReply.VolumeFormatReplyStruct;
 import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;

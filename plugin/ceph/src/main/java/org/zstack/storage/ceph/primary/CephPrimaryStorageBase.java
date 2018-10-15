@@ -6,7 +6,10 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.*;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatch;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.notification.N;
 import org.zstack.core.thread.AsyncThread;
@@ -17,6 +20,7 @@ import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.HasThreadContext;
+import org.zstack.header.agent.ReloadableCommand;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.core.*;
@@ -71,9 +75,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.i18n;
 import static org.zstack.core.Platform.operr;
-import static org.zstack.core.progress.ProgressReportService.getTaskStage;
-import static org.zstack.core.progress.ProgressReportService.markTaskStage;
-import static org.zstack.core.progress.ProgressReportService.reportProgress;
+import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -115,6 +117,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static class AgentCommand {
         String fsId;
         String uuid;
+        public String monUuid;
 
         public String getFsId() {
             return fsId;
@@ -270,6 +273,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         String installPath;
         long size;
         boolean shareable;
+        boolean skipIfExisting;
 
         public boolean isShareable() {
             return shareable;
@@ -293,6 +297,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         public void setSize(long size) {
             this.size = size;
+        }
+
+        public void setSkipIfExisting(boolean skipIfExisting) {
+            this.skipIfExisting = skipIfExisting;
+        }
+
+        public boolean isSkipIfExisting() {
+            return skipIfExisting;
         }
     }
 
@@ -724,7 +736,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     public static class GetFactsCmd extends AgentCommand {
-        public String monUuid;
     }
 
     public static class GetFactsRsp extends AgentResponse {
@@ -932,7 +943,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
     }
 
-    public static class DownloadBitsFromKVMHostCmd extends AgentCommand {
+    public static class DownloadBitsFromKVMHostCmd extends AgentCommand implements ReloadableCommand {
         private String hostname;
         private String username;
         private String sshKey;
@@ -941,6 +952,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         private String backupStorageInstallPath;
         private String primaryStorageInstallPath;
         private Long bandWidth;
+        private String identificationCode;
 
         public String getHostname() {
             return hostname;
@@ -996,6 +1008,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         public void setBandWidth(Long bandWidth) {
             this.bandWidth = bandWidth;
+        }
+
+        @Override
+        public void setIdentificationCode(String identificationCode) {
+            this.identificationCode = identificationCode;
         }
     }
 
@@ -1513,6 +1530,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         cmd.size = msg.getVolume().getSize();
         cmd.setShareable(msg.getVolume().isShareable());
+        cmd.skipIfExisting = msg.isSkipIfExisting();
 
         final InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
 
@@ -2239,27 +2257,39 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     protected <T extends AgentResponse> void httpCall(final String path, final AgentCommand cmd, final Class<T> retClass, final ReturnValueCompletion<T> callback) {
-        httpCall(path, cmd, retClass, callback, null, 0);
+        httpCall(path, cmd, retClass, callback, null, 0, null);
+    }
+
+    // specify mons order by randomFactor to ensure that the same mon receive cmd every time.
+    protected <T extends AgentResponse> void httpCallSpecifyOrder(final String path, final AgentCommand cmd, final Class<T> retClass, String randomFactor, final ReturnValueCompletion<T> callback) {
+        httpCall(path, cmd, retClass, callback, null, 0, randomFactor);
     }
 
     protected <T extends AgentResponse> void httpCall(final String path, final AgentCommand cmd, final Class<T> retClass, final ReturnValueCompletion<T> callback, TimeUnit unit, long timeout) {
+        httpCall(path, cmd, retClass, callback, unit, timeout, null);
+    }
+
+    protected <T extends AgentResponse> void httpCall(final String path, final AgentCommand cmd, final Class<T> retClass, final ReturnValueCompletion<T> callback, TimeUnit unit, long timeout, String randomFactor) {
         cmd.setUuid(self.getUuid());
         cmd.setFsId(getSelf().getFsid());
 
         final List<CephPrimaryStorageMonBase> mons = new ArrayList<CephPrimaryStorageMonBase>();
         for (CephPrimaryStorageMonVO monvo : getSelf().getMons()) {
-            if (monvo.getStatus() == MonStatus.Connected) {
-                mons.add(new CephPrimaryStorageMonBase(monvo));
-            }
+            mons.add(new CephPrimaryStorageMonBase(monvo));
         }
 
+        if (randomFactor != null) {
+            CollectionUtils.shuffleByKeySeed(mons, randomFactor, it -> it.getSelf().getUuid());
+        } else {
+            Collections.shuffle(mons);
+        }
+
+        mons.removeIf(it -> it.getSelf().getStatus() != MonStatus.Connected);
         if (mons.isEmpty()) {
             throw new OperationFailureException(operr(
                     "all ceph mons of primary storage[uuid:%s] are not in Connected state", self.getUuid())
             );
         }
-
-        Collections.shuffle(mons);
 
         class HttpCaller {
             private Iterator<CephPrimaryStorageMonBase> it = mons.iterator();
@@ -2275,6 +2305,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 }
 
                 CephPrimaryStorageMonBase base = it.next();
+                cmd.monUuid = base.getSelf().getUuid();
 
                 ReturnValueCompletion<T> completion = new ReturnValueCompletion<T>(callback) {
                     @Override
@@ -3164,7 +3195,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 cmd.setBackupStorageInstallPath(msg.getHostInstallPath());
                 cmd.setPrimaryStorageInstallPath(msg.getPrimaryStorageInstallPath());
                 cmd.setBandWidth(msg.getBandWidth());
-                httpCall(DOWNLOAD_BITS_FROM_KVM_HOST_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(reply) {
+                cmd.setIdentificationCode(msg.getLongJobUuid() + msg.getPrimaryStorageInstallPath());
+                String randomFactor = msg.getLongJobUuid();
+                httpCallSpecifyOrder(DOWNLOAD_BITS_FROM_KVM_HOST_PATH, cmd, AgentResponse.class, randomFactor, new ReturnValueCompletion<AgentResponse>(reply) {
                     @Override
                     public void success(AgentResponse returnValue) {
                         if (returnValue.isSuccess()) {

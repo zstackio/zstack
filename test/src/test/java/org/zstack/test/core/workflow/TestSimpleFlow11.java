@@ -37,6 +37,11 @@ public class TestSimpleFlow11 {
             public void skipRestRollbacks() {
 
             }
+
+            @Override
+            public ErrorCode getErrorCode() {
+                return null;
+            }
         };
 
         new Completion(rollback) {
@@ -65,6 +70,11 @@ public class TestSimpleFlow11 {
             @Override
             public void skipRestRollbacks() {
 
+            }
+
+            @Override
+            public ErrorCode getErrorCode() {
+                return null;
             }
         };
 

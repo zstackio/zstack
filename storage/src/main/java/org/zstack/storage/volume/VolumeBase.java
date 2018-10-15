@@ -346,6 +346,7 @@ public class VolumeBase implements Volume {
                         imsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
                         imsg.setVolume(getSelfInventory());
                         imsg.setSystemTags(msg.getSystemTags());
+                        imsg.setSkipIfExisting(msg.isSkipIfExisting());
                         if (msg.getHostUuid() != null) {
                             imsg.setDestHost(HostInventory.valueOf(dbf.findByUuid(msg.getHostUuid(), HostVO.class)));
                         }
