@@ -506,14 +506,6 @@ public class VmInstanceSpec implements Serializable {
         this.ignoreResourceReleaseFailure = ignoreResourceReleaseFailure;
     }
 
-    public V2VConversionSpec getV2vSpec() {
-        return v2vSpec;
-    }
-
-    public void setV2vSpec(V2VConversionSpec v2vSpec) {
-        this.v2vSpec = v2vSpec;
-    }
-
     public List<String> getRootVolumeSystemTags() {
         return rootVolumeSystemTags;
     }
