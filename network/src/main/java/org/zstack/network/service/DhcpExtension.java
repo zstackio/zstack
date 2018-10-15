@@ -134,10 +134,12 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
         VmNicInventory nic = null;
 
         /* SLACC mode doesn't need DHCP service */
-        IpRangeVO ipr = dbf.findByUuid(l3.getIpRanges().get(0).getUuid(), IpRangeVO.class);
-        if (ipr.getIpVersion() == IPv6Constants.IPv6 &&
-                (ipr.getAddressMode().equals(IPv6Constants.SLAAC))) {
-            return res;
+        if (l3.getIpRanges() != null && !l3.getIpRanges().isEmpty()) {
+            IpRangeVO ipr = dbf.findByUuid(l3.getIpRanges().get(0).getUuid(), IpRangeVO.class);
+            if (ipr.getIpVersion() == IPv6Constants.IPv6 &&
+                    (ipr.getAddressMode().equals(IPv6Constants.SLAAC))) {
+                return res;
+            }
         }
 
         for (VmNicInventory inv : spec.getDestNics()) {
@@ -180,10 +182,12 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
             struct.setMac(nic.getMac());
             struct.setNetmask(ip.getNetmask());
             struct.setMtu(new MtuGetter().getMtu(l3.getUuid()));
-            struct.setRaMode(l3.getIpRanges().get(0).getAddressMode());
-            struct.setFirstIp(NetworkUtils.getSmallestIp(l3.getIpRanges().stream().map(r -> r.getStartIp()).collect(Collectors.toList())));
-            struct.setEndIP(NetworkUtils.getBiggesttIp(l3.getIpRanges().stream().map(r -> r.getEndIp()).collect(Collectors.toList())));
-            struct.setPrefixLength(l3.getIpRanges().get(0).getPrefixLen());
+            if (l3.getIpRanges() != null && !l3.getIpRanges().isEmpty()) {
+                struct.setRaMode(l3.getIpRanges().get(0).getAddressMode());
+                struct.setFirstIp(NetworkUtils.getSmallestIp(l3.getIpRanges().stream().map(r -> r.getStartIp()).collect(Collectors.toList())));
+                struct.setEndIP(NetworkUtils.getBiggesttIp(l3.getIpRanges().stream().map(r -> r.getEndIp()).collect(Collectors.toList())));
+                struct.setPrefixLength(l3.getIpRanges().get(0).getPrefixLen());
+            }
             res.add(struct);
         }
 

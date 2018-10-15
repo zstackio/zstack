@@ -1,5 +1,11 @@
 package org.zstack.test.integration.network.l3network.ipv6
 
+import org.zstack.core.db.Q
+import org.zstack.header.network.l3.UsedIpVO
+import org.zstack.header.network.l3.UsedIpVO_
+import org.zstack.header.vm.VmInstanceVO
+import org.zstack.header.vm.VmNicVO
+import org.zstack.header.vm.VmNicVO_
 import org.zstack.sdk.*
 import org.zstack.test.integration.network.l3network.Env
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
@@ -32,11 +38,12 @@ class IPv6DeleteVmWithEipCase extends SubCase {
     @Override
     void test() {
         env.create {
+            testDeleteVmWithEip()
             testDeleteVm()
         }
     }
 
-    void testDeleteVm() {
+    void testDeleteVmWithEip() {
         L3NetworkInventory l3_statefull = env.inventoryByName("l3-Statefull-DHCP")
         L3NetworkInventory l3_statefull_1 = env.inventoryByName("l3-Statefull-DHCP-1")
         L3NetworkInventory l3 = env.inventoryByName("l3")
@@ -114,6 +121,48 @@ class IPv6DeleteVmWithEipCase extends SubCase {
 
         destroyVmInstance {
             uuid = vm.uuid
+        }
+    }
+
+    void testDeleteVm() {
+        L3NetworkInventory l3_statefull = env.inventoryByName("l3-Statefull-DHCP")
+        L3NetworkInventory l3_statefull_1 = env.inventoryByName("l3-Statefull-DHCP-1")
+        L3NetworkInventory l3 = env.inventoryByName("l3")
+        L3NetworkInventory l3_1 = env.inventoryByName("l3-1")
+        InstanceOfferingInventory offering = env.inventoryByName("instanceOffering")
+        ImageInventory image = env.inventoryByName("image1")
+
+        VmInstanceInventory vm = createVmInstance {
+            name = "vm-eip"
+            instanceOfferingUuid = offering.uuid
+            imageUuid = image.uuid
+            l3NetworkUuids = asList(l3_statefull.uuid)
+        }
+        VmNicInventory nic = vm.getVmNics()[0]
+        attachL3NetworkToVmNic {
+            vmNicUuid = nic.uuid
+            l3NetworkUuid = l3.uuid
+        }
+        attachL3NetworkToVmNic {
+            vmNicUuid = nic.uuid
+            l3NetworkUuid = l3_statefull_1.uuid
+        }
+
+        vm = queryVmInstance {
+            conditions=["uuid=${vm.uuid}".toString()]
+        } [0]
+        nic = vm.getVmNics()[0]
+
+        destroyVmInstance {
+            uuid = vm.uuid
+        }
+        expungeVmInstance {
+            uuid = vm.uuid
+        }
+
+        assert !Q.New(VmNicVO.class).eq(VmNicVO_.uuid, nic.uuid).isExists()
+        for (UsedIpInventory ip : nic.getUsedIps()) {
+            assert !Q.New(UsedIpVO.class).eq(UsedIpVO_.uuid, ip.uuid).isExists()
         }
     }
 
