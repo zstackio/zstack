@@ -555,6 +555,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 info.netmask = ip.getNetmask();
                 info.isDefaultL3Network = ip.getL3NetworkUuid().equals(vm.getDefaultL3NetworkUuid());
                 info.ip = ip.getIp();
+                info.ipVersion = ip.getIpVersion();
                 info.gateway = ip.getGateway();
 
                 L3NetworkVO l3 = l3Map.get(ip.getL3NetworkUuid());
