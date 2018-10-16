@@ -4288,8 +4288,8 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         final VolumeInventory volume = msg.getVolume();
         VolumeVO vvo = dbf.findByUuid(volume.getUuid(), VolumeVO.class);
-        if (vvo.getVmInstanceUuid() == null) {
-            // the volume is already detached, skip the bellow actions
+        // the volume is already detached, skip the bellow actions, except sharable
+        if (vvo.getVmInstanceUuid() == null && !vvo.isShareable()) {
             extEmitter.afterDetachVolume(getSelfInventory(), volume);
             bus.reply(msg, reply);
             completion.done();
