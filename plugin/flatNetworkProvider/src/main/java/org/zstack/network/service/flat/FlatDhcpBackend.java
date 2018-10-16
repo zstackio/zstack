@@ -3,6 +3,7 @@ package org.zstack.network.service.flat;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.VmSystemTags;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
@@ -456,29 +457,38 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         cmd.bridgeName = brName;
         cmd.namespaceName = makeNamespaceName(brName, inventory.getUuid());
 
-        new KvmCommandSender(huuids).send(cmd, DHCP_DELETE_NAMESPACE_PATH, wrapper -> {
-            DeleteNamespaceRsp rsp = wrapper.getResponse(DeleteNamespaceRsp.class);
-            return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
-        }, new SteppingSendCallback<KvmResponseWrapper>() {
-            @Override
-            public void success(KvmResponseWrapper w) {
-                logger.debug(String.format("successfully deleted namespace for L3 network[uuid:%s, name:%s] on the " +
-                        "KVM host[uuid:%s]", inventory.getUuid(), inventory.getName(), getHostUuid()));
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                if (!errorCode.isError(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE)) {
-                    return;
+        new While<>(huuids).all((huuid, comp) -> {
+            new KvmCommandSender(huuid).send(cmd, DHCP_DELETE_NAMESPACE_PATH, wrapper -> {
+                DeleteNamespaceRsp rsp = wrapper.getResponse(DeleteNamespaceRsp.class);
+                return rsp.isSuccess() ? null : operr("operation error, because:%s", rsp.getError());
+            }, new SteppingSendCallback<KvmResponseWrapper>() {
+                @Override
+                public void success(KvmResponseWrapper w) {
+                    logger.debug(String.format("successfully deleted namespace for L3 network[uuid:%s, name:%s] on the " +
+                            "KVM host[uuid:%s]", inventory.getUuid(), inventory.getName(), getHostUuid()));
                 }
 
-                FlatDHCPDeleteNamespaceGC gc = new FlatDHCPDeleteNamespaceGC();
-                gc.hostUuid = getHostUuid();
-                gc.command = cmd;
-                gc.NAME = String.format("gc-namespace-on-host-%s", getHostUuid());
-                gc.submit();
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    if (!errorCode.isError(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE)) {
+                        return;
+                    }
+
+                    FlatDHCPDeleteNamespaceGC gc = new FlatDHCPDeleteNamespaceGC();
+                    gc.hostUuid = getHostUuid();
+                    gc.command = cmd;
+                    gc.NAME = String.format("gc-namespace-on-host-%s", getHostUuid());
+                    gc.submit();
+                }
+            });
+            comp.done();
+        }).run(new NoErrorCompletion(new NopeCompletion()){
+            @Override
+            public void done() {
+
             }
         });
+
     }
 
     private List<DhcpInfo> getVmDhcpInfo(VmInstanceInventory vm) {

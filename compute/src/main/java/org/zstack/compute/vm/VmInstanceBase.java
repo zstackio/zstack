@@ -57,6 +57,7 @@ import org.zstack.header.vm.VmInstanceSpec.HostName;
 import org.zstack.header.vm.VmInstanceSpec.IsoSpec;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
+import org.zstack.header.vm.VmNicHelper;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.utils.CollectionUtils;
@@ -3199,7 +3200,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 sql = "select l3" +
                         " from L3NetworkVO l3, VmInstanceVO vm, L2NetworkVO l2, L2NetworkClusterRefVO l2ref" +
                         " where l3.uuid not in" +
-                        " (select nic.l3NetworkUuid from VmNicVO nic where nic.vmInstanceUuid = :uuid)" +
+                        " (select ip.l3NetworkUuid from VmNicVO nic, UsedIpVO ip where ip.vmNicUuid = nic.uuid and nic.vmInstanceUuid = :uuid)" +
                         " and vm.uuid = :uuid" +
                         " and vm.clusterUuid = l2ref.clusterUuid" +
                         " and l2ref.l2NetworkUuid = l2.uuid" +
@@ -3214,7 +3215,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 sql = "select l3" +
                         " from L3NetworkVO l3, VmInstanceVO vm, L2NetworkVO l2, L2NetworkClusterRefVO l2ref" +
                         " where l3.uuid not in" +
-                        " (select nic.l3NetworkUuid from VmNicVO nic where nic.vmInstanceUuid = :uuid)" +
+                        " (select ip.l3NetworkUuid from VmNicVO nic, UsedIpVO ip where ip.vmNicUuid = nic.uuid and nic.vmInstanceUuid = :uuid)" +
                         " and vm.uuid = :uuid" +
                         " and vm.clusterUuid = l2ref.clusterUuid" +
                         " and l2ref.l2NetworkUuid = l2.uuid" +
@@ -3251,7 +3252,8 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                 //filtering the ClusterUuid by vmNic L3s one by one
                 if (!self.getVmNics().isEmpty()){
-                    for (String l3uuid: self.getVmNics().stream().map(nic -> nic.getL3NetworkUuid()).collect(Collectors.toList())){
+                    for (String l3uuid: self.getVmNics().stream().flatMap(nic -> VmNicHelper.getL3Uuids(VmNicInventory.valueOf(nic)).stream())
+                            .distinct().collect(Collectors.toList())){
                         clusterUuids = getCandidateClusterUuidsFromAttachedL3(l3uuid, clusterUuids);
                         if (clusterUuids.isEmpty()){
                             return new ArrayList<>();
@@ -3287,7 +3289,8 @@ public class VmInstanceBase extends AbstractVmInstance {
                }
                //filter l3 that already attached
                if (!self.getVmNics().isEmpty()) {
-                   List<String> vmL3Uuids = self.getVmNics().stream().map(nic -> nic.getL3NetworkUuid()).collect(Collectors.toList());
+                   List<String> vmL3Uuids = self.getVmNics().stream().flatMap(nic -> VmNicHelper.getL3Uuids(VmNicInventory.valueOf(nic)).stream())
+                           .distinct().collect(Collectors.toList());
                    l3s = l3s.stream().filter(l3 -> !vmL3Uuids.contains(l3.getUuid())).collect(Collectors.toList());
                }
 

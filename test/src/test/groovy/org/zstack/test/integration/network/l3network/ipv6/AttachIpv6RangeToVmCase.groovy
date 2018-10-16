@@ -8,6 +8,8 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.network.IPv6Constants
 
+import java.util.stream.Collectors
+
 import static java.util.Arrays.asList
 
 /**
@@ -56,6 +58,14 @@ class AttachIpv6RangeToVmCase extends SubCase {
             defaultL3NetworkUuid = l3_statefull.uuid
         }
 
+        List<L3NetworkInventory> l3Invs = getVmAttachableL3Network {
+            vmInstanceUuid = vm.uuid
+        }
+        List<String> l3s = l3Invs.stream().map{l3n -> l3n.getUuid()}.collect(Collectors.toList())
+        assert !l3s.contains(l3_statefull.uuid)
+        assert l3s.contains(l3_statefull_1.uuid)
+        assert !l3s.contains(l3.uuid)
+
         expect(AssertionError.class) {
             attachL3NetworkToVm {
                 l3NetworkUuid = l3_statefull.uuid
@@ -67,6 +77,14 @@ class AttachIpv6RangeToVmCase extends SubCase {
             l3NetworkUuid = l3_statefull_1.uuid
             vmInstanceUuid = vm.uuid
         }
+
+        l3Invs = getVmAttachableL3Network {
+            vmInstanceUuid = vm.uuid
+        }
+        l3s = l3Invs.stream().map{l3n -> l3n.getUuid()}.collect(Collectors.toList())
+        assert !l3s.contains(l3_statefull.uuid)
+        assert !l3s.contains(l3_statefull_1.uuid)
+        assert !l3s.contains(l3.uuid)
 
         attachL3NetworkToVm {
             l3NetworkUuid = l3_stateless.uuid

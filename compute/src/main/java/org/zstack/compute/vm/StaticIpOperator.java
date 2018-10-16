@@ -11,6 +11,7 @@ import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.TagUtils;
+import org.zstack.utils.network.IPv6NetworkUtils;
 
 import java.util.HashMap;
 import java.util.List;
@@ -26,8 +27,6 @@ import static org.zstack.utils.CollectionDSL.map;
 public class StaticIpOperator {
     @Autowired
     private DatabaseFacade dbf;
-    private final String ipv6Token="::";
-    private final String ipv6Replace="--";
 
     public Map<String, String> getStaticIpbyVmUuid(String vmUuid) {
         Map<String, String> ret = new HashMap<String, String>();
@@ -36,7 +35,7 @@ public class StaticIpOperator {
         for (Map<String, String> tokens : tokenList) {
             String l3Uuid = tokens.get(VmSystemTags.STATIC_IP_L3_UUID_TOKEN);
             String ip = tokens.get(VmSystemTags.STATIC_IP_TOKEN);
-            ip = ip.replace(ipv6Replace, ipv6Token);
+            ip = IPv6NetworkUtils.ipv6TagValueToAddress(ip);
             ret.put(l3Uuid, ip);
         }
 
@@ -54,7 +53,7 @@ public class StaticIpOperator {
         final String tagUuid = q.findValue();
 
         /* '::' is token used by systemtag, replace with "--" */
-        ip = ip.replace(ipv6Token, ipv6Replace);
+        ip = IPv6NetworkUtils.ipv6AddessToTagValue(ip);
         if (tagUuid == null) {
             SystemTagCreator creator = VmSystemTags.STATIC_IP.newSystemTagCreator(vmUuid);
             creator.setTagByTokens(map(
