@@ -236,12 +236,14 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             if (!nicsInSg.isEmpty()) {
                 vmNicUuids = nicsInSg.stream().distinct().collect(Collectors.toList());
                 ret.addAll(calculateByVmNic());
+                logger.debug("ruanshixin calculateByHost nicInSg " + JSONObjectUtil.toJsonString(nicsInSg));
             }
             if (!nicsOutSg.isEmpty()) {
                 Collection<HostRuleTO> toRemove = createRulePlaceHolder(nicsOutSg);
                 for (HostRuleTO hto : toRemove) {
                     hto.setActionCodeForAllSecurityGroupRuleTOs(SecurityGroupRuleTO.ACTION_CODE_DELETE_CHAIN);
                 }
+                logger.debug("ruanshixin calculateByHost nicsOutSg " + JSONObjectUtil.toJsonString(toRemove));
                 //ret.addAll(toRemove);
                 ret = mergeMultiHostRuleTO(ret, toRemove);
             }
@@ -434,11 +436,13 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     sgto.setVmNicUuid(nicUuid);
                     sgto.setVmNicInternalName(nicName);
                     sgto.setVmNicMac(mac);
+                    sgto.setVmNicIp(new ArrayList<>());
+                    sgto.setVmNicIpv6(new ArrayList<>());
                     /* ip will used to delete conntrack on host */
                     if (version == IPv6Constants.IPv4) {
-                        sgto.setVmNicIp(asList(ip));
+                        sgto.getVmNicIp().add(ip);
                     } else {
-                        sgto.setVmNicIpv6(asList(ip));
+                        sgto.getVmNicIpv6().add(ip);
                     }
                     hto.getRules().add(sgto);
                 }
@@ -640,6 +644,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             hto.setRefreshHost(true);
         }
         logger.debug(String.format("required to refresh rules on host[uuid:%s]", msg.getHostUuid()));
+        logger.debug("ruanshixin RefreshSecurityGroupRulesOnHostMsg " + JSONObjectUtil.toJsonString(htos));
         applyRules(htos);
     }
 

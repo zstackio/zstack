@@ -48,6 +48,7 @@ import org.zstack.network.service.userdata.UserdataStruct;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
@@ -115,11 +116,12 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
 
             @Transactional(readOnly = true)
             private Map<String, VmIpL3Uuid> getVmIpL3Uuid(List<String> vmUuids) {
-                String sql = "select vm.uuid, nic.ip, nic.l3NetworkUuid, nic.netmask from VmInstanceVO vm," +
+                String sql = "select vm.uuid, ip.ip, ip.l3NetworkUuid, ip.netmask from VmInstanceVO vm," +
                         "VmNicVO nic, NetworkServiceL3NetworkRefVO ref," +
-                        "NetworkServiceProviderVO pro where " +
+                        "NetworkServiceProviderVO pro, UsedIpVO ip where " +
                         " vm.uuid = nic.vmInstanceUuid and vm.uuid in (:uuids)" +
-                        " and nic.l3NetworkUuid = vm.defaultL3NetworkUuid" +
+                        " and nic.uuid = ip.vmNicUuid " +
+                        " and ip.l3NetworkUuid = vm.defaultL3NetworkUuid" +
                         " and ref.networkServiceProviderUuid = pro.uuid" +
                         " and ref.l3NetworkUuid = vm.defaultL3NetworkUuid" +
                         " and pro.type = :proType";
@@ -148,17 +150,20 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     return null;
                 }
 
+                logger.debug("ruanshixin getUserData vmUuids " + vmUuids);
                 Map<String, VmIpL3Uuid> vmipl3 = getVmIpL3Uuid(vmUuids);
                 if (vmipl3.isEmpty()) {
                     return null;
                 }
 
+                logger.debug("ruanshixin getUserData vmipl3 " + JSONObjectUtil.toJsonString(vmipl3));
                 // filter out vm that not using flat network provider
                 vmUuids = vmUuids.stream().filter(vmipl3::containsKey).collect(Collectors.toList());
                 if (vmUuids.isEmpty()) {
                     return null;
                 }
 
+                logger.debug("ruanshixin getUserData vmUuids " + vmUuids);
                 Map<String, List<String>> userdata = new UserdataBuilder().buildByVmUuids(vmUuids);
                 Set<String> l3Uuids = new HashSet<String>();
                 for (VmIpL3Uuid l : vmipl3.values()) {

@@ -45,6 +45,7 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.TagUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
@@ -113,7 +114,8 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             vmDefaultL3.put(t.get(0, String.class), t.get(1, String.class));
         }
 
-        sql = "select nic from VmNicVO nic, L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO provider where nic.l3NetworkUuid = l3.uuid" +
+        sql = "select nic from VmNicVO nic, L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO provider, UsedIpVO ip" +
+                " where nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = l3.uuid" +
                 " and ref.l3NetworkUuid = l3.uuid and ref.networkServiceProviderUuid = provider.uuid " +
                 " and ref.networkServiceType = :dhcpType " +
                 " and provider.type = :ptype and nic.vmInstanceUuid in (:vmUuids) group by nic.uuid";
@@ -198,7 +200,11 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 if (info.isDefaultL3Network) {
                     info.hostname = hostnames.get(nic.getVmInstanceUuid());
                     if (info.hostname == null && ip.getIp() != null) {
-                        info.hostname = ip.getIp().replaceAll("\\.", "-");
+                        if (ip.getIpVersion() == IPv6Constants.IPv4) {
+                            info.hostname = ip.getIp().replaceAll("\\.", "-");
+                        } else {
+                            info.hostname = IPv6NetworkUtils.ipv6AddessToHostname(ip.getIp());
+                        }
                     }
 
                     if (info.dnsDomain != null) {
@@ -481,7 +487,8 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
     @Transactional(readOnly = true)
     private List<DhcpInfo> getVmDhcpInfo(VmInstanceInventory vm, String l3Uuid) {
-        String sql = "select nic from VmNicVO nic, L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO provider where nic.l3NetworkUuid = l3.uuid" +
+        String sql = "select nic from VmNicVO nic, L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO provider, UsedIpVO ip" +
+                " where nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = l3.uuid" +
                 " and ref.l3NetworkUuid = l3.uuid and ref.networkServiceProviderUuid = provider.uuid " +
                 " and ref.networkServiceType = :dhcpType " +
                 " and provider.type = :ptype and nic.vmInstanceUuid = :vmUuid group by nic.uuid";
@@ -493,7 +500,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         List<VmNicVO> nics = nq.getResultList();
 
         if (l3Uuid != null) {
-            nics = nics.stream().filter(nic -> nic.getL3NetworkUuid().equals(l3Uuid)).collect(Collectors.toList());
+            nics = nics.stream().filter(nic -> nic.getUsedIps().stream().map(ip -> ip.getL3NetworkUuid()).collect(Collectors.toList()).contains(l3Uuid)).collect(Collectors.toList());
         }
 
         if (nics.isEmpty()) {
@@ -568,7 +575,11 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 if (info.isDefaultL3Network) {
                     info.hostname = hostnames.get(nic.getVmInstanceUuid());
                     if (info.hostname == null && ip.getIp() != null) {
-                        info.hostname = ip.getIp().replaceAll("\\.", "-");
+                        if (ip.getIpVersion() == IPv6Constants.IPv4) {
+                            info.hostname = ip.getIp().replaceAll("\\.", "-");
+                        } else {
+                            info.hostname = IPv6NetworkUtils.ipv6AddessToHostname(ip.getIp());
+                        }
                     }
 
                     if (info.dnsDomain != null) {
@@ -1048,7 +1059,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                     return null;
                 }
 
-                if ((arg.getIpVersion() == IPv6Constants.IPv6) && (arg.getRaMode().equals(IPv6Constants.SLAAC))) {
+                if ((arg.getIpVersion() == IPv6Constants.IPv6) && (IPv6Constants.SLAAC.equals(arg.getRaMode()))) {
                     return null;
                 }
 
@@ -1065,7 +1076,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                         if (info.ipVersion == IPv6Constants.IPv4) {
                             info.hostname = arg.getIp().replaceAll("\\.", "-");
                         } else {
-                            info.hostname = arg.getIp().replaceAll(":", "-");
+                            info.hostname = IPv6NetworkUtils.ipv6AddessToHostname(arg.getIp());
                         }
                     }
 

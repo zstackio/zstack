@@ -716,5 +716,12 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 validateStaticIPv6(vmNicVO, l3Vo, msg.getStaticIp());
             }
         }
+
+        /* all l3 network attached to same nic must be on same l2 network */
+        L3NetworkVO oldL3 = dbf.findByUuid(vmNicVO.getL3NetworkUuid(), L3NetworkVO.class);
+        if (!oldL3.getL2NetworkUuid().equals(l3Vo.getL2NetworkUuid())) {
+            throw new ApiMessageInterceptionException(argerr("l3Network is attached l2Network [uuid:%s] which is different from " +
+                            "nic l2Network [uuid:%s]", l3Vo.getL2NetworkUuid(), oldL3.getL2NetworkUuid()));
+        }
     }
 }
