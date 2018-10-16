@@ -4,10 +4,14 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
@@ -36,6 +40,8 @@ public class VmAllocateNicForStartingVmFlow implements Flow {
     protected ErrorFacade errf;
     @Autowired
     protected L3NetworkManager l3nm;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     private static CLogger logger = Utils.getLogger(VmAllocateNicForStartingVmFlow.class);
 
@@ -106,7 +112,6 @@ public class VmAllocateNicForStartingVmFlow implements Flow {
 
                     final AllocateIpReply ar = reply.castReply();
                     final UsedIpInventory ip = ar.getIpInventory();
-                    allocatedIPs.add(ip);
 
                     String nicUuid = CollectionUtils.find(nicsNeedNewIp, new Function<String, VmNicInventory>() {
                         @Override
@@ -115,12 +120,10 @@ public class VmAllocateNicForStartingVmFlow implements Flow {
                         }
                     });
 
-                    VmNicVO nicvo = dbf.findByUuid(nicUuid, VmNicVO.class);
-                    nicvo.setGateway(ip.getGateway());
-                    nicvo.setNetmask(ip.getNetmask());
-                    nicvo.setIp(ip.getIp());
-                    nicvo.setUsedIpUuid(ip.getUuid());
-                    dbf.update(nicvo);
+                    for (VmNicExtensionPoint ext : pluginRgty.getExtensionList(VmNicExtensionPoint.class)) {
+                        ext.afterAddIpAddress(nicUuid, ip.getUuid());
+                    }
+                    allocatedIPs.add(UsedIpInventory.valueOf(dbf.findByUuid(ip.getUuid(), UsedIpVO.class)));
                 }
 
                 VmInstanceVO vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
@@ -153,21 +156,25 @@ public class VmAllocateNicForStartingVmFlow implements Flow {
     @Override
     public void rollback(FlowRollback trigger, Map data) {
         List<UsedIpInventory> allocatedIps = (List<UsedIpInventory>) data.get(VmAllocateNicForStartingVmFlow.class);
-        if (allocatedIps != null && !allocatedIps.isEmpty()) {
-            List<ReturnIpMsg> rmsgs = CollectionUtils.transformToList(allocatedIps, new Function<ReturnIpMsg, UsedIpInventory>() {
+        new While<>(allocatedIps).all((ip, cmpl) -> {
+            ReturnIpMsg rmsg = new ReturnIpMsg();
+            rmsg.setL3NetworkUuid(ip.getL3NetworkUuid());
+            rmsg.setUsedIpUuid(ip.getUuid());
+            bus.makeTargetServiceIdByResourceUuid(rmsg, L3NetworkConstant.SERVICE_ID, ip.getL3NetworkUuid());
+            bus.send(rmsg, new CloudBusCallBack(cmpl) {
                 @Override
-                public ReturnIpMsg call(UsedIpInventory arg) {
-                    ReturnIpMsg rmsg = new ReturnIpMsg();
-                    rmsg.setL3NetworkUuid(arg.getL3NetworkUuid());
-                    rmsg.setUsedIpUuid(arg.getUuid());
-                    bus.makeTargetServiceIdByResourceUuid(rmsg, L3NetworkConstant.SERVICE_ID, arg.getL3NetworkUuid());
-                    return rmsg;
+                public void run(MessageReply reply) {
+                    for (VmNicExtensionPoint ext : pluginRgty.getExtensionList(VmNicExtensionPoint.class)) {
+                        ext.afterAddIpAddress(ip.getVmNicUuid(), ip.getUuid());
+                    }
+                    cmpl.done();
                 }
             });
-
-            bus.send(rmsgs);
-        }
-
-        trigger.rollback();
+        }).run(new NoErrorCompletion(trigger) {
+            @Override
+            public void done() {
+                trigger.rollback();
+            }
+        });
     }
 }

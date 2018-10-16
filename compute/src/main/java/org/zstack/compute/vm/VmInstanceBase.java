@@ -5085,8 +5085,12 @@ public class VmInstanceBase extends AbstractVmInstance {
         spec.setDestNics(inv.getVmNics());
         List<String> l3Uuids = new ArrayList<>();
         for (VmNicInventory nic : inv.getVmNics()) {
-            for (UsedIpInventory ip : nic.getUsedIps()) {
-                l3Uuids.add(ip.getL3NetworkUuid());
+            if (nic.getUsedIps() == null || nic.getUsedIps().isEmpty()) {
+                l3Uuids.add(nic.getL3NetworkUuid());
+            } else {
+                for (UsedIpInventory ip : nic.getUsedIps()) {
+                    l3Uuids.add(ip.getL3NetworkUuid());
+                }
             }
         }
         spec.setL3Networks(L3NetworkInventory.valueOf(dbf.listByPrimaryKeys(l3Uuids, L3NetworkVO.class)));
