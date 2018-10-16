@@ -12,5 +12,9 @@ public @interface Param {
 
     long[] numberRange() default {};
 
+    int maxLength() default Integer.MAX_VALUE;
+
+    int minLength() default 0;
+
     Class resourceType() default Object.class;
 }

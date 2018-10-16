@@ -193,6 +193,22 @@ public class Form<T> {
                 }
             }
 
+            if (value != null && param.maxLength() != Integer.MAX_VALUE && (value instanceof String)) {
+                String str = (String) value;
+                if (str.length() > param.maxLength()) {
+                    errorSb.append(String.format("field[%s] of message[%s] exceeds max length of string. expected was <= %s, actual was %s",
+                            f.getName(), getClass().getName(), param.maxLength(), str.length()));
+                }
+            }
+
+            if (value != null && param.minLength() != 0 && (value instanceof String)) {
+                String str = (String) value;
+                if (str.length() < param.minLength()) {
+                    errorSb.append(String.format("field[%s] of message[%s] less than the min length of string. expected was >= %s, actual was %s",
+                            f.getName(), getClass().getName(), param.minLength(), str.length()));
+                }
+            }
+
             if (value != null && value instanceof String && param.resourceType() != Object.class && !StringDSL.isZStackUuid(((String) value).trim())) {
                 errorSb.append(String.format("field[%s] is not a valid uuid.", f.getName()));
             }
