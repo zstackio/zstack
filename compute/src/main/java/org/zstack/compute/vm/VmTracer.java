@@ -55,7 +55,9 @@ public abstract class VmTracer {
 
             for (Tuple t : ts) {
                 mgmtSideStates.put(t.get(0, String.class), t.get(1, VmInstanceState.class));
-                logger.debug(String.format("ManagementServerSideVmStates vm %s, state %s", t.get(0, String.class), t.get(1, VmInstanceState.class).toString()));
+                if (logger.isTraceEnabled()) {
+                    logger.trace(String.format("ManagementServerSideVmStates vm %s, state %s", t.get(0, String.class), t.get(1, VmInstanceState.class).toString()));
+                }
             }
         }
 

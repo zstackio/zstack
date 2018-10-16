@@ -88,6 +88,7 @@ public class SourceClassMap {
 			put("org.zstack.header.datacenter.DataCenterProperty", "org.zstack.sdk.DataCenterProperty");
 			put("org.zstack.header.errorcode.ErrorCode", "org.zstack.sdk.ErrorCode");
 			put("org.zstack.header.errorcode.ErrorCodeList", "org.zstack.sdk.ErrorCodeList");
+			put("org.zstack.header.host.AddHostFromFileResult", "org.zstack.sdk.AddHostFromFileResult");
 			put("org.zstack.header.host.HostInventory", "org.zstack.sdk.HostInventory");
 			put("org.zstack.header.hybrid.network.eip.HybridEipAddressInventory", "org.zstack.sdk.HybridEipAddressInventory");
 			put("org.zstack.header.hybrid.network.eip.HybridEipStatus", "org.zstack.sdk.HybridEipStatus");
@@ -303,6 +304,7 @@ public class SourceClassMap {
 			put("org.zstack.zwatch.alarm.AlarmLabelInventory", "org.zstack.sdk.zwatch.alarm.AlarmLabelInventory");
 			put("org.zstack.zwatch.alarm.AlarmState", "org.zstack.sdk.zwatch.alarm.AlarmState");
 			put("org.zstack.zwatch.alarm.AlarmStatus", "org.zstack.sdk.zwatch.alarm.AlarmStatus");
+			put("org.zstack.zwatch.alarm.AlarmType", "org.zstack.sdk.zwatch.alarm.AlarmType");
 			put("org.zstack.zwatch.alarm.EventSubscriptionActionInventory", "org.zstack.sdk.zwatch.alarm.EventSubscriptionActionInventory");
 			put("org.zstack.zwatch.alarm.EventSubscriptionInventory", "org.zstack.sdk.zwatch.alarm.EventSubscriptionInventory");
 			put("org.zstack.zwatch.alarm.EventSubscriptionLabelInventory", "org.zstack.sdk.zwatch.alarm.EventSubscriptionLabelInventory");
@@ -327,6 +329,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.AccountInventory", "org.zstack.header.identity.AccountInventory");
 			put("org.zstack.sdk.AccountResourceRefInventory", "org.zstack.header.identity.AccountResourceRefInventory");
 			put("org.zstack.sdk.ActionStruct", "org.zstack.cloudformation.template.struct.ActionStruct");
+			put("org.zstack.sdk.AddHostFromFileResult", "org.zstack.header.host.AddHostFromFileResult");
 			put("org.zstack.sdk.AffinityGroupInventory", "org.zstack.header.affinitygroup.AffinityGroupInventory");
 			put("org.zstack.sdk.AffinityGroupUsageInventory", "org.zstack.header.affinitygroup.AffinityGroupUsageInventory");
 			put("org.zstack.sdk.AlertInventory", "org.zstack.monitoring.AlertInventory");
@@ -622,6 +625,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.zwatch.alarm.AlarmLabelInventory", "org.zstack.zwatch.alarm.AlarmLabelInventory");
 			put("org.zstack.sdk.zwatch.alarm.AlarmState", "org.zstack.zwatch.alarm.AlarmState");
 			put("org.zstack.sdk.zwatch.alarm.AlarmStatus", "org.zstack.zwatch.alarm.AlarmStatus");
+			put("org.zstack.sdk.zwatch.alarm.AlarmType", "org.zstack.zwatch.alarm.AlarmType");
 			put("org.zstack.sdk.zwatch.alarm.EventSubscriptionActionInventory", "org.zstack.zwatch.alarm.EventSubscriptionActionInventory");
 			put("org.zstack.sdk.zwatch.alarm.EventSubscriptionInventory", "org.zstack.zwatch.alarm.EventSubscriptionInventory");
 			put("org.zstack.sdk.zwatch.alarm.EventSubscriptionLabelInventory", "org.zstack.zwatch.alarm.EventSubscriptionLabelInventory");

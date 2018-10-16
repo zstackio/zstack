@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateSchedulerJobAction extends AbstractAction {
+public class AddKVMHostFromConfigFileAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateSchedulerJobAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateSchedulerJobResult value;
+        public org.zstack.sdk.AddHostFromConfigFileResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,17 +25,11 @@ public class UpdateSchedulerJobAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String hostInfo;
 
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.Map parameters;
+    @Param(required = false)
+    public java.lang.String resourceUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -60,8 +54,8 @@ public class UpdateSchedulerJobAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateSchedulerJobResult value = res.getResult(org.zstack.sdk.UpdateSchedulerJobResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateSchedulerJobResult() : value; 
+        org.zstack.sdk.AddHostFromConfigFileResult value = res.getResult(org.zstack.sdk.AddHostFromConfigFileResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddHostFromConfigFileResult() : value; 
 
         return ret;
     }
@@ -90,11 +84,11 @@ public class UpdateSchedulerJobAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/scheduler/jobs/{uuid}/actions";
+        info.httpMethod = "POST";
+        info.path = "/hosts/kvm/from-file";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "updateSchedulerJob";
+        info.parameterName = "params";
         return info;
     }
 

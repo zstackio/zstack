@@ -34,7 +34,7 @@ public class RevertVolumeSnapshotLongJob implements LongJob {
         msg.setVolumeUuid(apiMessage.getVolumeUuid());
         msg.setTreeUuid(apiMessage.getTreeUuid());
         bus.makeLocalServiceId(msg, VolumeSnapshotConstant.SERVICE_ID);
-        bus.send(msg, new CloudBusCallBack(msg) {
+        bus.send(msg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {

@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateSchedulerJobAction extends AbstractAction {
+public class CheckKVMHostConfigFileAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateSchedulerJobAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateSchedulerJobResult value;
+        public org.zstack.sdk.CheckHostConfigFileResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,17 +25,8 @@ public class UpdateSchedulerJobAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.Map parameters;
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String hostInfo;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -46,12 +37,6 @@ public class UpdateSchedulerJobAction extends AbstractAction {
     @Param(required = true)
     public String sessionId;
 
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -60,8 +45,8 @@ public class UpdateSchedulerJobAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateSchedulerJobResult value = res.getResult(org.zstack.sdk.UpdateSchedulerJobResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateSchedulerJobResult() : value; 
+        org.zstack.sdk.CheckHostConfigFileResult value = res.getResult(org.zstack.sdk.CheckHostConfigFileResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CheckHostConfigFileResult() : value; 
 
         return ret;
     }
@@ -90,11 +75,11 @@ public class UpdateSchedulerJobAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/scheduler/jobs/{uuid}/actions";
+        info.httpMethod = "GET";
+        info.path = "/hosts/kvm/from-file";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "updateSchedulerJob";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 

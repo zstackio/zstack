@@ -2,6 +2,7 @@ package org.zstack.header.message;
 
 import org.zstack.header.rest.APINoSee;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -21,6 +22,14 @@ public abstract class NeedReplyMessage extends Message {
 
     public void setSystemTags(List<String> systemTags) {
         this.systemTags = systemTags;
+    }
+
+    public void addSystemTag(String systemTag){
+        if (systemTags == null) {
+            systemTags = new ArrayList<>();
+        }
+
+        systemTags.add(systemTag);
     }
 
     public List<String> getUserTags() {

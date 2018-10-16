@@ -1,5 +1,6 @@
 package org.zstack.kvm;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.compute.host.HostGlobalConfig;
@@ -17,6 +18,7 @@ import org.zstack.core.notification.N;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
@@ -26,23 +28,30 @@ import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.network.l2.L2NetworkType;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.rest.SyncHttpCallHandler;
+import org.zstack.header.tag.FormTagExtensionPoint;
 import org.zstack.header.volume.MaxDataVolumeNumberExtensionPoint;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeFormat;
 import org.zstack.kvm.KVMAgentCommands.ReconnectMeCmd;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.IpRangeSet;
 import org.zstack.utils.SizeUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.form.Form;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
+import static org.zstack.core.Platform.operr;
 
 public class KVMHostFactory extends AbstractService implements HypervisorFactory, Component,
-        ManagementNodeReadyExtensionPoint, MaxDataVolumeNumberExtensionPoint {
+        ManagementNodeReadyExtensionPoint, MaxDataVolumeNumberExtensionPoint, HypervisorMessageFactory {
     private static final CLogger logger = Utils.getLogger(KVMHostFactory.class);
 
     public static final HypervisorType hypervisorType = new HypervisorType(KVMConstant.KVM_HYPERVISOR_TYPE);
@@ -72,13 +81,40 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
 
     @Override
     public HostVO createHost(HostVO vo, AddHostMessage msg) {
-        APIAddKVMHostMsg amsg = (APIAddKVMHostMsg) msg;
+        AddKVMHostMessage amsg = (AddKVMHostMessage) msg;
         KVMHostVO kvo = new KVMHostVO(vo);
         kvo.setUsername(amsg.getUsername());
         kvo.setPassword(amsg.getPassword());
         kvo.setPort(amsg.getSshPort());
         kvo = dbf.persistAndRefresh(kvo);
         return kvo;
+    }
+
+    @Override
+    public List<AddHostMsg> buildMessageFromFile(String content) {
+        try {
+            return loadMsgFromFile(content).stream()
+                    .peek(it -> it.setName((StringUtils.isEmpty(it.getName()) ? "HOST" : it.getName()) + "-" + it.getManagementIp()))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+            throw new OperationFailureException(operr("fail to load host info from file. because\n%s", e.getMessage()));
+        }
+    }
+
+    private List<AddKVMHostMsg> loadMsgFromFile(String content) throws IOException {
+        Map<String, Function<String, String>> extensionTagMappers = new HashMap<>();
+        pluginRgty.getExtensionList(FormTagExtensionPoint.class).forEach(it -> extensionTagMappers.putAll(it.getTagMappers(AddKVMHostMsg.class)));
+
+        Form<AddKVMHostMsg> form = Form.New(AddKVMHostMsg.class, content)
+                .addHeaderConverter(head -> (head.matches(".*\\(.*\\).*") ? head.split("[()]")[1] : head)
+                        .replaceAll("\\*", ""))
+                .addColumnConverter("managementIps", IpRangeSet::listAllIps, AddHostMsg::setManagementIp);
+
+        extensionTagMappers.forEach((columnName, builder) ->
+                form.addColumnConverter(columnName, (it, value) -> it.addSystemTag(builder.call(value))));
+
+        return form.load();
     }
 
     @Override
