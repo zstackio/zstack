@@ -18,6 +18,13 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="CloudBus3ManagementNodeLifeCycleTracker" class="org.zstack.core.cloudbus.CloudBus3ManagementNodeLifeCycleTracker">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component"/>
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeChangeListener"/>
+        </zstack:plugin>
+    </bean>
+
     <bean id="CloudBus" class = "org.zstack.core.cloudbus.CloudBusImpl3" depends-on="ThreadFacade,ThreadAspectj">
     </bean>
 

@@ -33,6 +33,10 @@ public class MessageReply extends Message {
         this.setSuccess(false);
     }
 
+    public String getCorrelationId() {
+        return getHeaderEntry("correlationId");
+    }
+
     public <T> T castReply() {
         return (T) this;
     }

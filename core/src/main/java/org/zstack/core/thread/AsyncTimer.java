@@ -38,12 +38,21 @@ public abstract class AsyncTimer implements Runnable {
         return String.format("async-timer-%s[%s]", num, __name__);
     }
 
+
+    protected TimeUnit getTimeUnit() {
+        return timeUnit;
+    }
+
+    protected long getPeriod() {
+        return period;
+    }
+
     public void start() {
         if (cancelled.get()) {
             throw new CloudRuntimeException("cannot start a cancelled timer");
         }
 
-        cancel = thdf.submitTimeoutTask(this, timeUnit, period);
+        cancel = thdf.submitTimeoutTask(this, getTimeUnit(), getPeriod());
         if (logger.isTraceEnabled()) {
             logger.trace(String.format("%s starts", getName()));
         }
@@ -51,7 +60,9 @@ public abstract class AsyncTimer implements Runnable {
 
     public void cancel() {
         cancelled.set(true);
-        cancel.cancel();
+        if (cancel != null) {
+            cancel.cancel();
+        }
 
         if (logger.isTraceEnabled()) {
             logger.trace(String.format("%s cancelled", getName()));
@@ -63,7 +74,7 @@ public abstract class AsyncTimer implements Runnable {
             return;
         }
 
-        cancel = thdf.submitTimeoutTask(this, timeUnit, period);
+        cancel = thdf.submitTimeoutTask(this, getTimeUnit(), getPeriod());
         if (logger.isTraceEnabled()) {
             logger.trace(String.format("%s continues to run", getName()));
         }

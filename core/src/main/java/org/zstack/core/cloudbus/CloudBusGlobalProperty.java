@@ -15,6 +15,8 @@ public class CloudBusGlobalProperty {
     public static boolean CLOSE_TRACKER;
     @GlobalProperty(name="CloudBus.messageTrackerGarbageCollectorInterval", defaultValue = "600")
     public static int TRACKER_GARBAGE_COLLECTOR_INTERVAL;
+    @GlobalProperty(name="CloudBus3ManagementNodeLifeCycleTracker.timeoutMessageCleanupInterval", defaultValue = "600")
+    public static int CLOUDBUS3_MESSAGE_TRACKER_CLEANUP_INTERVAL;
     @GlobalProperty(name="CloudBus.messageLogFilterAll", defaultValue = "true")
     public static boolean MESSAGE_LOG_FILTER_ALL;
     @GlobalProperty(name="CloudBus.messageLog")
