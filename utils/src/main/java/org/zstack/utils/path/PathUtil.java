@@ -1,6 +1,7 @@
 package org.zstack.utils.path;
 
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.IOUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -9,6 +10,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
@@ -204,5 +206,13 @@ public class PathUtil {
 
     public static boolean moveFile(String source, String target) {
         return new File(source).renameTo(new File(target));
+    }
+
+    public static String readFileToString(String path, Charset charset) {
+        try(UnicodeReader reader = new UnicodeReader(new FileInputStream(new File(path)), charset.toString())) {
+            return IOUtils.toString(reader);
+        } catch (IOException e) {
+            throw new RuntimeException(e.getMessage());
+        }
     }
 }
