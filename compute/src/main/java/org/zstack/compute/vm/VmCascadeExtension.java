@@ -411,7 +411,8 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
 
             new While<>(vminvs).all((inv, noErrorCompletion) -> {
                 VmInstanceDeletionMsg msg = new VmInstanceDeletionMsg();
-                if (PrimaryStorageVO.class.getSimpleName().equals(action.getParentIssuer())) {
+                if (PrimaryStorageVO.class.getSimpleName().equals(action.getParentIssuer()) ||
+                        ZoneVO.class.getSimpleName().equals(action.getRootIssuer())) {
                     msg.setDeletionPolicy(VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy.KeepVolume.toString());
                 }
                 if (VmInstanceVO.class.getSimpleName().equals(action.getParentIssuer())) {
