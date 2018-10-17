@@ -42,6 +42,7 @@
     <bean id="BackupStoragePingTracker" class="org.zstack.storage.backup.BackupStoragePingTracker">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeChangeListener" />
         </zstack:plugin>
     </bean>
 
