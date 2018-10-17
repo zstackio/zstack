@@ -13,6 +13,7 @@ import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.notification.N;
 import org.zstack.core.thread.AsyncThread;
@@ -29,6 +30,7 @@ import org.zstack.header.network.l2.L2NetworkType;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.rest.SyncHttpCallHandler;
 import org.zstack.header.tag.FormTagExtensionPoint;
+import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.volume.MaxDataVolumeNumberExtensionPoint;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeFormat;
@@ -243,7 +245,45 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
             }
         });
 
+        KVMSystemTags.CHECK_CLUSTER_CPU_MODEL.installValidator(((resourceUuid, resourceType, systemTag) -> {
+            Map<String, String> hostModelMap = getHostsWithDiffModel(resourceUuid);
+
+            if (hostModelMap.values().stream().distinct().collect(Collectors.toList()).size() != 1) {
+                String str = "";
+                for (Map.Entry entry : hostModelMap.entrySet()) {
+                    str += String.format("host[uuid:%s]'s cpu model is %s ;\n", entry.getKey(), entry.getValue());
+                }
+
+                throw new OperationFailureException(operr("there are still hosts not have the same cpu model, details: %s", str));
+            }
+        }));
+
         return true;
+    }
+
+    private Map<String, String> getHostsWithDiffModel(String clusterUuid) {
+        List<String> hostUuidsInCluster = Q.New(HostVO.class)
+                .select(HostVO_.uuid)
+                .eq(HostVO_.clusterUuid, clusterUuid)
+                .listValues();
+        if (hostUuidsInCluster.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        Map<String, String> diffMap = new HashMap<>();
+        for (String hostUuid : hostUuidsInCluster) {
+            String hostCpuModel = KVMSystemTags.CPU_MODEL_NAME.getTokenByResourceUuid(hostUuid, KVMSystemTags.CPU_MODEL_NAME_TOKEN);
+
+            if (hostCpuModel == null) {
+                throw new OperationFailureException(operr("host[uuid:%s] does not have cpu model information, you can reconnect the host to fix it", hostUuid));
+            }
+
+            if (diffMap.values().stream().distinct().noneMatch(model -> model.equals(hostCpuModel))) {
+                diffMap.put(hostUuid, hostCpuModel);
+            }
+        }
+
+        return diffMap;
     }
 
     @Override

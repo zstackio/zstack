@@ -2,11 +2,13 @@ package org.zstack.test.integration.kvm.host
 
 import org.zstack.core.Platform
 import org.zstack.core.db.Q
+import org.zstack.header.cluster.ClusterVO
 import org.zstack.header.host.HostVO
 import org.zstack.kvm.KVMGlobalConfig
 import org.zstack.kvm.KVMSystemTags
 import org.zstack.sdk.AddKVMHostAction
 import org.zstack.sdk.ClusterInventory
+import org.zstack.sdk.CreateSystemTagAction
 import org.zstack.sdk.KVMHostInventory
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
@@ -146,6 +148,44 @@ class AddHostCheckQemuLibvirtCPUModelCase extends SubCase {
         def res = action.call()
         assert res.error != null
 
+        updateGlobalConfig {
+            category = KVMGlobalConfig.CATEGORY
+            name = "checkHostCpuModelName"
+            value = false
+        }
+
+        // cluster setting will take effect will check the host
+        def createSystemTagAction = new CreateSystemTagAction()
+        createSystemTagAction.resourceType = ClusterVO.getSimpleName()
+        createSystemTagAction.resourceUuid = cluster.uuid
+        createSystemTagAction.sessionId = adminSession()
+        createSystemTagAction.tag = "check::cluster::cpu::model::true"
+        CreateSystemTagAction.Result result = createSystemTagAction.call()
+
+        action = new AddKVMHostAction()
+        action.resourceUuid = Platform.getUuid()
+        action.sessionId = adminSession()
+        action.clusterUuid = cluster.uuid
+        action.name = "kvm13"
+        action.managementIp = "127.0.0.14"
+        action.username = "root"
+        action.password = "password"
+        action.systemTags = [
+                KVMSystemTags.QEMU_IMG_VERSION.instantiateTag(map(e(KVMSystemTags.QEMU_IMG_VERSION_TOKEN, "2.9.0"))),
+                KVMSystemTags.LIBVIRT_VERSION.instantiateTag(map(e(KVMSystemTags.LIBVIRT_VERSION_TOKEN, "1.3.3"))),
+                KVMSystemTags.CPU_MODEL_NAME.instantiateTag(map(e(KVMSystemTags.CPU_MODEL_NAME_TOKEN, "test")))
+        ]
+        res = action.call()
+        assert res.error != null
+
+        updateGlobalConfig {
+            category = KVMGlobalConfig.CATEGORY
+            name = "checkHostCpuModelName"
+            value = true
+        }
+
+        // when set to false won't check no matter global config
+        KVMSystemTags.CHECK_CLUSTER_CPU_MODEL.update(cluster.uuid, "check::cluster::cpu::model::false")
 
         action = new AddKVMHostAction()
         action.resourceUuid = Platform.getUuid()
@@ -158,10 +198,16 @@ class AddHostCheckQemuLibvirtCPUModelCase extends SubCase {
         action.systemTags = [
                 KVMSystemTags.QEMU_IMG_VERSION.instantiateTag(map(e(KVMSystemTags.QEMU_IMG_VERSION_TOKEN, "2.6.0"))),
                 KVMSystemTags.LIBVIRT_VERSION.instantiateTag(map(e(KVMSystemTags.LIBVIRT_VERSION_TOKEN, "1.3.3"))),
-                KVMSystemTags.CPU_MODEL_NAME.instantiateTag(map(e(KVMSystemTags.CPU_MODEL_NAME_TOKEN, cpuModelName)))
+                KVMSystemTags.CPU_MODEL_NAME.instantiateTag(map(e(KVMSystemTags.CPU_MODEL_NAME_TOKEN, "test")))
         ]
         res = action.call()
         assert res.error == null
+
+        deleteHost {
+            uuid = res.value.inventory.uuid
+        }
+
+        KVMSystemTags.CHECK_CLUSTER_CPU_MODEL.delete(cluster.uuid)
 
         updateGlobalConfig {
             category = KVMGlobalConfig.CATEGORY
