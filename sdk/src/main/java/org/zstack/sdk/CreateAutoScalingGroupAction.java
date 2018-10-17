@@ -43,7 +43,7 @@ public class CreateAutoScalingGroupAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,2147483647L}, noTrim = false)
     public java.lang.Long defaultCooldown;
 
-    @Param(required = true, validValues = {"OldestInstance","NewestInstance","OldestScalingConfiguration"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"OldestInstance","NewestInstance","OldestScalingConfiguration","MinimumCPUUsageInstance","MinimumMemoryUsageInstance"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String removalPolicy;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)

@@ -40,7 +40,7 @@ public class UpdateAutoScalingGroupAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,2147483647L}, noTrim = false)
     public java.lang.Integer maxResourceSize;
 
-    @Param(required = false, validValues = {"OldestInstance","NewestInstance","OldestScalingConfiguration"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"OldestInstance","NewestInstance","OldestScalingConfiguration","MinimumCPUUsageInstance","MinimumMemoryUsageInstance"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String removalPolicy;
 
     @Param(required = false)
@@ -97,7 +97,7 @@ public class UpdateAutoScalingGroupAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/autoscaling/groups/{uuid}";
+        info.path = "/autoscaling/groups/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "updateAutoScalingGroup";
