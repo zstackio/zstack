@@ -756,13 +756,12 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         SecurityGroupVO vo = dbf.findByUuid(msg.getUuid(), SecurityGroupVO.class);
         if (sevt == SecurityGroupStateEvent.enable) {
             vo.setState(SecurityGroupState.Enabled);
-            vo = dbf.updateAndRefresh(vo);
             List<SecurityGroupRuleVO> rvos = Q.New(SecurityGroupRuleVO.class).eq(SecurityGroupRuleVO_.securityGroupUuid, msg.getUuid()).list();
             for (SecurityGroupRuleVO rvo : rvos) {
                 rvo.setState(SecurityGroupRuleState.Enabled);
             }
             dbf.updateCollection(rvos);
-
+            vo = dbf.updateAndRefresh(vo);
 
             List<String> sgUuids = Q.New(SecurityGroupRuleVO.class).select(SecurityGroupRuleVO_.securityGroupUuid).eq(SecurityGroupRuleVO_.remoteSecurityGroupUuid, msg.getUuid()).listValues();
             sgUuids.add(msg.getUuid());
@@ -1134,7 +1133,8 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             List<HostRuleTO> htos = cal.calculate();
             applyRules(htos);
         }
-
+      
+        sgvo =  dbf.reload(sgvo);
         evt.setInventory(SecurityGroupInventory.valueOf(sgvo));
         logger.debug(String.format("successfully add rules to security group[uuid:%s, name:%s]:\n%s", sgvo.getUuid(), sgvo.getName(), JSONObjectUtil.toJsonString(msg.getRules())));
         bus.publish(evt);
@@ -1173,7 +1173,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         }.execute();
 
         createDefaultRule(finalVo.getUuid());
-
+        vo = dbf.reload(vo);
         SecurityGroupInventory inv = SecurityGroupInventory.valueOf(vo);
         APICreateSecurityGroupEvent evt = new APICreateSecurityGroupEvent(msg.getId());
         evt.setInventory(inv);
