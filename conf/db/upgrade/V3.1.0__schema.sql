@@ -16,3 +16,4 @@ CREATE TABLE IF NOT EXISTS `V2VConversionCacheVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE UNIQUE INDEX `type` ON NetworkServiceProviderVO(`type`);
+CREATE INDEX idxVmUsageVOaccountUuid ON VmUsageVO(accountUuid, dateInLong);
