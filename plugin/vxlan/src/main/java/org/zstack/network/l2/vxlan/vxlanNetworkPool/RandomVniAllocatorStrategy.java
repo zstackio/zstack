@@ -78,7 +78,8 @@ public class RandomVniAllocatorStrategy extends AbstractVniAllocatorStrategy {
         int failureCount = 0;
         int failureCheckPoint = 5;
 
-        while (s < e) {
+        /*zhanyong.miao s equal e that there is only one vni in the pool/range*/
+        while (s <= e) {
             // if failing failureCheckPoint times, the range is probably full,
             // we check the range.
             // why don't we check before steppingAllocate()? because in that case we
