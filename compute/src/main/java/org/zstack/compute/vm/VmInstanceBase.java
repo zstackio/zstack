@@ -399,8 +399,6 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((GetVmStartingCandidateClustersHostsMsg) msg);
         } else if (msg instanceof MigrateVmInnerMsg) {
             handle((MigrateVmInnerMsg) msg);
-        } else if (msg instanceof DestroyAndExpungeVmMsg) {
-            handle((DestroyAndExpungeVmMsg) msg);
         } else {
             VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
             if (ext != null) {
@@ -2148,7 +2146,11 @@ public class VmInstanceBase extends AbstractVmInstance {
         final String issuer = VmInstanceVO.class.getSimpleName();
 
         VmDeletionStruct s = new VmDeletionStruct();
-        s.setDeletionPolicy(deletionPolicyMgr.getDeletionPolicy(self.getUuid()));
+        if (msg.getDeletionPolicy() == null) {
+            s.setDeletionPolicy(deletionPolicyMgr.getDeletionPolicy(self.getUuid()));
+        } else {
+            s.setDeletionPolicy(msg.getDeletionPolicy());
+        }
         s.setInventory(getSelfInventory());
         final List<VmDeletionStruct> ctx = list(s);
 
@@ -2173,63 +2175,6 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void handle(Map data) {
                 casf.asyncCascadeFull(CascadeConstant.DELETION_CLEANUP_CODE, issuer, ctx, new NopeCompletion());
-                bus.reply(msg, reply);
-            }
-        }).error(new FlowErrorHandler(msg) {
-            @Override
-            public void handle(final ErrorCode errCode, Map data) {
-                reply.setError(errCode);
-                bus.reply(msg, reply);
-            }
-        }).start();
-    }
-
-    private void handle(final DestroyAndExpungeVmMsg msg) {
-        final DestroyAndExpungeVmReply reply = new DestroyAndExpungeVmReply();
-
-        final FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
-        chain.setName(String.format("destroy-and-expunge-vm-%s", self.getUuid()));
-        chain.then(new NoRollbackFlow() {
-            @Override
-            public void run(final FlowTrigger trigger, Map data) {
-                DestroyVmInstanceMsg destroyVmInstanceMsg = new DestroyVmInstanceMsg();
-                destroyVmInstanceMsg.setVmInstanceUuid(self.getUuid());
-                bus.makeLocalServiceId(destroyVmInstanceMsg, VmInstanceConstant.SERVICE_ID);
-
-                bus.send(destroyVmInstanceMsg, new CloudBusCallBack(trigger) {
-                    @Override
-                    public void run(MessageReply reply) {
-                        if (!reply.isSuccess()) {
-                            trigger.fail(reply.getError());
-                            return;
-                        }
-
-                        trigger.next();
-                    }
-                });
-            }
-        }).then(new NoRollbackFlow() {
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                ExpungeVmMsg expungeVmMsg = new ExpungeVmMsg();
-                expungeVmMsg.setVmInstanceUuid(self.getUuid());
-                bus.makeLocalServiceId(expungeVmMsg, VmInstanceConstant.SERVICE_ID);
-
-                bus.send(expungeVmMsg, new CloudBusCallBack(trigger) {
-                    @Override
-                    public void run(MessageReply reply) {
-                        if (!reply.isSuccess()) {
-                            trigger.fail(reply.getError());
-                            return;
-                        }
-
-                        trigger.next();
-                    }
-                });
-            }
-        }).done(new FlowDoneHandler(msg) {
-            @Override
-            public void handle(Map data) {
                 bus.reply(msg, reply);
             }
         }).error(new FlowErrorHandler(msg) {
