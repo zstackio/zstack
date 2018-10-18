@@ -4,6 +4,7 @@
 *~
 management-server.log
 management-server*.gz
+minion-server.log
 */management-server.log
 *.class
 */target/
