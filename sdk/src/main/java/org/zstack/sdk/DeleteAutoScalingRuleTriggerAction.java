@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class SetVmCleanTrafficAction extends AbstractAction {
+public class DeleteAutoScalingRuleTriggerAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class SetVmCleanTrafficAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.SetVmCleanTrafficResult value;
+        public org.zstack.sdk.DeleteAutoScalingRuleTriggerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -28,8 +28,8 @@ public class SetVmCleanTrafficAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean enable = false;
+    @Param(required = false)
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -54,8 +54,8 @@ public class SetVmCleanTrafficAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.SetVmCleanTrafficResult value = res.getResult(org.zstack.sdk.SetVmCleanTrafficResult.class);
-        ret.value = value == null ? new org.zstack.sdk.SetVmCleanTrafficResult() : value; 
+        org.zstack.sdk.DeleteAutoScalingRuleTriggerResult value = res.getResult(org.zstack.sdk.DeleteAutoScalingRuleTriggerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteAutoScalingRuleTriggerResult() : value; 
 
         return ret;
     }
@@ -84,11 +84,11 @@ public class SetVmCleanTrafficAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/vm-instances/{uuid}/actions";
+        info.httpMethod = "DELETE";
+        info.path = "/autoscaling/groups/rules/triggers/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "setVmCleanTraffic";
+        info.parameterName = "";
         return info;
     }
 

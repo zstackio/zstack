@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class SetVmCleanTrafficAction extends AbstractAction {
+public class AttachAutoScalingTemplateToGroupAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class SetVmCleanTrafficAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.SetVmCleanTrafficResult value;
+        public org.zstack.sdk.AttachAutoScalingTemplateToGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -29,7 +29,7 @@ public class SetVmCleanTrafficAction extends AbstractAction {
     public java.lang.String uuid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean enable = false;
+    public java.lang.String groupUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -54,8 +54,8 @@ public class SetVmCleanTrafficAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.SetVmCleanTrafficResult value = res.getResult(org.zstack.sdk.SetVmCleanTrafficResult.class);
-        ret.value = value == null ? new org.zstack.sdk.SetVmCleanTrafficResult() : value; 
+        org.zstack.sdk.AttachAutoScalingTemplateToGroupResult value = res.getResult(org.zstack.sdk.AttachAutoScalingTemplateToGroupResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AttachAutoScalingTemplateToGroupResult() : value; 
 
         return ret;
     }
@@ -84,11 +84,11 @@ public class SetVmCleanTrafficAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/vm-instances/{uuid}/actions";
+        info.httpMethod = "POST";
+        info.path = "/autoscaling/template/{uuid}/groups/{groupUuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "setVmCleanTraffic";
+        info.parameterName = "params";
         return info;
     }
 
