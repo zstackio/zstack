@@ -1185,8 +1185,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 /* detach last ip, will delete the nic */
                 VmNicInventory nic = VmNicInventory.valueOf(dbf.findByUuid(vmNicUuid, VmNicVO.class));
                 UsedIpInventory usedIp = UsedIpInventory.valueOf(dbf.findByUuid(usedIpUuid, UsedIpVO.class));
-                logger.debug("ruanshixin doDetachIpAddressFromNic " + JSONObjectUtil.toJsonString(nic));
-                logger.debug("ruanshixin doDetachIpAddressFromNic " + usedIpUuid);
 
                 if (nic.getUsedIps().size() <= 1) {
                     doDeleteVmNic(nic, completion);
