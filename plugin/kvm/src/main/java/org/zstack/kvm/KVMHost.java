@@ -2742,6 +2742,21 @@ public class KVMHost extends HostBase implements Host {
                     return;
                 }
 
+                if (KVMSystemTags.CHECK_CLUSTER_CPU_MODEL.hasTag(self.getClusterUuid())) {
+                    if (KVMSystemTags.CHECK_CLUSTER_CPU_MODEL
+                            .getTokenByResourceUuid(self.getClusterUuid(), KVMSystemTags.CHECK_CLUSTER_CPU_MODEL_TOKEN)
+                            .equals("true")
+                            && !checkCpuModelOfHost()) {
+                        complete.fail(operr("host [uuid:%s] cannot be added to cluster [uuid:%s] because cpu model name does not match",
+                                self.getUuid(), self.getClusterUuid()));
+                        return;
+                    }
+
+                    complete.success();
+                    return;
+                }
+
+
                 if (KVMGlobalConfig.CHECK_HOST_CPU_MODEL_NAME.value(Boolean.class) && !checkCpuModelOfHost()) {
                     complete.fail(operr("host [uuid:%s] cannot be added to cluster [uuid:%s] because cpu model name does not match",
                             self.getUuid(), self.getClusterUuid()));
@@ -3058,6 +3073,20 @@ public class KVMHost extends HostBase implements Host {
                                 if (!checkQemuLibvirtVersionOfHost()) {
                                     trigger.fail(operr("host [uuid:%s] cannot be added to cluster [uuid:%s] because qemu/libvirt version does not match",
                                             self.getUuid(), self.getClusterUuid()));
+                                    return;
+                                }
+
+                                if (KVMSystemTags.CHECK_CLUSTER_CPU_MODEL.hasTag(self.getClusterUuid())) {
+                                    if (KVMSystemTags.CHECK_CLUSTER_CPU_MODEL
+                                            .getTokenByResourceUuid(self.getClusterUuid(), KVMSystemTags.CHECK_CLUSTER_CPU_MODEL_TOKEN)
+                                            .equals("true")
+                                            && !checkCpuModelOfHost()) {
+                                        trigger.fail(operr("host [uuid:%s] cannot be added to cluster [uuid:%s] because cpu model name does not match",
+                                                self.getUuid(), self.getClusterUuid()));
+                                        return;
+                                    }
+
+                                    trigger.next();
                                     return;
                                 }
 
