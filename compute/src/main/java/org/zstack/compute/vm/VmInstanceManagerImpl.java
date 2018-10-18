@@ -44,6 +44,7 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudConfigureFailException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.AfterChangeHostStatusExtensionPoint;
+import org.zstack.header.host.HostAfterConnectedExtensionPoint;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.identity.*;
@@ -101,6 +102,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         L3NetworkDeleteExtensionPoint,
         ResourceOwnerAfterChangeExtensionPoint,
         GlobalApiMessageInterceptor,
+        HostAfterConnectedExtensionPoint,
         AfterChangeHostStatusExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VmInstanceManagerImpl.class);
     private Map<String, VmInstanceFactory> vmInstanceFactories = Collections.synchronizedMap(new HashMap<>());
@@ -1794,5 +1796,33 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 });
             }, 200).run(new NopeNoErrorCompletion());
         }
+    }
+
+    @Override
+    public void afterHostConnected(HostInventory inv) {
+        if (inv.getStatus().equals(HostStatus.Connected.toString())){
+            List<String> vmUuids = Q.New(VmInstanceVO.class).select(VmInstanceVO_.uuid)
+                    .eq(VmInstanceVO_.hostUuid, inv.getUuid())
+                    .listValues();
+            if(vmUuids.isEmpty()){
+                return;
+            }
+            new While<>(vmUuids).step((vmUuid, completion) -> {
+                VmCheckOwnStateMsg msg = new VmCheckOwnStateMsg();
+                msg.setVmInstanceUuid(vmUuid);
+                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vmUuid);
+                bus.send(msg, new CloudBusCallBack(completion) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if(!reply.isSuccess()){
+                            logger.warn(String.format("the host[uuid:%s] connected, but the vm[uuid:%s] fails to " +
+                                    "update it's state , %s", inv.getUuid(), vmUuid, reply.getError()));
+                        }
+                        completion.done();
+                    }
+                });
+            }, 200).run(new NopeNoErrorCompletion());
+        }
+
     }
 }
