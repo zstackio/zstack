@@ -1,6 +1,10 @@
 package org.zstack.header.network.l3;
 
+import org.zstack.header.query.ExpandedQueries;
+import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.rest.APINoSee;
+import org.zstack.header.search.Inventory;
+import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.vm.VmNicVO;
 
@@ -10,6 +14,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+@Inventory(mappingVOClass = UsedIpVO.class)
+@ExpandedQueries({
+        @ExpandedQuery(expandedField = "l3Network", inventoryClass = L3NetworkInventory.class,
+                foreignKey = "l3NetworkUuid", expandedInventoryKey = "uuid"),
+        @ExpandedQuery(expandedField = "vmNic", inventoryClass = VmNicInventory.class,
+                foreignKey = "vmNicUuid", expandedInventoryKey = "uuid"),
+})
 public class UsedIpInventory implements Serializable {
     private String uuid;
     private String ipRangeUuid;

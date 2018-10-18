@@ -4,10 +4,7 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SQLBatch;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
@@ -384,10 +381,12 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                             msg.getVmInstanceUuid(), state));
         }
 
-        SimpleQuery<VmNicVO> nq = dbf.createQuery(VmNicVO.class);
-        nq.add(VmNicVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
-        nq.add(VmNicVO_.vmInstanceUuid, Op.EQ, msg.getVmInstanceUuid());
-        if (nq.isExists()) {
+        String sql = "select ip.uuid from UsedIpVO ip, VmNicVO nic where ip.vmNicUuid = nic.uuid and nic.vmInstanceUuid = :vmUuid and ip.l3NetworkUuid = :l3Uuid";
+        List<String> ipUuids = SQL.New(sql, Tuple.class)
+                .param("vmUuid", msg.getVmInstanceUuid())
+                .param("l3Uuid", msg.getL3NetworkUuid())
+                .list();
+        if (ipUuids != null && !ipUuids.isEmpty()) {
             throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The L3 network[uuid:%s] is already attached to the vm[uuid: %s]",
                             msg.getL3NetworkUuid(), msg.getVmInstanceUuid()));
         }
@@ -680,6 +679,11 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     private void validate(APIAttachL3NetworkToVmNicMsg msg) {
         L3NetworkVO l3Vo = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
         VmNicVO vmNicVO = dbf.findByUuid(msg.getVmNicUuid(), VmNicVO.class);
+
+        if (vmNicVO.getVmInstanceUuid() == null || !Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vmNicVO.getVmInstanceUuid()).isExists()) {
+            throw new ApiMessageInterceptionException(argerr("vmNic[uuid:%s] is not attached to vmInstance", msg.getVmNicUuid(),
+                    msg.getVmNicUuid()));
+        }
 
         for (UsedIpVO ipVO : vmNicVO.getUsedIps()) {
             if (ipVO.getL3NetworkUuid().equals(msg.getL3NetworkUuid())) {

@@ -150,20 +150,17 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     return null;
                 }
 
-                logger.debug("ruanshixin getUserData vmUuids " + vmUuids);
                 Map<String, VmIpL3Uuid> vmipl3 = getVmIpL3Uuid(vmUuids);
                 if (vmipl3.isEmpty()) {
                     return null;
                 }
 
-                logger.debug("ruanshixin getUserData vmipl3 " + JSONObjectUtil.toJsonString(vmipl3));
                 // filter out vm that not using flat network provider
                 vmUuids = vmUuids.stream().filter(vmipl3::containsKey).collect(Collectors.toList());
                 if (vmUuids.isEmpty()) {
                     return null;
                 }
 
-                logger.debug("ruanshixin getUserData vmUuids " + vmUuids);
                 Map<String, List<String>> userdata = new UserdataBuilder().buildByVmUuids(vmUuids);
                 Set<String> l3Uuids = new HashSet<String>();
                 for (VmIpL3Uuid l : vmipl3.values()) {

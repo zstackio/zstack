@@ -10,6 +10,8 @@ import org.zstack.test.integration.network.l3network.Env
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 
+import java.util.stream.Collectors
+
 import static java.util.Arrays.asList
 
 /**
@@ -43,7 +45,7 @@ class AddIpv6RangeToVmNicsCase extends SubCase {
 
     void testAttachDetachL3ToVmNic() {
         L3NetworkInventory l3_statefull = env.inventoryByName("l3-Statefull-DHCP")
-        L3NetworkInventory l3_statefull_1 = env.inventoryByName("l3-Statefull-DHCP")
+        L3NetworkInventory l3_statefull_1 = env.inventoryByName("l3-Statefull-DHCP-1")
         L3NetworkInventory l3_stateless = env.inventoryByName("l3-Stateless-DHCP")
         L3NetworkInventory l3_slaac = env.inventoryByName("l3-SLAAC")
         L3NetworkInventory l3 = env.inventoryByName("l3")
@@ -59,6 +61,13 @@ class AddIpv6RangeToVmNicsCase extends SubCase {
             l3NetworkUuids = asList(l3_statefull.uuid)
         }
         VmNicInventory nic = vm.getVmNics()[0]
+        List<L3NetworkInventory> l3Invs = getVmAttachableL3Network {
+            vmInstanceUuid = vm.uuid
+        }
+        List<String> l3s = l3Invs.stream().map{l3n -> l3n.getUuid()}.collect(Collectors.toList())
+        assert !l3s.contains(l3_statefull.uuid)
+        assert l3s.contains(l3_statefull_1.uuid)
+        assert l3s.contains(l3.uuid)
 
         expect(AssertionError.class) {
             attachL3NetworkToVmNic {
@@ -70,24 +79,23 @@ class AddIpv6RangeToVmNicsCase extends SubCase {
         expect(AssertionError.class) {
             attachL3NetworkToVmNic {
                 vmNicUuid = nic.uuid
-                l3NetworkUuid = l3_statefull_1.uuid
-            }
-        }
-
-        expect(AssertionError.class) {
-            attachL3NetworkToVmNic {
-                vmNicUuid = nic.uuid
                 l3NetworkUuid = l3_vlan_ipv4.uuid
             }
         }
 
-/* TODO fix it shixin.ruan */
         sleep(1)
 
         attachL3NetworkToVmNic {
             vmNicUuid = nic.uuid
             l3NetworkUuid = l3_stateless.uuid
         }
+        l3Invs = getVmAttachableL3Network {
+            vmInstanceUuid = vm.uuid
+        }
+        l3s = l3Invs.stream().map{l3n -> l3n.getUuid()}.collect(Collectors.toList())
+        assert !l3s.contains(l3_statefull.uuid)
+        assert !l3s.contains(l3_stateless.uuid)
+        assert l3s.contains(l3.uuid)
 
         sleep(1)
 
@@ -100,6 +108,13 @@ class AddIpv6RangeToVmNicsCase extends SubCase {
             vmNicUuid = nic.uuid
             l3NetworkUuid = l3.uuid
         }
+        l3Invs = getVmAttachableL3Network {
+            vmInstanceUuid = vm.uuid
+        }
+        l3s = l3Invs.stream().map{l3n -> l3n.getUuid()}.collect(Collectors.toList())
+        assert !l3s.contains(l3_statefull.uuid)
+        assert !l3s.contains(l3_stateless.uuid)
+        assert !l3s.contains(l3.uuid)
 
         expect(AssertionError.class) {
             attachL3NetworkToVmNic {
@@ -120,6 +135,13 @@ class AddIpv6RangeToVmNicsCase extends SubCase {
             vmNicUuid = nic.uuid
             usedIpUuid = ipVO1.uuid
         }
+        l3Invs = getVmAttachableL3Network {
+            vmInstanceUuid = vm.uuid
+        }
+        l3s = l3Invs.stream().map{l3n -> l3n.getUuid()}.collect(Collectors.toList())
+        assert !l3s.contains(l3_statefull.uuid)
+        assert !l3s.contains(l3_stateless.uuid)
+        assert l3s.contains(l3.uuid)
 
         vm = queryVmInstance {
             conditions=["uuid=${vm.uuid}".toString()]
@@ -132,6 +154,13 @@ class AddIpv6RangeToVmNicsCase extends SubCase {
             vmNicUuid = nic.uuid
             usedIpUuid = ipVO2.uuid
         }
+        l3Invs = getVmAttachableL3Network {
+            vmInstanceUuid = vm.uuid
+        }
+        l3s = l3Invs.stream().map{l3n -> l3n.getUuid()}.collect(Collectors.toList())
+        assert l3s.contains(l3_statefull.uuid)
+        assert !l3s.contains(l3_stateless.uuid)
+        assert l3s.contains(l3.uuid)
 
         vm = queryVmInstance {
             conditions=["uuid=${vm.uuid}".toString()]

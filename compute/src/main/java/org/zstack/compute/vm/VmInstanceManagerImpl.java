@@ -193,6 +193,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
     private void handleLocalMessage(Message msg) {
         if (msg instanceof CreateVmInstanceMsg) {
             handle((CreateVmInstanceMsg) msg);
+        } else if (msg instanceof DetachIpAddressFromVmNicMsg) {
+            handle((DetachIpAddressFromVmNicMsg) msg);
         } else if (msg instanceof VmInstanceMessage) {
             passThrough((VmInstanceMessage) msg);
         } else {
@@ -1025,7 +1027,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         thdf.chainSubmit(new ChainTask(completion) {
             @Override
             public String getSyncSignature() {
-                return getVmNicSyncSignature(nic);
+                return getVmNicSyncSignature(nic.getUuid());
             }
 
             @Override
@@ -1098,15 +1100,15 @@ public class VmInstanceManagerImpl extends AbstractService implements
         });
     }
 
-    private String getVmNicSyncSignature(VmNicInventory nic) {
-        return String.format("vmNi-%s", nic.getUuid());
+    private String getVmNicSyncSignature(String nicUuid) {
+        return String.format("vmNic-%s", nicUuid);
     }
 
     private void doAttachL3ToNic(final VmNicInventory nic, final String l3Uuid, final Completion completion) {
         thdf.chainSubmit(new ChainTask(completion) {
             @Override
             public String getSyncSignature() {
-                return getVmNicSyncSignature(nic);
+                return getVmNicSyncSignature(nic.getUuid());
             }
 
             @Override
@@ -1124,20 +1126,23 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 }
                 flowChain.then(new VmPreAllocateNicIpFlow());
                 flowChain.then(new VmNicAllocateIpFlow());
+                if (vmVo != null) {
+                    flowChain.then(new VmChangeDefaultL3NetworkFlow());
+                }
                 flowChain.then(new AddL3NetworkToVmNicFlow());
                 flowChain.done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
                         completion.success();
+                        chain.next();
                     }
                 }).error(new FlowErrorHandler(completion) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
                         completion.fail(errCode);
+                        chain.next();
                     }
                 }).start();
-
-                chain.next();
             }
 
             @Override
@@ -1168,16 +1173,21 @@ public class VmInstanceManagerImpl extends AbstractService implements
         });
     }
 
-    private void doDetachIpAddressFromNic(final VmNicInventory nic, final UsedIpInventory usedIp, final Completion completion) {
+    private void doDetachIpAddressFromNic(String vmNicUuid, String usedIpUuid, final Completion completion) {
         thdf.chainSubmit(new ChainTask(completion) {
             @Override
             public String getSyncSignature() {
-                return getVmNicSyncSignature(nic);
+                return getVmNicSyncSignature(vmNicUuid);
             }
 
             @Override
             public void run(SyncTaskChain chain) {
                 /* detach last ip, will delete the nic */
+                VmNicInventory nic = VmNicInventory.valueOf(dbf.findByUuid(vmNicUuid, VmNicVO.class));
+                UsedIpInventory usedIp = UsedIpInventory.valueOf(dbf.findByUuid(usedIpUuid, UsedIpVO.class));
+                logger.debug("ruanshixin doDetachIpAddressFromNic " + JSONObjectUtil.toJsonString(nic));
+                logger.debug("ruanshixin doDetachIpAddressFromNic " + usedIpUuid);
+
                 if (nic.getUsedIps().size() <= 1) {
                     doDeleteVmNic(nic, completion);
                     chain.next();
@@ -1196,27 +1206,46 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 if (vmVo != null) {
                     flowChain.getData().put(VmInstanceConstant.Params.vmInventory.toString(), VmInstanceInventory.valueOf(vmVo));
                     flowChain.then(new DeleteL3NetworkFromVmNicFlow());
-                    flowChain.then(new VmChangeDefaultL3NetworkFlow());
                 }
                 flowChain.then(new VmNicReturnIpFlow());
+                if (vmVo != null) {
+                    flowChain.then(new VmChangeDefaultL3NetworkFlow());
+                }
                 flowChain.done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
                         completion.success();
+                        chain.next();
                     }
                 }).error(new FlowErrorHandler(completion) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
                         completion.fail(errCode);
+                        chain.next();
                     }
                 }).start();
-
-                chain.next();
             }
 
             @Override
             public String getName() {
-                return String.format("detach-usedIp-%s-to-nic-%s", usedIp.getIp(), nic.getUuid());
+                return String.format("detach-usedIp-%s-to-nic-%s", vmNicUuid, usedIpUuid);
+            }
+        });
+    }
+
+    private void handle(final DetachIpAddressFromVmNicMsg msg) {
+        final DetachIpAddressFromVmNicReply reply = new DetachIpAddressFromVmNicReply();
+
+        doDetachIpAddressFromNic(msg.getVmNicUuid(), msg.getUsedIpUuid(), new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
             }
         });
     }
@@ -1224,9 +1253,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
     private void handle(final APIDetachIpAddressFromVmNicMsg msg) {
         final APIDetachIpAddressFromVmNicEvent evt = new APIDetachIpAddressFromVmNicEvent(msg.getId());
 
-        VmNicVO vmNicVO = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find();
-        UsedIpVO ipVO = Q.New(UsedIpVO.class).eq(UsedIpVO_.uuid, msg.getUsedIpUuid()).find();
-        doDetachIpAddressFromNic(VmNicInventory.valueOf(vmNicVO), UsedIpInventory.valueOf(ipVO), new Completion(msg) {
+        doDetachIpAddressFromNic(msg.getVmNicUuid(), msg.getUsedIpUuid(), new Completion(msg) {
             @Override
             public void success() {
                 VmNicVO vmNicVO = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find();

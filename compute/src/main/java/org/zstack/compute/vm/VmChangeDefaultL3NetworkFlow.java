@@ -37,10 +37,19 @@ public class VmChangeDefaultL3NetworkFlow extends NoRollbackFlow {
     @Autowired
     private PluginRegistry pluginRgty;
 
+    private boolean isDefaultNic(VmNicInventory nic, String dafaultL3Uuid) {
+        for (UsedIpInventory ip : nic.getUsedIps()) {
+            if (ip.getL3NetworkUuid().equals(dafaultL3Uuid)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     @Override
     public void run(final FlowTrigger trigger, final Map data) {
         final VmNicInventory nic = (VmNicInventory) data.get(VmInstanceConstant.Params.VmNicInventory.toString());
-        final UsedIpInventory usedIp = (UsedIpInventory) data.get(VmInstanceConstant.Params.UsedIPInventory.toString());
 
         if (nic.getVmInstanceUuid() == null) {
             trigger.next();
@@ -48,13 +57,16 @@ public class VmChangeDefaultL3NetworkFlow extends NoRollbackFlow {
         }
 
         VmInstanceVO vmVo = dbf.findByUuid(nic.getVmInstanceUuid(), VmInstanceVO.class);
-        if (vmVo.getDefaultL3NetworkUuid() != null && !vmVo.getDefaultL3NetworkUuid().equals(usedIp.getL3NetworkUuid())) {
-            trigger.next();
-            return;
+        VmNicVO nicvo = dbf.findByUuid(nic.getUuid(), VmNicVO.class);
+
+        /* if this is default nic and vm default l3 is different from nic l3 */
+        if (isDefaultNic(nic, vmVo.getDefaultL3NetworkUuid()) ) {
+            if (vmVo.getDefaultL3NetworkUuid() == null || !vmVo.getDefaultL3NetworkUuid().equals(nicvo.getL3NetworkUuid())) {
+                vmVo.setDefaultL3NetworkUuid(nicvo.getL3NetworkUuid());
+                dbf.updateAndRefresh(vmVo);
+            }
         }
 
-        vmVo.setDefaultL3NetworkUuid(nic.getL3NetworkUuid());
-        dbf.updateAndRefresh(vmVo);
         trigger.next();
     }
 }

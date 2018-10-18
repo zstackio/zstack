@@ -236,14 +236,12 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             if (!nicsInSg.isEmpty()) {
                 vmNicUuids = nicsInSg.stream().distinct().collect(Collectors.toList());
                 ret.addAll(calculateByVmNic());
-                logger.debug("ruanshixin calculateByHost nicInSg " + JSONObjectUtil.toJsonString(nicsInSg));
             }
             if (!nicsOutSg.isEmpty()) {
                 Collection<HostRuleTO> toRemove = createRulePlaceHolder(nicsOutSg);
                 for (HostRuleTO hto : toRemove) {
                     hto.setActionCodeForAllSecurityGroupRuleTOs(SecurityGroupRuleTO.ACTION_CODE_DELETE_CHAIN);
                 }
-                logger.debug("ruanshixin calculateByHost nicsOutSg " + JSONObjectUtil.toJsonString(toRemove));
                 //ret.addAll(toRemove);
                 ret = mergeMultiHostRuleTO(ret, toRemove);
             }
@@ -644,7 +642,6 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             hto.setRefreshHost(true);
         }
         logger.debug(String.format("required to refresh rules on host[uuid:%s]", msg.getHostUuid()));
-        logger.debug("ruanshixin RefreshSecurityGroupRulesOnHostMsg " + JSONObjectUtil.toJsonString(htos));
         applyRules(htos);
     }
 

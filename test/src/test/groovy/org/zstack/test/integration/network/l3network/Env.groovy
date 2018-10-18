@@ -189,6 +189,7 @@ class Env {
 
                     attachPrimaryStorage("nfs")
                     attachL2Network("l2")
+                    attachL2Network("vlan-200")
                 }
 
                 nfsPrimaryStorage {
