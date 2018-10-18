@@ -399,7 +399,9 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((GetVmStartingCandidateClustersHostsMsg) msg);
         } else if (msg instanceof MigrateVmInnerMsg) {
             handle((MigrateVmInnerMsg) msg);
-        }else {
+        } else if (msg instanceof DestroyAndExpungeVmMsg) {
+            handle((DestroyAndExpungeVmMsg) msg);
+        } else {
             VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
             if (ext != null) {
                 VmInstance v = ext.getVmInstance(self);
@@ -2151,7 +2153,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         final List<VmDeletionStruct> ctx = list(s);
 
         final FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
-        chain.setName(String.format("destory-vm-%s", self.getUuid()));
+        chain.setName(String.format("destroy-vm-%s", self.getUuid()));
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(final FlowTrigger trigger, Map data) {
@@ -2182,6 +2184,62 @@ public class VmInstanceBase extends AbstractVmInstance {
         }).start();
     }
 
+    private void handle(final DestroyAndExpungeVmMsg msg) {
+        final DestroyAndExpungeVmReply reply = new DestroyAndExpungeVmReply();
+
+        final FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("destroy-and-expunge-vm-%s", self.getUuid()));
+        chain.then(new NoRollbackFlow() {
+            @Override
+            public void run(final FlowTrigger trigger, Map data) {
+                DestroyVmInstanceMsg destroyVmInstanceMsg = new DestroyVmInstanceMsg();
+                destroyVmInstanceMsg.setVmInstanceUuid(self.getUuid());
+                bus.makeLocalServiceId(destroyVmInstanceMsg, VmInstanceConstant.SERVICE_ID);
+
+                bus.send(destroyVmInstanceMsg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            trigger.fail(reply.getError());
+                            return;
+                        }
+
+                        trigger.next();
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                ExpungeVmMsg expungeVmMsg = new ExpungeVmMsg();
+                expungeVmMsg.setVmInstanceUuid(self.getUuid());
+                bus.makeLocalServiceId(expungeVmMsg, VmInstanceConstant.SERVICE_ID);
+
+                bus.send(expungeVmMsg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            trigger.fail(reply.getError());
+                            return;
+                        }
+
+                        trigger.next();
+                    }
+                });
+            }
+        }).done(new FlowDoneHandler(msg) {
+            @Override
+            public void handle(Map data) {
+                bus.reply(msg, reply);
+            }
+        }).error(new FlowErrorHandler(msg) {
+            @Override
+            public void handle(final ErrorCode errCode, Map data) {
+                reply.setError(errCode);
+                bus.reply(msg, reply);
+            }
+        }).start();
+    }
 
     protected void handle(final ChangeVmStateMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
