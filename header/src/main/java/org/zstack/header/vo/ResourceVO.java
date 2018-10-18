@@ -70,10 +70,6 @@ public class ResourceVO {
                 name = this.getResourceName();
             }
 
-            if (this.getResourceName() != null) {
-                name = this.getResourceName();
-            }
-
             return name;
         } catch (IllegalAccessException e) {
             throw new CloudRuntimeException(e);

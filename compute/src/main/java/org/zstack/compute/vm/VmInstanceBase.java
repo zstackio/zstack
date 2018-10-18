@@ -399,7 +399,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((GetVmStartingCandidateClustersHostsMsg) msg);
         } else if (msg instanceof MigrateVmInnerMsg) {
             handle((MigrateVmInnerMsg) msg);
-        }else {
+        } else {
             VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
             if (ext != null) {
                 VmInstance v = ext.getVmInstance(self);
@@ -2146,12 +2146,16 @@ public class VmInstanceBase extends AbstractVmInstance {
         final String issuer = VmInstanceVO.class.getSimpleName();
 
         VmDeletionStruct s = new VmDeletionStruct();
-        s.setDeletionPolicy(deletionPolicyMgr.getDeletionPolicy(self.getUuid()));
+        if (msg.getDeletionPolicy() == null) {
+            s.setDeletionPolicy(deletionPolicyMgr.getDeletionPolicy(self.getUuid()));
+        } else {
+            s.setDeletionPolicy(msg.getDeletionPolicy());
+        }
         s.setInventory(getSelfInventory());
         final List<VmDeletionStruct> ctx = list(s);
 
         final FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
-        chain.setName(String.format("destory-vm-%s", self.getUuid()));
+        chain.setName(String.format("destroy-vm-%s", self.getUuid()));
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(final FlowTrigger trigger, Map data) {
@@ -2181,7 +2185,6 @@ public class VmInstanceBase extends AbstractVmInstance {
             }
         }).start();
     }
-
 
     protected void handle(final ChangeVmStateMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {

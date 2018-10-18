@@ -1075,7 +1075,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         AddVmNicToSecurityGroupMsg addVmNicToSecurityGroupMsg = new AddVmNicToSecurityGroupMsg();
         addVmNicToSecurityGroupMsg.setSecurityGroupUuid(msg.getSecurityGroupUuid());
         addVmNicToSecurityGroupMsg.setVmNicUuids(msg.getVmNicUuids());
-        bus.makeTargetServiceIdByResourceUuid(msg, SecurityGroupConstant.SERVICE_ID, msg.getSecurityGroupUuid());
+        bus.makeTargetServiceIdByResourceUuid(addVmNicToSecurityGroupMsg, SecurityGroupConstant.SERVICE_ID, msg.getSecurityGroupUuid());
 
         bus.send(addVmNicToSecurityGroupMsg, new CloudBusCallBack(msg) {
             @Override
