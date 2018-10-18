@@ -22,18 +22,19 @@ import org.zstack.header.image.ImageVO;
 import org.zstack.header.image.ImageVO_;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkConstant;
+import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
-import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceSequenceNumberVO;
-import org.zstack.header.vm.VmInstanceState;
-import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.*;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.codehaus.groovy.runtime.InvokerHelper.asList;
+import static org.zstack.utils.CollectionDSL.list;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class CreateApplianceVmJob implements Job {
@@ -144,12 +145,14 @@ public class CreateApplianceVmJob implements Job {
 
         final ApplianceVmInventory inv = ApplianceVmInventory.valueOf(avo);
         StartNewCreatedApplianceVmMsg msg = new StartNewCreatedApplianceVmMsg();
-        List<String> nws = new ArrayList<String>();
-        nws.add(spec.getManagementNic().getL3NetworkUuid());
-        for (ApplianceVmNicSpec nicSpec : spec.getAdditionalNics()) {
-            nws.add(nicSpec.getL3NetworkUuid());
+        List<VmNicSpec> nicSpecs = new ArrayList<>();
+        L3NetworkInventory mnL3 = L3NetworkInventory.valueOf(dbf.findByUuid(spec.getManagementNic().getL3NetworkUuid(), L3NetworkVO.class));
+        nicSpecs.add(new VmNicSpec(mnL3));
+        for (ApplianceVmNicSpec aSpec : spec.getAdditionalNics()) {
+            L3NetworkInventory l3 = L3NetworkInventory.valueOf(dbf.findByUuid(aSpec.getL3NetworkUuid(), L3NetworkVO.class));
+            nicSpecs.add(new VmNicSpec(l3));
         }
-        msg.setL3NetworkUuids(nws);
+        msg.setL3NetworkUuids(nicSpecs);
         msg.setVmInstanceInventory(inv);
         msg.setApplianceVmSpec(spec);
         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, inv.getUuid());

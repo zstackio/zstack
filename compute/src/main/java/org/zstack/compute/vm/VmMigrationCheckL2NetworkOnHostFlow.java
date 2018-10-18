@@ -14,10 +14,13 @@ import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmNicHelper;
+import org.zstack.header.vm.VmNicSpec;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  */
@@ -30,7 +33,7 @@ public class VmMigrationCheckL2NetworkOnHostFlow implements Flow {
     public void run(final FlowTrigger trigger, Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         List<CheckL2NetworkOnHostMsg> cmsgs = new ArrayList<CheckL2NetworkOnHostMsg>();
-        for (L3NetworkInventory l3 : spec.getL3Networks()) {
+        for (L3NetworkInventory l3 : VmNicSpec.getL3NetworkInventoryOfSpec(spec.getL3Networks())) {
             CheckL2NetworkOnHostMsg msg = new CheckL2NetworkOnHostMsg();
             msg.setL2NetworkUuid(l3.getL2NetworkUuid());
             msg.setHostUuid(spec.getDestHost().getUuid());

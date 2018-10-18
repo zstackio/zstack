@@ -275,7 +275,7 @@ public class VmInstanceSpec implements Serializable {
     }
 
     private VmInstanceInventory vmInventory;
-    private List<L3NetworkInventory> l3Networks;
+    private List<VmNicSpec> l3Networks;
     private List<DiskOfferingInventory> dataDiskOfferings;
     private DiskOfferingInventory rootDiskOffering;
     private String hostAllocatorStrategy;
@@ -435,11 +435,11 @@ public class VmInstanceSpec implements Serializable {
         this.volumeSpecs = volumeSpecs;
     }
 
-    public List<L3NetworkInventory> getL3Networks() {
+    public List<VmNicSpec> getL3Networks() {
         return l3Networks;
     }
 
-    public void setL3Networks(List<L3NetworkInventory> l3Networks) {
+    public void setL3Networks(List<VmNicSpec> l3Networks) {
         this.l3Networks = l3Networks;
     }
 
@@ -567,8 +567,10 @@ public class VmInstanceSpec implements Serializable {
     public List<String> getRequiredNetworkServiceTypes() {
         List<String> nsTypes = new ArrayList<>();
         if (getL3Networks() != null) {
-            for (L3NetworkInventory l3 : getL3Networks()) {
-                nsTypes.addAll(l3.getNetworkServiceTypes());
+            for (VmNicSpec nicSpec : getL3Networks()) {
+                for (L3NetworkInventory l3: nicSpec.l3Invs) {
+                    nsTypes.addAll(l3.getNetworkServiceTypes());
+                }
             }
         }
         return nsTypes;

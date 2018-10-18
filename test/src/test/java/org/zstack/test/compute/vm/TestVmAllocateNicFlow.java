@@ -26,6 +26,7 @@ import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.deployer.Deployer;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -77,7 +78,11 @@ public class TestVmAllocateNicFlow {
         VmInstanceInventory vminv = VmInstanceInventory.valueOf(vo);
         VmInstanceSpec spec = new VmInstanceSpec();
         spec.setVmInventory(vminv);
-        spec.setL3Networks(l3Networks);
+        List<VmNicSpec> nicSpecs = new ArrayList<>();
+        for (L3NetworkInventory inv : l3Networks) {
+            nicSpecs.add(new VmNicSpec(inv));
+        }
+        spec.setL3Networks(nicSpecs);
         spec.getImageSpec().setInventory(iminv);
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
         chain.done(new FlowDoneHandler(null) {

@@ -40,6 +40,7 @@ import org.zstack.utils.function.Function;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
@@ -638,14 +639,17 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
 
             final VmInstanceSpec spec = new VmInstanceSpec();
             spec.setVmInventory(msg.getVmInstanceInventory());
+            List<VmNicSpec> nicSpecs = new ArrayList<>();
             if (msg.getL3NetworkUuids() != null && !msg.getL3NetworkUuids().isEmpty()) {
                 SimpleQuery<L3NetworkVO> nwquery = dbf.createQuery(L3NetworkVO.class);
-                nwquery.add(L3NetworkVO_.uuid, SimpleQuery.Op.IN, msg.getL3NetworkUuids());
+                nwquery.add(L3NetworkVO_.uuid, SimpleQuery.Op.IN, VmNicSpec.getL3UuidsOfSpec(msg.getL3NetworkUuids()));
                 List<L3NetworkVO> vos = nwquery.list();
-                List<L3NetworkInventory> nws = L3NetworkInventory.valueOf(vos);
-                spec.setL3Networks(nws);
+                for (L3NetworkVO vo :vos) {
+                    nicSpecs.add(new VmNicSpec(L3NetworkInventory.valueOf(vo)));
+                }
+                spec.setL3Networks(nicSpecs);
             } else {
-                spec.setL3Networks(new ArrayList<L3NetworkInventory>(0));
+                spec.setL3Networks(new ArrayList<VmNicSpec>(0));
             }
 
             if (msg.getDataDiskOfferingUuids() != null && !msg.getDataDiskOfferingUuids().isEmpty()) {

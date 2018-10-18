@@ -196,7 +196,8 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
 
     private Map<NetworkServiceDhcpBackend, List<DhcpStruct>> workoutDhcp(VmInstanceSpec spec) {
         Map<NetworkServiceDhcpBackend, List<DhcpStruct>> map = new HashMap<NetworkServiceDhcpBackend, List<DhcpStruct>>();
-        Map<NetworkServiceProviderType, List<L3NetworkInventory>> providerMap = getNetworkServiceProviderMap(NetworkServiceType.DHCP, spec.getL3Networks());
+        Map<NetworkServiceProviderType, List<L3NetworkInventory>> providerMap = getNetworkServiceProviderMap(NetworkServiceType.DHCP,
+                VmNicSpec.getL3NetworkInventoryOfSpec(spec.getL3Networks()));
 
         for (Map.Entry<NetworkServiceProviderType, List<L3NetworkInventory>> e : providerMap.entrySet()) {
             NetworkServiceProviderType ptype = e.getKey();

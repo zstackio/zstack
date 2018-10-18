@@ -1,5 +1,6 @@
 package org.zstack.header.vm;
 
+import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.UsedIpInventory;
 
 import java.util.ArrayList;
@@ -35,5 +36,35 @@ public class VmNicHelper {
     public static boolean includeAllNicL3s(VmNicInventory nic, List<String> l3Uuids) {
         List<String> l3s = nic.getUsedIps().stream().map(ip -> ip.getL3NetworkUuid()).collect(Collectors.toList());
         return l3Uuids.containsAll(l3s);
+    }
+
+    public static List<String> getCanAttachL3List(VmNicInventory nic, List<VmNicSpec> nicSpecs) {
+        List<String> res = new ArrayList<>();
+        for (VmNicSpec nicspec : nicSpecs) {
+            List<String> l3s = nicspec.l3Invs.stream().map(L3NetworkInventory::getUuid).collect(Collectors.toList());
+            if (l3s.contains(nic.getL3NetworkUuid())) {
+                /* remove all ready attached l3 */
+                l3s.removeAll(nic.getUsedIps().stream().map(UsedIpInventory::getL3NetworkUuid).collect(Collectors.toList()));
+                res.addAll(l3s);
+                break;
+            }
+        }
+
+        return res;
+    }
+
+    public static List<String> getCanDetachL3List(VmNicInventory nic, List<VmNicSpec> nicSpecs) {
+        List<String> res = new ArrayList<>();
+        for (VmNicSpec nicspec : nicSpecs) {
+            List<String> l3s = nicspec.l3Invs.stream().map(L3NetworkInventory::getUuid).collect(Collectors.toList());
+            if (l3s.contains(nic.getL3NetworkUuid())) {
+                /* detach all usedIP except the nic first l3*/
+                res.addAll(nic.getUsedIps().stream().filter(ip -> !ip.getL3NetworkUuid().equals(nic.getL3NetworkUuid()))
+                        .map(UsedIpInventory::getUuid).collect(Collectors.toList()));
+                break;
+            }
+        }
+
+        return res;
     }
 }

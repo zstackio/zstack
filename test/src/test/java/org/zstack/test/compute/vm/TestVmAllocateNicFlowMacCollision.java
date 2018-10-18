@@ -33,6 +33,8 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static org.codehaus.groovy.runtime.InvokerHelper.asList;
+
 public class TestVmAllocateNicFlowMacCollision {
     Deployer deployer;
     Api api;
@@ -85,7 +87,11 @@ public class TestVmAllocateNicFlowMacCollision {
             VmInstanceInventory vminv = VmInstanceInventory.valueOf(vo);
             VmInstanceSpec spec = new VmInstanceSpec();
             spec.setVmInventory(vminv);
-            spec.setL3Networks(l3Networks);
+            List<VmNicSpec> nicSpecs = new ArrayList<>();
+            for (L3NetworkInventory inv : l3Networks) {
+                nicSpecs.add(new VmNicSpec(inv));
+            }
+            spec.setL3Networks(nicSpecs);
             chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
             chain.done(new FlowDoneHandler(null) {
                 @Override
