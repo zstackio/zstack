@@ -115,6 +115,7 @@
             <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor" />
             <zstack:extension interface="org.zstack.header.identity.ResourceOwnerAfterChangeExtensionPoint" />
             <zstack:extension interface="org.zstack.header.host.AfterChangeHostStatusExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.host.HostAfterConnectedExtensionPoint"/>
         </zstack:plugin>
     </bean>
 
