@@ -51,3 +51,6 @@ DELIMITER ;
 
 CALL updateClusterHostCpuModelCheckTag();
 DROP PROCEDURE IF EXISTS updateClusterHostCpuModelCheckTag;
+
+ALTER TABLE `zstack`.`LongJobVO` MODIFY COLUMN `jobData` mediumtext NOT NULL;
+ALTER TABLE `zstack`.`LongJobVO` MODIFY COLUMN `jobResult` mediumtext DEFAULT NULL;
