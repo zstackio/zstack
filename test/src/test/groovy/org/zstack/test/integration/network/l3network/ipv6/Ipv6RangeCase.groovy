@@ -86,10 +86,28 @@ class Ipv6RangeCase extends SubCase {
                 netmask = "255.255.255.0"
             }
         }
+
+        expect(AssertionError.class) {
+            addIpv6RangeByNetworkCidr {
+                name = "ipr-6"
+                l3NetworkUuid = l3_pub_ipv6.getUuid()
+                networkCidr = "2002:2001::/7"
+                addressMode = IPv6Constants.Stateful_DHCP
+            }
+        }
+
+        expect(AssertionError.class) {
+            addIpv6RangeByNetworkCidr {
+                name = "ipr-6"
+                l3NetworkUuid = l3_pub_ipv6.getUuid()
+                networkCidr = "2002:2001::/127"
+                addressMode = IPv6Constants.Stateful_DHCP
+            }
+        }
     }
 
     void testAttachIpv6CidrOverLap(){
-        L2NetworkInventory l2 = env.inventoryByName("l2")
+        L2NetworkInventory l2 = env.inventoryByName("vlan-200")
 
         L3NetworkInventory l3_pub_ipv6 = createL3Network {
             category = "Public"
@@ -101,7 +119,7 @@ class Ipv6RangeCase extends SubCase {
         addIpv6RangeByNetworkCidr {
             name = "ipr-6"
             l3NetworkUuid = l3_pub_ipv6.getUuid()
-            networkCidr = "2002:2001::/64"
+            networkCidr = "2002:2001::/8"
             addressMode = IPv6Constants.Stateful_DHCP
         }
 
@@ -122,18 +140,6 @@ class Ipv6RangeCase extends SubCase {
                 addressMode = IPv6Constants.Stateful_DHCP
             }
         }
-
-        /*
-        expect(AssertionError.class) {
-            addIpv6Range {
-                name = "ipr-6"
-                l3NetworkUuid = l3_pub_ipv6.getUuid()
-                startIp = "2002:2001::0002"
-                startIp = "2002:2001::00fe"
-                prefixLen = 64
-                addressMode = IPv6Constants.Stateful_DHCP
-            }
-        }*/
     }
 
     void testAttachIpv6RangeOverLap() {
@@ -265,6 +271,23 @@ class Ipv6RangeCase extends SubCase {
                 prefixLen = 64
                 addressMode = IPv6Constants.Stateful_DHCP
             }
+        }
+
+        L3NetworkInventory l3_pri_ipv6 = createL3Network {
+            category = "Private"
+            l2NetworkUuid = l2.uuid
+            name = "private-ipv6"
+            ipVersion = 6
+        }
+
+        addIpv6Range {
+            name = "ipr-6-2"
+            l3NetworkUuid = l3_pri_ipv6.getUuid()
+            startIp = "2203:2001::0001"
+            endIp = "2203:2001::0002"
+            gateway = "2203:2001::2"
+            prefixLen = 126
+            addressMode = IPv6Constants.Stateful_DHCP
         }
     }
 

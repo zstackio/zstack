@@ -8,6 +8,7 @@ import org.zstack.test.integration.networkservice.provider.NetworkServiceProvide
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.network.IPv6Constants
+import org.zstack.utils.network.IPv6NetworkUtils
 
 import static java.util.Arrays.asList
 
@@ -74,6 +75,7 @@ class IPv6EipCase extends SubCase {
                 ipv6 = ip
             }
         }
+        assert ipv6.netmask == IPv6NetworkUtils.getFormalNetmaskOfNetworkCidr("2001:2003::/64")
 
         expect(AssertionError.class) {
             VipInventory vip6 = createVip {
@@ -96,6 +98,7 @@ class IPv6EipCase extends SubCase {
             l3NetworkUuid = l3_statefull_1.uuid
             requiredIp = "2001:2004::2004"
         }
+        assert vip6.netmask == IPv6NetworkUtils.getFormalNetmaskOfNetworkCidr("2001:2004::/64")
 
         VipInventory vip4 = createVip {
             name = "vip4"

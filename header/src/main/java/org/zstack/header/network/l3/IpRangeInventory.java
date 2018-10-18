@@ -283,7 +283,7 @@ public class IpRangeInventory implements Serializable {
         ipr.setAddressMode(msg.getAddressMode());
         ipr.setStartIp(IPv6NetworkUtils.getStartIpOfNetworkCidr(msg.getNetworkCidr()));
         ipr.setEndIp(IPv6NetworkUtils.getEndIpOfNetworkCidr(msg.getNetworkCidr()));
-        ipr.setNetmask("");
+        ipr.setNetmask(IPv6NetworkUtils.getFormalNetmaskOfNetworkCidr(msg.getNetworkCidr()));
         ipr.setGateway(IPv6NetworkUtils.getGatewayOfNetworkCidr(msg.getNetworkCidr()));
         ipr.setL3NetworkUuid(msg.getL3NetworkUuid());
         ipr.setUuid(msg.getResourceUuid());
@@ -302,7 +302,7 @@ public class IpRangeInventory implements Serializable {
         ipr.setAddressMode(msg.getAddressMode());
         ipr.setStartIp(msg.getStartIp());
         ipr.setEndIp(msg.getEndIp());
-        ipr.setNetmask("");
+        ipr.setNetmask(IPv6NetworkUtils.getNetworkMaskOfIpRange(msg.getStartIp(), msg.getPrefixLen()));
         ipr.setGateway(msg.getGateway());
         ipr.setPrefixLen(msg.getPrefixLen());
         ipr.setL3NetworkUuid(msg.getL3NetworkUuid());
