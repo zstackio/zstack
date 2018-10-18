@@ -169,10 +169,14 @@ public class PrimaryStorageCapacityRecalculator {
                         updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
                             @Override
                             public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
-                                cap.setAvailableCapacity(cap.getAvailablePhysicalCapacity());
+
+                                long before = cap.getAvailableCapacity();
+                                long now = cap.getTotalCapacity()
+                                        - (cap.getSystemUsedCapacity() == null ? 0 : cap.getSystemUsedCapacity());
+                                cap.setAvailableCapacity(now);
                                 logger.debug(String.format("re-calculated available capacity of the primary storage" +
-                                                "[uuid:%s] with over-provisioning ratio[%s]",
-                                        psUuid, ratioMgr.getRatio(psUuid)));
+                                                "[uuid:%s, before:%s, now:%s] with over-provisioning ratio[%s]",
+                                        psUuid, before, now, ratioMgr.getRatio(psUuid)));
                                 return cap;
                             }
                         });

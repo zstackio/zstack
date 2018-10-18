@@ -91,6 +91,12 @@ class CephPoolCapacityCase extends SubCase {
         assert afterPsCapacity.availablePhysicalCapacity - beforePsCapacity.availablePhysicalCapacity == addSize
         assert afterPsCapacity.totalCapacity - beforePsCapacity.availablePhysicalCapacity == addSize
         assert afterPsCapacity.totalPhysicalCapacity - beforePsCapacity.totalPhysicalCapacity == addSize
+        retryInSecs {
+            afterPsCapacity = getPrimaryStorageCapacity {
+                primaryStorageUuids = [ps.uuid]
+            }
+            assert addSize == afterPsCapacity.availableCapacity - beforePsCapacity.availableCapacity
+        }
 
         CephPrimaryStoragePoolInventory afterPrimaryStoragePool = queryCephPrimaryStoragePool {}[0]
         assert afterPrimaryStoragePool.availableCapacity - primaryStoragePool.availableCapacity == addSize
