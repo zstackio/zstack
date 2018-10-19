@@ -27,8 +27,6 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
-import static org.zstack.core.Platform.operr;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -36,6 +34,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  */
@@ -60,7 +60,7 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
     private void placePip703() {
         File pip = PathUtil.findFileOnClassPath("tools/pip-7.0.3.tar.gz");
         if (pip == null) {
-            throw new CloudRuntimeException(String.format("cannot find tools/pip-7.0.3.tar.gz on classpath"));
+            throw new CloudRuntimeException("cannot find tools/pip-7.0.3.tar.gz on classpath");
         }
 
         File root = new File(filesDir);
@@ -74,7 +74,7 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
     private void placeAnsible196() {
         File ansible = PathUtil.findFileOnClassPath("tools/ansible-1.9.6.tar.gz");
         if (ansible == null) {
-            throw new CloudRuntimeException(String.format("cannot find tools/ansible-1.9.6.tar.gz on classpath"));
+            throw new CloudRuntimeException("cannot find tools/ansible-1.9.6.tar.gz on classpath");
         }
 
         File root = new File(filesDir);
@@ -93,6 +93,15 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
 
         File privKeyFile = PathUtil.findFileOnClassPath(AnsibleConstant.RSA_PRIVATE_KEY, true);
         ShellUtils.run(String.format("chmod 600 %s", privKeyFile.getAbsolutePath()));
+
+        if (privKeyFile.length() == 0) {
+            String info = String.format("Private key [%s] for Ansible is corrupted.\n"
+                    + "Please re-generate it with:\n"
+                    + "# ssh-keygen -f %s -N \"\"\n"
+                    + "# chown -R zstack.zstack %s",
+                    privKeyFile.getName(), privKeyFile.getAbsolutePath(), privKeyFile.getParent());
+            throw new CloudRuntimeException(info);
+        }
 
         File pubKeyFile = PathUtil.findFileOnClassPath(AnsibleConstant.RSA_PUBLIC_KEY);
 
