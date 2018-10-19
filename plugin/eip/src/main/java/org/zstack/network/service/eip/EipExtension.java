@@ -11,11 +11,8 @@ import org.zstack.header.network.l3.UsedIpInventory;
 import org.zstack.header.network.l3.UsedIpVO;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceType;
-import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
-import org.zstack.header.vm.VmInstanceSpec;
-import org.zstack.header.vm.VmNicInventory;
-import org.zstack.header.vm.VmNicVO;
 import org.zstack.network.service.AbstractNetworkServiceExtension;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
@@ -29,6 +26,7 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  */
@@ -74,7 +72,8 @@ public class EipExtension extends AbstractNetworkServiceExtension implements Com
     }
 
     private Map<String, List<EipStruct>> workOutEipStruct(VmInstanceSpec spec) {
-        Map<NetworkServiceProviderType, List<L3NetworkInventory>> map = getNetworkServiceProviderMap(EipConstant.EIP_TYPE, spec.getL3Networks());
+        Map<NetworkServiceProviderType, List<L3NetworkInventory>> map = getNetworkServiceProviderMap(EipConstant.EIP_TYPE,
+                VmNicSpec.getL3NetworkInventoryOfSpec(spec.getL3Networks()));
         Map<String, List<EipStruct>> ret = new HashMap<String, List<EipStruct>>();
         for (Map.Entry<NetworkServiceProviderType, List<L3NetworkInventory>> e : map.entrySet()) {
             List<EipStruct> structs = new ArrayList<EipStruct>();

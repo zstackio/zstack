@@ -920,11 +920,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         // make sure the Flat DHCP acquired DHCP server IP before starting VMs,
         // otherwise it may not be able to get IP when lots of VMs start concurrently
         // because the logic of VM acquiring IP is ahead flat DHCP acquiring IP
-        for (L3NetworkInventory l3 : spec.getL3Networks()) {
-            if (l3.getIpVersion() != IPv6Constants.IPv4) {
-                continue;
-            }
-
+        for (L3NetworkInventory l3 :VmNicSpec.getL3NetworkInventoryOfSpec(spec.getL3Networks())) {
             List<String> serviceTypes = l3.getNetworkServiceTypesFromProvider(providerUuid);
             if (serviceTypes.contains(NetworkServiceType.DHCP.toString())) {
                 allocateDhcpIp(l3.getUuid());

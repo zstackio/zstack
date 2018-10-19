@@ -20,6 +20,7 @@
                 <value>org.zstack.compute.vm.VmAllocatePrimaryStorageFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateVolumeFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateNicFlow</value>
+                <value>org.zstack.compute.vm.VmAttachL3NetworkToNicFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateResourcePreFlow</value>
                 <value>org.zstack.compute.vm.VmCreateOnHypervisorFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateResourcePostFlow</value>

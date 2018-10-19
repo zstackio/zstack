@@ -11,6 +11,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -29,10 +30,9 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.taskProgress;
@@ -62,7 +62,8 @@ public class VmAllocateNicFlow implements Flow {
 
         List<ErrorCode> errs = new ArrayList<>();
         Map<String, String> vmStaticIps = new StaticIpOperator().getStaticIpbyVmUuid(spec.getVmInventory().getUuid());
-        new While<>(spec.getL3Networks()).each((nw, wcomp) -> {
+        List<L3NetworkInventory> firstL3s = VmNicSpec.getFirstL3NetworkInventoryOfSpec(spec.getL3Networks());
+        new While<>(firstL3s).each((nw, wcomp) -> {
             int deviceId = deviceIdBitmap.nextClearBit(0);
             deviceIdBitmap.set(deviceId);
             MacOperator mo = new MacOperator();
@@ -193,11 +194,14 @@ public class VmAllocateNicFlow implements Flow {
         List<ReturnIpMsg> msgs = new ArrayList<ReturnIpMsg>();
         final List<String> nicUuids = new ArrayList<String>();
         for (VmNicInventory nic : destNics) {
-            ReturnIpMsg msg = new ReturnIpMsg();
-            msg.setL3NetworkUuid(nic.getL3NetworkUuid());
-            msg.setUsedIpUuid(nic.getUsedIpUuid());
-            bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, nic.getL3NetworkUuid());
-            msgs.add(msg);
+            VmNicVO nicVO = dbf.findByUuid(nic.getUuid(), VmNicVO.class);
+            for (UsedIpVO ip: nicVO.getUsedIps()) {
+                ReturnIpMsg msg = new ReturnIpMsg();
+                msg.setL3NetworkUuid(ip.getL3NetworkUuid());
+                msg.setUsedIpUuid(ip.getUuid());
+                bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, nic.getL3NetworkUuid());
+                msgs.add(msg);
+            }
 
             nicUuids.add(nic.getUuid());
         }

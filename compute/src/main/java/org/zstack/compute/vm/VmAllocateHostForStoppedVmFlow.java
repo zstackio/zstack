@@ -20,15 +20,13 @@ import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_;
 import org.zstack.header.storage.primary.PrimaryStorageHostStatus;
-import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceSpec;
-import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.vm.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmAllocateHostForStoppedVmFlow implements Flow {
@@ -63,7 +61,8 @@ public class VmAllocateHostForStoppedVmFlow implements Flow {
         } else {
             msg.setAllocatorStrategy(HostAllocatorConstant.LEAST_VM_PREFERRED_HOST_ALLOCATOR_STRATEGY_TYPE);
         }
-        msg.setL3NetworkUuids(CollectionUtils.transformToList(spec.getL3Networks(), new Function<String, L3NetworkInventory>() {
+        msg.setL3NetworkUuids(CollectionUtils.transformToList(VmNicSpec.getL3NetworkInventoryOfSpec(spec.getL3Networks()),
+                new Function<String, L3NetworkInventory>() {
             @Override
             public String call(L3NetworkInventory arg) {
                 return arg.getUuid();

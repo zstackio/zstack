@@ -195,6 +195,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
             handle((CreateVmInstanceMsg) msg);
         } else if (msg instanceof DetachIpAddressFromVmNicMsg) {
             handle((DetachIpAddressFromVmNicMsg) msg);
+        } else if (msg instanceof AttachL3NetworkToVmNicMsg) {
+            handle((AttachL3NetworkToVmNicMsg) msg);
         } else if (msg instanceof VmInstanceMessage) {
             passThrough((VmInstanceMessage) msg);
         } else {
@@ -979,7 +981,12 @@ public class VmInstanceManagerImpl extends AbstractService implements
         cmsg.setAccountUuid(msg.getSession().getAccountUuid());
         cmsg.setName(msg.getName());
         cmsg.setImageUuid(msg.getImageUuid());
-        cmsg.setL3NetworkUuids(msg.getL3NetworkUuids());
+        List<VmNicSpec> nicSpecs = new ArrayList<>();
+        for (String l3Uuid : msg.getL3NetworkUuids()) {
+            L3NetworkInventory inv = L3NetworkInventory.valueOf(dbf.findByUuid(l3Uuid, L3NetworkVO.class));
+            nicSpecs.add(new VmNicSpec(inv));
+        }
+        cmsg.setL3NetworkUuids(nicSpecs);
         cmsg.setType(msg.getType());
         cmsg.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
         cmsg.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
@@ -1152,6 +1159,23 @@ public class VmInstanceManagerImpl extends AbstractService implements
         });
     }
 
+    private void handle(final AttachL3NetworkToVmNicMsg msg) {
+        final AttachL3NetworkToVmNicReply reply = new AttachL3NetworkToVmNicReply();
+        VmNicVO vmNicVO = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find();
+
+        doAttachL3ToNic(VmNicInventory.valueOf(vmNicVO), msg.getL3NetworkUuid(), new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
 
     private void handle(final APIAttachL3NetworkToVmNicMsg msg) {
         final APIAttachL3NetworkToVmNicEvent evt = new APIAttachL3NetworkToVmNicEvent(msg.getId());

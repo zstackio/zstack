@@ -1285,7 +1285,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.AttachNic);
                 spec.setDestNics(list(VmNicInventory.valueOf(vmNicVO)));
                 L3NetworkVO l3Vo = dbf.findByUuid(msg.getNewL3Uuid(), L3NetworkVO.class);
-                spec.setL3Networks(asList(L3NetworkInventory.valueOf(l3Vo)));
+                spec.setL3Networks(list(new VmNicSpec(L3NetworkInventory.valueOf(l3Vo))));
 
                 FlowChain fchain = FlowChainBuilder.newSimpleFlowChain();
                 fchain.setName(String.format("update-vmNic-%s-to-backend", msg.getVmInstanceUuid()));
@@ -1340,7 +1340,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.AttachNic);
                 spec.setDestNics(list(VmNicInventory.valueOf(vmNicVO)));
                 L3NetworkVO l3Vo = dbf.findByUuid(msg.getNewL3Uuid(), L3NetworkVO.class);
-                spec.setL3Networks(asList(L3NetworkInventory.valueOf(l3Vo)));
+                spec.setL3Networks(list(new VmNicSpec(L3NetworkInventory.valueOf(l3Vo))));
 
                 FlowChain fchain = FlowChainBuilder.newSimpleFlowChain();
                 fchain.setName(String.format("update-vmNic-%s-to-backend", msg.getVmInstanceUuid()));
@@ -1727,7 +1727,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     ext.vmPreAttachL3Network(vm, l3);
                 }
 
-                spec.setL3Networks(list(l3));
+                spec.setL3Networks(list(new VmNicSpec(l3)));
                 spec.setDestNics(new ArrayList<VmNicInventory>());
 
                 CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmBeforeAttachL3NetworkExtensionPoint.class),
@@ -1743,6 +1743,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 flowChain.setName(String.format("attachNic-vm-%s-l3-%s", self.getUuid(), l3Uuid));
                 flowChain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
                 flowChain.then(new VmAllocateNicFlow());
+                flowChain.then(new VmAttachL3NetworkToNicFlow());
                 flowChain.then(new VmSetDefaultL3NetworkOnAttachingFlow());
                 if (self.getState() == VmInstanceState.Running) {
                     flowChain.then(new VmInstantiateResourceOnAttachingNicFlow());
@@ -1847,7 +1848,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     ext.vmPreAttachL3Network(vm, l3);
                 }
 
-                spec.setL3Networks(list(l3));
+                spec.setL3Networks(list(new VmNicSpec(l3)));
 
                 CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmBeforeAttachL3NetworkExtensionPoint.class),
                         new ForEachFunction<VmBeforeAttachL3NetworkExtensionPoint>() {
@@ -3632,7 +3633,8 @@ public class VmInstanceBase extends AbstractVmInstance {
         final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.DetachNic);
         spec.setVmInventory(VmInstanceInventory.valueOf(self));
         spec.setDestNics(list(nic));
-        spec.setL3Networks(list(L3NetworkInventory.valueOf(dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class))));
+        L3NetworkInventory l3Inv = L3NetworkInventory.valueOf(dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class));
+        spec.setL3Networks(list(new VmNicSpec(l3Inv)));
 
         FlowChain flowChain = FlowChainBuilder.newSimpleFlowChain();
         flowChain.setName(String.format("detachNic-vm-%s-nic-%s", self.getUuid(), nicUuid));
@@ -4731,29 +4733,35 @@ public class VmInstanceBase extends AbstractVmInstance {
         spec.setVmInventory(getSelfInventory());
         if (struct.getL3NetworkUuids() != null && !struct.getL3NetworkUuids().isEmpty()) {
             SimpleQuery<L3NetworkVO> nwquery = dbf.createQuery(L3NetworkVO.class);
-            nwquery.add(L3NetworkVO_.uuid, Op.IN, struct.getL3NetworkUuids());
+            nwquery.add(L3NetworkVO_.uuid, Op.IN, VmNicSpec.getL3UuidsOfSpec(struct.getL3NetworkUuids()));
             List<L3NetworkVO> vos = nwquery.list();
             List<L3NetworkInventory> nws = L3NetworkInventory.valueOf(vos);
 
             // order L3 networks by the order they specified in the API
-            List<L3NetworkInventory> l3s = new ArrayList<>(nws.size());
-            for (final String l3Uuid : struct.getL3NetworkUuids()) {
-                L3NetworkInventory l3 = CollectionUtils.find(nws, new Function<L3NetworkInventory, L3NetworkInventory>() {
-                    @Override
-                    public L3NetworkInventory call(L3NetworkInventory arg) {
-                        return arg.getUuid().equals(l3Uuid) ? arg : null;
-                    }
-                });
+            List<VmNicSpec> nicSpecs = new ArrayList<>();
+            for (VmNicSpec nicSpec : struct.getL3NetworkUuids()) {
+                List<L3NetworkInventory> l3s = new ArrayList<>();
+                for (L3NetworkInventory inv : nicSpec.l3Invs) {
+                    L3NetworkInventory l3 = CollectionUtils.find(nws, new Function<L3NetworkInventory, L3NetworkInventory>() {
+                        @Override
+                        public L3NetworkInventory call(L3NetworkInventory arg) {
+                            return arg.getUuid().equals(inv.getUuid()) ? arg : null;
+                        }
+                    });
 
-                if(l3 == null){
-                    throw new OperationFailureException(operr(
-                            "Unable to find L3Network[uuid:%s] to start the current vm, it may have been deleted, " +
-                                    "Operation suggestion: delete this vm, recreate a new vm", l3Uuid));
+                    if (l3 == null) {
+                        throw new OperationFailureException(operr(
+                                "Unable to find L3Network[uuid:%s] to start the current vm, it may have been deleted, " +
+                                        "Operation suggestion: delete this vm, recreate a new vm", inv.getUuid()));
+                    }
+                    l3s.add(l3);
                 }
-                l3s.add(l3);
+                if (!l3s.isEmpty()) {
+                    nicSpecs.add(new VmNicSpec(l3s));
+                }
             }
 
-            spec.setL3Networks(l3s);
+            spec.setL3Networks(nicSpecs);
         } else {
             spec.setL3Networks(new ArrayList<>());
         }
@@ -5083,17 +5091,20 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         spec.setDestNics(inv.getVmNics());
-        List<String> l3Uuids = new ArrayList<>();
+        List<VmNicSpec> nicSpecs = new ArrayList<>();
         for (VmNicInventory nic : inv.getVmNics()) {
+            List<L3NetworkInventory> l3Invs = new ArrayList<>();
+            /* if destroy vm, then recover vm, ip address of nic has been deleted */
             if (nic.getUsedIps() == null || nic.getUsedIps().isEmpty()) {
-                l3Uuids.add(nic.getL3NetworkUuid());
+                l3Invs.add(L3NetworkInventory.valueOf(dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class)));
             } else {
                 for (UsedIpInventory ip : nic.getUsedIps()) {
-                    l3Uuids.add(ip.getL3NetworkUuid());
+                    l3Invs.add(L3NetworkInventory.valueOf(dbf.findByUuid(ip.getL3NetworkUuid(), L3NetworkVO.class)));
                 }
             }
+            nicSpecs.add(new VmNicSpec(l3Invs));
         }
-        spec.setL3Networks(L3NetworkInventory.valueOf(dbf.listByPrimaryKeys(l3Uuids, L3NetworkVO.class)));
+        spec.setL3Networks(nicSpecs);
 
         String huuid = inv.getHostUuid() == null ? inv.getLastHostUuid() : inv.getHostUuid();
         if (huuid != null) {

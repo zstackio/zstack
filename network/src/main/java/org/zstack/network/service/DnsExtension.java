@@ -17,10 +17,13 @@ import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.*;
 import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmNicHelper;
+import org.zstack.header.vm.VmNicSpec;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
@@ -109,7 +112,8 @@ public class DnsExtension extends AbstractNetworkServiceExtension implements Com
 
     private Map<NetworkServiceDnsBackend, List<DnsStruct>> workoutDns(VmInstanceSpec spec) {
         Map<NetworkServiceDnsBackend, List<DnsStruct>> map = new HashMap<NetworkServiceDnsBackend, List<DnsStruct>>();
-        Map<NetworkServiceProviderType, List<L3NetworkInventory>> providerMap = getNetworkServiceProviderMap(NetworkServiceType.DNS, spec.getL3Networks());
+        Map<NetworkServiceProviderType, List<L3NetworkInventory>> providerMap = getNetworkServiceProviderMap(NetworkServiceType.DNS,
+                VmNicSpec.getL3NetworkInventoryOfSpec(spec.getL3Networks()));
 
         for (Map.Entry<NetworkServiceProviderType, List<L3NetworkInventory>> e : providerMap.entrySet()) {
             NetworkServiceProviderType ptype = e.getKey();
