@@ -336,6 +336,11 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 if (PrimaryStorageVO.class.getSimpleName().equals(action.getParentIssuer())) {
                     msg.setDeletionPolicy(VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy.KeepVolume.toString());
                 }
+                if (VmInstanceVO.class.getSimpleName().equals(action.getParentIssuer())) {
+                    if (inv.getDeletionPolicy() != null) {
+                        msg.setDeletionPolicy(inv.getDeletionPolicy().toString());
+                    }
+                }
 
                 msg.setIgnoreResourceReleaseFailure(ignoreResourceReleaseFailure);
                 msg.setForceDelete(action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE));
