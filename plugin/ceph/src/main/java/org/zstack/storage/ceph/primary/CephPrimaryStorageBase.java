@@ -1016,6 +1016,18 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
     }
 
+    public static class CancelDownloadBitsFromKVMHostCmd extends AgentCommand {
+        private String primaryStorageInstallPath;
+
+        public String getPrimaryStorageInstallPath() {
+            return primaryStorageInstallPath;
+        }
+
+        public void setPrimaryStorageInstallPath(String primaryStorageInstallPath) {
+            this.primaryStorageInstallPath = primaryStorageInstallPath;
+        }
+    }
+
     public static class SnapInfo implements Comparable<SnapInfo> {
         long id;
         String name;
@@ -1079,6 +1091,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String CEPH_TO_CEPH_MIGRATE_VOLUME_SNAPSHOT_PATH = "/ceph/primarystorage/volume/snapshot/migrate";
     public static final String GET_VOLUME_SNAPINFOS_PATH = "/ceph/primarystorage/volume/getsnapinfos";
     public static final String DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/ceph/primarystorage/kvmhost/download";
+    public static final String CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/ceph/primarystorage/kvmhost/download/cancel";
 
     private final Map<String, BackupStorageMediator> backupStorageMediators = new HashMap<String, BackupStorageMediator>();
 
@@ -2257,88 +2270,128 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     protected <T extends AgentResponse> void httpCall(final String path, final AgentCommand cmd, final Class<T> retClass, final ReturnValueCompletion<T> callback) {
-        httpCall(path, cmd, retClass, callback, null, 0, null);
-    }
-
-    // specify mons order by randomFactor to ensure that the same mon receive cmd every time.
-    protected <T extends AgentResponse> void httpCallSpecifyOrder(final String path, final AgentCommand cmd, final Class<T> retClass, String randomFactor, final ReturnValueCompletion<T> callback) {
-        httpCall(path, cmd, retClass, callback, null, 0, randomFactor);
+        httpCall(path, cmd, retClass, callback, null, 0);
     }
 
     protected <T extends AgentResponse> void httpCall(final String path, final AgentCommand cmd, final Class<T> retClass, final ReturnValueCompletion<T> callback, TimeUnit unit, long timeout) {
-        httpCall(path, cmd, retClass, callback, unit, timeout, null);
+        new HttpCaller<>(path, cmd, retClass, callback, unit, timeout).call();
     }
 
-    protected <T extends AgentResponse> void httpCall(final String path, final AgentCommand cmd, final Class<T> retClass, final ReturnValueCompletion<T> callback, TimeUnit unit, long timeout, String randomFactor) {
-        cmd.setUuid(self.getUuid());
-        cmd.setFsId(getSelf().getFsid());
+    protected class HttpCaller<T extends AgentResponse> {
+        private Iterator<CephPrimaryStorageMonBase> it;
+        private List<ErrorCode> errorCodes = new ArrayList<ErrorCode>();
 
-        final List<CephPrimaryStorageMonBase> mons = new ArrayList<CephPrimaryStorageMonBase>();
-        for (CephPrimaryStorageMonVO monvo : getSelf().getMons()) {
-            mons.add(new CephPrimaryStorageMonBase(monvo));
+        private final String path;
+        private final AgentCommand cmd;
+        private final Class<T> retClass;
+        private final ReturnValueCompletion<T> callback;
+        private final TimeUnit unit;
+        private final long timeout;
+
+        private String randomFactor = null;
+        private boolean tryNext = false;
+
+        HttpCaller(String path, AgentCommand cmd, Class<T> retClass, ReturnValueCompletion<T> callback) {
+            this(path, cmd, retClass, callback, null, 0);
         }
 
-        if (randomFactor != null) {
-            CollectionUtils.shuffleByKeySeed(mons, randomFactor, it -> it.getSelf().getUuid());
-        } else {
-            Collections.shuffle(mons);
+        HttpCaller(String path, AgentCommand cmd, Class<T> retClass, ReturnValueCompletion<T> callback, TimeUnit unit, long timeout) {
+            this.path = path;
+            this.cmd = cmd;
+            this.retClass = retClass;
+            this.callback = callback;
+            this.unit = unit;
+            this.timeout = timeout;
         }
 
-        mons.removeIf(it -> it.getSelf().getStatus() != MonStatus.Connected);
-        if (mons.isEmpty()) {
-            throw new OperationFailureException(operr(
-                    "all ceph mons of primary storage[uuid:%s] are not in Connected state", self.getUuid())
-            );
+        void call() {
+            it = prepareMons().iterator();
+            prepareCmd();
+            doCall();
         }
 
-        class HttpCaller {
-            private Iterator<CephPrimaryStorageMonBase> it = mons.iterator();
-            private List<ErrorCode> errorCodes = new ArrayList<ErrorCode>();
+        // specify mons order by randomFactor to ensure that the same mon receive cmd every time.
+        HttpCaller<T> specifyOrder(String randomFactor) {
+            this.randomFactor = randomFactor;
+            return this;
+        }
 
-            private void call() {
-                if (!it.hasNext()) {
-                    callback.fail(operr(
-                            "all mons failed to execute http call[%s], errors are %s", path, JSONObjectUtil.toJsonString(errorCodes))
-                    );
+        HttpCaller<T> tryNext() {
+            this.tryNext = true;
+            return this;
+        }
 
-                    return;
-                }
+        private void prepareCmd() {
+            cmd.setUuid(self.getUuid());
+            cmd.setFsId(getSelf().getFsid());
+        }
 
-                CephPrimaryStorageMonBase base = it.next();
-                cmd.monUuid = base.getSelf().getUuid();
+        private List<CephPrimaryStorageMonBase> prepareMons() {
+            final List<CephPrimaryStorageMonBase> mons = new ArrayList<CephPrimaryStorageMonBase>();
+            for (CephPrimaryStorageMonVO monvo : getSelf().getMons()) {
+                mons.add(new CephPrimaryStorageMonBase(monvo));
+            }
 
-                ReturnValueCompletion<T> completion = new ReturnValueCompletion<T>(callback) {
-                    @Override
-                    public void success(T ret) {
-                        if (!ret.success) {
+            if (randomFactor != null) {
+                CollectionUtils.shuffleByKeySeed(mons, randomFactor, it -> it.getSelf().getUuid());
+            } else {
+                Collections.shuffle(mons);
+            }
+
+            mons.removeIf(it -> it.getSelf().getStatus() != MonStatus.Connected);
+            if (mons.isEmpty()) {
+                throw new OperationFailureException(operr(
+                        "all ceph mons of primary storage[uuid:%s] are not in Connected state", self.getUuid())
+                );
+            }
+            return mons;
+        }
+
+        private void doCall() {
+            if (!it.hasNext()) {
+                callback.fail(operr(
+                        "all mons failed to execute http call[%s], errors are %s", path, JSONObjectUtil.toJsonString(errorCodes))
+                );
+
+                return;
+            }
+
+            CephPrimaryStorageMonBase base = it.next();
+            cmd.monUuid = base.getSelf().getUuid();
+
+            ReturnValueCompletion<T> completion = new ReturnValueCompletion<T>(callback) {
+                @Override
+                public void success(T ret) {
+                    if (!ret.success) {
+                        if (tryNext) {
+                            doCall();
+                        } else {
                             callback.fail(operr("operation error, because:%s", ret.error));
-                            return;
                         }
-
-                        if (!(cmd instanceof InitCmd)) {
-                            updateCapacityIfNeeded(ret);
-                        }
-                        callback.success(ret);
+                        return;
                     }
 
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        logger.warn(String.format("mon[%s] failed to execute http call[%s], error is: %s",
-                                base.getSelf().getHostname(), path, JSONObjectUtil.toJsonString(errorCode)));
-                        errorCodes.add(errorCode);
-                        call();
+                    if (!(cmd instanceof InitCmd)) {
+                        updateCapacityIfNeeded(ret);
                     }
-                };
-
-                if (unit == null) {
-                    base.httpCall(path, cmd, retClass, completion);
-                } else {
-                    base.httpCall(path, cmd, retClass, completion, unit, timeout);
+                    callback.success(ret);
                 }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    logger.warn(String.format("mon[%s] failed to execute http call[%s], error is: %s",
+                            base.getSelf().getHostname(), path, JSONObjectUtil.toJsonString(errorCode)));
+                    errorCodes.add(errorCode);
+                    doCall();
+                }
+            };
+
+            if (unit == null) {
+                base.httpCall(path, cmd, retClass, completion);
+            } else {
+                base.httpCall(path, cmd, retClass, completion, unit, timeout);
             }
         }
-
-        new HttpCaller().call();
     }
 
     private void updateCapacityIfNeeded(AgentResponse rsp) {
@@ -3141,6 +3194,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((GetVolumeSnapshotInfoMsg) msg);
         } else if (msg instanceof DownloadBitsFromKVMHostToPrimaryStorageMsg) {
             handle((DownloadBitsFromKVMHostToPrimaryStorageMsg) msg);
+        } else if (msg instanceof CancelDownloadBitsFromKVMHostToPrimaryStorageMsg) {
+            handle((CancelDownloadBitsFromKVMHostToPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -3197,7 +3252,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 cmd.setBandWidth(msg.getBandWidth());
                 cmd.setIdentificationCode(msg.getLongJobUuid() + msg.getPrimaryStorageInstallPath());
                 String randomFactor = msg.getLongJobUuid();
-                httpCallSpecifyOrder(DOWNLOAD_BITS_FROM_KVM_HOST_PATH, cmd, AgentResponse.class, randomFactor, new ReturnValueCompletion<AgentResponse>(reply) {
+
+                new HttpCaller<>(DOWNLOAD_BITS_FROM_KVM_HOST_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(reply) {
                     @Override
                     public void success(AgentResponse returnValue) {
                         if (returnValue.isSuccess()) {
@@ -3216,10 +3272,37 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         reply.setError(errorCode);
                         bus.reply(msg, reply);
                     }
-                });
+                }).specifyOrder(randomFactor).call();
             }
         });
     }
+
+    private void handle(CancelDownloadBitsFromKVMHostToPrimaryStorageMsg msg) {
+        CancelDownloadBitsFromKVMHostToPrimaryStorageReply reply = new CancelDownloadBitsFromKVMHostToPrimaryStorageReply();
+        CancelDownloadBitsFromKVMHostCmd cmd = new CancelDownloadBitsFromKVMHostCmd();
+        cmd.setPrimaryStorageInstallPath(msg.getPrimaryStorageInstallPath());
+        String randomFactor = msg.getLongJobUuid();
+        new HttpCaller<>(CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(reply) {
+            @Override
+            public void success(AgentResponse returnValue) {
+                if (returnValue.isSuccess()) {
+                    logger.info(String.format("successfully cancle downloaded bits to primary storage %s", msg.getPrimaryStorageUuid()));
+                } else {
+                    logger.error(String.format("failed to cancel download bits to primary storage %s",msg.getPrimaryStorageUuid()));
+                    reply.setError(Platform.operr("operation error, because:%s", returnValue.getError()));
+                }
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.error(String.format("failed to cancel download bits to primary storage %s", msg.getPrimaryStorageUuid()));
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        }).specifyOrder(randomFactor).tryNext().call();
+    }
+
 
     private void handle(DeleteImageCacheOnPrimaryStorageMsg msg) {
         DeleteImageCacheOnPrimaryStorageReply reply = new DeleteImageCacheOnPrimaryStorageReply();

@@ -8,7 +8,10 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
-import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
@@ -33,6 +36,7 @@ import org.zstack.utils.logging.CLogger;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -288,14 +292,21 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             @Override
             public void fail(ErrorCode errorCode) {
                 LongJobVO vo = dbf.findByUuid(longJobUuid, LongJobVO.class);
-                if (vo.getState() != LongJobState.Suspended) {
-                    vo.setState(LongJobState.Failed);
-                }
+                setStateWhenFail(vo, errorCode);
                 if (vo.getJobResult() == null || vo.getJobResult().isEmpty()) {
                     vo.setJobResult("Failed : " + errorCode.toString());
                 }
                 dbf.update(vo);
                 logger.info(String.format("failed to run longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
+            }
+
+            private void setStateWhenFail(LongJobVO vo, ErrorCode errorCode) {
+                if (Arrays.asList(LongJobState.Canceling, LongJobState.Canceled).contains(vo.getState()) ||
+                        errorCode.isError(LongJobErrors.CANCELED)){
+                    vo.setState(LongJobState.Canceled);
+                } else if (vo.getState() != LongJobState.Suspended) {
+                    vo.setState(LongJobState.Failed);
+                }
             }
         });
     }

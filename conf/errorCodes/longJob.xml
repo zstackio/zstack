@@ -1,0 +1,8 @@
+<error>
+    <prefix>LONG_JOB</prefix>
+
+    <code>
+        <id>1000</id>
+        <description>long job has been canceled</description>
+    </code>
+</error>

@@ -192,6 +192,14 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                 rsp.success = true
                 return rsp
             }
+
+            simulator(CephPrimaryStorageBase.DOWNLOAD_BITS_FROM_KVM_HOST_PATH) {
+                return new CephPrimaryStorageBase.AgentResponse()
+            }
+
+            simulator(CephPrimaryStorageBase.CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH) {
+                return new CephPrimaryStorageBase.AgentResponse()
+            }
         }
     }
 
