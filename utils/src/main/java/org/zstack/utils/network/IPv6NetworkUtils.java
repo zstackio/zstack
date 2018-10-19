@@ -235,9 +235,18 @@ public class IPv6NetworkUtils {
         return network.toString();
     }
 
+    public static String getFormalNetmaskOfNetworkCidr(String cidr) {
+        IPv6Network network = IPv6Network.fromString(cidr);
+        return network.getNetmask().toString();
+    }
+
     public static String getStartIpOfNetworkCidr(String cidr) {
         IPv6Network network = IPv6Network.fromString(cidr);
-        return network.getFirst().add(2).toString();
+        if (network.getNetmask().asPrefixLength() < 127) {
+            return network.getFirst().add(2).toString();
+        } else {
+            return network.getFirst().toString();
+        }
     }
 
     public static String getEndIpOfNetworkCidr(String cidr) {
@@ -247,7 +256,11 @@ public class IPv6NetworkUtils {
 
     public static String getGatewayOfNetworkCidr(String cidr) {
         IPv6Network network = IPv6Network.fromString(cidr);
-        return network.getFirst().add(1).toString();
+        if (network.getNetmask().asPrefixLength() <= 127) {
+            return network.getFirst().add(1).toString();
+        } else {
+            return network.getFirst().toString();
+        }
     }
 
     public static int getPrefixLenOfNetworkCidr(String cidr) {
@@ -260,6 +273,16 @@ public class IPv6NetworkUtils {
             IPv6Address start = IPv6Address.fromString(startIp);
             IPv6Network network = IPv6Network.fromAddressAndMask(start, IPv6NetworkMask.fromPrefixLength(prefixLen));
             return network.toString();
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    public static String getNetworkMaskOfIpRange(String startIp, int prefixLen) {
+        try {
+            IPv6Address start = IPv6Address.fromString(startIp);
+            IPv6Network network = IPv6Network.fromAddressAndMask(start, IPv6NetworkMask.fromPrefixLength(prefixLen));
+            return network.getNetmask().toString();
         } catch (Exception e) {
             return "";
         }

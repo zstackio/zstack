@@ -224,6 +224,11 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validateIpv6Range(IpRangeInventory ipr) {
+        if (ipr.getPrefixLen() > IPv6Constants.IPV6_PREFIX_LEN_MAX || ipr.getPrefixLen() < IPv6Constants.IPV6_PREFIX_LEN_MIN) {
+            throw new ApiMessageInterceptionException(argerr("ip range prefix length is out of range [%d - %d] ",
+                    IPv6Constants.IPV6_PREFIX_LEN_MIN, IPv6Constants.IPV6_PREFIX_LEN_MAX));
+        }
+
         L3NetworkVO l3Vo = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, ipr.getL3NetworkUuid()).find();
         if (l3Vo.getIpVersion() != IPv6Constants.IPv6) {
             throw new ApiMessageInterceptionException(argerr("l3 network [uuid %s: name %s] is not a ipv6 network", l3Vo.getUuid(), l3Vo.getName()));
