@@ -981,6 +981,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         public String namespaceName;
         public Integer prefixLen;
         public Integer ipVersion;
+        public String addressMode;
     }
 
     public static class PrepareDhcpRsp extends KVMAgentCommands.AgentResponse {
@@ -1186,6 +1187,9 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                                 cmd.dhcpNetmask = dhcpNetmask;
                                 cmd.prefixLen = prefixLen;
                                 cmd.ipVersion = i.ipVersion;
+
+                                List<IpRangeVO> rangeVOS = Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, l3Uuid).list();
+                                cmd.addressMode = rangeVOS.get(0).getAddressMode();
 
                                 KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                                 msg.setHostUuid(hostUuid);
