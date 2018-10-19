@@ -235,9 +235,35 @@ public class IPv6NetworkUtils {
         return network.toString();
     }
 
+    private static final String[] IP6MASK = new String[] {
+            "8000", "C000", "E000", "F000",
+            "F800", "FC00", "FE00", "FF800",
+            "FF80", "FFC0", "FFE0", "FFF0",
+            "FFF8", "FFFC", "FFFE", "FFFF"
+    };
+
     public static String getFormalNetmaskOfNetworkCidr(String cidr) {
-        IPv6Network network = IPv6Network.fromString(cidr);
-        return network.getNetmask().toString();
+        Integer prefix = IPv6Network.fromString(cidr).getNetmask().asPrefixLength();
+        return getFormalNetmaskOfNetworkCidr(prefix);
+    }
+
+    public static String getFormalNetmaskOfNetworkCidr(Integer prefix) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 8; i++) {
+            int left = prefix - i * 16;
+            if (left > 16) {
+                sb.append(IP6MASK[15]);
+            } else if (left <= 0) {
+                sb.append("0");
+            } else {
+                sb.append(IP6MASK[left - 1]);
+            }
+            if (i != 7) {
+                sb.append(":");
+            }
+        }
+
+        return sb.toString();
     }
 
     public static String getStartIpOfNetworkCidr(String cidr) {
