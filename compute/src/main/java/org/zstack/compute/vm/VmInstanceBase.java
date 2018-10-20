@@ -4607,6 +4607,9 @@ public class VmInstanceBase extends AbstractVmInstance {
         final VmInstanceSpec spec = new VmInstanceSpec();
         spec.setRequiredPrimaryStorageUuidForRootVolume(struct.getPrimaryStorageUuidForRootVolume());
         spec.setRequiredPrimaryStorageUuidForDataVolume(struct.getPrimaryStorageUuidForDataVolume());
+        spec.setDataVolumeSystemTags(struct.getDataVolumeSystemTags());
+        spec.setRootVolumeSystemTags(struct.getRootVolumeSystemTags());
+
         spec.setVmInventory(getSelfInventory());
         if (struct.getL3NetworkUuids() != null && !struct.getL3NetworkUuids().isEmpty()) {
             SimpleQuery<L3NetworkVO> nwquery = dbf.createQuery(L3NetworkVO.class);
@@ -4660,6 +4663,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         } else {
             spec.setDataDiskOfferings(new ArrayList<>());
         }
+
         if (struct.getRootDiskOfferingUuid() != null) {
             DiskOfferingVO rootDisk = dbf.findByUuid(struct.getRootDiskOfferingUuid(), DiskOfferingVO.class);
             spec.setRootDiskOffering(DiskOfferingInventory.valueOf(rootDisk));
@@ -5031,7 +5035,6 @@ public class VmInstanceBase extends AbstractVmInstance {
                 getTokenByResourceUuid(self.getUuid(), VmSystemTags.CONSOLE_PASSWORD_TOKEN));
         return spec;
     }
-
 
     protected void rebootVm(final Message msg, final Completion completion) {
         refreshVO();

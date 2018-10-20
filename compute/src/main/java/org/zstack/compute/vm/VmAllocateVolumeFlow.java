@@ -27,9 +27,8 @@ import org.zstack.identity.AccountManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.progress.ProgressReportService.taskProgress;
 
@@ -58,11 +57,18 @@ public class VmAllocateVolumeFlow implements Flow {
         List<CreateVolumeMsg> msgs = new ArrayList<>(volumeSpecs.size());
         for (VolumeSpec vspec : volumeSpecs) {
             CreateVolumeMsg msg = new CreateVolumeMsg();
+            Set<String> tags = new HashSet<>();
+            if (vspec != null && vspec.getTags() != null) {
+                tags.addAll(vspec.getTags());
+            }
             if (vspec.isRoot()) {
             	msg.setResourceUuid((String) ctx.get("uuid"));
                 msg.setName("ROOT-for-" + spec.getVmInventory().getName());
                 msg.setDescription(String.format("Root volume for VM[uuid:%s]", spec.getVmInventory().getUuid()));
                 msg.setRootImageUuid(spec.getImageSpec().getInventory().getUuid());
+                if (spec.getRootVolumeSystemTags() != null) {
+                    tags.addAll(spec.getRootVolumeSystemTags());
+                }
                 if (ImageMediaType.ISO.toString().equals(spec.getImageSpec().getInventory().getMediaType())) {
                     msg.setFormat(VolumeFormat.getVolumeFormatByMasterHypervisorType(spec.getDestHost().getHypervisorType()).toString());
                 } else {
@@ -73,14 +79,19 @@ public class VmAllocateVolumeFlow implements Flow {
                 msg.setName(String.format("DATA-for-%s", spec.getVmInventory().getName()));
                 msg.setDescription(String.format("DataVolume-%s", spec.getVmInventory().getUuid()));
                 msg.setFormat(VolumeFormat.getVolumeFormatByMasterHypervisorType(spec.getDestHost().getHypervisorType()).toString());
+                if (spec.getDataVolumeSystemTags() != null) {
+                    tags.addAll(spec.getDataVolumeSystemTags());
+                }
             }
 
+            msg.setSystemTags(new ArrayList<>(tags));
             msg.setDiskOfferingUuid(vspec.getDiskOfferingUuid());
             msg.setSize(vspec.getSize());
             msg.setPrimaryStorageUuid(vspec.getPrimaryStorageInventory().getUuid());
             msg.setVmInstanceUuid(spec.getVmInventory().getUuid());
             msg.setVolumeType(vspec.isRoot() ? VolumeType.Root.toString() : VolumeType.Data.toString());
             msg.setAccountUuid(accountUuid);
+
             bus.makeLocalServiceId(msg, VolumeConstant.SERVICE_ID);
             msgs.add(msg);
         }

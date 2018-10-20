@@ -14,6 +14,8 @@ public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage impleme
     private String primaryStorageUuidForRootVolume;
     private String primaryStorageUuidForDataVolume;
     private String strategy;
+    private List<String> rootVolumeSystemTags;
+    private List<String> dataVolumeSystemTags;
 
     public VmInstanceInventory getVmInstanceInventory() {
         return vmInstanceInventory;
@@ -74,5 +76,21 @@ public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage impleme
 
     public String getStrategy() {
         return strategy;
+    }
+
+    public List<String> getRootVolumeSystemTags() {
+        return rootVolumeSystemTags;
+    }
+
+    public void setRootVolumeSystemTags(List<String> rootVolumeSystemTags) {
+        this.rootVolumeSystemTags = rootVolumeSystemTags;
+    }
+
+    public List<String> getDataVolumeSystemTags() {
+        return dataVolumeSystemTags;
+    }
+
+    public void setDataVolumeSystemTags(List<String> dataVolumeSystemTags) {
+        this.dataVolumeSystemTags = dataVolumeSystemTags;
     }
 }

@@ -2,6 +2,7 @@ package org.zstack.compute.vm;
 
 import org.zstack.header.tag.TagDefinition;
 import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.tag.EphemeralSystemTag;
 import org.zstack.tag.PatternedSystemTag;
 
 /**

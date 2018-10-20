@@ -14,6 +14,24 @@ public class InstantiateVmFromNewCreatedStruct {
     private String primaryStorageUuidForRootVolume;
     private String primaryStorageUuidForDataVolume;
     private VmCreationStrategy strategy = VmCreationStrategy.InstantStart;
+    private List<String> rootVolumeSystemTags;
+    private List<String> dataVolumeSystemTags;
+
+    public List<String> getRootVolumeSystemTags() {
+        return rootVolumeSystemTags;
+    }
+
+    public void setRootVolumeSystemTags(List<String> rootVolumeSystemTags) {
+        this.rootVolumeSystemTags = rootVolumeSystemTags;
+    }
+
+    public List<String> getDataVolumeSystemTags() {
+        return dataVolumeSystemTags;
+    }
+
+    public void setDataVolumeSystemTags(List<String> dataVolumeSystemTags) {
+        this.dataVolumeSystemTags = dataVolumeSystemTags;
+    }
 
     public static String makeLabelKey(String vmUuid) {
         return String.format("not-start-vm-%s", vmUuid);
@@ -59,6 +77,8 @@ public class InstantiateVmFromNewCreatedStruct {
         struct.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
         struct.setPrimaryStorageUuidForDataVolume(msg.getPrimaryStorageUuidForDataVolume());
         struct.strategy = VmCreationStrategy.valueOf(msg.getStrategy());
+        struct.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());
+        struct.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
         return struct;
     }
 
@@ -70,6 +90,8 @@ public class InstantiateVmFromNewCreatedStruct {
         struct.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
         struct.setPrimaryStorageUuidForDataVolume(msg.getPrimaryStorageUuidForDataVolume());
         struct.strategy = VmCreationStrategy.valueOf(msg.getStrategy());
+        struct.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());
+        struct.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
         return struct;
     }
 
