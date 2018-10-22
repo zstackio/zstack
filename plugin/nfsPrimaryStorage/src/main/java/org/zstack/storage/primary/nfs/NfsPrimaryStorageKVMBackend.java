@@ -688,6 +688,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         cmd.srcPsMountPath = Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.mountPath).eq(PrimaryStorageVO_.uuid, msg.getSrcPsUuid()).findValue();
         cmd.dstPsMountPath = Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.mountPath).eq(PrimaryStorageVO_.uuid, msg.getDstPsUuid()).findValue();
         cmd.dstVolumeFolderPath = msg.getDstVolumeFolderPath();
+        cmd.dstImageCacheTemplateFolderPath = msg.getDstImageCacheTemplateFolderPath();
 
         final HostInventory host = nfsFactory.getConnectedHostForOperation(inv).get(0);
         new KvmCommandSender(host.getUuid()).send(cmd, NFS_REBASE_VOLUME_BACKING_FILE_PATH, new KvmCommandFailureChecker() {
