@@ -8,6 +8,7 @@ public class InstantiateVolumeOnPrimaryStorageMsg extends NeedReplyMessage imple
     private HostInventory destHost;
     private VolumeInventory volume;
     private String primaryStorageUuid;
+    private boolean skipIfExisting;
 
     public void setPrimaryStorageUuid(String primaryStorageUuid) {
         this.primaryStorageUuid = primaryStorageUuid;
@@ -32,5 +33,13 @@ public class InstantiateVolumeOnPrimaryStorageMsg extends NeedReplyMessage imple
 
     public void setDestHost(HostInventory destHost) {
         this.destHost = destHost;
+    }
+
+    public boolean isSkipIfExisting() {
+        return skipIfExisting;
+    }
+
+    public void setSkipIfExisting(boolean skipIfExisting) {
+        this.skipIfExisting = skipIfExisting;
     }
 }

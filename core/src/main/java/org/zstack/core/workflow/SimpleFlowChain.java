@@ -438,6 +438,11 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
     }
 
     @Override
+    public ErrorCode getErrorCode() {
+        return errorCode;
+    }
+
+    @Override
     public void setError(ErrorCode error) {
         setErrorCode(error);
     }

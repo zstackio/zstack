@@ -208,6 +208,8 @@ public class VmInstanceSpec implements Serializable {
     private String consolePassword;
     private VmAccountPreference accountPerference;
     private boolean createPaused;
+    private boolean instantiateResourcesSuccess;
+    private boolean instantiateResourcesSkipExisting;
 
     private List<String> rootVolumeSystemTags;
     private List<String> dataVolumeSystemTags;
@@ -520,5 +522,21 @@ public class VmInstanceSpec implements Serializable {
 
     public void setDataVolumeSystemTags(List<String> dataVolumeSystemTags) {
         this.dataVolumeSystemTags = dataVolumeSystemTags;
+    }
+
+    public boolean isInstantiateResourcesSuccess() {
+        return instantiateResourcesSuccess;
+    }
+
+    public void setInstantiateResourcesSuccess(boolean instantiateResourcesSuccess) {
+        this.instantiateResourcesSuccess = instantiateResourcesSuccess;
+    }
+
+    public boolean isInstantiateResourcesSkipExisting() {
+        return instantiateResourcesSkipExisting;
+    }
+
+    public void setInstantiateResourcesSkipExisting(boolean instantiateResourcesSkipExisting) {
+        this.instantiateResourcesSkipExisting = instantiateResourcesSkipExisting;
     }
 }

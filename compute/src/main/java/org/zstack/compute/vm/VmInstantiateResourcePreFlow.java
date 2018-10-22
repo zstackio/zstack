@@ -38,6 +38,7 @@ public class VmInstantiateResourcePreFlow implements Flow {
     
     private void runExtensions(final Iterator<PreVmInstantiateResourceExtensionPoint> it, final VmInstanceSpec spec, final FlowTrigger chain) {
         if (!it.hasNext()) {
+            spec.setInstantiateResourcesSuccess(true);
             chain.next();
             return;
         }
