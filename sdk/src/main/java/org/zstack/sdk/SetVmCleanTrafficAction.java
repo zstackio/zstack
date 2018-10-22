@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class SetVmCleanTrafficAction extends AbstractAction {
 
@@ -28,7 +29,7 @@ public class SetVmCleanTrafficAction extends AbstractAction {
     public java.lang.String uuid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean enable;
+    public boolean enable = false;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -54,7 +55,7 @@ public class SetVmCleanTrafficAction extends AbstractAction {
         }
         
         org.zstack.sdk.SetVmCleanTrafficResult value = res.getResult(org.zstack.sdk.SetVmCleanTrafficResult.class);
-        ret.value = value == null ? new org.zstack.sdk.SetVmCleanTrafficResult() : value;
+        ret.value = value == null ? new org.zstack.sdk.SetVmCleanTrafficResult() : value; 
 
         return ret;
     }

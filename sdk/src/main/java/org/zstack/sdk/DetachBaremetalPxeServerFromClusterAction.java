@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateBaremetalInstanceAction extends AbstractAction {
+public class DetachBaremetalPxeServerFromClusterAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateBaremetalInstanceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateBaremetalInstanceResult value;
+        public org.zstack.sdk.DetachBaremetalPxeServerFromClusterResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,32 +25,11 @@ public class CreateBaremetalInstanceAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String chassisUuid;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String imageUuid;
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String password;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.Map nicCfgs;
-
-    @Param(required = false, validValues = {"InstantStart","JustCreate"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String strategy = "InstantStart";
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String pxeServerUuid;
 
-    @Param(required = false)
-    public java.lang.String resourceUuid;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String clusterUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -75,8 +54,8 @@ public class CreateBaremetalInstanceAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateBaremetalInstanceResult value = res.getResult(org.zstack.sdk.CreateBaremetalInstanceResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateBaremetalInstanceResult() : value; 
+        org.zstack.sdk.DetachBaremetalPxeServerFromClusterResult value = res.getResult(org.zstack.sdk.DetachBaremetalPxeServerFromClusterResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DetachBaremetalPxeServerFromClusterResult() : value; 
 
         return ret;
     }
@@ -105,11 +84,11 @@ public class CreateBaremetalInstanceAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/baremetal/instances";
+        info.httpMethod = "DELETE";
+        info.path = "/clusters/{clusterUuid}/pxeservers/{pxeServerUuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

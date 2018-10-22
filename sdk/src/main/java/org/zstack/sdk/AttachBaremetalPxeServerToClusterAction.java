@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateBaremetalPxeServerAction extends AbstractAction {
+public class AttachBaremetalPxeServerToClusterAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateBaremetalPxeServerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateBaremetalPxeServerResult value;
+        public org.zstack.sdk.AttachBaremetalPxeServerToClusterResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,43 +26,10 @@ public class CreateBaremetalPxeServerAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String zoneUuid;
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String hostname;
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String sshUsername;
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String sshPassword;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,65535L}, noTrim = false)
-    public java.lang.Integer sshPort = 22;
-
-    @Param(required = true, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String storagePath;
-
-    @Param(required = true, maxLength = 128, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String dhcpInterface;
+    public java.lang.String pxeServerUuid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String dhcpRangeBegin;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String dhcpRangeEnd;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String dhcpRangeNetmask;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
+    public java.lang.String clusterUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -87,8 +54,8 @@ public class CreateBaremetalPxeServerAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateBaremetalPxeServerResult value = res.getResult(org.zstack.sdk.CreateBaremetalPxeServerResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateBaremetalPxeServerResult() : value; 
+        org.zstack.sdk.AttachBaremetalPxeServerToClusterResult value = res.getResult(org.zstack.sdk.AttachBaremetalPxeServerToClusterResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AttachBaremetalPxeServerToClusterResult() : value; 
 
         return ret;
     }
@@ -118,7 +85,7 @@ public class CreateBaremetalPxeServerAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/baremetal/pxeservers";
+        info.path = "/clusters/{clusterUuid}/pxeservers/{pxeServerUuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
