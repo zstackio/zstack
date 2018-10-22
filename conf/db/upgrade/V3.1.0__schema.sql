@@ -139,7 +139,7 @@ CREATE TABLE `AutoScalingGroupActivityVO` (
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     `endDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY (`uuid`),
-    CONSTRAINT `fkAutoScalingGroupActivityVOAutoScalingGroupVO` FOREIGN KEY (`scalingGroupUuid`) REFERENCES `AutoScalingGroupVO` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkAutoScalingGroupActivityVOAutoScalingGroupVO` FOREIGN KEY (`scalingGroupUuid`) REFERENCES `AutoScalingGroupVO` (`uuid`),
     CONSTRAINT `fkAutoScalingGroupActivityVOAutoScalingRuleVO` FOREIGN KEY (`scalingGroupRuleUuid`) REFERENCES `AutoScalingRuleVO` (`uuid`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -155,7 +155,7 @@ CREATE TABLE `AutoScalingGroupInstanceVO` (
     `createDate` TIMESTAMP NOT NULL DEFAULT '0000-00-00 00:00:00',
     `description` VARCHAR(256) DEFAULT NULL,
     PRIMARY KEY (`uuid`),
-    CONSTRAINT `fkAutoScalingGroupInstanceVOAutoScalingGroupVO` FOREIGN KEY (`scalingGroupUuid`) REFERENCES `AutoScalingGroupVO` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkAutoScalingGroupInstanceVOAutoScalingGroupVO` FOREIGN KEY (`scalingGroupUuid`) REFERENCES `AutoScalingGroupVO` (`uuid`),
     CONSTRAINT `fkAutoScalingGroupInstanceVOAutoScalingTemplateVO` FOREIGN KEY (`templateUuid`) REFERENCES `AutoScalingTemplateVO` (`uuid`) ON DELETE SET NULL,
     CONSTRAINT `fkAutoScalingGroupInstanceVOAutoScalingGroupActivityVO` FOREIGN KEY (`scalingGroupActivityUuid`) REFERENCES `AutoScalingGroupActivityVO` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
