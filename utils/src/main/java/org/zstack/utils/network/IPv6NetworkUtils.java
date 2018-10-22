@@ -120,8 +120,9 @@ public class IPv6NetworkUtils {
 
         int idx = networkCidr.indexOf("::");
         String[] macs = mac.split(":");
-        return networkCidr.substring(0, idx) + "::" + Integer.toHexString(Integer.parseInt(macs[0], 16) ^ 2) +
+        String ip = networkCidr.substring(0, idx) + "::" + Integer.toHexString(Integer.parseInt(macs[0], 16) ^ 2) +
                 macs[1] + ":" + macs[2] + "ff:fe" + macs[3] +":" + macs[4] + macs[5];
+        return getIpv6AddressCanonicalString(ip);
     }
 
     public static boolean isIpv6Address(String ip) {

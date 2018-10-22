@@ -91,7 +91,7 @@ public class AttachEipAction extends AbstractAction {
         info.path = "/eips/{eipUuid}/vm-instances/nics/{vmNicUuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 
