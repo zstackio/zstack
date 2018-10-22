@@ -46,7 +46,12 @@ public class KVMSecurityGroupBackend implements SecurityGroupHypervisorBackend, 
 
     private void incrementallyApplyRules(final HostRuleTO hto, final Completion complete) {
         ApplySecurityGroupRuleCmd cmd = new ApplySecurityGroupRuleCmd();
-        cmd.setRuleTOs(hto.getRules());
+        if (!hto.getRules().isEmpty()) {
+            cmd.setRuleTOs(hto.getRules());
+        }
+        if (!hto.getIpv6Rules().isEmpty()) {
+            cmd.setIpv6RuleTOs(hto.getIpv6Rules());
+        }
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setHostUuid(hto.getHostUuid());
@@ -79,7 +84,12 @@ public class KVMSecurityGroupBackend implements SecurityGroupHypervisorBackend, 
     
     private void reApplyAllRulesOnHost(final HostRuleTO hto, final Completion complete) {
         RefreshAllRulesOnHostCmd cmd = new RefreshAllRulesOnHostCmd();
-        cmd.setRuleTOs(hto.getRules());
+        if (!hto.getRules().isEmpty()) {
+            cmd.setRuleTOs(hto.getRules());
+        }
+        if (!hto.getIpv6Rules().isEmpty()) {
+            cmd.setIpv6RuleTOs(hto.getIpv6Rules());
+        }
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setHostUuid(hto.getHostUuid());

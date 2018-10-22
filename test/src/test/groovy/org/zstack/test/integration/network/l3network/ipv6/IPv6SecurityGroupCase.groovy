@@ -47,6 +47,7 @@ class IPv6SecurityGroupCase extends SubCase {
             testSecurityGroupValidator()
             testApplySecurityGroup()
             testSecurityGroupApplyNetworkServices()
+            testChangeSecurityGroupRules()
         }
     }
 
@@ -186,16 +187,20 @@ class IPv6SecurityGroupCase extends SubCase {
             assert cmd.ruleTOs.size() == 1
             SecurityGroupRuleTO rule = cmd.ruleTOs.get(0)
             assert rule.vmNicUuid == nic.uuid
-            assert rule.rules.size() == 2
+            assert rule.rules.size() == 1
+            assert rule.securityGroupBaseRules.size() == 2
+            RuleTO ruleTo = rule.rules.get(0)
+            assert ruleTo.ipVersion == IPv6Constants.IPv4
+            assert ruleTo.allowedCidr == "192.168.0.1/24"
 
-            assert rule.securityGroupBaseRules.size() == 4
-            rule.rules = rule.rules.stream().sorted { u1, u2 -> u1.ipVersion - u2.ipVersion }.collect(Collectors.toList());
-            RuleTO rule1 = rule.rules.get(0)
-            RuleTO rule2 = rule.rules.get(1)
-            assert rule1.ipVersion == IPv6Constants.IPv4
-            assert rule1.allowedCidr == "192.168.0.1/24"
-            assert rule2.ipVersion == IPv6Constants.IPv6
-            assert rule2.allowedCidr == "2002::/64"
+            assert cmd.ipv6RuleTOs.size() == 1
+            rule = cmd.ipv6RuleTOs.get(0)
+            assert rule.vmNicUuid == nic.uuid
+            assert rule.rules.size() == 1
+            assert rule.securityGroupBaseRules.size() == 2
+            ruleTo = rule.rules.get(0)
+            assert ruleTo.ipVersion == IPv6Constants.IPv6
+            assert ruleTo.allowedCidr == "2002::/64"
         }
 
         KVMAgentCommands.RefreshAllRulesOnHostCmd rcmd = null
@@ -207,19 +212,23 @@ class IPv6SecurityGroupCase extends SubCase {
             uuid = host.uuid
         }
         retryInSecs {
-            assert rcmd.ruleTOs.size() == 1
-            SecurityGroupRuleTO rule = rcmd.ruleTOs.get(0)
+            assert cmd.ruleTOs.size() == 1
+            SecurityGroupRuleTO rule = cmd.ruleTOs.get(0)
             assert rule.vmNicUuid == nic.uuid
+            assert rule.rules.size() == 1
+            assert rule.securityGroupBaseRules.size() == 2
+            RuleTO ruleTo = rule.rules.get(0)
+            assert ruleTo.ipVersion == IPv6Constants.IPv4
+            assert ruleTo.allowedCidr == "192.168.0.1/24"
 
-            assert rule.rules.size() == 2
-            assert rule.securityGroupBaseRules.size() == 4
-            rule.rules = rule.rules.stream().sorted { u1, u2 -> u1.ipVersion - u2.ipVersion }.collect(Collectors.toList());
-            RuleTO rule1 = rule.rules.get(0)
-            RuleTO rule2 = rule.rules.get(1)
-            assert rule1.ipVersion == IPv6Constants.IPv4
-            assert rule1.allowedCidr == "192.168.0.1/24"
-            assert rule2.ipVersion == IPv6Constants.IPv6
-            assert rule2.allowedCidr == "2002::/64"
+            assert cmd.ipv6RuleTOs.size() == 1
+            rule = cmd.ipv6RuleTOs.get(0)
+            assert rule.vmNicUuid == nic.uuid
+            assert rule.rules.size() == 1
+            assert rule.securityGroupBaseRules.size() == 2
+            ruleTo = rule.rules.get(0)
+            assert ruleTo.ipVersion == IPv6Constants.IPv6
+            assert ruleTo.allowedCidr == "2002::/64"
         }
 
         SecurityGroupInventory sg4 = querySecurityGroup {
@@ -239,15 +248,16 @@ class IPv6SecurityGroupCase extends SubCase {
             uuid = vm.uuid
         }
         retryInSecs {
-            assert cmd.ruleTOs.size() == 1
-            SecurityGroupRuleTO rule = cmd.ruleTOs.get(0)
-            assert rule.vmNicUuid == nic.uuid
+            assert cmd.ruleTOs == null
 
+            assert cmd.ipv6RuleTOs.size() == 1
+            SecurityGroupRuleTO rule = cmd.ipv6RuleTOs.get(0)
+            assert rule.vmNicUuid == nic.uuid
             assert rule.rules.size() == 1
             assert rule.securityGroupBaseRules.size() == 2
-            RuleTO rule1 = rule.rules.get(0)
-            assert rule1.ipVersion == IPv6Constants.IPv6
-            assert rule1.allowedCidr == "2002::/64"
+            RuleTO ruleTo = rule.rules.get(0)
+            assert ruleTo.ipVersion == IPv6Constants.IPv6
+            assert ruleTo.allowedCidr == "2002::/64"
         }
 
         rcmd = null
@@ -255,17 +265,97 @@ class IPv6SecurityGroupCase extends SubCase {
             uuid = host.uuid
         }
         retryInSecs {
-            assert rcmd.ruleTOs.size() == 1
-            SecurityGroupRuleTO rule = rcmd.ruleTOs.get(0)
-            assert rule.vmNicUuid == nic.uuid
+            assert cmd.ruleTOs == null
 
-                assert rule.rules.size() == 1
+            assert cmd.ipv6RuleTOs.size() == 1
+            SecurityGroupRuleTO rule = cmd.ipv6RuleTOs.get(0)
+            assert rule.vmNicUuid == nic.uuid
+            assert rule.rules.size() == 1
             assert rule.securityGroupBaseRules.size() == 2
-            RuleTO rule1 = rule.rules.get(0)
-            assert rule1.ipVersion == IPv6Constants.IPv6
-            assert rule1.allowedCidr == "2002::/64"
+            RuleTO ruleTo = rule.rules.get(0)
+            assert ruleTo.ipVersion == IPv6Constants.IPv6
+            assert ruleTo.allowedCidr == "2002::/64"
         }
     }
 
+    void testChangeSecurityGroupRules() {
+        L3NetworkInventory l3_statefull = env.inventoryByName("l3-Statefull-DHCP")
+        L3NetworkInventory l3 = env.inventoryByName("l3")
+
+        VmInstanceInventory vm = queryVmInstance {
+            conditions = ["name=vm-eip"]
+        }[0]
+        VmNicInventory nic = vm.getVmNics()[0]
+        SecurityGroupInventory sg4 = querySecurityGroup {
+            conditions=["name=SecurityGroup4"]
+        }[0]
+        SecurityGroupInventory sg6 = querySecurityGroup {
+            conditions=["name=SecurityGroup6"]
+        }[0]
+
+        addVmNicToSecurityGroup {
+            securityGroupUuid = sg4.uuid
+            vmNicUuids = [nic.uuid]
+        }
+
+        APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO rule4 = new APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO()
+        rule4.allowedCidr = "192.168.0.1/24"
+        rule4.type = SecurityGroupRuleType.Ingress.toString()
+        rule4.protocol = SecurityGroupRuleProtocolType.ICMP.toString()
+        rule4.startPort = 0
+        rule4.endPort = 3
+
+        APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO rule41 = new APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO()
+        rule41.allowedCidr = "192.168.1.1/24"
+        rule41.type = SecurityGroupRuleType.Ingress.toString()
+        rule41.protocol = SecurityGroupRuleProtocolType.UDP.toString()
+        rule41.startPort = 100
+        rule41.endPort = 200
+
+        addSecurityGroupRule {
+            delegate.securityGroupUuid = sg4.uuid
+            delegate.rules = [rule4, rule41]
+        }
+
+        sg4 = querySecurityGroup {
+            conditions=["name=SecurityGroup4"]
+        }[0]
+        sg4.rules.size() == 3
+        List<SecurityGroupRuleInventory> rules = sg4.rules
+        SecurityGroupRuleInventory rule1 = rules.stream().filter{r -> r.protocol == SecurityGroupRuleProtocolType.ICMP.toString()}.collect(Collectors.toList()).get(0)
+        deleteSecurityGroupRule {
+            ruleUuids = asList(rule1.uuid)
+        }
+
+        APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO rule6 = new APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO()
+        rule6.allowedCidr = "2002::/64"
+        rule6.type = SecurityGroupRuleType.Egress.toString()
+        rule6.protocol = SecurityGroupRuleProtocolType.ICMP.toString()
+        rule6.ipVersion = 6
+        rule6.startPort = 0
+        rule6.endPort = 3
+
+        APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO rule61 = new APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO()
+        rule61.allowedCidr = "2003::/64"
+        rule61.type = SecurityGroupRuleType.Egress.toString()
+        rule61.protocol = SecurityGroupRuleProtocolType.UDP.toString()
+        rule61.startPort = 100
+        rule61.startPort = 200
+        rule61.ipVersion = 6
+
+        addSecurityGroupRule {
+            delegate.securityGroupUuid = sg6.uuid
+            delegate.rules = [rule6, rule61]
+        }
+        sg6 = querySecurityGroup {
+            conditions=["name=SecurityGroup6"]
+        }[0]
+        sg6.rules.size() == 3
+        rules = sg6.rules
+        rule1 = rules.stream().filter{r -> r.protocol == SecurityGroupRuleProtocolType.TCP.toString()}.collect(Collectors.toList()).get(0)
+        deleteSecurityGroupRule {
+            ruleUuids = asList(rule1.uuid)
+        }
+    }
 }
 
