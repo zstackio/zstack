@@ -53,6 +53,7 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
+import org.zstack.header.notification.NotificationConstant;
 import org.zstack.header.search.SearchOp;
 import org.zstack.header.storage.backup.BackupStorageType;
 import org.zstack.header.storage.backup.BackupStorageVO;
@@ -862,6 +863,10 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
         if (cmsg != null) {
             tagMgr.createTagsFromAPICreateMessage(cmsg, vo.getUuid(), VmInstanceVO.class.getSimpleName());
+        }
+
+        if (cmsg == null && msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()) {
+            tagMgr.createNonInherentSystemTags(msg.getSystemTags(), vo.getUuid(), VmInstanceVO.class.getSimpleName());
         }
 
         if (instanceOfferingUuid != null) {

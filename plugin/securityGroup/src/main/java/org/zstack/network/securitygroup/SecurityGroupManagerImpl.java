@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
@@ -18,6 +19,8 @@ import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
@@ -28,6 +31,7 @@ import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
@@ -53,6 +57,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
+import static org.zstack.core.Platform.argerr;
 import static org.zstack.network.securitygroup.SecurityGroupMembersTO.ACTION_CODE_DELETE_GROUP;
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -519,6 +524,8 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             handle((RemoveVmNicFromSecurityGroupMsg) msg);
         } else if (msg instanceof SecurityGroupDeletionMsg) {
             handle((SecurityGroupDeletionMsg) msg);
+        } else if (msg instanceof AddVmNicToSecurityGroupMsg) {
+            handle((AddVmNicToSecurityGroupMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -981,8 +988,44 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         bus.publish(evt);
     }
 
-    private void handle(final APIAddVmNicToSecurityGroupMsg msg) {
-        APIAddVmNicToSecurityGroupEvent evt = new APIAddVmNicToSecurityGroupEvent(msg.getId());
+    private void validate(AddVmNicToSecurityGroupMsg msg) {
+        String securityGroupUuid = msg.getSecurityGroupUuid();
+        List<String> uuids = Q.New(VmNicVO.class)
+                .select(VmNicVO_.uuid)
+                .in(VmNicVO_.uuid, msg.getVmNicUuids())
+                .listValues();
+        if (!uuids.containsAll(msg.getVmNicUuids())) {
+            msg.getVmNicUuids().removeAll(uuids);
+            throw new OperationFailureException(errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND,
+                    String.format("cannot find vm nics[uuids:%s]", msg.getVmNicUuids())
+            ));
+        }
+
+        List<String> nicUuids = SQL.New("select nic.uuid from SecurityGroupL3NetworkRefVO ref, VmNicVO nic where ref.l3NetworkUuid = nic.l3NetworkUuid" +
+                " and ref.securityGroupUuid = :sgUuid and nic.uuid in (:nicUuids)")
+                .param("nicUuids", uuids)
+                .param("sgUuid", securityGroupUuid)
+                .list();
+
+        List<String> wrongUuids = new ArrayList<>();
+        for (String uuid : uuids) {
+            if (!nicUuids.contains(uuid)) {
+                wrongUuids.add(uuid);
+            }
+        }
+
+        if (!wrongUuids.isEmpty()) {
+            throw new OperationFailureException(argerr("VM nics[uuids:%s] are not on L3 networks that have been attached to the security group[uuid:%s]",
+                    wrongUuids, securityGroupUuid));
+        }
+
+        msg.setVmNicUuids(uuids);
+    }
+
+    private void handle(AddVmNicToSecurityGroupMsg msg) {
+        AddVmNicToSecurityGroupReply reply = new AddVmNicToSecurityGroupReply();
+
+        validate(msg);
 
         SimpleQuery<VmNicVO> q = dbf.createQuery(VmNicVO.class);
         q.add(VmNicVO_.uuid, Op.IN, msg.getVmNicUuids());
@@ -1022,7 +1065,26 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         }
 
         logger.debug(String.format("successfully added vm nics%s to security group[uuid:%s]", msg.getVmNicUuids(), msg.getSecurityGroupUuid()));
-        bus.publish(evt);
+        bus.reply(msg, reply);
+    }
+
+    private void handle(final APIAddVmNicToSecurityGroupMsg msg) {
+        APIAddVmNicToSecurityGroupEvent evt = new APIAddVmNicToSecurityGroupEvent(msg.getId());
+
+        AddVmNicToSecurityGroupMsg addVmNicToSecurityGroupMsg = new AddVmNicToSecurityGroupMsg();
+        addVmNicToSecurityGroupMsg.setSecurityGroupUuid(msg.getSecurityGroupUuid());
+        addVmNicToSecurityGroupMsg.setVmNicUuids(msg.getVmNicUuids());
+        bus.makeTargetServiceIdByResourceUuid(addVmNicToSecurityGroupMsg, SecurityGroupConstant.SERVICE_ID, msg.getSecurityGroupUuid());
+
+        bus.send(addVmNicToSecurityGroupMsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    evt.setError(reply.getError());
+                }
+                bus.publish(evt);
+            }
+        });
     }
 
     private void applyRules(Collection<HostRuleTO> htos) {
