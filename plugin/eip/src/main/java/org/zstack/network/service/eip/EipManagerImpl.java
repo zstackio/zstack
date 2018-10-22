@@ -171,6 +171,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                     " where l3.system = :system" +
                     " and l3.uuid != :vipL3NetworkUuid" +
                     " and l3.uuid = ref.l3NetworkUuid" +
+                    " and l3.ipVersion = :ipVersion" +
                     " and ref.networkServiceType = :nsType" +
                     " and l3.zoneUuid = :zoneUuid" +
                     " and np.uuid = ref.networkServiceProviderUuid" +
@@ -181,6 +182,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                     .param("npType", providerType)
                     .param("vipL3NetworkUuid", vip.getL3NetworkUuid())
                     .param("clusterUuids", clusterUuids)
+                    .param("ipVersion", l3Vo.getIpVersion())
                     .list();
         } else {
             // the eip is not created on the backend
@@ -189,6 +191,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                     " where l3.system = :system" +
                     " and l3.uuid != :vipL3NetworkUuid" +
                     " and l3.uuid = ref.l3NetworkUuid" +
+                    " and l3.ipVersion = :ipVersion" +
                     " and ref.networkServiceType = :nsType" +
                     " and l3.zoneUuid = :zoneUuid and l3.l2NetworkUuid = l2ref.l2NetworkUuid and l2ref.clusterUuid in :clusterUuids")
                     .param("system", false)
@@ -196,6 +199,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                     .param("nsType", EipConstant.EIP_NETWORK_SERVICE_TYPE)
                     .param("vipL3NetworkUuid", vip.getL3NetworkUuid())
                     .param("clusterUuids", clusterUuids)
+                    .param("ipVersion", l3Vo.getIpVersion())
                     .list();
         }
 
@@ -219,13 +223,14 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         List<VmNicVO> nics  = SQL.New("select distinct nic" +
                 " from VmNicVO nic, VmInstanceVO vm, UsedIpVO ip" +
                 " where nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid in (:l3Uuids)" +
-                " and nic.vmInstanceUuid = vm.uuid" +
+                " and nic.vmInstanceUuid = vm.uuid and ip.ipVersion = :ipVersion" +
                 " and vm.type = :vmType and vm.state in (:vmStates) " +
                 // IP = null means the VM is just recovered without any IP allocated
                 " and nic.ip is not null")
                 .param("l3Uuids", l3Uuids)
                 .param("vmType", VmInstanceConstant.USER_VM_TYPE)
                 .param("vmStates", EipConstant.attachableVmStates)
+                .param("ipVersion", l3Vo.getIpVersion())
                 .list();
         return VmNicInventory.valueOf(nics);
     }
