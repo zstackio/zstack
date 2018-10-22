@@ -55,6 +55,7 @@ DROP PROCEDURE IF EXISTS updateClusterHostCpuModelCheckTag;
 ALTER TABLE `zstack`.`LongJobVO` MODIFY COLUMN `jobData` mediumtext NOT NULL;
 ALTER TABLE `zstack`.`LongJobVO` MODIFY COLUMN `jobResult` mediumtext DEFAULT NULL;
 
+<<<<<<< HEAD
 CREATE TABLE `AutoScalingGroupVO` (
     `uuid` VARCHAR(32) NOT NULL UNIQUE,
     `name` VARCHAR(256) NOT NULL,
@@ -220,3 +221,64 @@ ALTER TABLE `zstack`.`LongJobVO`  ADD COLUMN `executeTime` int unsigned DEFAULT 
 UPDATE `zstack`.`LongJobVO` job SET job.`executeTime` = TIMESTAMPDIFF(SECOND, job.createDate, job.lastOpDate);
 
 ALTER TABLE CephPrimaryStoragePoolVO ADD totalCapacity bigint(20) unsigned NOT NULL DEFAULT 0;
+
+CREATE TABLE `ScsiLunVO` (
+    `name` VARCHAR(256) DEFAULT NULL,
+    `uuid` VARCHAR(32) NOT NULL,
+    `wwid` VARCHAR(256) NOT NULL,
+    `vendor` VARCHAR(256) DEFAULT NULL,
+    `model` VARCHAR(256) DEFAULT NULL,
+    `wwn` VARCHAR(256) DEFAULT NULL,
+    `serial` VARCHAR(256) DEFAULT NULL,
+    `hctl` VARCHAR(64) DEFAULT NULL,
+    `type` VARCHAR(128) NOT NULL,
+    `path` VARCHAR(128) DEFAULT NULL,
+    `source` VARCHAR(128) DEFAULT NULL,
+    `size` bigint unsigned NOT NULL,
+    `state` VARCHAR(64) DEFAULT NULL,
+    `multipathDeviceUuid` VARCHAR(32) DEFAULT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`uuid`)
+)  ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `ScsiLunHostRefVO` (
+    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+    `hostUuid` varchar(32) NOT NULL,
+    `scsiLunUuid` varchar(32) NOT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fkScsiLunHostRefVOScsiLunVO` FOREIGN KEY (`scsiLunUuid`) REFERENCES ScsiLunVO (`uuid`),
+    CONSTRAINT `fkScsiLunHostRefVOHostVO` FOREIGN KEY (`hostUuid`) REFERENCES HostEO (`uuid`)
+)  ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `ScsiLunVmInstanceRefVO` (
+    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+    `vmInstanceUuid` varchar(32) NOT NULL,
+    `scsiLunUuid` varchar(32) NOT NULL,
+    `deviceId` int unsigned DEFAULT NULL,
+    `attachMultipath` boolean NOT NULL DEFAULT TRUE,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fkScsiLunVmInstanceRefVOScsiLunVO` FOREIGN KEY (`scsiLunUuid`) REFERENCES ScsiLunVO (`uuid`),
+    CONSTRAINT `fkScsiLunVmInstanceRefVOVmInstanceVO` FOREIGN KEY (`vmInstanceUuid`) REFERENCES VmInstanceEO (`uuid`)
+)  ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `FiberChannelStorageVO` (
+    `name` VARCHAR(256) DEFAULT NULL,
+    `uuid` VARCHAR(32) NOT NULL,
+    `wwnn` VARCHAR(256) NOT NULL,
+    `state` VARCHAR(64) DEFAULT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`uuid`)
+)  ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `FiberChannelLunVO` (
+    `uuid` VARCHAR(32) NOT NULL,
+    `fiberChannelStorageUuid` VARCHAR(32) NOT NULL,
+    PRIMARY KEY (`uuid`),
+    CONSTRAINT `fkFiberChannelLunVOFiberChannelStorageVO` FOREIGN KEY (`fiberChannelStorageUuid`) REFERENCES FiberChannelStorageVO (`uuid`)
+)  ENGINE=InnoDB DEFAULT CHARSET=utf8;

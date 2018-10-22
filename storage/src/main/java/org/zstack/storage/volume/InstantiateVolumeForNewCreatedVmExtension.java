@@ -3,6 +3,7 @@ package org.zstack.storage.volume;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Od;
@@ -26,6 +27,8 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
     private CloudBus bus;
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     @Override
     public void preBeforeInstantiateVmResource(VmInstanceSpec spec) throws VmInstantiateResourceException{
@@ -46,6 +49,10 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
                 q.add(VolumeVO_.deviceId, Op.NOT_NULL);
                 q.orderBy(VolumeVO_.deviceId, Od.ASC);
                 List<Integer> devIds = q.listValue();
+
+                for (BeforeGetNextVolumeDeviceIdExtensionPoint e : pluginRgty.getExtensionList(BeforeGetNextVolumeDeviceIdExtensionPoint.class)) {
+                    e.beforeGetNextVolumeDeviceId(spec.getVmInventory().getUuid(), devIds);
+                }
 
                 BitSet full = new BitSet(devIds.size()+1);
                 for (Integer id : devIds) {
