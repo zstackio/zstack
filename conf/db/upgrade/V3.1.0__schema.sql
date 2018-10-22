@@ -157,7 +157,7 @@ CREATE TABLE `AutoScalingGroupInstanceVO` (
     PRIMARY KEY (`uuid`),
     CONSTRAINT `fkAutoScalingGroupInstanceVOAutoScalingGroupVO` FOREIGN KEY (`scalingGroupUuid`) REFERENCES `AutoScalingGroupVO` (`uuid`) ON DELETE CASCADE,
     CONSTRAINT `fkAutoScalingGroupInstanceVOAutoScalingTemplateVO` FOREIGN KEY (`templateUuid`) REFERENCES `AutoScalingTemplateVO` (`uuid`) ON DELETE SET NULL,
-    CONSTRAINT `fkAutoScalingGroupInstanceVOAutoScalingGroupActivityVO` FOREIGN KEY (`scalingGroupActivityUuid`) REFERENCES `AutoScalingGroupActivityVO` (`uuid`) ON SET NULL
+    CONSTRAINT `fkAutoScalingGroupInstanceVOAutoScalingGroupActivityVO` FOREIGN KEY (`scalingGroupActivityUuid`) REFERENCES `AutoScalingGroupActivityVO` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `AddingNewInstanceRuleVO` (

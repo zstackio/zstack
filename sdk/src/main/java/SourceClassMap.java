@@ -15,6 +15,18 @@ public class SourceClassMap {
 			put("org.zstack.aliyunproxy.vpc.AliyunProxyVSwitchInventory", "org.zstack.sdk.AliyunProxyVSwitchInventory");
 			put("org.zstack.aliyunproxy.vpc.AliyunProxyVpcInventory", "org.zstack.sdk.AliyunProxyVpcInventory");
 			put("org.zstack.appliancevm.ApplianceVmInventory", "org.zstack.sdk.ApplianceVmInventory");
+			put("org.zstack.autoscaling.group.AutoScalingGroupInventory", "org.zstack.sdk.AutoScalingGroupInventory");
+			put("org.zstack.autoscaling.group.activity.AutoScalingGroupActivityInventory", "org.zstack.sdk.AutoScalingGroupActivityInventory");
+			put("org.zstack.autoscaling.group.instance.AutoScalingGroupInstanceInventory", "org.zstack.sdk.AutoScalingGroupInstanceInventory");
+			put("org.zstack.autoscaling.group.rule.AddingNewVmRuleInventory", "org.zstack.sdk.AddingNewVmRuleInventory");
+			put("org.zstack.autoscaling.group.rule.AutoScalingRuleInventory", "org.zstack.sdk.AutoScalingRuleInventory");
+			put("org.zstack.autoscaling.group.rule.AutoScalingRuleState", "org.zstack.sdk.AutoScalingRuleState");
+			put("org.zstack.autoscaling.group.rule.AutoScalingRuleStatus", "org.zstack.sdk.AutoScalingRuleStatus");
+			put("org.zstack.autoscaling.group.rule.RemovalInstanceRuleInventory", "org.zstack.sdk.RemovalInstanceRuleInventory");
+			put("org.zstack.autoscaling.group.rule.trigger.AutoScalingRuleAlarmTriggerInventory", "org.zstack.sdk.AutoScalingRuleAlarmTriggerInventory");
+			put("org.zstack.autoscaling.group.rule.trigger.AutoScalingRuleTriggerInventory", "org.zstack.sdk.AutoScalingRuleTriggerInventory");
+			put("org.zstack.autoscaling.template.AutoScalingTemplateInventory", "org.zstack.sdk.AutoScalingTemplateInventory");
+			put("org.zstack.autoscaling.template.AutoScalingVmTemplateInventory", "org.zstack.sdk.AutoScalingVmTemplateInventory");
 			put("org.zstack.billing.DataVolumeSpending", "org.zstack.sdk.DataVolumeSpending");
 			put("org.zstack.billing.DataVolumeSpendingInventory", "org.zstack.sdk.DataVolumeSpendingInventory");
 			put("org.zstack.billing.PciDeviceSpending", "org.zstack.sdk.PciDeviceSpending");
@@ -304,7 +316,6 @@ public class SourceClassMap {
 			put("org.zstack.zwatch.alarm.AlarmLabelInventory", "org.zstack.sdk.zwatch.alarm.AlarmLabelInventory");
 			put("org.zstack.zwatch.alarm.AlarmState", "org.zstack.sdk.zwatch.alarm.AlarmState");
 			put("org.zstack.zwatch.alarm.AlarmStatus", "org.zstack.sdk.zwatch.alarm.AlarmStatus");
-			put("org.zstack.zwatch.alarm.AlarmType", "org.zstack.sdk.zwatch.alarm.AlarmType");
 			put("org.zstack.zwatch.alarm.EventSubscriptionActionInventory", "org.zstack.sdk.zwatch.alarm.EventSubscriptionActionInventory");
 			put("org.zstack.zwatch.alarm.EventSubscriptionInventory", "org.zstack.sdk.zwatch.alarm.EventSubscriptionInventory");
 			put("org.zstack.zwatch.alarm.EventSubscriptionLabelInventory", "org.zstack.sdk.zwatch.alarm.EventSubscriptionLabelInventory");
@@ -330,6 +341,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.AccountResourceRefInventory", "org.zstack.header.identity.AccountResourceRefInventory");
 			put("org.zstack.sdk.ActionStruct", "org.zstack.cloudformation.template.struct.ActionStruct");
 			put("org.zstack.sdk.AddHostFromFileResult", "org.zstack.header.host.AddHostFromFileResult");
+			put("org.zstack.sdk.AddingNewVmRuleInventory", "org.zstack.autoscaling.group.rule.AddingNewVmRuleInventory");
 			put("org.zstack.sdk.AffinityGroupInventory", "org.zstack.header.affinitygroup.AffinityGroupInventory");
 			put("org.zstack.sdk.AffinityGroupUsageInventory", "org.zstack.header.affinitygroup.AffinityGroupUsageInventory");
 			put("org.zstack.sdk.AlertInventory", "org.zstack.monitoring.AlertInventory");
@@ -349,6 +361,16 @@ public class SourceClassMap {
 			put("org.zstack.sdk.AliyunRouterInterfaceInventory", "org.zstack.header.aliyun.network.connection.AliyunRouterInterfaceInventory");
 			put("org.zstack.sdk.AliyunSnapshotInventory", "org.zstack.header.aliyun.storage.snapshot.AliyunSnapshotInventory");
 			put("org.zstack.sdk.ApplianceVmInventory", "org.zstack.appliancevm.ApplianceVmInventory");
+			put("org.zstack.sdk.AutoScalingGroupActivityInventory", "org.zstack.autoscaling.group.activity.AutoScalingGroupActivityInventory");
+			put("org.zstack.sdk.AutoScalingGroupInstanceInventory", "org.zstack.autoscaling.group.instance.AutoScalingGroupInstanceInventory");
+			put("org.zstack.sdk.AutoScalingGroupInventory", "org.zstack.autoscaling.group.AutoScalingGroupInventory");
+			put("org.zstack.sdk.AutoScalingRuleAlarmTriggerInventory", "org.zstack.autoscaling.group.rule.trigger.AutoScalingRuleAlarmTriggerInventory");
+			put("org.zstack.sdk.AutoScalingRuleInventory", "org.zstack.autoscaling.group.rule.AutoScalingRuleInventory");
+			put("org.zstack.sdk.AutoScalingRuleState", "org.zstack.autoscaling.group.rule.AutoScalingRuleState");
+			put("org.zstack.sdk.AutoScalingRuleStatus", "org.zstack.autoscaling.group.rule.AutoScalingRuleStatus");
+			put("org.zstack.sdk.AutoScalingRuleTriggerInventory", "org.zstack.autoscaling.group.rule.trigger.AutoScalingRuleTriggerInventory");
+			put("org.zstack.sdk.AutoScalingTemplateInventory", "org.zstack.autoscaling.template.AutoScalingTemplateInventory");
+			put("org.zstack.sdk.AutoScalingVmTemplateInventory", "org.zstack.autoscaling.template.AutoScalingVmTemplateInventory");
 			put("org.zstack.sdk.BackupStorageInventory", "org.zstack.header.storage.backup.BackupStorageInventory");
 			put("org.zstack.sdk.BaremetalChassisInventory", "org.zstack.header.baremetal.chassis.BaremetalChassisInventory");
 			put("org.zstack.sdk.BaremetalException", "org.zstack.header.baremetal.BaremetalException");
@@ -484,6 +506,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ProgressProperty", "org.zstack.header.aliyun.image.ProgressProperty");
 			put("org.zstack.sdk.QuotaInventory", "org.zstack.header.identity.QuotaInventory");
 			put("org.zstack.sdk.QuotaUsage", "org.zstack.header.identity.Quota$QuotaUsage");
+			put("org.zstack.sdk.RemovalInstanceRuleInventory", "org.zstack.autoscaling.group.rule.RemovalInstanceRuleInventory");
 			put("org.zstack.sdk.ResourceInventory", "org.zstack.header.vo.ResourceInventory");
 			put("org.zstack.sdk.ResourceStackInventory", "org.zstack.header.cloudformation.ResourceStackInventory");
 			put("org.zstack.sdk.ResourceStruct", "org.zstack.cloudformation.template.struct.ResourceStruct");
@@ -625,7 +648,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.zwatch.alarm.AlarmLabelInventory", "org.zstack.zwatch.alarm.AlarmLabelInventory");
 			put("org.zstack.sdk.zwatch.alarm.AlarmState", "org.zstack.zwatch.alarm.AlarmState");
 			put("org.zstack.sdk.zwatch.alarm.AlarmStatus", "org.zstack.zwatch.alarm.AlarmStatus");
-			put("org.zstack.sdk.zwatch.alarm.AlarmType", "org.zstack.zwatch.alarm.AlarmType");
 			put("org.zstack.sdk.zwatch.alarm.EventSubscriptionActionInventory", "org.zstack.zwatch.alarm.EventSubscriptionActionInventory");
 			put("org.zstack.sdk.zwatch.alarm.EventSubscriptionInventory", "org.zstack.zwatch.alarm.EventSubscriptionInventory");
 			put("org.zstack.sdk.zwatch.alarm.EventSubscriptionLabelInventory", "org.zstack.zwatch.alarm.EventSubscriptionLabelInventory");
