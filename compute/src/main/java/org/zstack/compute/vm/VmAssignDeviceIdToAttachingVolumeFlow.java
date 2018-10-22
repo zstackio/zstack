@@ -58,16 +58,7 @@ public class VmAssignDeviceIdToAttachingVolumeFlow implements Flow {
         final VmInstanceSpec spec = (VmInstanceSpec) ctx.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
         VolumeVO dvol = dbf.findByUuid(volume.getUuid(), VolumeVO.class);
-        List<GetNextVolumeDeviceIdExtensionPoint> exts = pluginRegistry.getExtensionList(
-                GetNextVolumeDeviceIdExtensionPoint.class);
-        if (exts == null || exts.isEmpty()) {
-            dvol.setDeviceId(getNextVolumeDeviceId(spec.getVmInventory().getUuid()));
-        } else if (exts.size() == 1) {
-            dvol.setDeviceId(exts.get(0).getNextVolumeDeviceId(spec.getVmInventory().getUuid()));
-        } else {
-            throw new OperationFailureException(err(SysErrors.INTERNAL,
-                    "should not be more than one GetNextVolumeDeviceIdExtensionPoint implementation"));
-        }
+        dvol.setDeviceId(new NextVolumeDeviceIdGetter().getNextVolumeDeviceId(spec.getVmInventory().getUuid()));
         dvol = dbf.updateAndRefresh(dvol);
         ctx.put(VmInstanceConstant.Params.AttachingVolumeInventory.toString(), VolumeInventory.valueOf(dvol));
         chain.next();
