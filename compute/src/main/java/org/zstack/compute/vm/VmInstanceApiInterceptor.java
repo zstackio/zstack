@@ -685,10 +685,13 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                     msg.getVmNicUuid()));
         }
 
-        for (UsedIpVO ipVO : vmNicVO.getUsedIps()) {
-            if (ipVO.getL3NetworkUuid().equals(msg.getL3NetworkUuid())) {
-                throw new ApiMessageInterceptionException(argerr("L3 network[uuid:%s] has already been to attached vmNic[uuid:%s]", msg.getL3NetworkUuid(),
-                        msg.getVmNicUuid()));
+        List<VmNicVO> allNics = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, vmNicVO.getVmInstanceUuid()).list();
+        for (VmNicVO nic : allNics) {
+            for (UsedIpVO ipVO : nic.getUsedIps()) {
+                if (ipVO.getL3NetworkUuid().equals(msg.getL3NetworkUuid())) {
+                    throw new ApiMessageInterceptionException(argerr("L3 network[uuid:%s] has already been to attached vmNic[uuid:%s]", msg.getL3NetworkUuid(),
+                            msg.getVmNicUuid()));
+                }
             }
         }
 

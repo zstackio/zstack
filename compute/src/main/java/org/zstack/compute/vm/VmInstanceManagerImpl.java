@@ -1181,6 +1181,9 @@ public class VmInstanceManagerImpl extends AbstractService implements
         final APIAttachL3NetworkToVmNicEvent evt = new APIAttachL3NetworkToVmNicEvent(msg.getId());
         VmNicVO vmNicVO = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find();
 
+        if (msg.getStaticIp() != null) {
+            new StaticIpOperator().setStaticIp(vmNicVO.getVmInstanceUuid(), msg.getL3NetworkUuid(), msg.getStaticIp());
+        }
         doAttachL3ToNic(VmNicInventory.valueOf(vmNicVO), msg.getL3NetworkUuid(), new Completion(msg) {
             @Override
             public void success() {
@@ -1191,6 +1194,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
             @Override
             public void fail(ErrorCode errorCode) {
+                new StaticIpOperator().deleteStaticIpByVmUuidAndL3Uuid(vmNicVO.getVmInstanceUuid(), msg.getL3NetworkUuid());
                 evt.setError(errorCode);
                 bus.publish(evt);
             }
