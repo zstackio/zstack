@@ -11,6 +11,7 @@ public class NfsRebaseVolumeBackingFileMsg extends NeedReplyMessage implements P
     private String srcPsUuid;
     private String dstPsUuid;
     private String dstVolumeFolderPath;
+    private String dstImageCacheTemplateFolderPath;
     private String primaryStorageUuid;
 
     public String getHostUuid() {
@@ -52,5 +53,13 @@ public class NfsRebaseVolumeBackingFileMsg extends NeedReplyMessage implements P
 
     public void setPrimaryStorageUuid(String primaryStorageUuid) {
         this.primaryStorageUuid = primaryStorageUuid;
+    }
+
+    public String getDstImageCacheTemplateFolderPath() {
+        return dstImageCacheTemplateFolderPath;
+    }
+
+    public void setDstImageCacheTemplateFolderPath(String dstImageCacheTemplateFolderPath) {
+        this.dstImageCacheTemplateFolderPath = dstImageCacheTemplateFolderPath;
     }
 }
