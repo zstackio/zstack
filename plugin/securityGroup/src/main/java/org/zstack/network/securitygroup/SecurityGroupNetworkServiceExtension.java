@@ -17,6 +17,7 @@ import org.zstack.network.service.AbstractNetworkServiceExtension;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -70,6 +71,12 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
         msg.setVmInstanceUuid(servedVm.getVmInventory().getUuid());
         msg.setHostUuid(servedVm.getDestHost().getUuid());
         msg.setDeleteAllRules(true);
+        List<String> uuids = new ArrayList<String>();
+        for (VmNicInventory nic: servedVm.getDestNics()) {
+            uuids.add(nic.getUuid());
+        }
+        msg.setNicUuids(uuids);
+
         bus.makeLocalServiceId(msg, SecurityGroupConstant.SERVICE_ID);
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
@@ -77,11 +84,11 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
                 if (!reply.isSuccess()) {
                     logger.debug(String.format("failed to remove security group rules for vm[uuid:%s], %s", servedVm.getVmInventory().getUuid(), reply.getError()));
                 }
-
-	            if (servedVm.getCurrentVmOperation() == VmInstanceConstant.VmOperation.DetachNic) {
-		            VmNicInventory nic = servedVm.getDestNics().get(0);
-		            deleteVmNicSecurityGroupRef(nic.getUuid());
-	            }
+                if (servedVm.getCurrentVmOperation() == VmInstanceConstant.VmOperation.DetachNic) {
+                    for (VmNicInventory nic: servedVm.getDestNics()) {
+                        deleteVmNicSecurityGroupRef(nic.getUuid());
+                    }
+                }
 
                 completion.done();
             }
