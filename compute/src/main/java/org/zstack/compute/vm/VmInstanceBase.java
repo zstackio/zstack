@@ -2621,6 +2621,7 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void handle(final APIGetVmConsoleAddressMsg msg) {
+        refreshVO();
         ErrorCode error = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
         if (error != null) {
             throw new OperationFailureException(error);
