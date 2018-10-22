@@ -288,6 +288,11 @@ public class IPv6NetworkUtils {
         }
     }
 
+    public static String getIpv6AddressCanonicalString(String ip) {
+        IPv6Address ip6 = IPv6Address.fromString(ip);
+        return ip6.toString();
+    }
+
     public static BigInteger ipv6AddressToBigInteger(String ip) {
         return IPv6Address.fromString(ip).toBigInteger();
     }

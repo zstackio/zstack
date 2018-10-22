@@ -42,6 +42,7 @@ class SetStaticIpv6AddressCase extends SubCase {
         env.create {
             testCreateVmOfPrivateIPv6Network()
             testCreateVmWithStaticIpv6()
+            testAttachL3NetworkToVmNicWithStaticIpv6()
         }
     }
 
@@ -167,6 +168,40 @@ class SetStaticIpv6AddressCase extends SubCase {
         assert nic.usedIps.size() == 1
         ip6 = nic.getUsedIps().get(0)
         assert ip6.ip == IPv6NetworkUtils.ipv6TagValueToAddress(static_ip)
+    }
+
+    void testAttachL3NetworkToVmNicWithStaticIpv6() {
+        L3NetworkInventory l3_statefull = env.inventoryByName("l3-Statefull-DHCP")
+        L3NetworkInventory l3 = env.inventoryByName("l3")
+        InstanceOfferingInventory offering = env.inventoryByName("instanceOffering")
+        ImageInventory image = env.inventoryByName("image1")
+
+        VmInstanceInventory vm = createVmInstance {
+            name = "vm"
+            instanceOfferingUuid = offering.uuid
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3.uuid]
+            defaultL3NetworkUuid = l3.uuid
+        }
+        vm = queryVmInstance {
+            conditions=["uuid=${vm.uuid}"]
+        } [0]
+        VmNicInventory nic = vm.getVmNics().get(0)
+
+        String static_ip = "2001:2003::0110"
+        nic = attachL3NetworkToVmNic {
+            vmNicUuid = nic.uuid
+            l3NetworkUuid = l3_statefull.uuid
+            staticIp = static_ip
+        }
+
+        UsedIpInventory ip6 = null
+        for (UsedIpInventory ip : nic.getUsedIps()) {
+            if (ip.l3NetworkUuid == l3_statefull.uuid) {
+                ip6 = ip
+            }
+        }
+        assert ip6.ip == "2001:2003::110"
     }
 }
 
