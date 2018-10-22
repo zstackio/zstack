@@ -45,7 +45,7 @@ public class VmReturnReleaseNicFlow extends NoRollbackFlow {
 
             VmNicVO vo = dbf.findByUuid(nic.getUuid(), VmNicVO.class);
             if (VmInstanceConstant.USER_VM_TYPE.equals(spec.getVmInventory().getType())) {
-                VmInstanceDeletionPolicy deletionPolicy = deletionPolicyMgr.getDeletionPolicy(spec.getVmInventory().getUuid());
+                VmInstanceDeletionPolicy deletionPolicy = getDeletionPolicy(spec, data);
                 if (deletionPolicy == VmInstanceDeletionPolicy.Direct) {
                     dbf.remove(vo);
                 } else {
@@ -63,5 +63,13 @@ public class VmReturnReleaseNicFlow extends NoRollbackFlow {
         bus.send(msgs);
 
         chain.next();
+    }
+
+    private VmInstanceDeletionPolicy getDeletionPolicy(VmInstanceSpec spec, Map data) {
+        if (data.containsKey(VmInstanceConstant.Params.DeletionPolicy)) {
+            return (VmInstanceDeletionPolicy) data.get(VmInstanceConstant.Params.DeletionPolicy);
+        }
+
+        return deletionPolicyMgr.getDeletionPolicy(spec.getVmInventory().getUuid());
     }
 }

@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class SetVmCleanTrafficAction extends AbstractAction {
+public class CreateAutoScalingRuleAlarmTriggerAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class SetVmCleanTrafficAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.SetVmCleanTrafficResult value;
+        public org.zstack.sdk.CreateAutoScalingRuleTriggerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,10 +26,22 @@ public class SetVmCleanTrafficAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    public java.lang.String alarmUuid;
+
+    @Param(required = false)
+    public java.lang.String triggerType;
+
+    @Param(required = true, maxLength = 256, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean enable = false;
+    public java.lang.String ruleUuid;
+
+    @Param(required = false)
+    public java.lang.String resourceUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -54,8 +66,8 @@ public class SetVmCleanTrafficAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.SetVmCleanTrafficResult value = res.getResult(org.zstack.sdk.SetVmCleanTrafficResult.class);
-        ret.value = value == null ? new org.zstack.sdk.SetVmCleanTrafficResult() : value; 
+        org.zstack.sdk.CreateAutoScalingRuleTriggerResult value = res.getResult(org.zstack.sdk.CreateAutoScalingRuleTriggerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateAutoScalingRuleTriggerResult() : value; 
 
         return ret;
     }
@@ -84,11 +96,11 @@ public class SetVmCleanTrafficAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/vm-instances/{uuid}/actions";
+        info.httpMethod = "POST";
+        info.path = "/zwatch/alarms/{alarmUuid}/autoscaling/rules/{ruleUuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "setVmCleanTraffic";
+        info.parameterName = "params";
         return info;
     }
 

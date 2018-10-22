@@ -121,6 +121,8 @@ public class LoadBalancerBase {
             handle((DeleteLoadBalancerOnlyMsg) msg);
         } else if (msg instanceof LoadBalancerChangeCertificateMsg) {
             handle((LoadBalancerChangeCertificateMsg) msg);
+        } else if (msg instanceof AddVmNicToLoadBalancerMsg) {
+            handle((AddVmNicToLoadBalancerMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -975,6 +977,30 @@ public class LoadBalancerBase {
     }
 
     private void handle(final APIAddVmNicToLoadBalancerMsg msg) {
+        final APIAddVmNicToLoadBalancerEvent evt = new APIAddVmNicToLoadBalancerEvent(msg.getId());
+
+        AddVmNicToLoadBalancerMsg addVmNicToLoadBalancerMsg = new AddVmNicToLoadBalancerMsg();
+        addVmNicToLoadBalancerMsg.setLoadBalancerUuid(msg.getLoadBalancerUuid());
+        addVmNicToLoadBalancerMsg.setListenerUuid(msg.getListenerUuid());
+        addVmNicToLoadBalancerMsg.setVmNicUuids(msg.getVmNicUuids());
+        bus.makeLocalServiceId(addVmNicToLoadBalancerMsg, LoadBalancerConstants.SERVICE_ID);
+
+        bus.send(addVmNicToLoadBalancerMsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    evt.setInventory(LoadBalancerListenerInventory.valueOf(dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class)));
+                    bus.publish(evt);
+                    return;
+                }
+
+                evt.setError(reply.getError());
+                bus.publish(evt);
+            }
+        });
+    }
+
+    private void handle(final AddVmNicToLoadBalancerMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
@@ -998,8 +1024,8 @@ public class LoadBalancerBase {
         });
     }
 
-    private void addVmNicToListener(final APIAddVmNicToLoadBalancerMsg msg, final NoErrorCompletion completion) {
-        final APIAddVmNicToLoadBalancerEvent evt = new APIAddVmNicToLoadBalancerEvent(msg.getId());
+    private void addVmNicToListener(final AddVmNicToLoadBalancerMsg msg, final NoErrorCompletion completion) {
+        final AddVmNicToLoadBalancerReply reply = new AddVmNicToLoadBalancerReply();
 
         final String providerType = findProviderTypeByVmNicUuid(msg.getVmNicUuids().get(0));
         if (providerType == null) {
@@ -1110,8 +1136,8 @@ public class LoadBalancerBase {
                         }
 
                         dbf.updateCollection(refs);
-                        evt.setInventory(LoadBalancerListenerInventory.valueOf(dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class)));
-                        bus.publish(evt);
+                        reply.setSuccess(true);
+                        bus.reply(msg, reply);
                         completion.done();
                     }
                 });
@@ -1119,8 +1145,8 @@ public class LoadBalancerBase {
                 error(new FlowErrorHandler(msg, completion) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        evt.setError(errCode);
-                        bus.publish(evt);
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
                         completion.done();
                     }
                 });

@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class SetVmCleanTrafficAction extends AbstractAction {
+public class QueryAutoScalingRuleTriggerAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class SetVmCleanTrafficAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.SetVmCleanTrafficResult value;
+        public org.zstack.sdk.QueryAutoScalingRuleTriggerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,26 +25,6 @@ public class SetVmCleanTrafficAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean enable = false;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = true)
-    public String sessionId;
-
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -54,8 +34,8 @@ public class SetVmCleanTrafficAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.SetVmCleanTrafficResult value = res.getResult(org.zstack.sdk.SetVmCleanTrafficResult.class);
-        ret.value = value == null ? new org.zstack.sdk.SetVmCleanTrafficResult() : value; 
+        org.zstack.sdk.QueryAutoScalingRuleTriggerResult value = res.getResult(org.zstack.sdk.QueryAutoScalingRuleTriggerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryAutoScalingRuleTriggerResult() : value; 
 
         return ret;
     }
@@ -84,11 +64,11 @@ public class SetVmCleanTrafficAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/vm-instances/{uuid}/actions";
+        info.httpMethod = "GET";
+        info.path = "/autoscaling/groups/rules/trigger";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "setVmCleanTraffic";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 

@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class SetVmCleanTrafficAction extends AbstractAction {
+public class UpdateAutoScalingGroupAddingNewInstanceRuleAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class SetVmCleanTrafficAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.SetVmCleanTrafficResult value;
+        public org.zstack.sdk.UpdateAutoScalingRuleResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,11 +25,23 @@ public class SetVmCleanTrafficAction extends AbstractAction {
         }
     }
 
+    @Param(required = false, validValues = {"QuantityChangeInCapacity","PercentChangeInCapacity","TotalCapacity"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String adjustmentType;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,9223372036854775807L}, noTrim = false)
+    public java.lang.Integer adjustmentValue;
+
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean enable = false;
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,900L}, noTrim = false)
+    public java.lang.Long cooldown;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -54,8 +66,8 @@ public class SetVmCleanTrafficAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.SetVmCleanTrafficResult value = res.getResult(org.zstack.sdk.SetVmCleanTrafficResult.class);
-        ret.value = value == null ? new org.zstack.sdk.SetVmCleanTrafficResult() : value; 
+        org.zstack.sdk.UpdateAutoScalingRuleResult value = res.getResult(org.zstack.sdk.UpdateAutoScalingRuleResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateAutoScalingRuleResult() : value; 
 
         return ret;
     }
@@ -85,10 +97,10 @@ public class SetVmCleanTrafficAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/vm-instances/{uuid}/actions";
+        info.path = "/autoscaling/rules/adding-new-instance/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "setVmCleanTraffic";
+        info.parameterName = "updateAutoScalingGroupAddingNewInstanceRule";
         return info;
     }
 
