@@ -355,7 +355,8 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                 if (destinationMaker.isManagedByUs(uuid)) {
                     LongJobVO vo = dbf.findByUuid(uuid, LongJobVO.class);
                     vo.setManagementNodeUuid(Platform.getManagementServerId());
-                    dbf.updateAndRefresh(vo);
+                    vo = dbf.updateAndRefresh(vo);
+                    doLoadLongJob(vo);
                 }
             }
             start += group;
