@@ -194,6 +194,42 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         throw new CloudRuntimeException("unexpected addHost message: " + msg);
     }
 
+    private void addHostInQueue(final AddHostMessage msg, ReturnValueCompletion<HostInventory> completion) {
+        thdf.chainSubmit(new ChainTask(completion) {
+            @Override
+            public String getSyncSignature() {
+                return "batch-add-host";
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                doAddHostInQueue(msg, new ReturnValueCompletion<HostInventory>(completion) {
+                    @Override
+                    public void success(HostInventory returnValue) {
+                        completion.success(returnValue);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        completion.fail(errorCode);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
+            }
+
+            @Override
+            protected int getSyncLevel() {
+                return ThreadGlobalProperty.MAX_THREAD_NUM / 5;
+            }
+        });
+    }
+
     private void doAddHostInQueue(final AddHostMessage msg, ReturnValueCompletion<HostInventory> completion) {
         thdf.chainSubmit(new ChainTask(completion) {
             @Override
@@ -409,7 +445,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     private void handle(final AddHostMsg msg) {
         final AddHostReply reply = new AddHostReply();
 
-        doAddHostInQueue(msg, new ReturnValueCompletion<HostInventory>(msg) {
+        addHostInQueue(msg, new ReturnValueCompletion<HostInventory>(msg) {
             @Override
             public void success(HostInventory returnValue) {
                 reply.setInventory(returnValue);
@@ -428,7 +464,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     private void handle(final APIAddHostMsg msg) {
         final APIAddHostEvent evt = new APIAddHostEvent(msg.getId());
 
-        doAddHostInQueue(msg, new ReturnValueCompletion<HostInventory>(msg) {
+        addHostInQueue(msg, new ReturnValueCompletion<HostInventory>(msg) {
             @Override
             public void success(HostInventory inventory) {
                 evt.setInventory(inventory);
