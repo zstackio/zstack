@@ -58,6 +58,7 @@ import javax.persistence.Tuple;
 @RestRequest(
         path = "/eips/{eipUuid}/vm-instances/nics/{vmNicUuid}",
         method = HttpMethod.POST,
+        parameterName = "params",
         responseClass = APIAttachEipEvent.class
 )
 public class APIAttachEipMsg extends APIMessage implements EipMessage {
