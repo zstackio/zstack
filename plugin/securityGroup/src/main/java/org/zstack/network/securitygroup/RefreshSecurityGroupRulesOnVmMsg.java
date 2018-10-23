@@ -2,10 +2,16 @@ package org.zstack.network.securitygroup;
 
 import org.zstack.header.message.NeedReplyMessage;
 
+import java.util.List;
+
 public class RefreshSecurityGroupRulesOnVmMsg extends NeedReplyMessage {
     private String vmInstanceUuid;
     private String hostUuid;
     private boolean deleteAllRules;
+    private List<String> vNicUuids;
+
+    public List<String> getNicUuids() { return vNicUuids; }
+    public void setNicUuids(List<String> uuids) { this.vNicUuids = uuids; }
 
     public String getHostUuid() {
         return hostUuid;

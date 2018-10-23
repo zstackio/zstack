@@ -1,5 +1,6 @@
 package org.zstack.network.securitygroup;
 
+import com.google.common.base.Joiner;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
@@ -545,10 +546,14 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
     private void handle(RefreshSecurityGroupRulesOnVmMsg msg) {
         RefreshSecurityGroupRulesOnVmReply reply = new RefreshSecurityGroupRulesOnVmReply();
-        SimpleQuery<VmNicSecurityGroupRefVO> q = dbf.createQuery(VmNicSecurityGroupRefVO.class);
-        q.select(VmNicSecurityGroupRefVO_.vmNicUuid);
-        q.add(VmNicSecurityGroupRefVO_.vmInstanceUuid, Op.EQ, msg.getVmInstanceUuid());
-        List<String> nicUuids = q.listValue();
+        List<String> nicUuids = msg.getNicUuids();
+        if (nicUuids == null || nicUuids.isEmpty()) {
+            SimpleQuery<VmNicSecurityGroupRefVO> q = dbf.createQuery(VmNicSecurityGroupRefVO.class);
+            q.select(VmNicSecurityGroupRefVO_.vmNicUuid);
+            q.add(VmNicSecurityGroupRefVO_.vmInstanceUuid, Op.EQ, msg.getVmInstanceUuid());
+            nicUuids = q.listValue();
+        }
+
         if (nicUuids.isEmpty()) {
             checkDefaultRulesOnHost(msg.getHostUuid());
             logger.debug(String.format("no nic of vm[uuid:%s] needs to refresh security group rule", msg.getVmInstanceUuid()));
@@ -581,7 +586,8 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             checkDefaultRulesOnHost(msg.getHostUuid());
         }
 
-        logger.debug(String.format("refreshed security group rule for vm[uuid:%s]", msg.getVmInstanceUuid()));
+        logger.debug(String.format("refreshed security group rule for vm[uuid:%s] vNicuuids[%s]",
+                msg.getVmInstanceUuid(), Joiner.on(",").join(nicUuids)));
         bus.reply(msg, reply);
     }
 
