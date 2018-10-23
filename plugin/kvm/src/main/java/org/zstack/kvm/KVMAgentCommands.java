@@ -1588,6 +1588,7 @@ public class KVMAgentCommands {
         private String srcHostIp;
         private boolean useNuma;
         private boolean migrateFromDestination;
+        private Long timeout; // in seconds
 
         public boolean isUseNuma() {
             return useNuma;
@@ -1635,6 +1636,14 @@ public class KVMAgentCommands {
 
         public void setMigrateFromDestination(boolean migrateFromDestination) {
             this.migrateFromDestination = migrateFromDestination;
+        }
+
+        public Long getTimeout() {
+            return timeout;
+        }
+
+        public void setTimeout(Long timeout) {
+            this.timeout = timeout;
         }
     }
 
