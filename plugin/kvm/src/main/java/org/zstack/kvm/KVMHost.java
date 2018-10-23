@@ -1190,6 +1190,7 @@ public class KVMHost extends HostBase implements Host {
                         cmd.setStorageMigrationPolicy(storageMigrationPolicy == null ? null : storageMigrationPolicy.toString());
                         cmd.setVmUuid(vmUuid);
                         cmd.setUseNuma(VmGlobalConfig.NUMA.value(Boolean.class));
+                        cmd.setTimeout(timeoutManager.getTimeout(cmd.getClass(), TimeUnit.SECONDS));
 
                         UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(migrateVmPath);
                         ub.host(migrateFromDestination ? dstHostMnIp : srcHostMnIp);
