@@ -34,6 +34,7 @@ class BasicNfsCase extends SubCase {
     HostInventory host2
     HostInventory host3
     PrimaryStorageInventory ps
+    PrimaryStorageInventory ps1
     VmInstanceInventory vm
     VirtualRouterVmVO vr
 
@@ -118,9 +119,22 @@ class BasicNfsCase extends SubCase {
                     attachL2Network("l2")
                 }
 
+                cluster {
+                    name = "cluster1"
+                    hypervisorType = "KVM"
+
+                    attachPrimaryStorage("nfs1")
+                    attachL2Network("l2")
+                }
+
                 nfsPrimaryStorage {
                     name = "nfs"
                     url = "localhost:/nfs"
+                }
+
+                nfsPrimaryStorage {
+                    name = "nfs1"
+                    url = "localhost1:/nfs"
                 }
 
                 l2NoVlanNetwork {
@@ -190,6 +204,7 @@ class BasicNfsCase extends SubCase {
             host2 = env.inventoryByName("kvm2")
             host3 = env.inventoryByName("kvm3")
             ps = env.inventoryByName("nfs")
+            ps1 = env.inventoryByName("nfs1")
             vm = env.inventoryByName("vm")
             vr = Q.New(VirtualRouterVmVO.class).find()
 
@@ -198,6 +213,7 @@ class BasicNfsCase extends SubCase {
             testUpdateNfsName()
             testReconnectHostWillRemountNfsPsOnTheHost()
             testConfirmSystemUsedCapacityEqualToNull()
+            testUpdatePSWithoutHost()
         }
     }
 
@@ -314,5 +330,12 @@ class BasicNfsCase extends SubCase {
         PrimaryStorageCapacityVO capacityVO = dbFindByUuid(ps.uuid, PrimaryStorageCapacityVO.class)
 
         assert capacityVO.systemUsedCapacity == null
+    }
+
+    void testUpdatePSWithoutHost() {
+        updatePrimaryStorage {
+            uuid = ps1.uuid
+            url = "localhost2:/nfs"
+        }
     }
 }

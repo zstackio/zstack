@@ -59,6 +59,7 @@ import java.io.File;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 import static java.lang.Integer.min;
 import static org.zstack.core.Platform.operr;
@@ -1275,12 +1276,10 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     public void updateMountPoint(PrimaryStorageInventory pinv, String clusterUuid, String oldMountPoint,
                                  String newMountPoint, Completion completion) {
         SimpleQuery<HostVO> q = dbf.createQuery(HostVO.class);
-        q.select(HostVO_.uuid);
         q.add(HostVO_.clusterUuid, Op.EQ, clusterUuid);
-        q.add(HostVO_.status, Op.EQ, HostStatus.Connected);
-        final List<String> huuids = q.listValue();
-        if (huuids.isEmpty()) {
-            completion.fail(operr("No connected Host found in PrimaryStorage: [%s]", pinv.getUuid()));
+        final List<HostVO> hosts = q.list();
+        if (hosts.isEmpty()) {
+            completion.success();
             return;
         }
 
@@ -1289,7 +1288,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         new LoopAsyncBatch<String>(completion) {
             @Override
             protected Collection<String> collect() {
-                return huuids;
+                return hosts.stream().map(HostVO::getUuid).collect(Collectors.toList());
             }
 
             @Override
@@ -1329,7 +1328,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
             @Override
             protected void done() {
-                if(errors.size() == huuids.size()){
+                if(errors.size() == hosts.size()){
                     completion.fail(errors.get(0));
                 }else {
                     completion.success();
