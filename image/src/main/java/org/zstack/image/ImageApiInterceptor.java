@@ -179,7 +179,7 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
             SimpleQuery<BackupStorageVO> q = dbf.createQuery(BackupStorageVO.class);
             q.select(BackupStorageVO_.uuid);
             q.add(BackupStorageVO_.status, Op.EQ, BackupStorageStatus.Connected);
-            q.add(BackupStorageVO_.state, Op.EQ, BackupStorageState.Enabled);
+            q.add(BackupStorageVO_.availableCapacity, Op.GT, 0);
             q.add(BackupStorageVO_.uuid, Op.IN, msg.getBackupStorageUuids());
             List<String> bsUuids = q.listValue();
             if (bsUuids.isEmpty()) {

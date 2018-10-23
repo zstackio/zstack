@@ -2,7 +2,10 @@
 package org.zstack.test.integration.storage.backup.ceph
 
 import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
 import org.zstack.header.image.*
+import org.zstack.header.storage.backup.BackupStorageVO
+import org.zstack.header.storage.backup.BackupStorageVO_
 import org.zstack.sdk.BackupStorageInventory
 import org.zstack.sdk.ImageInventory
 import org.zstack.storage.ceph.backup.CephBackupStorageBase
@@ -75,6 +78,25 @@ class CephBSAddImageCase extends SubCase{
         env.create {
             testImageBackupStorageRefVOWhenAddImage()
             testUploadImage()
+            testAddImageButBSHasNoAvailableCapacity()
+
+        }
+    }
+
+    void testAddImageButBSHasNoAvailableCapacity() {
+        BackupStorageInventory bs = env.inventoryByName("ceph-bk")
+
+        SQL.New(BackupStorageVO.class)
+                .set(BackupStorageVO_.availableCapacity, Long.valueOf(0))
+                .eq(BackupStorageVO_.uuid, bs.uuid).update()
+
+        expect(AssertionError.class) {
+            addImage {
+                name = "large-image"
+                url = "http://my-site/ftest.iso"
+                backupStorageUuids = [bs.uuid]
+                format = ImageConstant.ISO_FORMAT_STRING
+            }
         }
     }
 
