@@ -1,9 +1,11 @@
 package org.zstack.utils;
 
+import com.google.common.collect.*;
+import com.google.common.collect.RangeSet;
 import org.apache.commons.lang.StringUtils;
 import org.zstack.utils.network.NetworkUtils;
 
-import java.util.Collection;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -12,7 +14,7 @@ import java.util.stream.Collectors;
 
 public class IpRangeSet {
     private static Pattern rangePattern = Pattern.compile("^([\\d.]+)(-[\\d.]+)?$");
-    private RangeSet rangeSet = new RangeSet();
+    private RangeSet<Long> rangeSet = TreeRangeSet.create();
 
     private static String IP_SET_SEPARATOR = ",";
     private static String IP_SET_INVERT_PREFIX = "^";
@@ -22,31 +24,26 @@ public class IpRangeSet {
         if (matcher.matches()) {
             Long start = NetworkUtils.ipv4StringToLong(matcher.group(1));
             Long end = Optional.ofNullable(matcher.group(2)).map(it -> NetworkUtils.ipv4StringToLong(it.replaceFirst("-", ""))).orElse(start);
-            rangeSet.closed(start, end);
+            rangeSet.add(Range.closed(start, end));
         } else {
             throw new IllegalArgumentException(String.format("illegal word[%s] for ip range", origin));
         }
     }
 
-    public static IpRangeSet valueOf(String word){
-        IpRangeSet result = new IpRangeSet();
-        Set<Long> values = originLongValueOf(word);
-        result.rangeSet = RangeSet.valueOf(values);
-        return result;
+    private void remove(IpRangeSet exclude) {
+       rangeSet.removeAll(exclude.rangeSet);
     }
 
-    public static IpRangeSet valueOf(Collection<Long> numbers){
-        IpRangeSet result = new IpRangeSet();
-        result.rangeSet = RangeSet.valueOf(numbers);
-        return result;
+    public long size() {
+        long size = 0L;
+        for (Range<Long> range : rangeSet.asRanges()) {
+            range = ContiguousSet.create(range, DiscreteDomain.longs()).range();
+            size += (range.upperEndpoint() - range.lowerEndpoint() + 1);
+        }
+        return size;
     }
 
-    public static Set<String> listAllIps(String word) {
-        Set<Long> ipLongValue = originLongValueOf(word);
-        return ipLongValue.stream().map(NetworkUtils::longToIpv4String).collect(Collectors.toSet());
-    }
-
-    public static Set<Long> originLongValueOf(String word){
+    public static Set<String> listAllIps(String word, long limit) {
         word = StringUtils.deleteWhitespace(word);
         String[] sets = word.split(IP_SET_SEPARATOR);
         IpRangeSet contain = new IpRangeSet();
@@ -59,20 +56,36 @@ public class IpRangeSet {
             }
         }
 
-        Set<Long> values = contain.rangeSet.values();
-        values.removeAll(exclude.rangeSet.values());
-        if (values.isEmpty()) {
-            throw new IllegalArgumentException(String.format("Invalid ipset [%s]", word));
+        contain.remove(exclude);
+
+        long size = contain.size();
+        if (size == 0) {
+            throw new IllegalArgumentException(String.format("Invalid empty ipset [%s]", word));
         }
 
-        return values;
+        if (size > limit) {
+            throw new IllegalArgumentException(String.format("ip range length[%d] is too large, must less than %d", size, limit));
+        }
+
+        Set<String> results = new HashSet<>();
+        for (Range<Long> range : contain.rangeSet.asRanges()) {
+            range = ContiguousSet.create(range, DiscreteDomain.longs()).range();
+            for (long i = range.lowerEndpoint(); i <= range.upperEndpoint() ; i++) {
+                results.add(NetworkUtils.longToIpv4String(i));
+            }
+        }
+
+        return results;
     }
 
     @Override
     public String toString(){
-        return String.join(IP_SET_SEPARATOR, rangeSet.getRanges().stream().map(range ->
-                range.getStart() == range.getEnd() ? String.valueOf(range.getStart()) :
-                        String.format("%s-%s", range.getStart(), range.getEnd()))
-                .collect(Collectors.toList()));
+        return String.join(IP_SET_SEPARATOR, rangeSet.asRanges().stream().map(range -> {
+            range = ContiguousSet.create(range, DiscreteDomain.longs()).range();
+            long start = range.lowerEndpoint();
+            long end = range.upperEndpoint();
+            return start == end ? NetworkUtils.longToIpv4String(start) :
+                    String.format("%s-%s", NetworkUtils.longToIpv4String(start),NetworkUtils.longToIpv4String(end));
+        }).collect(Collectors.toList()));
     }
 }

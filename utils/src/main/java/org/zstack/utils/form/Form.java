@@ -20,6 +20,8 @@ public class Form<T> {
     private List<Converter> headerConverter = new ArrayList<>();
     private Map<Field, Param> fieldParam = new HashMap<>();
     private String[] columns;
+    private final int limit;
+    private int size = 0;
 
     public interface Consumer<T> {
         void accept(T item, String value) throws Exception;
@@ -33,13 +35,20 @@ public class Form<T> {
         String accept(String column);
     }
 
-    private Form(Class<T> clz, String base64Content) {
-        this.clz = clz;
-        this.base64Content = base64Content;
+    public static class OutOfLimitException extends IllegalArgumentException{
+        public OutOfLimitException(String format) {
+            super(format);
+        }
     }
 
-    public static <T> Form<T> New(Class<T> clazz, String base64Content) {
-        return new Form<>(clazz, base64Content);
+    private Form(Class<T> clz, String base64Content, int limit) {
+        this.clz = clz;
+        this.base64Content = base64Content;
+        this.limit = limit;
+    }
+
+    public static <T> Form<T> New(Class<T> clazz, String base64Content, int limit) {
+        return new Form<>(clazz, base64Content, limit);
     }
 
     public Form<T> addColumnConverter(String column, ListConverter listConverter, Consumer<T> consumer) {
@@ -69,13 +78,15 @@ public class Form<T> {
         produceDefaultColumnConsumer();
         produceParamCheck();
 
-        int line = 0;
+        int line = 1;
         String[] record;
         Map<Integer, String> lineErrorInfo = new TreeMap<>();
         while ((record = reader.nextRecord()) != null) {
             try {
                 line++;
                 results.addAll(loadObject(record));
+            } catch (OutOfLimitException oe) {
+                throw oe;
             } catch (Exception e) {
                 lineErrorInfo.put(line, e.getMessage());
             }
@@ -154,6 +165,10 @@ public class Form<T> {
     }
 
     private T doLoadObject(String[] record) throws Exception {
+        if (++size > limit) {
+            throw new OutOfLimitException(String.format("objects count is too larger than limit[%d]", limit));
+        }
+
         T object = clz.newInstance();
         for (int i = 0; i < record.length; i++) {
             String key = columns[i];

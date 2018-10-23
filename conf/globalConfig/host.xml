@@ -84,4 +84,11 @@
         <defaultValue>2</defaultValue>
         <type>java.lang.Integer</type>
     </config>
+    <config>
+        <category>host</category>
+        <name>add.batchLimit</name>
+        <description>The maximum count of host that can batch add host once time</description>
+        <defaultValue>500</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
 </globalConfig>

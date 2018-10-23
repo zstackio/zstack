@@ -34,4 +34,6 @@ public class HostGlobalConfig {
     public static GlobalConfig RECONNECT_ALL_ON_BOOT = new GlobalConfig(CATEGORY, "reconnectAllOnBoot");
     @GlobalConfigValidation
     public static GlobalConfig HOST_UPDATE_OS_PARALLELISM_DEGREE = new GlobalConfig(CATEGORY, "update.os.parallelismDegree");
+    @GlobalConfigValidation(numberLessThan = 4096)
+    public static GlobalConfig BATCH_ADD_HOST_LIMIT = new GlobalConfig(CATEGORY, "add.batchLimit");
 }
