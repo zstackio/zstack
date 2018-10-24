@@ -61,14 +61,14 @@ class VirtualRouterVipsCase extends SubCase {
             delegate.uuid = vm.uuid
         }
         vrvmInv = queryVirtualRouterVm {}[0]
-        assert vrvmInv.virtualRouterVips.size() == 2
+        assert vrvmInv.virtualRouterVips.size() == 1
 
         attachEip {
             delegate.eipUuid = eip1.uuid
             delegate.vmNicUuid = vm.vmNics[0].uuid
         }
         vrvmInv = queryVirtualRouterVm {}[0]
-        assert vrvmInv.virtualRouterVips.size() == 2
+        assert vrvmInv.virtualRouterVips.size() == 1
 
         startVmInstance {
             delegate.uuid = vm.uuid
