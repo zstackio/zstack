@@ -778,6 +778,27 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                     });
                 }
 
+                flow(new NoRollbackFlow() {
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        ModifyVipAttributesStruct mstruct = new ModifyVipAttributesStruct();
+                        mstruct.setUseFor(EipConstant.EIP_NETWORK_SERVICE_TYPE);
+                        Vip vip = new Vip(struct.getVip().getUuid());
+                        vip.setStruct(mstruct);
+                        vip.release(new Completion(completion) {
+                            @Override
+                            public void success() {
+                                completion.success();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                completion.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
                 done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
