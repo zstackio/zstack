@@ -1302,7 +1302,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                         cmd.oldMountPoint = oldMountPoint;
                         cmd.options = options;
 
-                        asyncHttpCall(UPDATE_MOUNT_POINT_PATH, hostUuid, cmd, UpdateMountPointRsp.class, pinv,
+                        asyncHttpCall(UPDATE_MOUNT_POINT_PATH, hostUuid, cmd, true, UpdateMountPointRsp.class, pinv,
                                 new ReturnValueCompletion<UpdateMountPointRsp>(completion) {
                             @Override
                             public void success(UpdateMountPointRsp rsp) {
