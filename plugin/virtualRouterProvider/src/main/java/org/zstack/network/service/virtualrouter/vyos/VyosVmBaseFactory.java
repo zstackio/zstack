@@ -247,7 +247,7 @@ public class VyosVmBaseFactory extends VirtualRouterApplianceVmFactory implement
         if (!q.isExists()) {
             return;
         }
-
+        logger.debug("add vyos password to vrouter");
         info.put(VyosConstants.BootstrapInfoKey.vyosPassword.toString(), VirtualRouterGlobalConfig.VYOS_PASSWORD.value());
     }
 }
