@@ -300,8 +300,8 @@ public class IpRangeInventory implements Serializable {
         ipr.setDescription(msg.getDescription());
 
         ipr.setAddressMode(msg.getAddressMode());
-        ipr.setStartIp(msg.getStartIp());
-        ipr.setEndIp(msg.getEndIp());
+        ipr.setStartIp(IPv6NetworkUtils.getIpv6AddressCanonicalString(msg.getStartIp()));
+        ipr.setEndIp(IPv6NetworkUtils.getIpv6AddressCanonicalString(msg.getEndIp()));
         ipr.setNetmask(IPv6NetworkUtils.getFormalNetmaskOfNetworkCidr(msg.getPrefixLen()));
         ipr.setGateway(IPv6NetworkUtils.getIpv6AddressCanonicalString(msg.getGateway()));
         ipr.setPrefixLen(msg.getPrefixLen());

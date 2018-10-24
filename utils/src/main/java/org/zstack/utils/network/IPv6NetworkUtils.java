@@ -237,10 +237,10 @@ public class IPv6NetworkUtils {
     }
 
     private static final String[] IP6MASK = new String[] {
-            "8000", "C000", "E000", "F000",
-            "F800", "FC00", "FE00", "FF800",
-            "FF80", "FFC0", "FFE0", "FFF0",
-            "FFF8", "FFFC", "FFFE", "FFFF"
+            "8000", "c000", "e000", "f000",
+            "f800", "fc00", "fe00", "ff800",
+            "ff80", "ffc0", "ffe0", "fff0",
+            "fff8", "fffc", "fffe", "ffff"
     };
 
     public static String getFormalNetmaskOfNetworkCidr(String cidr) {

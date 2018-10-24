@@ -373,18 +373,15 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
             vipMap.put(v.getUuid(), v);
         }
 
-        List<String> l3Uuids = CollectionUtils.transformToList(vmNics, new Function<String, VmNicVO>() {
-            @Override
-            public String call(VmNicVO arg) {
-                for (UsedIpVO ip : arg.getUsedIps()) {
-                    List<String> guestips = nicGuestipMap.get(arg.getUuid());
-                    if (guestips != null && guestips.contains(ip.getIp())) {
-                        return ip.getL3NetworkUuid();
-                    }
+        List<String> l3Uuids = new ArrayList<>();
+        for (VmNicVO nicVO : vmNics) {
+            for (UsedIpVO ip : nicVO.getUsedIps()) {
+                List<String> guestips = nicGuestipMap.get(nicVO.getUuid());
+                if (guestips != null && guestips.contains(ip.getIp())) {
+                    l3Uuids.add(ip.getL3NetworkUuid());
                 }
-                return null;
             }
-        });
+        }
         l3Uuids = l3Uuids.stream().distinct().collect(Collectors.toList());
 
         final Map<String, VmNicVO> nicMap = new HashMap<String, VmNicVO>();
@@ -414,6 +411,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                         to.nicNetmask = ip.getNetmask();
                         IpRangeVO ipr = Q.New(IpRangeVO.class).eq(IpRangeVO_.uuid, ip.getIpRangeUuid()).find();
                         to.nicPrefixLen = ipr.getPrefixLen();
+                        to.vmBridgeName = bridgeNames.get(ip.getL3NetworkUuid());
                     }
                 }
                 to.nicMac = nic.getMac();
@@ -598,6 +596,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
             to.nicNetmask = struct.getGuestIp().getNetmask();
             to.nicGateway = struct.getGuestIp().getGateway();
             to.ipVersion = struct.getGuestIp().getIpVersion();
+            to.vmBridgeName = new BridgeNameFinder().findByL3Uuid(struct.getGuestIp().getL3NetworkUuid());
         } else {
             /* for detachEip */
             to.nicIp = struct.getEip().getGuestIp();
@@ -613,7 +612,6 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         to.vipUuid = struct.getVip().getUuid();
         List<IpRangeVO> iprs = Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, struct.getVip().getL3NetworkUuid()).list();
         to.vipPrefixLen = iprs.get(0).getPrefixLen();
-        to.vmBridgeName = new BridgeNameFinder().findByL3Uuid(struct.getNic().getL3NetworkUuid());
         to.publicBridgeName = new BridgeNameFinder().findByL3Uuid(struct.getVip().getL3NetworkUuid());
         return to;
     }
