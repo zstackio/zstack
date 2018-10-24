@@ -1472,6 +1472,7 @@ public class KVMAgentCommands {
 
     public static class RefreshAllRulesOnHostCmd extends AgentCommand {
         private List<SecurityGroupRuleTO> ruleTOs;
+        private List<SecurityGroupRuleTO> ipv6RuleTOs;
 
         public List<SecurityGroupRuleTO> getRuleTOs() {
             return ruleTOs;
@@ -1479,6 +1480,14 @@ public class KVMAgentCommands {
 
         public void setRuleTOs(List<SecurityGroupRuleTO> ruleTOs) {
             this.ruleTOs = ruleTOs;
+        }
+
+        public List<SecurityGroupRuleTO> getIpv6RuleTOs() {
+            return ipv6RuleTOs;
+        }
+
+        public void setIpv6RuleTOs(List<SecurityGroupRuleTO> ipv6RuleTOs) {
+            this.ipv6RuleTOs = ipv6RuleTOs;
         }
     }
 
@@ -1516,6 +1525,7 @@ public class KVMAgentCommands {
 
     public static class ApplySecurityGroupRuleCmd extends AgentCommand {
         private List<SecurityGroupRuleTO> ruleTOs;
+        private List<SecurityGroupRuleTO> ipv6RuleTOs;
 
         public List<SecurityGroupRuleTO> getRuleTOs() {
             return ruleTOs;
@@ -1523,6 +1533,14 @@ public class KVMAgentCommands {
 
         public void setRuleTOs(List<SecurityGroupRuleTO> ruleTOs) {
             this.ruleTOs = ruleTOs;
+        }
+
+        public List<SecurityGroupRuleTO> getIpv6RuleTOs() {
+            return ipv6RuleTOs;
+        }
+
+        public void setIpv6RuleTOs(List<SecurityGroupRuleTO> ipv6RuleTOs) {
+            this.ipv6RuleTOs = ipv6RuleTOs;
         }
     }
 

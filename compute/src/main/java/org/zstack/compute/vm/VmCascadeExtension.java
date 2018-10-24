@@ -466,7 +466,6 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
             }
 
             List<String> l3Uuids = l3s.stream().map(l3inv -> l3inv.getUuid()).collect(Collectors.toList());
-            logger.debug("ruanshixin vmcascade " + l3Uuids);
             for (VmDeletionStruct vm : vminvs) {
                 for (L3NetworkInventory l3 : l3s) {
                     VmNicInventory nic = vm.getInventory().findNic(l3.getUuid());

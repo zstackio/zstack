@@ -15,9 +15,9 @@ public class SecurityGroupRuleTO {
     private String vmNicUuid;
     private String vmNicMac;
     private List<String> vmNicIp;
-    private List<String> vmNicIpv6;
     private List<RuleTO> securityGroupBaseRules;
     private String actionCode = ACTION_CODE_APPLY_RULE;
+    private Integer ipVersion;
 
     public String getVmNicMac() {
         return vmNicMac;
@@ -33,14 +33,6 @@ public class SecurityGroupRuleTO {
 
     public void setVmNicIp(List<String> vmNicIp) {
         this.vmNicIp = vmNicIp;
-    }
-
-    public List<String> getVmNicIpv6() {
-        return vmNicIpv6;
-    }
-
-    public void setVmNicIpv6(List<String> vmNicIpv6) {
-        this.vmNicIpv6 = vmNicIpv6;
     }
 
     public String getActionCode() {
@@ -98,6 +90,14 @@ public class SecurityGroupRuleTO {
 
     public List<RuleTO> getSecurityGroupBaseRules() {
         return securityGroupBaseRules;
+    }
+
+    public Integer getIpVersion() {
+        return ipVersion;
+    }
+
+    public void setIpVersion(Integer ipVersion) {
+        this.ipVersion = ipVersion;
     }
 
     @Override

@@ -86,9 +86,9 @@ public class RuleTO {
         sb.append(String.format("protocol: %s,", this.protocol));
         sb.append(String.format("startPort: %s,", this.startPort));
         sb.append(String.format("endPort: %s,", this.endPort));
-        sb.append(String.format("allowedCidr: %s", this.allowedCidr));
-        sb.append(String.format("securityGroupUuid: %s", this.securityGroupUuid));
-        sb.append(String.format("remoteGroupUuid: %s", this.remoteGroupUuid));
+        sb.append(String.format("allowedCidr: %s,", this.allowedCidr));
+        sb.append(String.format("securityGroupUuid: %s,", this.securityGroupUuid));
+        sb.append(String.format("remoteGroupUuid: %s,", this.remoteGroupUuid));
         sb.append(String.format("remoteGroupVmIps: %s", this.remoteGroupVmIps));
         return sb.toString();
     }
