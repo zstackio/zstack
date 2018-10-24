@@ -52,10 +52,11 @@ public class TestForm {
         testCsv();
         testOtherCsv();
         testParam();
+        testLimit();
     }
 
     private void testExcel() throws Exception {
-        List<TestClass> results = Form.New(TestClass.class, createExcelContent())
+        List<TestClass> results = Form.New(TestClass.class, createExcelContent(), 100)
                 .addColumnConverter("test", it -> Arrays.asList(it.split(",")), TestClass::setValue)
                 .load();
         assert results.size() == 4;
@@ -66,7 +67,7 @@ public class TestForm {
     }
 
     private void testCsv() throws Exception {
-        List<TestClass> results = Form.New(TestClass.class, createCsvContent())
+        List<TestClass> results = Form.New(TestClass.class, createCsvContent(), 100)
                 .addColumnConverter("test", it -> Arrays.asList(it.split(",")), TestClass::setValue)
                 .load();
         assert results.size() == 4;
@@ -77,7 +78,7 @@ public class TestForm {
     }
 
     private void testOtherCsv() throws Exception {
-        List<TestClass> results = Form.New(TestClass.class, createOtherCsv())
+        List<TestClass> results = Form.New(TestClass.class, createOtherCsv(), 100)
                 .addColumnConverter("test", it -> Arrays.asList(it.split("\\|")), TestClass::setValue)
                 .load();
         assert results.size() == 4;
@@ -85,6 +86,22 @@ public class TestForm {
         assert results.get(0).anInt == 2;
         assert results.get(1).anInt == 23;
         assert results.get(1).value.equals("a");
+    }
+
+    private void testLimit() throws Exception {
+        List<TestClass> results = Form.New(TestClass.class, createOtherCsv(), 4)
+                .addColumnConverter("test", it -> Arrays.asList(it.split("\\|")), TestClass::setValue)
+                .load();
+
+        boolean called = false;
+        try {
+            Form.New(TestClass.class, createOtherCsv(), 3)
+                    .addColumnConverter("test", it -> Arrays.asList(it.split("\\|")), TestClass::setValue)
+                    .load();
+        } catch (Exception e) {
+            called = true;
+        }
+        assert called;
     }
 
     public static class TestClass2 extends TestParentClass{
@@ -104,7 +121,7 @@ public class TestForm {
         String csv = "trimValue,noTrimValue,number\n,aa,1";
         boolean failure = false;
         try {
-            Form.New(TestClass2.class, encodeToBase64(csv)).load();
+            Form.New(TestClass2.class, encodeToBase64(csv), 100).load();
         } catch (Exception e) {
             failure = true;
         }
@@ -113,14 +130,14 @@ public class TestForm {
         csv = "trimValue,noTrimValue,number\naa,aa,4\n , , \n";
         failure = false;
         try {
-            Form.New(TestClass2.class, encodeToBase64(csv)).load();
+            Form.New(TestClass2.class, encodeToBase64(csv), 100).load();
         } catch (Exception e) {
             failure = true;
         }
         assert failure;
 
         csv = "trimValue,noTrimValue,number\naa , aa\n,,\n";
-        List<TestClass2> results = Form.New(TestClass2.class, encodeToBase64(csv)).load();
+        List<TestClass2> results = Form.New(TestClass2.class, encodeToBase64(csv), 100).load();
         assert results.get(0).trimValue.equals("aa");
         assert results.get(0).noTrimValue.equals(" aa");
     }

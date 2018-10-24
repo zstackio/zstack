@@ -30,7 +30,6 @@ import org.zstack.header.network.l2.L2NetworkType;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.rest.SyncHttpCallHandler;
 import org.zstack.header.tag.FormTagExtensionPoint;
-import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.volume.MaxDataVolumeNumberExtensionPoint;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeFormat;
@@ -105,13 +104,14 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     }
 
     private List<AddKVMHostMsg> loadMsgFromFile(String content) throws IOException {
+        int limit = HostGlobalConfig.BATCH_ADD_HOST_LIMIT.value(Integer.class);
         Map<String, Function<String, String>> extensionTagMappers = new HashMap<>();
         pluginRgty.getExtensionList(FormTagExtensionPoint.class).forEach(it -> extensionTagMappers.putAll(it.getTagMappers(AddKVMHostMsg.class)));
 
-        Form<AddKVMHostMsg> form = Form.New(AddKVMHostMsg.class, content)
+        Form<AddKVMHostMsg> form = Form.New(AddKVMHostMsg.class, content, limit)
                 .addHeaderConverter(head -> (head.matches(".*\\(.*\\).*") ? head.split("[()]")[1] : head)
                         .replaceAll("\\*", ""))
-                .addColumnConverter("managementIps", IpRangeSet::listAllIps, AddHostMsg::setManagementIp);
+                .addColumnConverter("managementIps", it -> IpRangeSet.listAllIps(it, limit), AddHostMsg::setManagementIp);
 
         extensionTagMappers.forEach((columnName, builder) ->
                 form.addColumnConverter(columnName, (it, value) -> it.addSystemTag(builder.call(value))));
