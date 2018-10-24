@@ -873,7 +873,7 @@ public class VolumeBase implements Volume {
             @Override
             public void run(final SyncTaskChain chain) {
                 self = dbf.reload(self);
-                if (self.getStatus() == VolumeStatus.Deleted) {
+                if (self == null || self.getStatus() == VolumeStatus.Deleted) {
                     // the volume has been deleted
                     // we run into this case because the cascading framework
                     // will send duplicate messages when deleting a vm as the cascading
