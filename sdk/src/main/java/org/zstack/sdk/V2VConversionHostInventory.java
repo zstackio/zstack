@@ -76,4 +76,20 @@ public class V2VConversionHostInventory  {
         return this.lastOpDate;
     }
 
+    public java.lang.String hostStatus;
+    public void setHostStatus(java.lang.String hostStatus) {
+        this.hostStatus = hostStatus;
+    }
+    public java.lang.String getHostStatus() {
+        return this.hostStatus;
+    }
+
+    public java.lang.String hostState;
+    public void setHostState(java.lang.String hostState) {
+        this.hostState = hostState;
+    }
+    public java.lang.String getHostState() {
+        return this.hostState;
+    }
+
 }
