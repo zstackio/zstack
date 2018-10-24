@@ -1189,6 +1189,7 @@ public class KVMHost extends HostBase implements Host {
                         cmd.setMigrateFromDestination(migrateFromDestination);
                         cmd.setStorageMigrationPolicy(storageMigrationPolicy == null ? null : storageMigrationPolicy.toString());
                         cmd.setVmUuid(vmUuid);
+                        cmd.setAutoConverge(KVMGlobalConfig.MIGRATE_AUTO_CONVERGE.value(Boolean.class));
                         cmd.setUseNuma(VmGlobalConfig.NUMA.value(Boolean.class));
                         cmd.setTimeout(timeoutManager.getTimeout(cmd.getClass(), TimeUnit.SECONDS));
 

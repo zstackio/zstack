@@ -38,6 +38,8 @@ public class KVMGlobalConfig {
     public static GlobalConfig CHECK_HOST_CPU_MODEL_NAME = new GlobalConfig(CATEGORY, "checkHostCpuModelName");
     @GlobalConfigValidation
     public static GlobalConfig KVM_IGNORE_MSRS = new GlobalConfig(CATEGORY, "ignoreMsrs");
+    @GlobalConfigValidation
+    public static GlobalConfig MIGRATE_AUTO_CONVERGE = new GlobalConfig(CATEGORY, "migrate.autoConverge");
     @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 3600)
     public static GlobalConfig TEST_SSH_PORT_ON_OPEN_TIMEOUT = new GlobalConfig(CATEGORY, "testSshPortOpenTimeout");
     @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 300)
