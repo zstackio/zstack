@@ -1588,6 +1588,7 @@ public class KVMAgentCommands {
         private String srcHostIp;
         private boolean useNuma;
         private boolean migrateFromDestination;
+        private boolean autoConverge;
         private Long timeout; // in seconds
 
         public boolean isUseNuma() {
@@ -1628,6 +1629,14 @@ public class KVMAgentCommands {
 
         public void setDestHostIp(String destHostIp) {
             this.destHostIp = destHostIp;
+        }
+
+        public boolean isAutoConverge() {
+            return autoConverge;
+        }
+
+        public void setAutoConverge(boolean autoConverge) {
+            this.autoConverge = autoConverge;
         }
 
         public boolean isMigrateFromDestination() {
