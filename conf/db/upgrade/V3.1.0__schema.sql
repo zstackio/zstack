@@ -196,7 +196,6 @@ CREATE TABLE `AutoScalingRuleAlarmTriggerVO` (
     CONSTRAINT `fkAutoScalingRuleInstanceAlarmVO` FOREIGN KEY (`alarmUuid`) REFERENCES `AlarmVO` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-
 ALTER TABLE `zstack`.`IpRangeEO` ADD COLUMN `ipVersion` int(10) unsigned NOT NULL DEFAULT 4;
 ALTER TABLE `zstack`.`IpRangeEO` ADD COLUMN `addressMode` varchar(64) DEFAULT NULL;
 ALTER TABLE `zstack`.`IpRangeEO` ADD COLUMN `prefixLen` int(10) unsigned DEFAULT NULL;
@@ -214,4 +213,7 @@ ALTER TABLE `zstack`.`VmNicVO` ADD COLUMN `ipVersion` int(10) unsigned NOT NULL 
 
 ALTER TABLE `zstack`.`SecurityGroupVO` ADD COLUMN `ipVersion` int(10) unsigned NOT NULL DEFAULT 4;
 ALTER TABLE `zstack`.`SecurityGroupRuleVO` ADD COLUMN `ipVersion` int(10) unsigned NOT NULL DEFAULT 4;
+
+ALTER TABLE `zstack`.`LongJobVO`  ADD COLUMN `executeTime` int unsigned DEFAULT NULL;
+UPDATE `zstack`.`LongJobVO` job SET job.`executeTime` = TIMESTAMPDIFF(SECOND, job.createDate, job.lastOpDate);
 
