@@ -94,13 +94,31 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     @Override
     public List<AddHostMsg> buildMessageFromFile(String content) {
         try {
-            return loadMsgFromFile(content).stream()
-                    .peek(it -> it.setName((StringUtils.isEmpty(it.getName()) ? "HOST" : it.getName()) + "-" + it.getManagementIp()))
-                    .collect(Collectors.toList());
+            List<AddKVMHostMsg> msgs = loadMsgFromFile(content);
+            return prepareMsgHostName(msgs);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             throw new OperationFailureException(operr("fail to load host info from file. because\n%s", e.getMessage()));
         }
+    }
+
+    private List<AddHostMsg> prepareMsgHostName(List<AddKVMHostMsg> msgs) {
+        Map<String, List<AddKVMHostMsg>> nameMsgsMap = new HashMap<>();
+        msgs.forEach(it -> nameMsgsMap.computeIfAbsent(it.getName(), k -> new ArrayList<>()).add(it));
+
+        List<AddHostMsg> renamed = nameMsgsMap.entrySet().stream()
+                .filter(e -> e.getValue().size() > 1 || StringUtils.isEmpty(e.getKey()))
+                .flatMap(e -> e.getValue().stream())
+                .peek(msg -> msg.setName((StringUtils.isEmpty(msg.getName()) ? "HOST" : msg.getName()) + "-" + msg.getManagementIp()))
+                .collect(Collectors.toList());
+
+        List<AddHostMsg> origins = nameMsgsMap.entrySet().stream()
+                .filter(e -> e.getValue().size() == 1 && !StringUtils.isEmpty(e.getKey()))
+                .flatMap(e -> e.getValue().stream())
+                .collect(Collectors.toList());
+
+        renamed.addAll(origins);
+        return renamed;
     }
 
     private List<AddKVMHostMsg> loadMsgFromFile(String content) throws IOException {
