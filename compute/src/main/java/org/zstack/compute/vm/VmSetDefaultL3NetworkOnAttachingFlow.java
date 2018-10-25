@@ -8,11 +8,11 @@ import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceSpec;
-import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.*;
 
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Created by frank on 7/19/2015.
@@ -30,7 +30,7 @@ public class VmSetDefaultL3NetworkOnAttachingFlow implements Flow {
             return;
         }
 
-        L3NetworkInventory l3 = spec.getL3Networks().get(0);
+        L3NetworkInventory l3 = VmNicSpec.getL3NetworkInventoryOfSpec(spec.getL3Networks()).get(0);
         VmInstanceVO vm = dbf.findByUuid(spec.getVmInventory().getUuid(), VmInstanceVO.class);
         vm.setDefaultL3NetworkUuid(l3.getUuid());
         dbf.update(vm);

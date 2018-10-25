@@ -141,6 +141,7 @@ public class SourceClassMap {
 			put("org.zstack.header.network.l3.IpRangeInventory", "org.zstack.sdk.IpRangeInventory");
 			put("org.zstack.header.network.l3.L3NetworkHostRouteInventory", "org.zstack.sdk.L3NetworkHostRouteInventory");
 			put("org.zstack.header.network.l3.L3NetworkInventory", "org.zstack.sdk.L3NetworkInventory");
+			put("org.zstack.header.network.l3.UsedIpInventory", "org.zstack.sdk.UsedIpInventory");
 			put("org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory", "org.zstack.sdk.NetworkServiceL3NetworkRefInventory");
 			put("org.zstack.header.network.service.NetworkServiceProviderInventory", "org.zstack.sdk.NetworkServiceProviderInventory");
 			put("org.zstack.header.scheduler.SchedulerJobInventory", "org.zstack.sdk.SchedulerJobInventory");
@@ -547,6 +548,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.TwoFactorAuthenticationSecretInventory", "org.zstack.twoFactorAuthentication.TwoFactorAuthenticationSecretInventory");
 			put("org.zstack.sdk.UsbDeviceInventory", "org.zstack.usbDevice.UsbDeviceInventory");
 			put("org.zstack.sdk.UsbDeviceState", "org.zstack.usbDevice.UsbDeviceState");
+			put("org.zstack.sdk.UsedIpInventory", "org.zstack.header.network.l3.UsedIpInventory");
 			put("org.zstack.sdk.UserGroupInventory", "org.zstack.header.identity.UserGroupInventory");
 			put("org.zstack.sdk.UserInventory", "org.zstack.header.identity.UserInventory");
 			put("org.zstack.sdk.UserTagInventory", "org.zstack.header.tag.UserTagInventory");

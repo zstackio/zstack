@@ -12,6 +12,7 @@ public class SecurityGroupRuleVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<SecurityGroupRuleVO, String> securityGroupUuid;
     public static volatile SingularAttribute<SecurityGroupRuleVO, SecurityGroupRuleType> type;
     public static volatile SingularAttribute<SecurityGroupRuleVO, SecurityGroupRuleState> state;
+    public static volatile SingularAttribute<SecurityGroupRuleVO, Integer> ipVersion;
     public static volatile SingularAttribute<SecurityGroupRuleVO, Integer> startPort;
     public static volatile SingularAttribute<SecurityGroupRuleVO, Integer> endPort;
     public static volatile SingularAttribute<SecurityGroupRuleVO, String> protocol;

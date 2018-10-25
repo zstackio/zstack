@@ -8,7 +8,7 @@ import java.util.List;
 @ApiTimeout(apiClasses = {APICreateVmInstanceMsg.class})
 public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage implements VmInstanceMessage {
     private VmInstanceInventory vmInstanceInventory;
-    private List<String> l3NetworkUuids;
+    private List<VmNicSpec> l3NetworkUuids;
     private List<String> dataDiskOfferingUuids;
     private String rootDiskOfferingUuid;
     private String primaryStorageUuidForRootVolume;
@@ -25,11 +25,11 @@ public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage impleme
         this.vmInstanceInventory = vmInstanceInventory;
     }
 
-    public List<String> getL3NetworkUuids() {
+    public List<VmNicSpec> getL3NetworkUuids() {
         return l3NetworkUuids;
     }
 
-    public void setL3NetworkUuids(List<String> l3NetworkUuids) {
+    public void setL3NetworkUuids(List<VmNicSpec> l3NetworkUuids) {
         this.l3NetworkUuids = l3NetworkUuids;
     }
 

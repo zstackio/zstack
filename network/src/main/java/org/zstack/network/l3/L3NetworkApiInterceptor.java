@@ -1,6 +1,6 @@
 package org.zstack.network.l3;
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
+
 import org.apache.commons.net.util.SubnetUtils;
 import org.apache.commons.net.util.SubnetUtils.SubnetInfo;
 import org.apache.commons.validator.routines.DomainValidator;
@@ -12,7 +12,6 @@ import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
@@ -23,11 +22,14 @@ import org.zstack.header.zone.ZoneVO_;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6Constants;
+import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
 
@@ -90,6 +92,10 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             validate((APIAddHostRouteToL3NetworkMsg) msg);
         } else if (msg instanceof APIRemoveHostRouteFromL3NetworkMsg) {
             validate((APIRemoveHostRouteFromL3NetworkMsg) msg);
+        } else if (msg instanceof APIAddIpv6RangeByNetworkCidrMsg) {
+            validate((APIAddIpv6RangeByNetworkCidrMsg) msg);
+        } else if (msg instanceof APIAddIpv6RangeMsg) {
+            validate((APIAddIpv6RangeMsg) msg);
         }
 
         setServiceId(msg);
@@ -143,7 +149,7 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
                 throw new ApiMessageInterceptionException(argerr("ip[%s] is not in the cidr of ip range[uuid:%s, cidr:%s] which l3 network[%s] attached",
                         msg.getRouterInterfaceIp(), ipRangeVO.getUuid(), ipRangeVO.getNetworkCidr(), msg.getL3NetworkUuid()));
             }
-            if (NetworkUtils.isIpv4InRange(msg.getRouterInterfaceIp(), ipRangeVO.getStartIp(), ipRangeVO.getEndIp())) {
+            if (NetworkUtils.isInRange(msg.getRouterInterfaceIp(), ipRangeVO.getStartIp(), ipRangeVO.getEndIp())) {
                 throw new ApiMessageInterceptionException(argerr("ip[%s] in ip range[uuid:%s, startIp:%s, endIp:%s] which l3 network[%s] attached, this is not allowed",
                         msg.getRouterInterfaceIp(), ipRangeVO.getUuid(), ipRangeVO.getStartIp(), ipRangeVO.getEndIp(), msg.getL3NetworkUuid()));
             }
@@ -173,6 +179,102 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
 
         if (msg.getLimit() < 0) {
             msg.setLimit(Integer.MAX_VALUE);
+        }
+
+        L3NetworkVO l3Vo = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
+        if (msg.getStart() == null) {
+            if (l3Vo.getIpVersion() == IPv6Constants.IPv6) {
+                msg.setStartIp("::");
+            } else {
+                msg.setStartIp("0.0.0.0");
+            }
+        }
+
+    }
+
+    private void validate(APIAddIpv6RangeByNetworkCidrMsg msg) {
+        if (!IPv6NetworkUtils.isValidUnicastNetworkCidr(msg.getNetworkCidr())) {
+            throw new ApiMessageInterceptionException(argerr("%s is not a valid network cidr", msg.getNetworkCidr()));
+        }
+
+        IpRangeInventory ipr = IpRangeInventory.fromMessage(msg);
+        validateIpv6Range(ipr);
+    }
+
+    private void validate(APIAddIpv6RangeMsg msg) {
+        if (!IPv6NetworkUtils.isIpv6UnicastAddress(msg.getStartIp())) {
+            throw new ApiMessageInterceptionException(argerr("%s is not a valid ipv6 address", msg.getStartIp()));
+        }
+
+        if (!IPv6NetworkUtils.isIpv6UnicastAddress(msg.getEndIp())) {
+            throw new ApiMessageInterceptionException(argerr("%s is not a valid ipv6 address", msg.getEndIp()));
+        }
+
+        if (!IPv6NetworkUtils.isIpv6UnicastAddress(msg.getGateway())) {
+            throw new ApiMessageInterceptionException(argerr("%s is not a valid ipv6 address", msg.getGateway()));
+        }
+
+        if (!IPv6NetworkUtils.isValidUnicastIpv6Range(msg.getStartIp(), msg.getEndIp(), msg.getGateway(), msg.getPrefixLen())) {
+            throw new ApiMessageInterceptionException(argerr("[startIp %s, endIp %s, prefixLen %d, gateway %s] is not a valid ipv6 range",
+                    msg.getStartIp(), msg.getEndIp(), msg.getPrefixLen(), msg.getGateway()));
+        }
+
+        IpRangeInventory ipr = IpRangeInventory.fromMessage(msg);
+        validateIpv6Range(ipr);
+    }
+
+    private void validateIpv6Range(IpRangeInventory ipr) {
+        if (ipr.getPrefixLen() > IPv6Constants.IPV6_PREFIX_LEN_MAX || ipr.getPrefixLen() < IPv6Constants.IPV6_PREFIX_LEN_MIN) {
+            throw new ApiMessageInterceptionException(argerr("ip range prefix length is out of range [%d - %d] ",
+                    IPv6Constants.IPV6_PREFIX_LEN_MIN, IPv6Constants.IPV6_PREFIX_LEN_MAX));
+        }
+
+        L3NetworkVO l3Vo = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, ipr.getL3NetworkUuid()).find();
+        if (l3Vo.getIpVersion() != IPv6Constants.IPv6) {
+            throw new ApiMessageInterceptionException(argerr("l3 network [uuid %s: name %s] is not a ipv6 network", l3Vo.getUuid(), l3Vo.getName()));
+        }
+
+        List<IpRangeVO> rangeVOS = Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, ipr.getL3NetworkUuid()).list();
+        if (rangeVOS != null && !rangeVOS.isEmpty()) {
+            if (!rangeVOS.get(0).getAddressMode().equals(ipr.getAddressMode())) {
+                throw new ApiMessageInterceptionException(argerr("addressMode[%s] is different from L3Netowork address mode[%s]", ipr.getAddressMode(),
+                        rangeVOS.get(0).getAddressMode()));
+            }
+        }
+
+        if (!ipr.getAddressMode().equals(IPv6Constants.Stateful_DHCP) && ipr.getPrefixLen() != IPv6Constants.IPV6_STATELESS_PREFIX_LEN) {
+            throw new ApiMessageInterceptionException(argerr("ipv6 prefix length must be %d for Stateless-DHCP or SLAAC", IPv6Constants.IPV6_STATELESS_PREFIX_LEN));
+        }
+
+        List<String> l3Uuids = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.l2NetworkUuid, l3Vo.getL2NetworkUuid()).select(L3NetworkVO_.uuid).listValues();
+        SimpleQuery<IpRangeVO> q = dbf.createQuery(IpRangeVO.class);
+        q.add(IpRangeVO_.l3NetworkUuid, Op.IN, l3Uuids);
+        q.add(IpRangeVO_.ipVersion, Op.EQ, IPv6Constants.IPv6);
+        List<IpRangeVO> ranges = q.list();
+        for (IpRangeVO r : ranges) {
+            if (IPv6NetworkUtils.isIpv6RangeOverlap(ipr.getStartIp(), ipr.getEndIp(), r.getStartIp(), r.getEndIp())) {
+                throw new ApiMessageInterceptionException(argerr("new ip range [startip :%s, endip :%s] is overlaped with old ip range[startip :%s, endip :%s]",
+                        ipr.getStartIp(), ipr.getEndIp(), r.getStartIp(), r.getEndIp()));
+            }
+
+            if (!r.getL3NetworkUuid().equals(ipr.getL3NetworkUuid())) {
+                continue;
+            }
+
+            /* same l3 network can have only 1 cidr */
+            if (!r.getNetworkCidr().equals(ipr.getNetworkCidr())) {
+                throw new ApiMessageInterceptionException(argerr("multiple CIDR on the same L3 network is not allowed. There has been a IP" +
+                                " range[%s], the new IP range[CIDR:%s] is not in the CIDR with the existing one",
+                        r.getNetworkCidr(), ipr.getNetworkCidr()));
+            }
+        }
+
+        /* ipranges of same l3 network must have same gateway */
+        List<IpRangeVO> l3IpRanges = Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, ipr.getL3NetworkUuid()).list();
+        for (IpRangeVO r : l3IpRanges) {
+            if (!r.getGateway().equals(ipr.getGateway())) {
+                throw new ApiMessageInterceptionException(argerr("new add ip range gateway %s is different from old gateway %s", ipr.getGateway(), r.getGateway()));
+            }
         }
     }
 
@@ -250,7 +352,6 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(argerr("not valid combination of system and category," +
                     "only %s are valid", L3NetworkCategory.validCombination));
         }
-
     }
 
     private void validate(APIRemoveDnsFromL3NetworkMsg msg) {
@@ -273,6 +374,11 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(IpRangeInventory ipr) {
+        L3NetworkVO l3Vo = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, ipr.getL3NetworkUuid()).find();
+        if (l3Vo.getIpVersion() != IPv6Constants.IPv4) {
+            throw new ApiMessageInterceptionException(argerr("l3 network [uuid %s: name %s] is not a ipv4 network", l3Vo.getUuid(), l3Vo.getName()));
+        }
+
         if (NetworkUtils.isIpv4RangeOverlap("224.0.0.0", "239.255.255.255", ipr.getStartIp(), ipr.getEndIp())) {
             throw new ApiMessageInterceptionException(argerr("the IP range[%s ~ %s] contains D class addresses which are for multicast", ipr.getStartIp(), ipr.getEndIp()));
         }
@@ -329,10 +435,10 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
         }
 
         String cidr = ipr.toSubnetUtils().getInfo().getCidrSignature();
-        L3NetworkVO l3Vo = dbf.findByUuid(ipr.getL3NetworkUuid(), L3NetworkVO.class);
         List<String> l3Uuids = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.l2NetworkUuid, l3Vo.getL2NetworkUuid()).select(L3NetworkVO_.uuid).listValues();
         SimpleQuery<IpRangeVO> q = dbf.createQuery(IpRangeVO.class);
         q.add(IpRangeVO_.l3NetworkUuid, Op.IN, l3Uuids);
+        q.add(IpRangeVO_.ipVersion, Op.EQ, IPv6Constants.IPv4);
         List<IpRangeVO> ranges = q.list();
         for (IpRangeVO r : ranges) {
             if (NetworkUtils.isIpv4RangeOverlap(ipr.getStartIp(), ipr.getEndIp(), r.getStartIp(), r.getEndIp())) {
@@ -366,10 +472,25 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
         validate(ipr);
     }
 
-    private void validate(APIAddDnsToL3NetworkMsg msg) {
-        if (!NetworkUtils.isIpv4Address(msg.getDns())) {
-            throw new ApiMessageInterceptionException(argerr("DNS[%s] is not a IPv4 address", msg.getDns()));
+    private void validateIpAddress(String l3NetworkUuid, String ip, String manner) {
+        L3NetworkVO l3VO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3NetworkUuid).find();
+        if (l3VO == null) {
+            return;
         }
+
+        if (l3VO.getIpVersion() == IPv6Constants.IPv4) {
+            if (!NetworkUtils.isIpv4Address(ip)) {
+                throw new ApiMessageInterceptionException(argerr("%s[%s] is not a IPv4 address", manner, ip));
+            }
+        } else {
+            if (!IPv6NetworkUtils.isIpv6Address(ip)) {
+                throw new ApiMessageInterceptionException(argerr("%s[%s] is not a IPv6 address", manner, ip));
+            }
+        }
+    }
+
+    private void validate(APIAddDnsToL3NetworkMsg msg) {
+        validateIpAddress(msg.getL3NetworkUuid(), msg.getDns(), "DNS");
 
         SimpleQuery<L3NetworkDnsVO> q = dbf.createQuery(L3NetworkDnsVO.class);
         q.add(L3NetworkDnsVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());

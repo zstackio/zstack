@@ -30,6 +30,9 @@ public class SecurityGroupVO extends ResourceVO implements OwnedByAccount {
     private SecurityGroupState state;
 
     @Column
+    private Integer ipVersion;
+
+    @Column
     private Timestamp createDate;
     
     @Column
@@ -123,5 +126,13 @@ public class SecurityGroupVO extends ResourceVO implements OwnedByAccount {
 
     public void setState(SecurityGroupState state) {
         this.state = state;
+    }
+
+    public Integer getIpVersion() {
+        return ipVersion;
+    }
+
+    public void setIpVersion(Integer ipVersion) {
+        this.ipVersion = ipVersion;
     }
 }

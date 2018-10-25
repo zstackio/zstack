@@ -63,6 +63,16 @@ doc {
 					
 				}
 				column {
+					name "ipVersion"
+					enclosedIn "params"
+					desc "ip协议号"
+					location "body"
+					type "String"
+					optional true
+					since "3.1"
+					values ("4","6")
+				}
+				column {
 					name "system"
 					enclosedIn "params"
 					desc "是否用于系统云主机"

@@ -65,6 +65,9 @@ public class APICreateSecurityGroupMsg extends APICreateMessage implements APIAu
     @APIParam(required = false, maxLength = 2048)
     private String description;
 
+    @APIParam(required = false, validValues = {"4", "6"})
+    private Integer ipVersion;
+
     public String getName() {
         return name;
     }
@@ -80,7 +83,15 @@ public class APICreateSecurityGroupMsg extends APICreateMessage implements APIAu
     public void setDescription(String description) {
         this.description = description;
     }
- 
+
+    public Integer getIpVersion() {
+        return ipVersion;
+    }
+
+    public void setIpVersion(Integer ipVersion) {
+        this.ipVersion = ipVersion;
+    }
+
     public static APICreateSecurityGroupMsg __example__() {
         APICreateSecurityGroupMsg msg = new APICreateSecurityGroupMsg();
         msg.setName("sp");

@@ -31,6 +31,9 @@ public class AttachEipAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String vmNicUuid;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String usedIpUuid;
+
     @Param(required = false)
     public java.util.List systemTags;
 
@@ -88,7 +91,7 @@ public class AttachEipAction extends AbstractAction {
         info.path = "/eips/{eipUuid}/vm-instances/nics/{vmNicUuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

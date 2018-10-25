@@ -32,7 +32,7 @@ public class GetFreeIpOfIpRangeAction extends AbstractAction {
     public java.lang.String ipRangeUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String start = "0.0.0.0";
+    public java.lang.String start;
 
     @Param(required = false)
     public int limit = 100;

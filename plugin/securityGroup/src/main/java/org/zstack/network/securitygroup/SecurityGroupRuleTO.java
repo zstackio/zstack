@@ -14,9 +14,10 @@ public class SecurityGroupRuleTO {
     private String egressDefaultPolicy;
     private String vmNicUuid;
     private String vmNicMac;
-    private String vmNicIp;
+    private List<String> vmNicIp;
     private List<RuleTO> securityGroupBaseRules;
     private String actionCode = ACTION_CODE_APPLY_RULE;
+    private Integer ipVersion;
 
     public String getVmNicMac() {
         return vmNicMac;
@@ -26,11 +27,11 @@ public class SecurityGroupRuleTO {
         this.vmNicMac = vmNicMac;
     }
 
-    public String getVmNicIp() {
+    public List<String> getVmNicIp() {
         return vmNicIp;
     }
 
-    public void setVmNicIp(String vmNicIp) {
+    public void setVmNicIp(List<String> vmNicIp) {
         this.vmNicIp = vmNicIp;
     }
 
@@ -89,6 +90,14 @@ public class SecurityGroupRuleTO {
 
     public List<RuleTO> getSecurityGroupBaseRules() {
         return securityGroupBaseRules;
+    }
+
+    public Integer getIpVersion() {
+        return ipVersion;
+    }
+
+    public void setIpVersion(Integer ipVersion) {
+        this.ipVersion = ipVersion;
     }
 
     @Override

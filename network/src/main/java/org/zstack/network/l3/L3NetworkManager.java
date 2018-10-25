@@ -2,6 +2,7 @@ package org.zstack.network.l3;
 
 import org.zstack.header.network.l3.*;
 
+import java.math.BigInteger;
 import java.util.List;
 
 public interface L3NetworkManager {
@@ -11,8 +12,10 @@ public interface L3NetworkManager {
 
     boolean isIpRangeFull(IpRangeVO vo);
     
-    List<Long> getUsedIpInRange(String ipRangeUuid);
+    List<BigInteger> getUsedIpInRange(IpRangeVO vo);
 
 
     L3NetworkFactory getL3NetworkFactory(L3NetworkType type);
+
+    void updateIpAllocationMsg(AllocateIpMsg msg, String mac);
 }

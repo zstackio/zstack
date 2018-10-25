@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.TransactionalCallback;
 import org.zstack.header.core.workflow.Flow;
@@ -20,6 +21,8 @@ import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.identity.Account;
+import org.zstack.network.l3.L3NetworkManager;
+import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Query;
@@ -39,10 +42,13 @@ public class ApplianceVmAllocateNicFlow implements Flow {
     private CloudBus bus;
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private L3NetworkManager l3nm;
 
-    private UsedIpInventory acquireIp(String l3NetworkUuid, String stratgey) {
+    private UsedIpInventory acquireIp(String l3NetworkUuid, String mac, String stratgey) {
         AllocateIpMsg msg = new AllocateIpMsg();
         msg.setL3NetworkUuid(l3NetworkUuid);
+        l3nm.updateIpAllocationMsg(msg, mac);
         bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, l3NetworkUuid);
         msg.setAllocateStrategy(stratgey);
         MessageReply reply = bus.call(msg);
@@ -67,16 +73,19 @@ public class ApplianceVmAllocateNicFlow implements Flow {
 
         if (nicSpec.getIp() == null) {
             String strategy = nicSpec.getAllocatorStrategy() == null ? L3NetworkConstant.RANDOM_IP_ALLOCATOR_STRATEGY : nicSpec.getAllocatorStrategy();
-            UsedIpInventory ip = acquireIp(nicSpec.getL3NetworkUuid(), strategy);
+            UsedIpInventory ip = acquireIp(nicSpec.getL3NetworkUuid(), inv.getMac(), strategy);
             inv.setGateway(ip.getGateway());
             inv.setIp(ip.getIp());
             inv.setNetmask(ip.getNetmask());
             inv.setUsedIpUuid(ip.getUuid());
+            inv.setIpVersion(ip.getIpVersion());
+
         } else {
             inv.setGateway(nicSpec.getGateway());
             inv.setIp(nicSpec.getIp());
             inv.setNetmask(nicSpec.getNetmask());
             inv.setUsedIpUuid(null);
+            inv.setIpVersion(IPv6Constants.IPv4); /* TODO, shixin fix when ipv6 router is done*/
             if (nicSpec.getMac() != null) {
                 inv.setMac(nicSpec.getMac());
             }
@@ -132,7 +141,11 @@ public class ApplianceVmAllocateNicFlow implements Flow {
                     nvo.setMetaData(nic.getMetaData());
                     nvo.setInternalName(nic.getInternalName());
                     nvo.setAccountUuid(acntUuid);
+                    nvo.setIpVersion(nic.getIpVersion());
                     persist(nvo);
+                    if (nic.getUsedIpUuid() != null) {
+                        SQL.New(UsedIpVO.class).eq(UsedIpVO_.uuid, nic.getUsedIpUuid()).set(UsedIpVO_.vmNicUuid, nvo.getUuid()).update();
+                    }
                 });
 
                 ApplianceVmVO apvm = findByUuid(spec.getVmInventory().getUuid(), ApplianceVmVO.class);

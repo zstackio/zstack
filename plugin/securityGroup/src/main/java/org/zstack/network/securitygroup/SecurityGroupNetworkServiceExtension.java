@@ -10,9 +10,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceType;
-import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceSpec;
-import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.*;
 import org.zstack.network.service.AbstractNetworkServiceExtension;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -20,6 +18,7 @@ import org.zstack.utils.logging.CLogger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.persistence.Query;
 
@@ -43,7 +42,8 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
 
     @Override
     public void applyNetworkService(VmInstanceSpec servedVm, Map<String, Object> data, final Completion completion) {
-        Map<NetworkServiceProviderType, List<L3NetworkInventory>> map = getNetworkServiceProviderMap(SecurityGroupProviderFactory.networkServiceType, servedVm.getL3Networks());
+        Map<NetworkServiceProviderType, List<L3NetworkInventory>> map = getNetworkServiceProviderMap(SecurityGroupProviderFactory.networkServiceType,
+                VmNicSpec.getL3NetworkInventoryOfSpec(servedVm.getL3Networks()));
         if (map.isEmpty()) {
             completion.success();
             return;

@@ -1,5 +1,6 @@
 package org.zstack.header.network.l3;
 
+import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
@@ -17,6 +18,7 @@ import java.sql.Timestamp;
         parents = {
                 @EntityGraph.Neighbour(type = IpRangeVO.class, myField = "ipRangeUuid", targetField = "uuid"),
                 @EntityGraph.Neighbour(type = L3NetworkVO.class, myField = "l3NetworkUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = VmNicVO.class, myField = "vmNicUuid", targetField = "uuid"),
         }
 )
 public class UsedIpVO {
@@ -31,6 +33,13 @@ public class UsedIpVO {
     @Column
     @ForeignKey(parentEntityClass = L3NetworkEO.class, onDeleteAction = ReferenceOption.CASCADE)
     private String l3NetworkUuid;
+
+    @Column
+    @ForeignKey(parentEntityClass = VmNicVO.class, onDeleteAction = ReferenceOption.CASCADE)
+    private String vmNicUuid;
+
+    @Column
+    private Integer ipVersion;
 
     @Column
     @Index
@@ -63,7 +72,7 @@ public class UsedIpVO {
         this.ipRangeUuid = rangeUuid;
     }
 
-    private UsedIpVO() {
+    public UsedIpVO() {
     }
 
     public String getUuid() {
@@ -154,5 +163,21 @@ public class UsedIpVO {
 
     public void setMetaData(String metaData) {
         this.metaData = metaData;
+    }
+
+    public String getVmNicUuid() {
+        return vmNicUuid;
+    }
+
+    public void setVmNicUuid(String vmNicUuid) {
+        this.vmNicUuid = vmNicUuid;
+    }
+
+    public Integer getIpVersion() {
+        return ipVersion;
+    }
+
+    public void setIpVersion(Integer ipVersion) {
+        this.ipVersion = ipVersion;
     }
 }

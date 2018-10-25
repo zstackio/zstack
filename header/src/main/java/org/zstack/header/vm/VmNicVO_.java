@@ -14,6 +14,7 @@ public class VmNicVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<VmNicVO, String> l3NetworkUuid;
     public static volatile SingularAttribute<VmNicVO, String> netmask;
     public static volatile SingularAttribute<VmNicVO, String> gateway;
+    public static volatile SingularAttribute<VmNicVO, Integer> ipVersion;
     public static volatile SingularAttribute<VmNicVO, String> ip;
     public static volatile SingularAttribute<VmNicVO, String> mac;
     public static volatile SingularAttribute<VmNicVO, String> hypervisorType;
