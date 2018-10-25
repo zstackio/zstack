@@ -129,6 +129,8 @@ public class VmInstanceBase extends AbstractVmInstance {
                 String state = r.getStates().get(self.getUuid());
                 if (state == null) {
                     changeVmStateInDb(VmInstanceStateEvent.unknown);
+                    completion.done();
+                    return;
                 }
 
                 if (VmInstanceState.Running.toString().equals(state)) {
@@ -137,9 +139,11 @@ public class VmInstanceBase extends AbstractVmInstance {
                     changeVmStateInDb(VmInstanceStateEvent.destroyed);
                 } else if (VmInstanceState.Stopped.toString().equals(state)) {
                     changeVmStateInDb(VmInstanceStateEvent.stopped);
+                } else if (VmInstanceState.Paused.toString().equals(state)) {
+                    changeVmStateInDb(VmInstanceStateEvent.paused);
                 } else {
                     throw new CloudRuntimeException(String.format(
-                            "CheckVmStateOnHypervisorMsg should only report states[Running or Stopped]," +
+                            "CheckVmStateOnHypervisorMsg should only report states[Running, Paused or Stopped]," +
                                     "but it reports %s for the vm[uuid:%s] on the host[uuid:%s]", state, self.getUuid(), hostUuid));
                 }
 

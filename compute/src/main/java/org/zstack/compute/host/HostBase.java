@@ -280,7 +280,7 @@ public abstract class HostBase extends AbstractHost {
                             bus.send(msg, new CloudBusCallBack(coml) {
                                 @Override
                                 public void run(MessageReply reply) {
-                                    logger.debug(String.format("stop vm[uuid:%s] call back", vmUuid));
+                                    logger.debug(String.format("stop vm[uuid:%s] after migration failure", vmUuid));
                                     if (!reply.isSuccess() && dbf.isExist(vmUuid, VmInstanceVO.class)) {
                                         errors.add(reply.getError());
                                         vmFailedToStop.add(vmUuid);
