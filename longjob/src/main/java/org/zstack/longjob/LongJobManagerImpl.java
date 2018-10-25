@@ -8,10 +8,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SQL;
-import org.zstack.core.db.SQLBatchWithReturn;
+import org.zstack.core.db.*;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
@@ -42,6 +39,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
+import static org.zstack.longjob.LongJobUtils.jobCompleted;
 
 /**
  * Created by GuoYi on 11/14/17.
@@ -327,6 +325,13 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                 if (v < 10800) {
                     throw new GlobalConfigException("long job timeout must be larger than 10800s");
                 }
+            }
+        });
+
+        dbf.installEntityLifeCycleCallback(LongJobVO.class, EntityEvent.PRE_UPDATE, (evt, o) -> {
+            LongJobVO job = (LongJobVO) o;
+            if (jobCompleted(job) && job.getExecuteTime() == null) {
+                job.setExecuteTime((System.currentTimeMillis() - job.getCreateDate().getTime()) / 1000);
             }
         });
 

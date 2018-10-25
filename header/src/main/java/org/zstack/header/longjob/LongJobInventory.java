@@ -27,6 +27,7 @@ public class LongJobInventory implements Serializable {
     private String managementNodeUuid;
     private Timestamp createDate;
     private Timestamp lastOpDate;
+    private Long executeTime;
 
     public LongJobInventory() {
     }
@@ -41,6 +42,7 @@ public class LongJobInventory implements Serializable {
         this.setJobName(vo.getJobName());
         this.setCreateDate(vo.getCreateDate());
         this.setLastOpDate(vo.getLastOpDate());
+        this.setExecuteTime(vo.getExecuteTime());
         this.setDescription(vo.getDescription());
         this.setTargetResourceUuid(vo.getTargetResourceUuid());
         this.setManagementNodeUuid(vo.getManagementNodeUuid());
@@ -152,5 +154,13 @@ public class LongJobInventory implements Serializable {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
+    }
+
+    public Long getExecuteTime() {
+        return executeTime;
+    }
+
+    public void setExecuteTime(Long executeTime) {
+        this.executeTime = executeTime;
     }
 }

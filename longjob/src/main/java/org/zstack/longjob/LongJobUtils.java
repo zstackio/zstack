@@ -10,8 +10,12 @@ import org.zstack.header.longjob.LongJobVO;
 import org.zstack.header.longjob.LongJobVO_;
 
 import java.util.Arrays;
+import java.util.List;
 
 public class LongJobUtils {
+    private static List<LongJobState> completedStates = Arrays.asList(LongJobState.Failed, LongJobState.Succeeded, LongJobState.Canceled);
+    private static List<LongJobState> canceledStates = Arrays.asList(LongJobState.Canceled, LongJobState.Canceling);
+
     public static ErrorCode cancelErr(String longJobUuid) {
         return Platform.err(LongJobErrors.CANCELED, "long job[uuid:%s] has been canceled", longJobUuid);
     }
@@ -25,6 +29,10 @@ public class LongJobUtils {
 
     public static boolean jobCanceled(String longJobUuid) {
         LongJobState state = Q.New(LongJobVO.class).eq(LongJobVO_.uuid,longJobUuid).select(LongJobVO_.state).findValue();
-        return Arrays.asList(LongJobState.Canceled, LongJobState.Canceling).contains(state);
+        return canceledStates.contains(state);
+    }
+
+    public static boolean jobCompleted(LongJobVO vo) {
+        return completedStates.contains(vo.getState());
     }
 }
