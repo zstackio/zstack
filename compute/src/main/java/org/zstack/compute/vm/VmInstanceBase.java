@@ -57,7 +57,6 @@ import org.zstack.header.vm.VmInstanceSpec.HostName;
 import org.zstack.header.vm.VmInstanceSpec.IsoSpec;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
-import org.zstack.header.vm.VmNicHelper;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.utils.CollectionUtils;
@@ -2609,19 +2608,23 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private void handle(APIGetVmCapabilitiesMsg msg) {
         APIGetVmCapabilitiesReply reply = new APIGetVmCapabilitiesReply();
-        Map<String, Object> ret = new HashMap<>();
-        checkPrimaryStorageCapabilities(ret);
-        checkImageMediaTypeCapabilities(ret);
-        reply.setCapabilities(ret);
+
+        VmCapabilities capabilities = new VmCapabilities();
+        checkPrimaryStorageCapabilities(capabilities);
+        checkImageMediaTypeCapabilities(capabilities);
+
+        extEmitter.getVmCapabilities(getSelfInventory(), capabilities);
+
+        reply.setCapabilities(capabilities.toMap());
         bus.reply(msg, reply);
     }
 
-    private void checkPrimaryStorageCapabilities(Map<String, Object> ret) {
+    private void checkPrimaryStorageCapabilities(VmCapabilities capabilities) {
         VolumeInventory rootVolume = getSelfInventory().getRootVolume();
 
         if (rootVolume == null) {
-            ret.put(Capability.LiveMigration.toString(), false);
-            ret.put(Capability.VolumeMigration.toString(), false);
+            capabilities.setSupportLiveMigration(false);
+            capabilities.setSupportVolumeMigration(false);
         } else {
             SimpleQuery<PrimaryStorageVO> q = dbf.createQuery(PrimaryStorageVO.class);
             q.select(PrimaryStorageVO_.type);
@@ -2629,12 +2632,13 @@ public class VmInstanceBase extends AbstractVmInstance {
             String type = q.findValue();
 
             PrimaryStorageType psType = PrimaryStorageType.valueOf(type);
-            ret.put(Capability.LiveMigration.toString(), psType.isSupportVmLiveMigration());
-            ret.put(Capability.VolumeMigration.toString(), psType.isSupportVolumeMigration());
+
+            capabilities.setSupportLiveMigration(psType.isSupportVmLiveMigration());
+            capabilities.setSupportVolumeMigration(psType.isSupportVolumeMigration());
         }
     }
 
-    private void checkImageMediaTypeCapabilities(Map<String, Object> ret) {
+    private void checkImageMediaTypeCapabilities(VmCapabilities capabilities) {
         ImageVO vo = null;
         ImageMediaType imageMediaType;
 
@@ -2649,9 +2653,9 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         if (imageMediaType == ImageMediaType.ISO || imageMediaType == null) {
-            ret.put(Capability.Reimage.toString(), false);
+            capabilities.setSupportReimage(false);
         } else {
-            ret.put(Capability.Reimage.toString(), true);
+            capabilities.setSupportReimage(true);
         }
     }
 

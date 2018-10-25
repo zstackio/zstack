@@ -34,6 +34,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
     private List<VmInstanceMigrateExtensionPoint> migrateVmExtensions;
     private List<VmAttachVolumeExtensionPoint> attachVolumeExtensions;
     private List<VmDetachVolumeExtensionPoint> detachVolumeExtensions;
+    private List<VmCapabilitiesExtensionPoint> capabilitiesExtensionPoints;
 
     public void handleSystemTag(String vmUuid, List<String> tags){
         CollectionUtils.safeForEach(VmInstanceBeforeStartExtensions, new ForEachFunction<VmInstanceBeforeStartExtensionPoint>() {
@@ -338,6 +339,15 @@ public class VmInstanceExtensionPointEmitter implements Component {
         });
     }
 
+    public void getVmCapabilities(final VmInstanceInventory vm, final VmCapabilities capabilities) {
+        CollectionUtils.safeForEach(capabilitiesExtensionPoints, new ForEachFunction<VmCapabilitiesExtensionPoint>() {
+            @Override
+            public void run(VmCapabilitiesExtensionPoint arg) {
+                arg.checkVmCapability(vm, capabilities);
+            }
+        });
+    }
+
     private void populateExtensions() {
         VmInstanceBeforeStartExtensions = pluginRgty.getExtensionList(VmInstanceBeforeStartExtensionPoint.class);
         startNewCreatedVmExtensions = pluginRgty.getExtensionList(VmInstanceStartNewCreatedVmExtensionPoint.class);
@@ -348,6 +358,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
         migrateVmExtensions = pluginRgty.getExtensionList(VmInstanceMigrateExtensionPoint.class);
         attachVolumeExtensions = pluginRgty.getExtensionList(VmAttachVolumeExtensionPoint.class);
         detachVolumeExtensions = pluginRgty.getExtensionList(VmDetachVolumeExtensionPoint.class);
+        capabilitiesExtensionPoints = pluginRgty.getExtensionList(VmCapabilitiesExtensionPoint.class);
     }
 
     @Override
