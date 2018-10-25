@@ -324,7 +324,7 @@ public class ProgressReportService extends AbstractService implements Management
                 reply.setInventories(getAllProgress(msg.getApiId()));
             }
         }.execute();
-        
+
         bus.reply(msg, reply);
     }
 
@@ -445,39 +445,43 @@ public class ProgressReportService extends AbstractService implements Management
         taskProgress(TaskType.Progress, fmt);
     }
 
-    public void reportProgress(String begin, String end, int intervalSec) {
+    public void reportProgressUntil(String end, int intervalSec) {
+        reportProgressUntil(end, intervalSec, TimeUnit.SECONDS);
+    }
+
+    public void reportProgressUntil(String end, int intervalSec, TimeUnit timeUnit) {
         thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask() {
-            int beginPercent = new Double(begin).intValue();
             int endPercent = new Double(end).intValue();
             String apiId = ThreadContext.get(THREAD_CONTEXT_API);
             String taskName = ThreadContext.get(THREAD_CONTEXT_TASK_NAME);
 
             @Override
+            @Deferred
             public boolean run() {
                 // get current progress
-                String currentPercent = SQL.New("SELECT content FROM TaskProgressVO" +
+                String res = SQL.New("SELECT content FROM TaskProgressVO" +
                         " WHERE apiId = :apiId" +
                         " ORDER BY CAST(content AS int) DESC")
                         .param("apiId", apiId)
                         .limit(1)
                         .find();
 
-                if (beginPercent >= endPercent) {
-                    return true;
-                } else if (endPercent <= new Double(currentPercent).intValue()) {
+                int currentPecent = res == null ? 0 : new Double(res).intValue();
+                if (endPercent <= currentPecent) {
                     return true;
                 } else {
+                    Runnable cleanup = saveThreadContext();
+                    Defer.defer(cleanup);
                     ThreadContext.put(THREAD_CONTEXT_API, apiId);
                     ThreadContext.put(THREAD_CONTEXT_TASK_NAME, taskName);
-                    ProgressReportService.reportProgress(String.valueOf(beginPercent));
-                    beginPercent += 1;
+                    ProgressReportService.reportProgress(String.valueOf(currentPecent + 1));
                     return false;
                 }
             }
 
             @Override
             public TimeUnit getTimeUnit() {
-                return TimeUnit.SECONDS;
+                return timeUnit;
             }
 
             @Override
