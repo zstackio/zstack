@@ -36,12 +36,20 @@ public class ScsiLunVmInstanceRefInventory  {
         return this.lastOpDate;
     }
 
-    public long deviceId;
-    public void setDeviceId(long deviceId) {
+    public java.lang.Integer deviceId;
+    public void setDeviceId(java.lang.Integer deviceId) {
         this.deviceId = deviceId;
     }
-    public long getDeviceId() {
+    public java.lang.Integer getDeviceId() {
         return this.deviceId;
+    }
+
+    public boolean attachMultipath;
+    public void setAttachMultipath(boolean attachMultipath) {
+        this.attachMultipath = attachMultipath;
+    }
+    public boolean getAttachMultipath() {
+        return this.attachMultipath;
     }
 
 }
