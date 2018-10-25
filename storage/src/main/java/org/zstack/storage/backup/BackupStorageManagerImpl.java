@@ -403,6 +403,7 @@ public class BackupStorageManagerImpl extends AbstractService implements BackupS
         List<String> ret = new ArrayList<String>();
         SimpleQuery<BackupStorageVO> q = dbf.createQuery(BackupStorageVO.class);
         q.select(BackupStorageVO_.uuid);
+        // treat connecting as disconnected
         q.add(BackupStorageVO_.status, SimpleQuery.Op.NOT_EQ, BackupStorageStatus.Connected);
         List<String> uuids = q.listValue();
         for (String uuid : uuids) {
