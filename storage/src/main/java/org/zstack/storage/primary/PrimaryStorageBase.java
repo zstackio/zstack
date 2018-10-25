@@ -476,7 +476,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                         tracker.track(self.getUuid());
 
                         self = dbf.reload(self);
-                        if (changeStatus(PrimaryStorageStatus.Disconnected)) {
+                        if (changeStatus(PrimaryStorageStatus.Disconnected) && !errorCode.isError(PrimaryStorageErrors.DISCONNECTED)) {
                             fireDisconnectedCanonicalEvent(errorCode);
                         }
 
