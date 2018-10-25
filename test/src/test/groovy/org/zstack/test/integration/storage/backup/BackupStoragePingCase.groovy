@@ -1,6 +1,8 @@
 package org.zstack.test.integration.storage.backup
 
-import org.zstack.header.storage.backup.PingBackupStorageMsg
+import org.springframework.http.HttpEntity
+import org.zstack.core.db.Q
+import org.zstack.header.storage.backup.*
 import org.zstack.sdk.BackupStorageInventory
 import org.zstack.storage.backup.BackupStorageGlobalConfig
 import org.zstack.storage.backup.BackupStoragePingTracker
@@ -8,8 +10,10 @@ import org.zstack.storage.backup.sftp.SftpBackupStorageCommands
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
+import org.zstack.testlib.HttpError
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
+import org.zstack.utils.gson.JSONObjectUtil
 
 import java.util.concurrent.TimeUnit
 
@@ -62,6 +66,7 @@ class BackupStoragePingCase extends SubCase {
             prepareEnv()
             testNoPingAfterBSDeleted()
             testPingAfterRescan()
+            testPingSuccessBSReconnectCondition()
         }
     }
 
@@ -72,6 +77,76 @@ class BackupStoragePingCase extends SubCase {
             rsp.totalCapacity = SizeUnit.GIGABYTE.toByte(1000)
             return rsp
         }
+    }
+
+    void testPingSuccessBSReconnectCondition() {
+        BackupStorageInventory bs = addSftpBackupStorage {
+            name = "imagestore"
+            description = "desc"
+            username = "username"
+            password = "password"
+            hostname = "hostname"
+            url = "/data"
+            importImages = true
+        }
+
+        boolean pingFail = false
+        env.afterSimulator(SftpBackupStorageConstant.PING_PATH) { rsp, HttpEntity<String> e ->
+            SftpBackupStorageCommands.PingCmd cmd = JSONObjectUtil.toObject(e.body, SftpBackupStorageCommands.PingCmd)
+
+            if (cmd.uuid == bs.uuid && pingFail) {
+                throw new HttpError(503, "on purpose")
+            }
+
+            return rsp
+        }
+
+        int count = 0
+        def cleanup = notifyWhenReceivedMessage(PingBackupStorageMsg.class) { PingBackupStorageMsg msg ->
+            if (msg.backupStorageUuid == bs.uuid) {
+                count ++
+            }
+        }
+
+        def connectCount = 0
+        def cleanup2 = notifyWhenReceivedMessage(ConnectBackupStorageMsg.class) { ConnectBackupStorageMsg msg ->
+            if (msg.backupStorageUuid == bs.uuid) {
+                connectCount ++
+            }
+
+            // slow down the connect operation for more pings during it
+            sleep(5)
+        }
+
+        // make ping fail, bs will disconnected
+        pingFail = true
+
+        retryInSecs {
+            assert Q.New(BackupStorageVO.class)
+                    .eq(BackupStorageVO_.uuid, bs.uuid)
+                    .eq(BackupStorageVO_.status, BackupStorageStatus.Disconnected).isExists()
+            assert count > 0
+            assert connectCount == 0
+        }
+
+        // make ping success will trigger reconnect, and only one connect msg will be sent
+        // we do not connect connecting bs
+        pingFail = false
+        def tmpCount = count
+
+        // same pause time as connect operation
+        sleep(5)
+        retryInSecs {
+            assert Q.New(BackupStorageVO.class)
+                    .eq(BackupStorageVO_.uuid, bs.uuid)
+                    .eq(BackupStorageVO_.status, BackupStorageStatus.Connected).isExists()
+            assert count - tmpCount > 1
+            assert connectCount == 1
+        }
+
+        cleanup()
+        cleanup2()
+        env.cleanSimulatorAndMessageHandlers()
     }
 
     void testPingAfterRescan() {
