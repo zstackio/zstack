@@ -119,7 +119,8 @@ class CephCreateVmByImageCapacityCase extends SubCase {
                     new CephPoolCapacity(
                             name : primaryStoragePool.poolName,
                             availableCapacity : primaryStoragePool.availableCapacity - image_physical_size,
-                            usedCapacity: primaryStoragePool.usedCapacity + image_physical_size
+                            usedCapacity: primaryStoragePool.usedCapacity + image_physical_size,
+                            totalCapacity: cspec.totalCapacity
                     )
             ]
             return rsp

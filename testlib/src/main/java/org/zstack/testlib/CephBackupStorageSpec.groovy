@@ -69,7 +69,8 @@ class CephBackupStorageSpec extends BackupStorageSpec {
                         new CephPoolCapacity(
                                 name : bspec.poolName,
                                 availableCapacity : bspec.availableCapacity,
-                                usedCapacity : bspec.totalCapacity - bspec.availableCapacity
+                                usedCapacity : bspec.totalCapacity - bspec.availableCapacity,
+                                totalCapacity: bspec.totalCapacity
                         )
                 ]
                 rsp.poolCapacities = poolCapacities

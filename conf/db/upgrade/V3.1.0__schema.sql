@@ -1,4 +1,3 @@
-
 ALTER TABLE `AlarmVO`  ADD COLUMN `type` varchar(32) NOT NULL;
 UPDATE `AlarmVO` SET `type` = 'Any';
 
@@ -217,3 +216,4 @@ ALTER TABLE `zstack`.`SecurityGroupRuleVO` ADD COLUMN `ipVersion` int(10) unsign
 ALTER TABLE `zstack`.`LongJobVO`  ADD COLUMN `executeTime` int unsigned DEFAULT NULL;
 UPDATE `zstack`.`LongJobVO` job SET job.`executeTime` = TIMESTAMPDIFF(SECOND, job.createDate, job.lastOpDate);
 
+ALTER TABLE CephPrimaryStoragePoolVO ADD totalCapacity bigint(20) unsigned NOT NULL DEFAULT 0;

@@ -256,7 +256,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
                         }
                         poolNames.add(poolVO.getPoolName());
                         poolAvailableCapacities.add(poolVO.getAvailableCapacity());
-                        poolTotalCapacities.add(poolVO.getAvailableCapacity() + poolVO.getUsedCapacity());
+                        poolTotalCapacities.add(poolVO.getTotalCapacity());
                         continue;
                     }
 
@@ -267,12 +267,13 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
                     if (!poolNames.contains(poolVO.getPoolName())) {
                         poolNames.add(poolVO.getPoolName());
                         poolAvailableCapacities.add(poolCapacity.getAvailableCapacity());
-                        poolTotalCapacities.add(poolCapacity.getAvailableCapacity() + poolCapacity.getUsedCapacity());
+                        poolTotalCapacities.add(poolCapacity.getTotalCapacity());
                     }
 
                     poolVO.setAvailableCapacity(poolCapacity.getAvailableCapacity());
                     poolVO.setReplicatedSize(poolCapacity.getReplicatedSize());
                     poolVO.setUsedCapacity(poolCapacity.getUsedCapacity());
+                    poolVO.setTotalCapacity(poolCapacity.getTotalCapacity());
                     dbf.getEntityManager().merge(poolVO);
                 }
 
