@@ -40,6 +40,7 @@ import org.zstack.utils.SizeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.form.Form;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.function.ValidateFunction;
 import org.zstack.utils.logging.CLogger;
 
 import java.io.IOException;
@@ -82,6 +83,10 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
 
     @Override
     public HostVO createHost(HostVO vo, AddHostMessage msg) {
+        if (!(msg instanceof AddKVMHostMessage)) {
+            throw new OperationFailureException(operr("cluster[uuid:%s] hypervisorType is not %s", msg.getClusterUuid(), KVMConstant.KVM_HYPERVISOR_TYPE));
+        }
+
         AddKVMHostMessage amsg = (AddKVMHostMessage) msg;
         KVMHostVO kvo = new KVMHostVO(vo);
         kvo.setUsername(amsg.getUsername());
@@ -92,9 +97,9 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     }
 
     @Override
-    public List<AddHostMsg> buildMessageFromFile(String content) {
+    public List<AddHostMsg> buildMessageFromFile(String content, ValidateFunction<AddHostMsg> validator) {
         try {
-            List<AddKVMHostMsg> msgs = loadMsgFromFile(content);
+            List<AddKVMHostMsg> msgs = loadMsgFromFile(content, validator);
             return prepareMsgHostName(msgs);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
@@ -121,7 +126,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         return renamed;
     }
 
-    private List<AddKVMHostMsg> loadMsgFromFile(String content) throws IOException {
+    private List<AddKVMHostMsg> loadMsgFromFile(String content, ValidateFunction<? super AddKVMHostMsg> validator) throws IOException {
         int limit = HostGlobalConfig.BATCH_ADD_HOST_LIMIT.value(Integer.class);
         Map<String, Function<String, String>> extensionTagMappers = new HashMap<>();
         pluginRgty.getExtensionList(FormTagExtensionPoint.class).forEach(it -> extensionTagMappers.putAll(it.getTagMappers(AddKVMHostMsg.class)));
@@ -134,7 +139,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         extensionTagMappers.forEach((columnName, builder) ->
                 form.addColumnConverter(columnName, (it, value) -> it.addSystemTag(builder.call(value))));
 
-        return form.load();
+        return form.withValidator(validator).load();
     }
 
     @Override

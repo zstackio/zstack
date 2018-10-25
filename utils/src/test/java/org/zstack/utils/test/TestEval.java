@@ -1,4 +1,4 @@
-package com.zstack.utils.test;
+package org.zstack.utils.test;
 
 import org.apache.commons.net.util.SubnetUtils;
 import org.junit.Assert;

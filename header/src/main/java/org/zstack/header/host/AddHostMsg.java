@@ -2,12 +2,13 @@ package org.zstack.header.host;
 
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.message.NeedReplyMessage;
-import org.zstack.utils.form.Param;
+import org.zstack.utils.verify.Param;
+import org.zstack.utils.verify.Verifiable;
 
 /**
  * Created by david on 9/12/16.
  */
-public class AddHostMsg extends NeedReplyMessage implements AddHostMessage {
+public class AddHostMsg extends NeedReplyMessage implements AddHostMessage, Verifiable {
     private String name;
     private String description;
     @Param
