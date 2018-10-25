@@ -84,6 +84,14 @@ public class BaremetalPxeServerInventory  {
         return this.dhcpInterface;
     }
 
+    public java.lang.String dhcpInterfaceAddress;
+    public void setDhcpInterfaceAddress(java.lang.String dhcpInterfaceAddress) {
+        this.dhcpInterfaceAddress = dhcpInterfaceAddress;
+    }
+    public java.lang.String getDhcpInterfaceAddress() {
+        return this.dhcpInterfaceAddress;
+    }
+
     public java.lang.String dhcpRangeBegin;
     public void setDhcpRangeBegin(java.lang.String dhcpRangeBegin) {
         this.dhcpRangeBegin = dhcpRangeBegin;
