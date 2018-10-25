@@ -161,6 +161,9 @@ public class SourceClassMap {
 			put("org.zstack.header.storage.snapshot.VolumeSnapshotInventory", "org.zstack.sdk.VolumeSnapshotInventory");
 			put("org.zstack.header.storage.snapshot.VolumeSnapshotTree$SnapshotLeafInventory", "org.zstack.sdk.SnapshotLeafInventory");
 			put("org.zstack.header.storage.snapshot.VolumeSnapshotTreeInventory", "org.zstack.sdk.VolumeSnapshotTreeInventory");
+			put("org.zstack.header.storageDevice.ScsiLunHostRefInventory", "org.zstack.sdk.ScsiLunHostRefInventory");
+			put("org.zstack.header.storageDevice.ScsiLunInventory", "org.zstack.sdk.ScsiLunInventory");
+			put("org.zstack.header.storageDevice.ScsiLunVmInstanceRefInventory", "org.zstack.sdk.ScsiLunVmInstanceRefInventory");
 			put("org.zstack.header.tag.SystemTagInventory", "org.zstack.sdk.SystemTagInventory");
 			put("org.zstack.header.tag.TagInventory", "org.zstack.sdk.TagInventory");
 			put("org.zstack.header.tag.UserTagInventory", "org.zstack.sdk.UserTagInventory");
@@ -264,9 +267,6 @@ public class SourceClassMap {
 			put("org.zstack.storage.ceph.primary.CephPrimaryStorageInventory", "org.zstack.sdk.CephPrimaryStorageInventory");
 			put("org.zstack.storage.ceph.primary.CephPrimaryStorageMonInventory", "org.zstack.sdk.CephPrimaryStorageMonInventory");
 			put("org.zstack.storage.ceph.primary.CephPrimaryStoragePoolInventory", "org.zstack.sdk.CephPrimaryStoragePoolInventory");
-			put("org.zstack.storage.device.ScsiLunHostRefInventory", "org.zstack.sdk.ScsiLunHostRefInventory");
-			put("org.zstack.storage.device.ScsiLunInventory", "org.zstack.sdk.ScsiLunInventory");
-			put("org.zstack.storage.device.ScsiLunVmInstanceRefInventory", "org.zstack.sdk.ScsiLunVmInstanceRefInventory");
 			put("org.zstack.storage.device.fibreChannel.FiberChannelLunInventory", "org.zstack.sdk.FiberChannelLunInventory");
 			put("org.zstack.storage.device.fibreChannel.FiberChannelStorageInventory", "org.zstack.sdk.FiberChannelStorageInventory");
 			put("org.zstack.storage.device.iscsi.IscsiLunInventory", "org.zstack.sdk.IscsiLunInventory");
@@ -524,9 +524,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.SchedulerJobInventory", "org.zstack.header.scheduler.SchedulerJobInventory");
 			put("org.zstack.sdk.SchedulerJobSchedulerTriggerInventory", "org.zstack.header.scheduler.SchedulerJobSchedulerTriggerInventory");
 			put("org.zstack.sdk.SchedulerTriggerInventory", "org.zstack.header.scheduler.SchedulerTriggerInventory");
-			put("org.zstack.sdk.ScsiLunHostRefInventory", "org.zstack.storage.device.ScsiLunHostRefInventory");
-			put("org.zstack.sdk.ScsiLunInventory", "org.zstack.storage.device.ScsiLunInventory");
-			put("org.zstack.sdk.ScsiLunVmInstanceRefInventory", "org.zstack.storage.device.ScsiLunVmInstanceRefInventory");
+			put("org.zstack.sdk.ScsiLunHostRefInventory", "org.zstack.header.storageDevice.ScsiLunHostRefInventory");
+			put("org.zstack.sdk.ScsiLunInventory", "org.zstack.header.storageDevice.ScsiLunInventory");
+			put("org.zstack.sdk.ScsiLunVmInstanceRefInventory", "org.zstack.header.storageDevice.ScsiLunVmInstanceRefInventory");
 			put("org.zstack.sdk.SecurityGroupIngressRuleTO", "org.zstack.network.securitygroup.SecurityGroupIngressRuleTO");
 			put("org.zstack.sdk.SecurityGroupInventory", "org.zstack.network.securitygroup.SecurityGroupInventory");
 			put("org.zstack.sdk.SecurityGroupRuleInventory", "org.zstack.network.securitygroup.SecurityGroupRuleInventory");
