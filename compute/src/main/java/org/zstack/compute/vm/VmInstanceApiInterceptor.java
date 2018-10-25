@@ -19,8 +19,11 @@ import org.zstack.header.host.HostState;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
-import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
+import org.zstack.header.image.ImageState;
+import org.zstack.header.image.ImageStatus;
+import org.zstack.header.image.ImageVO;
+import org.zstack.header.image.ImageVO_;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.vm.*;
@@ -30,12 +33,13 @@ import org.zstack.header.zone.ZoneVO_;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
-import static org.zstack.core.Platform.*;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -392,13 +396,11 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
 
         SimpleQuery<L3NetworkVO> l3q = dbf.createQuery(L3NetworkVO.class);
-        l3q.select(L3NetworkVO_.state, L3NetworkVO_.system, L3NetworkVO_.category, L3NetworkVO_.type);
+        l3q.select(L3NetworkVO_.state, L3NetworkVO_.system);
         l3q.add(L3NetworkVO_.uuid, Op.EQ, msg.getL3NetworkUuid());
         t = l3q.findTuple();
         L3NetworkState l3state = t.get(0, L3NetworkState.class);
         boolean system = t.get(1, Boolean.class);
-        L3NetworkCategory category = t.get(2, L3NetworkCategory.class);
-        L3NetworkType l3Type = L3NetworkType.valueOf(t.get(3, String.class));
 
         if (l3state == L3NetworkState.Disabled) {
             throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The L3 network[uuid:%s] is disabled", msg.getL3NetworkUuid()));
@@ -470,13 +472,12 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
     @Transactional(readOnly = true)
     private void validate(APIDetachL3NetworkFromVmMsg msg) {
-        String sql = "select vm.uuid, vm.type, vm.state from VmInstanceVO vm, VmNicVO nic where vm.uuid = nic.vmInstanceUuid and nic.uuid = :uuid";
+        String sql = "select vm.uuid, vm.state from VmInstanceVO vm, VmNicVO nic where vm.uuid = nic.vmInstanceUuid and nic.uuid = :uuid";
         TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
         q.setParameter("uuid", msg.getVmNicUuid());
         Tuple t = q.getSingleResult();
         String vmUuid = t.get(0, String.class);
-        String vmType = t.get(1, String.class);
-        VmInstanceState state = t.get(2, VmInstanceState.class);
+        VmInstanceState state = t.get(1, VmInstanceState.class);
 
         if (!VmInstanceState.Running.equals(state) && !VmInstanceState.Stopped.equals(state)) {
             throw new ApiMessageInterceptionException(operr("unable to detach a L3 network. The vm[uuid: %s] is not Running or Stopped; the current state is %s",
@@ -537,7 +538,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
 
         SimpleQuery<ImageVO> imgq = dbf.createQuery(ImageVO.class);
-        imgq.select(ImageVO_.state, ImageVO_.system, ImageVO_.mediaType);
+        imgq.select(ImageVO_.state, ImageVO_.system, ImageVO_.mediaType, ImageVO_.status);
         imgq.add(ImageVO_.uuid, Op.EQ, msg.getImageUuid());
         Tuple imgt = imgq.findTuple();
         ImageState imgState = imgt.get(0, ImageState.class);
@@ -545,6 +546,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(operr("image[uuid:%s] is Disabled, can't create vm from it", msg.getImageUuid()));
         }
 
+        ImageStatus imgStatus = imgt.get(3, ImageStatus.class);
+        if (imgStatus != ImageStatus.Ready) {
+            throw new ApiMessageInterceptionException(operr("image[uuid:%s] is not ready yet, can't create vm from it", msg.getImageUuid()));
+        }
 
         ImageMediaType imgFormat = imgt.get(2, ImageMediaType.class);
         if (imgFormat != ImageMediaType.RootVolumeTemplate && imgFormat != ImageMediaType.ISO) {
