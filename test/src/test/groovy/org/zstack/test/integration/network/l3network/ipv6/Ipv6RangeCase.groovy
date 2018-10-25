@@ -4,6 +4,7 @@ import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
+import org.zstack.sdk.IpRangeInventory
 import org.zstack.sdk.L2NetworkInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.NetworkServiceProviderInventory
@@ -280,15 +281,19 @@ class Ipv6RangeCase extends SubCase {
             ipVersion = 6
         }
 
-        addIpv6Range {
+        IpRangeInventory ip6r = addIpv6Range {
             name = "ipr-6-2"
             l3NetworkUuid = l3_pri_ipv6.getUuid()
-            startIp = "2203:2001::0001"
-            endIp = "2203:2001::0002"
-            gateway = "2203:2001::2"
-            prefixLen = 126
+            startIp = "ABCD:FEFF::0001"
+            endIp = "ABCD:FEFF::0002"
+            gateway = "ABCD:FEFF::defc"
+            prefixLen = 32
             addressMode = IPv6Constants.Stateful_DHCP
         }
+        assert ip6r.netmask == "ffff:ffff:0:0:0:0:0:0"
+        assert ip6r.startIp == "abcd:feff::1"
+        assert ip6r.endIp == "abcd:feff::2"
+        assert ip6r.gateway == "abcd:feff::defc"
     }
 
     void testAttachIpv6RangeAddressMode() {

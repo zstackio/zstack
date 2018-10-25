@@ -1,8 +1,8 @@
 package org.zstack.test.integration.network.l3network.ipv6
 
+import org.springframework.http.HttpEntity
+import org.zstack.network.service.flat.FlatEipBackend
 import org.zstack.sdk.*
-import org.zstack.test.integration.kvm.KvmTest
-import org.zstack.test.integration.network.NetworkTest
 import org.zstack.test.integration.network.l3network.Env
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.testlib.EnvSpec
@@ -131,17 +131,26 @@ class IPv6EipCase extends SubCase {
             }
         }
 
+        FlatEipBackend.ApplyEipCmd cmd = new FlatEipBackend.ApplyEipCmd()
+        env.afterSimulator(FlatEipBackend.APPLY_EIP_PATH) { rsp, HttpEntity<String> entity ->
+            cmd = json(entity.getBody(), FlatEipBackend.ApplyEipCmd.class)
+            return rsp
+
+        }
         attachEip {
             eipUuid = eip4.uuid
             vmNicUuid = nic.uuid
             usedIpUuid = ipv4.uuid
         }
+        assert cmd.eip.vmBridgeName == "br_eth0"
 
+        cmd = null
         attachEip {
             eipUuid = eip6.uuid
             vmNicUuid = nic.uuid
             usedIpUuid = ipv6.uuid
         }
+        assert cmd.eip.vmBridgeName == "br_eth0"
     }
 
     void testIPv6EipApplyNetworkService() {
@@ -151,13 +160,31 @@ class IPv6EipCase extends SubCase {
             conditions=["name=vm-eip"]
         } [0]
 
+        FlatEipBackend.ApplyEipCmd cmd = new FlatEipBackend.ApplyEipCmd()
+        env.afterSimulator(FlatEipBackend.APPLY_EIP_PATH) { rsp, HttpEntity<String> entity ->
+            cmd = json(entity.getBody(), FlatEipBackend.ApplyEipCmd.class)
+            return rsp
+
+        }
         rebootVmInstance {
             uuid = vm.uuid
         }
+        assert cmd.eip.vmBridgeName == "br_eth0"
 
+        FlatEipBackend.BatchApplyEipCmd bcmd = new FlatEipBackend.BatchApplyEipCmd()
+        env.afterSimulator(FlatEipBackend.BATCH_APPLY_EIP_PATH) { rsp, HttpEntity<String> entity ->
+            bcmd = json(entity.getBody(), FlatEipBackend.BatchApplyEipCmd.class)
+            return rsp
+
+        }
         reconnectHost {
             uuid = host.uuid
         }
+        assert bcmd.eips.size() == 2
+        FlatEipBackend.EipTO to1 = bcmd.eips.get(0)
+        FlatEipBackend.EipTO to2 = bcmd.eips.get(1)
+        assert to1.vmBridgeName == "br_eth0"
+        assert to2.vmBridgeName == "br_eth0"
 
         EipInventory eip4 = queryEip {
             conditions=["name=eip4"]
