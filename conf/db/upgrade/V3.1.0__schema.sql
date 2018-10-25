@@ -10,7 +10,9 @@ ALTER TABLE `zstack`.`BaremetalPxeServerVO` ADD COLUMN `sshPort` int unsigned NO
 ALTER TABLE `zstack`.`BaremetalPxeServerVO` ADD COLUMN `storagePath` varchar(2048) NOT NULL;
 ALTER TABLE `zstack`.`BaremetalPxeServerVO` ADD COLUMN `totalCapacity` bigint unsigned DEFAULT 0;
 ALTER TABLE `zstack`.`BaremetalPxeServerVO` ADD COLUMN `availableCapacity` bigint unsigned DEFAULT 0;
+ALTER TABLE `zstack`.`BaremetalPxeServerVO` ADD COLUMN `dhcpInterfaceAddress` varchar(32) DEFAULT NULL;
 ALTER TABLE `zstack`.`BaremetalPxeServerVO` ADD COLUMN `state` varchar(32) NOT NULL;
+ALTER TABLE `zstack`.`BaremetalPxeServerVO` DROP INDEX `dhcpInterface`;
 
 DELETE FROM `zstack`.`BaremetalImageCacheVO`;
 ALTER TABLE `zstack`.`BaremetalImageCacheVO` ADD COLUMN `pxeServerUuid` varchar(32) NOT NULL;
