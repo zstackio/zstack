@@ -63,6 +63,9 @@ public class VipVO extends ResourceVO implements OwnedByAccount {
     private String netmask;
 
     @Column
+    private Integer prefixLen;
+
+    @Column
     private String serviceProvider;
 
     @Column
@@ -220,5 +223,13 @@ public class VipVO extends ResourceVO implements OwnedByAccount {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Integer getPrefixLen() {
+        return prefixLen;
+    }
+
+    public void setPrefixLen(Integer prefixLen) {
+        this.prefixLen = prefixLen;
     }
 }

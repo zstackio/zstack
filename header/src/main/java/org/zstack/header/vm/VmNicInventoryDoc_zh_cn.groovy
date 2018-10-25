@@ -60,9 +60,9 @@ doc {
 	}
 	field {
 		name "ipVersion"
-		desc ""
+		desc "ip协议号"
 		type "Integer"
-		since "0.6"
+		since "3.1"
 	}
 	ref {
 		name "usedIps"

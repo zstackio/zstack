@@ -28,25 +28,25 @@ doc {
 	}
 	field {
 		name "ipVersion"
-		desc ""
+		desc "IP协议号"
 		type "Integer"
-		since "0.6"
+		since "3.1"
 	}
 	field {
 		name "ip"
-		desc ""
+		desc "IP地址"
 		type "String"
 		since "0.6"
 	}
 	field {
 		name "netmask"
-		desc ""
+		desc "网络掩码"
 		type "String"
 		since "0.6"
 	}
 	field {
 		name "gateway"
-		desc ""
+		desc "网关地址"
 		type "String"
 		since "0.6"
 	}
@@ -66,7 +66,7 @@ doc {
 		name "vmNicUuid"
 		desc "云主机网卡UUID"
 		type "String"
-		since "0.6"
+		since "3.1"
 	}
 	field {
 		name "createDate"

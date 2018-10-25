@@ -243,6 +243,7 @@ public class IpRangeInventory implements Serializable {
         ipr.setStartIp(msg.getStartIp());
         ipr.setEndIp(msg.getEndIp());
         ipr.setNetmask(msg.getNetmask());
+        ipr.setPrefixLen(NetworkUtils.getPrefixLengthFromNetwork(msg.getNetmask()));
         ipr.setGateway(msg.getGateway());
         ipr.setL3NetworkUuid(msg.getL3NetworkUuid());
         SubnetUtils su = new SubnetUtils(msg.getGateway(), msg.getNetmask());
@@ -268,6 +269,7 @@ public class IpRangeInventory implements Serializable {
         ipr.setStartIp(startIp);
         ipr.setEndIp(endIp);
         ipr.setNetmask(subnet.getNetmask());
+        ipr.setPrefixLen(NetworkUtils.getPrefixLengthFromNetwork(subnet.getNetmask()));
         ipr.setL3NetworkUuid(msg.getL3NetworkUuid());
         ipr.setUuid(msg.getResourceUuid());
         ipr.setIpVersion(IPv6Constants.IPv4);

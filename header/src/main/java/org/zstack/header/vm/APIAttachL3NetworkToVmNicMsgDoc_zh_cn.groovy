@@ -7,7 +7,7 @@ doc {
 
     category "vmInstance"
 
-    desc """在这里填写API描述"""
+    desc """动态添加一个网络到网卡"""
 
     rest {
         request {
@@ -45,7 +45,7 @@ doc {
 				column {
 					name "staticIp"
 					enclosedIn "params"
-					desc ""
+					desc "指定分配给云主机的IP地址"
 					location "body"
 					type "String"
 					optional true

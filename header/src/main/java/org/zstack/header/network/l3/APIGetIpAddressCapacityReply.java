@@ -3,7 +3,6 @@ package org.zstack.header.network.l3;
 import org.zstack.header.message.APIReply;
 import org.zstack.header.rest.RestResponse;
 
-import java.math.BigInteger;
 
 /**
  */

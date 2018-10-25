@@ -81,6 +81,12 @@ public class VipInventory implements Serializable {
      * @desc netmask in IPv4
      */
     private String netmask;
+
+    /**
+     * @desc netmask in IPv4
+     */
+    private Integer prefixLen;
+
     /**
      * @desc service provider name that provides vip service
      */
@@ -117,6 +123,7 @@ public class VipInventory implements Serializable {
         inv.setL3NetworkUuid(vo.getL3NetworkUuid());
         inv.setLastOpDate(vo.getLastOpDate());
         inv.setNetmask(vo.getNetmask());
+        inv.setPrefixLen(vo.getPrefixLen());
         inv.setUseFor(vo.getUseFor());
         inv.setUuid(vo.getUuid());
         inv.setState(vo.getState().toString());
@@ -241,5 +248,13 @@ public class VipInventory implements Serializable {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Integer getPrefixLen() {
+        return prefixLen;
+    }
+
+    public void setPrefixLen(Integer prefixLen) {
+        this.prefixLen = prefixLen;
     }
 }

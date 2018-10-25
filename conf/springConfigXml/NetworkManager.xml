@@ -52,6 +52,7 @@
             <zstack:extension interface="org.zstack.header.Service"/>
             <zstack:extension interface="org.zstack.header.identity.ReportQuotaExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.identity.ResourceOwnerPreChangeExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint" />
         </zstack:plugin>
     </bean>
 

@@ -22,6 +22,7 @@ import org.zstack.header.identity.Quota.QuotaOperator;
 import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.identity.ReportQuotaExtensionPoint;
 import org.zstack.header.identity.ResourceOwnerPreChangeExtensionPoint;
+import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.NeedQuotaCheckMessage;
@@ -54,7 +55,7 @@ import java.util.stream.Collectors;
 import static org.zstack.utils.CollectionDSL.*;
 
 public class L3NetworkManagerImpl extends AbstractService implements L3NetworkManager, ReportQuotaExtensionPoint,
-        ResourceOwnerPreChangeExtensionPoint {
+        ResourceOwnerPreChangeExtensionPoint, PrepareDbInitialValueExtensionPoint {
     private static final CLogger logger = Utils.getLogger(L3NetworkManagerImpl.class);
 
     @Autowired
@@ -596,5 +597,19 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     @Override
     @Transactional(readOnly = true)
     public void resourceOwnerPreChange(AccountResourceRefInventory ref, String newOwnerUuid) {
+    }
+
+    @Override
+    public void prepareDbInitialValue() {
+        List<IpRangeVO> ipRangeVOS = Q.New(IpRangeVO.class).list();
+        List<IpRangeVO> changed = new ArrayList<>();
+        for (IpRangeVO ipr : ipRangeVOS) {
+            if (ipr.getPrefixLen() == null) {
+                ipr.setPrefixLen(NetworkUtils.getPrefixLengthFromNetwork(ipr.getNetmask()));
+            }
+        }
+        if (!changed.isEmpty()) {
+            dbf.persistCollection(changed);
+        }
     }
 }

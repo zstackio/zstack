@@ -214,4 +214,5 @@ ALTER TABLE `zstack`.`VmNicVO` ADD COLUMN `ipVersion` int(10) unsigned NOT NULL 
 
 ALTER TABLE `zstack`.`SecurityGroupVO` ADD COLUMN `ipVersion` int(10) unsigned NOT NULL DEFAULT 4;
 ALTER TABLE `zstack`.`SecurityGroupRuleVO` ADD COLUMN `ipVersion` int(10) unsigned NOT NULL DEFAULT 4;
+ALTER TABLE `zstack`.`VipVO` ADD COLUMN `prefixLen` int(10) unsigned DEFAULT NULL;
 
