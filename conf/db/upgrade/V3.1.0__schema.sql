@@ -55,7 +55,6 @@ DROP PROCEDURE IF EXISTS updateClusterHostCpuModelCheckTag;
 ALTER TABLE `zstack`.`LongJobVO` MODIFY COLUMN `jobData` mediumtext NOT NULL;
 ALTER TABLE `zstack`.`LongJobVO` MODIFY COLUMN `jobResult` mediumtext DEFAULT NULL;
 
-<<<<<<< HEAD
 CREATE TABLE `AutoScalingGroupVO` (
     `uuid` VARCHAR(32) NOT NULL UNIQUE,
     `name` VARCHAR(256) NOT NULL,

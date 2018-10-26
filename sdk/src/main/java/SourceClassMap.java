@@ -161,6 +161,7 @@ public class SourceClassMap {
 			put("org.zstack.header.storage.snapshot.VolumeSnapshotInventory", "org.zstack.sdk.VolumeSnapshotInventory");
 			put("org.zstack.header.storage.snapshot.VolumeSnapshotTree$SnapshotLeafInventory", "org.zstack.sdk.SnapshotLeafInventory");
 			put("org.zstack.header.storage.snapshot.VolumeSnapshotTreeInventory", "org.zstack.sdk.VolumeSnapshotTreeInventory");
+			put("org.zstack.header.storageDevice.ScsiLunClusterStatusInventory", "org.zstack.sdk.ScsiLunClusterStatusInventory");
 			put("org.zstack.header.storageDevice.ScsiLunHostRefInventory", "org.zstack.sdk.ScsiLunHostRefInventory");
 			put("org.zstack.header.storageDevice.ScsiLunInventory", "org.zstack.sdk.ScsiLunInventory");
 			put("org.zstack.header.storageDevice.ScsiLunVmInstanceRefInventory", "org.zstack.sdk.ScsiLunVmInstanceRefInventory");
@@ -524,6 +525,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.SchedulerJobInventory", "org.zstack.header.scheduler.SchedulerJobInventory");
 			put("org.zstack.sdk.SchedulerJobSchedulerTriggerInventory", "org.zstack.header.scheduler.SchedulerJobSchedulerTriggerInventory");
 			put("org.zstack.sdk.SchedulerTriggerInventory", "org.zstack.header.scheduler.SchedulerTriggerInventory");
+			put("org.zstack.sdk.ScsiLunClusterStatusInventory", "org.zstack.header.storageDevice.ScsiLunClusterStatusInventory");
 			put("org.zstack.sdk.ScsiLunHostRefInventory", "org.zstack.header.storageDevice.ScsiLunHostRefInventory");
 			put("org.zstack.sdk.ScsiLunInventory", "org.zstack.header.storageDevice.ScsiLunInventory");
 			put("org.zstack.sdk.ScsiLunVmInstanceRefInventory", "org.zstack.header.storageDevice.ScsiLunVmInstanceRefInventory");
