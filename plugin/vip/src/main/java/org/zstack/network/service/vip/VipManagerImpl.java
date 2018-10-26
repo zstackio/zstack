@@ -415,16 +415,12 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
 
     @Override
     public void prepareDbInitialValue() {
-        List<VipVO> vipVOS = Q.New(VipVO.class).list();
-        List<VipVO> changed = new ArrayList<>();
+        List<VipVO> vipVOS = Q.New(VipVO.class).isNull(VipVO_.prefixLen).list();
         for (VipVO vip : vipVOS) {
-            if (vip.getPrefixLen() == null) {
-                vip.setPrefixLen(NetworkUtils.getPrefixLengthFromNetwork(vip.getNetmask()));
-                changed.add(vip);
-            }
+            vip.setPrefixLen(NetworkUtils.getPrefixLengthFromNetwork(vip.getNetmask()));
         }
-        if (!changed.isEmpty()) {
-            dbf.persistCollection(changed);
+        if (!vipVOS.isEmpty()) {
+            dbf.updateCollection(vipVOS);
         }
     }
 }
