@@ -90,6 +90,7 @@ class CephCreateVmByIsoCapacityCase extends SubCase {
             bsPoolCapacity.name = bs.getPoolName()
             bsPoolCapacity.replicatedSize = bsPoolReplicatedSize
             bsPoolCapacity.usedCapacity = bsPoolUsedCapacity
+            bsPoolCapacity.totalCapacity = bsPoolAvailableCapacity + bsPoolUsedCapacity
 
             CephPoolCapacity otherPoolCapacity = new CephPoolCapacity()
             otherPoolCapacity.availableCapacity = 8
@@ -102,6 +103,7 @@ class CephCreateVmByIsoCapacityCase extends SubCase {
             psPoolCapacity.name = cephPrimaryStoragePool.poolName
             psPoolCapacity.replicatedSize = psPoolReplicatedSize
             psPoolCapacity.usedCapacity = psPoolUsedCapacity
+            psPoolCapacity.totalCapacity = psPoolAvailableCapacity + psPoolUsedCapacity
 
             rsp.setPoolCapacities(Arrays.asList(bsPoolCapacity, otherPoolCapacity, psPoolCapacity))
             rsp.setTotalCapacity(bs.totalCapacity)
@@ -163,7 +165,8 @@ class CephCreateVmByIsoCapacityCase extends SubCase {
                     new CephPoolCapacity(
                             name : primaryStoragePool.poolName,
                             availableCapacity : primaryStoragePool.availableCapacity - image_physical_size,
-                            usedCapacity: primaryStoragePool.usedCapacity + image_physical_size
+                            usedCapacity: primaryStoragePool.usedCapacity + image_physical_size,
+                            totalCapacity: cspec.totalCapacity
                     )
             ]
             return rsp

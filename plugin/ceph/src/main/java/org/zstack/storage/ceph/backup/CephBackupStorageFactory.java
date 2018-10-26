@@ -116,7 +116,7 @@ public class CephBackupStorageFactory implements BackupStorageFactory, CephCapac
                         .filter(e -> vo.getPoolName().equals(e.getName()))
                         .findAny().get();
 
-                vo.setTotalCapacity(poolCapacity.getAvailableCapacity() + poolCapacity.getUsedCapacity());
+                vo.setTotalCapacity(poolCapacity.getTotalCapacity());
                 vo.setAvailableCapacity(poolCapacity.getAvailableCapacity());
                 vo.setPoolAvailableCapacity(poolCapacity.getAvailableCapacity());
                 vo.setPoolReplicatedSize(poolCapacity.getReplicatedSize());

@@ -74,17 +74,20 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                         new CephPoolCapacity(
                                 name : cspec.rootVolumePoolName,
                                 availableCapacity : cspec.availableCapacity,
-                                usedCapacity : cspec.totalCapacity - cspec.availableCapacity
+                                usedCapacity : cspec.totalCapacity - cspec.availableCapacity,
+                                totalCapacity: cspec.totalCapacity
                         ),
                         new CephPoolCapacity(
                                 name : cspec.dataVolumePoolName,
                                 availableCapacity : 0,
-                                usedCapacity : 0
+                                usedCapacity : 0,
+                                totalCapacity: 0
                         ),
                         new CephPoolCapacity(
                                 name : cspec.imageCachePoolName,
                                 availableCapacity : 0,
-                                usedCapacity : 0
+                                usedCapacity : 0,
+                                totalCapacity: 0
                         ),
                 ]
                 rsp.poolCapacities = poolCapacities
