@@ -2905,7 +2905,7 @@
   {
     "raw": "inboundBandwidth must be set no more than %s.",
     "en_US": "inboundBandwidth must be set no more than {0}.",
-    "zh_CN": "",
+    "zh_CN": "下行带宽不能超过{0}",
     "arguments": [
       "inbound"
     ],
@@ -2915,7 +2915,7 @@
   {
     "raw": "outboundBandwidth must be set no more than %s.",
     "en_US": "outboundBandwidth must be set no more than {0}.",
-    "zh_CN": "",
+    "zh_CN": "上行带宽不能超过{0}",
     "arguments": [
       "outbound"
     ],
@@ -7347,7 +7347,7 @@
   {
     "raw": "Bandwidth must be set no more than %s",
     "en_US": "Bandwidth must be set no more than {0}",
-    "zh_CN": "",
+    "zh_CN": "带宽不能超过{0}",
     "arguments": [
       "bandWidth"
     ],
