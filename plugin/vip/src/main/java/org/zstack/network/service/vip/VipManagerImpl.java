@@ -26,6 +26,7 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.Quota.QuotaOperator;
 import org.zstack.header.identity.Quota.QuotaPair;
+import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -41,12 +42,11 @@ import org.zstack.tag.TagManager;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6Constants;
+import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.TypedQuery;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.utils.CollectionDSL.list;
@@ -54,7 +54,7 @@ import static org.zstack.utils.CollectionDSL.list;
 /**
  */
 public class VipManagerImpl extends AbstractService implements VipManager, ReportQuotaExtensionPoint,
-        ReleaseNetworkServiceOnDetachingNicExtensionPoint {
+        ReleaseNetworkServiceOnDetachingNicExtensionPoint, PrepareDbInitialValueExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VipManagerImpl.class);
 
     @Autowired
@@ -186,7 +186,15 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        String strategyType = msg.getAllocatorStrategy() == null ? L3NetworkConstant.RANDOM_IP_ALLOCATOR_STRATEGY : msg.getAllocatorStrategy();
+                        L3NetworkVO l3Vo = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
+                        String strategyType = msg.getAllocatorStrategy();
+                        if (msg.getAllocatorStrategy() == null) {
+                            if (l3Vo.getIpVersion() == IPv6Constants.IPv4) {
+                                strategyType = L3NetworkConstant.RANDOM_IP_ALLOCATOR_STRATEGY;
+                            } else {
+                                strategyType = L3NetworkConstant.RANDOM_IPV6_ALLOCATOR_STRATEGY;
+                            }
+                        }
                         AllocateIpMsg amsg = new AllocateIpMsg();
                         amsg.setL3NetworkUuid(msg.getL3NetworkUuid());
                         amsg.setAllocateStrategy(strategyType);
@@ -252,6 +260,9 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
                         vipvo.setNetmask(ip.getNetmask());
                         vipvo.setUsedIpUuid(ip.getUuid());
                         vipvo.setAccountUuid(msg.getSession().getAccountUuid());
+
+                        L3NetworkInventory vipL3 = L3NetworkInventory.valueOf(dbf.findByUuid(vipvo.getL3NetworkUuid(), L3NetworkVO.class));
+                        vipvo.setPrefixLen(vipL3.getIpRanges().get(0).getPrefixLen());
 
                         VipVO finalVipvo = vipvo;
                         vipvo = new SQLBatchWithReturn<VipVO>() {
@@ -400,5 +411,20 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
         }
 
         completion.done();
+    }
+
+    @Override
+    public void prepareDbInitialValue() {
+        List<VipVO> vipVOS = Q.New(VipVO.class).list();
+        List<VipVO> changed = new ArrayList<>();
+        for (VipVO vip : vipVOS) {
+            if (vip.getPrefixLen() == null) {
+                vip.setPrefixLen(NetworkUtils.getPrefixLengthFromNetwork(vip.getNetmask()));
+                changed.add(vip);
+            }
+        }
+        if (!changed.isEmpty()) {
+            dbf.persistCollection(changed);
+        }
     }
 }

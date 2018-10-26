@@ -72,7 +72,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
     private long DEFAULT_MESSAGE_TIMEOUT = TimeUnit.MINUTES.toMillis(30);
     private final String TASK_STACK = "task-stack";
     private final String TASK_CONTEXT = "task-context";
-    private final String SERVICE_ID_SPLITTER = ":::";
+    final static String SERVICE_ID_SPLITTER = ":::";
 
     private String SERVICE_ID = makeLocalServiceId("cloudbus.messages");
 
@@ -113,6 +113,14 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
         }
     }
 
+    public static String getManagementNodeUUIDFromServiceID(String serviceID) {
+        String[] ss = serviceID.split(SERVICE_ID_SPLITTER);
+        if (ss.length != 2) {
+            throw new CloudRuntimeException(String.format("%s is not a valid message ID", serviceID));
+        }
+
+        return ss[0];
+    }
 
     private abstract class Envelope {
         long startTime;

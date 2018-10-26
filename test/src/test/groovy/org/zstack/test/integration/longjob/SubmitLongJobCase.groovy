@@ -1,8 +1,13 @@
 package org.zstack.test.integration.longjob
 
+import org.zstack.core.Platform
+import org.zstack.core.db.DatabaseFacade
+import org.zstack.core.db.SQL
+import org.zstack.header.longjob.LongJobState
+import org.zstack.header.longjob.LongJobVO
+import org.zstack.header.longjob.LongJobVO_
 import org.zstack.sdk.SubmitLongJobAction
 import org.zstack.test.integration.ZStackTest
-import org.zstack.test.integration.storage.Env
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 /**
@@ -10,6 +15,7 @@ import org.zstack.testlib.SubCase
  */
 class SubmitLongJobCase extends SubCase {
     EnvSpec env
+    DatabaseFacade dbf
 
     @Override
     void clean() {
@@ -23,13 +29,20 @@ class SubmitLongJobCase extends SubCase {
 
     @Override
     void environment() {
-        env = Env.localStorageOneVmEnv()
+        env = makeEnv {
+            zone {
+                name = "zone"
+                description = "test"
+            }
+        }
     }
 
     @Override
     void test() {
         env.create {
+            dbf = bean(DatabaseFacade.class)
             testSubmitLongJobCase()
+            testExecuteTime()
         }
     }
 
@@ -41,5 +54,35 @@ class SubmitLongJobCase extends SubCase {
         action.jobData = "{}"
         SubmitLongJobAction.Result res = action.call()
         assert res.error != null
+    }
+
+    void testExecuteTime() {
+        def job = mockJobVO()
+        assert job.executeTime == null
+        job.setState(LongJobState.Succeeded)
+        job = dbf.updateAndRefresh(job)
+        long exec2 = job.executeTime
+        assert exec2 >= 0
+
+        // try again
+        job.setState(LongJobState.Canceled)
+        job = dbf.updateAndRefresh(job)
+        assert exec2 == job.executeTime
+        SQL.New(LongJobVO.class).eq(LongJobVO_.uuid, job.uuid).delete()
+    }
+
+    LongJobVO mockJobVO() {
+        def vo = new LongJobVO()
+        vo.setUuid(Platform.getUuid())
+        vo.setName("aaaa")
+        vo.setDescription("aaaa")
+        vo.setApiId(Platform.getUuid())
+        vo.setJobName("aaaa")
+        vo.setJobData("bbbbb")
+        vo.setState(LongJobState.Waiting)
+        vo.setTargetResourceUuid(Platform.getUuid())
+        vo.setManagementNodeUuid(Platform.getManagementServerId())
+        vo.setAccountUuid("36c27e8ff05c4780bf6d2fa65700f22e")
+        return dbf.persistAndRefresh(vo)
     }
 }

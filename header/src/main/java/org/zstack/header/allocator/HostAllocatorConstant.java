@@ -9,6 +9,7 @@ public interface HostAllocatorConstant {
     String LAST_HOST_PREFERRED_ALLOCATOR_STRATEGY_TYPE = "LastHostPreferredAllocatorStrategy";
     String MIGRATE_VM_ALLOCATOR_TYPE = "MigrateVmAllocatorStrategy";
     String LEAST_VM_PREFERRED_HOST_ALLOCATOR_STRATEGY_TYPE = "LeastVmPreferredHostAllocatorStrategy";
+    String STOPPED_VM_AWARE_LEAST_VM_PREFERRED_HOST_ALLOCATOR_STRATEGY_TYPE = "StoppedVmAwareLeastVmPreferredHostAllocatorStrategy";
 
     enum LocationSelector {
         zone,

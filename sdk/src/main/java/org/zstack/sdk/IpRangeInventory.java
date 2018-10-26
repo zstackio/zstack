@@ -76,6 +76,30 @@ public class IpRangeInventory  {
         return this.networkCidr;
     }
 
+    public java.lang.Integer ipVersion;
+    public void setIpVersion(java.lang.Integer ipVersion) {
+        this.ipVersion = ipVersion;
+    }
+    public java.lang.Integer getIpVersion() {
+        return this.ipVersion;
+    }
+
+    public java.lang.String addressMode;
+    public void setAddressMode(java.lang.String addressMode) {
+        this.addressMode = addressMode;
+    }
+    public java.lang.String getAddressMode() {
+        return this.addressMode;
+    }
+
+    public java.lang.Integer prefixLen;
+    public void setPrefixLen(java.lang.Integer prefixLen) {
+        this.prefixLen = prefixLen;
+    }
+    public java.lang.Integer getPrefixLen() {
+        return this.prefixLen;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

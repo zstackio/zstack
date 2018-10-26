@@ -6,6 +6,7 @@ import org.zstack.header.identity.AccountResourceRefVO_
 import org.zstack.network.service.eip.EipVO
 import org.zstack.network.service.vip.VipVO
 import org.zstack.sdk.EipInventory
+import org.zstack.sdk.IpRangeInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.VipInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
@@ -98,10 +99,16 @@ class DeleteEipAndVipCase extends SubCase {
 
     void testDeleteEipAndVip() {
         def pubL3 = env.inventoryByName("pubL3") as L3NetworkInventory
+
+        IpRangeInventory ipr = pubL3.getIpRanges().get(0)
+        assert ipr.prefixLen == 24
+
         def vip = createVip {
             name = "vip"
             l3NetworkUuid = pubL3.uuid
         } as VipInventory
+        assert vip.prefixLen == 24
+
         def eip = createEip {
             name = "eip"
             vipUuid = vip.uuid

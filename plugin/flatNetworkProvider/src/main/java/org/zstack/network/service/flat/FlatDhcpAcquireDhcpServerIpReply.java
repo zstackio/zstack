@@ -1,6 +1,8 @@
 package org.zstack.network.service.flat;
 
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.network.l3.IpRangeInventory;
+import org.zstack.header.network.l3.UsedIpInventory;
 
 /**
  * Created by frank on 10/11/2015.
@@ -9,6 +11,8 @@ public class FlatDhcpAcquireDhcpServerIpReply extends MessageReply {
     private String ip;
     private String netmask;
     private String usedIpUuid;
+    private UsedIpInventory usedIp;
+    private IpRangeInventory ipr;
 
     public String getNetmask() {
         return netmask;
@@ -32,5 +36,21 @@ public class FlatDhcpAcquireDhcpServerIpReply extends MessageReply {
 
     public void setUsedIpUuid(String usedIpUuid) {
         this.usedIpUuid = usedIpUuid;
+    }
+
+    public UsedIpInventory getUsedIp() {
+        return usedIp;
+    }
+
+    public void setUsedIp(UsedIpInventory usedIp) {
+        this.usedIp = usedIp;
+    }
+
+    public IpRangeInventory getIpr() {
+        return ipr;
+    }
+
+    public void setIpr(IpRangeInventory ipr) {
+        this.ipr = ipr;
     }
 }

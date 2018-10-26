@@ -3,7 +3,6 @@ package org.zstack.storage.volume;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.springframework.security.access.method.P;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
@@ -347,6 +346,7 @@ public class VolumeBase implements Volume {
                         imsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
                         imsg.setVolume(getSelfInventory());
                         imsg.setSystemTags(msg.getSystemTags());
+                        imsg.setSkipIfExisting(msg.isSkipIfExisting());
                         if (msg.getHostUuid() != null) {
                             imsg.setDestHost(HostInventory.valueOf(dbf.findByUuid(msg.getHostUuid(), HostVO.class)));
                         }
@@ -721,7 +721,6 @@ public class VolumeBase implements Volume {
                                         trigger.fail(reply.getError());
                                         return;
                                     }
-
                                     self.setVmInstanceUuid(null);
                                     self = dbf.updateAndRefresh(self);
                                     trigger.next();
@@ -874,7 +873,7 @@ public class VolumeBase implements Volume {
             @Override
             public void run(final SyncTaskChain chain) {
                 self = dbf.reload(self);
-                if (self.getStatus() == VolumeStatus.Deleted) {
+                if (self == null || self.getStatus() == VolumeStatus.Deleted) {
                     // the volume has been deleted
                     // we run into this case because the cascading framework
                     // will send duplicate messages when deleting a vm as the cascading

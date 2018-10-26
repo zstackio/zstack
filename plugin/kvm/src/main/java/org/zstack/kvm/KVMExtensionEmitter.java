@@ -50,7 +50,7 @@ public class KVMExtensionEmitter implements Component {
         mergeSnapshotExts = pluginRgty.getExtensionList(KVMMergeSnapshotExtensionPoint.class);
     }
 
-    public void beforeStartVmOnKvm(final KVMHostInventory host, final VmInstanceSpec spec, final StartVmCmd cmd) throws KVMException {
+    public void beforeStartVmOnKvm(final KVMHostInventory host, final VmInstanceSpec spec, final StartVmCmd cmd) {
         for (KVMStartVmExtensionPoint extp : startVmExts) {
             extp.beforeStartVmOnKvm(host, spec, cmd);
         }

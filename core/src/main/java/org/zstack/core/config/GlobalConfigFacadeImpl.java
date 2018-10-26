@@ -22,7 +22,6 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -102,9 +101,8 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
         for(GlobalConfig globalConfig: allConfigs.values()) {
                 globalConfig.updateValue(globalConfig.getDefaultValue());
         }
-        evt.setSuccess(true);
-        logger.info(String.format("Reset all the system global configurations."));
 
+        logger.info("Reset all the system global configurations.");
         bus.publish(evt);
     }
 
@@ -156,8 +154,8 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                     validateConfigFromDatabase();
                     persistConfigInXmlButNotInDatabase();
                     mergeXmlDatabase();
-                    initAllConfig();
                     link();
+                    initAllConfig(); // don't run before link()
                     allConfigs.putAll(configsFromXml);
                     // re-validate after merging xml's with db's
                     validateAll();
@@ -182,7 +180,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                                 if (config == null) {
                                     throw new CloudRuntimeException(String.format("GlobalConfigDefinition[%s] defines a null GlobalConfig[%s]." +
                                                     "You must assign a value to it using new GlobalConfig(category, name)",
-                                            def.getClass().getName(), field.getName()));
+                                            def.getName(), field.getName()));
                                 }
 
                                 globalConfigFields.add(field);
@@ -201,7 +199,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                         if (config == null) {
                             throw new CloudRuntimeException(String.format("GlobalConfigDefinition[%s] defines a null GlobalConfig[%s]." +
                                             "You must assign a value to it using new GlobalConfig(category, name)",
-                                    field.getDeclaringClass().getClass().getName(), field.getName()));
+                                    field.getDeclaringClass().getName(), field.getName()));
                         }
 
                         GlobalConfigDef d = field.getAnnotation(GlobalConfigDef.class);
@@ -264,14 +262,14 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
             }
 
             private void validateConfigFromDatabase() {
-                logger.debug(String.format("validating global config loaded from database"));
+                logger.debug("validating global config loaded from database");
                 for (GlobalConfig g : configsFromDatabase.values()) {
                     g.validate();
                 }
             }
 
             private void validateConfigFromXml() {
-                logger.debug(String.format("validating global config loaded from XML files"));
+                logger.debug("validating global config loaded from XML files");
                 for (GlobalConfig g : configsFromXml.values()) {
                     g.validate();
                 }
@@ -304,7 +302,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                 }
             }
 
-            private void loadConfigFromXml() throws JAXBException, FileNotFoundException {
+            private void loadConfigFromXml() throws JAXBException {
                 context = JAXBContext.newInstance("org.zstack.core.config.schema");
                 List<String> filePaths = PathUtil.scanFolderOnClassPath(CONFIG_FOLDER);
                 for (String path : filePaths) {

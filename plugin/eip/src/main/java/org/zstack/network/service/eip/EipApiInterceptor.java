@@ -1,5 +1,6 @@
 package org.zstack.network.service.eip;
 
+
 import org.apache.commons.net.util.SubnetUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,14 +15,20 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.network.l3.IpRangeVO;
+import org.zstack.header.network.l3.UsedIpVO;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
+import org.zstack.network.service.vip.Vip;
 import org.zstack.network.service.vip.VipState;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.utils.Utils;
 import org.zstack.utils.VipUseForList;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6Constants;
+import org.zstack.utils.network.IPv6NetworkUtils;
+import org.zstack.utils.network.NetworkUtils;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -81,9 +88,23 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
+    private void validateEipGuestIpUuid(String vmNicUuid, String guestIpUuid){
+        VmNicVO nic = dbf.findByUuid(vmNicUuid, VmNicVO.class);
+        boolean found = false;
+        for (UsedIpVO ip : nic.getUsedIps()) {
+            if (ip.getUuid().equals(guestIpUuid)) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            throw new ApiMessageInterceptionException(argerr("ip [uuid:%s] is attached to vm nic [%s]", guestIpUuid, vmNicUuid));
+        }
+    }
+
     private void validate(final APIAttachEipMsg msg) {
         SimpleQuery<EipVO> q = dbf.createQuery(EipVO.class);
-        q.select(EipVO_.state, EipVO_.vmNicUuid, EipVO_.vipIp);
+        q.select(EipVO_.state, EipVO_.vmNicUuid, EipVO_.vipUuid);
         q.add(EipVO_.uuid, Op.EQ, msg.getEipUuid());
         Tuple t = q.findTuple();
         String vmNicUuid = t.get(1, String.class);
@@ -98,8 +119,15 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
                             msg.getEipUuid(), EipState.Enabled, state));
         }
 
-        String vipIp = t.get(2, String.class);
-        isVipInVmNicSubnet(vipIp, msg.getVmNicUuid());
+        if (msg.getUsedIpUuid() == null) {
+            VmNicVO nic = dbf.findByUuid(msg.getVmNicUuid(), VmNicVO.class);
+            msg.setUsedIpUuid(nic.getUsedIpUuid());
+        } else {
+            validateEipGuestIpUuid(msg.getVmNicUuid(), msg.getUsedIpUuid());
+        }
+
+        String vipUuid = t.get(2, String.class);
+        isVipInVmNicSubnet(vipUuid, msg.getUsedIpUuid());
 
         VipVO vip = new Callable<VipVO>() {
             @Override
@@ -124,6 +152,21 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
         // check if the vm already has a network where the vip comes
         checkIfVmAlreadyHasVipNetwork(nic.getVmInstanceUuid(), vip);
         checkVmState(msg.getVmNicUuid());
+
+        if (msg.getUsedIpUuid() != null) {
+            boolean found = false;
+            for (UsedIpVO ip : nic.getUsedIps()) {
+                if (ip.getUuid().equals(msg.getUsedIpUuid())) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                throw new ApiMessageInterceptionException(argerr("Ip address [uuid:%s] is not belonged to nic [uuid:%s]", msg.getEipUuid(), msg.getVmNicUuid()));
+            }
+        } else {
+            msg.setUsedIpUuid(nic.getUsedIpUuid());
+        }
     }
 
     private void validate(APIDetachEipMsg msg) {
@@ -146,17 +189,30 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
-    private void isVipInVmNicSubnet(String eipIp, String vmNicUuid) {
-        SimpleQuery<VmNicVO> q = dbf.createQuery(VmNicVO.class);
-        q.select(VmNicVO_.gateway, VmNicVO_.netmask);
-        q.add(VmNicVO_.uuid, Op.EQ, vmNicUuid);
-        Tuple t = q.findTuple();
-        String gw = t.get(0, String.class);
-        String netmask = t.get(1, String.class);
-        SubnetUtils sub = new SubnetUtils(gw, netmask);
-        if (sub.getInfo().isInRange(eipIp)) {
-            throw new ApiMessageInterceptionException(operr("overlap public and private subnets. The subnet of EIP[%s] is an overlap with the subnet[%s, %s]" +
-                            " of the VM nic[uuid: %s].", eipIp, gw, netmask, vmNicUuid));
+    private void isVipInVmNicSubnet(String vipUuid, String guestIpUuid) {
+        VipVO vip = dbf.findByUuid(vipUuid, VipVO.class);
+        UsedIpVO vipIp = dbf.findByUuid(vip.getUsedIpUuid(), UsedIpVO.class);
+        IpRangeVO vipRange = dbf.findByUuid(vipIp.getIpRangeUuid(), IpRangeVO.class);
+
+        UsedIpVO guestIp = dbf.findByUuid(guestIpUuid, UsedIpVO.class);
+        IpRangeVO guestRange = dbf.findByUuid(guestIp.getIpRangeUuid(), IpRangeVO.class);
+
+        if (vipIp.getIpVersion() != guestIp.getIpVersion()) {
+            throw new ApiMessageInterceptionException(operr("vip ipVersion [%d] is different from guestIp ipVersion [%d].",
+                    vipIp.getIpVersion(), guestIp.getIpVersion()));
+        }
+
+        if (vipIp.getIpVersion() == IPv6Constants.IPv4) {
+            SubnetUtils guestSub = new SubnetUtils(guestRange.getGateway(), guestRange.getNetmask());
+            if (guestSub.getInfo().isInRange(vipIp.getIp())) {
+                throw new ApiMessageInterceptionException(operr("overlap public and private subnets. The subnet of is an overlap with the subnet[%s, %s]" +
+                        " of the VM nic ip range[%s, %s].", vipRange.getStartIp(), vipRange.getEndIp(), guestRange.getStartIp(), guestRange.getEndIp()));
+            }
+        } else {
+            if (IPv6NetworkUtils.isIpv6InCidrRange(vipIp.getIp(), guestRange.getNetworkCidr())){
+                throw new ApiMessageInterceptionException(operr("overlap public and private subnets. The subnet of is an overlap with the subnet[%s]" +
+                        " of the VM nic ip range[%s].", vipRange.getNetworkCidr(), guestRange.getNetworkCidr()));
+            }
         }
     }
 
@@ -188,8 +244,6 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (msg.getVmNicUuid() != null) {
-            isVipInVmNicSubnet(vip.getIp(), msg.getVmNicUuid());
-
             SimpleQuery<VmNicVO> nicq = dbf.createQuery(VmNicVO.class);
             nicq.add(VmNicVO_.uuid, Op.EQ, msg.getVmNicUuid());
             VmNicVO nic = nicq.find();
@@ -197,8 +251,18 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
                 throw new ApiMessageInterceptionException(argerr("guest l3Network of vm nic[uuid:%s] and vip l3Network of vip[uuid: %s] are the same network", msg.getVmNicUuid(), msg.getVipUuid()));
             }
 
+            if (msg.getUsedIpUuid() == null) {
+                msg.setUsedIpUuid(nic.getUsedIpUuid());
+            } else {
+                validateEipGuestIpUuid(msg.getVmNicUuid(), msg.getUsedIpUuid());
+            }
+
             // check if the vm already has a network where the vip comes
             checkIfVmAlreadyHasVipNetwork(nic.getVmInstanceUuid(), vip);
+        }
+
+        if (msg.getUsedIpUuid() != null) {
+            isVipInVmNicSubnet(msg.getVipUuid(), msg.getUsedIpUuid());
         }
     }
 

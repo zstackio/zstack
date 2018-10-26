@@ -33,6 +33,7 @@ import org.zstack.header.storage.backup.BackupStorageStatus;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
 import org.zstack.header.volume.APIGetVolumeFormatReply.VolumeFormatReplyStruct;
 import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
@@ -156,6 +157,10 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                 return vol;
             }
         }.execute();
+
+        if (msg.getSystemTags() != null) {
+            tagMgr.createNonInherentSystemTags(msg.getSystemTags(), vvo.getUuid(), VolumeVO.class.getSimpleName());
+        }
 
         new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(null, VolumeInventory.valueOf(vvo));
 
@@ -392,6 +397,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         vo.setName(msg.getName());
         vo.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
         vo.setSize(msg.getSize());
+        vo.setActualSize(msg.getActualSize());
         vo.setVmInstanceUuid(msg.getVmInstanceUuid());
         vo.setFormat(msg.getFormat());
         vo.setStatus(VolumeStatus.NotInstantiated);
@@ -412,6 +418,9 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                 return finalVo;
             }
         }.execute();
+        if (msg.getSystemTags() != null) {
+            tagMgr.createNonInherentSystemTags(msg.getSystemTags(), vo.getUuid(), VolumeVO.class.getSimpleName());
+        }
 
         List<CreateDataVolumeExtensionPoint> exts = pluginRgty.getExtensionList(CreateDataVolumeExtensionPoint.class);
         for (CreateDataVolumeExtensionPoint ext : exts) {

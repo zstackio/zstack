@@ -193,6 +193,24 @@ doc {
 					values ("InstantStart","JustCreate","CreateStopped")
 					
 				}
+				column {
+					name "rootVolumeSystemTags"
+					enclosedIn "params"
+					desc "云主机根盘所需要的系统标签"
+					location "body"
+					type "List"
+					optional true
+					since "3.0"
+				}
+				column {
+					name "dataVolumeSystemTags"
+					enclosedIn "params"
+					desc "云主机数据盘所需要的系统标签"
+					location "body"
+					type "List"
+					optional true
+					since "3.0"
+				}
 			}
         }
 

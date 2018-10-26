@@ -4,9 +4,9 @@ import org.springframework.http.HttpEntity
 import org.zstack.header.Constants
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
-import org.zstack.header.vm.VmNicVO
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
+import org.zstack.kvm.KVMGlobalConfig
 import org.zstack.kvm.KVMSecurityGroupBackend
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.MigrateVmAction
@@ -15,7 +15,6 @@ import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
-
 /**
  * Created by shixin.ruan on 2018/02/10.
  */
@@ -171,8 +170,9 @@ class MigrateVmFromDestitonHostCase extends SubCase {
             return new KVMAgentCommands.CleanupUnusedRulesOnHostResponse()
         }
 
+        KVMGlobalConfig.MIGRATE_AUTO_CONVERGE.updateValue(true)
         KVMAgentCommands.MigrateVmCmd cmd = null
-        String huuid
+        String huuid = null
         env.afterSimulator(KVMConstant.KVM_MIGRATE_VM_PATH) { rsp, HttpEntity<String> entity ->
             huuid = entity.getHeaders().getFirst(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID)
             cmd = json(entity.getBody(), KVMAgentCommands.MigrateVmCmd.class)
@@ -187,6 +187,7 @@ class MigrateVmFromDestitonHostCase extends SubCase {
         }
         assert cmd != null
         assert cmd.migrateFromDestination
+        assert cmd.autoConverge
         assert cmd.destHostIp == host.managementIp
         assert cmd.srcHostIp == host1.managementIp
         assert huuid == host.uuid

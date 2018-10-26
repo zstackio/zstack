@@ -52,6 +52,7 @@
             <zstack:extension interface="org.zstack.header.Service"/>
             <zstack:extension interface="org.zstack.header.identity.ReportQuotaExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.identity.ResourceOwnerPreChangeExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint" />
         </zstack:plugin>
     </bean>
 
@@ -74,6 +75,18 @@
     </bean>
 
     <bean id="RandomIpAllocatorStrategy" class="org.zstack.network.l3.RandomIpAllocatorStrategy">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.network.l3.IpAllocatorStrategy"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="RandomIpv6AllocatorStrategy" class="org.zstack.network.l3.RandomIpv6AllocatorStrategy">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.network.l3.IpAllocatorStrategy"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="FirstAvailableIpv6AllocatorStrategy" class="org.zstack.network.l3.FirstAvailableIpv6AllocatorStrategy">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.network.l3.IpAllocatorStrategy"/>
         </zstack:plugin>

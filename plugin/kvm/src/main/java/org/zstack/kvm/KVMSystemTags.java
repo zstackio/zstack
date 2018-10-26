@@ -1,5 +1,6 @@
 package org.zstack.kvm;
 
+import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.tag.TagDefinition;
@@ -23,6 +24,9 @@ public class KVMSystemTags {
 
     public static final String CPU_MODEL_NAME_TOKEN = "name";
     public static PatternedSystemTag CPU_MODEL_NAME = new PatternedSystemTag(String.format("cpuModelName::{%s}", CPU_MODEL_NAME_TOKEN), HostVO.class);
+
+    public static final String CHECK_CLUSTER_CPU_MODEL_TOKEN = "enable";
+    public static PatternedSystemTag CHECK_CLUSTER_CPU_MODEL = new PatternedSystemTag(String.format("check::cluster::cpu::model::{%s}", CHECK_CLUSTER_CPU_MODEL_TOKEN), ClusterVO.class);
 
     public static SystemTag VIRTIO_SCSI = new SystemTag("capability:virtio-scsi", HostVO.class);
 

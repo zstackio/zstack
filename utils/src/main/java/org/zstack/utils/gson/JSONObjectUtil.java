@@ -43,7 +43,7 @@ public class JSONObjectUtil {
     public static <T> T toObject(String content, Class<T> clazz){
         return gson.fromJson(content, clazz);
     }
-    
+
     public static String toJsonString(Object obj) {
         return gson.toJson(obj);
     }

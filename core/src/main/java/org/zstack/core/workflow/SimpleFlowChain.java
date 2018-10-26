@@ -438,6 +438,11 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
     }
 
     @Override
+    public ErrorCode getErrorCode() {
+        return errorCode;
+    }
+
+    @Override
     public void setError(ErrorCode error) {
         setErrorCode(error);
     }
@@ -512,19 +517,19 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
     }
 
     private boolean isSkipFlow(Flow flow) {
-        Boolean skip = FieldUtils.getFieldValue("__skip__", flow);
-        boolean ret = skip != null && skip;
-        if (ret) {
-            logger.debug(String.format("[FlowChain: %s] skip flow[%s] because it's __skip__ set to true", name, getFlowName(flow)));
+        boolean skip = flow.skip(data);
+        if (skip) {
+            logger.debug(String.format("[FlowChain: %s] skip flow[%s] because it's skip() returns true", name, getFlowName(flow)));
         }
-        return ret;
+        return skip;
     }
 
     private Flow getFirstNotSkippedFlow() {
         Flow flow = null;
         while (it.hasNext()) {
-            flow = it.next();
-            if (!isSkipFlow(flow)) {
+            Flow tempflow = it.next();
+            if (!isSkipFlow(tempflow)) {
+                flow = tempflow;
                 break;
             }
         }

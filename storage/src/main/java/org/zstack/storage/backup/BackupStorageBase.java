@@ -226,7 +226,8 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
             @Override
             public void success() {
-                if (self.getStatus() != BackupStorageStatus.Connected) {
+                if (self.getStatus() == BackupStorageStatus.Disconnected) {
+                    logger.debug(String.format("Ping backup storage[uuid%s] success, but it is disconnected, reconnect it", self.getUuid()));
                     reconnect();
                 }
 

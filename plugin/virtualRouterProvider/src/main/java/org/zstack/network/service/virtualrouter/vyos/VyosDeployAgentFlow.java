@@ -18,6 +18,7 @@ import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.network.service.virtualrouter.VirtualRouterGlobalConfig;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -115,6 +116,10 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
             }
 
             private void deployAgent() {
+                String script = "sudo bash /home/vyos/zvrboot.bin\n" +
+                        "sudo bash /home/vyos/zvr.bin\n" +
+                        "sudo bash /etc/init.d/zstack-virtualrouteragent restart\n";
+                
                 new Ssh().setTimeout(300).scp(
                         PathUtil.findFileOnClassPath("ansible/zvr/zvr.bin", true).getAbsolutePath(),
                         "/home/vyos/zvr.bin"
@@ -126,9 +131,7 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
                         "/home/vyos/zvr/version"
                 ).setPrivateKey(asf.getPrivateKey()).setUsername("vyos").setHostname(mgmtNicIp).setPort(22).runErrorByExceptionAndClose();
 
-                new Ssh().shell("sudo bash /home/vyos/zvrboot.bin\n" +
-                        "sudo bash /home/vyos/zvr.bin\n" +
-                        "sudo bash /etc/init.d/zstack-virtualrouteragent restart\n"
+                new Ssh().shell( script
                 ).setTimeout(300).setPrivateKey(asf.getPrivateKey()).setUsername("vyos").setHostname(mgmtNicIp).setPort(22).runErrorByExceptionAndClose();
 
                 trigger.next();

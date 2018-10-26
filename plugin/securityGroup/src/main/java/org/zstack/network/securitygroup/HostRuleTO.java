@@ -5,10 +5,16 @@ import java.util.List;
 
 public class HostRuleTO {
     private List<SecurityGroupRuleTO> rules;
+    private List<SecurityGroupRuleTO> ipv6Rules;
     private String hostUuid;
     private String hypervisorType;
     private boolean refreshHost;
-    
+
+    public HostRuleTO() {
+        rules = new ArrayList<SecurityGroupRuleTO>();
+        ipv6Rules = new ArrayList<SecurityGroupRuleTO>();
+    }
+
     public List<SecurityGroupRuleTO> getRules() {
         if (rules == null) {
             rules = new ArrayList<SecurityGroupRuleTO>();
@@ -41,5 +47,19 @@ public class HostRuleTO {
         for (SecurityGroupRuleTO rto : rules) {
             rto.setActionCode(actionCode);
         }
+        for (SecurityGroupRuleTO rto : ipv6Rules) {
+            rto.setActionCode(actionCode);
+        }
+    }
+
+    public List<SecurityGroupRuleTO> getIpv6Rules() {
+        if (ipv6Rules == null) {
+            ipv6Rules = new ArrayList<SecurityGroupRuleTO>();
+        }
+        return ipv6Rules;
+    }
+
+    public void setIpv6Rules(List<SecurityGroupRuleTO> ipv6Rules) {
+        this.ipv6Rules = ipv6Rules;
     }
 }

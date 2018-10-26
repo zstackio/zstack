@@ -27,6 +27,7 @@ public class VmInstanceSpec implements Serializable {
         private long size;
         private String diskOfferingUuid;
         private boolean isVolumeCreated;
+        private List<String> tags;
 
         public boolean isVolumeCreated() {
             return isVolumeCreated;
@@ -70,6 +71,14 @@ public class VmInstanceSpec implements Serializable {
 
         public void setSize(long size) {
             this.size = size;
+        }
+
+        public List<String> getTags() {
+            return tags;
+        }
+
+        public void setTags(List<String> tags) {
+            this.tags = tags;
         }
     }
 
@@ -163,119 +172,8 @@ public class VmInstanceSpec implements Serializable {
         }
     }
 
-    public static class V2VConversionSpec implements Serializable {
-        private String v2vType;
-        private String srcVmUrl;
-        private String srcVmName;
-        private String dstVmUuid;
-        private String storagePath;
-        private String conversionHostUuid;
-        private String hostUuid;
-        private Long rootVolumeActualSize;
-        private Long rootVolumeVirtualSize;
-        private List<Long> dataVolumeActualSizes;
-        private List<Long> dataVolumeVirtualSizes;
-        private String bootMode;
-
-        public String getV2vType() {
-            return v2vType;
-        }
-
-        public void setV2vType(String v2vType) {
-            this.v2vType = v2vType;
-        }
-
-        public String getSrcVmUrl() {
-            return srcVmUrl;
-        }
-
-        public void setSrcVmUrl(String srcVmUrl) {
-            this.srcVmUrl = srcVmUrl;
-        }
-
-        public String getSrcVmName() {
-            return srcVmName;
-        }
-
-        public void setSrcVmName(String srcVmName) {
-            this.srcVmName = srcVmName;
-        }
-
-        public String getDstVmUuid() {
-            return dstVmUuid;
-        }
-
-        public void setDstVmUuid(String dstVmUuid) {
-            this.dstVmUuid = dstVmUuid;
-        }
-
-        public String getStoragePath() {
-            return storagePath;
-        }
-
-        public void setStoragePath(String storagePath) {
-            this.storagePath = storagePath;
-        }
-
-        public String getConversionHostUuid() {
-            return conversionHostUuid;
-        }
-
-        public void setConversionHostUuid(String conversionHostUuid) {
-            this.conversionHostUuid = conversionHostUuid;
-        }
-
-        public String getHostUuid() {
-            return hostUuid;
-        }
-
-        public void setHostUuid(String hostUuid) {
-            this.hostUuid = hostUuid;
-        }
-
-        public Long getRootVolumeActualSize() {
-            return rootVolumeActualSize;
-        }
-
-        public void setRootVolumeActualSize(Long rootVolumeActualSize) {
-            this.rootVolumeActualSize = rootVolumeActualSize;
-        }
-
-        public Long getRootVolumeVirtualSize() {
-            return rootVolumeVirtualSize;
-        }
-
-        public void setRootVolumeVirtualSize(Long rootVolumeVirtualSize) {
-            this.rootVolumeVirtualSize = rootVolumeVirtualSize;
-        }
-
-        public List<Long> getDataVolumeActualSizes() {
-            return dataVolumeActualSizes;
-        }
-
-        public void setDataVolumeActualSizes(List<Long> dataVolumeActualSizes) {
-            this.dataVolumeActualSizes = dataVolumeActualSizes;
-        }
-
-        public List<Long> getDataVolumeVirtualSizes() {
-            return dataVolumeVirtualSizes;
-        }
-
-        public void setDataVolumeVirtualSizes(List<Long> dataVolumeVirtualSizes) {
-            this.dataVolumeVirtualSizes = dataVolumeVirtualSizes;
-        }
-
-        public String getBootMode() {
-            return bootMode;
-        }
-
-        public void setBootMode(String bootMode) {
-            this.bootMode = bootMode;
-        }
-    }
-
     private VmInstanceInventory vmInventory;
-    private List<L3NetworkInventory> l3Networks;
+    private List<VmNicSpec> l3Networks;
     private List<DiskOfferingInventory> dataDiskOfferings;
     private DiskOfferingInventory rootDiskOffering;
     private String hostAllocatorStrategy;
@@ -310,7 +208,11 @@ public class VmInstanceSpec implements Serializable {
     private String consolePassword;
     private VmAccountPreference accountPerference;
     private boolean createPaused;
-    private V2VConversionSpec v2vSpec;
+    private boolean instantiateResourcesSuccess;
+    private boolean instantiateResourcesSkipExisting;
+
+    private List<String> rootVolumeSystemTags;
+    private List<String> dataVolumeSystemTags;
 
     public String getVDIMonitorNumber() {
         return VDIMonitorNumber == null ? "1" : VDIMonitorNumber;
@@ -435,11 +337,11 @@ public class VmInstanceSpec implements Serializable {
         this.volumeSpecs = volumeSpecs;
     }
 
-    public List<L3NetworkInventory> getL3Networks() {
+    public List<VmNicSpec> getL3Networks() {
         return l3Networks;
     }
 
-    public void setL3Networks(List<L3NetworkInventory> l3Networks) {
+    public void setL3Networks(List<VmNicSpec> l3Networks) {
         this.l3Networks = l3Networks;
     }
 
@@ -567,8 +469,10 @@ public class VmInstanceSpec implements Serializable {
     public List<String> getRequiredNetworkServiceTypes() {
         List<String> nsTypes = new ArrayList<>();
         if (getL3Networks() != null) {
-            for (L3NetworkInventory l3 : getL3Networks()) {
-                nsTypes.addAll(l3.getNetworkServiceTypes());
+            for (VmNicSpec nicSpec : getL3Networks()) {
+                for (L3NetworkInventory l3: nicSpec.l3Invs) {
+                    nsTypes.addAll(l3.getNetworkServiceTypes());
+                }
             }
         }
         return nsTypes;
@@ -606,11 +510,35 @@ public class VmInstanceSpec implements Serializable {
         this.ignoreResourceReleaseFailure = ignoreResourceReleaseFailure;
     }
 
-    public V2VConversionSpec getV2vSpec() {
-        return v2vSpec;
+    public List<String> getRootVolumeSystemTags() {
+        return rootVolumeSystemTags;
     }
 
-    public void setV2vSpec(V2VConversionSpec v2vSpec) {
-        this.v2vSpec = v2vSpec;
+    public void setRootVolumeSystemTags(List<String> rootVolumeSystemTags) {
+        this.rootVolumeSystemTags = rootVolumeSystemTags;
+    }
+
+    public List<String> getDataVolumeSystemTags() {
+        return dataVolumeSystemTags;
+    }
+
+    public void setDataVolumeSystemTags(List<String> dataVolumeSystemTags) {
+        this.dataVolumeSystemTags = dataVolumeSystemTags;
+    }
+
+    public boolean isInstantiateResourcesSuccess() {
+        return instantiateResourcesSuccess;
+    }
+
+    public void setInstantiateResourcesSuccess(boolean instantiateResourcesSuccess) {
+        this.instantiateResourcesSuccess = instantiateResourcesSuccess;
+    }
+
+    public boolean isInstantiateResourcesSkipExisting() {
+        return instantiateResourcesSkipExisting;
+    }
+
+    public void setInstantiateResourcesSkipExisting(boolean instantiateResourcesSkipExisting) {
+        this.instantiateResourcesSkipExisting = instantiateResourcesSkipExisting;
     }
 }

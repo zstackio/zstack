@@ -54,14 +54,15 @@ class KVMSimulator implements Simulator {
 
         spec.simulator(KVMConstant.KVM_VM_CHECK_STATE) { HttpEntity<String> e ->
             KVMAgentCommands.CheckVmStateCmd cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.CheckVmStateCmd.class)
-            List<VmInstanceState> states = Q.New(VmInstanceVO.class)
-                    .select(VmInstanceVO_.state).in(VmInstanceVO_.uuid, cmd.vmUuids).listValues()
+            List<VmInstanceVO> vms = Q.New(VmInstanceVO.class).in(VmInstanceVO_.uuid, cmd.vmUuids).list()
             KVMAgentCommands.CheckVmStateRsp rsp = new KVMAgentCommands.CheckVmStateRsp()
             rsp.states = [:]
-            states.each {
-                def kstate = KVMConstant.KvmVmState.fromVmInstanceState(it)
+            vms.each {
+                def kstate = KVMConstant.KvmVmState.fromVmInstanceState(it.state)
                 if (kstate != null) {
-                    rsp.states[(cmd.hostUuid)] = kstate.toString()
+                    rsp.states[(it.uuid)] = kstate.toString()
+                } else {
+                    rsp.states[(it.uuid)] = KVMConstant.KvmVmState.Shutdown.toString()
                 }
             }
 
@@ -74,6 +75,10 @@ class KVMSimulator implements Simulator {
 
         spec.simulator(KVMConstant.KVM_DETACH_NIC_PATH) {
             return new KVMAgentCommands.DetachNicRsp()
+        }
+
+        spec.simulator(KVMConstant.KVM_UPDATE_NIC_PATH) {
+            return new KVMAgentCommands.UpdateNicRsp()
         }
 
         spec.simulator(KVMConstant.KVM_ATTACH_ISO_PATH) {

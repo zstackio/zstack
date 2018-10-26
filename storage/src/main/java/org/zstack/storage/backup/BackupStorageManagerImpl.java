@@ -16,6 +16,7 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.AbstractService;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
@@ -25,6 +26,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.*;
+import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.search.GetQuery;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
@@ -34,6 +36,7 @@ import org.zstack.utils.SizeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.LockModeType;
 import javax.persistence.Tuple;
@@ -42,6 +45,7 @@ import java.util.*;
 import java.util.concurrent.Callable;
 
 import static org.zstack.core.Platform.New;
+import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 
 public class BackupStorageManagerImpl extends AbstractService implements BackupStorageManager,
@@ -322,7 +326,22 @@ public class BackupStorageManagerImpl extends AbstractService implements BackupS
     public boolean start() {
         populateBackupStorageFactory();
         installValidatorToGlobalConfig();
+        installValidatorToSystemTag();
         return true;
+    }
+
+    private void installValidatorToSystemTag() {
+        BackupStorageSystemTags.BACKUP_STORAGE_DATA_NETWORK.installValidator(new SystemTagValidator() {
+            @Override
+            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                String cidr = BackupStorageSystemTags.BACKUP_STORAGE_DATA_NETWORK.getTokenByTag(systemTag,
+                        BackupStorageSystemTags.BACKUP_STORAGE_DATA_NETWORK_TOKEN);
+                String fmtCidr = NetworkUtils.fmtCidr(cidr);
+                if (!fmtCidr.equals(cidr)) {
+                    throw new OperationFailureException(argerr("[%s] is not a standard cidr, do you mean [%s]?", cidr, fmtCidr));
+                }
+            }
+        });
     }
 
     private void installValidatorToGlobalConfig() {
@@ -384,6 +403,8 @@ public class BackupStorageManagerImpl extends AbstractService implements BackupS
         List<String> ret = new ArrayList<String>();
         SimpleQuery<BackupStorageVO> q = dbf.createQuery(BackupStorageVO.class);
         q.select(BackupStorageVO_.uuid);
+        // treat connecting as disconnected
+        q.add(BackupStorageVO_.status, SimpleQuery.Op.NOT_EQ, BackupStorageStatus.Connected);
         List<String> uuids = q.listValue();
         for (String uuid : uuids) {
             if (destMaker.isManagedByUs(uuid)) {

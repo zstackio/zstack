@@ -1,5 +1,8 @@
 package org.zstack.utils.network;
 
+import com.googlecode.ipv6.IPv6Address;
+import com.googlecode.ipv6.IPv6AddressRange;
+import com.googlecode.ipv6.IPv6Network;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.net.util.SubnetUtils;
 import org.zstack.utils.DebugUtils;
@@ -15,47 +18,48 @@ import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class NetworkUtils {
     private static final CLogger logger = Utils.getLogger(NetworkUtils.class);
 
-    private static final Set<String> validNetmasks = new HashSet<String>();
+    private static final Map<String, Integer> validNetmasks = new HashMap<String, Integer>();
 
 
     static {
-        validNetmasks.add("255.255.255.255");
-        validNetmasks.add("255.255.255.254");
-        validNetmasks.add("255.255.255.252");
-        validNetmasks.add("255.255.255.248");
-        validNetmasks.add("255.255.255.240");
-        validNetmasks.add("255.255.255.224");
-        validNetmasks.add("255.255.255.192");
-        validNetmasks.add("255.255.255.128");
-        validNetmasks.add("255.255.255.0");
-        validNetmasks.add("255.255.254.0");
-        validNetmasks.add("255.255.252.0");
-        validNetmasks.add("255.255.248.0");
-        validNetmasks.add("255.255.240.0");
-        validNetmasks.add("255.255.224.0");
-        validNetmasks.add("255.255.192.0");
-        validNetmasks.add("255.255.128.0");
-        validNetmasks.add("255.255.0.0");
-        validNetmasks.add("255.254.0.0");
-        validNetmasks.add("255.252.0.0");
-        validNetmasks.add("255.248.0.0");
-        validNetmasks.add("255.240.0.0");
-        validNetmasks.add("255.224.0.0");
-        validNetmasks.add("255.192.0.0");
-        validNetmasks.add("255.128.0.0");
-        validNetmasks.add("255.0.0.0");
-        validNetmasks.add("254.0.0.0");
-        validNetmasks.add("252.0.0.0");
-        validNetmasks.add("248.0.0.0");
-        validNetmasks.add("240.0.0.0");
-        validNetmasks.add("224.0.0.0");
-        validNetmasks.add("192.0.0.0");
-        validNetmasks.add("128.0.0.0");
-        validNetmasks.add("0.0.0.0");
+        validNetmasks.put("255.255.255.255", 32);
+        validNetmasks.put("255.255.255.254", 31);
+        validNetmasks.put("255.255.255.252", 30);
+        validNetmasks.put("255.255.255.248", 29);
+        validNetmasks.put("255.255.255.240", 28);
+        validNetmasks.put("255.255.255.224", 27);
+        validNetmasks.put("255.255.255.192", 26);
+        validNetmasks.put("255.255.255.128", 25);
+        validNetmasks.put("255.255.255.0", 24);
+        validNetmasks.put("255.255.254.0", 23);
+        validNetmasks.put("255.255.252.0", 22);
+        validNetmasks.put("255.255.248.0", 21);
+        validNetmasks.put("255.255.240.0", 20);
+        validNetmasks.put("255.255.224.0", 19);
+        validNetmasks.put("255.255.192.0", 18);
+        validNetmasks.put("255.255.128.0", 17);
+        validNetmasks.put("255.255.0.0",16);
+        validNetmasks.put("255.254.0.0",15);
+        validNetmasks.put("255.252.0.0",14);
+        validNetmasks.put("255.248.0.0",13);
+        validNetmasks.put("255.240.0.0",12);
+        validNetmasks.put("255.224.0.0",11);
+        validNetmasks.put("255.192.0.0",10);
+        validNetmasks.put("255.128.0.0", 9);
+        validNetmasks.put("255.0.0.0", 8);
+        validNetmasks.put("254.0.0.0", 7);
+        validNetmasks.put("252.0.0.0", 6);
+        validNetmasks.put("248.0.0.0", 5);
+        validNetmasks.put("240.0.0.0", 4);
+        validNetmasks.put("224.0.0.0", 3);
+        validNetmasks.put("192.0.0.0", 2);
+        validNetmasks.put("128.0.0.0", 1);
+        validNetmasks.put("0.0.0.0", 0);
     }
 
     public static boolean isHostname(String hostname) {
@@ -77,17 +81,38 @@ public class NetworkUtils {
     }
 
     public static boolean isNetmask(String netmask) {
-        return validNetmasks.contains(netmask);
+        return validNetmasks.keySet().contains(netmask);
     }
 
     public static boolean isNetmaskExcept(String netmask, String except) {
-        return validNetmasks.contains(netmask) && !netmask.equals(except);
+        return validNetmasks.keySet().contains(netmask) && !netmask.equals(except);
     }
 
     public static boolean isCidr(String cidr) {
-        Pattern pattern = Pattern.compile("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(\\d|[1-2]\\d|3[0-2]))$");
-        Matcher matcher = pattern.matcher(cidr);
-        return matcher.find();
+        try {
+            IPv6Network.fromString(cidr);
+            return true;
+        } catch (Exception e) {
+            Pattern pattern = Pattern.compile("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(\\d|[1-2]\\d|3[0-2]))$");
+            Matcher matcher = pattern.matcher(cidr);
+            return matcher.find();
+        }
+    }
+
+    public static boolean isCidr(String cidr, int ipVersion) {
+        if (ipVersion == IPv6Constants.IPv4) {
+            Pattern pattern = Pattern.compile("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(\\d|[1-2]\\d|3[0-2]))$");
+            Matcher matcher = pattern.matcher(cidr);
+            return matcher.find();
+        } else if(ipVersion == IPv6Constants.IPv6) {
+            try {
+                IPv6Network.fromString(cidr);
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+        }
+        return false;
     }
 
     public static long bytesToLong(byte[] bytes) {
@@ -298,10 +323,16 @@ public class NetworkUtils {
     }
 
     public static int getTotalIpInRange(String startIp, String endIp) {
-        validateIpRange(startIp, endIp);
-        long s = ipv4StringToLong(startIp);
-        long e = ipv4StringToLong(endIp);
-        return (int) (e - s + 1);
+        if (isIpv4Address(startIp)) {
+            validateIpRange(startIp, endIp);
+            long s = ipv4StringToLong(startIp);
+            long e = ipv4StringToLong(endIp);
+            return (int) (e - s + 1);
+        } else if (IPv6NetworkUtils.isIpv6Address(startIp)) {
+            return (int)IPv6NetworkUtils.getIpv6RangeSize(startIp, endIp);
+        } else {
+            throw new IllegalArgumentException(String.format("%s is not a valid ipv4 address or valid ipv6 address", startIp));
+        }
     }
 
     public static int getTotalIpInCidr(String cidr) {
@@ -424,6 +455,33 @@ public class NetworkUtils {
             if (!usedIps.contains(ip)) {
                 res.add(ip);
             }
+
+            if (res.size() >= limit) {
+                break;
+            }
+        }
+
+        return res;
+    }
+
+    public static List<String> getFreeIpv6InRange(String startIp, String endIp, List<String> usedIps, int limit, String start) {
+        IPv6Address s = IPv6Address.fromString(startIp);
+        IPv6Address e = IPv6Address.fromString(endIp);
+        IPv6Address f = IPv6Address.fromString(start);
+        IPv6AddressRange range = IPv6AddressRange.fromFirstAndLast(s, e);
+
+        List<String> res = new ArrayList<String>();
+        while (s.compareTo(e) <= 0) {
+            if (s.compareTo(f) <= 0) {
+                s = s.add(1);
+                continue;
+            }
+            if (usedIps.contains(s.toString())) {
+                s = s.add(1);
+                continue;
+            }
+            res.add(s.toString());
+            s = s.add(1);
 
             if (res.size() >= limit) {
                 break;
@@ -656,6 +714,67 @@ public class NetworkUtils {
         sb.append(String.valueOf(longIP & 0x000000FF));
 
         return sb.toString();
+    }
+
+    public static boolean isInRange(String ip, String startIp, String endIp) {
+        if (isIpv4Address(ip)) {
+            return isIpv4InRange(ip, startIp, endIp);
+        } else if (IPv6NetworkUtils.isIpv6Address(ip)) {
+            return IPv6NetworkUtils.isIpv6InRange(ip, startIp, endIp);
+        } else {
+            throw new IllegalArgumentException(String.format("%s is not a valid ipv4 address or valid ipv6 address", ip));
+        }
+    }
+
+    public static String getSmallestIp(List<String> ips) {
+        if (isIpv4Address(ips.get(0))) {
+            List<Long> addresses = ips.stream().map(ip -> ipToLong(ip)).collect(Collectors.toList());
+            addresses.sort(Long::compareTo);
+            return longToIP(addresses.get(0));
+        } else {
+            List<IPv6Address> addresses = ips.stream().map(ip -> IPv6Address.fromString(ip)).collect(Collectors.toList());
+            addresses.sort(IPv6Address::compareTo);
+            return addresses.get(0).toString();
+        }
+    }
+
+    public static String getBiggesttIp(List<String> ips) {
+        int length = ips.size();
+        if (isIpv4Address(ips.get(0))) {
+            List<Long> addresses = ips.stream().map(ip -> ipToLong(ip)).collect(Collectors.toList());
+            addresses.sort(Long::compareTo);
+            return longToIP(addresses.get(length -1));
+        } else {
+            List<IPv6Address> addresses = ips.stream().map(ip -> IPv6Address.fromString(ip)).collect(Collectors.toList());
+            addresses.sort(IPv6Address::compareTo);
+            return addresses.get(length -1).toString();
+        }
+    }
+
+    public static Integer getIpversion(String ip) {
+        if (isIpv4Address(ip)) {
+            return IPv6Constants.IPv4;
+        } else {
+            try {
+                IPv6Address.fromString(ip);
+                return IPv6Constants.IPv6;
+            } catch (Exception e) {
+                throw e;
+            }
+        }
+    }
+
+    public static Integer getPrefixLengthFromNetwork(String mask) {
+        if (isIpv4Address(mask)) {
+            return validNetmasks.get(mask);
+        } else {
+            try {
+                IPv6Address addr = IPv6Address.fromString(mask);
+                return addr.numberOfLeadingOnes();
+            } catch (Exception e) {
+                throw e;
+            }
+        }
     }
 }
 

@@ -85,6 +85,14 @@
     </message>
 
     <message>
+        <name>org.zstack.header.network.l3.APIAddIpv6RangeByNetworkCidrMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.network.l3.APIAddIpv6RangeMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.header.network.l3.APIGetFreeIpMsg</name>
     </message>
 

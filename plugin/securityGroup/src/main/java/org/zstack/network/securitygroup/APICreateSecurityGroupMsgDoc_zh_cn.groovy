@@ -43,6 +43,16 @@ doc {
 					
 				}
 				column {
+					name "ipVersion"
+					enclosedIn "params"
+					desc "ip协议号"
+					location "body"
+					type "Integer"
+					optional true
+					since "3.1"
+					values ("4","6")
+				}
+				column {
 					name "resourceUuid"
 					enclosedIn "params"
 					desc "用户指定的资源UUID，若指定，系统不会为该资源随机分配UUID"

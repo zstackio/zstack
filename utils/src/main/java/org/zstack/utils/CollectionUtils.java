@@ -101,4 +101,21 @@ public class CollectionUtils {
         Map<Object,Boolean> seen = new ConcurrentHashMap<>();
         return t -> seen.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
     }
+
+    public static <T> void shuffleByKeySeed(List<T> list, String keySeed, java.util.function.Function<? super T, ? extends Comparable> keyExtractor) {
+        Collections.sort(list, Comparator.comparing(keyExtractor));
+
+        long seed = 0;
+        char[] keyArrary = keySeed.toCharArray();
+        for (char c : keyArrary) {
+            seed += c;
+        }
+
+        Random r = new Random(seed);
+        List<T> result = new ArrayList<>();
+        for (int i = list.size(); i > 0; i--) {
+            result.add(list.remove(r.nextInt(i)));
+        }
+        list.addAll(result);
+    }
 }

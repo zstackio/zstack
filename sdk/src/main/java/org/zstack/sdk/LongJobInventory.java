@@ -100,4 +100,11 @@ public class LongJobInventory  {
         return this.lastOpDate;
     }
 
+    public java.lang.Long executeTime;
+    public void setExecuteTime(java.lang.Long executeTime) {
+        this.executeTime = executeTime;
+    }
+    public java.lang.Long getExecuteTime() {
+        return this.executeTime;
+    }
 }

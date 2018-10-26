@@ -7,6 +7,7 @@ import org.zstack.header.vm.APICreateVmInstanceMsg;
 @ApiTimeout(apiClasses = {APICreateVmInstanceMsg.class})
 public class CreateVolumeMsg extends NeedReplyMessage {
     private long size;
+    private long actualSize;
     private String primaryStorageUuid;
     private String vmInstanceUuid;
     private String volumeType;
@@ -104,5 +105,13 @@ public class CreateVolumeMsg extends NeedReplyMessage {
 
     public void setResourceUuid(String resourceUuid) {
         this.resourceUuid = resourceUuid;
+    }
+
+    public long getActualSize() {
+        return actualSize;
+    }
+
+    public void setActualSize(long actualSize) {
+        this.actualSize = actualSize;
     }
 }

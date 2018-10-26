@@ -17,7 +17,7 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
     private int cpuNum;
     private long cpuSpeed;
     private long memorySize;
-    private List<String> l3NetworkUuids;
+    private List<VmNicSpec> l3NetworkUuids;
     private String type;
     private String rootDiskOfferingUuid;
     private List<String> dataDiskOfferingUuids;
@@ -31,6 +31,24 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
     private String defaultL3NetworkUuid;
     private String allocatorStrategy;
     private String strategy;
+    private List<String> rootVolumeSystemTags;
+    private List<String> dataVolumeSystemTags;
+
+    public List<String> getRootVolumeSystemTags() {
+        return rootVolumeSystemTags;
+    }
+
+    public void setRootVolumeSystemTags(List<String> rootVolumeSystemTags) {
+        this.rootVolumeSystemTags = rootVolumeSystemTags;
+    }
+
+    public List<String> getDataVolumeSystemTags() {
+        return dataVolumeSystemTags;
+    }
+
+    public void setDataVolumeSystemTags(List<String> dataVolumeSystemTags) {
+        this.dataVolumeSystemTags = dataVolumeSystemTags;
+    }
 
     public String getStrategy() {
         return strategy;
@@ -122,11 +140,11 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
     }
 
     @Override
-    public List<String> getL3NetworkUuids() {
+    public List<VmNicSpec> getL3NetworkUuids() {
         return l3NetworkUuids;
     }
 
-    public void setL3NetworkUuids(List<String> l3NetworkUuids) {
+    public void setL3NetworkUuids(List<VmNicSpec> l3NetworkUuids) {
         this.l3NetworkUuids = l3NetworkUuids;
     }
 

@@ -24,6 +24,7 @@
     <bean id="KVMHostFactory" class="org.zstack.kvm.KVMHostFactory">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.host.HypervisorFactory" />
+            <zstack:extension interface="org.zstack.header.host.HypervisorMessageFactory" />
             <zstack:extension interface="org.zstack.header.Component" />
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
             <zstack:extension interface="org.zstack.header.volume.MaxDataVolumeNumberExtensionPoint" />
@@ -103,6 +104,12 @@
     <bean id="KVMHostAllocatorFilterExtensionPoint" class="org.zstack.kvm.KVMHostAllocatorFilterExtensionPoint">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.allocator.HostAllocatorFilterExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="QmpKvmStartVmExtension" class="org.zstack.kvm.QmpKvmStartVmExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.kvm.KVMStartVmExtensionPoint" />
         </zstack:plugin>
     </bean>
 </beans>

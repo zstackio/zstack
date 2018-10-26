@@ -6,6 +6,7 @@ import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.network.l3.UsedIpVO;
 import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.vm.VmInstanceVO;
@@ -57,6 +58,7 @@ import javax.persistence.Tuple;
 @RestRequest(
         path = "/eips/{eipUuid}/vm-instances/nics/{vmNicUuid}",
         method = HttpMethod.POST,
+        parameterName = "params",
         responseClass = APIAttachEipEvent.class
 )
 public class APIAttachEipMsg extends APIMessage implements EipMessage {
@@ -70,6 +72,12 @@ public class APIAttachEipMsg extends APIMessage implements EipMessage {
      */
     @APIParam(resourceType = VmNicVO.class, checkAccount = true, operationTarget = true)
     private String vmNicUuid;
+
+    /**
+     * @desc vm nic ip. See :ref:`UsedIpInventory`
+     */
+    @APIParam(required = false, resourceType = UsedIpVO.class, checkAccount = true, operationTarget = true)
+    private String usedIpUuid;
 
     public String getEipUuid() {
         return eipUuid;
@@ -86,7 +94,15 @@ public class APIAttachEipMsg extends APIMessage implements EipMessage {
     public void setVmNicUuid(String vmNicUuid) {
         this.vmNicUuid = vmNicUuid;
     }
- 
+
+    public String getUsedIpUuid() {
+        return usedIpUuid;
+    }
+
+    public void setUsedIpUuid(String usedIpUuid) {
+        this.usedIpUuid = usedIpUuid;
+    }
+
     public static APIAttachEipMsg __example__() {
         APIAttachEipMsg msg = new APIAttachEipMsg();
         msg.setEipUuid(uuid());

@@ -9,11 +9,29 @@ import java.util.List;
  */
 public class InstantiateVmFromNewCreatedStruct {
     private List<String> dataDiskOfferingUuids;
-    private List<String> l3NetworkUuids;
+    private List<VmNicSpec> l3NetworkUuids;
     private String rootDiskOfferingUuid;
     private String primaryStorageUuidForRootVolume;
     private String primaryStorageUuidForDataVolume;
     private VmCreationStrategy strategy = VmCreationStrategy.InstantStart;
+    private List<String> rootVolumeSystemTags;
+    private List<String> dataVolumeSystemTags;
+
+    public List<String> getRootVolumeSystemTags() {
+        return rootVolumeSystemTags;
+    }
+
+    public void setRootVolumeSystemTags(List<String> rootVolumeSystemTags) {
+        this.rootVolumeSystemTags = rootVolumeSystemTags;
+    }
+
+    public List<String> getDataVolumeSystemTags() {
+        return dataVolumeSystemTags;
+    }
+
+    public void setDataVolumeSystemTags(List<String> dataVolumeSystemTags) {
+        this.dataVolumeSystemTags = dataVolumeSystemTags;
+    }
 
     public static String makeLabelKey(String vmUuid) {
         return String.format("not-start-vm-%s", vmUuid);
@@ -27,11 +45,11 @@ public class InstantiateVmFromNewCreatedStruct {
         this.dataDiskOfferingUuids = dataDiskOfferingUuids;
     }
 
-    public List<String> getL3NetworkUuids() {
+    public List<VmNicSpec> getL3NetworkUuids() {
         return l3NetworkUuids;
     }
 
-    public void setL3NetworkUuids(List<String> l3NetworkUuids) {
+    public void setL3NetworkUuids(List<VmNicSpec> l3NetworkUuids) {
         this.l3NetworkUuids = l3NetworkUuids;
     }
 
@@ -59,6 +77,8 @@ public class InstantiateVmFromNewCreatedStruct {
         struct.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
         struct.setPrimaryStorageUuidForDataVolume(msg.getPrimaryStorageUuidForDataVolume());
         struct.strategy = VmCreationStrategy.valueOf(msg.getStrategy());
+        struct.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());
+        struct.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
         return struct;
     }
 
@@ -70,6 +90,8 @@ public class InstantiateVmFromNewCreatedStruct {
         struct.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
         struct.setPrimaryStorageUuidForDataVolume(msg.getPrimaryStorageUuidForDataVolume());
         struct.strategy = VmCreationStrategy.valueOf(msg.getStrategy());
+        struct.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());
+        struct.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
         return struct;
     }
 

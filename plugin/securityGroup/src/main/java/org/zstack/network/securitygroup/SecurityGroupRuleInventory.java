@@ -57,6 +57,9 @@ public class SecurityGroupRuleInventory {
      * - Egress
      */
     private String type;
+
+    private Integer ipVersion;
+
     /**
      * @desc
      * start port
@@ -114,6 +117,7 @@ public class SecurityGroupRuleInventory {
         this.setRemoteSecurityGroupUuid(vo.getRemoteSecurityGroupUuid());
         this.setCreateDate(vo.getCreateDate());
         this.setLastOpDate(vo.getLastOpDate());
+        this.setIpVersion(vo.getIpVersion());
     }
     
     public static SecurityGroupRuleInventory valueOf(SecurityGroupRuleVO vo) {
@@ -217,10 +221,19 @@ public class SecurityGroupRuleInventory {
         this.lastOpDate = lastOpDate;
     }
 
+    public Integer getIpVersion() {
+        return ipVersion;
+    }
+
+    public void setIpVersion(Integer ipVersion) {
+        this.ipVersion = ipVersion;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(String.format("type: %s,", this.type));
+        sb.append(String.format("ipVersion: %d,", this.ipVersion));
         sb.append(String.format("protocol: %s,", this.protocol));
         sb.append(String.format("startPort: %s,", this.startPort));
         sb.append(String.format("endPort: %s,", this.endPort));

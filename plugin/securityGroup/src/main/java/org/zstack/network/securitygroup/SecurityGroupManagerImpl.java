@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
@@ -19,6 +20,8 @@ import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
@@ -29,6 +32,7 @@ import org.zstack.header.identity.Quota.QuotaPair;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
@@ -44,7 +48,9 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6Constants;
 
+import javax.json.Json;
 import javax.persistence.LockModeType;
 import javax.persistence.Query;
 import javax.persistence.Tuple;
@@ -52,8 +58,10 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
+import static org.zstack.core.Platform.argerr;
 import static org.zstack.network.securitygroup.SecurityGroupMembersTO.ACTION_CODE_DELETE_GROUP;
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -157,8 +165,13 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         private List<String> securityGroupUuids;
         private List<String> hostUuids;
         private List<VmInstanceState> vmStates;
+        private List<SecurityGroupState> sgStates;
 
         List<HostRuleTO> calculate() {
+            if (sgStates == null) {
+                sgStates = new ArrayList<SecurityGroupState>();
+                sgStates.add(SecurityGroupState.Enabled);
+            }
             if (vmNicUuids != null) {
                 return calculateByVmNic();
             } else if (l3NetworkUuids != null && securityGroupUuids != null) {
@@ -176,10 +189,12 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
         @Transactional(readOnly = true)
         HostSecurityGroupMembersTO returnHostSecurityGroupMember(String sgUuid){
+            SecurityGroupVO sg = dbf.findByUuid(sgUuid, SecurityGroupVO.class);
             HostSecurityGroupMembersTO hto = new HostSecurityGroupMembersTO();
             SecurityGroupMembersTO gto = new SecurityGroupMembersTO();
             gto.setSecurityGroupVmIps(getVmIpsBySecurityGroup(sgUuid));
             gto.setSecurityGroupUuid(sgUuid);
+            gto.setIpVersion(sg.getIpVersion());
             hto.setGroupMembersTO(gto);
             Set<String> hostUuids = new HashSet<>();
 
@@ -204,12 +219,14 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
         @Transactional(readOnly = true)
         private List<HostRuleTO> calculateByHost() {
-            String sql = "select nic.uuid from VmNicVO nic, VmInstanceVO vm, VmNicSecurityGroupRefVO ref" +
-                    " where nic.uuid = ref.vmNicUuid and nic.vmInstanceUuid = vm.uuid" +
+            String sql = "select nic.uuid from VmNicVO nic, VmInstanceVO vm, VmNicSecurityGroupRefVO ref, SecurityGroupVO sg" +
+                    " where nic.uuid = ref.vmNicUuid and nic.vmInstanceUuid = vm.uuid"+
+                    " and ref.securityGroupUuid = sg.uuid and sg.state in (:sgState)" +
                     " and vm.hostUuid in (:hostUuids) and vm.state in (:vmStates)";
             TypedQuery<String> insgQuery = dbf.getEntityManager().createQuery(sql, String.class);
             insgQuery.setParameter("hostUuids", hostUuids);
             insgQuery.setParameter("vmStates", vmStates);
+            insgQuery.setParameter("sgState", sgStates);
             List<String> nicsInSg = insgQuery.getResultList();
 
             sql = "select nic.uuid from VmNicVO nic, VmInstanceVO vm where nic.vmInstanceUuid = vm.uuid" +
@@ -223,7 +240,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
             List<HostRuleTO> ret = new ArrayList<HostRuleTO>();
             if (!nicsInSg.isEmpty()) {
-                vmNicUuids = nicsInSg;
+                vmNicUuids = nicsInSg.stream().distinct().collect(Collectors.toList());
                 ret.addAll(calculateByVmNic());
             }
             if (!nicsOutSg.isEmpty()) {
@@ -231,7 +248,8 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 for (HostRuleTO hto : toRemove) {
                     hto.setActionCodeForAllSecurityGroupRuleTOs(SecurityGroupRuleTO.ACTION_CODE_DELETE_CHAIN);
                 }
-                ret.addAll(toRemove);
+                //ret.addAll(toRemove);
+                ret = mergeMultiHostRuleTO(ret, toRemove);
             }
 
             return ret;
@@ -259,6 +277,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                         hostRuleTOMap.put(hto.getHostUuid(), hto);
                     } else {
                         old.getRules().addAll(hto.getRules());
+                        old.getIpv6Rules().addAll(hto.getIpv6Rules());
                     }
                 }
             }
@@ -269,29 +288,43 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         }
 
         private List<HostRuleTO> calculateByL3NetworkAndSecurityGroup() {
-            String sql = "select ref.vmNicUuid from VmNicSecurityGroupRefVO ref, SecurityGroupL3NetworkRefVO l3ref, VmNicVO nic where l3ref.securityGroupUuid = ref.securityGroupUuid and nic.uuid = ref.vmNicUuid and nic.l3NetworkUuid = l3ref.l3NetworkUuid and ref.securityGroupUuid in (:sgUuids) and l3ref.l3NetworkUuid in (:l3Uuids)";
+            String sql = "select ref.vmNicUuid from VmNicSecurityGroupRefVO ref, SecurityGroupL3NetworkRefVO l3ref, VmNicVO nic, UsedIpVO ip, SecurityGroupVO sg" +
+                    " where l3ref.securityGroupUuid = ref.securityGroupUuid and nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = l3ref.l3NetworkUuid" +
+                    " and ref.securityGroupUuid in (:sgUuids) and l3ref.l3NetworkUuid in (:l3Uuids)" +
+                    " and ref.securityGroupUuid = sg.uuid and sg.state in (:sgStates)";
             TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
             q.setParameter("sgUuids", securityGroupUuids);
             q.setParameter("l3Uuids", l3NetworkUuids);
-            vmNicUuids = q.getResultList();
+            q.setParameter("sgStates", sgStates);
+            vmNicUuids = q.getResultList().stream().distinct().collect(Collectors.toList());
+
             return calculateByVmNic();
         }
 
-        private List<RuleTO> calculateRuleTOBySecurityGroup(List<String> sgUuids, String l3Uuid) {
+        private List<RuleTO> calculateRuleTOBySecurityGroup(List<String> sgUuids, List<String> l3Uuids) {
             List<RuleTO> ret = new ArrayList<>();
 
             for (String sgUuid : sgUuids) {
-                String sql = "select r from SecurityGroupRuleVO r where r.securityGroupUuid = :sgUuid" +
-                        " and r.remoteSecurityGroupUuid is null";
-                TypedQuery<SecurityGroupRuleVO> q = dbf.getEntityManager().createQuery(sql, SecurityGroupRuleVO.class);
-                q.setParameter("sgUuid", sgUuid);
-                List<SecurityGroupRuleVO> rules = q.getResultList();
+                List<SecurityGroupRuleVO> rules = new ArrayList<>();
+                SecurityGroupVO sg = Q.New(SecurityGroupVO.class).eq(SecurityGroupVO_.uuid, sgUuid).in(SecurityGroupVO_.state, sgStates).find();
+                if (sg == null) {
+                    continue;
+                }
+                rules = Q.New(SecurityGroupRuleVO.class).eq(SecurityGroupRuleVO_.securityGroupUuid,sgUuid )
+                        .isNull(SecurityGroupRuleVO_.remoteSecurityGroupUuid).list();
                 if (rules.isEmpty()) {
                     continue;
                 }
 
                 for (SecurityGroupRuleVO r : rules) {
+                    if ( r.getRemoteSecurityGroupUuid() != null) {
+                        SecurityGroupVO remoteSg = Q.New(SecurityGroupVO.class).eq(SecurityGroupVO_.uuid, r.getRemoteSecurityGroupUuid()).in(SecurityGroupVO_.state, sgStates).find();
+                        if (remoteSg == null) {
+                            continue;
+                        }
+                    }
                     RuleTO rto = new RuleTO();
+                    rto.setIpVersion(r.getIpVersion());
                     rto.setAllowedCidr(r.getAllowedCidr());
                     rto.setEndPort(r.getEndPort());
                     rto.setProtocol(r.getProtocol().toString());
@@ -314,17 +347,19 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             return ret;
         }
 
-        private List<RuleTO> calculateSecurityGroupBaseRule(List<String> sgUuids, String l3Uuid){
+        private List<RuleTO> calculateSecurityGroupBaseRule(List<String> sgUuids, List<String> l3Uuids){
             List<RuleTO> rules = new ArrayList<>();
             for(String sgUuid : sgUuids){
-                String sql = "select r from SecurityGroupRuleVO r where r.securityGroupUuid = :sgUuid" +
-                        " and r.remoteSecurityGroupUuid is not null";
+                String sql = "select r from SecurityGroupRuleVO r,SecurityGroupVO sg  where r.securityGroupUuid = :sgUuid" +
+                        " and r.remoteSecurityGroupUuid is not null and r.remoteSecurityGroupUuid = sg.uuid and sg.state in (:sgStates)";
                 TypedQuery<SecurityGroupRuleVO> q = dbf.getEntityManager().createQuery(sql, SecurityGroupRuleVO.class);
                 q.setParameter("sgUuid", sgUuid);
+                q.setParameter("sgStates", sgStates);
                 List<SecurityGroupRuleVO> remoteRules = q.getResultList();
 
                 for(SecurityGroupRuleVO r : remoteRules){
                     RuleTO rule = new RuleTO();
+                    rule.setIpVersion(r.getIpVersion());
                     rule.setStartPort(r.getStartPort());
                     rule.setEndPort(r.getEndPort());
                     rule.setProtocol(r.getProtocol().toString());
@@ -343,11 +378,11 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
         private List<String> getVmIpsBySecurityGroup(String sgUuid){
             // TODO: if two L3 network which have same ip segment attached same sg, it might has a problem
-            String sql = "select nic.ip" +
-                    " from VmNicVO nic, VmNicSecurityGroupRefVO ref" +
-                    " where ref.vmNicUuid = nic.uuid" +
+            String sql = "select ip.ip" +
+                    " from VmNicVO nic, VmNicSecurityGroupRefVO ref, SecurityGroupVO sg, UsedIpVO ip" +
+                    " where sg.uuid = ref.securityGroupUuid and ref.vmNicUuid = nic.uuid" +
                     " and ref.securityGroupUuid = :sgUuid" +
-                    " and nic.ip is not null";
+                    " and nic.uuid = ip.vmNicUuid and ip.ipVersion = sg.ipVersion";
             TypedQuery<String> internalIpQuery = dbf.getEntityManager().createQuery(sql, String.class);
             internalIpQuery.setParameter("sgUuid", sgUuid);
 
@@ -356,12 +391,19 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
         @Transactional(readOnly = true)
         Collection<HostRuleTO> createRulePlaceHolder(List<String> nicUuids) {
-            String sql = "select nic.uuid, vm.hostUuid, vm.hypervisorType, nic.internalName, nic.mac, nic.ip from VmInstanceVO vm, VmNicVO nic where nic.vmInstanceUuid = vm.uuid and vm.hostUuid is not null and nic.uuid in (:nicUuids) group by nic.uuid";
+            /* there are multiple ips on same nic */
+            String sql = "select nic.uuid, vm.hostUuid, vm.hypervisorType, nic.internalName, nic.mac, ip.ip, ip.ipVersion" +
+                    " from VmInstanceVO vm, VmNicVO nic, UsedIpVO ip" +
+                    " where nic.vmInstanceUuid = vm.uuid and vm.hostUuid is not null and nic.uuid in (:nicUuids)" +
+                    " and ip.vmNicUuid = nic.uuid";
             TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
             q.setParameter("nicUuids", nicUuids);
             List<Tuple> tuples = q.getResultList();
 
-            sql = "select nic.uuid, vm.lastHostUuid, vm.hypervisorType, nic.internalName, nic.mac, nic.ip from VmInstanceVO vm, VmNicVO nic where nic.vmInstanceUuid = vm.uuid and vm.hostUuid is null and vm.lastHostUuid is not null and nic.uuid in (:nicUuids) group by nic.uuid";
+            sql = "select nic.uuid, vm.lastHostUuid, vm.hypervisorType, nic.internalName, nic.mac, ip.ip, ip.ipVersion" +
+                    " from VmInstanceVO vm, VmNicVO nic, UsedIpVO ip" +
+                    " where nic.vmInstanceUuid = vm.uuid and vm.hostUuid is null and vm.lastHostUuid is not null" +
+                    " and nic.uuid in (:nicUuids) and ip.vmNicUuid = nic.uuid";
             q = dbf.getEntityManager().createQuery(sql, Tuple.class);
             q.setParameter("nicUuids", nicUuids);
             tuples.addAll(q.getResultList());
@@ -374,15 +416,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 String nicName = t.get(3, String.class);
                 String mac = t.get(4, String.class);
                 String ip = t.get(5, String.class);
-
-                SecurityGroupRuleTO sgto = new SecurityGroupRuleTO();
-                sgto.setEgressDefaultPolicy(SecurityGroupGlobalConfig.EGRESS_RULE_DEFAULT_POLICY.value(String.class));
-                sgto.setIngressDefaultPolicy(SecurityGroupGlobalConfig.INGRESS_RULE_DEFAULT_POLICY.value(String.class));
-                sgto.setRules(new ArrayList<RuleTO>());
-                sgto.setVmNicUuid(nicUuid);
-                sgto.setVmNicInternalName(nicName);
-                sgto.setVmNicMac(mac);
-                sgto.setVmNicIp(ip);
+                Integer version = t.get(6, Integer.class);
 
                 HostRuleTO hto = hostRuleTOMap.get(hostUuid);
                 if (hto == null) {
@@ -392,7 +426,32 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     hostRuleTOMap.put(hto.getHostUuid(), hto);
                 }
 
-                hto.getRules().add(sgto);
+                Optional<SecurityGroupRuleTO> sgRule;
+                if (version == IPv6Constants.IPv4) {
+                    sgRule = hto.getRules().stream().filter(r -> r.getVmNicUuid().equals(nicUuid)).findFirst();
+                } else {
+                    sgRule = hto.getIpv6Rules().stream().filter(r -> r.getVmNicUuid().equals(nicUuid)).findFirst();
+                }
+
+                if (sgRule.isPresent()) {
+                    sgRule.get().getVmNicIp().add(ip);
+                } else {
+                    SecurityGroupRuleTO sgto = new SecurityGroupRuleTO();
+                    sgto.setEgressDefaultPolicy(SecurityGroupGlobalConfig.EGRESS_RULE_DEFAULT_POLICY.value(String.class));
+                    sgto.setIngressDefaultPolicy(SecurityGroupGlobalConfig.INGRESS_RULE_DEFAULT_POLICY.value(String.class));
+                    sgto.setRules(new ArrayList<RuleTO>());
+                    sgto.setSecurityGroupBaseRules(new ArrayList<RuleTO>());
+                    sgto.setVmNicUuid(nicUuid);
+                    sgto.setVmNicInternalName(nicName);
+                    sgto.setVmNicMac(mac);
+                    sgto.setVmNicIp(new ArrayList<>());
+                    sgto.getVmNicIp().add(ip);
+                    if (version == IPv6Constants.IPv4) {
+                        hto.getRules().add(sgto);
+                    } else {
+                        hto.getIpv6Rules().add(sgto);
+                    }
+                }
             }
 
             return hostRuleTOMap.values();
@@ -406,15 +465,24 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             for (String nicUuid : vmNicUuids) {
                 List<Tuple> tuples;
                 if (vmStates != null && !vmStates.isEmpty()) {
-                    String sql = "select ref.securityGroupUuid, vm.hostUuid, vm.hypervisorType, nic.internalName, nic.l3NetworkUuid, nic.mac, nic.ip from VmNicSecurityGroupRefVO ref, VmInstanceVO vm, VmNicVO nic where ref.vmNicUuid = nic.uuid and nic.vmInstanceUuid = vm.uuid and ref.vmNicUuid = :nicUuid and vm.state in (:vmStates)";
+                    String sql = "select ref.securityGroupUuid, vm.hostUuid, vm.hypervisorType, nic.internalName, ip.l3NetworkUuid, nic.mac, ip.ip, ip.ipVersion" +
+                                     " from VmNicSecurityGroupRefVO ref, VmInstanceVO vm, VmNicVO nic, SecurityGroupVO sg, UsedIpVO ip" +
+                                     " where ref.vmNicUuid = nic.uuid and nic.vmInstanceUuid = vm.uuid and ref.vmNicUuid = :nicUuid " +
+                                     " and vm.state in (:vmStates) and ref.securityGroupUuid = sg.uuid and sg.state in (:sgStates) " +
+                                     " and nic.uuid = ip.vmNicUuid and sg.ipVersion = ip.ipVersion";
                     TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     q.setParameter("nicUuid", nicUuid);
                     q.setParameter("vmStates", vmStates);
+                    q.setParameter("sgStates", sgStates);
                     tuples = q.getResultList();
                 } else {
-                    String sql = "select ref.securityGroupUuid, vm.hostUuid, vm.hypervisorType, nic.internalName, nic.l3NetworkUuid, nic.mac, nic.ip from VmNicSecurityGroupRefVO ref, VmInstanceVO vm, VmNicVO nic where ref.vmNicUuid = nic.uuid and nic.vmInstanceUuid = vm.uuid and ref.vmNicUuid = :nicUuid";
+                    String sql = "select ref.securityGroupUuid, vm.hostUuid, vm.hypervisorType, nic.internalName, ip.l3NetworkUuid, nic.mac, ip.ip, ip.ipVersion" +
+                            " from VmNicSecurityGroupRefVO ref, VmInstanceVO vm, VmNicVO nic, SecurityGroupVO sg, UsedIpVO ip" +
+                            " where ref.vmNicUuid = nic.uuid and nic.vmInstanceUuid = vm.uuid and ref.vmNicUuid = :nicUuid " +
+                            " and ref.securityGroupUuid = sg.uuid and sg.state in (:sgStates) and nic.uuid = ip.vmNicUuid and sg.ipVersion = ip.ipVersion";
                     TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     q.setParameter("nicUuid", nicUuid);
+                    q.setParameter("sgStates", sgStates);
                     tuples = q.getResultList();
                 }
 
@@ -423,44 +491,84 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     continue;
                 }
 
-                List<String> sgUuids = new ArrayList<String>();
+                List<String> sg4Uuids = new ArrayList<String>();
+                List<String> sg6Uuids = new ArrayList<String>();
                 String hostUuid = null;
                 String hypervisorType = null;
                 String nicName = null;
-                String l3Uuid = null;
+                List<String> l3Uuids = new ArrayList<String>();
                 String mac = null;
-                String ip = null;
+                List<String> ips = new ArrayList<String>();
+                List<String> ip6s = new ArrayList<String>();
                 for (Tuple t : tuples) {
-                    sgUuids.add(t.get(0, String.class));
                     hostUuid = t.get(1, String.class);
                     hypervisorType = t.get(2, String.class);
                     nicName = t.get(3, String.class);
-                    l3Uuid = t.get(4, String.class);
+                    l3Uuids.add(t.get(4, String.class));
                     mac = t.get(5, String.class);
-                    ip = t.get(6, String.class);
+                    Integer version = t.get(7, Integer.class);
+                    if (version == IPv6Constants.IPv4) {
+                        sg4Uuids.add(t.get(0, String.class));
+                        ips.add(t.get(6, String.class));
+                    } else {
+                        sg6Uuids.add(t.get(0, String.class));
+                        ip6s.add(t.get(6, String.class));
+                    }
                 }
 
-                List<RuleTO> rtos = calculateRuleTOBySecurityGroup(sgUuids, l3Uuid);
-                List<RuleTO> securityGroupBaseRules = calculateSecurityGroupBaseRule(sgUuids, l3Uuid);
+                /* calculate all sg rules for a single nic, including ipv4 rules and ipv6 rules */
+                sg4Uuids = sg4Uuids.stream().distinct().collect(Collectors.toList());
+                sg6Uuids = sg6Uuids.stream().distinct().collect(Collectors.toList());
+                l3Uuids = l3Uuids.stream().distinct().collect(Collectors.toList());
+                if (!sg4Uuids.isEmpty()) {
+                    List<RuleTO> rtos = calculateRuleTOBySecurityGroup(sg4Uuids, l3Uuids);
+                    List<RuleTO> securityGroupBaseRules = calculateSecurityGroupBaseRule(sg4Uuids, l3Uuids);
+                    SecurityGroupRuleTO sgto = new SecurityGroupRuleTO();
+                    sgto.setEgressDefaultPolicy(SecurityGroupGlobalConfig.EGRESS_RULE_DEFAULT_POLICY.value(String.class));
+                    sgto.setIngressDefaultPolicy(SecurityGroupGlobalConfig.INGRESS_RULE_DEFAULT_POLICY.value(String.class));
+                    sgto.setRules(rtos);
+                    sgto.setVmNicUuid(nicUuid);
+                    sgto.setVmNicInternalName(nicName);
+                    sgto.setVmNicMac(mac);
+                    sgto.setVmNicIp(ips);
+                    sgto.setSecurityGroupBaseRules(securityGroupBaseRules);
+                    sgto.setIpVersion(IPv6Constants.IPv4);
 
-                SecurityGroupRuleTO sgto = new SecurityGroupRuleTO();
-                sgto.setEgressDefaultPolicy(SecurityGroupGlobalConfig.EGRESS_RULE_DEFAULT_POLICY.value(String.class));
-                sgto.setIngressDefaultPolicy(SecurityGroupGlobalConfig.INGRESS_RULE_DEFAULT_POLICY.value(String.class));
-                sgto.setRules(rtos);
-                sgto.setVmNicUuid(nicUuid);
-                sgto.setVmNicInternalName(nicName);
-                sgto.setVmNicMac(mac);
-                sgto.setVmNicIp(ip);
-                sgto.setSecurityGroupBaseRules(securityGroupBaseRules);
+                    HostRuleTO hto = hostRuleMap.get(hostUuid);
+                    if (hto == null) {
+                        hto = new HostRuleTO();
+                        hto.setHostUuid(hostUuid);
+                        hto.setHypervisorType(hypervisorType);
+                        hostRuleMap.put(hto.getHostUuid(), hto);
+                    }
 
-                HostRuleTO hto = hostRuleMap.get(hostUuid);
-                if (hto == null) {
-                    hto = new HostRuleTO();
-                    hto.setHostUuid(hostUuid);
-                    hto.setHypervisorType(hypervisorType);
-                    hostRuleMap.put(hto.getHostUuid(), hto);
+                    hto.getRules().add(sgto);
                 }
-                hto.getRules().add(sgto);
+
+                if (!sg6Uuids.isEmpty()) {
+                    List<RuleTO> rtos = calculateRuleTOBySecurityGroup(sg6Uuids, l3Uuids);
+                    List<RuleTO> securityGroupBaseRules = calculateSecurityGroupBaseRule(sg6Uuids, l3Uuids);
+                    SecurityGroupRuleTO sgto = new SecurityGroupRuleTO();
+                    sgto.setEgressDefaultPolicy(SecurityGroupGlobalConfig.EGRESS_RULE_DEFAULT_POLICY.value(String.class));
+                    sgto.setIngressDefaultPolicy(SecurityGroupGlobalConfig.INGRESS_RULE_DEFAULT_POLICY.value(String.class));
+                    sgto.setRules(rtos);
+                    sgto.setVmNicUuid(nicUuid);
+                    sgto.setVmNicInternalName(nicName);
+                    sgto.setVmNicMac(mac);
+                    sgto.setVmNicIp(ip6s);
+                    sgto.setSecurityGroupBaseRules(securityGroupBaseRules);
+                    sgto.setIpVersion(IPv6Constants.IPv6);
+
+                    HostRuleTO hto = hostRuleMap.get(hostUuid);
+                    if (hto == null) {
+                        hto = new HostRuleTO();
+                        hto.setHostUuid(hostUuid);
+                        hto.setHypervisorType(hypervisorType);
+                        hostRuleMap.put(hto.getHostUuid(), hto);
+                    }
+
+                    hto.getIpv6Rules().add(sgto);
+                }
             }
 
             htos.addAll(hostRuleMap.values());
@@ -497,6 +605,8 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             handle((RemoveVmNicFromSecurityGroupMsg) msg);
         } else if (msg instanceof SecurityGroupDeletionMsg) {
             handle((SecurityGroupDeletionMsg) msg);
+        } else if (msg instanceof AddVmNicToSecurityGroupMsg) {
+            handle((AddVmNicToSecurityGroupMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -531,6 +641,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             return;
         }
 
+        nicUuids = nicUuids.stream().distinct().collect(Collectors.toList());
         Collection<HostRuleTO> htos;
         if (msg.isDeleteAllRules()) {
             RuleCalculator cal = new RuleCalculator();
@@ -647,29 +758,29 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         if (nicUuidsToInclude == null) {
             // accessed by an admin
             if (nicUuidsToExclued.isEmpty()) {
-                sql = "select nic from VmNicVO nic, VmInstanceVO vm, SecurityGroupVO sg, SecurityGroupL3NetworkRefVO ref " +
-                        "where nic.vmInstanceUuid = vm.uuid and nic.l3NetworkUuid = ref.l3NetworkUuid and ref.securityGroupUuid = sg.uuid " +
-                        " and sg.uuid = :sgUuid and vm.type = :vmType and vm.state in (:vmStates) group by nic.uuid";
+                sql = "select nic from VmNicVO nic, VmInstanceVO vm, SecurityGroupVO sg, SecurityGroupL3NetworkRefVO ref, UsedIpVO ip " +
+                        "where nic.vmInstanceUuid = vm.uuid and nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = ref.l3NetworkUuid and ref.securityGroupUuid = sg.uuid " +
+                        " and sg.uuid = :sgUuid and sg.ipVersion = ip.ipVersion and vm.type = :vmType and vm.state in (:vmStates) group by nic.uuid";
                 q = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
             } else {
-                sql = "select nic from VmNicVO nic, VmInstanceVO vm, SecurityGroupVO sg, SecurityGroupL3NetworkRefVO ref " +
-                        "where nic.vmInstanceUuid = vm.uuid and nic.l3NetworkUuid = ref.l3NetworkUuid and ref.securityGroupUuid = sg.uuid " +
-                        " and sg.uuid = :sgUuid and vm.type = :vmType and vm.state in (:vmStates) and nic.uuid not in (:nicUuids) group by nic.uuid";
+                sql = "select nic from VmNicVO nic, VmInstanceVO vm, SecurityGroupVO sg, SecurityGroupL3NetworkRefVO ref, UsedIpVO ip" +
+                        " where nic.vmInstanceUuid = vm.uuid and nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = ref.l3NetworkUuid and ref.securityGroupUuid = sg.uuid " +
+                        " and sg.uuid = :sgUuid and sg.ipVersion = ip.ipVersion and vm.type = :vmType and vm.state in (:vmStates) and nic.uuid not in (:nicUuids) group by nic.uuid";
                 q = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
                 q.setParameter("nicUuids", nicUuidsToExclued);
             }
         } else {
             // accessed by a normal account
             if (nicUuidsToExclued.isEmpty()) {
-                sql = "select nic from VmNicVO nic, VmInstanceVO vm, SecurityGroupVO sg, SecurityGroupL3NetworkRefVO ref " +
-                        "where nic.vmInstanceUuid = vm.uuid and nic.l3NetworkUuid = ref.l3NetworkUuid and ref.securityGroupUuid = sg.uuid " +
-                        " and sg.uuid = :sgUuid and vm.type = :vmType and vm.state in (:vmStates) and nic.uuid in (:iuuids) group by nic.uuid";
+                sql = "select nic from VmNicVO nic, VmInstanceVO vm, SecurityGroupVO sg, SecurityGroupL3NetworkRefVO ref, UsedIpVO ip " +
+                        " where nic.vmInstanceUuid = vm.uuid and nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = ref.l3NetworkUuid and ref.securityGroupUuid = sg.uuid " +
+                        " and sg.uuid = :sgUuid and sg.ipVersion = ip.ipVersion and vm.type = :vmType and vm.state in (:vmStates) and nic.uuid in (:iuuids) group by nic.uuid";
                 q = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
                 q.setParameter("iuuids", nicUuidsToInclude);
             } else {
-                sql = "select nic from VmNicVO nic, VmInstanceVO vm, SecurityGroupVO sg, SecurityGroupL3NetworkRefVO ref " +
-                        "where nic.vmInstanceUuid = vm.uuid and nic.l3NetworkUuid = ref.l3NetworkUuid and ref.securityGroupUuid = sg.uuid " +
-                        " and sg.uuid = :sgUuid and vm.type = :vmType and vm.state in (:vmStates) and nic.uuid not in (:nicUuids) and nic.uuid in (:iuuids) group by nic.uuid";
+                sql = "select nic from VmNicVO nic, VmInstanceVO vm, SecurityGroupVO sg, SecurityGroupL3NetworkRefVO ref, UsedIpVO ip " +
+                        " where nic.vmInstanceUuid = vm.uuid and nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = ref.l3NetworkUuid and ref.securityGroupUuid = sg.uuid " +
+                        " and sg.uuid = :sgUuid and sg.ipVersion = ip.ipVersion and vm.type = :vmType and vm.state in (:vmStates) and nic.uuid not in (:nicUuids) and nic.uuid in (:iuuids) group by nic.uuid";
                 q = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
                 q.setParameter("nicUuids", nicUuidsToExclued);
                 q.setParameter("iuuids", nicUuidsToInclude);
@@ -691,7 +802,9 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
     @Transactional
     private void detachSecurityGroupFromL3Network(String sgUuid, String l3Uuid) {
-        String sql = "select ref.uuid from VmNicSecurityGroupRefVO ref, VmNicVO nic where nic.uuid = ref.vmNicUuid and nic.l3NetworkUuid = :l3Uuid and ref.securityGroupUuid = :sgUuid";
+        String sql = "select distinct ref.uuid from VmNicSecurityGroupRefVO ref, VmNicVO nic, UsedIpVO ip, SecurityGroupVO sg" +
+                " where nic.uuid = ref.vmNicUuid and nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = :l3Uuid and ref.securityGroupUuid = :sgUuid" +
+                " and sg.ipVersion = ip.ipVersion";
         TypedQuery<String> tq = dbf.getEntityManager().createQuery(sql, String.class);
         tq.setParameter("l3Uuid", l3Uuid);
         tq.setParameter("sgUuid", sgUuid);
@@ -712,7 +825,9 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
     @Transactional(readOnly = true)
     private List<String> getVmNicUuidsToRemoveForDetachSecurityGroup(String sgUuid, String l3Uuid) {
-        String sql = "select nic.uuid from VmNicVO nic, VmNicSecurityGroupRefVO ref where ref.vmNicUuid = nic.uuid and nic.l3NetworkUuid = :l3Uuid and ref.securityGroupUuid = :sgUuid";
+        String sql = "select distinct nic.uuid from VmNicVO nic, VmNicSecurityGroupRefVO ref, UsedIpVO ip, SecurityGroupVO sg" +
+                " where ref.vmNicUuid = nic.uuid and nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = :l3Uuid and ref.securityGroupUuid = :sgUuid" +
+                " and sg.ipVersion = ip.ipVersion";
         TypedQuery<String> tq = dbf.getEntityManager().createQuery(sql, String.class);
         tq.setParameter("l3Uuid", l3Uuid);
         tq.setParameter("sgUuid", sgUuid);
@@ -739,10 +854,37 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         SecurityGroupVO vo = dbf.findByUuid(msg.getUuid(), SecurityGroupVO.class);
         if (sevt == SecurityGroupStateEvent.enable) {
             vo.setState(SecurityGroupState.Enabled);
+            List<SecurityGroupRuleVO> rvos = Q.New(SecurityGroupRuleVO.class).eq(SecurityGroupRuleVO_.securityGroupUuid, msg.getUuid()).list();
+            for (SecurityGroupRuleVO rvo : rvos) {
+                rvo.setState(SecurityGroupRuleState.Enabled);
+            }
+            dbf.updateCollection(rvos);
+            vo = dbf.updateAndRefresh(vo);
+
+            List<String> sgUuids = Q.New(SecurityGroupRuleVO.class).select(SecurityGroupRuleVO_.securityGroupUuid).eq(SecurityGroupRuleVO_.remoteSecurityGroupUuid, msg.getUuid()).listValues();
+            sgUuids.add(msg.getUuid());
+            RuleCalculator cal = new RuleCalculator();
+            cal.securityGroupUuids = sgUuids;
+            cal.vmStates = asList(VmInstanceState.Running);
+            List<HostRuleTO> htos = cal.calculate();
+
+            applyRules(htos);
+            HostSecurityGroupMembersTO groupMemberTO = cal.returnHostSecurityGroupMember(msg.getUuid());
+            if (!groupMemberTO.getHostUuids().isEmpty()) {
+                updateGroupMembers(groupMemberTO);
+            }
         } else {
+            List<SecurityGroupRuleVO> rvos = Q.New(SecurityGroupRuleVO.class).eq(SecurityGroupRuleVO_.securityGroupUuid, msg.getUuid()).list();
+            for (SecurityGroupRuleVO rvo : rvos) {
+                rvo.setState(SecurityGroupRuleState.Disabled);
+            }
+            dbf.updateCollection(rvos);
+
             vo.setState(SecurityGroupState.Disabled);
+            vo = dbf.updateAndRefresh(vo);
+
+            disableSecurityGroup(msg.getUuid());
         }
-        vo = dbf.updateAndRefresh(vo);
 
         APIChangeSecurityGroupStateEvent evt = new APIChangeSecurityGroupStateEvent(msg.getId());
         evt.setInventory(SecurityGroupInventory.valueOf(vo));
@@ -784,11 +926,10 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
         dbf.removeCollection(refVOs, VmNicSecurityGroupRefVO.class);
 
-
-        SimpleQuery<VmNicVO> l3Query = dbf.createQuery(VmNicVO.class);
-        l3Query.select(VmNicVO_.l3NetworkUuid);
-        l3Query.add(VmNicVO_.uuid, Op.IN, vmNicUuids);
-        List<String> l3Uuids = l3Query.listValue();
+        SecurityGroupVO sgvo = dbf.findByUuid(sgUuid, SecurityGroupVO.class);
+        if (SecurityGroupState.Disabled == sgvo.getState()) {
+            return;
+        }
 
         // nics may be in other security group
         RuleCalculator cal = new RuleCalculator();
@@ -796,10 +937,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         List<HostRuleTO> htos1 = cal.calculate();
 
         // create deleting chain action for nics no longer in any security group
-        SimpleQuery<VmNicSecurityGroupRefVO> refq = dbf.createQuery(VmNicSecurityGroupRefVO.class);
-        refq.select(VmNicSecurityGroupRefVO_.vmNicUuid);
-        refq.add(VmNicSecurityGroupRefVO_.vmNicUuid, Op.IN, vmNicUuids);
-        List<String> nicUuidsIn = refq.listValue();
+        List<String> nicUuidsIn = SQL.New("select ref.vmNicUuid from VmNicSecurityGroupRefVO ref, SecurityGroupVO sg where ref.securityGroupUuid = sg.uuid and sg.state = :sgState", String.class).param("sgState", SecurityGroupState.Enabled).list();
         List<String> nicsUuidsCopy = new ArrayList<String>();
         nicsUuidsCopy.addAll(vmNicUuids);
         nicsUuidsCopy.removeAll(nicUuidsIn);
@@ -811,7 +949,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             }
         }
 
-        List<HostRuleTO> finalHtos = cal.mergeMultiHostRuleTO(htos1, htos1, htos2);
+        List<HostRuleTO> finalHtos = cal.mergeMultiHostRuleTO(htos1, htos2);
 
         applyRules(finalHtos);
 
@@ -826,6 +964,50 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         removeNicFromSecurityGroup(msg.getSecurityGroupUuid(), msg.getVmNicUuids());
         APIDeleteVmNicFromSecurityGroupEvent evt = new APIDeleteVmNicFromSecurityGroupEvent(msg.getId());
         bus.publish(evt);
+    }
+
+    private void disableSecurityGroup(String uuid) {
+        SimpleQuery<VmNicSecurityGroupRefVO> q = dbf.createQuery(VmNicSecurityGroupRefVO.class);
+        q.select(VmNicSecurityGroupRefVO_.vmNicUuid);
+        q.add(VmNicSecurityGroupRefVO_.securityGroupUuid, Op.EQ, uuid);
+        List<String> vmNicUuids = q.listValue();
+
+        RuleCalculator cal = new RuleCalculator();
+        SecurityGroupVO sgvo = dbf.findByUuid(uuid, SecurityGroupVO.class);
+
+        if (!vmNicUuids.isEmpty()) {
+            cal.vmNicUuids = vmNicUuids;
+            cal.vmStates = asList(VmInstanceState.Running);
+            List<HostRuleTO> htos = cal.calculate();
+
+            List<String> nicUuidsIn = SQL.New("select ref.vmNicUuid from VmNicSecurityGroupRefVO ref, SecurityGroupVO sg where ref.vmNicUuid in (:vmNicUuids) and ref.securityGroupUuid = sg.uuid and sg.state = :sgState", String.class)
+                    .param("vmNicUuids", vmNicUuids).param("sgState", SecurityGroupState.Enabled).list();
+
+            vmNicUuids.removeAll(nicUuidsIn);
+            if (!vmNicUuids.isEmpty()) {
+                // these vm nics are no longer in any security group, delete their chains on host
+                Collection<HostRuleTO> toRemove = cal.createRulePlaceHolder(vmNicUuids);
+                for (HostRuleTO hto : toRemove) {
+                    hto.setActionCodeForAllSecurityGroupRuleTOs(SecurityGroupRuleTO.ACTION_CODE_DELETE_CHAIN);
+                }
+
+                htos = cal.mergeMultiHostRuleTO(htos, toRemove);
+            }
+            applyRules(htos);
+        }
+
+        List<String> sgUuids = Q.New(SecurityGroupRuleVO.class).select(SecurityGroupRuleVO_.securityGroupUuid).eq(SecurityGroupRuleVO_.remoteSecurityGroupUuid, uuid).listValues();
+        RuleCalculator rcal = new RuleCalculator();
+        rcal.securityGroupUuids = sgUuids;
+        rcal.vmStates = asList(VmInstanceState.Running);
+        List<HostRuleTO> rhtos = rcal.calculate();
+
+        applyRules(rhtos);
+        HostSecurityGroupMembersTO groupMemberTO = cal.returnHostSecurityGroupMember(uuid);
+        if(!groupMemberTO.getHostUuids().isEmpty()){
+            groupMemberTO.getGroupMembersTO().setActionCode(ACTION_CODE_DELETE_GROUP);
+            updateGroupMembers(groupMemberTO);
+        }
     }
 
     private void handle(APIDeleteSecurityGroupMsg msg) {
@@ -844,10 +1026,8 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             cal.vmStates = asList(VmInstanceState.Running);
             List<HostRuleTO> htos = cal.calculate();
 
-            SimpleQuery<VmNicSecurityGroupRefVO> refq = dbf.createQuery(VmNicSecurityGroupRefVO.class);
-            refq.select(VmNicSecurityGroupRefVO_.vmNicUuid);
-            refq.add(VmNicSecurityGroupRefVO_.vmNicUuid, Op.IN, vmNicUuids);
-            List<String> nicUuidsIn = refq.listValue();
+            List<String> nicUuidsIn = SQL.New("select ref.vmNicUuid from VmNicSecurityGroupRefVO ref, SecurityGroupVO sg where ref.vmNicUuid in (:vmNicUuids) and ref.securityGroupUuid = sg.uuid and sg.state = :sgState", String.class)
+                    .param("vmNicUuids", vmNicUuids).param("sgState", SecurityGroupState.Enabled).list();
 
             vmNicUuids.removeAll(nicUuidsIn);
             if (!vmNicUuids.isEmpty()) {
@@ -861,7 +1041,6 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             }
             applyRules(htos);
         }
-
 
         if(!groupMemberTO.getHostUuids().isEmpty()){
             groupMemberTO.getGroupMembersTO().setActionCode(ACTION_CODE_DELETE_GROUP);
@@ -880,22 +1059,61 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         String sgUuid = q.findValue();
 
         dbf.removeByPrimaryKeys(msg.getRuleUuids(), SecurityGroupRuleVO.class);
-
-        RuleCalculator cal = new RuleCalculator();
-        cal.securityGroupUuids = asList(sgUuid);
-        cal.vmStates = asList(VmInstanceState.Running);
-
-        List<HostRuleTO> htos = cal.calculate();
-        applyRules(htos);
-
         SecurityGroupVO sgvo = dbf.findByUuid(sgUuid, SecurityGroupVO.class);
+
+        if (SecurityGroupState.Enabled == sgvo.getState()) {
+            RuleCalculator cal = new RuleCalculator();
+            cal.securityGroupUuids = asList(sgUuid);
+            cal.vmStates = asList(VmInstanceState.Running);
+
+            List<HostRuleTO> htos = cal.calculate();
+            applyRules(htos);
+        }
+
         APIDeleteSecurityGroupRuleEvent evt = new APIDeleteSecurityGroupRuleEvent(msg.getId());
         evt.setInventory(SecurityGroupInventory.valueOf(sgvo));
         bus.publish(evt);
     }
 
-    private void handle(final APIAddVmNicToSecurityGroupMsg msg) {
-        APIAddVmNicToSecurityGroupEvent evt = new APIAddVmNicToSecurityGroupEvent(msg.getId());
+    private void validate(AddVmNicToSecurityGroupMsg msg) {
+        String securityGroupUuid = msg.getSecurityGroupUuid();
+        List<String> uuids = Q.New(VmNicVO.class)
+                .select(VmNicVO_.uuid)
+                .in(VmNicVO_.uuid, msg.getVmNicUuids())
+                .listValues();
+        if (!uuids.containsAll(msg.getVmNicUuids())) {
+            msg.getVmNicUuids().removeAll(uuids);
+            throw new OperationFailureException(errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND,
+                    String.format("cannot find vm nics[uuids:%s]", msg.getVmNicUuids())
+            ));
+        }
+
+        List<String> nicUuids = SQL.New("select nic.uuid from SecurityGroupL3NetworkRefVO ref, VmNicVO nic, UsedIpVO ip" +
+                " where ref.l3NetworkUuid = ip.l3NetworkUuid and ip.vmNicUuid = nic.uuid" +
+                " and ref.securityGroupUuid = :sgUuid and nic.uuid in (:nicUuids)")
+                .param("nicUuids", uuids)
+                .param("sgUuid", securityGroupUuid)
+                .list();
+
+        List<String> wrongUuids = new ArrayList<>();
+        for (String uuid : uuids) {
+            if (!nicUuids.contains(uuid)) {
+                wrongUuids.add(uuid);
+            }
+        }
+
+        if (!wrongUuids.isEmpty()) {
+            throw new OperationFailureException(argerr("VM nics[uuids:%s] are not on L3 networks that have been attached to the security group[uuid:%s]",
+                    wrongUuids, securityGroupUuid));
+        }
+
+        msg.setVmNicUuids(uuids);
+    }
+
+    private void handle(AddVmNicToSecurityGroupMsg msg) {
+        AddVmNicToSecurityGroupReply reply = new AddVmNicToSecurityGroupReply();
+
+        validate(msg);
 
         SimpleQuery<VmNicVO> q = dbf.createQuery(VmNicVO.class);
         q.add(VmNicVO_.uuid, Op.IN, msg.getVmNicUuids());
@@ -919,20 +1137,42 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 .eq(VmInstanceVO_.state, VmInstanceState.Running)
                 .isExists();
 
-        RuleCalculator cal = new RuleCalculator();
-        if (triggerApplyRules) {
-            cal.vmNicUuids = msg.getVmNicUuids();
-            List<HostRuleTO> htos = cal.calculate();
-            applyRules(htos);
-        }
+        SecurityGroupVO sgvo = dbf.findByUuid(msg.getSecurityGroupUuid(), SecurityGroupVO.class);
+        if (SecurityGroupState.Enabled == sgvo.getState()) {
+            RuleCalculator cal = new RuleCalculator();
+            if (triggerApplyRules) {
+                cal.vmNicUuids = msg.getVmNicUuids();
+                List<HostRuleTO> htos = cal.calculate();
+                applyRules(htos);
+            }
 
-        HostSecurityGroupMembersTO groupMemberTO = cal.returnHostSecurityGroupMember(msg.getSecurityGroupUuid());
-        if(!groupMemberTO.getHostUuids().isEmpty()){
-            updateGroupMembers(groupMemberTO);
+            HostSecurityGroupMembersTO groupMemberTO = cal.returnHostSecurityGroupMember(msg.getSecurityGroupUuid());
+            if (!groupMemberTO.getHostUuids().isEmpty()) {
+                updateGroupMembers(groupMemberTO);
+            }
         }
 
         logger.debug(String.format("successfully added vm nics%s to security group[uuid:%s]", msg.getVmNicUuids(), msg.getSecurityGroupUuid()));
-        bus.publish(evt);
+        bus.reply(msg, reply);
+    }
+
+    private void handle(final APIAddVmNicToSecurityGroupMsg msg) {
+        APIAddVmNicToSecurityGroupEvent evt = new APIAddVmNicToSecurityGroupEvent(msg.getId());
+
+        AddVmNicToSecurityGroupMsg addVmNicToSecurityGroupMsg = new AddVmNicToSecurityGroupMsg();
+        addVmNicToSecurityGroupMsg.setSecurityGroupUuid(msg.getSecurityGroupUuid());
+        addVmNicToSecurityGroupMsg.setVmNicUuids(msg.getVmNicUuids());
+        bus.makeTargetServiceIdByResourceUuid(addVmNicToSecurityGroupMsg, SecurityGroupConstant.SERVICE_ID, msg.getSecurityGroupUuid());
+
+        bus.send(addVmNicToSecurityGroupMsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    evt.setError(reply.getError());
+                }
+                bus.publish(evt);
+            }
+        });
     }
 
     private void applyRules(Collection<HostRuleTO> htos) {
@@ -999,6 +1239,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
     private void handle(APIAddSecurityGroupRuleMsg msg) {
         APIAddSecurityGroupRuleEvent evt = new APIAddSecurityGroupRuleEvent(msg.getId());
+        SecurityGroupVO sgvo = dbf.findByUuid(msg.getSecurityGroupUuid(), SecurityGroupVO.class);
 
         List<SecurityGroupRuleVO> vos = new ArrayList<SecurityGroupRuleVO>();
         for (SecurityGroupRuleAO ao : msg.getRules()) {
@@ -1006,6 +1247,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 for (String remoteGroupUuid : msg.getRemoteSecurityGroupUuids()){
                     SecurityGroupRuleVO vo = new SecurityGroupRuleVO();
                     vo.setUuid(Platform.getUuid());
+                    vo.setIpVersion(ao.getIpVersion());
                     vo.setAllowedCidr(ao.getAllowedCidr());
                     vo.setEndPort(ao.getEndPort());
                     vo.setStartPort(ao.getStartPort());
@@ -1013,29 +1255,38 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     vo.setType(SecurityGroupRuleType.valueOf(ao.getType()));
                     vo.setSecurityGroupUuid(msg.getSecurityGroupUuid());
                     vo.setRemoteSecurityGroupUuid(remoteGroupUuid);
+                    if (SecurityGroupState.Disabled == sgvo.getState()) {
+                        vo.setState(SecurityGroupRuleState.Disabled);
+                    }
                     vos.add(vo);
                 }
             }else {
                 SecurityGroupRuleVO vo = new SecurityGroupRuleVO();
                 vo.setUuid(Platform.getUuid());
+                vo.setIpVersion(ao.getIpVersion());
                 vo.setAllowedCidr(ao.getAllowedCidr());
                 vo.setEndPort(ao.getEndPort());
                 vo.setStartPort(ao.getStartPort());
                 vo.setProtocol(SecurityGroupRuleProtocolType.valueOf(ao.getProtocol()));
                 vo.setType(SecurityGroupRuleType.valueOf(ao.getType()));
                 vo.setSecurityGroupUuid(msg.getSecurityGroupUuid());
+                if (SecurityGroupState.Disabled == sgvo.getState()) {
+                    vo.setState(SecurityGroupRuleState.Disabled);
+                }
                 vos.add(vo);
             }
         }
         dbf.persistCollection(vos);
 
-        RuleCalculator cal = new RuleCalculator();
-        cal.securityGroupUuids = asList(msg.getSecurityGroupUuid());
-        cal.vmStates = asList(VmInstanceState.Running);
-        List<HostRuleTO> htos = cal.calculate();
-        applyRules(htos);
-
-        SecurityGroupVO sgvo = dbf.findByUuid(msg.getSecurityGroupUuid(), SecurityGroupVO.class);
+        if (SecurityGroupState.Enabled == sgvo.getState()) {
+            RuleCalculator cal = new RuleCalculator();
+            cal.securityGroupUuids = asList(msg.getSecurityGroupUuid());
+            cal.vmStates = asList(VmInstanceState.Running);
+            List<HostRuleTO> htos = cal.calculate();
+            applyRules(htos);
+        }
+      
+        sgvo =  dbf.reload(sgvo);
         evt.setInventory(SecurityGroupInventory.valueOf(sgvo));
         logger.debug(String.format("successfully add rules to security group[uuid:%s, name:%s]:\n%s", sgvo.getUuid(), sgvo.getName(), JSONObjectUtil.toJsonString(msg.getRules())));
         bus.publish(evt);
@@ -1056,6 +1307,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         } else {
             vo.setUuid(Platform.getUuid());
         }
+        vo.setIpVersion(msg.getIpVersion());
         vo.setName(msg.getName());
         vo.setDescription(msg.getDescription());
         vo.setState(SecurityGroupState.Enabled);
@@ -1073,7 +1325,8 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             }
         }.execute();
 
-        createDefaultRule(finalVo.getUuid());
+        createDefaultRule(finalVo.getUuid(), finalVo.getIpVersion());
+        vo = dbf.reload(vo);
 
         SecurityGroupInventory inv = SecurityGroupInventory.valueOf(vo);
         APICreateSecurityGroupEvent evt = new APICreateSecurityGroupEvent(msg.getId());
@@ -1086,12 +1339,17 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         return bus.makeLocalServiceId(SecurityGroupConstant.SERVICE_ID);
     }
 
-    private void createDefaultRule(String sgUuid){
+    private void createDefaultRule(String sgUuid, int ipVersion){
         List<SecurityGroupRuleVO> vos = new ArrayList<>();
 
         SecurityGroupRuleVO ingressRuleVo = new SecurityGroupRuleVO();
         ingressRuleVo.setUuid(Platform.getUuid());
-        ingressRuleVo.setAllowedCidr("0.0.0.0/0");
+        ingressRuleVo.setIpVersion(ipVersion);
+        if (ipVersion == IPv6Constants.IPv4) {
+            ingressRuleVo.setAllowedCidr("0.0.0.0/0");
+        } else {
+            ingressRuleVo.setAllowedCidr("::/0");
+        }
         ingressRuleVo.setEndPort(-1);
         ingressRuleVo.setStartPort(-1);
         ingressRuleVo.setProtocol(SecurityGroupRuleProtocolType.ALL);
@@ -1102,7 +1360,12 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
         SecurityGroupRuleVO egressRuleVo = new SecurityGroupRuleVO();
         egressRuleVo.setUuid(Platform.getUuid());
-        egressRuleVo.setAllowedCidr("0.0.0.0/0");
+        egressRuleVo.setIpVersion(ipVersion);
+        if (ipVersion == IPv6Constants.IPv4) {
+            egressRuleVo.setAllowedCidr("0.0.0.0/0");
+        } else {
+            egressRuleVo.setAllowedCidr("::/0");
+        }
         egressRuleVo.setEndPort(-1);
         egressRuleVo.setStartPort(-1);
         egressRuleVo.setProtocol(SecurityGroupRuleProtocolType.ALL);

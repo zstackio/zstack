@@ -49,6 +49,9 @@ public class LongJobVO extends ResourceVO implements OwnedByAccount {
     @Column
     private Timestamp lastOpDate;
 
+    @Column
+    private Long executeTime;
+
     @Transient
     private String accountUuid;
 
@@ -60,6 +63,11 @@ public class LongJobVO extends ResourceVO implements OwnedByAccount {
     @Override
     public void setAccountUuid(String accountUuid) {
         this.accountUuid = accountUuid;
+    }
+
+    @PreUpdate
+    private void preUpdate() {
+        lastOpDate = null;
     }
 
     public String getName() {
@@ -148,5 +156,13 @@ public class LongJobVO extends ResourceVO implements OwnedByAccount {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
+    }
+
+    public Long getExecuteTime() {
+        return executeTime;
+    }
+
+    public void setExecuteTime(Long executeTime) {
+        this.executeTime = executeTime;
     }
 }

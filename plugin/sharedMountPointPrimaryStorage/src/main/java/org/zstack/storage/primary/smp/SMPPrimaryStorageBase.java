@@ -47,6 +47,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -161,7 +162,7 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
 
     @Override
     protected void handle(final DeleteVolumeOnPrimaryStorageMsg msg) {
-        HypervisorType type = VolumeFormat.getMasterHypervisorTypeByVolumeFormat(msg.getVolume().getFormat());
+        HypervisorType type = findHypervisorTypeByImageFormatAndPrimaryStorageUuid(msg.getVolume().getFormat(), msg.getPrimaryStorageUuid());
         HypervisorFactory f = getHypervisorFactoryByHypervisorType(type.toString());
         final HypervisorBackend bkd = f.getHypervisorBackend(self);
         bkd.handle(msg, new ReturnValueCompletion<DeleteVolumeOnPrimaryStorageReply>(msg) {
@@ -815,5 +816,33 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    public HypervisorType findHypervisorTypeByImageFormatAndPrimaryStorageUuid(String imageFormat, final String psUuid) {
+        HypervisorType hvType = VolumeFormat.getMasterHypervisorTypeByVolumeFormat(imageFormat);
+        if (hvType != null) {
+            return hvType;
+        }
+
+        String type = new Callable<String>() {
+            @Override
+            @Transactional(readOnly = true)
+            public String call() {
+                String sql = "select c.hypervisorType" +
+                        " from ClusterVO c, PrimaryStorageClusterRefVO ref" +
+                        " where c.uuid = ref.clusterUuid" +
+                        " and ref.primaryStorageUuid = :psUuid";
+                TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+                q.setParameter("psUuid", psUuid);
+                List<String> types = q.getResultList();
+                return types.isEmpty() ? null : types.get(0);
+            }
+        }.call();
+
+        if (type != null) {
+            return HypervisorType.valueOf(type);
+        }
+
+        throw new OperationFailureException(operr("cannot find proper hypervisorType for primary storage[uuid:%s] to handle image format or volume format[%s]", psUuid, imageFormat));
     }
 }

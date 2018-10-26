@@ -2,20 +2,16 @@ package org.zstack.test.integration.storage.primary.ceph
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
-import org.zstack.header.storage.primary.PrimaryStorageVO
-import org.zstack.header.storage.primary.PrimaryStorageVO_
 import org.zstack.kvm.KVMConstant
 import org.zstack.sdk.*
 import org.zstack.storage.ceph.CephSystemTags
 import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
-import org.zstack.storage.ceph.primary.CephPrimaryStoragePoolType
 import org.zstack.storage.ceph.primary.CephPrimaryStoragePoolVO
 import org.zstack.storage.ceph.primary.CephPrimaryStoragePoolVO_
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.*
 import org.zstack.utils.EncodingConversion
 import org.zstack.utils.data.SizeUnit
-
 /**
  * Created by xing5 on 2017/2/28.
  */
@@ -117,6 +113,7 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
 
         env.afterSimulator(CephPrimaryStorageBase.CREATE_VOLUME_PATH) { rsp, HttpEntity<String> e ->
             cmd = json(e.body, CephPrimaryStorageBase.CreateEmptyVolumeCmd.class)
+            assert !cmd.skipIfExisting
             return rsp
         }
 
@@ -139,6 +136,7 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
 
         env.afterSimulator(CephPrimaryStorageBase.CREATE_VOLUME_PATH) { rsp, HttpEntity<String> e ->
             cmd = json(e.body, CephPrimaryStorageBase.CreateEmptyVolumeCmd.class)
+            assert !cmd.skipIfExisting
             return rsp
         }
 

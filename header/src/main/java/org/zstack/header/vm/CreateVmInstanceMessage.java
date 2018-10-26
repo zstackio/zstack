@@ -20,7 +20,7 @@ public interface CreateVmInstanceMessage {
 
     long getMemorySize();
 
-    List<String> getL3NetworkUuids();
+    List<VmNicSpec> getL3NetworkUuids();
 
     String getType();
 

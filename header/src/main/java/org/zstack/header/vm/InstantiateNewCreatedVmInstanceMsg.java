@@ -8,12 +8,14 @@ import java.util.List;
 @ApiTimeout(apiClasses = {APICreateVmInstanceMsg.class})
 public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage implements VmInstanceMessage {
     private VmInstanceInventory vmInstanceInventory;
-    private List<String> l3NetworkUuids;
+    private List<VmNicSpec> l3NetworkUuids;
     private List<String> dataDiskOfferingUuids;
     private String rootDiskOfferingUuid;
     private String primaryStorageUuidForRootVolume;
     private String primaryStorageUuidForDataVolume;
     private String strategy;
+    private List<String> rootVolumeSystemTags;
+    private List<String> dataVolumeSystemTags;
 
     public VmInstanceInventory getVmInstanceInventory() {
         return vmInstanceInventory;
@@ -23,11 +25,11 @@ public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage impleme
         this.vmInstanceInventory = vmInstanceInventory;
     }
 
-    public List<String> getL3NetworkUuids() {
+    public List<VmNicSpec> getL3NetworkUuids() {
         return l3NetworkUuids;
     }
 
-    public void setL3NetworkUuids(List<String> l3NetworkUuids) {
+    public void setL3NetworkUuids(List<VmNicSpec> l3NetworkUuids) {
         this.l3NetworkUuids = l3NetworkUuids;
     }
 
@@ -74,5 +76,21 @@ public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage impleme
 
     public String getStrategy() {
         return strategy;
+    }
+
+    public List<String> getRootVolumeSystemTags() {
+        return rootVolumeSystemTags;
+    }
+
+    public void setRootVolumeSystemTags(List<String> rootVolumeSystemTags) {
+        this.rootVolumeSystemTags = rootVolumeSystemTags;
+    }
+
+    public List<String> getDataVolumeSystemTags() {
+        return dataVolumeSystemTags;
+    }
+
+    public void setDataVolumeSystemTags(List<String> dataVolumeSystemTags) {
+        this.dataVolumeSystemTags = dataVolumeSystemTags;
     }
 }

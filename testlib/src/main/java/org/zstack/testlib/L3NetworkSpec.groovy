@@ -13,6 +13,8 @@ class L3NetworkSpec extends Spec implements HasSession {
     String category
     @SpecParam
     String type = "L3BasicNetwork"
+    @SpecParam
+    Integer ipVersion  = 4
 
     L3NetworkInventory inventory
 
@@ -32,6 +34,7 @@ class L3NetworkSpec extends Spec implements HasSession {
             delegate.category = category
             delegate.type = type
             delegate.l2NetworkUuid = (parent as L2NetworkSpec).inventory.uuid
+            delegate.ipVersion = ipVersion
         }
 
         postCreate {
@@ -54,6 +57,15 @@ class L3NetworkSpec extends Spec implements HasSession {
 
     IpRangeSpec ip(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = IpRangeSpec.class) Closure c) {
         def spec = new IpRangeSpec(envSpec)
+        c.delegate = spec
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c()
+        addChild(spec)
+        return spec
+    }
+
+    Ipv6RangeSpec ipv6(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = Ipv6RangeSpec.class) Closure c) {
+        def spec = new Ipv6RangeSpec(envSpec)
         c.delegate = spec
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()

@@ -1,5 +1,7 @@
 package org.zstack.network.service.eip;
 
+import org.zstack.header.network.l3.IpRangeInventory;
+import org.zstack.header.network.l3.UsedIpInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.vip.VipInventory;
 
@@ -10,6 +12,8 @@ public class EipStruct {
     private VmNicInventory nic;
     private VipInventory vip;
     private boolean snatInboundTraffic;
+    private UsedIpInventory guestIp;
+    private IpRangeInventory guestIpRange;
 
     public boolean isSnatInboundTraffic() {
         return snatInboundTraffic;
@@ -41,5 +45,21 @@ public class EipStruct {
 
     public void setVip(VipInventory vip) {
         this.vip = vip;
+    }
+
+    public UsedIpInventory getGuestIp() {
+        return guestIp;
+    }
+
+    public void setGuestIp(UsedIpInventory guestIp) {
+        this.guestIp = guestIp;
+    }
+
+    public IpRangeInventory getGuestIpRange() {
+        return guestIpRange;
+    }
+
+    public void setGuestIpRange(IpRangeInventory guestIpRange) {
+        this.guestIpRange = guestIpRange;
     }
 }

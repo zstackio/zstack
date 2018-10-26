@@ -58,7 +58,7 @@ public class ErrorFacadeImpl implements ErrorFacade {
         }
 
         if (details != null && details.length() > 4096) {
-            details = details.substring(0, Math.min(details.length(), 4096));
+            details = details.substring(0, 4093) + "...";
         }
         ErrorCodeList err = (ErrorCodeList) info.code.copy();
         err.setDetails(details);

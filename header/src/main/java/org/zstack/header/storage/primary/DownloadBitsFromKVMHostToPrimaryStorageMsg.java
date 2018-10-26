@@ -12,6 +12,7 @@ public class DownloadBitsFromKVMHostToPrimaryStorageMsg extends NeedReplyMessage
     private String primaryStorageInstallPath;
     private String destHostUuid;
     private Long bandWidth;
+    private String longJobUuid;
 
     public String getDestHostUuid() {
         return destHostUuid;
@@ -60,5 +61,13 @@ public class DownloadBitsFromKVMHostToPrimaryStorageMsg extends NeedReplyMessage
 
     public void setBandWidth(Long bandWidth) {
         this.bandWidth = bandWidth;
+    }
+
+    public String getLongJobUuid() {
+        return longJobUuid;
+    }
+
+    public void setLongJobUuid(String longJobUuid) {
+        this.longJobUuid = longJobUuid;
     }
 }

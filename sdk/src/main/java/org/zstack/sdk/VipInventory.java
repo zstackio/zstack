@@ -68,6 +68,14 @@ public class VipInventory  {
         return this.netmask;
     }
 
+    public java.lang.Integer prefixLen;
+    public void setPrefixLen(java.lang.Integer prefixLen) {
+        this.prefixLen = prefixLen;
+    }
+    public java.lang.Integer getPrefixLen() {
+        return this.prefixLen;
+    }
+
     public java.lang.String serviceProvider;
     public void setServiceProvider(java.lang.String serviceProvider) {
         this.serviceProvider = serviceProvider;

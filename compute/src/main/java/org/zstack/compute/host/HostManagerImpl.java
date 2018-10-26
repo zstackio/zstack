@@ -83,7 +83,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     private EventFacade evtf;
 
     private Map<Class, HostBaseExtensionFactory> hostBaseExtensionFactories = new HashMap<>();
-
+    private List<HostExtensionManager> hostExtensionManagers = new ArrayList<>();
 
     private Map<String, HypervisorFactory> hypervisorFactories = Collections.synchronizedMap(new HashMap<String, HypervisorFactory>());
     private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<Class>();
@@ -163,7 +163,11 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     @Override
     @MessageSafe
     public void handleMessage(Message msg) {
-        if (msg instanceof APIMessage) {
+        HostExtensionManager extensionManager = hostExtensionManagers.stream().filter(it -> it.getMessageClasses()
+                .stream().anyMatch(clz -> clz.isAssignableFrom(msg.getClass()))).findFirst().orElse(null);
+        if (extensionManager != null) {
+            extensionManager.handleMessage(msg);
+        } else if (msg instanceof APIMessage) {
             handleApiMessage((APIMessage) msg);
         } else {
             handleLocalMessage(msg);
@@ -188,6 +192,42 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         }
 
         throw new CloudRuntimeException("unexpected addHost message: " + msg);
+    }
+
+    private void addHostInQueue(final AddHostMessage msg, ReturnValueCompletion<HostInventory> completion) {
+        thdf.chainSubmit(new ChainTask(completion) {
+            @Override
+            public String getSyncSignature() {
+                return "batch-add-host";
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                doAddHostInQueue(msg, new ReturnValueCompletion<HostInventory>(completion) {
+                    @Override
+                    public void success(HostInventory returnValue) {
+                        completion.success(returnValue);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        completion.fail(errorCode);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
+            }
+
+            @Override
+            protected int getSyncLevel() {
+                return ThreadGlobalProperty.MAX_THREAD_NUM / 5;
+            }
+        });
     }
 
     private void doAddHostInQueue(final AddHostMessage msg, ReturnValueCompletion<HostInventory> completion) {
@@ -249,6 +289,8 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
 
         if (msg instanceof APIAddHostMsg) {
             tagMgr.createTagsFromAPICreateMessage((APIAddHostMsg)msg, vo.getUuid(), HostVO.class.getSimpleName());
+        } else if (msg instanceof AddHostMsg) {
+            tagMgr.createTags(((AddHostMsg) msg).getSystemTags(), ((AddHostMsg) msg).getUserTags(), vo.getUuid(), HostVO.class.getSimpleName());
         }
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
@@ -403,7 +445,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     private void handle(final AddHostMsg msg) {
         final AddHostReply reply = new AddHostReply();
 
-        doAddHostInQueue(msg, new ReturnValueCompletion<HostInventory>(msg) {
+        addHostInQueue(msg, new ReturnValueCompletion<HostInventory>(msg) {
             @Override
             public void success(HostInventory returnValue) {
                 reply.setInventory(returnValue);
@@ -422,7 +464,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     private void handle(final APIAddHostMsg msg) {
         final APIAddHostEvent evt = new APIAddHostEvent(msg.getId());
 
-        doAddHostInQueue(msg, new ReturnValueCompletion<HostInventory>(msg) {
+        addHostInQueue(msg, new ReturnValueCompletion<HostInventory>(msg) {
             @Override
             public void success(HostInventory inventory) {
                 evt.setInventory(inventory);
@@ -468,6 +510,8 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                 hostBaseExtensionFactories.put(clz, ext);
             }
         }
+
+        hostExtensionManagers.addAll(pluginRgty.getExtensionList(HostExtensionManager.class));
 
     }
 

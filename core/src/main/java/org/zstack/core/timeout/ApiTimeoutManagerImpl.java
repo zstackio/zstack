@@ -159,7 +159,7 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component {
             long timeout = parseTimeout(val.getValue(VALUE_TIMEOUT));
             ApiTimeout apiTimeout = new ApiTimeout();
             apiTimeout.setTimeout(timeout);
-            apiTimeout.setRelatives(m.get(apiClz));
+            apiTimeout.setRelatives(m.computeIfAbsent(apiClz, k -> new HashSet<>()));
             apiTimeouts.put(apiClz, apiTimeout);
             if (logger.isTraceEnabled()) {
                 logger.trace(String.format("configure timeout for API[%s]:" +

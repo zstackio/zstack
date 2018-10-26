@@ -1,16 +1,14 @@
 package org.zstack.test.integration.kvm.vm
 
 import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
 import org.zstack.header.image.ImageConstant
+import org.zstack.header.image.ImageStatus
+import org.zstack.header.image.ImageVO
+import org.zstack.header.image.ImageVO_
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
-import org.zstack.sdk.BackupStorageInventory
-import org.zstack.sdk.GetVmStartingCandidateClustersHostsResult
-import org.zstack.sdk.HostInventory
-import org.zstack.sdk.ImageInventory
-import org.zstack.sdk.InstanceOfferingInventory
-import org.zstack.sdk.L3NetworkInventory
-import org.zstack.sdk.VmInstanceInventory
+import org.zstack.sdk.*
 import org.zstack.test.integration.kvm.Env
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
@@ -65,13 +63,31 @@ class StartVmAfterImageDeleteCase extends SubCase {
             format = ImageConstant.QCOW2_FORMAT_STRING
         } as ImageInventory
 
+        SQL.New(ImageVO.class)
+                .eq(ImageVO_.uuid, image.uuid)
+                .set(ImageVO_.status, ImageStatus.Downloading)
+                .update()
+
+        expect(AssertionError.class) {
+            vm = createVmInstance {
+                name = "vm"
+                imageUuid = image.uuid
+                l3NetworkUuids = [l3.uuid]
+                instanceOfferingUuid = offering.uuid
+            } as VmInstanceInventory
+        }
+
+        SQL.New(ImageVO.class)
+                .eq(ImageVO_.uuid, image.uuid)
+                .set(ImageVO_.status, ImageStatus.Ready)
+                .update()
+
         vm = createVmInstance {
             name = "vm"
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
             instanceOfferingUuid = offering.uuid
         } as VmInstanceInventory
-
         assert Q.New(VmInstanceVO.class).count() == 1
     }
 

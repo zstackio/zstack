@@ -17,10 +17,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantiateResourceExtensionPoint {
     private static final CLogger logger = Utils.getLogger(InstantiateVolumeForNewCreatedVmExtension.class);
@@ -65,15 +62,11 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
                     if (vo.getType() == VolumeType.Data) {
                         vo.setDeviceId(getNextDeviceId());
                         vo.setActualSize(0L);
-                    } else if (spec.getV2vSpec() != null) {
-                        // instantiate root volume when v2v
-                        vo.setDeviceId(0);
-                        vo.setActualSize(spec.getV2vSpec().getRootVolumeActualSize());
-                    } else {
+                    } else if (spec.getImageSpec().getInventory() != null) {
                         vo.setActualSize(spec.getImageSpec().getInventory().getActualSize());
                     }
-                    vo = dbf.updateAndRefresh(vo);
 
+                    vo = dbf.updateAndRefresh(vo);
                     VolumeInventory vinv = VolumeInventory.valueOf(vo);
                     if (spec.getDestRootVolume().getUuid().equals(vinv.getUuid())) {
                         spec.setDestRootVolume(vinv);
@@ -110,6 +103,7 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
             msg.setPrimaryStorageUuid(volume.getPrimaryStorageUuid());
             msg.setHostUuid(spec.getDestHost().getUuid());
             msg.setPrimaryStorageAllocated(true);
+            msg.setSkipIfExisting(spec.isInstantiateResourcesSkipExisting());
             bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, volume.getUuid());
             msgs.add(msg);
         }
@@ -126,6 +120,7 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
         rmsg.setHostUuid(spec.getDestHost().getUuid());
         rmsg.setVolumeUuid(spec.getDestRootVolume().getUuid());
         rmsg.setPrimaryStorageAllocated(true);
+        rmsg.setSkipIfExisting(spec.isInstantiateResourcesSkipExisting());
         bus.makeTargetServiceIdByResourceUuid(rmsg, VolumeConstant.SERVICE_ID, spec.getDestRootVolume().getUuid());
         msgs.add(rmsg);
 

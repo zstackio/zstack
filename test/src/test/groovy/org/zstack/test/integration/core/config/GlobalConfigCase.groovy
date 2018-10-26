@@ -1,6 +1,8 @@
 package org.zstack.test.integration.core.config
 
-import org.zstack.compute.host.HostGlobalConfig
+import org.zstack.core.Platform
+import org.zstack.core.cloudbus.EventFacade
+import org.zstack.core.config.GlobalConfigCanonicalEvents
 import org.zstack.core.config.GlobalConfigFacadeImpl
 import org.zstack.core.config.GlobalConfigVO
 import org.zstack.core.db.DatabaseFacade
@@ -11,6 +13,10 @@ import org.zstack.sdk.UpdateGlobalConfigAction
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
+
+import static org.zstack.utils.CollectionDSL.e
+import static org.zstack.utils.CollectionDSL.map
+import static org.zstack.utils.StringDSL.s
 
 /**
  * Created by miao on 17-5-4.
@@ -47,6 +53,7 @@ class GlobalConfigCase extends SubCase {
             testBorderValue()
             testImageGlobalConfig()
             testResetGlobalConfig()
+            testSyncConfigUponEvent()
         }
     }
 
@@ -152,5 +159,27 @@ class GlobalConfigCase extends SubCase {
             conditions = ["category=${KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.category}","name=${KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.name}"]
         }[0]
         assert KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.value(int.class) == 0
+    }
+
+    private static String makeUpdateEventPath(String category, String name) {
+        return s(GlobalConfigCanonicalEvents.UPDATE_EVENT_PATH).formatByMap(map(
+                e("nodeUuid", Platform.getUuid()),
+                e("category", category),
+                e("name", name)
+        ))
+    }
+
+    void testSyncConfigUponEvent() {
+        EventFacade evtf = bean(EventFacade.class)
+        String name = KVMGlobalConfig.LIBVIRT_CACHE_MODE.name
+
+        GlobalConfigCanonicalEvents.UpdateEvent d = new GlobalConfigCanonicalEvents.UpdateEvent()
+        d.oldValue = KVMGlobalConfig.LIBVIRT_CACHE_MODE.value()
+        d.newValue = "writeback"
+        evtf.fire(makeUpdateEventPath(KVMGlobalConfig.CATEGORY, name), d)
+
+        retryInSecs {
+            assert KVMGlobalConfig.LIBVIRT_CACHE_MODE.value() == d.newValue
+        }
     }
 }

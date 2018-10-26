@@ -84,6 +84,14 @@ public class L3NetworkInventory  {
         return this.category;
     }
 
+    public java.lang.Integer ipVersion;
+    public void setIpVersion(java.lang.Integer ipVersion) {
+        this.ipVersion = ipVersion;
+    }
+    public java.lang.Integer getIpVersion() {
+        return this.ipVersion;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

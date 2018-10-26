@@ -725,6 +725,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
         public String srcPsMountPath;
         public String dstPsMountPath;
         public String dstVolumeFolderPath;
+        public String dstImageCacheTemplateFolderPath;
     }
 
     public static class NfsRebaseVolumeBackingFileRsp extends NfsPrimaryStorageAgentResponse {
