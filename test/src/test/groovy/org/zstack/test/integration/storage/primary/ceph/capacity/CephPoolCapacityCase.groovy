@@ -67,12 +67,14 @@ class CephPoolCapacityCase extends SubCase {
                     new CephPoolCapacity(
                             name : primaryStoragePool.poolName,
                             availableCapacity : primaryStoragePool.availableCapacity + addSize,
-                            usedCapacity: primaryStoragePool.usedCapacity
+                            usedCapacity: primaryStoragePool.usedCapacity,
+                            totalCapacity: primaryStoragePool.usedCapacity + primaryStoragePool.availableCapacity + addSize
                     ),
                     new CephPoolCapacity(
                             name : "other-pool",
                             availableCapacity : 10,
-                            usedCapacity: 10
+                            usedCapacity: 10,
+                            totalCapacity: 20,
                     ),
                     new CephPoolCapacity(
                             availableCapacity : 11,

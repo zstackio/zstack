@@ -36,6 +36,8 @@ public class CephPrimaryStoragePoolVO extends ResourceVO {
     private long usedCapacity;
     @Column
     private Integer replicatedSize;
+    @Column
+    private long totalCapacity;
 
     public String getPrimaryStorageUuid() {
         return primaryStorageUuid;
@@ -115,5 +117,13 @@ public class CephPrimaryStoragePoolVO extends ResourceVO {
 
     public void setReplicatedSize(Integer replicatedSize) {
         this.replicatedSize = replicatedSize;
+    }
+
+    public long getTotalCapacity() {
+        return totalCapacity;
+    }
+
+    public void setTotalCapacity(long totalCapacity) {
+        this.totalCapacity = totalCapacity;
     }
 }
