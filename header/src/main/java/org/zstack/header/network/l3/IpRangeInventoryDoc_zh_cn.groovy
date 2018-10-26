@@ -51,6 +51,12 @@ doc {
 		since "0.6"
 	}
 	field {
+		name "prefixLen"
+		desc "掩码长度"
+		type "String"
+		since "3.1"
+	}
+	field {
 		name "gateway"
 		desc ""
 		type "String"

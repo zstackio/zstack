@@ -28,7 +28,7 @@ doc {
 	}
 	field {
 		name "usedIpAddressNumber"
-		desc ""
+		desc "已使用IP数量"
 		type "Long"
 		since "3.1"
 	}

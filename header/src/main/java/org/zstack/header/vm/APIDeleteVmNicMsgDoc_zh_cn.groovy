@@ -7,7 +7,7 @@ doc {
 
     category "vmInstance"
 
-    desc """在这里填写API描述"""
+    desc """从云主机卸载网卡"""
 
     rest {
         request {

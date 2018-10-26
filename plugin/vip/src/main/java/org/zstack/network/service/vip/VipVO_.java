@@ -18,6 +18,7 @@ public class VipVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<VipVO, String> usedIpUuid;
     public static volatile SingularAttribute<VipVO, String> gateway;
     public static volatile SingularAttribute<VipVO, String> netmask;
+    public static volatile SingularAttribute<VipVO, Integer> prefixLen;
     public static volatile SingularAttribute<VipVO, VipState> state;
     public static volatile SingularAttribute<VipVO, Timestamp> createDate;
     public static volatile SingularAttribute<VipVO, Timestamp> lastOpDate;

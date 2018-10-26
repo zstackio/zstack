@@ -45,7 +45,7 @@ doc {
 				column {
 					name "usedIpUuid"
 					enclosedIn "params"
-					desc ""
+					desc "IP地址Uuid"
 					location "body"
 					type "String"
 					optional true

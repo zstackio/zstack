@@ -23,43 +23,43 @@ import java.util.stream.Collectors;
 public class NetworkUtils {
     private static final CLogger logger = Utils.getLogger(NetworkUtils.class);
 
-    private static final Set<String> validNetmasks = new HashSet<String>();
+    private static final Map<String, Integer> validNetmasks = new HashMap<String, Integer>();
 
 
     static {
-        validNetmasks.add("255.255.255.255");
-        validNetmasks.add("255.255.255.254");
-        validNetmasks.add("255.255.255.252");
-        validNetmasks.add("255.255.255.248");
-        validNetmasks.add("255.255.255.240");
-        validNetmasks.add("255.255.255.224");
-        validNetmasks.add("255.255.255.192");
-        validNetmasks.add("255.255.255.128");
-        validNetmasks.add("255.255.255.0");
-        validNetmasks.add("255.255.254.0");
-        validNetmasks.add("255.255.252.0");
-        validNetmasks.add("255.255.248.0");
-        validNetmasks.add("255.255.240.0");
-        validNetmasks.add("255.255.224.0");
-        validNetmasks.add("255.255.192.0");
-        validNetmasks.add("255.255.128.0");
-        validNetmasks.add("255.255.0.0");
-        validNetmasks.add("255.254.0.0");
-        validNetmasks.add("255.252.0.0");
-        validNetmasks.add("255.248.0.0");
-        validNetmasks.add("255.240.0.0");
-        validNetmasks.add("255.224.0.0");
-        validNetmasks.add("255.192.0.0");
-        validNetmasks.add("255.128.0.0");
-        validNetmasks.add("255.0.0.0");
-        validNetmasks.add("254.0.0.0");
-        validNetmasks.add("252.0.0.0");
-        validNetmasks.add("248.0.0.0");
-        validNetmasks.add("240.0.0.0");
-        validNetmasks.add("224.0.0.0");
-        validNetmasks.add("192.0.0.0");
-        validNetmasks.add("128.0.0.0");
-        validNetmasks.add("0.0.0.0");
+        validNetmasks.put("255.255.255.255", 32);
+        validNetmasks.put("255.255.255.254", 31);
+        validNetmasks.put("255.255.255.252", 30);
+        validNetmasks.put("255.255.255.248", 29);
+        validNetmasks.put("255.255.255.240", 28);
+        validNetmasks.put("255.255.255.224", 27);
+        validNetmasks.put("255.255.255.192", 26);
+        validNetmasks.put("255.255.255.128", 25);
+        validNetmasks.put("255.255.255.0", 24);
+        validNetmasks.put("255.255.254.0", 23);
+        validNetmasks.put("255.255.252.0", 22);
+        validNetmasks.put("255.255.248.0", 21);
+        validNetmasks.put("255.255.240.0", 20);
+        validNetmasks.put("255.255.224.0", 19);
+        validNetmasks.put("255.255.192.0", 18);
+        validNetmasks.put("255.255.128.0", 17);
+        validNetmasks.put("255.255.0.0",16);
+        validNetmasks.put("255.254.0.0",15);
+        validNetmasks.put("255.252.0.0",14);
+        validNetmasks.put("255.248.0.0",13);
+        validNetmasks.put("255.240.0.0",12);
+        validNetmasks.put("255.224.0.0",11);
+        validNetmasks.put("255.192.0.0",10);
+        validNetmasks.put("255.128.0.0", 9);
+        validNetmasks.put("255.0.0.0", 8);
+        validNetmasks.put("254.0.0.0", 7);
+        validNetmasks.put("252.0.0.0", 6);
+        validNetmasks.put("248.0.0.0", 5);
+        validNetmasks.put("240.0.0.0", 4);
+        validNetmasks.put("224.0.0.0", 3);
+        validNetmasks.put("192.0.0.0", 2);
+        validNetmasks.put("128.0.0.0", 1);
+        validNetmasks.put("0.0.0.0", 0);
     }
 
     public static boolean isHostname(String hostname) {
@@ -81,11 +81,11 @@ public class NetworkUtils {
     }
 
     public static boolean isNetmask(String netmask) {
-        return validNetmasks.contains(netmask);
+        return validNetmasks.keySet().contains(netmask);
     }
 
     public static boolean isNetmaskExcept(String netmask, String except) {
-        return validNetmasks.contains(netmask) && !netmask.equals(except);
+        return validNetmasks.keySet().contains(netmask) && !netmask.equals(except);
     }
 
     public static boolean isCidr(String cidr) {
@@ -758,6 +758,19 @@ public class NetworkUtils {
             try {
                 IPv6Address.fromString(ip);
                 return IPv6Constants.IPv6;
+            } catch (Exception e) {
+                throw e;
+            }
+        }
+    }
+
+    public static Integer getPrefixLengthFromNetwork(String mask) {
+        if (isIpv4Address(mask)) {
+            return validNetmasks.get(mask);
+        } else {
+            try {
+                IPv6Address addr = IPv6Address.fromString(mask);
+                return addr.numberOfLeadingOnes();
             } catch (Exception e) {
                 throw e;
             }

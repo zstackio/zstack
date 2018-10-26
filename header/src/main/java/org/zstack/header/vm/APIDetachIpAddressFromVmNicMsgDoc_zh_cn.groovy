@@ -5,7 +5,7 @@ doc {
 
     category "vmInstance"
 
-    desc """在这里填写API描述"""
+    desc """从网卡卸载网络"""
 
     rest {
         request {
@@ -33,7 +33,7 @@ doc {
 				column {
 					name "usedIpUuid"
 					enclosedIn ""
-					desc ""
+					desc "IP地址UUID"
 					location "url"
 					type "String"
 					optional false
