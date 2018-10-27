@@ -6,15 +6,12 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.network.l3.*;
-import org.zstack.utils.Utils;
-import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6NetworkUtils;
 
 import java.math.BigInteger;
 import java.util.*;
 
 public class RandomIpv6AllocatorStrategy extends AbstractIpAllocatorStrategy {
-    private static final CLogger logger = Utils.getLogger(RandomIpv6AllocatorStrategy.class);
     public static final IpAllocatorType type = new IpAllocatorType(L3NetworkConstant.RANDOM_IPV6_ALLOCATOR_STRATEGY);
     @Autowired
     private PluginRegistry pluginRgty;

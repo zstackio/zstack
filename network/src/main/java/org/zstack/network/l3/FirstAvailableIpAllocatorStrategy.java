@@ -9,12 +9,11 @@ import org.zstack.utils.network.NetworkUtils;
 
 import java.math.BigInteger;
 import java.util.List;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 public class FirstAvailableIpAllocatorStrategy extends AbstractIpAllocatorStrategy{
     private static final CLogger logger = Utils.getLogger(FirstAvailableIpAllocatorStrategy.class);
-    static final IpAllocatorType type = new IpAllocatorType(L3NetworkConstant.FIRST_AVAILABLE_IP_ALLOCATOR_STRATEGY);
+    private static final IpAllocatorType type = new IpAllocatorType(L3NetworkConstant.FIRST_AVAILABLE_IP_ALLOCATOR_STRATEGY);
     
     @Override
     public IpAllocatorType getType() {
@@ -23,9 +22,8 @@ public class FirstAvailableIpAllocatorStrategy extends AbstractIpAllocatorStrate
     
     private String allocateIp(IpRangeVO vo) {
         List<BigInteger> used = l3NwMgr.getUsedIpInRange(vo);
-        List<Long> usedIP = used.stream().map(u -> u.longValue()).collect(Collectors.toList());
-        String ret = NetworkUtils.findFirstAvailableIpv4Address(vo.getStartIp(), vo.getEndIp(), usedIP.toArray(new Long[usedIP.size()]));
-        return ret;
+        List<Long> usedIP = used.stream().map(BigInteger::longValue).collect(Collectors.toList());
+        return NetworkUtils.findFirstAvailableIpv4Address(vo.getStartIp(), vo.getEndIp(), usedIP.toArray(new Long[usedIP.size()]));
     }
     
     @Override
