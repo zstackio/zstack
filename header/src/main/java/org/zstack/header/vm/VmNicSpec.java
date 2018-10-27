@@ -2,12 +2,13 @@ package org.zstack.header.vm;
 
 import org.zstack.header.network.l3.L3NetworkInventory;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.zstack.utils.CollectionDSL.list;
 
-public class VmNicSpec {
+public class VmNicSpec implements Serializable {
     public List<L3NetworkInventory> l3Invs;
 
     public VmNicSpec(List<L3NetworkInventory> l3Invs) {
@@ -16,6 +17,14 @@ public class VmNicSpec {
 
     public VmNicSpec(L3NetworkInventory l3) {
         this.l3Invs = list(l3);
+    }
+
+    public List<L3NetworkInventory> getL3Invs() {
+        return l3Invs;
+    }
+
+    public void setL3Invs(List<L3NetworkInventory> l3Invs) {
+        this.l3Invs = l3Invs;
     }
 
     public static List<L3NetworkInventory> getL3NetworkInventoryOfSpec(List<VmNicSpec> specs) {
