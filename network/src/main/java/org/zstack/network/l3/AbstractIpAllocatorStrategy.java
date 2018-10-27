@@ -53,15 +53,17 @@ public abstract class AbstractIpAllocatorStrategy implements IpAllocatorStrategy
 
         if (ipr == null) {
             L3NetworkVO l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid()).find();
-            if (l3NetworkVO.getType().equals(L3NetworkConstant.L3_BASIC_NETWORK_TYPE)) {
-                throw new OperationFailureException(errf.instantiateErrorCode(L3Errors.ALLOCATE_IP_ERROR,
-                        String.format("cannot find ip range that has ip[%s] in l3Network[uuid:%s]", msg.getRequiredIp(), msg.getL3NetworkUuid())
-                ));
+            if (!l3NetworkVO.getType().equals(L3NetworkConstant.L3_BASIC_NETWORK_TYPE)) {
+                for (AfterAllocateRequiredIpExtensionPoint extp : pluginRgty.getExtensionList(AfterAllocateRequiredIpExtensionPoint.class)) {
+                    ipr = extp.afterAllocateRequiredIp(msg, ipr, iprs);
+                }
             }
         }
 
-        for (AfterAllocateRequiredIpExtensionPoint extp : pluginRgty.getExtensionList(AfterAllocateRequiredIpExtensionPoint.class)) {
-            ipr = extp.afterAllocateRequiredIp(msg, ipr, iprs);
+        if (ipr == null) {
+            throw new OperationFailureException(errf.instantiateErrorCode(L3Errors.ALLOCATE_IP_ERROR,
+                    String.format("cannot find ip range that has ip[%s] in l3Network[uuid:%s]", msg.getRequiredIp(), msg.getL3NetworkUuid())
+            ));
         }
 
         return l3NwMgr.reserveIp(IpRangeInventory.valueOf(ipr), msg.getRequiredIp());
@@ -85,15 +87,17 @@ public abstract class AbstractIpAllocatorStrategy implements IpAllocatorStrategy
 
         if (ipr == null) {
             L3NetworkVO l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid()).find();
-            if (l3NetworkVO.getType().equals(L3NetworkConstant.L3_BASIC_NETWORK_TYPE)) {
-                throw new OperationFailureException(errf.instantiateErrorCode(L3Errors.ALLOCATE_IP_ERROR,
-                        String.format("cannot find ip range that has ip[%s] in l3Network[uuid:%s]", msg.getRequiredIp(), msg.getL3NetworkUuid())
-                ));
+            if (!l3NetworkVO.getType().equals(L3NetworkConstant.L3_BASIC_NETWORK_TYPE)) {
+                for (AfterAllocateRequiredIpExtensionPoint extp : pluginRgty.getExtensionList(AfterAllocateRequiredIpExtensionPoint.class)) {
+                    ipr = extp.afterAllocateRequiredIp(msg, ipr, iprs);
+                }
             }
         }
 
-        for (AfterAllocateRequiredIpExtensionPoint extp : pluginRgty.getExtensionList(AfterAllocateRequiredIpExtensionPoint.class)) {
-            ipr = extp.afterAllocateRequiredIp(msg, ipr, iprs);
+        if (ipr == null) {
+            throw new OperationFailureException(errf.instantiateErrorCode(L3Errors.ALLOCATE_IP_ERROR,
+                    String.format("cannot find ip range that has ip[%s] in l3Network[uuid:%s]", msg.getRequiredIp(), msg.getL3NetworkUuid())
+            ));
         }
 
         return l3NwMgr.reserveIp(IpRangeInventory.valueOf(ipr), msg.getRequiredIp());
