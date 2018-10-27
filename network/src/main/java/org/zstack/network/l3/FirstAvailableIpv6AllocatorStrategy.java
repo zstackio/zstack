@@ -12,7 +12,7 @@ import java.util.List;
 
 public class FirstAvailableIpv6AllocatorStrategy extends AbstractIpAllocatorStrategy{
     private static final CLogger logger = Utils.getLogger(FirstAvailableIpv6AllocatorStrategy.class);
-    static final IpAllocatorType type = new IpAllocatorType(L3NetworkConstant.FIRST_AVAILABLE_IPV6_ALLOCATOR_STRATEGY);
+    private static final IpAllocatorType type = new IpAllocatorType(L3NetworkConstant.FIRST_AVAILABLE_IPV6_ALLOCATOR_STRATEGY);
     
     @Override
     public IpAllocatorType getType() {

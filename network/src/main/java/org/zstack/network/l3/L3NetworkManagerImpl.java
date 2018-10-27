@@ -41,7 +41,6 @@ import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
@@ -251,8 +250,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
 
     private void handle(APIGetL3NetworkTypesMsg msg) {
         APIGetL3NetworkTypesReply reply = new APIGetL3NetworkTypesReply();
-        List<String> lst = new ArrayList<String>();
-        lst.addAll(L3NetworkType.getAllTypeNames());
+        List<String> lst = new ArrayList<String>(L3NetworkType.getAllTypeNames());
         reply.setL3NetworkTypes(lst);
         bus.reply(msg, reply);
     }
@@ -334,7 +332,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         vo.setState(L3NetworkState.Enabled);
         vo.setCategory(L3NetworkCategory.valueOf(msg.getCategory()));
         if (msg.getIpVersion() != null) {
-            vo.setIpVersion(Integer.valueOf(msg.getIpVersion()));
+            vo.setIpVersion(msg.getIpVersion());
         } else {
             vo.setIpVersion(IPv6Constants.IPv4);
         }
@@ -512,11 +510,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
             query.select(UsedIpVO_.ip);
             query.add(UsedIpVO_.ipRangeUuid, Op.EQ, vo.getUuid());
             List<String> used = query.listValue();
-            List<BigInteger> usedIp = used.stream().map(s -> {
-                 return IPv6NetworkUtils.getBigIntegerFromString(s);
-            }).collect(Collectors.toList());
-            Collections.sort(usedIp);
-            return usedIp;
+            return used.stream().map(IPv6NetworkUtils::getBigIntegerFromString).sorted().collect(Collectors.toList());
         }
     }
 
@@ -620,9 +614,9 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                 ips.add(ip);
             }
         }
+
         if (!ips.isEmpty()) {
             dbf.updateCollection(ips);
         }
-
     }
 }
