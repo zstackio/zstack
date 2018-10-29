@@ -1,5 +1,6 @@
 package org.zstack.test.integration.network.l3network.ipv6
 
+import com.googlecode.ipv6.IPv6Address
 import org.springframework.http.HttpEntity
 import org.zstack.network.service.flat.FlatEipBackend
 import org.zstack.sdk.*
@@ -145,20 +146,40 @@ class IPv6EipCase extends SubCase {
         assert cmd.eip.vmBridgeName == "br_eth0"
 
         cmd = null
-        attachEip {
+        eip6 = attachEip {
             eipUuid = eip6.uuid
             vmNicUuid = nic.uuid
             usedIpUuid = ipv6.uuid
         }
         assert cmd.eip.vmBridgeName == "br_eth0"
+        assert eip6.guestIp == ipv6.ip
+
+        stopVmInstance {
+            uuid = vm.uuid
+        }
+
+        IPv6Address address2 = IPv6Address.fromString("2001:2003::02")
+        IPv6Address address3 = IPv6Address.fromString("2001:2003::03")
+        String ip6Str = (ipv6.ip == address2.toString() ? address3.toString() : address2.toString())
+        setVmStaticIp {
+            vmInstanceUuid = vm.uuid
+            l3NetworkUuid = l3_statefull.uuid
+            ip = ip6Str
+        }
+        eip6 = queryEip { conditions=["name=eip6"] }[0]
+        assert eip6.guestIp == ip6Str
     }
 
     void testIPv6EipApplyNetworkService() {
         HostInventory host = env.inventoryByName("kvm-1")
+        L3NetworkInventory l3 = env.inventoryByName("l3")
 
         VmInstanceInventory vm = queryVmInstance {
             conditions=["name=vm-eip"]
         } [0]
+        assert vm.getVmNics().size() == 1
+        VmNicInventory nic = vm.getVmNics().get(0)
+        assert nic.getL3NetworkUuid() == l3.uuid
 
         FlatEipBackend.ApplyEipCmd cmd = new FlatEipBackend.ApplyEipCmd()
         env.afterSimulator(FlatEipBackend.APPLY_EIP_PATH) { rsp, HttpEntity<String> entity ->
@@ -166,8 +187,9 @@ class IPv6EipCase extends SubCase {
             return rsp
 
         }
-        rebootVmInstance {
+        startVmInstance {
             uuid = vm.uuid
+            hostUuid = vm.lastHostUuid
         }
         assert cmd.eip.vmBridgeName == "br_eth0"
 

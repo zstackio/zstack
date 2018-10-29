@@ -654,7 +654,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         final UsedIpInventory oldIp = new UsedIpInventory();
         for (UsedIpVO ipvo : targetNic.getUsedIps()) {
-            if (ipvo.getL3NetworkUuid().equals(targetNic.getL3NetworkUuid())) {
+            if (ipvo.getL3NetworkUuid().equals(l3Uuid)) {
                 oldIp.setIp(ipvo.getIp());
                 oldIp.setGateway(ipvo.getGateway());
                 oldIp.setNetmask(ipvo.getNetmask());
@@ -667,7 +667,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         chain.setName(String.format("change-vm-ip-to-%s-l3-%s-vm-%s", ip, l3Uuid, self.getUuid()));
         chain.then(new ShareFlow() {
             UsedIpInventory newIp;
-            String oldIpUuid = targetNic.getUsedIpUuid();
+            String oldIpUuid = oldIp.getUuid();
 
             @Override
             public void setup() {
@@ -688,9 +688,6 @@ public class VmInstanceBase extends AbstractVmInstance {
                                 } else {
                                     AllocateIpReply r = reply.castReply();
                                     newIp = r.getIpInventory();
-                                    for (VmNicExtensionPoint ext : pluginRgty.getExtensionList(VmNicExtensionPoint.class)) {
-                                        ext.afterAddIpAddress(targetNic.getUuid(), newIp.getUuid());
-                                    }
                                     trigger.next();
                                 }
                             }
@@ -704,10 +701,15 @@ public class VmInstanceBase extends AbstractVmInstance {
                             rmsg.setL3NetworkUuid(newIp.getL3NetworkUuid());
                             rmsg.setUsedIpUuid(newIp.getUuid());
                             bus.makeTargetServiceIdByResourceUuid(rmsg, L3NetworkConstant.SERVICE_ID, newIp.getL3NetworkUuid());
-                            bus.send(rmsg);
+                            bus.send(rmsg, new CloudBusCallBack(trigger) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    trigger.rollback();
+                                }
+                            });
+                        } else {
+                            trigger.rollback();
                         }
-
-                        trigger.rollback();
                     }
                 });
 
@@ -716,12 +718,10 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        targetNic.setUsedIpUuid(newIp.getUuid());
-                        targetNic.setGateway(newIp.getGateway());
-                        targetNic.setNetmask(newIp.getNetmask());
-                        targetNic.setIp(newIp.getIp());
-                        targetNic.setIpVersion(newIp.getIpVersion());
-                        dbf.update(targetNic);
+                        /* for multiple IP address, change nic.ip ONLY when set static ip of of default IP */
+                        for (VmNicExtensionPoint ext : pluginRgty.getExtensionList(VmNicExtensionPoint.class)) {
+                            ext.afterAddIpAddress(targetNic.getUuid(), newIp.getUuid());
+                        }
                         trigger.next();
                     }
                 });
@@ -733,13 +733,17 @@ public class VmInstanceBase extends AbstractVmInstance {
                     public void run(FlowTrigger trigger, Map data) {
                         ReturnIpMsg rmsg = new ReturnIpMsg();
                         rmsg.setUsedIpUuid(oldIpUuid);
-                        rmsg.setL3NetworkUuid(targetNic.getL3NetworkUuid());
-                        bus.makeTargetServiceIdByResourceUuid(rmsg, L3NetworkConstant.SERVICE_ID, targetNic.getL3NetworkUuid());
-                        bus.send(rmsg);
-                        for (VmNicExtensionPoint ext : pluginRgty.getExtensionList(VmNicExtensionPoint.class)) {
-                            ext.afterDelIpAddress(targetNic.getUuid(), oldIpUuid);
-                        }
-                        trigger.next();
+                        rmsg.setL3NetworkUuid(oldIp.getL3NetworkUuid());
+                        bus.makeTargetServiceIdByResourceUuid(rmsg, L3NetworkConstant.SERVICE_ID, oldIp.getL3NetworkUuid());
+                        bus.send(rmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                for (VmNicExtensionPoint ext : pluginRgty.getExtensionList(VmNicExtensionPoint.class)) {
+                                    ext.afterDelIpAddress(targetNic.getUuid(), oldIpUuid);
+                                }
+                                trigger.next();
+                            }
+                        });
                     }
                 });
 
