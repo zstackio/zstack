@@ -27,7 +27,7 @@ public class SshChronyConfigChecker implements AnsibleChecker {
                 .setPassword(password).setPort(sshPort)
                 .setHostname(targetIp);
         try {
-            ssh.command("chronyc sources | grep '^\\^' | awk '{print $2}'");
+            ssh.command("awk '/^\\s*server/{print $2}' /etc/chrony.conf");
             SshResult ret = ssh.run();
             ssh.reset();
 
