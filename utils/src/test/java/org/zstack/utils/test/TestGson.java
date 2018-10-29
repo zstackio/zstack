@@ -1,4 +1,4 @@
-package com.zstack.utils.test;
+package org.zstack.utils.test;
 
 import junit.framework.Assert;
 import org.junit.Test;
