@@ -220,3 +220,110 @@ ALTER TABLE `zstack`.`LongJobVO`  ADD COLUMN `executeTime` int unsigned DEFAULT 
 UPDATE `zstack`.`LongJobVO` job SET job.`executeTime` = TIMESTAMPDIFF(SECOND, job.createDate, job.lastOpDate);
 
 ALTER TABLE CephPrimaryStoragePoolVO ADD totalCapacity bigint(20) unsigned NOT NULL DEFAULT 0;
+
+CREATE TABLE `ScsiLunVO` (
+    `name` VARCHAR(256) DEFAULT NULL,
+    `uuid` VARCHAR(32) NOT NULL,
+    `wwid` VARCHAR(256) NOT NULL,
+    `vendor` VARCHAR(256) DEFAULT NULL,
+    `model` VARCHAR(256) DEFAULT NULL,
+    `wwn` VARCHAR(256) DEFAULT NULL,
+    `serial` VARCHAR(256) DEFAULT NULL,
+    `hctl` VARCHAR(64) DEFAULT NULL,
+    `type` VARCHAR(128) NOT NULL,
+    `path` VARCHAR(128) DEFAULT NULL,
+    `source` VARCHAR(128) DEFAULT NULL,
+    `size` bigint unsigned NOT NULL,
+    `state` VARCHAR(64) DEFAULT NULL,
+    `multipathDeviceUuid` VARCHAR(32) DEFAULT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`uuid`)
+)  ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `ScsiLunHostRefVO` (
+    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+    `hostUuid` varchar(32) NOT NULL,
+    `scsiLunUuid` varchar(32) NOT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fkScsiLunHostRefVOScsiLunVO` FOREIGN KEY (`scsiLunUuid`) REFERENCES ScsiLunVO (`uuid`),
+    CONSTRAINT `fkScsiLunHostRefVOHostVO` FOREIGN KEY (`hostUuid`) REFERENCES HostEO (`uuid`) ON DELETE CASCADE
+)  ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `ScsiLunVmInstanceRefVO` (
+    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+    `vmInstanceUuid` varchar(32) NOT NULL,
+    `scsiLunUuid` varchar(32) NOT NULL,
+    `deviceId` int unsigned DEFAULT NULL,
+    `attachMultipath` boolean NOT NULL DEFAULT TRUE,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fkScsiLunVmInstanceRefVOScsiLunVO` FOREIGN KEY (`scsiLunUuid`) REFERENCES ScsiLunVO (`uuid`),
+    CONSTRAINT `fkScsiLunVmInstanceRefVOVmInstanceVO` FOREIGN KEY (`vmInstanceUuid`) REFERENCES VmInstanceEO (`uuid`) ON DELETE CASCADE
+)  ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `FiberChannelStorageVO` (
+    `name` VARCHAR(256) DEFAULT NULL,
+    `uuid` VARCHAR(32) NOT NULL,
+    `wwnn` VARCHAR(256) NOT NULL,
+    `state` VARCHAR(64) DEFAULT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`uuid`)
+)  ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `FiberChannelLunVO` (
+    `uuid` VARCHAR(32) NOT NULL,
+    `fiberChannelStorageUuid` VARCHAR(32) NOT NULL,
+    PRIMARY KEY (`uuid`),
+    CONSTRAINT `fkFiberChannelLunVOFiberChannelStorageVO` FOREIGN KEY (`fiberChannelStorageUuid`) REFERENCES FiberChannelStorageVO (`uuid`)
+)  ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP PROCEDURE IF EXISTS migrateIscsiLunVOToScsiLunVO;
+DELIMITER $$
+CREATE PROCEDURE migrateIscsiLunVOToScsiLunVO()
+    BEGIN
+        DECLARE done INT DEFAULT FALSE;
+        DECLARE name VARCHAR(256);
+        DECLARE uuid VARCHAR(32);
+        DECLARE wwid VARCHAR(256);
+        DECLARE vendor VARCHAR(256);
+        DECLARE model VARCHAR(256);
+        DECLARE wwn VARCHAR(256);
+        DECLARE serial VARCHAR(256);
+        DECLARE hctl VARCHAR(64);
+        DECLARE type VARCHAR(128);
+        DECLARE path VARCHAR(128);
+        DECLARE source VARCHAR(128);
+        DECLARE size bigint unsigned;
+        DECLARE state VARCHAR(64);
+        DECLARE multipathDeviceUuid VARCHAR(32);
+        DECLARE lastOpDate timestamp;
+        DECLARE createDate timestamp;
+        DECLARE cur CURSOR FOR SELECT i.uuid, i.wwid, i.vendor, i.model, i.wwn, i.serial, i.hctl, i.type, i.path, i.size, i.multipathDeviceUuid, i.lastOpDate, i.createDate FROM zstack.IscsiLunVO i;
+        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+        OPEN cur;
+        read_loop: LOOP
+            FETCH cur INTO uuid, wwid, vendor, model, wwn, serial, hctl, type, path, size, multipathDeviceUuid, lastOpDate, createDate;
+            IF done THEN
+                LEAVE read_loop;
+            END IF;
+
+            set name = concat('iscsi-lun-', wwid);
+            set source = 'iSCSI';
+            set state = 'Enabled';
+
+            INSERT INTO zstack.ScsiLunVO (name, uuid, wwid, vendor, model, wwn, serial, hctl, type, path, source, state, multipathDeviceUuid, size, lastOpDate, createDate)
+            values (name, uuid, wwid, vendor, model, wwn, serial, hctl, type, path, source, state, multipathDeviceUuid, size, lastOpDate, createDate);
+
+        end loop;
+        close cur;
+        select curtime();
+    end $$
+DELIMITER ;
+
+call migrateIscsiLunVOToScsiLunVO();
+alter table IscsiLunVO drop column wwid, drop vendor, drop model, drop wwn, drop serial, drop hctl, drop type, drop path, drop multipathDeviceUuid, drop size, drop lastOpDate, drop createDate
