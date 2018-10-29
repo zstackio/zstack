@@ -281,3 +281,49 @@ CREATE TABLE `FiberChannelLunVO` (
     PRIMARY KEY (`uuid`),
     CONSTRAINT `fkFiberChannelLunVOFiberChannelStorageVO` FOREIGN KEY (`fiberChannelStorageUuid`) REFERENCES FiberChannelStorageVO (`uuid`)
 )  ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP PROCEDURE IF EXISTS migrateIscsiLunVOToScsiLunVO;
+DELIMITER $$
+CREATE PROCEDURE migrateIscsiLunVOToScsiLunVO()
+    BEGIN
+        DECLARE done INT DEFAULT FALSE;
+        DECLARE name VARCHAR(256);
+        DECLARE uuid VARCHAR(32);
+        DECLARE wwid VARCHAR(256);
+        DECLARE vendor VARCHAR(256);
+        DECLARE model VARCHAR(256);
+        DECLARE wwn VARCHAR(256);
+        DECLARE serial VARCHAR(256);
+        DECLARE hctl VARCHAR(64);
+        DECLARE type VARCHAR(128);
+        DECLARE path VARCHAR(128);
+        DECLARE source VARCHAR(128);
+        DECLARE size bigint unsigned;
+        DECLARE state VARCHAR(64);
+        DECLARE multipathDeviceUuid VARCHAR(32);
+        DECLARE lastOpDate timestamp;
+        DECLARE createDate timestamp;
+        DECLARE cur CURSOR FOR SELECT i.uuid, i.wwid, i.vendor, i.model, i.wwn, i.serial, i.hctl, i.type, i.path, i.size, i.multipathDeviceUuid, i.lastOpDate, i.createDate FROM zstack.IscsiLunVO i;
+        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+        OPEN cur;
+        read_loop: LOOP
+            FETCH cur INTO uuid, wwid, vendor, model, wwn, serial, hctl, type, path, size, multipathDeviceUuid, lastOpDate, createDate;
+            IF done THEN
+                LEAVE read_loop;
+            END IF;
+
+            set name = concat('iscsi-lun-', wwid);
+            set source = 'iSCSI';
+            set state = 'Enabled';
+
+            INSERT INTO zstack.ScsiLunVO (name, uuid, wwid, vendor, model, wwn, serial, hctl, type, path, source, state, multipathDeviceUuid, size, lastOpDate, createDate)
+            values (name, uuid, wwid, vendor, model, wwn, serial, hctl, type, path, source, state, multipathDeviceUuid, size, lastOpDate, createDate);
+
+        end loop;
+        close cur;
+        select curtime();
+    end $$
+DELIMITER ;
+
+call migrateIscsiLunVOToScsiLunVO();
+alter table IscsiLunVO drop column wwid, drop vendor, drop model, drop wwn, drop serial, drop hctl, drop type, drop path, drop multipathDeviceUuid, drop size, drop lastOpDate, drop createDate
