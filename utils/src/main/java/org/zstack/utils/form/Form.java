@@ -1,10 +1,8 @@
 package org.zstack.utils.form;
 
 import org.apache.commons.lang.StringUtils;
-import org.zstack.utils.DebugUtils;
 import org.zstack.utils.FieldUtils;
-import org.zstack.utils.StringDSL;
-import org.zstack.utils.TypeUtils;
+import org.zstack.utils.function.ValidateFunction;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -18,8 +16,9 @@ public class Form<T> {
     private Map<String, ListConverter> columnListConverter = new HashMap<>();
     private Map<String, Consumer<T>> columnConsumer = new HashMap<>();
     private List<Converter> headerConverter = new ArrayList<>();
-    private Map<Field, Param> fieldParam = new HashMap<>();
+    private ValidateFunction<? super T> validator = null;
     private String[] columns;
+
     private final int limit;
     private int size = 0;
 
@@ -67,6 +66,11 @@ public class Form<T> {
         return this;
     }
 
+    public Form<T> withValidator(ValidateFunction<? super T> validator) {
+        this.validator = validator;
+        return this;
+    }
+
     public List<T> load() throws IOException {
         List<T> results = new ArrayList<>();
 
@@ -76,7 +80,6 @@ public class Form<T> {
             return null;
         }
         produceDefaultColumnConsumer();
-        produceParamCheck();
 
         int line = 1;
         String[] record;
@@ -179,60 +182,9 @@ public class Form<T> {
             }
         }
 
-        return checkParam(object);
-    }
-
-    private T checkParam(T object) throws IllegalAccessException {
-        StringBuilder errorSb = new StringBuilder();
-        for (Map.Entry<Field, Param> entry : fieldParam.entrySet()) {
-            Field f = entry.getKey();
-            Param param = entry.getValue();
-
-            f.setAccessible(true);
-            Object value = f.get(object);
-            if (param.required() && value == null) {
-                errorSb.append(String.format("field[%s] cannot be null.", f.getName()));
-            }
-
-            if (value != null && value instanceof String && !param.noTrim()) {
-                f.set(object, ((String) value).trim());
-            }
-
-            if (value != null && param.numberRange().length > 0 && TypeUtils.isTypeOf(value, Integer.TYPE, Integer.class, Long.TYPE, Long.class)) {
-                DebugUtils.Assert(param.numberRange().length == 2, String.format("invalid field[%s], Param.numberRange must have and only have 2 items.", f.getName()));
-                long low = param.numberRange()[0];
-                long high = param.numberRange()[1];
-                long val = ((Number) value).longValue();
-                if (val < low || val > high) {
-                    errorSb.append(String.format("field[%s] must be in range of [%s, %s].", f.getName(), low, high));
-                }
-            }
-
-            if (value != null && param.maxLength() != Integer.MAX_VALUE && (value instanceof String)) {
-                String str = (String) value;
-                if (str.length() > param.maxLength()) {
-                    errorSb.append(String.format("field[%s] of message[%s] exceeds max length of string. expected was <= %s, actual was %s",
-                            f.getName(), getClass().getName(), param.maxLength(), str.length()));
-                }
-            }
-
-            if (value != null && param.minLength() != 0 && (value instanceof String)) {
-                String str = (String) value;
-                if (str.length() < param.minLength()) {
-                    errorSb.append(String.format("field[%s] of message[%s] less than the min length of string. expected was >= %s, actual was %s",
-                            f.getName(), getClass().getName(), param.minLength(), str.length()));
-                }
-            }
-
-            if (value != null && value instanceof String && param.resourceType() != Object.class && !StringDSL.isZStackUuid(((String) value).trim())) {
-                errorSb.append(String.format("field[%s] is not a valid uuid.", f.getName()));
-            }
+        if (validator != null) {
+            validator.validate(object);
         }
-
-        if (errorSb.length() != 0) {
-            throw new IllegalArgumentException(errorSb.toString());
-        }
-
         return object;
     }
 
@@ -243,11 +195,6 @@ public class Form<T> {
             }
         }
         return columns;
-    }
-
-    private void produceParamCheck() {
-         List<Field> fields = FieldUtils.getAnnotatedFields(Param.class, clz);
-         fields.forEach(it -> fieldParam.put(it, it.getAnnotation(Param.class)));
     }
 
     private void produceDefaultColumnConsumer(){
