@@ -461,6 +461,11 @@ public class VmInstanceManagerImpl extends AbstractService implements
             }
         }
 
+        List<String> bsUuids = bss.stream().map(BackupStorageVO::getUuid).collect(Collectors.toList());
+        for (GetInterdependentL3NetworksExtensionPoint ext : pluginRgty.getExtensionList(GetInterdependentL3NetworksExtensionPoint.class)) {
+            l3s = ext.afterFilterByImage(l3s, bsUuids, msg.getImageUuid());
+        }
+
         List<String> l3sFromAccount = acntMgr.getResourceUuidsCanAccessByAccount(accountUuid, L3NetworkVO.class);
         if (l3sFromAccount == null) {
             reply.setInventories(L3NetworkInventory.valueOf(l3s));
