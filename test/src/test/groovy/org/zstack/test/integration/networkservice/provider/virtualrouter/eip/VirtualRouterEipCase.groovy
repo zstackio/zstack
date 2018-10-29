@@ -77,9 +77,17 @@ class VirtualRouterEipCase extends SubCase {
         assert vipCmd.vips.size() == 1
         assert vipCmd.vips.get(0).vipUuid == eip1.vipUuid
 
+        VirtualRouterCommands.RemoveVipCmd removeVipCmd = null
+        env.afterSimulator(VirtualRouterConstant.VR_REMOVE_VIP) { rsp, HttpEntity<String> entity ->
+            removeVipCmd = json(entity.getBody(), VirtualRouterCommands.RemoveVipCmd)
+            return rsp
+        }
+
         detachEip {
             uuid = eip1.uuid
         }
+
+        assert removeVipCmd != null
 
         stopVmInstance {
             uuid = vm.uuid
@@ -100,7 +108,7 @@ class VirtualRouterEipCase extends SubCase {
         VipVO vip = dbFindByUuid(eip.vipUuid, VipVO.class)
         // the vip has not created on backend
         assert vip.serviceProvider == null
-        assert vip.useFor == EipConstant.EIP_NETWORK_SERVICE_TYPE
+        assert vip.useFor == null
     }
 
     void testVirtualRouterDHCP() {
