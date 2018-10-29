@@ -4,7 +4,12 @@ import org.zstack.core.db.DatabaseFacade
 import org.zstack.header.storage.primary.PrimaryStorageState
 import org.zstack.header.storage.primary.PrimaryStorageStateEvent
 import org.zstack.header.storage.primary.PrimaryStorageVO
+import org.zstack.header.vm.VmInstanceConstant
+import org.zstack.sdk.DiskOfferingInventory
+import org.zstack.sdk.GetVmCapabilitiesResult
 import org.zstack.sdk.LocalStorageMigrateVolumeAction
+import org.zstack.sdk.VmInstanceInventory
+import org.zstack.sdk.VolumeInventory
 import org.zstack.storage.primary.local.LocalStorageKvmBackend
 import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow
 import org.zstack.test.integration.storage.Env
@@ -35,11 +40,38 @@ class LocalStorageMigrateVolumeCase extends SubCase{
     @Override
     void test() {
         env.create {
+            testLocalStorageMigrateVolumeCapabilities()
             testLocalStorageMigrateVolumeWhenDisable()
             testLocalStorageMigrateVolume()
         }
     }
 
+    void testLocalStorageMigrateVolumeCapabilities() {
+        def vm = env.inventoryByName("vm") as VmInstanceInventory
+        def diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory
+        def volume = createDataVolume {
+            name = "test"
+            diskOfferingUuid = diskOffering.uuid
+        } as VolumeInventory
+
+        attachDataVolumeToVm {
+            vmInstanceUuid = vm.uuid
+            volumeUuid = volume.uuid
+        }
+
+        // with data volumes can not live migrate and volume migrate
+        GetVmCapabilitiesResult capRes = getVmCapabilities {
+            uuid = vm.uuid
+        }
+
+        assert !capRes.capabilities.get(VmInstanceConstant.Capability.LiveMigration.toString()) as Boolean
+        assert !capRes.capabilities.get(VmInstanceConstant.Capability.VolumeMigration.toString()) as Boolean
+
+        detachDataVolumeFromVm {
+            uuid = volume.uuid
+            vmUuid = vm.uuid
+        }
+    }
 
     void testLocalStorageMigrateVolumeWhenDisable() {
         PrimaryStorageSpec primaryStorageSpec = env.specByName("local")
