@@ -46,6 +46,43 @@ class SetStaticIpv6AddressCase extends SubCase {
         }
     }
 
+    void assertVmNicAfterSetStaticIp(String vmUuid, VmNicInventory oldNic) {
+        L3NetworkInventory l3_statefull = env.inventoryByName("l3-Statefull-DHCP")
+        L3NetworkInventory l3 = env.inventoryByName("l3")
+
+        UsedIpInventory ip4 = null
+        UsedIpInventory ip6 = null
+        for (UsedIpInventory ip : oldNic.getUsedIps()) {
+            if (ip.l3NetworkUuid == l3.uuid) {
+                ip4 = ip
+            } else if (ip.l3NetworkUuid == l3_statefull.uuid) {
+                ip6 = ip
+            }
+        }
+
+        VmInstanceInventory vm = queryVmInstance {
+            conditions=["uuid=${vmUuid}"]
+        } [0]
+        VmNicInventory nic = vm.getVmNics().get(0)
+        UsedIpInventory ip41 = null
+        UsedIpInventory ip61 = null
+        for (UsedIpInventory ip : nic.getUsedIps()) {
+            if (ip.l3NetworkUuid == l3.uuid) {
+                ip41 = ip
+            } else if (ip.l3NetworkUuid == l3_statefull.uuid) {
+                ip61 = ip
+            }
+        }
+        assert ip41 != null
+        assert ip41.ipVersion == ip4.ipVersion
+        assert ip41.l3NetworkUuid == ip4.l3NetworkUuid
+        assert ip61 != null
+        assert ip61.ipVersion == ip6.ipVersion
+        assert ip61.l3NetworkUuid == ip6.l3NetworkUuid
+        assert nic.ipVersion == ip4.ipVersion
+        assert nic.l3NetworkUuid == ip4.l3NetworkUuid
+    }
+
     void testCreateVmOfPrivateIPv6Network() {
         L3NetworkInventory l3_statefull = env.inventoryByName("l3-Statefull-DHCP")
         L3NetworkInventory l3 = env.inventoryByName("l3")
@@ -53,7 +90,7 @@ class SetStaticIpv6AddressCase extends SubCase {
         ImageInventory image = env.inventoryByName("image1")
 
         VmInstanceInventory vm = createVmInstance {
-            name = "vm"
+            name = "vm-static-ip"
             instanceOfferingUuid = offering.uuid
             imageUuid = image.uuid
             l3NetworkUuids = [l3_statefull.uuid]
@@ -61,7 +98,23 @@ class SetStaticIpv6AddressCase extends SubCase {
         }
 
         VmNicInventory nic = vm.getVmNics().get(0)
-        UsedIpInventory ip6 = nic.getUsedIps().get(0)
+        UsedIpInventory ip4 = null
+        UsedIpInventory ip6 = null
+        nic = attachL3NetworkToVmNic {
+            vmNicUuid = nic.uuid
+            l3NetworkUuid = l3.uuid
+        }
+        vm = queryVmInstance {
+            conditions=["uuid=${vm.uuid}"]
+        } [0]
+        nic = vm.getVmNics().get(0)
+        for (UsedIpInventory ip : nic.getUsedIps()) {
+            if (ip.l3NetworkUuid == l3.uuid) {
+                ip4 = ip
+            } else if (ip.l3NetworkUuid == l3_statefull.uuid) {
+                ip6 = ip
+            }
+        }
 
         stopVmInstance {
             uuid = vm.uuid
@@ -79,24 +132,7 @@ class SetStaticIpv6AddressCase extends SubCase {
         startVmInstance {
             uuid = vm.uuid
         }
-
-        vm = queryVmInstance {
-            conditions=["uuid=${vm.uuid}"]
-        } [0]
-        nic = vm.getVmNics().get(0)
-        ip6 = nic.getUsedIps().get(0)
-        assert ip6.ip == ip6Str
-
-        nic = attachL3NetworkToVmNic {
-            vmNicUuid = nic.uuid
-            l3NetworkUuid = l3.uuid
-        }
-        UsedIpInventory ip4 = null
-        for (UsedIpInventory ip : nic.getUsedIps()) {
-            if (ip.l3NetworkUuid == l3.uuid) {
-                ip4 = ip
-            }
-        }
+        assertVmNicAfterSetStaticIp(vm.uuid, nic)
 
         stopVmInstance {
             uuid = vm.uuid
@@ -112,19 +148,26 @@ class SetStaticIpv6AddressCase extends SubCase {
         startVmInstance {
             uuid = vm.uuid
         }
+        assertVmNicAfterSetStaticIp(vm.uuid, nic)
+
         vm = queryVmInstance {
             conditions=["uuid=${vm.uuid}"]
         } [0]
         nic = vm.getVmNics().get(0)
         for (UsedIpInventory ip : nic.getUsedIps()) {
             if (ip.l3NetworkUuid == l3.uuid) {
-                assert ip.ip == ip4Str
+                ip4 = ip
             } else if (ip.l3NetworkUuid == l3_statefull.uuid) {
-                assert ip.ip == ip6Str
+                ip6 = ip
             } else {
                 assert false
             }
         }
+
+        assert ip4 != null
+        assert ip6 != null
+        assert ip4.ip == ip4Str
+        assert ip6.ip == ip6Str
     }
 
     void testCreateVmWithStaticIpv6() {
