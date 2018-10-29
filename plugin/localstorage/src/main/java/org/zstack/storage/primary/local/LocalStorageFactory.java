@@ -4,10 +4,7 @@ import com.google.common.collect.Lists;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.host.MigrateNetworkExtensionPoint;
-import org.zstack.compute.vm.IsoOperator;
-import org.zstack.compute.vm.VmAllocatePrimaryStorageFlow;
-import org.zstack.compute.vm.VmAllocatePrimaryStorageForAttachingDiskFlow;
-import org.zstack.compute.vm.VmMigrateOnHypervisorFlow;
+import org.zstack.compute.vm.*;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
@@ -44,10 +41,8 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.utils.path.PathUtil;
 
 import javax.persistence.TypedQuery;
-import java.io.File;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -65,7 +60,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         AddExpandedQueryExtensionPoint, VolumeGetAttachableVmExtensionPoint, RecoverDataVolumeExtensionPoint,
         RecoverVmExtensionPoint, VmPreMigrationExtensionPoint, CreateTemplateFromVolumeSnapshotExtensionPoint, HostAfterConnectedExtensionPoint,
         InstantiateDataVolumeOnCreationExtensionPoint, PrimaryStorageAttachExtensionPoint, PostMarkRootVolumeAsSnapshotExtension,
-        AfterTakeLiveSnapshotsOnVolumes {
+        AfterTakeLiveSnapshotsOnVolumes, VmCapabilitiesExtensionPoint {
     private final static CLogger logger = Utils.getLogger(LocalStorageFactory.class);
     public static PrimaryStorageType type = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE) {
         @Override
@@ -857,9 +852,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 
     }
 
-    @Override
-    @Transactional(readOnly = true, noRollbackForClassName = {"org.zstack.header.errorcode.OperationFailureException"})
-    public void preVmMigration(VmInstanceInventory vm) {
+    private ErrorCode checkVmMigrationCapability(VmInstanceInventory vm) {
         // if not local storage, return
         String sql = "select count(ps)" +
                 " from PrimaryStorageVO ps" +
@@ -871,37 +864,44 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         q.setMaxResults(1);
         Long count = q.getSingleResult();
         if (count == 0) {
-            return;
+            return null;
         }
 
         if (!LocalStoragePrimaryStorageGlobalConfig.ALLOW_LIVE_MIGRATION.value(Boolean.class)) {
-            refuseLiveMigrationForLocalStorage(vm);
+            return refuseLiveMigrationForLocalStorage(vm);
         }
 
         // forbid live migration with data volumes for local storage
         if (vm.getAllVolumes().size() > 1) {
-            throw new OperationFailureException(operr("unable to live migrate vm[uuid:%s] with data volumes on local storage." +
-                    " Need detach all data volumes first.", vm.getUuid()));
+            return operr("unable to live migrate vm[uuid:%s] with data volumes on local storage." +
+                    " Need detach all data volumes first.", vm.getUuid());
         }
 
         if (!ImagePlatform.Linux.toString().equals(vm.getPlatform())) {
-            throw new OperationFailureException(operr("unable to live migrate vm[uuid:%s] with local storage." +
-                    " Only linux guest is supported. Current platform is [%s]", vm.getUuid(), vm.getPlatform()));
+            return operr("unable to live migrate vm[uuid:%s] with local storage." +
+                    " Only linux guest is supported. Current platform is [%s]", vm.getUuid(), vm.getPlatform());
         }
 
         if (IsoOperator.isIsoAttachedToVm(vm.getUuid())) {
-            throw new OperationFailureException(operr("unable to live migrate vm[uuid:%s] with ISO on local storage." +
-                    " Need detach all ISO first.", vm.getUuid()));
+            return operr("unable to live migrate vm[uuid:%s] with ISO on local storage." +
+                    " Need detach all ISO first.", vm.getUuid());
+        }
+
+        return null;
+    }
+
+    @Override
+    @Transactional(readOnly = true, noRollbackForClassName = {"org.zstack.header.errorcode.OperationFailureException"})
+    public void preVmMigration(VmInstanceInventory vm) {
+        ErrorCode err = checkVmMigrationCapability(vm);
+
+        if (err != null) {
+            throw new OperationFailureException(err);
         }
     }
 
-    private void refuseLiveMigrationForLocalStorage(VmInstanceInventory vm) {
-        List<String> volUuids = CollectionUtils.transformToList(vm.getAllVolumes(), new Function<String, VolumeInventory>() {
-            @Override
-            public String call(VolumeInventory arg) {
-                return arg.getUuid();
-            }
-        });
+    private ErrorCode refuseLiveMigrationForLocalStorage(VmInstanceInventory vm) {
+        List<String> volUuids = CollectionUtils.transformToList(vm.getAllVolumes(), VolumeInventory::getUuid);
 
         String sql = "select count(ps)" +
                 " from PrimaryStorageVO ps, VolumeVO vol" +
@@ -914,9 +914,11 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         q.setMaxResults(1);
         Long count = q.getSingleResult();
         if (count > 0) {
-            throw new OperationFailureException(operr("unable to live migrate with local storage. The vm[uuid:%s] has volumes on local storage," +
-                    "to protect your data, please stop the vm and do the volume migration", vm.getUuid()));
+            return operr("unable to live migrate with local storage. The vm[uuid:%s] has volumes on local storage," +
+                    "to protect your data, please stop the vm and do the volume migration", vm.getUuid());
         }
+
+        return null;
     }
 
     @Override
@@ -1109,5 +1111,36 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             dbf.persistAndRefresh(ref);
         }
         completion.success();
+    }
+
+    @Override
+    public void checkVmCapability(VmInstanceInventory inv, VmCapabilities capabilities) {
+        if (capabilities.isSupportLiveMigration()) {
+            // this function will check if vm on local
+            ErrorCode err = checkVmMigrationCapability(inv);
+
+            if (err != null) {
+                capabilities.setSupportLiveMigration(false);
+            }
+        }
+
+        if (capabilities.isSupportVolumeMigration()) {
+            if (!Q.New(PrimaryStorageVO.class)
+                    .eq(PrimaryStorageVO_.uuid, inv.getRootVolume().getPrimaryStorageUuid())
+                    .eq(PrimaryStorageVO_.type, LocalStorageConstants.LOCAL_STORAGE_TYPE).isExists()) {
+                return;
+            }
+
+            long count = Q.New(VolumeVO.class)
+                    .eq(VolumeVO_.type,VolumeType.Data)
+                    .eq(VolumeVO_.vmInstanceUuid, inv.getUuid()).count();
+            if (count != 0) {
+                capabilities.setSupportVolumeMigration(false);
+            }
+
+            if (IsoOperator.isIsoAttachedToVm(inv.getUuid())) {
+                capabilities.setSupportVolumeMigration(false);
+            }
+        }
     }
 }
