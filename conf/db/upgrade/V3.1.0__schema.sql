@@ -326,4 +326,4 @@ CREATE PROCEDURE migrateIscsiLunVOToScsiLunVO()
 DELIMITER ;
 
 call migrateIscsiLunVOToScsiLunVO();
-alter table IscsiLunVO drop column wwid, drop vendor, drop model, drop wwn, drop serial, drop hctl, drop type, drop path, drop multipathDeviceUuid, drop size, drop lastOpDate, drop createDate
+alter table IscsiLunVO drop column wwid, drop vendor, drop model, drop wwn, drop serial, drop hctl, drop type, drop path, drop multipathDeviceUuid, drop size, drop lastOpDate, drop createDate;
