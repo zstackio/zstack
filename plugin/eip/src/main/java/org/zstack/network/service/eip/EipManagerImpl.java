@@ -1230,6 +1230,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
     public void vmIpChanged(VmInstanceInventory vm, VmNicInventory nic, UsedIpInventory oldIp, UsedIpInventory newIp) {
         SimpleQuery<EipVO> q = dbf.createQuery(EipVO.class);
         q.add(EipVO_.vmNicUuid, Op.EQ, nic.getUuid());
+        q.add(EipVO_.guestIp, Op.EQ, oldIp.getIp());
         EipVO eip = q.find();
 
         if (eip == null) {
