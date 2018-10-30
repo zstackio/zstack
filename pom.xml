@@ -54,11 +54,6 @@
         <dependencies>
             <!-- third-party dependency -->
             <dependency>
-                <groupId>org.antlr</groupId>
-                <artifactId>antlr4</artifactId>
-                <version>4.7.1</version>
-            </dependency>
-            <dependency>
                 <groupId>org.kohsuke</groupId>
                 <artifactId>groovy-sandbox</artifactId>
                 <version>1.15</version>
