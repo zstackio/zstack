@@ -41,7 +41,7 @@ public class PortForwardingExtension extends AbstractNetworkServiceExtension {
     protected List<PortForwardingStruct> makePortForwardingStruct(List<VmNicInventory> nics, boolean releaseVmNicInfo,L3NetworkInventory l3) {
         VmNicInventory nic = null;
         for (VmNicInventory inv : nics) {
-            if (inv.getL3NetworkUuid().equals(l3.getUuid())) {
+            if (VmNicHelper.getL3Uuids(inv).contains(l3.getUuid())) {
                 nic = inv;
                 break;
             }

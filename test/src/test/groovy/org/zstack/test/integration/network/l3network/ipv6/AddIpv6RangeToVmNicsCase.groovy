@@ -40,6 +40,7 @@ class AddIpv6RangeToVmNicsCase extends SubCase {
     void test() {
         env.create {
             testAttachDetachL3ToVmNic()
+            testDetachVmNicFromVm()
         }
     }
 
@@ -130,6 +131,7 @@ class AddIpv6RangeToVmNicsCase extends SubCase {
         assert nic.getUsedIps().size() == 4
         assert nic.l3NetworkUuid == l3.uuid
 
+        /*
         UsedIpVO ipVO1 = Q.New(UsedIpVO.class).eq(UsedIpVO_.l3NetworkUuid, l3.uuid).eq(UsedIpVO_.vmNicUuid, nic.uuid).find();
         detachIpAddressFromVmNic {
             vmNicUuid = nic.uuid
@@ -189,7 +191,39 @@ class AddIpv6RangeToVmNicsCase extends SubCase {
         vm = queryVmInstance {
             conditions=["uuid=${vm.uuid}".toString()]
         }[0]
-        assert vm.getVmNics().size() == 0
+        assert vm.getVmNics().size() == 0*/
+    }
+
+    void testDetachVmNicFromVm() {
+        L3NetworkInventory l3_statefull = env.inventoryByName("l3-Statefull-DHCP")
+        L3NetworkInventory l3 = env.inventoryByName("l3")
+        InstanceOfferingInventory offering = env.inventoryByName("instanceOffering")
+        ImageInventory image = env.inventoryByName("image1")
+
+        VmInstanceInventory vm = createVmInstance {
+            name = "vm"
+            instanceOfferingUuid = offering.uuid
+            imageUuid = image.uuid
+            l3NetworkUuids = asList(l3_statefull.uuid)
+        }
+        VmNicInventory nic = vm.getVmNics()[0]
+
+        nic = attachL3NetworkToVmNic {
+            vmNicUuid = nic.uuid
+            l3NetworkUuid = l3.uuid
+        }
+        assert nic.usedIps.size() == 2
+        List<String> nicL3Uuids = nic.usedIps.stream().map{ip -> ip.getL3NetworkUuid()}.collect(Collectors.toList())
+        assert nicL3Uuids.contains(l3_statefull.uuid)
+        assert nicL3Uuids.contains(l3.uuid)
+
+        detachL3NetworkFromVm {
+            vmNicUuid = nic.uuid
+        }
+
+        for (UsedIpInventory ip : nic.usedIps) {
+            assert !Q.New(UsedIpVO.class).eq(UsedIpVO_.uuid, ip.uuid).exists
+        }
     }
 
 

@@ -160,7 +160,8 @@ public class VmAllocateNicFlow implements Flow {
                                 /* update usedIpVo */
                                 SQL.New(UsedIpVO.class).eq(UsedIpVO_.uuid, vo.getUsedIpUuid()).set(UsedIpVO_.vmNicUuid, nic.getUuid()).update();
 
-                                spec.getDestNics().add(nic);
+                                vo = reload(vo);
+                                spec.getDestNics().add(VmNicInventory.valueOf(vo));
                             }
                         }.execute();
                         wcomp.done();
@@ -199,7 +200,7 @@ public class VmAllocateNicFlow implements Flow {
                 ReturnIpMsg msg = new ReturnIpMsg();
                 msg.setL3NetworkUuid(ip.getL3NetworkUuid());
                 msg.setUsedIpUuid(ip.getUuid());
-                bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, nic.getL3NetworkUuid());
+                bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, ip.getL3NetworkUuid());
                 msgs.add(msg);
             }
 
