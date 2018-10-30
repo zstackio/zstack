@@ -6,7 +6,7 @@ import org.zstack.header.query.APIQueryMessage
 doc {
     title "QueryIpAddress"
 
-    category "未知类别"
+    category "network.l3"
 
     desc """在这里填写API描述"""
 

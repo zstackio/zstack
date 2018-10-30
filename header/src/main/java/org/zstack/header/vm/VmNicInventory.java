@@ -19,6 +19,8 @@ import java.util.List;
                 foreignKey = "vmInstanceUuid", expandedInventoryKey = "uuid"),
         @ExpandedQuery(expandedField = "l3Network", inventoryClass = L3NetworkInventory.class,
                 foreignKey = "l3NetworkUuid", expandedInventoryKey = "uuid"),
+        @ExpandedQuery(expandedField = "usedIp", inventoryClass = UsedIpInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "vmNicUuid"),
 })
 public class VmNicInventory implements Serializable {
     private String uuid;

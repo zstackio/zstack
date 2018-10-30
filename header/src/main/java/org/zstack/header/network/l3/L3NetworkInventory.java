@@ -67,7 +67,9 @@ import java.util.stream.Collectors;
         @ExpandedQuery(expandedField = "vmNic", inventoryClass = VmNicInventory.class,
                 foreignKey = "uuid", expandedInventoryKey = "l3NetworkUuid"),
         @ExpandedQuery(expandedField = "serviceProviderRef", inventoryClass = NetworkServiceL3NetworkRefInventory.class,
-                foreignKey = "uuid", expandedInventoryKey = "l3NetworkUuid", hidden = true)
+                foreignKey = "uuid", expandedInventoryKey = "l3NetworkUuid", hidden = true),
+        @ExpandedQuery(expandedField = "usedIp", inventoryClass = UsedIpInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "l3NetworkUuid"),
 })
 @ExpandedQueryAliases({
         @ExpandedQueryAlias(alias = "serviceProvider", expandedField = "serviceProviderRef.serviceProvider")
