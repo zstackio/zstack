@@ -1059,7 +1059,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         @Override
         public int compareTo(SnapInfo snapInfo) {
-            return Long.valueOf(this.getId()).compareTo(snapInfo.getId());
+            return Long.compare(this.getId(), snapInfo.getId());
         }
     }
 
@@ -1878,8 +1878,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     private void createVolumeFromTemplate(final InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg msg) {
-        final ImageInventory img = msg.getTemplateSpec().getInventory();
-
         final InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("create-root-volume-%s", msg.getVolume().getUuid()));
@@ -2402,16 +2400,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     private void connect(final boolean newAdded, final Completion completion) {
         final List<CephPrimaryStorageMonBase> mons = CollectionUtils.transformToList(getSelf().getMons(),
-                new Function<CephPrimaryStorageMonBase, CephPrimaryStorageMonVO>() {
-                    @Override
-                    public CephPrimaryStorageMonBase call(CephPrimaryStorageMonVO arg) {
-                        return new CephPrimaryStorageMonBase(arg);
-                    }
-                });
+                CephPrimaryStorageMonBase::new);
 
         class Connector {
-            List<ErrorCode> errorCodes = new ArrayList<>();
-            Iterator<CephPrimaryStorageMonBase> it = mons.iterator();
+            private List<ErrorCode> errorCodes = new ArrayList<>();
+            private Iterator<CephPrimaryStorageMonBase> it = mons.iterator();
 
             void connect(final FlowTrigger trigger) {
                 if (!it.hasNext()) {
@@ -2534,8 +2527,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                     return;
                                 }
 
-                                Set<String> set = new HashSet<>();
-                                set.addAll(fsids.values());
+                                Set<String> set = new HashSet<>(fsids.values());
 
                                 if (set.size() != 1) {
                                     StringBuilder sb = new StringBuilder(i18n("the fsid returned by mons are mismatching, it seems the mons belong to different ceph clusters:\n"));
@@ -2701,7 +2693,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     protected void pingHook(final Completion completion) {
         final List<CephPrimaryStorageMonBase> mons = getSelf().getMons().stream()
                 .filter(mon -> !mon.getStatus().equals(MonStatus.Connecting)).map(CephPrimaryStorageMonBase::new).collect(Collectors.toList());
-
         final List<ErrorCode> errors = new ArrayList<ErrorCode>();
 
         class Ping {
@@ -2732,8 +2723,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     if (delay) {
                         try {
                             TimeUnit.SECONDS.sleep(CephGlobalConfig.PRIMARY_STORAGE_MON_RECONNECT_DELAY.value(Long.class));
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
+                        } catch (InterruptedException ignored) {
                         }
                     }
 
@@ -2758,7 +2748,12 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 }
             }
 
-            void ping() {
+            private void ping() {
+                final List<String> monUuids = mons.stream()
+                        .map(m -> m.getSelf().getMonAddr())
+                        .collect(Collectors.toList());
+                logger.info(String.format("ceph-ps-ping-mon: %s", String.join(",", monUuids)));
+
                 // this is only called when all mons are disconnected
                 final AsyncLatch latch = new AsyncLatch(mons.size(), new NoErrorCompletion() {
                     @Override
@@ -3201,19 +3196,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
     }
 
-    public static class SetPasswordCmd extends AgentCommand {
-        public String cephInstallPath;
-        public String vmUuid;
-        public String account;
-        public String password;
-    }
-
-    public static class SetPasswordRsp extends AgentResponse {
-        public String cephInstallPath;
-        public String vmUuid;
-        public String account;
-        public String password;
-    }
     public static class CheckIsBitsExistingRsp extends AgentResponse {
         private boolean existing;
 

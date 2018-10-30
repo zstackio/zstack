@@ -67,6 +67,7 @@ class BackupStoragePingCase extends SubCase {
             testNoPingAfterBSDeleted()
             testPingAfterRescan()
             testPingSuccessBSReconnectCondition()
+            testPingAfterManagementNodeReady()
         }
     }
 
@@ -77,6 +78,34 @@ class BackupStoragePingCase extends SubCase {
             rsp.totalCapacity = SizeUnit.GIGABYTE.toByte(1000)
             return rsp
         }
+    }
+
+    void testPingAfterManagementNodeReady() {
+        BackupStorageInventory bs = env.inventoryByName("sftp")
+        BackupStoragePingTracker tracker = bean(BackupStoragePingTracker.class)
+
+        // untrack all bs
+        tracker.untrackAll()
+
+        int count = 0
+        def cleanup = notifyWhenReceivedMessage(PingBackupStorageMsg.class) { PingBackupStorageMsg msg ->
+            if (msg.backupStorageUuid == bs.uuid) {
+                count ++
+            }
+        }
+
+        sleep(3)
+
+        assert count == 0
+
+        // check management node ready
+        tracker.managementNodeReady()
+
+        retryInSecs {
+            assert count > 0
+        }
+
+        cleanup()
     }
 
     void testPingSuccessBSReconnectCondition() {

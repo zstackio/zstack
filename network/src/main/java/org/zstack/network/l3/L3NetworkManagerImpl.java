@@ -29,6 +29,8 @@ import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.L2NetworkVO_;
 import org.zstack.header.network.l3.*;
+import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.VmNicVO_;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.service.MtuGetter;
@@ -39,7 +41,6 @@ import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
@@ -249,8 +250,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
 
     private void handle(APIGetL3NetworkTypesMsg msg) {
         APIGetL3NetworkTypesReply reply = new APIGetL3NetworkTypesReply();
-        List<String> lst = new ArrayList<String>();
-        lst.addAll(L3NetworkType.getAllTypeNames());
+        List<String> lst = new ArrayList<String>(L3NetworkType.getAllTypeNames());
         reply.setL3NetworkTypes(lst);
         bus.reply(msg, reply);
     }
@@ -332,7 +332,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         vo.setState(L3NetworkState.Enabled);
         vo.setCategory(L3NetworkCategory.valueOf(msg.getCategory()));
         if (msg.getIpVersion() != null) {
-            vo.setIpVersion(Integer.valueOf(msg.getIpVersion()));
+            vo.setIpVersion(msg.getIpVersion());
         } else {
             vo.setIpVersion(IPv6Constants.IPv4);
         }
@@ -510,11 +510,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
             query.select(UsedIpVO_.ip);
             query.add(UsedIpVO_.ipRangeUuid, Op.EQ, vo.getUuid());
             List<String> used = query.listValue();
-            List<BigInteger> usedIp = used.stream().map(s -> {
-                 return IPv6NetworkUtils.getBigIntegerFromString(s);
-            }).collect(Collectors.toList());
-            Collections.sort(usedIp);
-            return usedIp;
+            return used.stream().map(IPv6NetworkUtils::getBigIntegerFromString).sorted().collect(Collectors.toList());
         }
     }
 
@@ -601,15 +597,26 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
 
     @Override
     public void prepareDbInitialValue() {
-        List<IpRangeVO> ipRangeVOS = Q.New(IpRangeVO.class).list();
-        List<IpRangeVO> changed = new ArrayList<>();
+        List<IpRangeVO> ipRangeVOS = Q.New(IpRangeVO.class).isNull(IpRangeVO_.prefixLen).list();
         for (IpRangeVO ipr : ipRangeVOS) {
-            if (ipr.getPrefixLen() == null) {
-                ipr.setPrefixLen(NetworkUtils.getPrefixLengthFromNetwork(ipr.getNetmask()));
+            ipr.setPrefixLen(NetworkUtils.getPrefixLengthFromNetwork(ipr.getNetmask()));
+        }
+        if (!ipRangeVOS.isEmpty()) {
+            dbf.updateCollection(ipRangeVOS);
+        }
+
+        List<VmNicVO> nics = Q.New(VmNicVO.class).notNull(VmNicVO_.usedIpUuid).list();
+        List<UsedIpVO> ips = new ArrayList<>();
+        for (VmNicVO nic : nics) {
+            UsedIpVO ip = Q.New(UsedIpVO.class).eq(UsedIpVO_.uuid, nic.getUsedIpUuid()).isNull(UsedIpVO_.vmNicUuid).find();
+            if (ip != null) {
+                ip.setVmNicUuid(nic.getUuid());
+                ips.add(ip);
             }
         }
-        if (!changed.isEmpty()) {
-            dbf.persistCollection(changed);
+
+        if (!ips.isEmpty()) {
+            dbf.updateCollection(ips);
         }
     }
 }

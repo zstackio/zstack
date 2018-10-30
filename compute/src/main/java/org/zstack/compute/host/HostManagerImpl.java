@@ -268,6 +268,11 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         }
 
         final ClusterVO cluster = findClusterByUuid(msg.getClusterUuid());
+        if (cluster == null) {
+            completion.fail(argerr("cluster[uuid:%s] is not existing", msg.getClusterUuid()));
+            return;
+        }
+
         final HostVO hvo = new HostVO();
         if (msg.getResourceUuid() != null) {
             hvo.setUuid(msg.getResourceUuid());

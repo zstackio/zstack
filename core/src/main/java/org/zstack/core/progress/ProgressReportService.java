@@ -468,6 +468,7 @@ public class ProgressReportService extends AbstractService implements Management
 
                 int currentPecent = res == null ? 0 : new Double(res).intValue();
                 if (endPercent <= currentPecent) {
+                    reportProgress(String.valueOf(endPercent));
                     return true;
                 } else {
                     Runnable cleanup = saveThreadContext();

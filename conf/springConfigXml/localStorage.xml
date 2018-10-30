@@ -35,6 +35,7 @@
             <zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageAttachExtensionPoint"/>
             <zstack:extension interface="org.zstack.storage.snapshot.PostMarkRootVolumeAsSnapshotExtension"/>
             <zstack:extension interface="org.zstack.header.storage.snapshot.AfterTakeLiveSnapshotsOnVolumes"/>
+            <zstack:extension interface="org.zstack.compute.vm.VmCapabilitiesExtensionPoint"/>
         </zstack:plugin>
     </bean>
 
