@@ -489,12 +489,13 @@ public abstract class HostBase extends AbstractHost {
                         }
                     });
                 } else {
-                    HostState origState = self.getState();
-                    HostState state = changeState(stateEvent);
-
-                    if (origState == HostState.Maintenance && state != HostState.Maintenance) {
+                    if (hostOutOfMaintenance(stateEvent)) {
                         // host is out of maintenance mode, track and reconnect it.
                         tracker.trackHost(self.getUuid());
+
+                        // change host status to connecting
+                        // jira: ZSTAC-15944
+                        changeConnectionState(HostStatusEvent.connecting);
                         ReconnectHostMsg rmsg = new ReconnectHostMsg();
                         rmsg.setHostUuid(self.getUuid());
                         bus.makeTargetServiceIdByResourceUuid(rmsg, HostConstant.SERVICE_ID, self.getUuid());
@@ -506,6 +507,13 @@ public abstract class HostBase extends AbstractHost {
                     bus.publish(evt);
                     done(chain);
                 }
+            }
+
+            private boolean hostOutOfMaintenance(HostStateEvent stateEvent) {
+                HostState origState = self.getState();
+                HostState state = changeState(stateEvent);
+
+                return origState == HostState.Maintenance && state != HostState.Maintenance;
             }
 
             @Override

@@ -16,7 +16,9 @@ import org.zstack.header.host.HostStateEvent
 import org.zstack.header.host.HostStatus
 import org.zstack.header.host.HostVO
 import org.zstack.header.host.HostVO_
+import org.zstack.header.host.ReconnectHostMsg
 import org.zstack.header.network.service.NetworkServiceType
+import org.zstack.header.storage.backup.PingBackupStorageMsg
 import org.zstack.header.vm.StopVmInstanceMsg
 import org.zstack.header.vm.StopVmInstanceReply
 import org.zstack.header.vm.VmInstanceState
@@ -143,11 +145,39 @@ class MaintainHostCase extends SubCase{
         env.create {
             host = env.inventoryByName("kvm") as HostInventory
             vm = env.inventoryByName("vm") as VmInstanceInventory
+            testHostOutOfMaintainStateWillReconnectHost()
             testMaintainHostWhileCreateingVm()
             testChangeHostStateRollback()
             testChangeStateIntoMaintainOneVMUnkown()
         }
 
+    }
+
+    void testHostOutOfMaintainStateWillReconnectHost() {
+        def count = 0
+        def cleanup = notifyWhenReceivedMessage(ReconnectHostMsg.class) { ReconnectHostMsg msg ->
+            if (msg.hostUuid == host.uuid) {
+                count ++
+            }
+        }
+
+        changeHostState {
+            uuid = host.uuid
+            stateEvent = HostStateEvent.maintain
+        }
+
+        changeHostState {
+            uuid = host.uuid
+            stateEvent = HostStateEvent.enable
+        }
+
+        assert count == 1
+
+        cleanup()
+
+        retryInSecs {
+            assert Q.New(HostVO.class).eq(HostVO_.uuid, host.uuid).select(HostVO_.status).findValue() == HostStatus.Connected
+        }
     }
 
     void testMaintainHostWhileCreateingVm(){
