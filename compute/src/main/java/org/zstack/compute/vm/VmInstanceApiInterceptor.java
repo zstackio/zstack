@@ -732,8 +732,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         /* all l3 network attached to same nic must be on same l2 network */
         L3NetworkVO oldL3 = dbf.findByUuid(vmNicVO.getL3NetworkUuid(), L3NetworkVO.class);
         if (!oldL3.getL2NetworkUuid().equals(l3Vo.getL2NetworkUuid())) {
-            throw new ApiMessageInterceptionException(argerr("l3Network is attached l2Network [uuid:%s] which is different from " +
-                            "nic l2Network [uuid:%s]", l3Vo.getL2NetworkUuid(), oldL3.getL2NetworkUuid()));
+            throw new ApiMessageInterceptionException(argerr("l2Network [uuid:%s] to be attached is different from " +
+                    "l2Network [uuid:%s] of the nic", l3Vo.getL2NetworkUuid(), oldL3.getL2NetworkUuid()));
         }
     }
 }
