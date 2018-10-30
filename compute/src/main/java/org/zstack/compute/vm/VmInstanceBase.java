@@ -407,6 +407,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((AddL3NetworkToVmNicMsg) msg);
         } else if (msg instanceof DeleteL3NetworkFromVmNicMsg) {
             handle((DeleteL3NetworkFromVmNicMsg) msg);
+        } else if (msg instanceof DetachIsoFromVmInstanceMsg) {
+            handle((DetachIsoFromVmInstanceMsg) msg);
         } else {
             VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
             if (ext != null) {
@@ -3068,6 +3070,23 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public String getName() {
                 return "expunge-vm-by-api";
+            }
+        });
+    }
+
+    private void handle(final DetachIsoFromVmInstanceMsg msg) {
+        DetachIsoFromVmInstanceReply reply = new DetachIsoFromVmInstanceReply();
+
+        detachIso(msg.getIsoUuid() ,new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
             }
         });
     }

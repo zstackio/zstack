@@ -3,6 +3,7 @@ package org.zstack.image;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.compute.vm.IsoOperator;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
@@ -34,10 +35,13 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageDeletionPolicyManager.ImageDeletionPolicy;
 import org.zstack.header.message.*;
 import org.zstack.header.storage.backup.*;
+import org.zstack.header.vm.DetachIsoFromVmInstanceMsg;
+import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
@@ -312,6 +316,51 @@ public class ImageBase implements Image {
                     }
                 }
         );
+
+        chain.then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                List<String> vmUuids = IsoOperator.getVmUuidByIsoUuid(msg.getImageUuid());
+                if (vmUuids.isEmpty()) {
+                    trigger.next();
+                    return;
+                }
+
+                List<DetachIsoFromVmInstanceMsg> detachIsoFromVmInstanceMsgs = new ArrayList<>();
+                for (String vmUuid : vmUuids) {
+                    DetachIsoFromVmInstanceMsg detachIsoFromVmInstanceMsg = new DetachIsoFromVmInstanceMsg();
+                    detachIsoFromVmInstanceMsg.setVmInstanceUuid(vmUuid);
+                    detachIsoFromVmInstanceMsg.setIsoUuid(msg.getImageUuid());
+                    bus.makeLocalServiceId(detachIsoFromVmInstanceMsg, VmInstanceConstant.SERVICE_ID);
+                    detachIsoFromVmInstanceMsgs.add(detachIsoFromVmInstanceMsg);
+                }
+
+                List<ErrorCode> errors = Collections.synchronizedList(new LinkedList<ErrorCode>());
+                new While<>(detachIsoFromVmInstanceMsgs).all((detachIsoFromVmInstanceMsg, completion) -> {
+                    bus.send(detachIsoFromVmInstanceMsg, new CloudBusCallBack(completion) {
+                        @Override
+                        public void run(MessageReply rly) {
+                            if (!rly.isSuccess()) {
+                                errors.add(rly.getError());
+                            }
+
+                            completion.done();
+                        }
+                    });
+                }).run(new NoErrorCompletion() {
+                    @Override
+                    public void done() {
+                        if (errors.size() != 0) {
+                            trigger.fail(operr("detach iso[uuid=%s] from vm failed, errors are %s"
+                                    ,msg.getImageUuid(), JSONObjectUtil.toJsonString(errors)));
+                            return;
+                        }
+                        trigger.next();
+                    }
+                });
+            }
+        });
+
 
         List<Object> refs = new ArrayList<>();
 
