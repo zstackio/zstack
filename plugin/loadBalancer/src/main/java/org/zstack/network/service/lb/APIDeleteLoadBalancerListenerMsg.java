@@ -22,7 +22,7 @@ import org.zstack.header.rest.RestRequest;
 public class APIDeleteLoadBalancerListenerMsg extends APIMessage implements LoadBalancerMessage, APIAuditor {
     @APINoSee
     private String loadBalancerUuid;
-    @APIParam(resourceType = LoadBalancerListenerVO.class, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = LoadBalancerListenerVO.class, checkAccount = true, operationTarget = true, successIfResourceNotExisting = true)
     private String uuid;
 
     @Override
