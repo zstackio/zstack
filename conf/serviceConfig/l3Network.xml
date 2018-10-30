@@ -131,4 +131,9 @@
     <message>
         <name>org.zstack.header.network.l3.APIRemoveHostRouteFromL3NetworkMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.network.l3.APIQueryIpAddressMsg</name>
+        <serviceId>query</serviceId>
+    </message>
 </service>
