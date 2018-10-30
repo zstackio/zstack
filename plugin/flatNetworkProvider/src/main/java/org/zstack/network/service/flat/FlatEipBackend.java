@@ -423,7 +423,6 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                 to.vipUuid = vip.getUuid();
                 List<IpRangeVO> vipIprs = Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, vip.getL3NetworkUuid()).list();
                 to.vipPrefixLen = vipIprs.get(0).getPrefixLen();
-                to.vmBridgeName = bridgeNames.get(nic.getL3NetworkUuid());
                 to.publicBridgeName = pubBridgeNames.get(eip.getVipUuid());
                 return to;
             }
