@@ -3,19 +3,25 @@ package org.zstack.compute.vm;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.UpdateQuery;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkConstant;
 import org.zstack.header.network.l3.ReturnIpMsg;
+import org.zstack.header.network.l3.UsedIpInventory;
 import org.zstack.header.vm.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -34,7 +40,7 @@ public class VmDetachNicFlow extends NoRollbackFlow {
         final VmNicInventory nic = spec.getDestNics().get(0);
         String defaultL3Uuid = dbf.findByUuid(spec.getVmInventory().getUuid(), VmInstanceVO.class).getDefaultL3NetworkUuid();
 
-        if (defaultL3Uuid != null && defaultL3Uuid.equals(nic.getL3NetworkUuid())) {
+        if (defaultL3Uuid != null && VmNicHelper.getL3Uuids(nic).contains(defaultL3Uuid)) {
             // reset the default L3 to a l3 network; if there is no other l3, the default l3 will be null
             String l3Uuid = CollectionUtils.find(spec.getVmInventory().getVmNics(), new Function<String, VmNicInventory>() {
                 @Override
@@ -60,21 +66,23 @@ public class VmDetachNicFlow extends NoRollbackFlow {
             return;
         }
 
-        ReturnIpMsg msg = new ReturnIpMsg();
-        msg.setUsedIpUuid(nic.getUsedIpUuid());
-        msg.setL3NetworkUuid(nic.getL3NetworkUuid());
-        bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, nic.getL3NetworkUuid());
-        bus.send(msg, new CloudBusCallBack(trigger) {
-            @Override
-            public void run(MessageReply reply) {
-                if (reply.isSuccess()) {
-                    dbf.removeByPrimaryKey(nic.getUuid(), VmNicVO.class);
-                    trigger.next();
-                } else {
-                    trigger.fail(reply.getError());
+        new While<>(nic.getUsedIps()).all((ip, comp) -> {
+            ReturnIpMsg msg = new ReturnIpMsg();
+            msg.setUsedIpUuid(ip.getUuid());
+            msg.setL3NetworkUuid(ip.getL3NetworkUuid());
+            bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, ip.getL3NetworkUuid());
+            bus.send(msg, new CloudBusCallBack(comp) {
+                @Override
+                public void run(MessageReply reply) {
+                    comp.done();
                 }
+            });
+        }).run(new NoErrorCompletion(){
+            @Override
+            public void done() {
+                dbf.removeByPrimaryKey(nic.getUuid(), VmNicVO.class);
+                trigger.next();
             }
         });
-
     }
 }

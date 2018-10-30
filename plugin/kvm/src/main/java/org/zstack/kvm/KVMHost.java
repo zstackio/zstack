@@ -2038,6 +2038,7 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private NicTO completeNicInfo(VmNicInventory nic) {
+        /* all l3 networks of the nic has same l2 network */
         L2NetworkInventory l2inv = getL2NetworkTypeFromL3NetworkUuid(nic.getL3NetworkUuid());
         KVMCompleteNicInformationExtensionPoint extp = factory.getCompleteNicInfoExtension(L2NetworkType.valueOf(l2inv.getType()));
         NicTO to = extp.completeNicInformation(l2inv, nic);

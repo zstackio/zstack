@@ -41,6 +41,7 @@ import org.zstack.identity.QuotaUtil;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.NetworkUtils;
@@ -393,6 +394,7 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
             return;
         }
 
+        /* FIXME shixin: nic.getL3NetworkUuid() should be change to nic.getUesedIp for appliancevm */
         logger.debug(String.format("check detaching nic[uuid:%s] in peer l3 of vip", nic.getUuid()));
         List<VipPeerL3NetworkRefVO> refVOS = Q.New(VipPeerL3NetworkRefVO.class).eq(VipPeerL3NetworkRefVO_.l3NetworkUuid,
                 nic.getL3NetworkUuid()).list();

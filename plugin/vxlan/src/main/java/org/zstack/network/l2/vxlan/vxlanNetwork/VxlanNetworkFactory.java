@@ -135,6 +135,7 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInsta
     public void preMigrateVm(VmInstanceInventory inv, String destHostUuid) {
         List<VmNicInventory> nics = inv.getVmNics();
         List<L3NetworkVO> l3vos = new ArrayList<>();
+        /* FIXME: shixin need add ipv6 on vlxan network */
         nics.stream().forEach((nic -> l3vos.add(Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid ,nic.getL3NetworkUuid()).find())));
 
         List<String> vxlanUuids = new ArrayList<>();

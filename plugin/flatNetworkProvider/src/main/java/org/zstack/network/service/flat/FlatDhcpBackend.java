@@ -1342,9 +1342,9 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         VmNicInventory nnic = null;
 
         for (VmNicInventory nic : vm.getVmNics()) {
-            if (nic.getL3NetworkUuid().equals(previousL3)) {
+            if (VmNicHelper.getL3Uuids(nic).contains(previousL3)) {
                 pnic = nic;
-            } else if (nic.getL3NetworkUuid().equals(nowL3)) {
+            } else if (VmNicHelper.getL3Uuids(nic).contains(nowL3)) {
                 nnic = nic;
             }
         }

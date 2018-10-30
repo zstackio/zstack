@@ -686,7 +686,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                     public void run(FlowTrigger trigger, Map data) {
                         ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
                         struct.setUseFor(EipConstant.EIP_NETWORK_SERVICE_TYPE);
-                        struct.setPeerL3NetworkUuid(nicInventory.getL3NetworkUuid());
+                        struct.setPeerL3NetworkUuid(guestIp.getL3NetworkUuid());
                         struct.setServiceProvider(providerType.toString());
                         Vip vip = new Vip(vipInventory.getUuid());
                         vip.setStruct(struct);
@@ -913,6 +913,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
     public void attachEip(final EipStruct struct, final String providerType, final Completion completion) {
         final EipInventory eip = struct.getEip();
         final VmNicInventory nic = struct.getNic();
+        final UsedIpInventory guestIp = struct.getGuestIp();
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("attach-eip-%s-vmNic-%s", eip.getUuid(), nic.getUuid()));
@@ -929,7 +930,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                         ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
                         vipStruct.setUseFor(EipConstant.EIP_NETWORK_SERVICE_TYPE);
                         vipStruct.setServiceProvider(providerType);
-                        vipStruct.setPeerL3NetworkUuid(nic.getL3NetworkUuid());
+                        vipStruct.setPeerL3NetworkUuid(guestIp.getL3NetworkUuid());
                         Vip vip = new Vip(struct.getVip().getUuid());
                         vip.setStruct(vipStruct);
                         vip.acquire(new Completion(trigger) {
@@ -1057,7 +1058,19 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
             return;
         }
 
-        NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(nicInventory.getL3NetworkUuid(), EipConstant.EIP_TYPE);
+        UsedIpInventory guestIp = null;
+        for (UsedIpInventory ip : nicInventory.getUsedIps()) {
+            if (ip.getIp().equals(vo.getGuestIp())) {
+                guestIp = ip;
+            }
+        }
+        String peerL3;
+        if (guestIp == null) {
+            peerL3 = nicInventory.getL3NetworkUuid();
+        } else {
+            peerL3 = guestIp.getL3NetworkUuid();
+        }
+        NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(peerL3, EipConstant.EIP_TYPE);
         EipStruct struct = new EipStruct();
         struct.setVip(vip);
         struct.setNic(nicInventory);
