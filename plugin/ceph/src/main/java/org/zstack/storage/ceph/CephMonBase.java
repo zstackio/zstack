@@ -12,6 +12,7 @@ import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.utils.ssh.Ssh;
 import org.zstack.utils.ssh.SshException;
+import org.zstack.utils.ssh.SshResult;
 
 import java.util.concurrent.TimeUnit;
 
@@ -52,6 +53,27 @@ public abstract class CephMonBase {
                     .checkTool("ceph", "rbd").setTimeout(5).runErrorByException();
         } catch (SshException e) {
             throw new OperationFailureException(operr("The problem may be caused by an incorrect user name or password or SSH port or unstable network environment"));
+        }
+    }
+
+    protected void checkHealth() {
+        Ssh ssh = new Ssh();
+        SshResult ret = null;
+        try {
+            ret = ssh.setHostname(self.getHostname()).setUsername(self.getSshUsername()).setPassword(self.getSshPassword()).setPort(self.getSshPort())
+                    .shell("ceph health").setTimeout(15).runAndClose();
+        } catch (SshException e) {
+            throw new OperationFailureException(operr("The problem may be caused by an incorrect user name or password or SSH port or unstable network environment"));
+        }
+
+        if(ret.getReturnCode() != 0){
+            ret.setSshFailure(true);
+            throw new SshException(ret.getStderr());
+        }
+
+        String stdOut = ret.getStdout();
+        if(stdOut.contains("HEALTH_ERROR")) {
+            throw new SshException(stdOut);
         }
     }
 
