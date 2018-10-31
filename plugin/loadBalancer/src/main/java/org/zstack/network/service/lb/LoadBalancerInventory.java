@@ -7,6 +7,7 @@ import org.zstack.header.query.ExpandedQueryAliases;
 import org.zstack.header.search.Inventory;
 import org.zstack.network.service.vip.VipInventory;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -27,6 +28,8 @@ public class LoadBalancerInventory {
     private String description;
     private String state;
     private String vipUuid;
+    private Timestamp createDate;
+    private Timestamp lastOpDate;
     private List<LoadBalancerListenerInventory> listeners;
 
     public static LoadBalancerInventory valueOf(LoadBalancerVO vo) {
@@ -36,6 +39,8 @@ public class LoadBalancerInventory {
         inv.setDescription(vo.getDescription());
         inv.setState(vo.getState().toString());
         inv.setVipUuid(vo.getVipUuid());
+        inv.setCreateDate(vo.getCreateDate());
+        inv.setLastOpDate(vo.getLastOpDate());
         inv.setListeners(LoadBalancerListenerInventory.valueOf(vo.getListeners()));
         return inv;
     }
@@ -94,5 +99,21 @@ public class LoadBalancerInventory {
 
     public void setState(String state) {
         this.state = state;
+    }
+
+    public Timestamp getCreateDate() {
+        return createDate;
+    }
+
+    public void setCreateDate(Timestamp createDate) {
+        this.createDate = createDate;
+    }
+
+    public Timestamp getLastOpDate() {
+        return lastOpDate;
+    }
+
+    public void setLastOpDate(Timestamp lastOpDate) {
+        this.lastOpDate = lastOpDate;
     }
 }
