@@ -63,6 +63,13 @@ class IPv6DeleteVmWithEipCase extends SubCase {
             l3NetworkUuid = l3.uuid
         }
 
+        VmInstanceInventory vm1 = createVmInstance {
+            name = "vm-eip-not-attachable"
+            instanceOfferingUuid = offering.uuid
+            imageUuid = image.uuid
+            l3NetworkUuids = asList(l3_statefull.uuid)
+        }
+
         vm = queryVmInstance {
             conditions=["uuid=${vm.uuid}".toString()]
         } [0]
@@ -100,12 +107,22 @@ class IPv6DeleteVmWithEipCase extends SubCase {
         List<VmNicInventory> nics = getEipAttachableVmNics {
             eipUuid = eip6.uuid
         }
-        assert nics.size() == 1
+        assert nics.size() == 2
         nics = getEipAttachableVmNics {
             eipUuid = eip4.uuid
         }
         assert nics.size() == 1
 
+        /* after attach l3_statefull_1, vm can not be attached to eip in l3_statefull_1 */
+        VmNicInventory nic1 = vm1.getVmNics()[0]
+        attachL3NetworkToVmNic {
+            vmNicUuid = nic1.uuid
+            l3NetworkUuid = l3_statefull_1.uuid
+        }
+        nics = getEipAttachableVmNics {
+            eipUuid = eip6.uuid
+        }
+        assert nics.size() == 1
 
         attachEip {
             eipUuid = eip4.uuid
