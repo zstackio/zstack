@@ -5,6 +5,7 @@ import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMSecurityGroupBackend
 import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg
 import org.zstack.network.securitygroup.RuleTO
+import org.zstack.network.securitygroup.SecurityGroupMembersTO
 import org.zstack.network.securitygroup.SecurityGroupRuleProtocolType
 import org.zstack.network.securitygroup.SecurityGroupRuleTO
 import org.zstack.network.securitygroup.SecurityGroupRuleType
@@ -164,6 +165,66 @@ class IPv6SecurityGroupCase extends SubCase {
             securityGroupUuid = sg6.uuid
             vmNicUuids = [nic.uuid]
         }
+
+        /*
+        KVMAgentCommands.ApplySecurityGroupRuleCmd cmd = null
+        env.afterSimulator(KVMSecurityGroupBackend.SECURITY_GROUP_APPLY_RULE_PATH) { rsp, HttpEntity<String> e ->
+            cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.ApplySecurityGroupRuleCmd.class)
+            return rsp
+        }
+
+        changeSecurityGroupState {
+            uuid = sg4.uuid
+            stateEvent = "disable"
+        }
+        sleep(1)
+        assert cmd.ipv6RuleTOs.size() == 1
+        SecurityGroupRuleTO rule6 = cmd.ipv6RuleTOs.get(0)
+        assert rule6.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
+        assert cmd.ruleTOs.size() == 1
+        SecurityGroupRuleTO rule4 = cmd.ruleTOs.get(0)
+        assert rule4.actionCode == SecurityGroupRuleTO.ACTION_CODE_DELETE_CHAIN
+
+        cmd != null
+        changeSecurityGroupState {
+            uuid = sg4.uuid
+            stateEvent = "enable"
+        }
+        sleep(1)
+        assert cmd.ipv6RuleTOs.size() == 1
+        assert cmd.ruleTOs.size() == 1
+        rule6 = cmd.ipv6RuleTOs.get(0)
+        assert rule6.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
+        assert cmd.ruleTOs.size() == 1
+        rule4 = cmd.ruleTOs.get(0)
+        assert rule4.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
+
+        changeSecurityGroupState {
+            uuid = sg6.uuid
+            stateEvent = "disable"
+        }
+        sleep(1)
+        assert cmd.ipv6RuleTOs.size() == 1
+        assert cmd.ruleTOs.size() == 1
+        rule6 = cmd.ipv6RuleTOs.get(0)
+        assert rule6.actionCode == SecurityGroupRuleTO.ACTION_CODE_DELETE_CHAIN
+        assert cmd.ruleTOs.size() == 1
+        rule4 = cmd.ruleTOs.get(0)
+        assert rule4.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
+
+        cmd != null
+        changeSecurityGroupState {
+            uuid = sg6.uuid
+            stateEvent = "enable"
+        }
+        sleep(1)
+        assert cmd.ipv6RuleTOs.size() == 1
+        assert cmd.ruleTOs.size() == 1
+        rule6 = cmd.ipv6RuleTOs.get(0)
+        assert rule6.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
+        assert cmd.ruleTOs.size() == 1
+        rule4 = cmd.ruleTOs.get(0)
+        assert rule4.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE*/
     }
 
     void testSecurityGroupApplyNetworkServices() {

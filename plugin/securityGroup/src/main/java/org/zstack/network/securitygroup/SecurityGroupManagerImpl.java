@@ -244,7 +244,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 ret.addAll(calculateByVmNic());
             }
             if (!nicsOutSg.isEmpty()) {
-                Collection<HostRuleTO> toRemove = createRulePlaceHolder(nicsOutSg);
+                Collection<HostRuleTO> toRemove = createRulePlaceHolder(nicsOutSg, null);
                 for (HostRuleTO hto : toRemove) {
                     hto.setActionCodeForAllSecurityGroupRuleTOs(SecurityGroupRuleTO.ACTION_CODE_DELETE_CHAIN);
                 }
@@ -390,23 +390,43 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         }
 
         @Transactional(readOnly = true)
-        Collection<HostRuleTO> createRulePlaceHolder(List<String> nicUuids) {
-            /* there are multiple ips on same nic */
-            String sql = "select nic.uuid, vm.hostUuid, vm.hypervisorType, nic.internalName, nic.mac, ip.ip, ip.ipVersion" +
-                    " from VmInstanceVO vm, VmNicVO nic, UsedIpVO ip" +
-                    " where nic.vmInstanceUuid = vm.uuid and vm.hostUuid is not null and nic.uuid in (:nicUuids)" +
-                    " and ip.vmNicUuid = nic.uuid";
-            TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
-            q.setParameter("nicUuids", nicUuids);
-            List<Tuple> tuples = q.getResultList();
+        Collection<HostRuleTO> createRulePlaceHolder(List<String> nicUuids, Integer ipVersion) {
+            List<Tuple> tuples;
+            if (ipVersion != null) {
+                /* there are multiple ips on same nic */
+                String sql = "select nic.uuid, vm.hostUuid, vm.hypervisorType, nic.internalName, nic.mac, ip.ip, ip.ipVersion" +
+                        " from VmInstanceVO vm, VmNicVO nic, UsedIpVO ip" +
+                        " where nic.vmInstanceUuid = vm.uuid and vm.hostUuid is not null and nic.uuid in (:nicUuids)" +
+                        " and ip.vmNicUuid = nic.uuid and ip.ipVersion = :ipversion";
+                TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
+                q.setParameter("nicUuids", nicUuids).setParameter("ipversion", ipVersion);
+                tuples = q.getResultList();
 
-            sql = "select nic.uuid, vm.lastHostUuid, vm.hypervisorType, nic.internalName, nic.mac, ip.ip, ip.ipVersion" +
-                    " from VmInstanceVO vm, VmNicVO nic, UsedIpVO ip" +
-                    " where nic.vmInstanceUuid = vm.uuid and vm.hostUuid is null and vm.lastHostUuid is not null" +
-                    " and nic.uuid in (:nicUuids) and ip.vmNicUuid = nic.uuid";
-            q = dbf.getEntityManager().createQuery(sql, Tuple.class);
-            q.setParameter("nicUuids", nicUuids);
-            tuples.addAll(q.getResultList());
+                sql = "select nic.uuid, vm.lastHostUuid, vm.hypervisorType, nic.internalName, nic.mac, ip.ip, ip.ipVersion" +
+                        " from VmInstanceVO vm, VmNicVO nic, UsedIpVO ip" +
+                        " where nic.vmInstanceUuid = vm.uuid and vm.hostUuid is null and vm.lastHostUuid is not null" +
+                        " and nic.uuid in (:nicUuids) and ip.vmNicUuid = nic.uuid and ip.ipVersion = :ipversion";
+                q = dbf.getEntityManager().createQuery(sql, Tuple.class);
+                q.setParameter("nicUuids", nicUuids).setParameter("ipversion", ipVersion);
+                tuples.addAll(q.getResultList());
+            } else {
+                /* there are multiple ips on same nic */
+                String sql = "select nic.uuid, vm.hostUuid, vm.hypervisorType, nic.internalName, nic.mac, ip.ip, ip.ipVersion" +
+                        " from VmInstanceVO vm, VmNicVO nic, UsedIpVO ip" +
+                        " where nic.vmInstanceUuid = vm.uuid and vm.hostUuid is not null and nic.uuid in (:nicUuids)" +
+                        " and ip.vmNicUuid = nic.uuid";
+                TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
+                q.setParameter("nicUuids", nicUuids);
+                tuples = q.getResultList();
+
+                sql = "select nic.uuid, vm.lastHostUuid, vm.hypervisorType, nic.internalName, nic.mac, ip.ip, ip.ipVersion" +
+                        " from VmInstanceVO vm, VmNicVO nic, UsedIpVO ip" +
+                        " where nic.vmInstanceUuid = vm.uuid and vm.hostUuid is null and vm.lastHostUuid is not null" +
+                        " and nic.uuid in (:nicUuids) and ip.vmNicUuid = nic.uuid";
+                q = dbf.getEntityManager().createQuery(sql, Tuple.class);
+                q.setParameter("nicUuids", nicUuids);
+                tuples.addAll(q.getResultList());
+            }
 
             Map<String, HostRuleTO> hostRuleTOMap = new HashMap<String, HostRuleTO>();
             for (Tuple t : tuples) {
@@ -645,7 +665,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         Collection<HostRuleTO> htos;
         if (msg.isDeleteAllRules()) {
             RuleCalculator cal = new RuleCalculator();
-            htos = cal.createRulePlaceHolder(nicUuids);
+            htos = cal.createRulePlaceHolder(nicUuids, null);
             for (HostRuleTO hto : htos) {
                 hto.setActionCodeForAllSecurityGroupRuleTOs(SecurityGroupRuleTO.ACTION_CODE_DELETE_CHAIN);
             }
@@ -943,7 +963,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         nicsUuidsCopy.removeAll(nicUuidsIn);
         Collection<HostRuleTO> htos2 = new ArrayList<HostRuleTO>();
         if (!nicsUuidsCopy.isEmpty()) {
-            htos2 = cal.createRulePlaceHolder(nicsUuidsCopy);
+            htos2 = cal.createRulePlaceHolder(nicsUuidsCopy, sgvo.getIpVersion());
             for (HostRuleTO hto : htos2) {
                 hto.setActionCodeForAllSecurityGroupRuleTOs(SecurityGroupRuleTO.ACTION_CODE_DELETE_CHAIN);
             }
@@ -980,13 +1000,15 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             cal.vmStates = asList(VmInstanceState.Running);
             List<HostRuleTO> htos = cal.calculate();
 
-            List<String> nicUuidsIn = SQL.New("select ref.vmNicUuid from VmNicSecurityGroupRefVO ref, SecurityGroupVO sg where ref.vmNicUuid in (:vmNicUuids) and ref.securityGroupUuid = sg.uuid and sg.state = :sgState", String.class)
-                    .param("vmNicUuids", vmNicUuids).param("sgState", SecurityGroupState.Enabled).list();
+            List<String> nicUuidsIn = SQL.New("select ref.vmNicUuid from VmNicSecurityGroupRefVO ref, SecurityGroupVO sg" +
+                    " where ref.vmNicUuid in (:vmNicUuids) and ref.securityGroupUuid = sg.uuid and sg.state = :sgState and sg.ipVersion = :version", String.class)
+                    .param("vmNicUuids", vmNicUuids).param("sgState", SecurityGroupState.Enabled)
+                    .param("version", sgvo.getIpVersion()).list();
 
             vmNicUuids.removeAll(nicUuidsIn);
             if (!vmNicUuids.isEmpty()) {
                 // these vm nics are no longer in any security group, delete their chains on host
-                Collection<HostRuleTO> toRemove = cal.createRulePlaceHolder(vmNicUuids);
+                Collection<HostRuleTO> toRemove = cal.createRulePlaceHolder(vmNicUuids, sgvo.getIpVersion());
                 for (HostRuleTO hto : toRemove) {
                     hto.setActionCodeForAllSecurityGroupRuleTOs(SecurityGroupRuleTO.ACTION_CODE_DELETE_CHAIN);
                 }
@@ -997,12 +1019,16 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         }
 
         List<String> sgUuids = Q.New(SecurityGroupRuleVO.class).select(SecurityGroupRuleVO_.securityGroupUuid).eq(SecurityGroupRuleVO_.remoteSecurityGroupUuid, uuid).listValues();
-        RuleCalculator rcal = new RuleCalculator();
-        rcal.securityGroupUuids = sgUuids;
-        rcal.vmStates = asList(VmInstanceState.Running);
-        List<HostRuleTO> rhtos = rcal.calculate();
+        sgUuids = sgUuids.stream().distinct().collect(Collectors.toList());
+        sgUuids.remove(uuid);
+        if (!sgUuids.isEmpty()) {
+            RuleCalculator rcal = new RuleCalculator();
+            rcal.securityGroupUuids = sgUuids;
+            rcal.vmStates = asList(VmInstanceState.Running);
+            List<HostRuleTO> rhtos = rcal.calculate();
+            applyRules(rhtos);
+        }
 
-        applyRules(rhtos);
         HostSecurityGroupMembersTO groupMemberTO = cal.returnHostSecurityGroupMember(uuid);
         if(!groupMemberTO.getHostUuids().isEmpty()){
             groupMemberTO.getGroupMembersTO().setActionCode(ACTION_CODE_DELETE_GROUP);
@@ -1011,6 +1037,8 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
     }
 
     private void handle(APIDeleteSecurityGroupMsg msg) {
+        SecurityGroupVO sgVo = dbf.findByUuid(msg.getUuid(), SecurityGroupVO.class);
+        
         SimpleQuery<VmNicSecurityGroupRefVO> q = dbf.createQuery(VmNicSecurityGroupRefVO.class);
         q.select(VmNicSecurityGroupRefVO_.vmNicUuid);
         q.add(VmNicSecurityGroupRefVO_.securityGroupUuid, Op.EQ, msg.getUuid());
@@ -1032,7 +1060,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             vmNicUuids.removeAll(nicUuidsIn);
             if (!vmNicUuids.isEmpty()) {
                 // these vm nics are no longer in any security group, delete their chains on host
-                Collection<HostRuleTO> toRemove = cal.createRulePlaceHolder(vmNicUuids);
+                Collection<HostRuleTO> toRemove = cal.createRulePlaceHolder(vmNicUuids, sgVo.getIpVersion());
                 for (HostRuleTO hto : toRemove) {
                     hto.setActionCodeForAllSecurityGroupRuleTOs(SecurityGroupRuleTO.ACTION_CODE_DELETE_CHAIN);
                 }
