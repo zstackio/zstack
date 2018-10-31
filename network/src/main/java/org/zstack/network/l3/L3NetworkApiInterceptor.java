@@ -263,8 +263,7 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
 
             /* same l3 network can have only 1 cidr */
             if (!r.getNetworkCidr().equals(ipr.getNetworkCidr())) {
-                throw new ApiMessageInterceptionException(argerr("multiple CIDR on the same L3 network is not allowed. There has been a IP" +
-                                " range[%s], the new IP range[CIDR:%s] is not in the CIDR with the existing one",
+                throw new ApiMessageInterceptionException(argerr("new network CIDR [%s] is different from old network cidr [%s]",
                         r.getNetworkCidr(), ipr.getNetworkCidr()));
             }
         }
