@@ -2,19 +2,29 @@ package org.zstack.storage.primary;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.tacker.PingTracker;
+import org.zstack.header.managementnode.ManagementNodeChangeListener;
+import org.zstack.header.managementnode.ManagementNodeInventory;
+import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.storage.primary.PingPrimaryStorageMsg;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 /**
  */
-public class PrimaryStoragePingTracker extends PingTracker {
+public class PrimaryStoragePingTracker extends PingTracker implements ManagementNodeReadyExtensionPoint, ManagementNodeChangeListener {
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private ResourceDestinationMaker destMaker;
 
     @Override
     public String getResourceName() {
@@ -52,5 +62,49 @@ public class PrimaryStoragePingTracker extends PingTracker {
                 pingIntervalChanged();
             }
         });
+    }
+
+    private void reScanPrimaryStorage() {
+        untrackAll();
+
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                long count = sql("select count(ps) from PrimaryStorageVO ps", Long.class).find();
+                sql("select ps.uuid from PrimaryStorageVO ps", String.class).limit(1000).paginate(count, (List<String> psUuids) -> {
+                    List<String> byUs = psUuids.stream()
+                            .filter(psUuid ->
+                                    destMaker.isManagedByUs(psUuid))
+                            .collect(Collectors.toList());
+
+                    track(byUs);
+                });
+            }
+        }.execute();
+    }
+
+    @Override
+    public void managementNodeReady() {
+        reScanPrimaryStorage();
+    }
+
+    @Override
+    public void nodeJoin(ManagementNodeInventory inv) {
+        reScanPrimaryStorage();
+    }
+
+    @Override
+    public void nodeLeft(ManagementNodeInventory inv) {
+        reScanPrimaryStorage();
+    }
+
+    @Override
+    public void iAmDead(ManagementNodeInventory inv) {
+
+    }
+
+    @Override
+    public void iJoin(ManagementNodeInventory inv) {
+
     }
 }
