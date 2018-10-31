@@ -205,13 +205,13 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
         if (vipIp.getIpVersion() == IPv6Constants.IPv4) {
             SubnetUtils guestSub = new SubnetUtils(guestRange.getGateway(), guestRange.getNetmask());
             if (guestSub.getInfo().isInRange(vipIp.getIp())) {
-                throw new ApiMessageInterceptionException(operr("overlap public and private subnets. The subnet of is an overlap with the subnet[%s, %s]" +
-                        " of the VM nic ip range[%s, %s].", vipRange.getStartIp(), vipRange.getEndIp(), guestRange.getStartIp(), guestRange.getEndIp()));
+                throw new ApiMessageInterceptionException(operr("Vip[%s] is in the guest ip range [%s, %s]",
+                        vipIp.getIp(), guestRange.getStartIp(), guestRange.getEndIp()));
             }
         } else {
             if (IPv6NetworkUtils.isIpv6InCidrRange(vipIp.getIp(), guestRange.getNetworkCidr())){
-                throw new ApiMessageInterceptionException(operr("overlap public and private subnets. The subnet of is an overlap with the subnet[%s]" +
-                        " of the VM nic ip range[%s].", vipRange.getNetworkCidr(), guestRange.getNetworkCidr()));
+                throw new ApiMessageInterceptionException(operr("Vip[%s] is in the guest ip range [%s, %s]",
+                        vipIp.getIp(), guestRange.getStartIp(), guestRange.getEndIp()));
             }
         }
     }
