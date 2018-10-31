@@ -1,6 +1,11 @@
 package org.zstack.compute.vm;
 
+import org.zstack.core.db.Q;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
+import org.zstack.header.vm.VmInstance;
+import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.tag.SystemTagCreator;
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -24,6 +29,15 @@ public class IsoOperator {
             result.add(tokens.get(VmSystemTags.ISO_TOKEN));
         }
 
+        return result;
+    }
+
+    public static List<String> getVmUuidByIsoUuid(String isoUuid) {
+        List<String> result = Q.New(SystemTagVO.class)
+                .select(SystemTagVO_.resourceUuid)
+                .eq(SystemTagVO_.resourceType, VmInstanceVO.class.getSimpleName())
+                .like(SystemTagVO_.tag, String.format("%s::%s%s", VmSystemTags.ISO_TOKEN, isoUuid,"%"))
+                .listValues();
         return result;
     }
 
