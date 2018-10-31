@@ -16705,5 +16705,63 @@
     ],
     "line": 816,
     "fileName": "src/zstack/./tag/src/main/java/org/zstack/tag/TagManagerImpl.java"
+    "line": 3318,
+    "fileName": "src/main/java/org/zstack/vmware/VCenterManagerImpl.java"
+  },
+  {
+    "raw": "InsufficientData",
+    "en_US": "InsufficientData",
+    "zh_CN": "数据不足",
+    "arguments": [],
+    "line": 16,
+    "fileName": "src/main/java/org/zstack/zwatch/alarm/AlarmStatus.java"
+  },
+  {
+    "raw": "Alarm",
+    "en_US": "Alarm",
+    "zh_CN": "已触发",
+    "arguments": [],
+    "line": 14,
+    "fileName": "src/main/java/org/zstack/zwatch/alarm/AlarmStatus.java"
+  },
+  {
+    "raw": "OK",
+    "en_US": "OK",
+    "zh_CN": "监控中",
+    "arguments": [],
+    "line": 12,
+    "fileName": "src/main/java/org/zstack/zwatch/alarm/AlarmStatus.java"
+  },
+  {
+    "raw": "LessThanOrEqualTo",
+    "en_US": "LessThanOrEqualTo",
+    "zh_CN": "小于等于",
+    "arguments": [],
+    "line": 35,
+    "fileName": "src/main/java/org/zstack/zwatch/ruleengine/ComparisonOperator.java"
+  },
+  {
+    "raw": "LessThan",
+    "en_US": "LessThan",
+    "zh_CN": "小于",
+    "arguments": [],
+    "line": 33,
+    "fileName": "src/main/java/org/zstack/zwatch/ruleengine/ComparisonOperator.java"
+  },
+  {
+    "raw": "GreaterThan",
+    "en_US": "GreaterThan",
+    "zh_CN": "大于",
+    "arguments": [],
+    "line": 31,
+    "fileName": "src/main/java/org/zstack/zwatch/ruleengine/ComparisonOperator.java"
+  },
+  {
+    "raw": "GreaterThanOrEqualTo",
+    "en_US": "GreaterThanOrEqualTo",
+    "zh_CN": "大于等于",
+    "arguments": [],
+    "line": 29,
+    "fileName": "src/main/java/org/zstack/zwatch/ruleengine/ComparisonOperator.java"
   }
 ]
