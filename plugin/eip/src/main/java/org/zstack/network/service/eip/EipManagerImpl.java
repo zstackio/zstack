@@ -220,18 +220,41 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
             return new ArrayList<>();
         }
 
-        List<VmNicVO> nics  = SQL.New("select distinct nic" +
-                " from VmNicVO nic, VmInstanceVO vm, UsedIpVO ip" +
-                " where nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid in (:l3Uuids)" +
-                " and nic.vmInstanceUuid = vm.uuid and ip.ipVersion = :ipVersion" +
-                " and vm.type = :vmType and vm.state in (:vmStates) " +
-                // IP = null means the VM is just recovered without any IP allocated
-                " and nic.ip is not null")
-                .param("l3Uuids", l3Uuids)
-                .param("vmType", VmInstanceConstant.USER_VM_TYPE)
-                .param("vmStates", EipConstant.attachableVmStates)
-                .param("ipVersion", l3Vo.getIpVersion())
-                .list();
+        /* get all vm which has nic in vip public l3 */
+        List<String> vmInPublicL3s = SQL.New("select distinct nic.vmInstanceUuid from UsedIpVO ip, VmNicVO nic" +
+                " where nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = :pubL3")
+                .param("pubL3", vip.getL3NetworkUuid()).list();
+        vmInPublicL3s = vmInPublicL3s.stream().distinct().filter(uuid -> uuid != null).collect(Collectors.toList());
+
+        List<VmNicVO> nics;
+        if (vmInPublicL3s != null && !vmInPublicL3s.isEmpty()) {
+            nics = SQL.New("select distinct nic" +
+                    " from VmNicVO nic, VmInstanceVO vm, UsedIpVO ip" +
+                    " where nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid in (:l3Uuids)" +
+                    " and nic.vmInstanceUuid = vm.uuid and ip.ipVersion = :ipVersion" +
+                    " and vm.type = :vmType and vm.state in (:vmStates) " +
+                    // IP = null means the VM is just recovered without any IP allocated
+                    " and nic.ip is not null and vm.uuid not in (:vmInPublicL3s)")
+                    .param("l3Uuids", l3Uuids)
+                    .param("vmType", VmInstanceConstant.USER_VM_TYPE)
+                    .param("vmStates", EipConstant.attachableVmStates)
+                    .param("ipVersion", l3Vo.getIpVersion())
+                    .param("vmInPublicL3s", vmInPublicL3s)
+                    .list();
+        } else {
+            nics = SQL.New("select distinct nic" +
+                    " from VmNicVO nic, VmInstanceVO vm, UsedIpVO ip" +
+                    " where nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid in (:l3Uuids)" +
+                    " and nic.vmInstanceUuid = vm.uuid and ip.ipVersion = :ipVersion" +
+                    " and vm.type = :vmType and vm.state in (:vmStates) " +
+                    // IP = null means the VM is just recovered without any IP allocated
+                    " and nic.ip is not null")
+                    .param("l3Uuids", l3Uuids)
+                    .param("vmType", VmInstanceConstant.USER_VM_TYPE)
+                    .param("vmStates", EipConstant.attachableVmStates)
+                    .param("ipVersion", l3Vo.getIpVersion())
+                    .list();
+        }
         return VmNicInventory.valueOf(nics);
     }
 

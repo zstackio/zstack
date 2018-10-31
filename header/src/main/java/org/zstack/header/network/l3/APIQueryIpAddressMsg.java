@@ -14,7 +14,7 @@ import static java.util.Arrays.asList;
 @Action(category = L3NetworkConstant.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
         path = "/l3-networks/ip-address",
-        optionalPaths = {"/l3-networks/ip-address{uuid}"},
+        optionalPaths = {"/l3-networks/ip-address/{uuid}"},
         method = HttpMethod.GET,
         responseClass = APIQueryIpAddressReply.class
 )
