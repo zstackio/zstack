@@ -152,6 +152,7 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
                             checkTools();
+                            checkHealth();
                             trigger.next();
                         }
                     });
