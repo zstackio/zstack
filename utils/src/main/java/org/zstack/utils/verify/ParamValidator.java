@@ -3,6 +3,8 @@ package org.zstack.utils.verify;
 import org.zstack.utils.*;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -16,7 +18,7 @@ public class ParamValidator {
             ));
 
     public static void validate(Verifiable verifiable) throws IllegalAccessException {
-        StringBuilder errorSb = new StringBuilder();
+        List<String> errors = new ArrayList<>();
         for (Map.Entry<Field, Param> entry : verifiableParams.get(verifiable.getClass()).entrySet()) {
             Field f = entry.getKey();
             Param param = entry.getValue();
@@ -24,7 +26,7 @@ public class ParamValidator {
             f.setAccessible(true);
             Object value = f.get(verifiable);
             if (param.required() && value == null) {
-                errorSb.append(String.format("field[%s] cannot be null.", f.getName()));
+                errors.add(String.format("field[%s] cannot be null.", f.getName()));
             }
 
             if (value != null && value instanceof String && !param.noTrim()) {
@@ -37,14 +39,14 @@ public class ParamValidator {
                 long high = param.numberRange()[1];
                 long val = ((Number) value).longValue();
                 if (val < low || val > high) {
-                    errorSb.append(String.format("field[%s] must be in range of [%s, %s].", f.getName(), low, high));
+                    errors.add(String.format("field[%s] must be in range of [%s, %s].", f.getName(), low, high));
                 }
             }
 
             if (value != null && param.maxLength() != Integer.MAX_VALUE && (value instanceof String)) {
                 String str = (String) value;
                 if (str.length() > param.maxLength()) {
-                    errorSb.append(String.format("field[%s] of message[%s] exceeds max length of string. expected was <= %s, actual was %s.",
+                    errors.add(String.format("field[%s] of message[%s] exceeds max length of string. expected was <= %s, actual was %s.",
                             f.getName(), verifiable.getClass().getName(), param.maxLength(), str.length()));
                 }
             }
@@ -52,18 +54,18 @@ public class ParamValidator {
             if (value != null && param.minLength() != 0 && (value instanceof String)) {
                 String str = (String) value;
                 if (str.length() < param.minLength()) {
-                    errorSb.append(String.format("field[%s] of message[%s] less than the min length of string. expected was >= %s, actual was %s.",
+                    errors.add(String.format("field[%s] of message[%s] less than the min length of string. expected was >= %s, actual was %s.",
                             f.getName(), verifiable.getClass().getName(), param.minLength(), str.length()));
                 }
             }
 
             if (value != null && value instanceof String && param.resourceType() != Object.class && !StringDSL.isZStackUuid(((String) value).trim())) {
-                errorSb.append(String.format("field[%s] is not a valid uuid.", f.getName()));
+                errors.add(String.format("field[%s] is not a valid uuid.", f.getName()));
             }
         }
 
-        if (errorSb.length() != 0) {
-            throw new IllegalArgumentException(errorSb.toString());
+        if (!errors.isEmpty()) {
+            throw new IllegalArgumentException(String.join(" ", errors));
         }
     }
 }
