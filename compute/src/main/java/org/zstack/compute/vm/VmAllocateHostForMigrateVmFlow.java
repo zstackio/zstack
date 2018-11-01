@@ -7,22 +7,20 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.allocator.AllocateHostReply;
+import org.zstack.header.allocator.DesignatedAllocateHostMsg;
+import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.allocator.ReturnHostCapacityMsg;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
-import org.zstack.header.allocator.AllocateHostReply;
-import org.zstack.header.allocator.DesignatedAllocateHostMsg;
-import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmAllocateHostForMigrateVmFlow implements Flow {
@@ -40,11 +38,12 @@ public class VmAllocateHostForMigrateVmFlow implements Flow {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
         String destHostUuid = null;
+        DesignatedAllocateHostMsg msg = new DesignatedAllocateHostMsg();
         if (spec.getMessage() instanceof MigrateVmMessage) {
             destHostUuid = ((MigrateVmMessage)spec.getMessage()).getHostUuid();
+            msg.setAllowNoL3Networks(true);
         }
 
-        DesignatedAllocateHostMsg msg = new DesignatedAllocateHostMsg();
         msg.setCpuCapacity(spec.getVmInventory().getCpuNum());
         msg.setMemoryCapacity(spec.getVmInventory().getMemorySize());
         msg.setHostUuid(destHostUuid);
