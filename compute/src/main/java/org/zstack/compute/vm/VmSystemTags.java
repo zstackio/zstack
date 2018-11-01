@@ -85,4 +85,7 @@ public class VmSystemTags {
 
     public static String CLEAN_TRAFFIC_TOKEN = "cleanTraffic";
     public static PatternedSystemTag CLEAN_TRAFFIC = new PatternedSystemTag(String.format("cleanTraffic::{%s}", CLEAN_TRAFFIC_TOKEN), VmInstanceVO.class);
+
+    public static String AUTO_SCALING_GROUP_UUID_TOKEN = "autoScalingGroupUuid";
+    public static PatternedSystemTag AUTO_SCALING_GROUP_UUID = new PatternedSystemTag(String.format("autoScalingGroupUuid::{%s}", AUTO_SCALING_GROUP_UUID_TOKEN), VmInstanceVO.class);
 }
