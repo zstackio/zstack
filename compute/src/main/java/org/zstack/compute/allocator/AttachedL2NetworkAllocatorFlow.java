@@ -10,14 +10,12 @@ import org.zstack.header.allocator.AbstractHostAllocatorFlow;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO;
-import org.zstack.utils.Utils;
-import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
+
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class AttachedL2NetworkAllocatorFlow extends AbstractHostAllocatorFlow {
-    private static final CLogger logger = Utils.getLogger(AttachedL2NetworkAllocatorFlow.class);
 
     @Autowired
     private DatabaseFacade dbf;
@@ -42,11 +40,7 @@ public class AttachedL2NetworkAllocatorFlow extends AbstractHostAllocatorFlow {
 
         Map<String, Set<String>> l2ClusterMap = new HashMap<>();
         for (L2NetworkClusterRefVO ref : refs) {
-            Set<String> l2s = l2ClusterMap.get(ref.getClusterUuid());
-            if (l2s == null) {
-                l2s = new HashSet<>();
-                l2ClusterMap.put(ref.getClusterUuid(), l2s);
-            }
+            Set<String> l2s = l2ClusterMap.computeIfAbsent(ref.getClusterUuid(), k -> new HashSet<>());
             l2s.add(ref.getL2NetworkUuid());
         }
 
