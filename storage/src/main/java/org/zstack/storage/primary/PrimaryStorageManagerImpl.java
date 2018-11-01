@@ -567,6 +567,8 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         List<String> ret = new ArrayList<>();
         SimpleQuery<PrimaryStorageVO> q = dbf.createQuery(PrimaryStorageVO.class);
         q.select(PrimaryStorageVO_.uuid);
+        // treat connecting as disconnected
+        q.add(PrimaryStorageVO_.status, Op.NOT_EQ, PrimaryStorageStatus.Connected);
         List<String> uuids = q.listValue();
         for (String uuid : uuids) {
             if (destMaker.isManagedByUs(uuid)) {
