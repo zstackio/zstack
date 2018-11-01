@@ -49,7 +49,6 @@ import org.zstack.header.vm.*;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicHostUuid;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicVmState;
 import org.zstack.header.vm.VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperation;
-import org.zstack.header.vm.VmInstanceConstant.Capability;
 import org.zstack.header.vm.VmInstanceConstant.Params;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
@@ -308,6 +307,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                 self.setState(state);
                 self = merge(self);
+                flush();
             }
         };
         try {
