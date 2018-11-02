@@ -6,15 +6,11 @@ import org.zstack.core.db.SQL
 import org.zstack.header.identity.AccountConstant
 import org.zstack.header.identity.SharedResourceVO
 import org.zstack.header.vm.VmInstanceConstant
+import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMSecurityGroupBackend
-import org.zstack.sdk.AccountInventory
-import org.zstack.sdk.GetVmCapabilitiesResult
-import org.zstack.sdk.HostInventory
-import org.zstack.sdk.KVMHostInventory
-import org.zstack.sdk.MigrateVmAction
-import org.zstack.sdk.VmInstanceInventory
+import org.zstack.sdk.*
 import org.zstack.storage.primary.local.LocalStorageKvmBackend
 import org.zstack.storage.primary.local.LocalStoragePrimaryStorageGlobalConfig
 import org.zstack.test.integration.storage.Env
@@ -122,6 +118,13 @@ class LiveMigrateVmCase extends SubCase {
             vmInstanceUuid = vm1.getUuid()
             hostUuid = targetHostUuid
         }
+
+        logger.info("XXX: querying vm state")  // to log the timestamp
+        List<VmInstanceInventory> qVmInv = queryVmInstance {
+            conditions=["uuid=${vm1.getUuid()}".toString()]
+        } as List<VmInstanceInventory>
+
+        assert qVmInv[0].state == VmInstanceState.Running.toString()
 
         // make sure migration success
         retryInSecs {
