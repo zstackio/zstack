@@ -317,7 +317,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         if (bs != state) {
-            logger.debug(String.format("vm[uuid:%s] changed state from %s to %s in db", self.getUuid(), bs, self.getState()));
+            logger.debug(String.format("vm[uuid:%s] changed state from %s to %s in db", self.getUuid(), bs, state));
 
             VmCanonicalEvents.VmStateChangedData data = new VmCanonicalEvents.VmStateChangedData();
             data.setVmUuid(self.getUuid());
@@ -2643,8 +2643,17 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             PrimaryStorageType psType = PrimaryStorageType.valueOf(type);
 
-            capabilities.setSupportLiveMigration(psType.isSupportVmLiveMigration());
-            capabilities.setSupportVolumeMigration(psType.isSupportVolumeMigration());
+            if (self.getState() != VmInstanceState.Running) {
+                capabilities.setSupportLiveMigration(false);
+            } else {
+                capabilities.setSupportLiveMigration(psType.isSupportVmLiveMigration());
+            }
+
+            if (self.getState() != VmInstanceState.Stopped) {
+                capabilities.setSupportVolumeMigration(false);
+            } else {
+                capabilities.setSupportVolumeMigration(psType.isSupportVolumeMigration());
+            }
         }
     }
 

@@ -70,6 +70,14 @@ class LiveMigrateVmCase extends SubCase {
 
     void testLiveMigrateVmWithDataVolume() {
         VmInstanceInventory vm1 = (VmInstanceInventory) env.inventoryByName("vm")
+
+        GetVmCapabilitiesResult capRes = getVmCapabilities {
+            uuid = vm1.getUuid()
+        } as GetVmCapabilitiesResult
+
+        assert !capRes.capabilities.get(VmInstanceConstant.Capability.LiveMigration.toString()) as Boolean
+        assert capRes.capabilities.get(VmInstanceConstant.Capability.VolumeMigration.toString()) as Boolean
+
         startVmInstance {
             uuid = vm1.uuid
         }
@@ -78,10 +86,11 @@ class LiveMigrateVmCase extends SubCase {
         def targetHostUuid = invs.find { i -> i.uuid != vm1.getHostUuid() }.getUuid()
 
         // default false
-        GetVmCapabilitiesResult capRes = getVmCapabilities {
+        capRes = getVmCapabilities {
             uuid = vm1.getUuid()
         } as GetVmCapabilitiesResult
         assert !capRes.capabilities.get(VmInstanceConstant.Capability.LiveMigration.toString()) as Boolean
+        assert !capRes.capabilities.get(VmInstanceConstant.Capability.VolumeMigration.toString()) as Boolean
 
         // set true
         LocalStoragePrimaryStorageGlobalConfig.ALLOW_LIVE_MIGRATION.updateValue(Boolean.TRUE.toString())
