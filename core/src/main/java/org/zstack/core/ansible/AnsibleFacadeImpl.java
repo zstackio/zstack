@@ -3,13 +3,15 @@ package org.zstack.core.ansible;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.DirectoryWalker;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.ini4j.Wini;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
-import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.jsonlabel.JsonLabel;
+import org.zstack.core.jsonlabel.JsonLabelInventory;
 import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
@@ -50,9 +52,9 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
     @Autowired
     private CloudBus bus;
     @Autowired
-    private ErrorFacade errf;
-    @Autowired
     private ThreadFacade thdf;
+    @Autowired
+    private ThreadFacade dbf;
 
     private String publicKey;
     private String privateKey;
@@ -91,28 +93,7 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
             return;
         }
 
-        File privKeyFile = PathUtil.findFileOnClassPath(AnsibleConstant.RSA_PRIVATE_KEY, true);
-        ShellUtils.run(String.format("chmod 600 %s", privKeyFile.getAbsolutePath()));
-
-        if (privKeyFile.length() == 0) {
-            String info = String.format("Private key [%s] for Ansible is corrupted.\n"
-                    + "Please re-generate it with:\n"
-                    + "# ssh-keygen -f %s -N \"\"\n"
-                    + "# chown -R zstack.zstack %s",
-                    privKeyFile.getName(), privKeyFile.getAbsolutePath(), privKeyFile.getParent());
-            throw new CloudRuntimeException(info);
-        }
-
-        File pubKeyFile = PathUtil.findFileOnClassPath(AnsibleConstant.RSA_PUBLIC_KEY);
-
         try {
-            publicKey = FileUtils.readFileToString(pubKeyFile);
-            publicKey = publicKey.trim();
-            publicKey = StringDSL.stripEnd(publicKey, "\n");
-            privateKey = FileUtils.readFileToString(privKeyFile);
-            privateKey = privateKey.trim();
-            privateKey = StringDSL.stripEnd(privateKey, "\n");
-
             File invFile = new File(AnsibleConstant.CONFIGURATION_FILE);
             File invDir = new File(invFile.getParent());
             if (!invDir.exists()) {
@@ -204,18 +185,18 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                 arguments.put("pkg_zstacklib", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME);
                 arguments.putAll(getVariables());
                 String playBookPath = msg.getPlayBookPath();
-                if ( ! playBookPath.contains("py")) {
-                   arguments.put("ansible_ssh_user", arguments.get("remote_user"));
-                   arguments.put("ansible_ssh_port", arguments.get("remote_port"));
-                   arguments.put("ansible_ssh_pass", arguments.get("remote_pass"));
-                   arguments.remove("remote_user");
-                   arguments.remove("remote_pass");
-                   arguments.remove("remote_port");
-                   if  ( ! arguments.get("ansible_ssh_user").equals("root")) {
-                       arguments.put("ansible_become", "yes");
-                       arguments.put("become_user", "root");
-                       arguments.put("ansible_become_pass", arguments.get("ansible_ssh_pass"));
-                   }
+                if (!playBookPath.contains("py")) {
+                    arguments.put("ansible_ssh_user", arguments.get("remote_user"));
+                    arguments.put("ansible_ssh_port", arguments.get("remote_port"));
+                    arguments.put("ansible_ssh_pass", arguments.get("remote_pass"));
+                    arguments.remove("remote_user");
+                    arguments.remove("remote_pass");
+                    arguments.remove("remote_port");
+                    if (!arguments.get("ansible_ssh_user").equals("root")) {
+                        arguments.put("ansible_become", "yes");
+                        arguments.put("become_user", "root");
+                        arguments.put("ansible_become_pass", arguments.get("ansible_ssh_pass"));
+                    }
                 }
                 String executable = msg.getAnsibleExecutable() == null ? AnsibleGlobalProperty.EXECUTABLE : msg.getAnsibleExecutable();
                 long timeout = TimeUnit.MILLISECONDS.toSeconds(msg.getTimeout());
@@ -223,15 +204,15 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                     String output;
                     if (AnsibleGlobalProperty.DEBUG_MODE2) {
                         output = ShellUtils.run(String.format("PYTHONPATH=%s timeout %d %s %s -i %s -vvvv --private-key %s -e '%s' | tee -a %s",
-                                        AnsibleConstant.ZSTACKLIB_ROOT, timeout, executable, playBookPath, AnsibleConstant.INVENTORY_FILE, msg.getPrivateKeyFile(), JSONObjectUtil.toJsonString(arguments), AnsibleConstant.LOG_PATH),
+                                AnsibleConstant.ZSTACKLIB_ROOT, timeout, executable, playBookPath, AnsibleConstant.INVENTORY_FILE, msg.getPrivateKeyFile(), JSONObjectUtil.toJsonString(arguments), AnsibleConstant.LOG_PATH),
                                 AnsibleConstant.ROOT_DIR);
                     } else if (AnsibleGlobalProperty.DEBUG_MODE) {
                         output = ShellUtils.run(String.format("PYTHONPATH=%s timeout %d %s %s -i %s -vvvv --private-key %s -e '%s'",
-                                        AnsibleConstant.ZSTACKLIB_ROOT, timeout, executable, playBookPath, AnsibleConstant.INVENTORY_FILE, msg.getPrivateKeyFile(), JSONObjectUtil.toJsonString(arguments)),
+                                AnsibleConstant.ZSTACKLIB_ROOT, timeout, executable, playBookPath, AnsibleConstant.INVENTORY_FILE, msg.getPrivateKeyFile(), JSONObjectUtil.toJsonString(arguments)),
                                 AnsibleConstant.ROOT_DIR);
                     } else {
                         output = ShellUtils.run(String.format("PYTHONPATH=%s timeout %d %s %s -i %s --private-key %s -e '%s'",
-                                        AnsibleConstant.ZSTACKLIB_ROOT, timeout, executable, playBookPath, AnsibleConstant.INVENTORY_FILE, msg.getPrivateKeyFile(), JSONObjectUtil.toJsonString(arguments)),
+                                AnsibleConstant.ZSTACKLIB_ROOT, timeout, executable, playBookPath, AnsibleConstant.INVENTORY_FILE, msg.getPrivateKeyFile(), JSONObjectUtil.toJsonString(arguments)),
                                 AnsibleConstant.ROOT_DIR);
                     }
 
@@ -248,7 +229,7 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
             }
 
             @Override
-            public Object call() throws Exception {
+            public Object call() {
                 final RunAnsibleReply reply = new RunAnsibleReply();
                 run(new Completion(msg) {
                     @Override
@@ -275,24 +256,60 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
 
     @Override
     public boolean start() {
+        if (CoreGlobalProperty.UNIT_TEST_ON) {
+            return true;
+        }
+
+        try {
+            File privKeyFile = PathUtil.findFileOnClassPath(AnsibleConstant.RSA_PRIVATE_KEY, true);
+            ShellUtils.run(String.format("chmod 600 %s", privKeyFile.getAbsolutePath()));
+            File pubKeyFile = PathUtil.findFileOnClassPath(AnsibleConstant.RSA_PUBLIC_KEY);
+
+            if (pubKeyFile == null) {
+                publicKey = new JsonLabel().get("ansiblePublicKey", String.class);
+            } else {
+                publicKey = FileUtils.readFileToString(pubKeyFile);
+                publicKey = publicKey.trim();
+                publicKey = StringDSL.stripEnd(publicKey, "\n");
+            }
+
+            if (privKeyFile.length() == 0) {
+                privateKey = new JsonLabel().get("ansiblePrivateKey", String.class);
+            } else {
+                privateKey = FileUtils.readFileToString(privKeyFile);
+                privateKey = privateKey.trim();
+                privateKey = StringDSL.stripEnd(privateKey, "\n");
+            }
+
+            if (StringUtils.isEmpty(privateKey)) {
+                String info = String.format("Private key [%s] for Ansible is corrupted.\n"
+                                + "Please re-generate it with:\n"
+                                + "# ssh-keygen -f %s -N \"\"\n"
+                                + "# chown -R zstack.zstack %s",
+                        privKeyFile.getName(), privKeyFile.getAbsolutePath(), privKeyFile.getParent());
+                throw new CloudRuntimeException(info);
+            }
+
+            JsonLabelInventory ansiblePublicKey = new JsonLabel().createIfAbsent("ansiblePublicKey", publicKey);
+            JsonLabelInventory ansiblePrivateKey = new JsonLabel().createIfAbsent("ansiblePrivateKey", privateKey);
+
+            publicKey = ansiblePublicKey.getLabelValue();
+            if (pubKeyFile != null) {
+                FileUtils.writeStringToFile(pubKeyFile, publicKey);
+            }
+
+            privateKey = ansiblePrivateKey.getLabelValue();
+            FileUtils.writeStringToFile(privKeyFile, privateKey);
+        } catch (IOException e) {
+            throw new CloudRuntimeException(e);
+        }
+
         return true;
     }
 
     @Override
     public boolean stop() {
         return true;
-    }
-
-    @SuppressWarnings("rawtypes")
-    public class ModuleWalker extends DirectoryWalker {
-        @Override
-        protected void handleFile(File file, int depth, Collection results) {
-            results.add(file);
-        }
-
-        public void doWalk(File start, Collection result) throws IOException {
-            walk(start, result);
-        }
     }
 
     private boolean isNeedToDeploy(String moduleName, String modulePath) throws IOException {
@@ -304,7 +321,7 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
             if (!dest.exists()) {
                 logger.debug(String.format("%s is not existing, need to deploy ansible module[%s]", destModulePath, moduleName));
                 needed = true;
-                return needed;
+                return true;
             }
             List<File> destFiles = new ArrayList<File>(20);
             ModuleWalker walker = new ModuleWalker();
@@ -318,7 +335,7 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                 logger.debug(String.format("%s has %s files, %s has %s files, need to deploy ansible module[%s]", destModulePath, destFiles.size(), modulePath,
                         srcFiles.size(), moduleName));
                 needed = true;
-                return needed;
+                return true;
             }
 
             Map<String, String> srcMd5sum = new HashMap<String, String>(srcFiles.size());
@@ -339,19 +356,19 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                 if (destMd5 == null) {
                     logger.debug(String.format("%s is not existing in %s, need to deploy ansible module[%s]", name, destModulePath, moduleName));
                     needed = true;
-                    return needed;
+                    return true;
                 }
                 if (!destMd5.equals(srcEntry.getValue())) {
                     logger.debug(String.format("%s's md5 changed[{%s} in %s, {%s} in %s], need to deploy ansible module[%s]", name, destMd5, destModulePath,
                             srcEntry.getValue(), modulePath, moduleName));
                     needed = true;
-                    return needed;
+                    return true;
                 }
             }
             logger.debug(String.format("no file changed in ansible module[%s], no need to deploy", moduleName));
             needed = false;
-            return needed;
-        }  finally {
+            return false;
+        } finally {
             moduleChanges.put(moduleName, needed);
         }
     }
@@ -439,5 +456,17 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
     @Override
     public String getPrivateKey() {
         return privateKey;
+    }
+
+    @SuppressWarnings("rawtypes")
+    public class ModuleWalker extends DirectoryWalker {
+        @Override
+        protected void handleFile(File file, int depth, Collection results) {
+            results.add(file);
+        }
+
+        public void doWalk(File start, Collection result) throws IOException {
+            walk(start, result);
+        }
     }
 }
