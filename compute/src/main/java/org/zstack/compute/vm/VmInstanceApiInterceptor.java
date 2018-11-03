@@ -6,7 +6,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
@@ -53,8 +52,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     private CloudBus bus;
     @Autowired
     private DatabaseFacade dbf;
-    @Autowired
-    private ErrorFacade errf;
 
     private void setServiceId(APIMessage msg) {
         if (msg instanceof VmInstanceMessage) {

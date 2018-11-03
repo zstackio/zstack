@@ -6,7 +6,7 @@ import java.util.List;
 
 /**
  */
-public class MigrateVmMsg extends NeedReplyMessage implements VmInstanceMessage {
+public class MigrateVmMsg extends NeedReplyMessage implements VmInstanceMessage, MigrateVmMessage {
     private String vmInstanceUuid;
     private List<String> avoidHostUuids;
 
@@ -24,5 +24,15 @@ public class MigrateVmMsg extends NeedReplyMessage implements VmInstanceMessage 
 
     public void setVmInstanceUuid(String vmInstanceUuid) {
         this.vmInstanceUuid = vmInstanceUuid;
+    }
+
+    @Override
+    public String getHostUuid() {
+        return null;
+    }
+
+    @Override
+    public boolean isMigrateFromDestination() {
+        return false;
     }
 }

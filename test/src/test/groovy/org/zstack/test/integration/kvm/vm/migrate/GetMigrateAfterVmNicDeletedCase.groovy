@@ -1,11 +1,14 @@
 package org.zstack.test.integration.kvm.vm.migrate
 
+import org.zstack.core.cloudbus.CloudBus
+import org.zstack.header.allocator.DesignatedAllocateHostMsg
+import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor
+import org.zstack.header.message.Message
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
-
 /**
  * Created by mingjian.deng on 2017/12/26.
  */
@@ -63,10 +66,24 @@ class GetMigrateAfterVmNicDeletedCase extends SubCase {
     void testMigrate() {
         def host = env.inventoryByName("kvm") as HostInventory
 
+        CloudBus bus = bean(CloudBus.class)
+        boolean allowNoL3 = false
+        int count = 0
+        bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
+            @Override
+            void beforeDeliveryMessage(Message msg) {
+                DesignatedAllocateHostMsg dmsg = (DesignatedAllocateHostMsg) msg
+                count += 1
+                allowNoL3 = dmsg.isAllowNoL3Networks()
+            }
+        }, DesignatedAllocateHostMsg.class)
+
         vm = migrateVm {
             vmInstanceUuid = vm.uuid
         } as VmInstanceInventory
 
         assert vm.hostUuid != host.uuid
+        assert count == 1
+        assert allowNoL3
     }
 }
