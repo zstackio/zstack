@@ -327,3 +327,5 @@ DELIMITER ;
 
 call migrateIscsiLunVOToScsiLunVO();
 alter table IscsiLunVO drop column wwid, drop vendor, drop model, drop wwn, drop serial, drop hctl, drop type, drop path, drop multipathDeviceUuid, drop size, drop lastOpDate, drop createDate;
+
+update SystemTagVO a, VolumeVO b set a.resourceType='VolumeVO' where a.resourceType='InstanceOfferingVO' and a.resourceUuid=b.uuid;
