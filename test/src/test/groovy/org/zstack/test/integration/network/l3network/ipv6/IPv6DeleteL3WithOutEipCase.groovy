@@ -42,7 +42,7 @@ class IPv6DeleteL3WithOutEipCase extends SubCase {
 
     void testDeleteL3WithoutEip() {
         L3NetworkInventory l3_statefull = env.inventoryByName("l3-Statefull-DHCP")
-        L3NetworkInventory l3_statefull_1 = env.inventoryByName("l3-Statefull-DHCP-1")
+        L3NetworkInventory l3_slaac = env.inventoryByName("l3-SLAAC")
         L3NetworkInventory l3 = env.inventoryByName("l3")
         InstanceOfferingInventory offering = env.inventoryByName("instanceOffering")
         ImageInventory image = env.inventoryByName("image1")
@@ -63,7 +63,7 @@ class IPv6DeleteL3WithOutEipCase extends SubCase {
             }
             attachL3NetworkToVmNic {
                 vmNicUuid = nic.uuid
-                l3NetworkUuid = l3_statefull_1.uuid
+                l3NetworkUuid = l3_slaac.uuid
             }
             vm = queryVmInstance {
                 conditions=["uuid=${vm.uuid}".toString()]
@@ -74,13 +74,13 @@ class IPv6DeleteL3WithOutEipCase extends SubCase {
         }
 
         deleteL3Network {
-            uuid = l3_statefull_1.uuid
+            uuid = l3_slaac.uuid
         }
 
         for (VmNicInventory nic : nics) {
             assert Q.New(VmNicVO.class).eq(VmNicVO_.uuid, nic.uuid).exists
             for (UsedIpInventory ip : nic.getUsedIps()) {
-                if (ip.l3NetworkUuid == l3_statefull_1.uuid) {
+                if (ip.l3NetworkUuid == l3_slaac.uuid) {
                     assert !Q.New(UsedIpVO.class).eq(UsedIpVO_.uuid, ip.uuid).exists
                 } else {
                     assert Q.New(UsedIpVO.class).eq(UsedIpVO_.uuid, ip.uuid).exists

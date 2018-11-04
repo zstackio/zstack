@@ -45,7 +45,7 @@ class IPv6DeleteVmWithEipCase extends SubCase {
 
     void testDeleteVmWithEip() {
         L3NetworkInventory l3_statefull = env.inventoryByName("l3-Statefull-DHCP")
-        L3NetworkInventory l3_statefull_1 = env.inventoryByName("l3-Statefull-DHCP-1")
+        L3NetworkInventory l3_slaac = env.inventoryByName("l3-SLAAC")
         L3NetworkInventory l3 = env.inventoryByName("l3")
         L3NetworkInventory l3_1 = env.inventoryByName("l3-1")
         InstanceOfferingInventory offering = env.inventoryByName("instanceOffering")
@@ -86,7 +86,7 @@ class IPv6DeleteVmWithEipCase extends SubCase {
 
         VipInventory vip6 = createVip {
             name = "vip6"
-            l3NetworkUuid = l3_statefull_1.uuid
+            l3NetworkUuid = l3_slaac.uuid
         }
 
         VipInventory vip4 = createVip {
@@ -113,11 +113,11 @@ class IPv6DeleteVmWithEipCase extends SubCase {
         }
         assert nics.size() == 1
 
-        /* after attach l3_statefull_1, vm can not be attached to eip in l3_statefull_1 */
+        /* after attach l3_slaac, vm can not be attached to eip in l3_slaac */
         VmNicInventory nic1 = vm1.getVmNics()[0]
         attachL3NetworkToVmNic {
             vmNicUuid = nic1.uuid
-            l3NetworkUuid = l3_statefull_1.uuid
+            l3NetworkUuid = l3_slaac.uuid
         }
         nics = getEipAttachableVmNics {
             eipUuid = eip6.uuid
@@ -143,7 +143,7 @@ class IPv6DeleteVmWithEipCase extends SubCase {
 
     void testDeleteVm() {
         L3NetworkInventory l3_statefull = env.inventoryByName("l3-Statefull-DHCP")
-        L3NetworkInventory l3_statefull_1 = env.inventoryByName("l3-Statefull-DHCP-1")
+        L3NetworkInventory l3_slaac = env.inventoryByName("l3-SLAAC")
         L3NetworkInventory l3 = env.inventoryByName("l3")
         L3NetworkInventory l3_1 = env.inventoryByName("l3-1")
         InstanceOfferingInventory offering = env.inventoryByName("instanceOffering")
@@ -162,7 +162,7 @@ class IPv6DeleteVmWithEipCase extends SubCase {
         }
         attachL3NetworkToVmNic {
             vmNicUuid = nic.uuid
-            l3NetworkUuid = l3_statefull_1.uuid
+            l3NetworkUuid = l3_slaac.uuid
         }
 
         vm = queryVmInstance {
