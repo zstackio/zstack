@@ -307,7 +307,6 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                 self.setState(state);
                 self = merge(self);
-                flush();
             }
         };
         try {
