@@ -957,7 +957,9 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         List<HostRuleTO> htos1 = cal.calculate();
 
         // create deleting chain action for nics no longer in any security group
-        List<String> nicUuidsIn = SQL.New("select ref.vmNicUuid from VmNicSecurityGroupRefVO ref, SecurityGroupVO sg where ref.securityGroupUuid = sg.uuid and sg.state = :sgState", String.class).param("sgState", SecurityGroupState.Enabled).list();
+        List<String> nicUuidsIn = SQL.New("select ref.vmNicUuid from VmNicSecurityGroupRefVO ref, SecurityGroupVO sg" +
+                " where ref.securityGroupUuid = sg.uuid and sg.state = :sgState and sg.ipVersion = :version", String.class)
+                .param("sgState", SecurityGroupState.Enabled).param("version", sgvo.getIpVersion()).list();
         List<String> nicsUuidsCopy = new ArrayList<String>();
         nicsUuidsCopy.addAll(vmNicUuids);
         nicsUuidsCopy.removeAll(nicUuidsIn);
@@ -1054,8 +1056,10 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             cal.vmStates = asList(VmInstanceState.Running);
             List<HostRuleTO> htos = cal.calculate();
 
-            List<String> nicUuidsIn = SQL.New("select ref.vmNicUuid from VmNicSecurityGroupRefVO ref, SecurityGroupVO sg where ref.vmNicUuid in (:vmNicUuids) and ref.securityGroupUuid = sg.uuid and sg.state = :sgState", String.class)
-                    .param("vmNicUuids", vmNicUuids).param("sgState", SecurityGroupState.Enabled).list();
+            List<String> nicUuidsIn = SQL.New("select ref.vmNicUuid from VmNicSecurityGroupRefVO ref, SecurityGroupVO sg " +
+                    " where ref.vmNicUuid in (:vmNicUuids) and ref.securityGroupUuid = sg.uuid and sg.state = :sgState and sg.ipVersion = :version", String.class)
+                    .param("vmNicUuids", vmNicUuids).param("sgState", SecurityGroupState.Enabled)
+                    .param("version", sgVo.getIpVersion()).list();
 
             vmNicUuids.removeAll(nicUuidsIn);
             if (!vmNicUuids.isEmpty()) {
