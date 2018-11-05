@@ -14,28 +14,23 @@ import org.zstack.header.message.AbstractBeforeSendMessageInterceptor
 import org.zstack.header.message.Event
 import org.zstack.header.message.Message
 import org.zstack.sdk.SessionInventory
-import org.zstack.sdk.ZQLQueryAction
 import org.zstack.sdk.ZQLQueryReturn
 import org.zstack.sdk.ZSClient
-import org.zstack.testlib.collectstrategy.SubCaseCollectionStrategyFactory
 import org.zstack.testlib.collectstrategy.SubCaseCollectionStrategy
+import org.zstack.testlib.collectstrategy.SubCaseCollectionStrategyFactory
 import org.zstack.testlib.util.Retry
-import org.zstack.utils.FieldUtils
 import org.zstack.utils.ShellUtils
 import org.zstack.utils.Utils
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.logging.CLogger
 import org.zstack.utils.path.PathUtil
-import org.zstack.zql.ZQL
 
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
-import java.lang.reflect.Field
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.logging.Level
 import java.util.logging.Logger
-
 /**
  * Created by xing5 on 2017/2/12.
  */
@@ -460,6 +455,7 @@ abstract class Test implements ApiHelper, Retry {
     static Case CURRENT_SUB_CASE
 
     protected void beforeRunSubCase() {
+
     }
 
     private String getResultDirBase() {
@@ -524,6 +520,7 @@ abstract class Test implements ApiHelper, Retry {
             return ret
         }
 
+        def suiteStartTime = System.currentTimeMillis()
         boolean hasFailure = false
 
         for (SubCaseResult r in allCases) {
@@ -536,6 +533,7 @@ abstract class Test implements ApiHelper, Retry {
             logger.info("starts running a sub case[${c.class}] of suite[${this.class}]")
             new File([dir.absolutePath, "current-case"].join("/")).write("${c.class}")
 
+            def caseStartTime = System.currentTimeMillis()
             try {
                 CURRENT_SUB_CASE = c
                 c.metaClass.collectErrorLog = {
@@ -575,7 +573,10 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
 
                 logger.error("a sub case[${c.class}] of suite[${this.class}] fails, ${t.message}", t)
             } finally {
-                def fname = c.class.name.replace(".", "_") + "." + (r.success ? "success" : "failure")
+                def spendTime = (System.currentTimeMillis() - caseStartTime) as long
+                logger.info("spend time collected: case ${c.class.simpleName} of suite[${this.class}] spends ${spendTime} millisencends")
+
+                def fname = c.class.name.replace(".", "_") + "." + spendTime + "." + (r.success ? "success" : "failure")
                 def rfile = new File([dir.absolutePath, fname].join("/"))
                 rfile.write(JSONObjectUtil.toJsonString(r))
 
@@ -600,13 +601,16 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
             }
         }
 
+        def suiteEndTime = System.currentTimeMillis()
+
         def summary = new File([dir.absolutePath, "summary"].join("/"))
         summary.write(JSONObjectUtil.toJsonString([
                 "total" : caseTypes.size(),
                 "success": success,
                 "failure": failure,
                 "skipped": skipped,
-                "passRate": ((float)success / (float)caseTypes.size()) * 100
+                "passRate": ((float)success / (float)caseTypes.size()) * 100,
+                "spendTime": suiteEndTime - suiteStartTime
         ]))
 
         new File([dir.absolutePath, "done"].join("/")).createNewFile()
