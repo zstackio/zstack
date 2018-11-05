@@ -7,7 +7,6 @@ import org.zstack.header.longjob.LongJobState
 import org.zstack.header.longjob.LongJobVO
 import org.zstack.header.longjob.LongJobVO_
 import org.zstack.sdk.SubmitLongJobAction
-import org.zstack.test.integration.ZStackTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 /**
@@ -24,16 +23,15 @@ class SubmitLongJobCase extends SubCase {
 
     @Override
     void setup() {
-        useSpring(ZStackTest.springSpec)
+        INCLUDE_CORE_SERVICES = false
+        spring {
+            include("LongJobManager.xml")
+        }
     }
 
     @Override
     void environment() {
         env = makeEnv {
-            zone {
-                name = "zone"
-                description = "test"
-            }
         }
     }
 
@@ -59,14 +57,22 @@ class SubmitLongJobCase extends SubCase {
     void testExecuteTime() {
         def job = mockJobVO()
         assert job.executeTime == null
+
+        SQL.New(LongJobVO.class).eq(LongJobVO_.uuid, job.uuid).set(LongJobVO_.state, LongJobState.Canceled).update()
+
+        job = dbf.reload(job)
+        assert job.executeTime == null
+
         job.setState(LongJobState.Succeeded)
-        job = dbf.updateAndRefresh(job)
+        dbf.update(job)
+        job = dbf.reload(job)
         long exec2 = job.executeTime
         assert exec2 >= 0
 
         // try again
         job.setState(LongJobState.Canceled)
-        job = dbf.updateAndRefresh(job)
+        dbf.update(job)
+        job = dbf.reload(job)
         assert exec2 == job.executeTime
         SQL.New(LongJobVO.class).eq(LongJobVO_.uuid, job.uuid).delete()
     }
