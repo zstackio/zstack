@@ -85,6 +85,8 @@
 
         <Logger name="org.hibernate" level="warn"/>
 
+        <Logger name="org.zstack.storage.primary" level="TRACE" />
+
         <Root level="warn" additivity="false">
             <AppenderRef ref="Async"/>
         </Root>
