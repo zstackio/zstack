@@ -554,12 +554,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         if (self.getImageUuid() != null && dbf.findByUuid(self.getImageUuid(), ImageVO.class) != null) {
             amsg.setImage(ImageInventory.valueOf(dbf.findByUuid(self.getImageUuid(), ImageVO.class)));
         }
-        amsg.setL3NetworkUuids(CollectionUtils.transformToList(self.getVmNics(), new Function<String, VmNicVO>() {
-            @Override
-            public String call(VmNicVO arg) {
-                return arg.getL3NetworkUuid();
-            }
-        }));
+        amsg.setL3NetworkUuids(VmNicHelper.getL3Uuids(VmNicInventory.valueOf(self.getVmNics())));
         amsg.setDryRun(true);
         amsg.setListAllHosts(true);
 
@@ -635,7 +630,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public VmNicVO call(VmNicVO arg) {
                 for (UsedIpVO ip : arg.getUsedIps()) {
-                    if (ip.getL3NetworkUuid().equals(arg.getL3NetworkUuid())) {
+                    if (ip.getL3NetworkUuid().equals(l3Uuid)) {
                         return arg;
                     }
                 }
@@ -1505,12 +1500,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         amsg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
         amsg.setAllocatorStrategy(HostAllocatorConstant.MIGRATE_VM_ALLOCATOR_TYPE);
         amsg.setVmOperation(VmOperation.Migrate.toString());
-        amsg.setL3NetworkUuids(CollectionUtils.transformToList(self.getVmNics(), new Function<String, VmNicVO>() {
-            @Override
-            public String call(VmNicVO arg) {
-                return arg.getL3NetworkUuid();
-            }
-        }));
+        amsg.setL3NetworkUuids(VmNicHelper.getL3Uuids(VmNicInventory.valueOf(self.getVmNics())));
         amsg.setDryRun(true);
         amsg.setAllowNoL3Networks(true);
 
@@ -1816,8 +1806,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                 String vmNicUuid = msg.getVmNicUuid();
                 VmNicVO vmNicVO = dbf.findByUuid(vmNicUuid, VmNicVO.class);
-                L3NetworkVO l3NetworkVO = dbf.findByUuid(vmNicVO.getL3NetworkUuid(), L3NetworkVO.class);
-                String l3Uuid = l3NetworkVO.getUuid();
+                String l3Uuid = VmNicHelper.getPrimaryL3Uuid(VmNicInventory.valueOf(vmNicVO));
 
                 class SetDefaultL3Network {
                     private boolean isSet = false;
@@ -3599,7 +3588,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     // switch vm default nic if vm current default nic is input parm nic
     protected void selectDefaultL3(VmNicInventory nic) {
-        if (self.getDefaultL3NetworkUuid() != null && !self.getDefaultL3NetworkUuid().equals(nic.getL3NetworkUuid())) {
+        if (self.getDefaultL3NetworkUuid() != null && !VmNicHelper.isDefaultNic(nic, VmInstanceInventory.valueOf(self))) {
             return;
         }
 
@@ -3617,25 +3606,26 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
 
         if (candidate != null) {
+            String newDefaultL3 = VmNicHelper.getPrimaryL3Uuid(VmNicInventory.valueOf(candidate));
             CollectionUtils.safeForEach(
                     pluginRgty.getExtensionList(VmDefaultL3NetworkChangedExtensionPoint.class),
                     new ForEachFunction<VmDefaultL3NetworkChangedExtensionPoint>() {
                         @Override
                         public void run(VmDefaultL3NetworkChangedExtensionPoint ext) {
-                            ext.vmDefaultL3NetworkChanged(vm, previousDefaultL3, candidate.getL3NetworkUuid());
+                            ext.vmDefaultL3NetworkChanged(vm, previousDefaultL3, newDefaultL3);
                         }
                     });
 
-            self.setDefaultL3NetworkUuid(candidate.getL3NetworkUuid());
+            self.setDefaultL3NetworkUuid(newDefaultL3);
             logger.debug(String.format(
                     "after detaching the nic[uuid:%s, L3 uuid:%s], change the default L3 of the VM[uuid:%s]" +
-                            " to the L3 network[uuid: %s]", nic.getUuid(), nic.getL3NetworkUuid(), self.getUuid(),
-                    candidate.getL3NetworkUuid()));
+                            " to the L3 network[uuid: %s]", nic.getUuid(), VmNicHelper.getL3Uuids(nic), self.getUuid(),
+                    newDefaultL3));
         } else {
             self.setDefaultL3NetworkUuid(null);
             logger.debug(String.format(
                     "after detaching the nic[uuid:%s, L3 uuid:%s], change the default L3 of the VM[uuid:%s]" +
-                            " to null, as the VM has no other nics", nic.getUuid(), nic.getL3NetworkUuid(), self.getUuid()));
+                            " to null, as the VM has no other nics", nic.getUuid(), VmNicHelper.getL3Uuids(nic), self.getUuid()));
         }
 
         self = dbf.updateAndRefresh(self);
@@ -3705,7 +3695,9 @@ public class VmInstanceBase extends AbstractVmInstance {
             }
 
             private void removeStaticIp() {
-                new StaticIpOperator().deleteStaticIpByVmUuidAndL3Uuid(self.getUuid(), nic.getL3NetworkUuid());
+                for (UsedIpInventory ip : nic.getUsedIps()) {
+                    new StaticIpOperator().deleteStaticIpByVmUuidAndL3Uuid(self.getUuid(), ip.getL3NetworkUuid());
+                }
             }
 
 
@@ -3856,12 +3848,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 }
                 msg.setHostUuid(self.getHostUuid());
                 msg.setFullAllocate(false);
-                msg.setL3NetworkUuids(CollectionUtils.transformToList(self.getVmNics(), new Function<String, VmNicVO>() {
-                    @Override
-                    public String call(VmNicVO arg) {
-                        return arg.getL3NetworkUuid();
-                    }
-                }));
+                msg.setL3NetworkUuids(VmNicHelper.getL3Uuids(VmNicInventory.valueOf(self.getVmNics())));
                 msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
                 bus.send(msg, new CloudBusCallBack(chain) {
                     @Override

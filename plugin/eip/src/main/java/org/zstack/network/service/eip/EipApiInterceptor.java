@@ -18,6 +18,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l3.IpRangeVO;
 import org.zstack.header.network.l3.UsedIpVO;
 import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmNicHelper;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
 import org.zstack.network.service.vip.Vip;
@@ -144,7 +145,7 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
         }.call();
 
         VmNicVO nic = dbf.findByUuid(msg.getVmNicUuid(), VmNicVO.class);
-        if (nic.getL3NetworkUuid().equals(vip.getL3NetworkUuid())) {
+        if (VmNicHelper.getL3Uuids(nic).contains(vip.getL3NetworkUuid())){
             throw new ApiMessageInterceptionException(argerr("guest l3Network of vm nic[uuid:%s] and vip l3Network of EIP[uuid:%s] are the same network",
                             msg.getVmNicUuid(), msg.getEipUuid()));
         }
@@ -247,7 +248,7 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
             SimpleQuery<VmNicVO> nicq = dbf.createQuery(VmNicVO.class);
             nicq.add(VmNicVO_.uuid, Op.EQ, msg.getVmNicUuid());
             VmNicVO nic = nicq.find();
-            if (nic.getL3NetworkUuid().equals(vip.getL3NetworkUuid())) {
+            if (VmNicHelper.getL3Uuids(nic).contains(vip.getL3NetworkUuid())) {
                 throw new ApiMessageInterceptionException(argerr("guest l3Network of vm nic[uuid:%s] and vip l3Network of vip[uuid: %s] are the same network", msg.getVmNicUuid(), msg.getVipUuid()));
             }
 

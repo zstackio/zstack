@@ -15,6 +15,8 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.network.IPv6NetworkUtils
 
+import java.util.stream.Collectors
+
 /**
  * Created by shixin on 2018/09/10.
  */
@@ -63,7 +65,7 @@ class SetStaticIpv6AddressCase extends SubCase {
         VmInstanceInventory vm = queryVmInstance {
             conditions=["uuid=${vmUuid}"]
         } [0]
-        VmNicInventory nic = vm.getVmNics().get(0)
+        VmNicInventory nic = vm.getVmNics().stream().filter{n -> n.getUuid() == oldNic.uuid}.collect(Collectors.toList()).get(0)
         UsedIpInventory ip41 = null
         UsedIpInventory ip61 = null
         for (UsedIpInventory ip : nic.getUsedIps()) {
@@ -86,6 +88,7 @@ class SetStaticIpv6AddressCase extends SubCase {
     void testCreateVmOfPrivateIPv6Network() {
         L3NetworkInventory l3_statefull = env.inventoryByName("l3-Statefull-DHCP")
         L3NetworkInventory l3 = env.inventoryByName("l3")
+        L3NetworkInventory l3_vlan = env.inventoryByName("l3-vlan-ipv4")
         InstanceOfferingInventory offering = env.inventoryByName("instanceOffering")
         ImageInventory image = env.inventoryByName("image1")
 
@@ -93,11 +96,23 @@ class SetStaticIpv6AddressCase extends SubCase {
             name = "vm-static-ip"
             instanceOfferingUuid = offering.uuid
             imageUuid = image.uuid
-            l3NetworkUuids = [l3_statefull.uuid]
+            l3NetworkUuids = [l3_statefull.uuid, l3_vlan.uuid]
             defaultL3NetworkUuid = l3_statefull.uuid
         }
+        assert vm.getVmNics().size() == 2
 
-        VmNicInventory nic = vm.getVmNics().get(0)
+        VmNicInventory nic
+        for (VmNicInventory nicInv: vm.getVmNics()) {
+            assert nicInv.getUsedIps().size() == 1
+            for (UsedIpInventory ip : nicInv.usedIps) {
+                if (ip.l3NetworkUuid == l3_statefull.uuid) {
+                    nic = nicInv
+                }
+            }
+
+        }
+        assert nic != null
+
         UsedIpInventory ip4 = null
         UsedIpInventory ip6 = null
         nic = attachL3NetworkToVmNic {
@@ -107,7 +122,7 @@ class SetStaticIpv6AddressCase extends SubCase {
         vm = queryVmInstance {
             conditions=["uuid=${vm.uuid}"]
         } [0]
-        nic = vm.getVmNics().get(0)
+        nic = vm.getVmNics().stream().filter{n -> n.getUuid() == nic.uuid}.collect(Collectors.toList()).get(0)
         for (UsedIpInventory ip : nic.getUsedIps()) {
             if (ip.l3NetworkUuid == l3.uuid) {
                 ip4 = ip
@@ -153,7 +168,7 @@ class SetStaticIpv6AddressCase extends SubCase {
         vm = queryVmInstance {
             conditions=["uuid=${vm.uuid}"]
         } [0]
-        nic = vm.getVmNics().get(0)
+        nic = vm.getVmNics().stream().filter{n -> n.getUuid() == nic.uuid}.collect(Collectors.toList()).get(0)
         for (UsedIpInventory ip : nic.getUsedIps()) {
             if (ip.l3NetworkUuid == l3.uuid) {
                 ip4 = ip

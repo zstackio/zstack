@@ -152,6 +152,7 @@ class IPv6DhcpCase extends SubCase {
             return rsp
         }
 
+        /*
         UsedIpVO ipVO1 = Q.New(UsedIpVO.class).eq(UsedIpVO_.l3NetworkUuid, l3_statefull.uuid).eq(UsedIpVO_.vmNicUuid, nic.uuid).find();
         detachIpAddressFromVmNic {
             vmNicUuid = nic.uuid
@@ -198,7 +199,7 @@ class IPv6DhcpCase extends SubCase {
         assert dhcpInfo.l3NetworkUuid == ipVO4.l3NetworkUuid
         assert dhcpInfo.ip == ipVO4.ip
         assert dhcpInfo.mac == nic.mac
-        assert dhcpInfo.ipVersion == ipVO4.ipVersion
+        assert dhcpInfo.ipVersion == ipVO4.ipVersion*/
     }
 
 

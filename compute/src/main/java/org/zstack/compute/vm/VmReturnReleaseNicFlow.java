@@ -45,7 +45,7 @@ public class VmReturnReleaseNicFlow extends NoRollbackFlow {
                 ReturnIpMsg msg = new ReturnIpMsg();
                 msg.setL3NetworkUuid(ip.getL3NetworkUuid());
                 msg.setUsedIpUuid(ip.getUuid());
-                bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, nic.getL3NetworkUuid());
+                bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, ip.getL3NetworkUuid());
                 msgs.add(msg);
             }
 

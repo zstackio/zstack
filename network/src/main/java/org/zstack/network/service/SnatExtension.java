@@ -11,6 +11,7 @@ import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.network.service.NetworkServiceSnatBackend;
 import org.zstack.header.network.service.SnatStruct;
 import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmNicHelper;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.vm.VmNicSpec;
 import org.zstack.utils.Utils;
@@ -88,7 +89,7 @@ public class SnatExtension extends AbstractNetworkServiceExtension implements Co
     private SnatStruct makeSnatStruct(VmInstanceSpec spec, L3NetworkInventory l3) {
         VmNicInventory nic = null;
         for (VmNicInventory inv : spec.getDestNics()) {
-            if (inv.getL3NetworkUuid().equals(l3.getUuid())) {
+            if (VmNicHelper.getL3Uuids(inv).contains(l3.getUuid())){
                 nic = inv;
                 break;
             }
