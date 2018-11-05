@@ -158,7 +158,4 @@
     <message>
         <name>org.zstack.header.vm.APIAttachL3NetworkToVmNicMsg</name>
     </message>
-    <message>
-        <name>org.zstack.header.vm.APIDetachIpAddressFromVmNicMsg</name>
-    </message>
 </service>

@@ -93,7 +93,7 @@ public class CentralizedDnsExtension extends AbstractNetworkServiceExtension imp
     private ForwardDnsStruct makeForwardDnsStruct(VmInstanceSpec spec, final L3NetworkInventory l3) {
         VmNicInventory nic = null;
         for (VmNicInventory inv : spec.getDestNics()) {
-            if (inv.getL3NetworkUuid().equals(l3.getUuid())) {
+            if (VmNicHelper.getL3Uuids(inv).contains(l3.getUuid())) {
                 nic = inv;
                 break;
             }
