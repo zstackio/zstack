@@ -29,6 +29,9 @@ import org.zstack.header.vm.*;
 import org.zstack.header.zone.ZoneState;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
+import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
+import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
@@ -48,6 +51,7 @@ import static org.zstack.utils.CollectionDSL.list;
  * To change this template use File | Settings | File Templates.
  */
 public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
+    private static final CLogger logger = Utils.getLogger(VmInstanceApiInterceptor.class);
     @Autowired
     private CloudBus bus;
     @Autowired
@@ -710,7 +714,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             if (addressMode.equals(IPv6Constants.Stateful_DHCP)) {
                 for (UsedIpVO ipVO : vmNicVO.getUsedIps()) {
                     IpRangeVO rangeVO = dbf.findByUuid(ipVO.getIpRangeUuid(), IpRangeVO.class);
-                    if (rangeVO.equals(addressMode)) {
+                    if (rangeVO.getIpVersion() == IPv6Constants.IPv6 && rangeVO.getAddressMode().equals(addressMode)) {
                         throw new ApiMessageInterceptionException(argerr("there is another IPv6 stateful-dhcp network[uuid:%s] attached vmNic[uuid:%s]",
                                 ipVO.getL3NetworkUuid(), msg.getVmNicUuid()));
                     }
