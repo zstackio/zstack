@@ -119,6 +119,10 @@ public class SystemTag {
         return q.isExists();
     }
 
+    public void simpleCopy(String srcUuid, Class srcClass, String dstUuid, Class dstClass, boolean inherent) {
+        tagMgr.copySystemTag(srcUuid, srcClass.getSimpleName(), dstUuid, dstClass.getSimpleName(), inherent);
+    }
+
     public void copy(String srcUuid, Class srcClass, String dstUuid, Class dstClass) {
         SimpleQuery<SystemTagVO> q = dbf.createQuery(SystemTagVO.class);
         q.add(SystemTagVO_.resourceType, Op.EQ, srcClass.getSimpleName());
