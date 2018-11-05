@@ -1,7 +1,6 @@
 package org.zstack.test.integration.storage.primary.ceph.capacity
 
 import org.springframework.http.HttpEntity
-import org.zstack.sdk.CephPrimaryStoragePoolInventory
 import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.GetPrimaryStorageCapacityResult
@@ -9,7 +8,6 @@ import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.PrimaryStorageInventory
-import org.zstack.storage.ceph.CephPoolCapacity
 import org.zstack.test.integration.storage.Env
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
@@ -100,11 +98,6 @@ class CephCreateVmByImageCapacityCase extends SubCase {
         }
         assert beforeCapacityResult.availableCapacity == capacityResult.availableCapacity + image_virtual_size + image_physical_size
 
-
-        CephPrimaryStoragePoolInventory primaryStoragePool = queryCephPrimaryStoragePool {
-            conditions = ["availableCapacity>0"]
-        }[0]
-
         env.simulator(CephPrimaryStorageBase.INIT_PATH) { HttpEntity<String> e, EnvSpec spec ->
             def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.InitCmd.class)
             CephPrimaryStorageSpec cspec = spec.specByUuid(cmd.uuid)
@@ -115,14 +108,6 @@ class CephCreateVmByImageCapacityCase extends SubCase {
             rsp.userKey = Platform.uuid
             rsp.totalCapacity = cspec.totalCapacity
             rsp.availableCapacity = cspec.availableCapacity - image_physical_size
-            rsp.poolCapacities = [
-                    new CephPoolCapacity(
-                            name : primaryStoragePool.poolName,
-                            availableCapacity : primaryStoragePool.availableCapacity - image_physical_size,
-                            usedCapacity: primaryStoragePool.usedCapacity + image_physical_size,
-                            totalCapacity: cspec.totalCapacity
-                    )
-            ]
             return rsp
         }
         reconnectPrimaryStorage {
