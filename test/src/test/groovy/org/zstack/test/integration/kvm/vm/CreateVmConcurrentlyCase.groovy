@@ -1,7 +1,6 @@
 package org.zstack.test.integration.kvm.vm
 
 import org.zstack.compute.vm.VmQuotaConstant
-import org.zstack.core.cloudbus.CloudBusGlobalProperty
 import org.zstack.core.db.Q
 import org.zstack.header.identity.AccountType
 import org.zstack.header.network.service.NetworkServiceType
@@ -15,9 +14,13 @@ import org.zstack.sdk.*
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
+import org.zstack.utils.Utils
 import org.zstack.utils.data.SizeUnit
+import org.zstack.utils.stopwatch.StopWatch
 
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+
 ///**
 // * Created by kayo on 2018/3/20.
 // */
@@ -184,10 +187,26 @@ class CreateVmConcurrentlyCase extends SubCase {
     void test() {
         env.create {
             def flatl3 = env.inventoryByName("l3") as L3NetworkInventory
-            def vrl3 = env.inventoryByName("l3-vr") as L3NetworkInventory
-            testCreateVMWithQuota()
-            //testCreateVMConcurrently(1000, flatl3.uuid)
+
+            StopWatch sw = Utils.getStopWatch()
+            int n = 50
+            try {
+                String numberOfVM = System.getProperty("numberOfVM")
+                if (numberOfVM != null) {
+                    n = Integer.parseInt(numberOfVM)
+                }
+
+                sw.start()
+                testCreateVMConcurrently(n, flatl3.uuid)
+            } finally {
+                sw.stop()
+                logger.info(String.format("XXX: Creating %d VMs costs %d seconds", n, sw.getLapse(TimeUnit.SECONDS)))
+            }
+
+            //def vrl3 = env.inventoryByName("l3-vr") as L3NetworkInventory
             //testCreateVMConcurrently(300, vrl3.uuid)
+
+            testCreateVMWithQuota()
         }
     }
 
