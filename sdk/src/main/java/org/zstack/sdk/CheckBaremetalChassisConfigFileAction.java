@@ -75,11 +75,11 @@ public class CheckBaremetalChassisConfigFileAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/baremetal/chassis/from-file";
+        info.httpMethod = "POST";
+        info.path = "/baremetal/chassis/from-file/check";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

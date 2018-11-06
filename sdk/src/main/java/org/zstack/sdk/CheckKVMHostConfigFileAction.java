@@ -75,11 +75,11 @@ public class CheckKVMHostConfigFileAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/hosts/kvm/from-file";
+        info.httpMethod = "POST";
+        info.path = "/hosts/kvm/from-file/check";
         info.needSession = true;
         info.needPoll = false;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 
