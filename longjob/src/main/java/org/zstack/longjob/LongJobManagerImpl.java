@@ -31,6 +31,7 @@ import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import java.sql.SQLNonTransientConnectionException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -40,8 +41,11 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
+import static org.zstack.header.longjob.LongJobConstants.LongJobOperation;
 import static org.zstack.longjob.LongJobUtils.jobCompleted;
 import static org.zstack.longjob.LongJobUtils.updateByUuid;
+import static org.zstack.core.db.DBSourceUtils.isDBConnected;
+import static org.zstack.core.db.DBSourceUtils.waitDBConnected;
 
 /**
  * Created by GuoYi on 11/14/17.
@@ -440,13 +444,30 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                     .limit(group).start(start).listValues();
             for (String uuid : uuids) {
                 if (destinationMaker.isManagedByUs(uuid)) {
-                    LongJobVO vo = dbf.findByUuid(uuid, LongJobVO.class);
-                    vo.setManagementNodeUuid(Platform.getManagementServerId());
-                    vo = dbf.updateAndRefresh(vo);
-                    doLoadLongJob(vo);
+                    retryTakeOverLongJob(uuid);
                 }
             }
             start += group;
+        }
+    }
+
+    private void retryTakeOverLongJob(String uuid) {
+        LongJobOperation operation = null;
+        try {
+            LongJobVO vo = updateByUuid(uuid, it -> it.setManagementNodeUuid(Platform.getManagementServerId()));
+            operation = getLoadOperation(vo);
+            doLoadLongJob(vo, operation);
+        } catch (Throwable t) {
+            if (!(t instanceof SQLNonTransientConnectionException) && isDBConnected()) {
+                throw t;
+            }
+
+            if (!waitDBConnected(5, 5)) {
+                throw t;
+            }
+
+            LongJobVO vo = updateByUuid(uuid, it -> it.setManagementNodeUuid(Platform.getManagementServerId()));
+            doLoadLongJob(vo, operation);
         }
     }
 
@@ -483,15 +504,22 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
     }
 
     private void doLoadLongJob(LongJobVO vo) {
-        if (vo.getState() == LongJobState.Waiting) {
+        doLoadLongJob(vo, null);
+    }
+
+    private void doLoadLongJob(LongJobVO vo, LongJobOperation operation) {
+        if (operation == null) {
+            operation = getLoadOperation(vo);
+        }
+
+        if (operation == LongJobOperation.Start) {
             // launch the waiting jobs
             ThreadContext.put(Constants.THREAD_CONTEXT_API, vo.getApiId());
             LongJob job = longJobFactory.getLongJob(vo.getJobName());
             ThreadContext.put(Constants.THREAD_CONTEXT_TASK_NAME, job.getClass().toString());
             doStartJob(job, vo, null);
             SQL.New(LongJobVO.class).eq(LongJobVO_.uuid, vo.getUuid()).set(LongJobVO_.state, LongJobState.Running).update();
-        } else if (vo.getState() == LongJobState.Running || vo.getState() == LongJobState.Suspended) {
-            // set running jobs to error
+        } else if (operation == LongJobOperation.Resume) {
             ThreadContext.put(Constants.THREAD_CONTEXT_API, vo.getApiId());
             LongJob job = longJobFactory.getLongJob(vo.getJobName());
             ThreadContext.put(Constants.THREAD_CONTEXT_TASK_NAME, job.getClass().toString());
@@ -499,6 +527,15 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             job.resume(vo);
             dbf.update(vo);
         }
+    }
+
+    private LongJobOperation getLoadOperation(LongJobVO vo) {
+        if (vo.getState() == LongJobState.Waiting) {
+            return LongJobOperation.Start;
+        } else if (vo.getState() == LongJobState.Running || vo.getState() == LongJobState.Suspended) {
+            return LongJobOperation.Resume;
+        }
+        return null;
     }
 
     @Override
