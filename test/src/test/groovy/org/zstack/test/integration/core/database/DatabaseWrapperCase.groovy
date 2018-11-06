@@ -8,6 +8,7 @@ import org.zstack.core.db.SQLBatch
 import org.zstack.header.configuration.InstanceOfferingVO
 import org.zstack.header.configuration.InstanceOfferingVO_
 import org.zstack.header.identity.AccountConstant
+import org.zstack.core.db.DBSourceUtils
 import org.zstack.testlib.SubCase
 
 import java.sql.SQLException
@@ -27,6 +28,8 @@ class DatabaseWrapperCase extends SubCase {
 
     @Override
     void test() {
+        assert DBSourceUtils.isDBConnected()
+        assert DBSourceUtils.waitDBConnected(5, 5)
         testQ()
         testSQLBatch()
     }
