@@ -22,7 +22,6 @@ public class CephPrimaryStoragePoolInventory {
     private Long availableCapacity;
     private Long usedCapacity;
     private Integer replicatedSize;
-    private Long totalCapacity;
 
     public static CephPrimaryStoragePoolInventory valueOf(CephPrimaryStoragePoolVO vo) {
         CephPrimaryStoragePoolInventory inv = new CephPrimaryStoragePoolInventory();
@@ -37,7 +36,6 @@ public class CephPrimaryStoragePoolInventory {
         inv.availableCapacity = vo.getAvailableCapacity();
         inv.usedCapacity = vo.getUsedCapacity();
         inv.replicatedSize = vo.getReplicatedSize();
-        inv.totalCapacity = vo.getTotalCapacity();
         return inv;
     }
 
@@ -135,13 +133,5 @@ public class CephPrimaryStoragePoolInventory {
 
     public void setReplicatedSize(Integer replicatedSize) {
         this.replicatedSize = replicatedSize;
-    }
-
-    public Long getTotalCapacity() {
-        return totalCapacity;
-    }
-
-    public void setTotalCapacity(Long totalCapacity) {
-        this.totalCapacity = totalCapacity;
     }
 }

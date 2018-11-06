@@ -8,7 +8,6 @@ public class CephPoolCapacity {
     int replicatedSize;
     Long availableCapacity;
     Long usedCapacity;
-    Long totalCapacity;
 
     public String getName() {
         return name;
@@ -40,13 +39,5 @@ public class CephPoolCapacity {
 
     public void setUsedCapacity(Long usedCapacity) {
         this.usedCapacity = usedCapacity;
-    }
-
-    public Long getTotalCapacity() {
-        return totalCapacity;
-    }
-
-    public void setTotalCapacity(Long totalCapacity) {
-        this.totalCapacity = totalCapacity;
     }
 }

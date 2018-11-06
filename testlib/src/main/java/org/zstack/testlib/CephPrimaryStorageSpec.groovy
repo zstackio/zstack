@@ -5,7 +5,6 @@ import org.zstack.core.Platform
 import org.zstack.core.db.Q
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.sdk.PrimaryStorageInventory
-import org.zstack.storage.ceph.CephPoolCapacity
 import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonVO
@@ -22,12 +21,6 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
     List<String> monUrls
     @SpecParam
     Map<String, String> monAddrs = [:]
-    @SpecParam
-    String rootVolumePoolName = "pri-c-" + Platform.getUuid()
-    @SpecParam
-    String dataVolumePoolName = "pri-v-d-" + Platform.getUuid()
-    @SpecParam
-    String imageCachePoolName = "pri-v-r-" + Platform.getUuid()
 
     CephPrimaryStorageSpec(EnvSpec envSpec) {
         super(envSpec)
@@ -70,27 +63,6 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                 rsp.userKey = Platform.uuid
                 rsp.totalCapacity = cspec.totalCapacity
                 rsp.availableCapacity = cspec.availableCapacity
-                List<CephPoolCapacity> poolCapacities = [
-                        new CephPoolCapacity(
-                                name : cspec.rootVolumePoolName,
-                                availableCapacity : cspec.availableCapacity,
-                                usedCapacity : cspec.totalCapacity - cspec.availableCapacity,
-                                totalCapacity: cspec.totalCapacity
-                        ),
-                        new CephPoolCapacity(
-                                name : cspec.dataVolumePoolName,
-                                availableCapacity : 0,
-                                usedCapacity : 0,
-                                totalCapacity: 0
-                        ),
-                        new CephPoolCapacity(
-                                name : cspec.imageCachePoolName,
-                                availableCapacity : 0,
-                                usedCapacity : 0,
-                                totalCapacity: 0
-                        ),
-                ]
-                rsp.poolCapacities = poolCapacities
                 return rsp
             }
 
@@ -217,9 +189,6 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
             delegate.userTags = userTags
             delegate.systemTags = systemTags
             delegate.monUrls = monUrls
-            delegate.rootVolumePoolName = rootVolumePoolName
-            delegate.dataVolumePoolName = dataVolumePoolName
-            delegate.imageCachePoolName = imageCachePoolName
         } as PrimaryStorageInventory
 
         postCreate {
