@@ -6,4 +6,11 @@ package org.zstack.header.longjob;
 public class LongJobConstants {
     public static final String SERVICE_ID = "longjob";
     public static final String ACTION_CATEGORY = "longjob";
+
+    public enum LongJobOperation {
+        Start,
+        Resume,
+        Rerun,
+        Cancel,
+    }
 }
