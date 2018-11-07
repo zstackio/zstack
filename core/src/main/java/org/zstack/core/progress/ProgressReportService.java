@@ -467,14 +467,15 @@ public class ProgressReportService extends AbstractService implements Management
                         .find();
 
                 int currentPecent = res == null ? 0 : new Double(res).intValue();
+
+                Runnable cleanup = saveThreadContext();
+                Defer.defer(cleanup);
+                ThreadContext.put(THREAD_CONTEXT_API, apiId);
+                ThreadContext.put(THREAD_CONTEXT_TASK_NAME, taskName);
                 if (endPercent <= currentPecent) {
                     reportProgress(String.valueOf(endPercent));
                     return true;
                 } else {
-                    Runnable cleanup = saveThreadContext();
-                    Defer.defer(cleanup);
-                    ThreadContext.put(THREAD_CONTEXT_API, apiId);
-                    ThreadContext.put(THREAD_CONTEXT_TASK_NAME, taskName);
                     ProgressReportService.reportProgress(String.valueOf(currentPecent + 1));
                     return false;
                 }
