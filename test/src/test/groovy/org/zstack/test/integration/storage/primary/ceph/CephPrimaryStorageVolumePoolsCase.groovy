@@ -12,6 +12,9 @@ import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.*
 import org.zstack.utils.EncodingConversion
 import org.zstack.utils.data.SizeUnit
+
+import static java.util.Arrays.asList
+
 /**
  * Created by xing5 on 2017/2/28.
  */
@@ -20,6 +23,9 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
 
     String HIGH_POOL_NAME = "high_pool"
     String LOW_POOL_NAME = "low_pool"
+    String NEW_ROOT_POOL_NAME = "new_root_pool"
+    String ROOT_POOL_TYPE = "Root"
+    String DATA_POOL_TYPE = "Data"
 
     @Override
     void setup() {
@@ -67,6 +73,12 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
 
                     pool {
                         poolName = HIGH_POOL_NAME
+                        type = DATA_POOL_TYPE
+                    }
+
+                    pool {
+                        poolName = NEW_ROOT_POOL_NAME
+                        type = ROOT_POOL_TYPE
                     }
                 }
 
@@ -101,10 +113,12 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
                 useImage("image")
                 useL3Networks("l3")
             }
+
         }
     }
 
     VmInstanceInventory vm
+    VmInstanceInventory root_pool_vm
     DiskOfferingInventory diskOffering
     CephPrimaryStorageInventory primaryStorage
 
@@ -152,6 +166,22 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
         assert cmd.installPath.contains(dataVolumePoolName)
     }
 
+    void testVmRootAndDataVolumeUseDesignatedPool() {
+        String rootVolumePoolName = CephSystemTags.USE_CEPH_ROOT_POOL.getTokenByResourceUuid(root_pool_vm.rootVolumeUuid,CephSystemTags.USE_CEPH_ROOT_POOL_TOKEN)
+        VolumeInventory rootVolume = root_pool_vm.allVolumes.find { it.uuid == root_pool_vm.rootVolumeUuid }
+
+        String defaultDataVolumePoolName = CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_DATA_VOLUME_POOL.getTokenByResourceUuid(primaryStorage.uuid, CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_DATA_VOLUME_POOL_TOKEN)
+        VolumeInventory dataVolume = root_pool_vm.allVolumes.find { it.type == DATA_POOL_TYPE }
+
+        assert rootVolumePoolName != null
+        assert rootVolume != null
+        assert rootVolume.installPath.contains(rootVolumePoolName)
+
+        assert defaultDataVolumePoolName != null
+        assert dataVolume != null
+        assert !dataVolume.installPath.contains(defaultDataVolumePoolName)
+    }
+
     void testVmRootVolumeUseDefaultPool() {
         String rootVolumePoolName = CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_ROOT_VOLUME_POOL.getTokenByResourceUuid(primaryStorage.uuid, CephSystemTags.DEFAULT_CEPH_PRIMARY_STORAGE_ROOT_VOLUME_POOL_TOKEN)
         VolumeInventory rootVolume = vm.allVolumes.find { it.uuid == vm.rootVolumeUuid }
@@ -170,6 +200,7 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
         CephPrimaryStoragePoolInventory inv = addCephPrimaryStoragePool {
             poolName = LOW_POOL_NAME
             primaryStorageUuid = primaryStorage.uuid
+            type = DATA_POOL_TYPE
         }
 
         assert inv.poolName == LOW_POOL_NAME
@@ -208,6 +239,7 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
         a.isCreate = true
         a.poolName = LOW_POOL_NAME
         a.primaryStorageUuid = primaryStorage.uuid
+        a.type = DATA_POOL_TYPE
         a.sessionId = adminSession()
         def res = a.call()
 
@@ -233,9 +265,18 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
         action.primaryStorageUuid = primaryStorage.uuid
         action.poolName = HIGH_POOL_NAME
         action.sessionId = adminSession()
+        action.type = DATA_POOL_TYPE
         def ret = action.call()
 
+        AddCephPrimaryStoragePoolAction rootPoolAction = new AddCephPrimaryStoragePoolAction()
+        rootPoolAction.primaryStorageUuid = primaryStorage.uuid
+        rootPoolAction.poolName = NEW_ROOT_POOL_NAME
+        rootPoolAction.sessionId = adminSession()
+        rootPoolAction.type = ROOT_POOL_TYPE
+        def rootRet = rootPoolAction.call()
+
         assert ret.error != null
+        assert rootRet.error != null
     }
 
     void testAddCephPoolWithChinese(){
@@ -243,6 +284,7 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
             addCephPrimaryStoragePool {
                 poolName = "中文"
                 primaryStorageUuid = primaryStorage.uuid
+                type = DATA_POOL_TYPE
             }
         }
 
@@ -250,8 +292,24 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
             addCephPrimaryStoragePool {
                 poolName = "zhong中文"
                 primaryStorageUuid = primaryStorage.uuid
+                type = DATA_POOL_TYPE
             }
         }
+    }
+
+    void createRootPoolVm(){
+        L3NetworkSpec l3Spec = env.specByName("l3")
+        root_pool_vm = createVmInstance {
+            name = "new_root_pool_vm"
+            instanceOfferingUuid = vm.instanceOfferingUuid
+            imageUuid = vm.imageUuid
+            l3NetworkUuids = asList((l3Spec.inventory.uuid))
+            dataDiskOfferingUuids = [diskOffering.uuid]
+            sessionId = adminSession()
+            rootVolumeSystemTags = [CephSystemTags.USE_CEPH_ROOT_POOL.instantiateTag([(CephSystemTags.USE_CEPH_ROOT_POOL_TOKEN) : NEW_ROOT_POOL_NAME])]
+            dataVolumeSystemTags = [CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL.instantiateTag([(CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL_TOKEN) : HIGH_POOL_NAME])]
+            systemTags = ["primaryStorageUuidForDataVolume::${primaryStorage.uuid}".toString()]
+        } as VmInstanceInventory
     }
 
     @Override
@@ -261,7 +319,9 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
             diskOffering = (env.specByName("diskOffering") as DiskOfferingSpec).inventory
             primaryStorage = (env.specByName("ceph-pri") as CephPrimaryStorageSpec).inventory
 
+            createRootPoolVm()
             testVmRootVolumeUseDefaultPool()
+            testVmRootAndDataVolumeUseDesignatedPool()
             testCreateDataVolumeInPool()
             testCreateDataVolumeInDefaultPool()
             testAddAndDeletePool()

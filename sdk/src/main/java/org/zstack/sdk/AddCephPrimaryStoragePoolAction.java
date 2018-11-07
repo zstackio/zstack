@@ -37,6 +37,9 @@ public class AddCephPrimaryStoragePoolAction extends AbstractAction {
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
+    @Param(required = true, validValues = {"Root","Data"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String type;
+
     @Param(required = false)
     public boolean isCreate = false;
 

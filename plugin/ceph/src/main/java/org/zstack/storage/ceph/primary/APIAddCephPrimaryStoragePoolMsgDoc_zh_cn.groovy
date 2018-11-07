@@ -102,6 +102,16 @@ doc {
 					since "0.6"
 					
 				}
+				column {
+					name "type"
+					enclosedIn "params"
+					desc "存储池类型"
+					location "body"
+					type "String"
+					optional true
+					since "0.6"
+					values ("Root","Data")
+				}
 			}
         }
 
