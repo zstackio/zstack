@@ -43,17 +43,17 @@ class ProgressCase extends SubCase {
         reportProgress("5")
         progRpt.reportProgressUntil("10", 10, TimeUnit.MILLISECONDS)
         retryInSecs {
-            assert Q.New(TaskProgressVO.class).count() == 10 - 5 + 1
+            assert Q.New(TaskProgressVO.class).count() == 10 - 5 + 2
         }
 
         progRpt.reportProgressUntil("10", 10, TimeUnit.MILLISECONDS)
         sleep(500)
-        assert Q.New(TaskProgressVO.class).count() == 10 - 5 + 1
+        assert Q.New(TaskProgressVO.class).count() == 10 - 5 + 3
         SQL.New(TaskProgressVO.class).delete()
 
 
         progRpt.reportProgressUntil("10", 10, TimeUnit.MILLISECONDS)
         sleep(1000)
-        assert Q.New(TaskProgressVO.class).count() == 10
+        assert Q.New(TaskProgressVO.class).count() == 10 + 1
     }
 }
