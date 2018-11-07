@@ -1,24 +1,25 @@
-package org.zstack.test.integration.storage.primary.ceph.capacity
+package org.zstack.test.integration.storage.primary.ceph.xsky.capacity
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.Platform
-import org.zstack.header.image.ImageConstant
-import org.zstack.sdk.*
+import org.zstack.sdk.BackupStorageInventory
+import org.zstack.sdk.CephBackupStorageInventory
+import org.zstack.sdk.CephPrimaryStoragePoolInventory
+import org.zstack.sdk.GetPrimaryStorageCapacityResult
+import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.storage.ceph.CephPoolCapacity
-import org.zstack.storage.ceph.backup.CephBackupStorageBase
 import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
 import org.zstack.test.integration.storage.CephEnv
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.CephPrimaryStorageSpec
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
-import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 
 /**
  * Created by lining on 2018/11/7.
  */
-class CephPoolCapacityCase extends SubCase {
+class CephXskyPoolCapacityCase extends SubCase {
     EnvSpec env
 
     @Override
@@ -45,7 +46,7 @@ class CephPoolCapacityCase extends SubCase {
 
     void testReconnectPrimaryStorage() {
         PrimaryStorageInventory ps = env.inventoryByName("ceph-pri")
-        BackupStorageInventory bs = env.inventoryByName("ceph-bk")
+        CephBackupStorageInventory bs = env.inventoryByName("ceph-bk")
 
         CephPrimaryStoragePoolInventory primaryStoragePool = queryCephPrimaryStoragePool {}[0]
 
@@ -61,14 +62,20 @@ class CephPoolCapacityCase extends SubCase {
             def rsp = new CephPrimaryStorageBase.InitRsp()
             rsp.fsid = cspec.fsid
             rsp.userKey = Platform.uuid
-            rsp.totalCapacity = beforePsCapacity.totalCapacity + addSize
-            rsp.availableCapacity = beforePsCapacity.availableCapacity + addSize
+            rsp.totalCapacity = 1000
+            rsp.availableCapacity = 999
             rsp.poolCapacities = [
                     new CephPoolCapacity(
                             name : primaryStoragePool.poolName,
                             usedCapacity: primaryStoragePool.usedCapacity,
                             availableCapacity : primaryStoragePool.availableCapacity + addSize,
                             totalCapacity: primaryStoragePool.totalCapacity + addSize
+                    ),
+                    new CephPoolCapacity(
+                            name : bs.poolName,
+                            usedCapacity: bs.getPoolUsedCapacity(),
+                            availableCapacity : bs.availableCapacity + addSize,
+                            totalCapacity: bs.totalCapacity + addSize
                     ),
                     new CephPoolCapacity(
                             name : "other-pool",
@@ -81,8 +88,10 @@ class CephPoolCapacityCase extends SubCase {
                             usedCapacity: 11
                     )
             ]
+            rsp.xsky = true
             return rsp
         }
+
         reconnectPrimaryStorage {
             uuid = ps.uuid
         }

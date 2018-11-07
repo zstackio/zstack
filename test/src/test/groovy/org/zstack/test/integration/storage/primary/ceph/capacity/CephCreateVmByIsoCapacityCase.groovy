@@ -75,9 +75,9 @@ class CephCreateVmByIsoCapacityCase extends SubCase {
         def bsPoolAvailableCapacity = 1
         def bsPoolReplicatedSize = 2
         def bsPoolUsedCapacity = 3
-        def psPoolUsedCapacity = 6
-        def psPoolAvailableCapacity = SizeUnit.GIGABYTE.toByte(100) - psPoolUsedCapacity
+        def psPoolAvailableCapacity = 4
         def psPoolReplicatedSize = 5
+        def psPoolUsedCapacity = 6
         def download_image_path_invoked = false
         env.simulator(CephBackupStorageBase.DOWNLOAD_IMAGE_PATH) {
             def rsp = new CephBackupStorageBase.DownloadRsp()
@@ -147,10 +147,6 @@ class CephCreateVmByIsoCapacityCase extends SubCase {
         }
         assert beforeCapacityResult.availableCapacity == capacityResult.availableCapacity + SizeUnit.GIGABYTE.toByte(20) + image_physical_size
 
-        CephPrimaryStoragePoolInventory primaryStoragePool = queryCephPrimaryStoragePool {
-            conditions = ["availableCapacity>$image_physical_size".toString()]
-        }[0]
-
         env.simulator(CephPrimaryStorageBase.INIT_PATH) { HttpEntity<String> e, EnvSpec spec ->
             def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.InitCmd.class)
             CephPrimaryStorageSpec cspec = spec.specByUuid(cmd.uuid)
@@ -161,14 +157,6 @@ class CephCreateVmByIsoCapacityCase extends SubCase {
             rsp.userKey = Platform.uuid
             rsp.totalCapacity = cspec.totalCapacity
             rsp.availableCapacity = cspec.availableCapacity - image_physical_size
-            rsp.poolCapacities = [
-                    new CephPoolCapacity(
-                            name : primaryStoragePool.poolName,
-                            availableCapacity : primaryStoragePool.availableCapacity - image_physical_size,
-                            usedCapacity: primaryStoragePool.usedCapacity + image_physical_size,
-                            totalCapacity: cspec.totalCapacity
-                    )
-            ]
             return rsp
         }
 
