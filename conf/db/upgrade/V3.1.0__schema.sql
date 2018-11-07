@@ -219,6 +219,8 @@ ALTER TABLE `zstack`.`VipVO` ADD COLUMN `prefixLen` int(10) unsigned DEFAULT NUL
 ALTER TABLE `zstack`.`LongJobVO`  ADD COLUMN `executeTime` int unsigned DEFAULT NULL;
 UPDATE `zstack`.`LongJobVO` job SET job.`executeTime` = TIMESTAMPDIFF(SECOND, job.createDate, job.lastOpDate);
 
+ALTER TABLE CephPrimaryStoragePoolVO ADD totalCapacity bigint(20) unsigned NOT NULL DEFAULT 0;
+
 CREATE TABLE `ScsiLunVO` (
     `name` VARCHAR(256) DEFAULT NULL,
     `uuid` VARCHAR(32) NOT NULL,

@@ -73,4 +73,10 @@ doc {
 		type "Integer"
 		since "2.3.2"
 	}
+	field {
+		name "totalCapacity"
+		desc ""
+		type "Long"
+		since "3.1.0"
+	}
 }
