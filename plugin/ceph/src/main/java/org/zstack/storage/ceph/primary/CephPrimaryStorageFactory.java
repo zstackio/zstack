@@ -222,7 +222,13 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     }
 
     @Override
-    public void update(String fsid, final long total, final long avail, List<CephPoolCapacity> poolCapacities) {
+    public void update(CephCapacity cephCapacity) {
+        String fsid = cephCapacity.getFsid();
+        long total = cephCapacity.getTotalCapacity();
+        long avail = cephCapacity.getAvailableCapacity();
+        List<CephPoolCapacity> poolCapacities = cephCapacity.getPoolCapacities();
+        boolean xsky = cephCapacity.isXsky();
+
         CephPrimaryStorageVO cephPs = SQL.New("select pri from CephPrimaryStorageVO pri where pri.fsid = :fsid",CephPrimaryStorageVO.class)
                 .param("fsid", fsid)
                 .find();
@@ -230,13 +236,32 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
             return;
         }
 
-        if (poolCapacities == null) {
-            return;
-        }
-
         List<String> poolNames = new ArrayList<>();
         List<Long> poolTotalCapacities = new ArrayList<>();
         List<Long> poolAvailableCapacities = new ArrayList<>();
+
+        if (!xsky) {
+            PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(cephPs.getUuid());
+            updater.run(new PrimaryStorageCapacityUpdaterRunnable() {
+                @Override
+                public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
+                    if (cap.getTotalCapacity() == 0 && cap.getAvailableCapacity() == 0) {
+                        // init
+                        cap.setTotalCapacity(total);
+                        cap.setAvailableCapacity(avail);
+                    }
+
+                    cap.setTotalPhysicalCapacity(total);
+                    cap.setAvailablePhysicalCapacity(avail);
+
+                    return cap;
+                }
+            });
+        }
+
+        if (poolCapacities == null) {
+            return;
+        }
 
         new SQLBatch() {
             @Override
@@ -275,6 +300,10 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
                     poolVO.setUsedCapacity(poolCapacity.getUsedCapacity());
                     poolVO.setTotalCapacity(poolCapacity.getTotalCapacity());
                     dbf.getEntityManager().merge(poolVO);
+                }
+
+                if (!xsky) {
+                    return;
                 }
 
                 long psTotalPhysicalCapacity = poolTotalCapacities.stream().mapToLong(Long::longValue).sum();
