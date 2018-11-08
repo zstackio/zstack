@@ -8,7 +8,6 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.gc.GC;
 import org.zstack.core.gc.GCCompletion;
 import org.zstack.core.gc.TimeBasedGarbageCollector;
@@ -27,7 +26,6 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkDeleteExtensionPoint;
-import org.zstack.header.network.l3.L3NetworkException;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.UsedIpInventory;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory;
@@ -48,7 +46,6 @@ import org.zstack.network.service.userdata.UserdataStruct;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
@@ -71,8 +68,6 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
     private CloudBus bus;
     @Autowired
     private DatabaseFacade dbf;
-    @Autowired
-    private ErrorFacade errf;
     @Autowired
     private ApiTimeoutManager timeoutMgr;
     @Autowired
@@ -178,8 +173,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     UserdataTO to = new UserdataTO();
                     MetadataTO mto = new MetadataTO();
                     mto.vmUuid = vmuuid;
-                    String vmHostname = VmSystemTags.HOSTNAME.getTokenByResourceUuid(vmuuid, VmSystemTags.HOSTNAME_TOKEN);
-                    mto.vmHostname = vmHostname;
+                    mto.vmHostname = VmSystemTags.HOSTNAME.getTokenByResourceUuid(vmuuid, VmSystemTags.HOSTNAME_TOKEN);
                     to.metadata = mto;
 
                     VmIpL3Uuid l = vmipl3.get(vmuuid);
@@ -237,7 +231,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
     }
 
     @Override
-    public String preDeleteL3Network(L3NetworkInventory inventory) throws L3NetworkException {
+    public String preDeleteL3Network(L3NetworkInventory inventory) {
         return null;
     }
 
@@ -303,7 +297,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
 
     private UserdataStruct makeUserdataStructForMigratingVm(VmInstanceInventory inv, String hostUuid) {
         String providerType = new NetworkProviderFinder().getNetworkProviderTypeByNetworkServiceType(inv.getDefaultL3NetworkUuid(), UserdataConstant.USERDATA_TYPE_STRING);
-        if (providerType == null || !FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING.equals(providerType)) {
+        if (!FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING.equals(providerType)) {
             return null;
         }
 
@@ -499,6 +493,11 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
 
     @Override
     public void applyUserdata(final UserdataStruct struct, final Completion completion) {
+        if (struct.getUserdataList() == null || struct.getUserdataList().isEmpty()) {
+            completion.success();
+            return;
+        }
+
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("flat-network-userdata-set-for-vm-%s", struct.getVmUuid()));
         chain.then(new ShareFlow() {
@@ -539,8 +538,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
 
                         MetadataTO to = new MetadataTO();
                         to.vmUuid = struct.getVmUuid();
-                        String vmHostname = VmSystemTags.HOSTNAME.getTokenByResourceUuid(struct.getVmUuid(), VmSystemTags.HOSTNAME_TOKEN);
-                        to.vmHostname = vmHostname;
+                        to.vmHostname = VmSystemTags.HOSTNAME.getTokenByResourceUuid(struct.getVmUuid(), VmSystemTags.HOSTNAME_TOKEN);
                         UserdataTO uto = new UserdataTO();
                         uto.metadata = to;
                         uto.userdataList = struct.getUserdataList();

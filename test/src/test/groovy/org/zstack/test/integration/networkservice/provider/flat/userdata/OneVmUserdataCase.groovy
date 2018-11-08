@@ -4,7 +4,6 @@ import org.springframework.http.HttpEntity
 import org.zstack.compute.vm.VmSystemTags
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.header.vm.VmInstanceVO
-import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.flat.BridgeNameFinder
@@ -18,7 +17,6 @@ import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VmNicInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
-import org.zstack.test.integration.networkservice.provider.flat.FlatNetworkServiceEnv
 import org.zstack.testlib.*
 import org.zstack.utils.data.SizeUnit
 

@@ -151,8 +151,7 @@ class NoDhcpServiceCase extends SubCase {
             hostUuid = env.inventoryByName("kvm").uuid
         }
 
-        assert cmd != null
-        assert null == cmd.userdata.dhcpServerIp
+        assert cmd == null
 
         migrateVm {
             delegate.vmInstanceUuid = vm.uuid
