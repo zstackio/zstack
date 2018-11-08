@@ -36,6 +36,7 @@ import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.vip.*;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -909,6 +910,12 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         final EipInventory eip = struct.getEip();
         final VmNicInventory nic = struct.getNic();
         final UsedIpInventory guestIp = struct.getGuestIp();
+        if (guestIp == null) {
+            /* fix http://jira.zstack.io/browse/ZSTAC-16343 */
+            List<String> nicIps = nic.getUsedIps().stream().map(UsedIpInventory::getIp).collect(Collectors.toList());
+            completion.fail(operr("cannot find Eip guest ip: %s in vmNic ips :%s", eip.getGuestIp(), nicIps));
+            return;
+        }
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("attach-eip-%s-vmNic-%s", eip.getUuid(), nic.getUuid()));
