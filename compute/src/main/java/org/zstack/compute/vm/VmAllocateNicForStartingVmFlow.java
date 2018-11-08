@@ -20,9 +20,7 @@ import org.zstack.header.network.l3.*;
 import org.zstack.header.vm.*;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
-import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
@@ -42,8 +40,6 @@ public class VmAllocateNicForStartingVmFlow implements Flow {
     protected L3NetworkManager l3nm;
     @Autowired
     private PluginRegistry pluginRgty;
-
-    private static CLogger logger = Utils.getLogger(VmAllocateNicForStartingVmFlow.class);
 
     @Override
     public void run(final FlowTrigger trigger, Map data) {
@@ -156,6 +152,11 @@ public class VmAllocateNicForStartingVmFlow implements Flow {
     @Override
     public void rollback(FlowRollback trigger, Map data) {
         List<UsedIpInventory> allocatedIps = (List<UsedIpInventory>) data.get(VmAllocateNicForStartingVmFlow.class);
+        if (allocatedIps == null || allocatedIps.isEmpty()) {
+            trigger.rollback();
+            return;
+        }
+
         new While<>(allocatedIps).all((ip, cmpl) -> {
             ReturnIpMsg rmsg = new ReturnIpMsg();
             rmsg.setL3NetworkUuid(ip.getL3NetworkUuid());
