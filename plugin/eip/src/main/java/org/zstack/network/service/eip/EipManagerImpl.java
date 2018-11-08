@@ -8,7 +8,6 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
@@ -38,16 +37,13 @@ import org.zstack.network.service.vip.*;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
-
-import static org.zstack.core.Platform.operr;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -68,11 +64,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
     @Autowired
     private AccountManager acntMgr;
     @Autowired
-    private VipManager vipMgr;
-    @Autowired
     private TagManager tagMgr;
-    @Autowired
-    private ErrorFacade errf;
 
     private Map<String, EipBackend> backends = new HashMap<>();
 
@@ -212,7 +204,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                         .eq(VmNicVO_.vmInstanceUuid, rnic.getVmInstanceUuid())
                         .listValues();
                 Set l3UuidSet = new HashSet<>(vrAttachedL3Uuids);
-                l3Uuids = l3Uuids.stream().filter(l -> l3UuidSet.contains(l)).collect(Collectors.toList());
+                l3Uuids = l3Uuids.stream().filter(l3UuidSet::contains).collect(Collectors.toList());
             }
         }
 
@@ -224,10 +216,10 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         List<String> vmInPublicL3s = SQL.New("select distinct nic.vmInstanceUuid from UsedIpVO ip, VmNicVO nic" +
                 " where nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = :pubL3")
                 .param("pubL3", vip.getL3NetworkUuid()).list();
-        vmInPublicL3s = vmInPublicL3s.stream().distinct().filter(uuid -> uuid != null).collect(Collectors.toList());
+        vmInPublicL3s = vmInPublicL3s.stream().distinct().filter(Objects::nonNull).collect(Collectors.toList());
 
         List<VmNicVO> nics;
-        if (vmInPublicL3s != null && !vmInPublicL3s.isEmpty()) {
+        if (!vmInPublicL3s.isEmpty()) {
             nics = SQL.New("select distinct nic" +
                     " from VmNicVO nic, VmInstanceVO vm, UsedIpVO ip" +
                     " where nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid in (:l3Uuids)" +
@@ -282,14 +274,17 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                         .find();
         VipInventory vipInv = VipInventory.valueOf(vipvo);
         List<VmNicInventory> nics = getAttachableVmNicForEip(vipInv);
-        if (nics != null && !nics.isEmpty()) {
-            logger.debug(String.format("get eip[uuid:%s] attachable vm nics[%s] before filter extension point",
-                    msg.getEipUuid(), nics.stream().map(n -> n.getUuid()).collect(Collectors.toList())));
+        if (nics == null || nics.isEmpty()) {
+            return nics;
         }
+
+        logger.debug(String.format("get eip[uuid:%s] attachable vm nics[%s] before filter extension point",
+                msg.getEipUuid(), nics.stream().map(VmNicInventory::getUuid).collect(Collectors.toList())));
+
         nics = filterVmNicsForEipInVirtualRouterExtensionPoint(vipInv, nics);
         if (nics != null && !nics.isEmpty()) {
             logger.debug(String.format("get eip[uuid:%s] attachable vm nics[%s] after filter extension point",
-                    msg.getEipUuid(), nics.stream().map(n -> n.getUuid()).collect(Collectors.toList())));
+                    msg.getEipUuid(), nics.stream().map(VmNicInventory::getUuid).collect(Collectors.toList())));
         }
         return nics;
     }
@@ -1250,12 +1245,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
     @Override
     public void vmPreAttachL3Network(final VmInstanceInventory vm, final L3NetworkInventory l3) {
         final List<String> nicUuids = CollectionUtils.transformToList(vm.getVmNics(),
-                new Function<String, VmNicInventory>() {
-                    @Override
-                    public String call(VmNicInventory arg) {
-                        return arg.getUuid();
-                    }
-                });
+                VmNicInventory::getUuid);
 
         if (nicUuids.isEmpty()) {
             return;

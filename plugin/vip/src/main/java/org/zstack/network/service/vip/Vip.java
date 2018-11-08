@@ -5,27 +5,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.MessageReply;
-import org.zstack.utils.Utils;
-import org.zstack.utils.logging.CLogger;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class Vip {
     @Autowired
     private CloudBus bus;
-    @Autowired
-    private DatabaseFacade dbf;
+
     private String uuid;
+    private ModifyVipAttributesStruct struct;
 
     public Vip(String uuid) {
         this.uuid = uuid;
     }
-    protected static final CLogger logger = Utils.getLogger(VipBase.class);
-
-    ModifyVipAttributesStruct struct;
 
     public ModifyVipAttributesStruct getStruct() {
         return struct;

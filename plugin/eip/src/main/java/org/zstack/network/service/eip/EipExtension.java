@@ -20,13 +20,11 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.function.FunctionNoArg;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  */
@@ -99,6 +97,10 @@ public class EipExtension extends AbstractNetworkServiceExtension implements Com
                     }
                 });
 
+                if (nic == null) {
+                    continue;
+                }
+
                 List<EipVO> evos = new FunctionNoArg<List<EipVO>>() {
                     @Override
                     @Transactional
@@ -134,11 +136,7 @@ public class EipExtension extends AbstractNetworkServiceExtension implements Com
         final EipStruct struct = it.next();
         eipMgr.attachEip(struct, providerType, new Completion(completion) {
             private void addAppliedStruct() {
-                List<EipStruct> s = applieds.get(providerType);
-                if (s == null) {
-                    s = new ArrayList<EipStruct>();
-                    applieds.put(providerType, s);
-                }
+                List<EipStruct> s = applieds.computeIfAbsent(providerType, k -> new ArrayList<EipStruct>());
                 s.add(struct);
                 logger.debug(String.format("successfully applied eip[uuid:%s, ip:%s] for vm nic[uuid:%s]", struct.getEip().getUuid(),
                         struct.getVip().getIp(), struct.getNic().getUuid()));
@@ -247,7 +245,7 @@ public class EipExtension extends AbstractNetworkServiceExtension implements Com
             return;
         }
 
-        Map<String, List<EipStruct>> map = null;
+        Map<String, List<EipStruct>> map;
         if (data.containsKey(SUCCESS)) {
             map = (Map<String, List<EipStruct>>) data.get(SUCCESS);
         } else {
