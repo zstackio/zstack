@@ -1,5 +1,7 @@
 package org.zstack.test.integration.kvm.vm
 
+import org.springframework.http.HttpEntity
+import org.zstack.network.service.flat.FlatUserdataBackend
 import org.zstack.sdk.ApiException
 import org.zstack.sdk.CreateVmInstanceAction
 import org.zstack.sdk.VmInstanceInventory
@@ -37,12 +39,20 @@ class CreateVmWithEmptyNameCase extends SubCase {
         VmInstanceInventory vm = env.inventoryByName("vm")
         assert null != vm
 
+        int cnt = 0
+        env.afterSimulator(FlatUserdataBackend.APPLY_USER_DATA) { rsp, HttpEntity<String> e ->
+            cnt += 1
+            return rsp
+        }
+
         createVmInstance {
             name = ""
             instanceOfferingUuid =  vm.instanceOfferingUuid
             l3NetworkUuids = [vm.defaultL3NetworkUuid]
             imageUuid = vm.imageUuid
         }
+
+        assert cnt == 0
     }
 
     void createVmWithNullNameTest() {
