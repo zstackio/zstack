@@ -19,6 +19,7 @@ import javax.persistence.TypedQuery;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -38,6 +39,7 @@ public abstract class VmTracer {
 
     private class Tracer {
         String hostUuid;
+        Set<String> vmsToSkip;
         Map<String, VmInstanceState> hostSideStates;
         Map<String, VmInstanceState> mgmtSideStates;
 
@@ -62,6 +64,11 @@ public abstract class VmTracer {
         private void checkFromHostSide() {
             for (Map.Entry<String, VmInstanceState> e : hostSideStates.entrySet()) {
                 String vmUuid = e.getKey();
+
+                if (vmsToSkip != null && vmsToSkip.contains(vmUuid)) {
+                    continue;
+                }
+
                 VmInstanceState actualState = e.getValue();
 
                 VmInstanceState expectedState = mgmtSideStates.get(vmUuid);
@@ -131,7 +138,7 @@ public abstract class VmTracer {
         }
     }
 
-    protected void reportVmState(final String hostUuid, final Map<String, VmInstanceState> vmStates) {
+    protected void reportVmState(final String hostUuid, final Map<String, VmInstanceState> vmStates, final Set<String> vmsToSkip) {
         if (logger.isTraceEnabled()) {
             for (Map.Entry<String, VmInstanceState> e : vmStates.entrySet()) {
                 logger.trace(String.format("reportVmState vm: %s, state: %s", e.getKey(), e.getValue().toString()));
@@ -166,10 +173,11 @@ public abstract class VmTracer {
             }
 
             @Override
-            public Object call() throws Exception {
+            public Object call() {
                 Tracer t = new Tracer();
                 t.hostUuid = hostUuid;
                 t.hostSideStates = vmStates;
+                t.vmsToSkip = vmsToSkip;
                 t.trace();
                 return null;
             }

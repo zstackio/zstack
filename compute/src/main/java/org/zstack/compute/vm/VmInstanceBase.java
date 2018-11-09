@@ -71,7 +71,6 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.*;
 
@@ -3154,7 +3153,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.DetachIso);
-        boolean isoNotExist = !spec.getDestIsoList().stream().anyMatch(isoSpec -> isoSpec.getImageUuid().equals(isoUuid));
+        boolean isoNotExist = spec.getDestIsoList().stream().noneMatch(isoSpec -> isoSpec.getImageUuid().equals(isoUuid));
         if (isoNotExist) {
             // the image ISO has been deleted from backup storage
             // try to detach it from the VM anyway
@@ -4020,12 +4019,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                 updateVmIsoFirstOrder(msg.getSystemTags());
 
-                CollectionUtils.safeForEach(extensions, new ForEachFunction<Runnable>() {
-                    @Override
-                    public void run(Runnable arg) {
-                        arg.run();
-                    }
-                });
+                CollectionUtils.safeForEach(extensions, Runnable::run);
 
                 if (msg.getCpuNum() != null || msg.getMemorySize() != null) {
                     int cpuNum = msg.getCpuNum() == null ? self.getCpuNum() : msg.getCpuNum();
@@ -4947,7 +4941,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 dbf.remove(self);
                 // clean up EO, otherwise API-retry may cause conflict if
                 // the resource uuid is set
-                dbf.eoCleanup(VmInstanceVO.class, asList(self.getUuid()));
+                dbf.eoCleanup(VmInstanceVO.class, Collections.singletonList(self.getUuid()));
                 completion.fail(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR, errCode));
             }
         }).start();

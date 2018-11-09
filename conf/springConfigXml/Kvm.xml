@@ -77,6 +77,7 @@
             <zstack:extension interface="org.zstack.kvm.KVMHostConnectExtensionPoint" />
             <zstack:extension interface="org.zstack.header.host.HostConnectionReestablishExtensionPoint" />
             <zstack:extension interface="org.zstack.header.host.HostAfterConnectedExtensionPoint" />
+            <zstack:extension interface="org.zstack.core.cloudbus.ReplyMessagePreSendingExtensionPoint" />
         </zstack:plugin>
     </bean>
 
