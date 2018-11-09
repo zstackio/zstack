@@ -571,10 +571,13 @@ public abstract class HostBase extends AbstractHost {
             HostBaseExtensionFactory ext = hostMgr.getHostBaseExtensionFactory(msg);
             if (ext != null) {
                 Host h = ext.getHost(self);
-                h.handleMessage(msg);
-            } else {
-                bus.dealWithUnknownMessage(msg);
+                if (h != null) {
+                    h.handleMessage(msg);
+                    return;
+                }
             }
+
+            bus.dealWithUnknownMessage(msg);
         }
     }
 
