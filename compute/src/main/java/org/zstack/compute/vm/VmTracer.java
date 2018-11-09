@@ -6,12 +6,10 @@ import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
 import org.zstack.core.notification.N;
 import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.HostConstant;
 import org.zstack.header.vm.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -78,14 +76,6 @@ public abstract class VmTracer {
         }
 
         private void handleStateChangeOnHostSide(final String vmUuid, final VmInstanceState actualState, VmInstanceState expected) {
-            VmInstanceState stateInDb = expected != null ? expected :
-                    Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vmUuid).select(VmInstanceVO_.state).findValue();
-
-            if (needDestroy(vmUuid, actualState, stateInDb)) {
-                destroyVmOnHypervisor(vmUuid, actualState, stateInDb);
-                return;
-            }
-
             VmStateChangedOnHostMsg msg = new VmStateChangedOnHostMsg();
             msg.setVmStateAtTracingMoment(expected);
             msg.setVmInstanceUuid(vmUuid);
@@ -132,20 +122,6 @@ public abstract class VmTracer {
             msg.setStateOnHost(VmInstanceState.Stopped);
             bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vmUuid);
             bus.send(msg);
-        }
-
-        private void destroyVmOnHypervisor(final String vmUuid, final VmInstanceState actualState, final VmInstanceState expectState) {
-            logger.error(String.format("vm[uuid:%s, actualState:%s, expectState:%s] is in fatal error, destroy it",
-                    vmUuid, actualState, expectState));
-            VmDirectlyDestroyOnHypervisorMsg msg = new VmDirectlyDestroyOnHypervisorMsg();
-            msg.setHostUuid(hostUuid);
-            msg.setVmUuid(vmUuid);
-            bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
-            bus.send(msg);
-        }
-
-        private boolean needDestroy(final String vmUuid, final VmInstanceState actualState, final VmInstanceState expectState) {
-            return actualState == VmInstanceState.Paused && expectState == VmInstanceState.Stopped;
         }
 
         void trace() {
