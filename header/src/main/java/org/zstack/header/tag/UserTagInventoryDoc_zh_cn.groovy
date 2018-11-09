@@ -1,5 +1,6 @@
 package org.zstack.header.tag
 
+import org.zstack.header.tag.TagPatternInventory
 import java.sql.Timestamp
 import java.sql.Timestamp
 
@@ -7,6 +8,20 @@ doc {
 
 	title "用户标签清单"
 
+	field {
+		name "tagPatternUuid"
+		desc "标签模版UUID"
+		type "String"
+		since "3.2.0"
+	}
+	ref {
+		name "tagPattern"
+		path "org.zstack.header.tag.UserTagInventory.tagPattern"
+		desc "以该标签模版创建的用户标签"
+		type "TagPatternInventory"
+		since "3.2.0"
+		clz TagPatternInventory.class
+	}
 	field {
 		name "uuid"
 		desc "资源的UUID，唯一标示该资源"

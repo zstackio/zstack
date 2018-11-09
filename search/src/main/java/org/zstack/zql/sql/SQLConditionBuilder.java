@@ -7,10 +7,8 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.query.Queryable;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.UserTagVO;
-import org.zstack.header.zql.ASTNode;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.FieldUtils;
-import org.zstack.zql.ZQL;
 import org.zstack.zql.ast.ZQLMetadata;
 
 import java.lang.reflect.Field;
@@ -28,6 +26,7 @@ public class SQLConditionBuilder {
     private enum ConditionType {
         QueryableField,
         Tag,
+        TagPattern,
         Normal
     }
 
@@ -86,6 +85,8 @@ public class SQLConditionBuilder {
     private ConditionType getConditionType(Class invClass, String fname) {
         if (fname.equals(ZQLMetadata.SYS_TAG_NAME) || fname.equals(ZQLMetadata.USER_TAG_NAME)) {
             return ConditionType.Tag;
+        } else if (fname.equals(ZQLMetadata.TAG_PATTERN_UUID)) {
+            return ConditionType.TagPattern;
         } else if (queryableFields.containsKey(String.format("%s.%s", invClass.getName(), fname))) {
             return ConditionType.QueryableField;
         } else {
@@ -104,6 +105,8 @@ public class SQLConditionBuilder {
             ConditionType ctype = getConditionType(fc.self.selfInventoryClass, fc.fieldName);
             if (ctype == ConditionType.Tag) {
                 template = createTagSQL(fc.self.selfInventoryClass, fc.fieldName, false);
+            } else if (ctype == ConditionType.TagPattern) {
+                template = createTagPatternSQL(fc.self.selfInventoryClass, fc.fieldName, false);
             } else {
                 setConditionField(fc.self.selfInventoryClass, fc.fieldName);
                 QueryableField qf = getIfConditionFieldQueryableField();
@@ -172,6 +175,29 @@ public class SQLConditionBuilder {
         return new TagSQLMaker().make();
     }
 
+    private String createTagPatternSQL(Class invClz, String fieldName, boolean nestedQuery) {
+        ZQLMetadata.InventoryMetadata src = ZQLMetadata.getInventoryMetadataByName(invClz.getName());
+
+        String primaryKey = EntityMetadata.getPrimaryKeyField(src.inventoryAnnotation.mappingVOClass()).getName();
+
+        boolean reserve = TAG_FALSE_OP.containsKey(operator);
+
+        String op = reserve ? TAG_FALSE_OP.get(operator) : operator;
+        String subCondition = String.format("pattern.uuid %s ", op + (value == null ? "" : value));
+        String filterResourceUuidSQL = String.format("SELECT utag.resourceUuid FROM UserTagVO utag, TagPatternVO pattern" +
+                " WHERE %s and utag.tagPatternUuid = pattern.uuid", subCondition);
+
+        String weather_not_in = reserve ? "NOT" : "";
+        if (nestedQuery) {
+            return String.format("(SELECT %s.%s FROM %s %s WHERE %s.%s %s IN (%s))",
+                    src.simpleInventoryName(), primaryKey, src.inventoryAnnotation.mappingVOClass().getSimpleName(), src.simpleInventoryName(),
+                    src.simpleInventoryName(), primaryKey, weather_not_in, filterResourceUuidSQL);
+        } else {
+            return String.format("(%s.%s %s IN (%s))",
+                    src.simpleInventoryName(), primaryKey, weather_not_in, filterResourceUuidSQL);
+        }
+    }
+
     private String makeTemplate(Iterator<ZQLMetadata.ChainQueryStruct> iterator) {
         ZQLMetadata.ChainQueryStruct current = iterator.next();
 
@@ -189,6 +215,8 @@ public class SQLConditionBuilder {
             ConditionType ctype = getConditionType(right.targetInventoryClass, fc.fieldName);
             if (ctype == ConditionType.Tag) {
                 return createTagSQL(right.targetInventoryClass, fc.fieldName, true);
+            } else if (ctype == ConditionType.TagPattern) {
+                return createTagPatternSQL(fc.self.selfInventoryClass, fc.fieldName, true);
             } else {
                 setConditionField(right.targetInventoryClass, fc.fieldName);
                 QueryableField qf = getIfConditionFieldQueryableField();
