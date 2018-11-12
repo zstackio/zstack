@@ -13,6 +13,8 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.notification.N;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.cluster.ClusterVO;
@@ -1137,23 +1139,40 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     }
 
     private void handle(NfsToNfsMigrateBitsMsg msg) {
-        NfsPrimaryStorageBackend backend = getUsableBackend();
-        if (backend == null) {
-            throw new OperationFailureException(operr("the NFS primary storage[uuid:%s, name:%s] cannot find hosts in attached clusters to perform the operation",
-                    self.getUuid(), self.getName()));
-        }
-
-        backend.handle(getSelfInventory(), msg, new ReturnValueCompletion<NfsToNfsMigrateBitsReply>(msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
-            public void success(NfsToNfsMigrateBitsReply reply) {
-                bus.reply(msg, reply);
+            public String getSyncSignature() {
+                return getName();
             }
 
             @Override
-            public void fail(ErrorCode errorCode) {
-                NfsToNfsMigrateBitsReply reply = new NfsToNfsMigrateBitsReply();
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
+            public void run(SyncTaskChain chain) {
+                NfsPrimaryStorageBackend backend = getUsableBackend();
+                if (backend == null) {
+                    throw new OperationFailureException(operr("the NFS primary storage[uuid:%s, name:%s] cannot find hosts in attached clusters to perform the operation",
+                            self.getUuid(), self.getName()));
+                }
+
+                backend.handle(getSelfInventory(), msg, new ReturnValueCompletion<NfsToNfsMigrateBitsReply>(msg) {
+                    @Override
+                    public void success(NfsToNfsMigrateBitsReply reply) {
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        NfsToNfsMigrateBitsReply reply = new NfsToNfsMigrateBitsReply();
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("migrate-bits-from-host-%s-to-ps-%s", msg.getHostUuid(), msg.getPrimaryStorageUuid());
             }
         });
     }
