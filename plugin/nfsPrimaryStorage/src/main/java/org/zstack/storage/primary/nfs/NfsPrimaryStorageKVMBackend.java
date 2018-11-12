@@ -614,70 +614,37 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 .eq(PrimaryStorageClusterRefVO_.clusterUuid, host.getClusterUuid())
                 .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, dstPsInv.getUuid())
                 .isExists();
-        if (mounted) {
-            logger.info(String.format("no need to mount nfs ps[uuid:%s] to host[uuid:%s]", dstPsInv.getUuid(), host.getUuid()));
-            // copy volume folder
-            NfsToNfsMigrateBitsCmd cmd = new NfsToNfsMigrateBitsCmd();
-            cmd.srcFolderPath = msg.getSrcFolderPath();
-            cmd.dstFolderPath = msg.getDstFolderPath();
-            new KvmCommandSender(host.getUuid()).send(cmd, NFS_TO_NFS_MIGRATE_BITS_PATH, new KvmCommandFailureChecker() {
-                @Override
-                public ErrorCode getError(KvmResponseWrapper wrapper) {
-                    NfsToNfsMigrateBitsRsp rsp = wrapper.getResponse(NfsToNfsMigrateBitsRsp.class);
-                    return rsp.isSuccess() ? null : operr(rsp.getError());
-                }
-            }, msg.getTimeout(), new ReturnValueCompletion<KvmResponseWrapper>(completion) {
-                @Override
-                public void success(KvmResponseWrapper w) {
-                    logger.info("successfully copyed volume folder to nfs ps " + dstPsInv.getUuid());
-                    NfsToNfsMigrateBitsReply reply = new NfsToNfsMigrateBitsReply();
-                    completion.success(reply);
-                }
-                @Override
-                public void fail(ErrorCode errorCode) {
-                    logger.error("failed to copy volume folder to nfs ps " + dstPsInv.getUuid());
-                    completion.fail(errorCode);
-                }
-            });
-            return;
+
+        if (logger.isTraceEnabled()) {
+            if (mounted) {
+                logger.info(String.format("no need to mount nfs ps[uuid:%s] to host[uuid:%s]", dstPsInv.getUuid(), host.getUuid()));
+            }
         }
 
-        // mount ps to host
-        mount(dstPsInv, host.getUuid(), new Completion(completion) {
-            @Override
-            public void success() {
-                logger.info(String.format("successfully mounted nfs ps[uuid:%s] to host[uuid:%s]", dstPsInv.getUuid(), host.getUuid()));
-                // copy volume folder
-                NfsToNfsMigrateBitsCmd cmd = new NfsToNfsMigrateBitsCmd();
-                cmd.srcFolderPath = msg.getSrcFolderPath();
-                cmd.dstFolderPath = msg.getDstFolderPath();
-                new KvmCommandSender(host.getUuid()).send(cmd, NFS_TO_NFS_MIGRATE_BITS_PATH, new KvmCommandFailureChecker() {
-                    @Override
-                    public ErrorCode getError(KvmResponseWrapper wrapper) {
-                        NfsToNfsMigrateBitsRsp rsp = wrapper.getResponse(NfsToNfsMigrateBitsRsp.class);
-                        return rsp.isSuccess() ? null : operr(rsp.getError());
-                    }
-                }, msg.getTimeout(), new ReturnValueCompletion<KvmResponseWrapper>(completion) {
-                    @Override
-                    public void success(KvmResponseWrapper w) {
-                        logger.info("successfully copyed volume folder to nfs ps " + dstPsInv.getUuid());
-                        // umount ps from host
-                        logger.debug(String.format("try to umount nfs ps[uuid:%s] from host[uuid:%s]", dstPsInv.getUuid(), host.getUuid()));
-                        unmount(dstPsInv, host.getUuid());
-                        NfsToNfsMigrateBitsReply reply = new NfsToNfsMigrateBitsReply();
-                        completion.success(reply);
-                    }
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        logger.error("failed to copy volume folder to nfs ps " + dstPsInv.getUuid());
-                        completion.fail(errorCode);
-                    }
-                });
-            }
+        NfsToNfsMigrateBitsCmd cmd = new NfsToNfsMigrateBitsCmd();
+        cmd.srcFolderPath = msg.getSrcFolderPath();
+        cmd.dstFolderPath = msg.getDstFolderPath();
+        cmd.isMounted = mounted;
 
+        if (!mounted) {
+            cmd.options = NfsSystemTags.MOUNT_OPTIONS.getTokenByResourceUuid(dstPsInv.getUuid(), NfsSystemTags.MOUNT_OPTIONS_TOKEN);
+            cmd.url = dstPsInv.getUrl();
+            cmd.mountPath = dstPsInv.getMountPath();
+        }
+
+        new KvmCommandSender(host.getUuid()).send(cmd, NFS_TO_NFS_MIGRATE_BITS_PATH, wrapper -> {
+            NfsToNfsMigrateBitsRsp rsp = wrapper.getResponse(NfsToNfsMigrateBitsRsp.class);
+            return rsp.isSuccess() ? null : operr(rsp.getError());
+        }, msg.getTimeout(), new ReturnValueCompletion<KvmResponseWrapper>(completion) {
+            @Override
+            public void success(KvmResponseWrapper w) {
+                logger.info("successfully copyed volume folder to nfs ps " + dstPsInv.getUuid());
+                NfsToNfsMigrateBitsReply reply = new NfsToNfsMigrateBitsReply();
+                completion.success(reply);
+            }
             @Override
             public void fail(ErrorCode errorCode) {
-                logger.error(String.format("failed to mount nfs ps[uuid:%s] to host[uuid:%s]", dstPsInv.getUuid(), host.getUuid()));
+                logger.error("failed to copy volume folder to nfs ps " + dstPsInv.getUuid());
                 completion.fail(errorCode);
             }
         });
