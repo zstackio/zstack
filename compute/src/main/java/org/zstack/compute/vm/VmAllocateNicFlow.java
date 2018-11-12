@@ -27,6 +27,7 @@ import org.zstack.header.vm.*;
 import org.zstack.identity.Account;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
@@ -60,6 +61,10 @@ public class VmAllocateNicFlow implements Flow {
             deviceIdBitmap.set(nic.getDeviceId());
         }
 
+        List<UsedIpInventory> ips = new ArrayList<>();
+        List<VmNicInventory> nics = new ArrayList<>();
+        data.put(VmInstanceConstant.Params.VmAllocateNicFlow_ips.toString(), ips);
+        data.put(VmInstanceConstant.Params.VmAllocateNicFlow_nics.toString(), nics);
         List<ErrorCode> errs = new ArrayList<>();
         Map<String, String> vmStaticIps = new StaticIpOperator().getStaticIpbyVmUuid(spec.getVmInventory().getUuid());
         List<L3NetworkInventory> firstL3s = VmNicSpec.getFirstL3NetworkInventoryOfSpec(spec.getL3Networks());
@@ -91,6 +96,7 @@ public class VmAllocateNicFlow implements Flow {
                 public void run(MessageReply reply) {
                     if (reply.isSuccess()) {
                         AllocateIpReply areply = reply.castReply();
+                        ips.add(areply.getIpInventory());
                         VmNicInventory nic = new VmNicInventory();
                         nic.setUuid(Platform.getUuid());
                         nic.setIp(areply.getIpInventory().getIp());
@@ -162,6 +168,7 @@ public class VmAllocateNicFlow implements Flow {
 
                                 vo = reload(vo);
                                 spec.getDestNics().add(VmNicInventory.valueOf(vo));
+                                nics.add(nic);
                             }
                         }.execute();
                         wcomp.done();
@@ -185,26 +192,23 @@ public class VmAllocateNicFlow implements Flow {
 
     @Override
     public void rollback(final FlowRollback chain, Map data) {
-        VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-        final List<VmNicInventory> destNics = spec.getDestNics();
-        if (destNics.isEmpty()) {
-            chain.rollback();
-            return;
+        final List<VmNicInventory> destNics = (List<VmNicInventory>) data.get(VmInstanceConstant.Params.VmAllocateNicFlow_nics.toString());
+        final List<String> nicUuids = destNics.stream().map(VmNicInventory::getUuid).collect(Collectors.toList());
+
+        List<UsedIpInventory> ips = (List<UsedIpInventory>) data.get(VmInstanceConstant.Params.VmAllocateNicFlow_ips.toString());
+        List<ReturnIpMsg> msgs = new ArrayList<ReturnIpMsg>();
+        for (UsedIpInventory ip : ips) {
+            ReturnIpMsg msg = new ReturnIpMsg();
+            msg.setL3NetworkUuid(ip.getL3NetworkUuid());
+            msg.setUsedIpUuid(ip.getUuid());
+            bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, ip.getL3NetworkUuid());
+            msgs.add(msg);
         }
 
-        List<ReturnIpMsg> msgs = new ArrayList<ReturnIpMsg>();
-        final List<String> nicUuids = new ArrayList<String>();
-        for (VmNicInventory nic : destNics) {
-            VmNicVO nicVO = dbf.findByUuid(nic.getUuid(), VmNicVO.class);
-            for (UsedIpVO ip: nicVO.getUsedIps()) {
-                ReturnIpMsg msg = new ReturnIpMsg();
-                msg.setL3NetworkUuid(ip.getL3NetworkUuid());
-                msg.setUsedIpUuid(ip.getUuid());
-                bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, ip.getL3NetworkUuid());
-                msgs.add(msg);
-            }
-
-            nicUuids.add(nic.getUuid());
+        if (msgs.isEmpty()) {
+            dbf.removeByPrimaryKeys(nicUuids, VmNicVO.class);
+            chain.rollback();
+            return;
         }
 
         bus.send(msgs, 1, new CloudBusListCallBack(chain) {
