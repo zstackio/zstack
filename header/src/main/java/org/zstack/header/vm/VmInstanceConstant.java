@@ -25,6 +25,8 @@ public interface VmInstanceConstant {
         L3NetworkInventory,
         UsedIPInventory,
         vmInventory,
+        VmAllocateNicFlow_ips,
+        VmAllocateNicFlow_nics,
     }
 
     enum VmOperation {
