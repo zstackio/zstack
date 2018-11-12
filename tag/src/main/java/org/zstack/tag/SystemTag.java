@@ -123,6 +123,25 @@ public class SystemTag {
         tagMgr.copySystemTag(srcUuid, srcClass.getSimpleName(), dstUuid, dstClass.getSimpleName(), inherent);
     }
 
+    public void simpleCopyTag(String srcUuid, Class srcClass, String dstUuid, Class dstClass, String tag) {
+        logger.debug(String.format("weiw: tag: %s", tag));
+        SystemTagVO systemTagVO = Q.New(SystemTagVO.class)
+                .eq(SystemTagVO_.resourceUuid, srcUuid)
+                .eq(SystemTagVO_.resourceType, srcClass.getSimpleName())
+                .eq(SystemTagVO_.tag, tag)
+                .find();
+
+        if (systemTagVO == null) {
+            return;
+        }
+
+        SystemTagVO ntag = new SystemTagVO(systemTagVO);
+        ntag.setUuid(Platform.getUuid());
+        ntag.setResourceType(dstClass.getSimpleName());
+        ntag.setResourceUuid(dstUuid);
+        dbf.getEntityManager().persist(ntag);
+    }
+
     public void copy(String srcUuid, Class srcClass, String dstUuid, Class dstClass) {
         SimpleQuery<SystemTagVO> q = dbf.createQuery(SystemTagVO.class);
         q.add(SystemTagVO_.resourceType, Op.EQ, srcClass.getSimpleName());
