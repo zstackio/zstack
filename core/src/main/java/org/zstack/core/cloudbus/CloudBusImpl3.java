@@ -917,11 +917,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
 
         for (Class clz : classes) {
             while (clz != Object.class) {
-                List<BeforeDeliveryMessageInterceptor> is = beforeDeliveryMessageInterceptors.get(clz);
-                if (is == null) {
-                    is = new ArrayList<>();
-                    beforeDeliveryMessageInterceptors.put(clz, is);
-                }
+                List<BeforeDeliveryMessageInterceptor> is = beforeDeliveryMessageInterceptors.computeIfAbsent(clz, k -> new ArrayList<>());
 
                 synchronized (is) {
                     int order = 0;
@@ -956,11 +952,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
 
         for (Class clz : classes) {
             while (clz != Object.class) {
-                List<BeforeSendMessageInterceptor> is = beforeSendMessageInterceptors.get(clz);
-                if (is == null) {
-                    is = new ArrayList<>();
-                    beforeSendMessageInterceptors.put(clz, is);
-                }
+                List<BeforeSendMessageInterceptor> is = beforeSendMessageInterceptors.computeIfAbsent(clz, k -> new ArrayList<>());
 
                 synchronized (is) {
                     int order = 0;
