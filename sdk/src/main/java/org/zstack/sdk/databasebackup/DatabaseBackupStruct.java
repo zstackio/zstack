@@ -1,6 +1,6 @@
 package org.zstack.sdk.databasebackup;
 
-
+import org.zstack.sdk.databasebackup.DatabaseType;
 
 public class DatabaseBackupStruct  {
 
@@ -26,6 +26,14 @@ public class DatabaseBackupStruct  {
     }
     public java.lang.String getInstallPath() {
         return this.installPath;
+    }
+
+    public DatabaseType type;
+    public void setType(DatabaseType type) {
+        this.type = type;
+    }
+    public DatabaseType getType() {
+        return this.type;
     }
 
     public java.sql.Timestamp createdTime;

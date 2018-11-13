@@ -116,6 +116,14 @@ public class ScsiLunInventory  {
         return this.scsiLunVmInstanceRefs;
     }
 
+    public java.lang.String source;
+    public void setSource(java.lang.String source) {
+        this.source = source;
+    }
+    public java.lang.String getSource() {
+        return this.source;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
