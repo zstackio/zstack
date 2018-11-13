@@ -19,7 +19,6 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.cluster.ClusterInventory;
-import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -37,11 +36,9 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
-import org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotMsg;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
-import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
@@ -225,7 +222,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         }
     }
 
-    @ApiTimeout(apiClasses = {APICreateVmInstanceMsg.class})
     public static class CreateVolumeFromCacheCmd extends AgentCommand {
         private String templatePathInCache;
         private String installUrl;
@@ -260,13 +256,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
     }
 
-    @ApiTimeout(apiClasses = {
-            APICreateRootVolumeTemplateFromRootVolumeMsg.class,
-            APICreateDataVolumeTemplateFromVolumeMsg.class,
-            APICreateDataVolumeFromVolumeSnapshotMsg.class,
-            APILocalStorageMigrateVolumeMsg.class,
-            APIDeleteVolumeSnapshotMsg.class,
-    })
     public static class DeleteBitsCmd extends AgentCommand {
         private String hostUuid;
         private String path;
@@ -333,10 +322,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         }
     }
 
-    @ApiTimeout(apiClasses = {
-            APICreateRootVolumeTemplateFromRootVolumeMsg.class,
-            APICreateDataVolumeTemplateFromVolumeMsg.class
-    })
     public static class CreateTemplateFromVolumeCmd extends AgentCommand implements HasThreadContext{
         private String installPath;
         private String volumePath;
@@ -431,7 +416,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         }
     }
 
-    @ApiTimeout(apiClasses = {APIDeleteVolumeSnapshotMsg.class})
     public static class MergeSnapshotCmd extends AgentCommand {
         private String volumeUuid;
         private String snapshotInstallPath;
@@ -483,7 +467,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         }
     }
 
-    @ApiTimeout(apiClasses = {APICreateRootVolumeTemplateFromVolumeSnapshotMsg.class})
     public static class RebaseAndMergeSnapshotsCmd extends AgentCommand {
         private String volumeUuid;
         private List<String> snapshotInstallPaths;
@@ -535,7 +518,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         }
     }
 
-    @ApiTimeout(apiClasses = {APIDeleteVolumeSnapshotMsg.class})
     public static class OfflineMergeSnapshotCmd extends AgentCommand implements HasThreadContext {
         private String srcPath;
         private String destPath;
@@ -591,7 +573,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         public String path;
     }
 
-    @ApiTimeout(apiClasses = {APILocalStorageMigrateVolumeMsg.class})
     public static class GetMd5Cmd extends AgentCommand implements HasThreadContext {
         public List<GetMd5TO> md5s;
         public String sendCommandUrl;
@@ -610,7 +591,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
 
-    @ApiTimeout(apiClasses = {APILocalStorageMigrateVolumeMsg.class})
     public static class CheckMd5sumCmd extends AgentCommand implements HasThreadContext {
         public List<Md5TO> md5s;
         public String sendCommandUrl;
@@ -618,7 +598,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         public String stage;
     }
 
-    @ApiTimeout(apiClasses = {APILocalStorageMigrateVolumeMsg.class})
     public static class GetBackingFileCmd extends AgentCommand {
         public String path;
         public String volumeUuid;
@@ -791,7 +770,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                 msg.setHostUuid(arg);
                 msg.setCommand(cmd);
-                msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
                 msg.setPath(GET_PHYSICAL_CAPACITY_PATH);
                 bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, arg);
                 return msg;
@@ -839,7 +817,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         msg.setPath(path);
         msg.setNoStatusCheck(noCheckStatus);
         msg.setCommand(cmd);
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
@@ -2608,7 +2585,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                         msg.setCommand(cmd);
-                        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
                         msg.setPath(INIT_PATH);
                         msg.setHostUuid(arg);
                         msg.setNoStatusCheck(noCheckStatus);

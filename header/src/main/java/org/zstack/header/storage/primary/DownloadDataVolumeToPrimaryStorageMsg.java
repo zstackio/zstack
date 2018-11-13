@@ -1,12 +1,9 @@
 package org.zstack.header.storage.primary;
 
-import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.image.ImageBackupStorageRefInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.NeedReplyMessage;
-import org.zstack.header.volume.APICreateDataVolumeFromVolumeTemplateMsg;
 
-@ApiTimeout(apiClasses = {APICreateDataVolumeFromVolumeTemplateMsg.class})
 public class DownloadDataVolumeToPrimaryStorageMsg extends NeedReplyMessage implements PrimaryStorageMessage {
     private String primaryStorageUuid;
     private ImageBackupStorageRefInventory backupStorageRef;

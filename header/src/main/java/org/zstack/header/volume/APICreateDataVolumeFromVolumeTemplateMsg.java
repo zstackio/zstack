@@ -4,16 +4,15 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.Action;
 import org.zstack.header.image.ImageVO;
-import org.zstack.header.message.APICreateMessage;
-import org.zstack.header.message.APIEvent;
-import org.zstack.header.message.APIMessage;
-import org.zstack.header.message.APIParam;
+import org.zstack.header.message.*;
 import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.notification.NotificationConstant;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.tag.TagResourceType;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  */
@@ -25,6 +24,7 @@ import org.zstack.header.tag.TagResourceType;
         method = HttpMethod.POST,
         parameterName = "params"
 )
+@APIDefaultTimeout(timeunit = TimeUnit.HOURS, value = 72)
 public class APICreateDataVolumeFromVolumeTemplateMsg extends APICreateMessage implements APIAuditor {
     @APIParam(resourceType = ImageVO.class, checkAccount = true)
     private String imageUuid;

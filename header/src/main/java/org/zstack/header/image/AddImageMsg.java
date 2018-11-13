@@ -1,6 +1,5 @@
 package org.zstack.header.image;
 
-import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.message.*;
 
@@ -11,7 +10,6 @@ import java.util.List;
  * Created by camile on 2/3/2018.
  * copy by APIAddImageMsg
  */
-@ApiTimeout(apiClasses = {APIAddImageMsg.class})
 public class AddImageMsg extends NeedReplyMessage {
     private String name;
     private String description;

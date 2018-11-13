@@ -55,7 +55,6 @@ public class ApplyPortforwardingRuleOnVirtualRouterVmFlow implements Flow {
         VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
         msg.setVmInstanceUuid(vr.getUuid());
         msg.setCommand(cmd);
-        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
         msg.setPath(VirtualRouterConstant.VR_CREATE_PORT_FORWARDING);
         msg.setCheckStatus(true);
         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
@@ -100,7 +99,6 @@ public class ApplyPortforwardingRuleOnVirtualRouterVmFlow implements Flow {
             msg.setCheckStatus(true);
             msg.setPath(VirtualRouterConstant.VR_REVOKE_PORT_FORWARDING);
             msg.setCommand(cmd);
-            msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
             msg.setVmInstanceUuid(vr.getUuid());
             bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
             bus.send(msg, new CloudBusCallBack(chain) {

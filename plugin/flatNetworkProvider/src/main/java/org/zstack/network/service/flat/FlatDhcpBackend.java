@@ -885,7 +885,6 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                 msg.setHostUuid(context.getInventory().getUuid());
                 msg.setCommand(cmd);
-                msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
                 msg.setNoStatusCheck(true);
                 msg.setPath(DHCP_CONNECT_PATH);
                 bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, context.getInventory().getUuid());
@@ -1192,7 +1191,6 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                                 msg.setNoStatusCheck(true);
                                 msg.setCommand(cmd);
                                 msg.setPath(PREPARE_DHCP_PATH);
-                                msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
                                 bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
                                 bus.send(msg, new CloudBusCallBack(trigger) {
                                     @Override
@@ -1227,7 +1225,6 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
                                 KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                                 msg.setCommand(cmd);
-                                msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
                                 msg.setHostUuid(hostUuid);
                                 msg.setPath(APPLY_DHCP_PATH);
                                 msg.setNoStatusCheck(true);
@@ -1290,7 +1287,6 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         msg.setHostUuid(hostUuid);
         msg.setPath(RELEASE_DHCP_PATH);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);

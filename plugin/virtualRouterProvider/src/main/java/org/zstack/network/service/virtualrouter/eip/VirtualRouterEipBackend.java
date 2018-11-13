@@ -144,7 +144,6 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
                 msg.setCheckStatus(true);
                 msg.setPath(VirtualRouterConstant.VR_CREATE_EIP);
                 msg.setCommand(cmd);
-                msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
                 msg.setVmInstanceUuid(vr.getUuid());
                 bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
                 bus.send(msg, new CloudBusCallBack(completion) {
@@ -285,7 +284,6 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
                 VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
                 msg.setVmInstanceUuid(vr.getUuid());
                 msg.setCommand(cmd);
-                msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
                 msg.setCheckStatus(true);
                 msg.setPath(VirtualRouterConstant.VR_REMOVE_EIP);
                 bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
@@ -394,7 +392,6 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
         VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
         msg.setPath(VirtualRouterConstant.VR_SYNC_EIP);
         msg.setCommand(cmd);
-        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
         msg.setVmInstanceUuid(vr.getUuid());
         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {

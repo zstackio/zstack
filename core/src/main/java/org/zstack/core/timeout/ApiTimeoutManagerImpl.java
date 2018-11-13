@@ -1,38 +1,63 @@
 package org.zstack.core.timeout;
 
-import org.reflections.Reflections;
+import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
+import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.config.*;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.header.Component;
+import org.zstack.header.Constants;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
+import org.zstack.header.message.*;
 import org.zstack.utils.*;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.*;
-import java.util.concurrent.TimeUnit;
+import static org.zstack.core.Platform.argerr;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
  * Created by frank on 2/17/2016.
  */
-public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component {
+public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
+        BeforeDeliveryMessageInterceptor, PrepareDbInitialValueExtensionPoint {
     private static final CLogger logger = Utils.getLogger(ApiTimeoutManagerImpl.class);
 
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    private CloudBus bus;
+    @Autowired
+    private GlobalConfigFacade gcf;
 
-    private Map<Class, ApiTimeout> apiTimeouts = new HashMap<Class, ApiTimeout>();
-    private Map<Class, Long> timeouts = new HashMap<Class, Long>();
+    // Legacy timeout which is configured in zstack.properties is prior 3.2.0
+    // which has been replaced by ThreadContext based timeout
+    // keep this for back-compatibility
+    private Map<Class, Long> legacyTimeouts = new HashMap<>();
     private List<ApiTimeoutExtensionPoint> apiTimeoutExts;
+
+    public static final String APITIMEOUT_GLOBAL_CONFIG_TYPE = "apiTimeout";
+    private long SYNCALL_TIMEOUT = -1;
+    public static final String TASK_CONTEXT_API_TIMEOUT = "__apitimeout__";
+
+    void init() {
+        SYNCALL_TIMEOUT = parseTimeout(ApiTimeoutGlobalProperty.SYNCCALL_API_TIMEOUT);
+        collectLegacyTimeout();
+    }
 
     @Override
     public boolean start() {
         try {
-            collectTimeout();
-            collectTimeoutForDerivedApi();
-            flatTimeout();
             populateExtensions();
+            bus.installBeforeDeliveryMessageInterceptor(this);
+            installValidatorToGlobalConfig();
         } catch (RuntimeException e) {
             new BootErrorLog().write(e.getMessage());
             throw e;
@@ -41,15 +66,97 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component {
         return true;
     }
 
+    private void installValidatorToGlobalConfig() {
+        GlobalConfigValidatorExtensionPoint validator = (category, name, oldValue, newValue) -> {
+            long minimal = parseTimeout(ApiTimeoutGlobalProperty.MINIMAL_TIMEOUT);
+            if (parseTimeout(newValue) < minimal) {
+                throw new OperationFailureException(argerr("api timeout cannot be set smaller than %s", ApiTimeoutGlobalProperty.MINIMAL_TIMEOUT));
+            }
+        };
+
+        gcf.getAllConfig().values().stream().filter(gc -> APITIMEOUT_GLOBAL_CONFIG_TYPE.equals(gc.getCategory()))
+                .forEach(gc -> gc.installValidateExtension(validator));
+    }
+
     @Override
     public boolean stop() {
         return true;
     }
 
+    @Override
+    public int orderOfBeforeDeliveryMessageInterceptor() {
+        return 100;
+    }
+
+    private long getAPIMessageTimeout(APIMessage msg) {
+        if (msg.getTimeout() != -1) {
+            // the timeout is set somewhere, use it
+            return msg.getTimeout();
+        }
+
+        if (msg instanceof APISyncCallMessage) {
+            return SYNCALL_TIMEOUT;
+        } else  {
+            String s = gcf.getConfigValue(APITIMEOUT_GLOBAL_CONFIG_TYPE, msg.getClass().getName(), String.class);
+            return parseTimeout(s);
+        }
+    }
+
+    @Override
+    public void beforeDeliveryMessage(Message msg) {
+        if (msg instanceof APIMessage) {
+            TaskContext.putTaskContextItem(TASK_CONTEXT_API_TIMEOUT, getAPIMessageTimeout((APIMessage) msg));
+        }
+    }
+
+    private Long getLegacyTimeout(Class clz) {
+        return legacyTimeouts.get(clz);
+    }
+
+    @Override
+    public void prepareDbInitialValue() {
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                List<String> apiClassNamesInGlobalConfig = q(GlobalConfigVO.class).select(GlobalConfigVO_.name)
+                        .eq(GlobalConfigVO_.category, APITIMEOUT_GLOBAL_CONFIG_TYPE).listValues();
+
+                List<Class> apiClasses = BeanUtils.reflections.getSubTypesOf(APIMessage.class)
+                        .stream().filter(clz -> !APISyncCallMessage.class.isAssignableFrom(clz))
+                        .filter(clz -> !apiClassNamesInGlobalConfig.contains(clz.getName()))
+                        .collect(Collectors.toList());
+
+
+                apiClasses.forEach(clz -> {
+                    GlobalConfigVO vo = new GlobalConfigVO();
+                    vo.setCategory(APITIMEOUT_GLOBAL_CONFIG_TYPE);
+                    vo.setName(clz.getName());
+                    vo.setDescription(String.format("timeout for API %s", clz));
+
+                    APIDefaultTimeout at = (APIDefaultTimeout) clz.getAnnotation(APIDefaultTimeout.class);
+                    if (at == null) {
+                        vo.setDefaultValue("30m");
+                    } else {
+                        vo.setDefaultValue(String.valueOf(at.timeunit().toMillis(at.value())));
+                    }
+
+                    Long timeout = getLegacyTimeout(clz);
+                    if (timeout != null) {
+                        vo.setValue(String.valueOf(timeout));
+                    } else {
+                        vo.setValue(vo.getDefaultValue());
+                    }
+
+                    gcf.createGlobalConfig(vo);
+                });
+            }
+        }.execute();
+    }
+
     class Value {
         private String valueString;
         private String key;
-        private Map<String, String> values = new HashMap<String, String>();
+        private Map<String, String> values = new HashMap<>();
 
         public Value(String key, String valueString) {
             this.valueString = valueString;
@@ -78,65 +185,11 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component {
         }
     }
 
-    private final String VALUE_TIMEOUT = "timeout";
-
     private void populateExtensions() {
         apiTimeoutExts = pluginRgty.getExtensionList(ApiTimeoutExtensionPoint.class);
     }
 
-    private void flatTimeout() {
-        for (Map.Entry<Class, ApiTimeout> e :apiTimeouts.entrySet()) {
-            ApiTimeout v = e.getValue();
-            for (Class clz : v.getRelatives()) {
-                Long currentTimeout = timeouts.get(clz);
-                Long timeout = currentTimeout == null ? v.getTimeout() : Math.max(currentTimeout, v.getTimeout());
-                timeouts.put(clz, timeout);
-            }
-        }
-    }
-
-    private void collectTimeoutForDerivedApi() {
-        Reflections reflections = Platform.getReflections();
-
-        Map<Class, ApiTimeout> children = new HashMap<Class, ApiTimeout>();
-        for (Map.Entry<Class, ApiTimeout> e : apiTimeouts.entrySet()) {
-            Class clz = e.getKey();
-            ApiTimeout at = e.getValue();
-
-            Set<Class> subClasses = reflections.getSubTypesOf(clz);
-            for (Class child : subClasses) {
-                children.put(child, at);
-
-                if (logger.isTraceEnabled()) {
-                    logger.trace(String.format("configure timeout for API[%s]:" +
-                            "\nrelatives: %s" +
-                            "\ntimeout: %sms", child, at.relatives, at.timeout));
-                }
-            }
-        }
-
-        apiTimeouts.putAll(children);
-    }
-
-    private void collectTimeout() {
-        Map<Class, Set<Class>> m = new HashMap<Class, Set<Class>>();
-        Set<Class<?>> subs = BeanUtils.reflections
-                .getTypesAnnotatedWith(org.zstack.header.core.ApiTimeout.class)
-                .stream().filter(i->i.isAnnotationPresent(org.zstack.header.core.ApiTimeout.class)).collect(Collectors.toSet());;
-
-        for (Class sub : subs) {
-            org.zstack.header.core.ApiTimeout at = (org.zstack.header.core.ApiTimeout) sub.getAnnotation(org.zstack.header.core.ApiTimeout.class);
-            for (Class apiClz : at.apiClasses()) {
-                Set<Class> relatives = m.get(apiClz);
-                if (relatives == null) {
-                    relatives = new HashSet<>();
-                    m.put(apiClz, relatives);
-                }
-
-                relatives.add(sub);
-            }
-        }
-
+    private void collectLegacyTimeout() {
         for (final Map.Entry<String, String> e : Platform.getGlobalProperties().entrySet()) {
             String key = e.getKey();
             if (!key.startsWith("ApiTimeout.")) {
@@ -156,16 +209,9 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component {
 
             String value = e.getValue();
             Value val = new Value(key, value);
+            String VALUE_TIMEOUT = "timeout";
             long timeout = parseTimeout(val.getValue(VALUE_TIMEOUT));
-            ApiTimeout apiTimeout = new ApiTimeout();
-            apiTimeout.setTimeout(timeout);
-            apiTimeout.setRelatives(m.computeIfAbsent(apiClz, k -> new HashSet<>()));
-            apiTimeouts.put(apiClz, apiTimeout);
-            if (logger.isTraceEnabled()) {
-                logger.trace(String.format("configure timeout for API[%s]:" +
-                        "\nrelatives: %s" +
-                        "\ntimeout: %sms", apiClz, apiTimeout.relatives, apiTimeout.timeout));
-            }
+            legacyTimeouts.put(apiClz, timeout);
         }
     }
 
@@ -179,47 +225,33 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component {
     }
 
     @Override
-    public Long getTimeout(Class clz) {
-        Long timeout = null;
-        for (ApiTimeoutExtensionPoint ext : apiTimeoutExts) {
-            timeout = ext.getApiTimeout(clz);
+    public Long getTimeout() {
+        for (ApiTimeoutExtensionPoint apiTimeoutExt : apiTimeoutExts) {
+            Long timeout = apiTimeoutExt.getApiTimeout();
+            if (timeout != null) {
+                return timeout;
+            }
         }
 
-        if (timeout != null) {
-            return timeout;
-        }
-
-        return timeouts.get(clz);
-    }
-
-    @Override
-    public Long getTimeout(Class clz, long defaultTimeout) {
-        Long t = getTimeout(clz);
-        return t == null ? defaultTimeout : t;
-    }
-
-    @Override
-    public Long getTimeout(Class clz, String defaultTimeout) {
-        Long t = getTimeout(clz);
-        if (t == null) {
-            return parseTimeout(defaultTimeout);
+        Long apiTimeout = (Long) TaskContext.getTaskContextItem(TASK_CONTEXT_API_TIMEOUT);
+        if (apiTimeout != null) {
+            return apiTimeout;
         } else {
-            return t;
+            // this is an internal message
+            return parseTimeout(ApiTimeoutGlobalProperty.INTERNAL_MESSAGE_TIMEOUT);
         }
     }
 
     @Override
-    public Long getTimeout(Class clz, TimeUnit tu) {
-        Long t = getTimeout(clz);
-        if (t != null) {
-            return tu.convert(t, TimeUnit.MILLISECONDS);
-        } else {
-            return null;
+    public void setMessageTimeout(Message msg) {
+        if (msg instanceof APIMessage) {
+            APIMessage amsg = (APIMessage) msg;
+            amsg.setTimeout(getAPIMessageTimeout(amsg));
+        } else if (msg instanceof NeedReplyMessage) {
+            NeedReplyMessage nmsg = (NeedReplyMessage) msg;
+            if (nmsg.getTimeout() == -1) {
+                nmsg.setTimeout(getTimeout());
+            }
         }
-    }
-
-    @Override
-    public Map<Class, ApiTimeout> getAllTimeout() {
-        return apiTimeouts;
     }
 }

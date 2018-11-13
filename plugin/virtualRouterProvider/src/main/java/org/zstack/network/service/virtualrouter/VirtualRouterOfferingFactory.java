@@ -29,9 +29,8 @@ public class VirtualRouterOfferingFactory implements InstanceOfferingFactory {
 				rvo.setImageUuid(amsg.getImageUuid());
 				rvo.setAccountUuid(msg.getSession().getAccountUuid());
 				rvo.setDefault(amsg.isDefault() != null ? amsg.isDefault() : false);
-				dbf.getEntityManager().persist(rvo);
-				dbf.getEntityManager().flush();
-				dbf.getEntityManager().refresh(rvo);
+				persist(rvo);
+				reload(rvo);
 
 				DefaultVirtualRouterOfferingSelector selector = new DefaultVirtualRouterOfferingSelector();
 				selector.setOfferingUuid(rvo.getUuid());
@@ -40,8 +39,7 @@ public class VirtualRouterOfferingFactory implements InstanceOfferingFactory {
 				selector.setCreated(true);
 				selector.selectDefaultOffering();
 
-				dbf.getEntityManager().refresh(rvo);
-				return VirtualRouterOfferingInventory.valueOf(rvo);
+				return VirtualRouterOfferingInventory.valueOf(reload(rvo));
 			}
 		}.execute();
 	}

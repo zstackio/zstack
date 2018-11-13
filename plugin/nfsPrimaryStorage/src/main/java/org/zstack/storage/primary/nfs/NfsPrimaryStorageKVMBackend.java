@@ -407,7 +407,6 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
             KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
             msg.setCommand(cmd);
-            msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
             msg.setPath(PING_PATH);
             msg.setHostUuid(huuid);
             bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, huuid);
@@ -726,7 +725,6 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         msg.setHostUuid(host.getUuid());
         msg.setPath(GET_CAPACITY_PATH);
         msg.setCommand(cmd);
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
@@ -760,7 +758,6 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         msg.setPath(CHECK_BITS_PATH);
         msg.setHostUuid(host.getUuid());
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
@@ -867,7 +864,6 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         msg.setCommand(cmd);
         msg.setPath(CREATE_EMPTY_VOLUME_PATH);
         msg.setHostUuid(host.getUuid());
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
         bus.send(msg, new CloudBusCallBack(complete) {
             @Override
@@ -970,7 +966,6 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         msg.setCommand(cmd);
         msg.setPath(DELETE_PATH);
         msg.setHostUuid(host.getUuid());
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
@@ -1014,7 +1009,6 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         msg.setCommand(cmd);
         msg.setPath(LIST_PATH);
         msg.setHostUuid(host.getUuid());
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
@@ -1046,7 +1040,6 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         msg.setCommand(cmd);
         msg.setPath(REVERT_VOLUME_FROM_SNAPSHOT_PATH);
         msg.setHostUuid(host.getUuid());
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
@@ -1084,7 +1077,6 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         msg.setCommand(cmd);
         msg.setPath(REINIT_IMAGE_PATH);
         msg.setHostUuid(host.getUuid());
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
@@ -1120,7 +1112,6 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         msg.setCommand(cmd);
         msg.setHostUuid(destHost.getUuid());
         msg.setPath(CREATE_TEMPLATE_FROM_VOLUME_PATH);
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, destHost.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
@@ -1183,7 +1174,6 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             msg.setCommand(cmd);
             msg.setPath(OFFLINE_SNAPSHOT_MERGE);
             msg.setHostUuid(host.getUuid());
-            msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
             bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
             bus.send(msg, new CloudBusCallBack(completion) {
                 @Override
@@ -1402,7 +1392,6 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         msg.setPath(path);
         msg.setNoStatusCheck(noCheckStatus);
         msg.setCommand(cmd);
-        msg.setCommandTimeout(timeoutManager.getTimeout(cmd.getClass(), "5m"));
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override

@@ -1,10 +1,7 @@
 package org.zstack.header.storage.primary;
 
-import org.zstack.header.core.ApiTimeout;
-import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 
-@ApiTimeout(apiClasses = {APICreateVmInstanceMsg.class})
 public class InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg extends InstantiateVolumeOnPrimaryStorageMsg implements PrimaryStorageMessage {
     private ImageSpec templateSpec;
 

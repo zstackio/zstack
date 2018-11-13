@@ -14,27 +14,10 @@ public class KVMHostAsyncHttpCallMsg extends NeedReplyMessage implements HostMes
     private String command;
     private String hostUuid;
     private boolean noStatusCheck;
-    private long commandTimeout = -1;
     private String commandClassName;
 
     public String getCommandClassName() {
         return commandClassName;
-    }
-
-    @Override
-    public long getTimeout() {
-        return getCommandTimeout() + TimeUnit.SECONDS.toMillis(30);
-    }
-
-    public long getCommandTimeout() {
-        assert commandTimeout != -1 : "commandTimeout is not set";
-        assert commandTimeout != 0 : "commandTimeout cannot be 0";
-        return commandTimeout;
-    }
-
-    public void setCommandTimeout(long commandTimeout) {
-        this.commandTimeout = commandTimeout;
-        timeout = getTimeout();
     }
 
     public boolean isNoStatusCheck() {

@@ -257,7 +257,6 @@ public class CephBackupStorageBase extends BackupStorageBase {
         }
     }
 
-    @ApiTimeout(apiClasses = {APIAddImageMsg.class})
     public static class DownloadCmd extends AgentCommand implements HasThreadContext {
         String url;
         String installPath;

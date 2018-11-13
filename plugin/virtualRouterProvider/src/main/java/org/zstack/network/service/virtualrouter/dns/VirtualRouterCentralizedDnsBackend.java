@@ -128,7 +128,6 @@ public class VirtualRouterCentralizedDnsBackend extends AbstractVirtualRouterBac
 
                     KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
                     kmsg.setCommand(cmd);
-                    kmsg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "5m"));
                     kmsg.setPath(SET_DNS_FORWARD_PATH);
                     kmsg.setHostUuid(spec.getDestHost().getUuid());
                     bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, spec.getDestHost().getUuid());
@@ -186,7 +185,6 @@ public class VirtualRouterCentralizedDnsBackend extends AbstractVirtualRouterBac
 
             KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
             kmsg.setCommand(cmd);
-            kmsg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "5m"));
             kmsg.setPath(REMOVE_DNS_FORWARD_PATH);
             kmsg.setHostUuid(spec.getDestHost().getUuid());
             bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, spec.getDestHost().getUuid());

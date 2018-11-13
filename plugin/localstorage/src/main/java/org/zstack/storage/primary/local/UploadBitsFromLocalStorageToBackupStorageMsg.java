@@ -1,17 +1,11 @@
 package org.zstack.storage.primary.local;
 
-import org.zstack.header.core.ApiTimeout;
-import org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeMsg;
-import org.zstack.header.image.APICreateRootVolumeTemplateFromRootVolumeMsg;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.storage.primary.PrimaryStorageMessage;
-import org.zstack.header.volume.APICreateDataVolumeFromVolumeSnapshotMsg;
 
 /**
  * Created by xing5 on 2016/4/29.
  */
-@ApiTimeout(apiClasses = {APICreateDataVolumeTemplateFromVolumeMsg.class, APICreateRootVolumeTemplateFromRootVolumeMsg.class,
-        APICreateDataVolumeFromVolumeSnapshotMsg.class})
 public class UploadBitsFromLocalStorageToBackupStorageMsg extends NeedReplyMessage implements PrimaryStorageMessage {
     private String hostUuid;
     private String imageUuid;

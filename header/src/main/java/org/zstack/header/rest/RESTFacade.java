@@ -70,7 +70,7 @@ public interface RESTFacade {
 
     String makeUrl(String path);
 
-    void installBeforeAsyncJsonPostInterceptor(BeforeAsyncJsonPostInterceptor interceptor);
+    Runnable installBeforeAsyncJsonPostInterceptor(BeforeAsyncJsonPostInterceptor interceptor);
 
     // timeout are in milliseconds
     static TimeoutRestTemplate createRestTemplate(int readTimeout, int connectTimeout) {

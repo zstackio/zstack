@@ -67,7 +67,7 @@ class CloudBus3Case extends SubCase {
 
         List<StartVmInstanceMsg> msgs = []
         for (int i=0; i<3; i++) {
-            StartVmInstanceMsg msg = new StartVmInstanceMsg()
+            StartVmInstanceMsg msg = new StartVmInstanceMsg(vmInstanceUuid: Platform.uuid)
             bus.makeLocalServiceId(msg, SERVICE_ID)
             msgs.add(msg)
         }
@@ -118,7 +118,7 @@ class CloudBus3Case extends SubCase {
         bus.registerService(service)
 
         MessageReply errorReply
-        StartVmInstanceMsg msg = new StartVmInstanceMsg()
+        StartVmInstanceMsg msg = new StartVmInstanceMsg(vmInstanceUuid: Platform.uuid)
         bus.makeLocalServiceId(msg, SERVICE_ID)
         bus.send(msg, new CloudBusCallBack(null) {
             @Override

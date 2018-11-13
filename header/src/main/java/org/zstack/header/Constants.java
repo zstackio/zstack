@@ -6,6 +6,7 @@ package org.zstack.header;
 public interface Constants {
     String AGENT_HTTP_HEADER_RESOURCE_UUID = "X-Resource-UUID";
     String THREAD_CONTEXT_API = "api";
+    String THREAD_CONTEXT_API_TIMEOUT = "apitimeout";
     String THREAD_CONTEXT_TASK_NAME = "task-name";
     String THREAD_CONTEXT_PROGRESS_ENABLED = "progress-enabled";
     String THREAD_CONTEXT_TASK_STAGE = "task-stage";

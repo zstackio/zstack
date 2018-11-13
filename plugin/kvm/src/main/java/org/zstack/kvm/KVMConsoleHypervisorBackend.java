@@ -56,7 +56,6 @@ public class KVMConsoleHypervisorBackend implements ConsoleHypervisorBackend {
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setHostUuid(vm.getHostUuid());
         msg.setCommand(cmd);
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         msg.setPath(KVMConstant.KVM_GET_VNC_PORT_PATH);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, vm.getHostUuid());
         bus.send(msg, new CloudBusCallBack(complete) {

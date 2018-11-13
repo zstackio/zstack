@@ -107,7 +107,7 @@ public class SftpBackupStorage extends BackupStorageBase {
             cmd.setUrl(url);
             cmd.setUrlScheme(scheme);
             cmd.setInstallPath(installPath);
-            cmd.setTimeout(timeoutManager.getTimeout(cmd.getClass(), "3h"));
+            cmd.setTimeout(timeoutManager.getTimeout());
 
             restf.asyncJsonPost(buildUrl(SftpBackupStorageConstant.DOWNLOAD_IMAGE_PATH), cmd, new JsonAsyncRESTCallback<DownloadResponse>(completion) {
                 @Override

@@ -1,15 +1,8 @@
 package org.zstack.kvm;
 
 import org.zstack.core.validation.ConditionalValidation;
-import org.zstack.header.cluster.APIUpdateClusterOSMsg;
-import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.core.validation.Validation;
-import org.zstack.header.host.APIReconnectHostMsg;
-import org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotMsg;
-import org.zstack.header.vm.APICreateVmInstanceMsg;
-import org.zstack.header.vm.APIMigrateVmMsg;
 import org.zstack.header.vm.VmBootDevice;
-import org.zstack.header.volume.APICreateVolumeSnapshotMsg;
 import org.zstack.network.securitygroup.SecurityGroupMembersTO;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
 
@@ -886,7 +879,6 @@ public class KVMAgentCommands {
         String getVmInstanceUuid();
     }
 
-    @ApiTimeout(apiClasses = {APICreateVmInstanceMsg.class})
     public static class StartVmCmd extends AgentCommand implements VmAddOnsCmd {
         private String vmInstanceUuid;
         private long vmInternalId;
@@ -1599,7 +1591,6 @@ public class KVMAgentCommands {
     public static class ApplySecurityGroupRuleResponse extends AgentResponse {
     }
 
-    @ApiTimeout(apiClasses = {APIMigrateVmMsg.class})
     public static class MigrateVmCmd extends AgentCommand {
         private String vmUuid;
         private String destHostIp;
@@ -1681,7 +1672,6 @@ public class KVMAgentCommands {
     public static class MergeSnapshotRsp extends AgentResponse {
     }
 
-    @ApiTimeout(apiClasses = {APIDeleteVolumeSnapshotMsg.class})
     public static class MergeSnapshotCmd extends AgentCommand {
         private String vmUuid;
         private int deviceId;
@@ -1730,7 +1720,6 @@ public class KVMAgentCommands {
         }
     }
 
-    @ApiTimeout(apiClasses = {APICreateVolumeSnapshotMsg.class})
     public static class TakeSnapshotCmd extends AgentCommand {
         private String vmUuid;
         private String volumeUuid;
@@ -1941,7 +1930,6 @@ public class KVMAgentCommands {
 
     }
 
-    @ApiTimeout(apiClasses = APIUpdateClusterOSMsg.class)
     public static class UpdateHostOSCmd extends AgentCommand {
         public String hostUuid;
         public String excludePackages;
@@ -1950,7 +1938,6 @@ public class KVMAgentCommands {
     public static class UpdateHostOSRsp extends AgentResponse {
     }
 
-    @ApiTimeout(apiClasses = APIReconnectHostMsg.class)
     public static class UpdateDependencyCmd extends AgentCommand {
         public String hostUuid;
     }

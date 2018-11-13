@@ -1348,15 +1348,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     }
 
     private void evaluateMessageTimeout(NeedReplyMessage msg) {
-        Long timeout = timeoutMgr.getTimeout(msg.getClass());
-
-        if (timeout != null && msg.getTimeout() == -1) {
-            msg.setTimeout(timeout);
-        }
-
-        if (msg.getTimeout() == -1) {
-            msg.setTimeout(DEFAULT_MESSAGE_TIMEOUT);
-        }
+        timeoutMgr.setMessageTimeout(msg);
     }
 
     @Override

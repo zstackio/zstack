@@ -1,13 +1,11 @@
 package org.zstack.storage.primary.local;
 
-import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.storage.primary.PrimaryStorageMessage;
 
 /**
  * Created by xing5 on 2016/7/21.
  */
-@ApiTimeout(apiClasses = {APILocalStorageMigrateVolumeMsg.class})
 public class MigrateVolumeOnLocalStorageMsg extends NeedReplyMessage implements PrimaryStorageMessage {
     private String volumeUuid;
     private String primaryStorageUuid;

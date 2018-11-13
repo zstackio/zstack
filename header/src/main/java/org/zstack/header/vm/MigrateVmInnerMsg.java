@@ -1,13 +1,11 @@
 package org.zstack.header.vm;
 
-import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.message.NeedReplyMessage;
 
 /**
  * Created by camile on 3/7/2018.
  * copy by APIMigrateVmMsg for LongJob
  */
-@ApiTimeout(apiClasses = {APIMigrateVmMsg.class})
 public class MigrateVmInnerMsg extends NeedReplyMessage implements VmInstanceMessage, MigrateVmMessage {
     private String vmInstanceUuid;
     private String hostUuid;

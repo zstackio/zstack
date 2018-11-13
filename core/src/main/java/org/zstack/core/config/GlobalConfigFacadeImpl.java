@@ -588,14 +588,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
 
     @Override
     public Map<String, GlobalConfig> getAllConfig() {
-        SimpleQuery<GlobalConfigVO> query = dbf.createQuery(GlobalConfigVO.class);
-        List<GlobalConfigVO> vos = query.list();
-        Map<String, GlobalConfig> ret = new HashMap<String, GlobalConfig>(vos.size());
-        for (GlobalConfigVO vo : vos) {
-            GlobalConfig c = GlobalConfig.valueOf(vo);
-            ret.put(c.getIdentity(), c);
-        }
-        return ret;
+        return allConfigs;
     }
 
     @Override

@@ -58,6 +58,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -838,6 +839,11 @@ public class RestServer implements Component, CloudBusEventListener {
             }
 
             msg.setId(jobUuid);
+        }
+
+        if (requestInfo.get().headers.containsKey(RestConstants.HEADER_API_TIMEOUT)) {
+            String apiTimeout = requestInfo.get().headers.get(RestConstants.HEADER_API_TIMEOUT).get(0);
+            msg.setTimeout(TimeUnit.SECONDS.toMillis(Long.valueOf(apiTimeout)));
         }
 
         if (sessionId != null) {
