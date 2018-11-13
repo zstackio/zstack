@@ -5136,11 +5136,19 @@ public class VmInstanceBase extends AbstractVmInstance {
         for (VmNicInventory nic : inv.getVmNics()) {
             List<L3NetworkInventory> l3Invs = new ArrayList<>();
             /* if destroy vm, then recover vm, ip address of nic has been deleted */
-            if (nic.getUsedIps() == null || nic.getUsedIps().isEmpty()) {
-                l3Invs.add(L3NetworkInventory.valueOf(dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class)));
-            } else {
+            if (nic.getUsedIps() != null && !nic.getUsedIps().isEmpty()) {
                 for (UsedIpInventory ip : nic.getUsedIps()) {
-                    l3Invs.add(L3NetworkInventory.valueOf(dbf.findByUuid(ip.getL3NetworkUuid(), L3NetworkVO.class)));
+                    L3NetworkVO l3Vo = dbf.findByUuid(ip.getL3NetworkUuid(), L3NetworkVO.class);
+                    if (l3Vo != null) {
+                        l3Invs.add(L3NetworkInventory.valueOf(l3Vo));
+                    }
+                }
+            }
+
+            if (l3Invs.isEmpty()) {
+                L3NetworkVO l3Vo = dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class);
+                if (l3Vo != null) {
+                    l3Invs.add(L3NetworkInventory.valueOf(l3Vo));
                 }
             }
             nicSpecs.add(new VmNicSpec(l3Invs));
