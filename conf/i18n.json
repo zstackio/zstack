@@ -11558,9 +11558,9 @@
     "fileName": "src/zstack/./premium/mevoco/src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorageApiInterceptor.java"
   },
   {
-    "raw": "dst backupstorage[%s] already contains it, which uuid is: [%s]",
-    "en_US": "dst backupstorage[{0}] already contains it, which uuid is: [{1}]",
-    "zh_CN": "目的镜像服务器已经包含了它，它的uuid是[{1}]",
+    "raw": "target backup storage[uuid:%s] already contains the image[uuid:%s]",
+    "en_US": "target backup storage[uuid:{0}] already contains the image[uuid:{1}]",
+    "zh_CN": "目标镜像服务器已经包含了待同步镜像，uuid是[{1}]",
     "arguments": [
       "bsUuid",
       "imageUuid"
@@ -11569,9 +11569,9 @@
     "fileName": "src/zstack/./premium/mevoco/src/main/java/org/zstack/storage/backup/imagestore/ImageStoreBackupStorageApiInterceptor.java"
   },
   {
-    "raw": "src backupstorage[%s] doesn\u0027t contain image[%s]",
-    "en_US": "src backupstorage[{0}] doesn\u0027t contain image[{1}]",
-    "zh_CN": "SRC镜像服务器[{0}]不包含该镜像[{1}]",
+    "raw": "source backup storage[%s] doesn\u0027t contain image[%s]",
+    "en_US": "source backup storage[{0}] doesn\u0027t contain image[{1}]",
+    "zh_CN": "源镜像服务器[{0}]不包含该镜像[{1}]",
     "arguments": [
       "msg.getSrcBackupStorageUuid()",
       "msg.getUuid()"
