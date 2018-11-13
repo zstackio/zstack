@@ -7,8 +7,6 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.defer.Defer;
-import org.zstack.core.defer.Deferred;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -28,7 +26,10 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.*;
+import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostStatus;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIMessage;
@@ -48,7 +49,6 @@ import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply.
 import org.zstack.storage.primary.local.MigrateBitsStruct.ResourceInfo;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
-import org.zstack.utils.ShellUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -57,8 +57,6 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.LockModeType;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import javax.persistence.metamodel.SingularAttribute;
-
 import java.util.*;
 import java.util.concurrent.Callable;
 
@@ -2499,7 +2497,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 " from HostVO host, LocalStorageResourceRefVO ref" +
                 " where ref.hostUuid = host.uuid" +
                 " and ref.resourceUuid = :resUuid" +
-                " and ref.primaryStorageUuid = :puuid";
+                " and ref.primaryStorageUuid = :puuid group by hypervisorType";
         TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("resUuid", resUuid);
         q.setParameter("puuid", self.getUuid());
