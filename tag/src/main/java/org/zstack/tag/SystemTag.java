@@ -124,7 +124,6 @@ public class SystemTag {
     }
 
     public void simpleCopyTag(String srcUuid, Class srcClass, String dstUuid, Class dstClass, String tag) {
-        logger.debug(String.format("weiw: tag: %s", tag));
         SystemTagVO systemTagVO = Q.New(SystemTagVO.class)
                 .eq(SystemTagVO_.resourceUuid, srcUuid)
                 .eq(SystemTagVO_.resourceType, srcClass.getSimpleName())
@@ -132,6 +131,7 @@ public class SystemTag {
                 .find();
 
         if (systemTagVO == null) {
+            logger.debug(String.format("can not find tag[%s] from resource[uuid:%s, type:%s]", tag, srcClass.getSimpleName(), srcUuid));
             return;
         }
 
