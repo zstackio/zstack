@@ -65,5 +65,9 @@
         <id>1015</id>
         <description>no such user vpn gateway</description>
     </code>
+    <code>
+        <id>1016</id>
+        <description>no such oss domain</description>
+    </code>
 </error>
 

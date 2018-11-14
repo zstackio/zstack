@@ -671,6 +671,7 @@ public class KVMAgentCommands {
         public static final String FUSIONSTOR = "fusionstor";
         public static final String SHAREDBLOCK = "sharedblock";
         public static final String SCSILUN = "scsilun";
+        public static final String BLOCK = "block";
 
         private String installPath;
         private int deviceId;

@@ -91,8 +91,7 @@ class LocalStorageCreateVmByImageCapacityCase extends SubCase {
         // ImageCache(1G) + QCOW2(2G)
         assert beforeCapacityResult.availableCapacity == capacityResult.availableCapacity +
                 SizeUnit.GIGABYTE.toByte(1) + SizeUnit.GIGABYTE.toByte(2)
-        assert beforeCapacityResult.availablePhysicalCapacity ==
-                capacityResult.availablePhysicalCapacity + SizeUnit.GIGABYTE.toByte(20) + SizeUnit.GIGABYTE.toByte(1)
+        assert beforeCapacityResult.availablePhysicalCapacity == capacityResult.availablePhysicalCapacity + SizeUnit.GIGABYTE.toByte(20) + SizeUnit.GIGABYTE.toByte(1)
         assert beforeCapacityResult.totalCapacity == capacityResult.totalCapacity
         assert beforeCapacityResult.totalPhysicalCapacity == capacityResult.totalPhysicalCapacity
 
@@ -111,8 +110,7 @@ class LocalStorageCreateVmByImageCapacityCase extends SubCase {
         }
         assert beforeCapacityResult.availableCapacity == afterCapacityResult.availableCapacity +
                 SizeUnit.GIGABYTE.toByte(1) + SizeUnit.GIGABYTE.toByte(2)
-        assert beforeCapacityResult.availablePhysicalCapacity ==
-                afterCapacityResult.availablePhysicalCapacity + SizeUnit.GIGABYTE.toByte(20) + SizeUnit.GIGABYTE.toByte(1)
+        assert beforeCapacityResult.availablePhysicalCapacity == afterCapacityResult.availablePhysicalCapacity + SizeUnit.GIGABYTE.toByte(20) + SizeUnit.GIGABYTE.toByte(1)
         assert beforeCapacityResult.totalCapacity == afterCapacityResult.totalCapacity
         assert beforeCapacityResult.totalPhysicalCapacity == afterCapacityResult.totalPhysicalCapacity
     }

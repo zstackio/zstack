@@ -27,10 +27,7 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
-import org.zstack.header.host.HostState;
-import org.zstack.header.host.HostStatus;
-import org.zstack.header.host.HostVO;
-import org.zstack.header.host.HostVO_;
+import org.zstack.header.host.DetachIsoOnPrimaryStorageMsg;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -50,11 +47,15 @@ import org.zstack.header.volume.VolumeReportPrimaryStorageCapacityUsageReply;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
-import static org.zstack.core.Platform.*;
 
 import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
+import static org.zstack.core.Platform.operr;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE, dependencyCheck = true)
 public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
@@ -329,9 +330,17 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((AskInstallPathForNewSnapshotMsg) msg);
         } else if ((msg instanceof SyncPrimaryStorageCapacityMsg)) {
             handle((SyncPrimaryStorageCapacityMsg) msg);
+        } else if ((msg instanceof DetachIsoOnPrimaryStorageMsg)) {
+            handle((DetachIsoOnPrimaryStorageMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+
+    }
+
+    protected void handle(final DetachIsoOnPrimaryStorageMsg msg) {
+        MessageReply reply = new MessageReply();
+        bus.reply(msg, reply);
     }
 
     protected void handle(UpdatePrimaryStorageHostStatusMsg msg){

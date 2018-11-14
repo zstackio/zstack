@@ -1588,6 +1588,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setVolume(to);
         cmd.setVmUuid(vm.getUuid());
         extEmitter.beforeDetachVolume((KVMHostInventory) getSelfInventory(), vm, vol, cmd);
+
         new Http<>(detachDataVolumePath, cmd, DetachDataVolumeResponse.class).call(new ReturnValueCompletion<DetachDataVolumeResponse>(msg, completion) {
             @Override
             public void success(DetachDataVolumeResponse ret) {
@@ -1596,18 +1597,20 @@ public class KVMHost extends HostBase implements Host {
                             vol.getUuid(), vol.getInstallPath(), vm.getUuid(), vm.getName(), getSelf().getUuid(), getSelf().getManagementIp(), ret.getError());
                     reply.setError(err);
                     extEmitter.detachVolumeFailed((KVMHostInventory) getSelfInventory(), vm, vol, cmd, reply.getError());
+                    bus.reply(msg, reply);
+                    completion.done();
                 } else {
                     extEmitter.afterDetachVolume((KVMHostInventory) getSelfInventory(), vm, vol, cmd);
+                    bus.reply(msg, reply);
+                    completion.done();
                 }
-                bus.reply(msg, reply);
-                completion.done();
             }
 
             @Override
             public void fail(ErrorCode err) {
                 reply.setError(err);
+                extEmitter.detachVolumeFailed((KVMHostInventory) getSelfInventory(), vm, vol, cmd, reply.getError());
                 bus.reply(msg, reply);
-                extEmitter.detachVolumeFailed((KVMHostInventory) getSelfInventory(), vm, vol, cmd, err);
                 completion.done();
             }
         });

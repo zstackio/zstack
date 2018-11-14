@@ -28,6 +28,15 @@ public class CreateOssBackupBucketRemoteAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String regionId;
 
+    @Param(required = false, maxLength = 127, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String ossDomain;
+
+    @Param(required = false, maxLength = 127, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String ossKey;
+
+    @Param(required = false, maxLength = 127, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String ossSecret;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 

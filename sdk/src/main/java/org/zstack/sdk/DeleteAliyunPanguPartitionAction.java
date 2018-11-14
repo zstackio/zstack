@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateOssBucketRemoteAction extends AbstractAction {
+public class DeleteAliyunPanguPartitionAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateOssBucketRemoteAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateOssBucketRemoteResult value;
+        public org.zstack.sdk.DeleteAliyunPanguPartitionResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,25 +26,10 @@ public class CreateOssBucketRemoteAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String dataCenterUuid;
-
-    @Param(required = true, maxLength = 128, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String bucketName;
-
-    @Param(required = false, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false, maxLength = 256, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String ossDomain;
-
-    @Param(required = false, maxLength = 127, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String ossKey;
-
-    @Param(required = false, maxLength = 127, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String ossSecret;
+    public java.lang.String uuid;
 
     @Param(required = false)
-    public java.lang.String resourceUuid;
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -69,8 +54,8 @@ public class CreateOssBucketRemoteAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateOssBucketRemoteResult value = res.getResult(org.zstack.sdk.CreateOssBucketRemoteResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateOssBucketRemoteResult() : value; 
+        org.zstack.sdk.DeleteAliyunPanguPartitionResult value = res.getResult(org.zstack.sdk.DeleteAliyunPanguPartitionResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteAliyunPanguPartitionResult() : value; 
 
         return ret;
     }
@@ -99,11 +84,11 @@ public class CreateOssBucketRemoteAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/hybrid/aliyun/oss-bucket/remote";
+        info.httpMethod = "DELETE";
+        info.path = "/aliyun/pangu/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 
