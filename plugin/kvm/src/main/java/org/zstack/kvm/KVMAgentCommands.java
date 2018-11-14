@@ -1976,6 +1976,13 @@ public class KVMAgentCommands {
         public String reason;
     }
 
+    public static class ReportSelfFencerCmd {
+        public String hostUuid;
+        public List<String> psUuids;
+        public String reason;
+        public String vmUuidsString;
+    }
+
     public static class ReportHostDeviceEventCmd {
         public String hostUuid;
     }
