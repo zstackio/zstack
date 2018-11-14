@@ -2044,13 +2044,13 @@ public class KVMHost extends HostBase implements Host {
             String platform = q.findValue();
 
             to.setUseVirtio(ImagePlatform.valueOf(platform).isParaVirtualization());
-            to.setIp(getCleanTrafficIp(nic));
+            to.setIps(getCleanTrafficIp(nic));
         }
 
         return to;
     }
 
-    private String getCleanTrafficIp(VmNicInventory nic) {
+    private List<String> getCleanTrafficIp(VmNicInventory nic) {
         boolean isUserVm = Q.New(VmInstanceVO.class)
                 .eq(VmInstanceVO_.uuid, nic.getVmInstanceUuid()).select(VmInstanceVO_.type)
                 .findValue().equals(VmInstanceConstant.USER_VM_TYPE);
@@ -2061,7 +2061,7 @@ public class KVMHost extends HostBase implements Host {
 
         String tagValue = VmSystemTags.CLEAN_TRAFFIC.getTokenByResourceUuid(nic.getVmInstanceUuid(), VmSystemTags.CLEAN_TRAFFIC_TOKEN);
         if (Boolean.valueOf(tagValue) || (tagValue == null && VmGlobalConfig.VM_CLEAN_TRAFFIC.value(Boolean.class))) {
-            return nic.getIp();
+            return VmNicHelper.getIpAddresses(nic);
         }
 
         return null;

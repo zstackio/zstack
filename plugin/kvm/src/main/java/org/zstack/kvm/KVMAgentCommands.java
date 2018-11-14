@@ -523,7 +523,7 @@ public class KVMAgentCommands {
 
     public static class NicTO {
         private String mac;
-        private String ip;
+        private List<String> ips;
         private String bridgeName;
         private String uuid;
         private String nicInternalName;
@@ -531,12 +531,12 @@ public class KVMAgentCommands {
         private String metaData;
         private Boolean useVirtio;
 
-        public String getIp() {
-            return ip;
+        public List<String> getIps() {
+            return ips;
         }
 
-        public void setIp(String ip) {
-            this.ip = ip;
+        public void setIps(List<String> ips) {
+            this.ips = ips;
         }
 
         public String getUuid() {

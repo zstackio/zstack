@@ -44,7 +44,7 @@ public class VmNicHelper {
     public static List<String> getIpAddresses(VmNicInventory nic) {
         List<String> ret = new ArrayList<>();
         for (UsedIpInventory ip : nic.getUsedIps()) {
-            ret.add(ip.getL3NetworkUuid());
+            ret.add(ip.getIp());
         }
 
         return ret;
