@@ -320,6 +320,7 @@ public class VmQuotaOperator implements Quota.QuotaOperator {
                 return;
             } else if (!vmInstanceVO.getState().equals(VmInstanceState.Stopped)
                     && !vmInstanceVO.getState().equals(VmInstanceState.Running)
+                    && !vmInstanceVO.getState().equals(VmInstanceState.Paused)
                     && !vmInstanceVO.getState().equals(VmInstanceState.Starting)) {
                 throw new ApiMessageInterceptionException(errf.instantiateErrorCode(VmErrors.NOT_IN_CORRECT_STATE,
                         String.format("Incorrect VM State.VM[uuid:%s] current state:%s. ",
@@ -330,7 +331,8 @@ public class VmQuotaOperator implements Quota.QuotaOperator {
             String vmInstanceUuid = msg.getResourceUuid();
 
             // check vm
-            if (vmInstanceVO.getState().equals(VmInstanceState.Running)) {
+            if (vmInstanceVO.getState().equals(VmInstanceState.Running)
+             || vmInstanceVO.getState().equals(VmInstanceState.Paused)) {
                 checkRunningVMQuotaForChangeResourceOwner(vmInstanceUuid, resourceTargetOwnerAccountUuid,
                         currentAccountUuid, pairs);
             }
