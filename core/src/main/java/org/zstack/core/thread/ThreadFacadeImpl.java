@@ -325,4 +325,19 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
         cancelablePeriodicTasks.put(task, ret);
         return ret;
     }
+
+    @Override
+    public void printThreadsAndTasks() {
+        long completedTask = _pool.getCompletedTaskCount();
+        long pendingTask = _pool.getTaskCount() - completedTask;
+
+        StringBuilder builder = new StringBuilder();
+        builder.append("check thread poolSize and tasks: ");
+        builder.append(String.format("poolSize: %s, activeSize: %s, corePoolSize: %s, maximumPoolSize: %s, " +
+                "completedTasks: %s, pendingTasks: %s, queueTasks: %s", _pool.getPoolSize(), _pool.getActiveCount(),
+                _pool.getCorePoolSize(), _pool.getMaximumPoolSize(), completedTask, pendingTask, _pool.getQueue().size()));
+
+
+        _logger.debug(builder.toString());
+    }
 }
