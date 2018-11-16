@@ -69,7 +69,8 @@ public class AuthorizationManager implements GlobalApiMessageInterceptor, Compon
                     "session uuid is null"));
         }
 
-        msg.setSession(Session.renewSession(msg.getSession().getUuid(), null));
+        Session.errorOnTimeout(msg.getSession().getUuid());
+        msg.setSession(Session.getSession(msg.getSession().getUuid()));
         return msg.getSession();
     }
 

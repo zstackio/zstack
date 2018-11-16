@@ -742,7 +742,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
     @Override
     public InterceptorPosition getPosition() {
-        return InterceptorPosition.FRONT;
+        return InterceptorPosition.END;
     }
 
     private boolean isCheckSystemTags(APIMessage msg) {
@@ -808,7 +808,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     }
 
     private ErrorCode checkPemission(String tag, SessionInventory session){
-        if (session == null || session.getUuid() == null || AccountConstant.isAdminPermission(Session.getSession(session.getUuid()))) {
+        if (session == null || session.getUuid() == null || AccountConstant.isAdminPermission(session.getAccountUuid())) {
             return null;
         }
 
