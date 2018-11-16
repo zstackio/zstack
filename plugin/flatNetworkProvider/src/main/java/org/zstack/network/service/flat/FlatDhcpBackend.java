@@ -92,8 +92,6 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     public static final String RESET_DEFAULT_GATEWAY_PATH = "/flatnetworkprovider/dhcp/resetDefaultGateway";
     public static final String DHCP_DELETE_NAMESPACE_PATH = "/flatnetworkprovider/dhcp/deletenamespace";
 
-    private Map<String, UsedIpInventory> l3NetworkDhcpServerIp = new ConcurrentHashMap<String, UsedIpInventory>();
-
     public static String makeNamespaceName(String brName, String l3Uuid) {
         return String.format("%s_%s", brName, l3Uuid);
     }
@@ -261,13 +259,6 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             return;
         }
 
-        UsedIpInventory ip = l3NetworkDhcpServerIp.get(msg.getL3NetworkUuid());
-        if (ip != null) {
-            reply.setIp(ip.getIp());
-            bus.reply(msg, reply);
-            return;
-        }
-
         String tag = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTag(msg.getL3NetworkUuid());
         if (tag != null) {
             Map<String, String> tokens = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTokensByTag(tag);
@@ -277,8 +268,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 throw new CloudRuntimeException(String.format("cannot find used ip [uuid:%s]", ipUuid));
             }
 
-            ip = UsedIpInventory.valueOf(vo);
-            l3NetworkDhcpServerIp.put(msg.getL3NetworkUuid(), ip);
+            UsedIpInventory ip = UsedIpInventory.valueOf(vo);
             reply.setIp(ip.getIp());
             bus.reply(msg, reply);
             logger.debug(String.format("APIGetL3NetworkDhcpIpAddressMsg[ip:%s, uuid:%s] for l3 network[uuid:%s]",
@@ -293,10 +283,6 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     @Deferred
     public UsedIpInventory allocateDhcpIp(String l3Uuid) {
         L3NetworkVO l3 = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3Uuid).find();
-        UsedIpInventory ip = l3NetworkDhcpServerIp.get(l3Uuid);
-        if (ip != null) {
-            return ip;
-        }
 
         if (!isProvidedbyMe(L3NetworkInventory.valueOf(l3))) {
             return null;
@@ -316,8 +302,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 throw new CloudRuntimeException(String.format("cannot find used ip [uuid:%s]", ipUuid));
             }
 
-            ip = UsedIpInventory.valueOf(vo);
-            l3NetworkDhcpServerIp.put(l3Uuid, ip);
+            UsedIpInventory ip = UsedIpInventory.valueOf(vo);
             return ip;
         }
 
@@ -330,7 +315,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         }
 
         AllocateIpReply r = reply.castReply();
-        ip = r.getIpInventory();
+        UsedIpInventory ip = r.getIpInventory();
 
         SystemTagCreator creator = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.newSystemTagCreator(l3Uuid);
         creator.inherent = true;
@@ -342,7 +327,6 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         );
         creator.create();
 
-        l3NetworkDhcpServerIp.put(l3Uuid, ip);
         logger.debug(String.format("allocate DHCP server IP[ip:%s, uuid:%s] for l3 network[uuid:%s]", ip.getIp(), ip.getUuid(), ip.getL3NetworkUuid()));
         for (DhcpServerExtensionPoint exp : pluginRgty.getExtensionList(DhcpServerExtensionPoint.class)) {
             exp.afterAllocateDhcpServerIP(l3Uuid, ip);
@@ -824,7 +808,6 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     }
 
     private void deleteDhcpServerIp(UsedIpInventory ip) {
-        l3NetworkDhcpServerIp.remove(ip.getL3NetworkUuid());
         FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.deleteInherentTag(ip.getL3NetworkUuid());
         dbf.removeByPrimaryKey(ip.getUuid(), UsedIpVO.class);
         for (DhcpServerExtensionPoint exp : pluginRgty.getExtensionList(DhcpServerExtensionPoint.class)) {
@@ -833,11 +816,6 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     }
 
     private UsedIpInventory getDHCPServerIP(String l3Uuid) {
-        UsedIpInventory dhcpIp = l3NetworkDhcpServerIp.get(l3Uuid);
-        if (dhcpIp != null) {
-            return dhcpIp;
-        }
-
         String tag = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTag(l3Uuid);
         if (tag != null) {
             Map<String, String> tokens = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTokensByTag(tag);
