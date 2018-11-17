@@ -23,8 +23,7 @@ import java.util.List;
         @ExpandedQuery(expandedField = "listener", inventoryClass = LoadBalancerListenerInventory.class,
                 foreignKey = "listenerUuid", expandedInventoryKey = "uuid"),
         @ExpandedQuery(target = VmNicInventory.class, expandedField = "loadBalancerListenerRef",
-                inventoryClass = LoadBalancerListenerVmNicRefInventory.class, foreignKey = "uuid", expandedInventoryKey = "vmNicUuid", hidden = true),
-        @ExpandedQuery(target = VipInventory.class, expandedField = "loadBalancer", inventoryClass = LoadBalancerListenerVmNicRefInventory.class, foreignKey = "uuid", expandedInventoryKey = "vipUuid")
+                inventoryClass = LoadBalancerListenerVmNicRefInventory.class, foreignKey = "uuid", expandedInventoryKey = "vmNicUuid", hidden = true)
 })
 @ExpandedQueryAliases({
         @ExpandedQueryAlias(target = VmNicInventory.class, alias = "loadBalancerListener", expandedField = "loadBalancerListenerRef.listener")
