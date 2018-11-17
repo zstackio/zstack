@@ -2068,7 +2068,6 @@ public class KVMHost extends HostBase implements Host {
         final StartVmCmd cmd = new StartVmCmd();
 
         boolean virtio;
-        String consoleMode;
         String nestedVirtualization;
         String platform = spec.getVmInventory().getPlatform() == null ? spec.getImageSpec().getInventory().getPlatform() :
                 spec.getVmInventory().getPlatform();
@@ -2264,7 +2263,7 @@ public class KVMHost extends HostBase implements Host {
 
             @Override
             protected int getSyncLevel() {
-                return getHostSyncLevel();
+                return KVMGlobalConfig.VM_CREATE_CONCURRENCY.value(Integer.class);
             }
         });
     }
