@@ -141,6 +141,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         Long totalCapacity;
         Long availableCapacity;
         List<CephPoolCapacity> poolCapacities;
+        boolean xsky = false;
 
         public String getError() {
             return error;
@@ -181,6 +182,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         public void setPoolCapacities(List<CephPoolCapacity> poolCapacities) {
             this.poolCapacities = poolCapacities;
+        }
+
+        public boolean isXsky() {
+            return xsky;
+        }
+
+        public void setXsky(boolean xsky) {
+            this.xsky = xsky;
         }
     }
 
@@ -2369,7 +2378,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     private void updateCapacityIfNeeded(AgentResponse rsp) {
         if (rsp.totalCapacity != null && rsp.availableCapacity != null) {
-            new CephCapacityUpdater().update(getSelf().getFsid(), rsp.totalCapacity, rsp.availableCapacity, rsp.getPoolCapacities());
+            CephCapacity cephCapacity = new CephCapacity();
+            cephCapacity.setFsid(getSelf().getFsid());
+            cephCapacity.setAvailableCapacity(rsp.availableCapacity);
+            cephCapacity.setTotalCapacity(rsp.totalCapacity);
+            cephCapacity.setPoolCapacities(rsp.poolCapacities);
+            cephCapacity.setXsky(rsp.isXsky());
+            new CephCapacityUpdater().update(cephCapacity);
         }
     }
 
@@ -2621,7 +2636,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 self = dbf.updateAndRefresh(self);
 
                                 CephCapacityUpdater updater = new CephCapacityUpdater();
-                                updater.update(ret.fsid, ret.totalCapacity, ret.availableCapacity, ret.getPoolCapacities(), true);
+                                CephCapacity cephCapacity = new CephCapacity();
+                                cephCapacity.setFsid(ret.fsid);
+                                cephCapacity.setAvailableCapacity(ret.availableCapacity);
+                                cephCapacity.setTotalCapacity(ret.totalCapacity);
+                                cephCapacity.setPoolCapacities(ret.poolCapacities);
+                                cephCapacity.setXsky(ret.isXsky());
+                                updater.update(cephCapacity, true);
                                 trigger.next();
                             }
                         });

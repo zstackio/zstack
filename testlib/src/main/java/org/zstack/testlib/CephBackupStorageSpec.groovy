@@ -1,7 +1,9 @@
 package org.zstack.testlib
 
 import org.springframework.http.HttpEntity
+import org.zstack.core.Platform
 import org.zstack.core.db.Q
+import org.zstack.storage.ceph.CephPoolCapacity
 import org.zstack.storage.ceph.backup.CephBackupStorageBase
 import org.zstack.storage.ceph.backup.CephBackupStorageMonBase
 import org.zstack.storage.ceph.backup.CephBackupStorageMonVO
@@ -18,6 +20,8 @@ class CephBackupStorageSpec extends BackupStorageSpec {
     List<String> monUrls
     @SpecParam
     Map<String, String> monAddrs = [:]
+    @SpecParam
+    String poolName = "bak-t-" + Platform.getUuid()
 
     CephBackupStorageSpec(EnvSpec envSpec) {
         super(envSpec)
@@ -61,6 +65,15 @@ class CephBackupStorageSpec extends BackupStorageSpec {
                 rsp.fsid = bspec.fsid
                 rsp.totalCapacity = bspec.totalCapacity
                 rsp.availableCapacity = bspec.availableCapacity
+                List<CephPoolCapacity> poolCapacities = [
+                        new CephPoolCapacity(
+                                name : bspec.poolName,
+                                availableCapacity : bspec.availableCapacity,
+                                usedCapacity : bspec.totalCapacity - bspec.availableCapacity,
+                                totalCapacity: bspec.totalCapacity
+                        )
+                ]
+                rsp.poolCapacities = poolCapacities
                 return rsp
             }
 
@@ -124,6 +137,8 @@ class CephBackupStorageSpec extends BackupStorageSpec {
     }
 
     SpecID create(String uuid, String sessionId) {
+
+
         inventory = addCephBackupStorage {
             delegate.resourceUuid = uuid
             delegate.name = name
@@ -133,6 +148,7 @@ class CephBackupStorageSpec extends BackupStorageSpec {
             delegate.monUrls = monUrls
             delegate.userTags = userTags
             delegate.systemTags = systemTags
+            delegate.poolName = poolName
         }
 
         postCreate {

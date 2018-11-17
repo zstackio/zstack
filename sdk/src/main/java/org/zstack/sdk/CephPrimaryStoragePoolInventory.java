@@ -92,4 +92,12 @@ public class CephPrimaryStoragePoolInventory  {
         return this.replicatedSize;
     }
 
+    public java.lang.Long totalCapacity;
+    public void setTotalCapacity(java.lang.Long totalCapacity) {
+        this.totalCapacity = totalCapacity;
+    }
+    public java.lang.Long getTotalCapacity() {
+        return this.totalCapacity;
+    }
+
 }
