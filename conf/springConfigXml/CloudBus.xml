@@ -15,6 +15,7 @@
     <bean id="TimeoutManager" class="org.zstack.core.timeout.ApiTimeoutManagerImpl">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component"/>
+            <zstack:extension interface="org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint"/>
         </zstack:plugin>
     </bean>
 

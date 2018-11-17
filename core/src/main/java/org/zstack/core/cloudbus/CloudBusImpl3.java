@@ -36,6 +36,7 @@ import org.zstack.header.rest.TimeoutRestTemplate;
 import org.zstack.header.search.APISearchMessage;
 import org.zstack.header.search.APISearchReply;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.TaskContext;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -69,8 +70,8 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
     private final String CORRELATION_ID = "correlationId";
     private final String REPLY_TO = "replyTo";
     private final String IS_MESSAGE_REPLY = "isReply";
-    private long DEFAULT_MESSAGE_TIMEOUT = TimeUnit.MINUTES.toMillis(30);
-    private final String TASK_STACK = "task-stack";
+    private final String THREAD_CONTEXT_STACK = "thread-context-stack";
+    private final String THREAD_CONTEXT = "thread-context";
     private final String TASK_CONTEXT = "task-context";
     final static String SERVICE_ID_SPLITTER = ":::";
 
@@ -270,15 +271,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
     }
 
     private void evaluateMessageTimeout(NeedReplyMessage msg) {
-        Long timeout = timeoutMgr.getTimeout(msg.getClass());
-
-        if (timeout != null && msg.getTimeout() == -1) {
-            msg.setTimeout(timeout);
-        }
-
-        if (msg.getTimeout() == -1) {
-            msg.setTimeout(DEFAULT_MESSAGE_TIMEOUT);
-        }
+        timeoutMgr.setMessageTimeout(msg);
     }
 
     private MessageReply createErrorReply(NeedReplyMessage m, ErrorCode err) {
@@ -616,15 +609,19 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
             ThreadContext.put(Constants.THREAD_CONTEXT_API, msg.getId());
             ThreadContext.put(Constants.THREAD_CONTEXT_TASK_NAME, msg.getClass().getName());
         } else {
-            Map<String, String> ctx = msg.getHeaderEntry(TASK_CONTEXT);
+            Map<String, String> ctx = msg.getHeaderEntry(THREAD_CONTEXT);
             if (ctx != null) {
                 ThreadContext.putAll(ctx);
             }
         }
 
-        if (msg.getHeaders().containsKey(TASK_STACK)) {
-            List<String> taskStack = msg.getHeaderEntry(TASK_STACK);
+        if (msg.getHeaders().containsKey(THREAD_CONTEXT_STACK)) {
+            List<String> taskStack = msg.getHeaderEntry(THREAD_CONTEXT_STACK);
             ThreadContext.setStack(taskStack);
+        }
+
+        if (msg.getHeaders().containsKey(TASK_CONTEXT)) {
+            TaskContext.setTaskContext(msg.getHeaderEntry(TASK_CONTEXT));
         }
     }
 
@@ -1055,12 +1052,17 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
     private void evalThreadContextToMessage(Message msg) {
         Map<String, String> ctx = ThreadContext.getImmutableContext();
         if (ctx != null) {
-            msg.putHeaderEntry(TASK_CONTEXT, new HashMap<>(ctx));
+            msg.putHeaderEntry(THREAD_CONTEXT, new HashMap<>(ctx));
         }
 
         List<String> list = ThreadContext.getImmutableStack().asList();
         if (list != null && !list.isEmpty()) {
-            msg.putHeaderEntry(TASK_STACK, new ArrayList<>(list));
+            msg.putHeaderEntry(THREAD_CONTEXT_STACK, new ArrayList<>(list));
+        }
+
+        Map<Object, Object> tctx = TaskContext.getTaskContext();
+        if (tctx != null) {
+            msg.putHeaderEntry(TASK_CONTEXT, tctx);
         }
     }
 

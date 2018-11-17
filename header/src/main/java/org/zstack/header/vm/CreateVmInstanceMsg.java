@@ -1,6 +1,5 @@
 package org.zstack.header.vm;
 
-import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.message.NeedReplyMessage;
 
 import java.util.List;
@@ -8,7 +7,6 @@ import java.util.List;
 /**
  * Created by david on 8/4/16.
  */
-@ApiTimeout(apiClasses = {APICreateVmInstanceMsg.class})
 public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmInstanceMessage {
     private String accountUuid;
     private String name;

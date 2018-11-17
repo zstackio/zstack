@@ -19,5 +19,7 @@
 
 	<bean id="ThreadAspectj" class="org.zstack.core.aspect.ThreadAspect" factory-method="aspectOf" />
 
+	<bean id="TaskContextCleaner" class="org.zstack.core.thread.TaskContextCleaner "/>
+
 </beans>
          

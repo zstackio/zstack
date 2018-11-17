@@ -1,9 +1,5 @@
 package org.zstack.storage.backup.sftp;
 
-import org.zstack.header.core.ApiTimeout;
-import org.zstack.header.image.APIAddImageMsg;
-import org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotMsg;
-
 public class SftpBackupStorageCommands {
     public static class AgentCommand {
         public String uuid;
@@ -80,7 +76,6 @@ public class SftpBackupStorageCommands {
     public static class ConnectResponse extends AgentResponse {
     }
 
-    @ApiTimeout(apiClasses = {APIAddImageMsg.class})
     public static class DownloadCmd extends AgentCommand {
         private String imageUuid;
         private String installPath;
@@ -170,7 +165,6 @@ public class SftpBackupStorageCommands {
         }
     }
 
-    @ApiTimeout(apiClasses = {APIDeleteVolumeSnapshotMsg.class})
     public static class DeleteCmd extends AgentCommand {
         private String installUrl;
         public String getInstallUrl() {

@@ -57,7 +57,6 @@ public class KVMSecurityGroupBackend implements SecurityGroupHypervisorBackend, 
         msg.setHostUuid(hto.getHostUuid());
         msg.setPath(SECURITY_GROUP_APPLY_RULE_PATH);
         msg.setCommand(cmd);
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hto.getHostUuid());
         bus.send(msg, new CloudBusCallBack(complete) {
             @Override
@@ -95,7 +94,6 @@ public class KVMSecurityGroupBackend implements SecurityGroupHypervisorBackend, 
         msg.setHostUuid(hto.getHostUuid());
         msg.setPath(SECURITY_GROUP_REFRESH_RULE_ON_HOST_PATH);
         msg.setCommand(cmd);
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         msg.setNoStatusCheck(true);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hto.getHostUuid());
         bus.send(msg, new CloudBusCallBack(complete) {
@@ -138,7 +136,6 @@ public class KVMSecurityGroupBackend implements SecurityGroupHypervisorBackend, 
         msg.setHostUuid(hostUuid);
         msg.setPath(SECURITY_GROUP_CHECK_DEFAULT_RULES_ON_HOST_PATH);
         msg.setCommand(cmd);
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         msg.setNoStatusCheck(true);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
         bus.send(msg, new CloudBusCallBack(completion) {
@@ -172,7 +169,6 @@ public class KVMSecurityGroupBackend implements SecurityGroupHypervisorBackend, 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setHostUuid(hostUuid);
         msg.setCommand(cmd);
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         msg.setPath(SECURITY_GROUP_UPDATE_GROUP_MEMBER);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
         bus.send(msg, new CloudBusCallBack(completion) {
@@ -201,7 +197,6 @@ public class KVMSecurityGroupBackend implements SecurityGroupHypervisorBackend, 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setHostUuid(hostUuid);
         msg.setCommand(cmd);
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         msg.setPath(SECURITY_GROUP_CLEANUP_UNUSED_RULE_ON_HOST_PATH);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
         bus.send(msg, new CloudBusCallBack(completion) {

@@ -15,6 +15,7 @@ import java.util.regex.Pattern;
  */
 public abstract class AbstractAction {
     public String apiId;
+    public Long apiTimeout;
 
     protected abstract RestInfo getRestInfo();
 

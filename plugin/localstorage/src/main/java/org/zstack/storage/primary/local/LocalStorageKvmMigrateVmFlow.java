@@ -18,7 +18,6 @@ import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.HasThreadContext;
-import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
@@ -98,7 +97,6 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
         public List<SnapshotTO> snapshots;
     }
 
-    @ApiTimeout(apiClasses = {APILocalStorageMigrateVolumeMsg.class})
     public static class CopyBitsFromRemoteCmd extends LocalStorageKvmBackend.AgentCommand implements HasThreadContext {
         public String sendCommandUrl;
         public List<String> paths;
@@ -904,7 +902,6 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                 findValue();
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         msg.setPath(path);
         msg.setHostUuid(hostUuid);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);

@@ -66,7 +66,7 @@ class RestResultAPINoSeeFilterCase extends SubCase {
 
         String ret = Q.New(AsyncRestVO.class)
                 .select(AsyncRestVO_.result)
-                .like(AsyncRestVO_.requestData, "%APIUpdateKVMHostMsg%").findValue()
+                .like(AsyncRestVO_.requestData, "%\"apiClassName\":\"org.zstack.kvm.APIUpdateKVMHostMsg\"%").findValue()
 
         // the filed of password won't exists due to @APINoSee annotation
         assert ret.indexOf("password") == -1

@@ -288,7 +288,7 @@ public class VirtualRouter extends ApplianceVmBase {
                     public Class<LinkedHashMap> getReturnClass() {
                         return LinkedHashMap.class;
                     }
-                }, TimeUnit.SECONDS, msg.getCommandTimeout());
+                });
             }
 
             @Override
@@ -431,7 +431,6 @@ public class VirtualRouter extends ApplianceVmBase {
 
             VirtualRouterAsyncHttpCallMsg cmsg = new VirtualRouterAsyncHttpCallMsg();
             cmsg.setCommand(cmd);
-            cmsg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
             cmsg.setPath(VirtualRouterConstant.VR_CONFIGURE_NIC_PATH);
             cmsg.setVmInstanceUuid(vr.getUuid());
             cmsg.setCheckStatus(true);
@@ -602,7 +601,6 @@ public class VirtualRouter extends ApplianceVmBase {
 
             VirtualRouterAsyncHttpCallMsg cmsg = new VirtualRouterAsyncHttpCallMsg();
             cmsg.setCommand(cmd);
-            cmsg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
             cmsg.setPath(VirtualRouterConstant.VR_REMOVE_NIC_PATH);
             cmsg.setVmInstanceUuid(vr.getUuid());
             cmsg.setCheckStatus(true);

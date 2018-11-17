@@ -1,10 +1,7 @@
 package org.zstack.header.storage.snapshot;
 
-import org.zstack.header.core.ApiTimeout;
-import org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotMsg;
 import org.zstack.header.message.NeedReplyMessage;
 
-@ApiTimeout(apiClasses = {APICreateRootVolumeTemplateFromVolumeSnapshotMsg.class})
 public class CreateTemplateFromVolumeSnapshotMsg extends NeedReplyMessage implements VolumeSnapshotMessage {
     private String imageUuid;
     private String snapshotUuid;

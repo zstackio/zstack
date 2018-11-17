@@ -100,7 +100,6 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setHostUuid(hostUuid);
         msg.setCommand(cmd);
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         msg.setNoStatusCheck(noStatusCheck);
         msg.setPath(VXLAN_KVM_REALIZE_L2VXLAN_NETWORK_PATH);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
@@ -165,7 +164,6 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
                 KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                 msg.setHostUuid(hostUuid);
                 msg.setCommand(cmd);
-                msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
                 msg.setPath(VXLAN_KVM_CHECK_L2VXLAN_NETWORK_PATH);
                 msg.setNoStatusCheck(noStatusCheck);
                 bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
@@ -283,7 +281,6 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
                     KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                     msg.setHostUuid(vtep.getHostUuid());
                     msg.setCommand(cmd);
-                    msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
                     msg.setPath(VXLAN_KVM_POPULATE_FDB_L2VXLAN_NETWORK_PATH);
                     msg.setNoStatusCheck(noStatusCheck);
                     bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);

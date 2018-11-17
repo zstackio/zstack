@@ -13,7 +13,6 @@ public class VirtualRouterAsyncHttpCallMsg extends NeedReplyMessage implements V
     private String vmInstanceUuid;
     private String path;
     private String command;
-    private long commandTimeout = -1;
     private boolean checkStatus;
     private String commandClassName;
 
@@ -27,11 +26,6 @@ public class VirtualRouterAsyncHttpCallMsg extends NeedReplyMessage implements V
 
     public void setCheckStatus(boolean checkStatus) {
         this.checkStatus = checkStatus;
-    }
-
-    @Override
-    public long getTimeout() {
-        return getCommandTimeout() + TimeUnit.SECONDS.toMillis(30);
     }
 
     @Override
@@ -62,15 +56,5 @@ public class VirtualRouterAsyncHttpCallMsg extends NeedReplyMessage implements V
 
     public void setCommandByString(String command) {
         this.command = command;
-    }
-
-    public long getCommandTimeout() {
-        assert commandTimeout != -1 : "commandTimeout is not set";
-        return commandTimeout;
-    }
-
-    public void setCommandTimeout(long commandTimeout) {
-        this.commandTimeout = commandTimeout;
-        timeout = getTimeout();
     }
 }

@@ -1,17 +1,13 @@
 package org.zstack.header.storage.snapshot;
 
-import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.message.NeedReplyMessage;
-import org.zstack.header.volume.APICreateVolumeSnapshotMsg;
 import org.zstack.header.volume.VolumeMessage;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Create by weiwang at 2018/6/11
  */
-@ApiTimeout(apiClasses = {APICreateVolumeSnapshotMsg.class})
 public class CreateVolumesSnapshotOverlayInnerMsg extends NeedReplyMessage implements VolumeMessage {
     private String accountUuid;
 

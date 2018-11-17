@@ -1,13 +1,10 @@
 package org.zstack.header.host;
 
-import org.zstack.header.cluster.APIUpdateClusterOSMsg;
-import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.message.NeedReplyMessage;
 
 /**
  * Created by GuoYi on 3/12/18
  */
-@ApiTimeout(apiClasses = APIUpdateClusterOSMsg.class)
 public class UpdateHostOSMsg extends NeedReplyMessage implements HostMessage {
     private String uuid;
     private String clusterUuid;

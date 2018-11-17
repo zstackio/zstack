@@ -36,7 +36,6 @@ public class KVMHostCapacityExtension implements KVMHostConnectExtensionPoint, H
     private void reportCapacity(HostInventory host, Completion completion) {
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setHostUuid(host.getUuid());
-        msg.setCommandTimeout(timeoutMgr.getTimeout(HostCapacityCmd.class, "5m"));
         msg.setPath(KVMConstant.KVM_HOST_CAPACITY_PATH);
         msg.setNoStatusCheck(true);
         msg.setCommand(new HostCapacityCmd());

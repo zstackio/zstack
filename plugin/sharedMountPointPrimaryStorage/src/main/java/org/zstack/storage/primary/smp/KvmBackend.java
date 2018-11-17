@@ -28,11 +28,9 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
-import org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotMsg;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
-import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
@@ -99,7 +97,6 @@ public class KvmBackend extends HypervisorBackend {
         public boolean isFirst = false;
     }
 
-    @ApiTimeout(apiClasses = {APICreateVmInstanceMsg.class})
     public static class CreateVolumeFromCacheCmd extends AgentCmd {
         public String templatePathInCache;
         public String installPath;
@@ -119,19 +116,11 @@ public class KvmBackend extends HypervisorBackend {
         public List<String> paths;
     }
 
-    @ApiTimeout(apiClasses = {
-            APICreateRootVolumeTemplateFromRootVolumeMsg.class,
-            APICreateDataVolumeTemplateFromVolumeMsg.class
-    })
     public static class CreateTemplateFromVolumeCmd extends AgentCmd implements HasThreadContext{
         public String installPath;
         public String volumePath;
     }
 
-    @ApiTimeout(apiClasses = {
-            APICreateRootVolumeTemplateFromVolumeSnapshotMsg.class,
-            APICreateRootVolumeTemplateFromRootVolumeMsg.class,
-    })
     public static class SftpUploadBitsCmd extends AgentCmd implements HasThreadContext{
         public String primaryStorageInstallPath;
         public String backupStorageInstallPath;
@@ -141,7 +130,6 @@ public class KvmBackend extends HypervisorBackend {
         public int sshPort;
     }
 
-    @ApiTimeout(apiClasses = {APIAddImageMsg.class})
     public static class SftpDownloadBitsCmd extends AgentCmd {
         public String sshKey;
         public int sshPort;
@@ -173,7 +161,6 @@ public class KvmBackend extends HypervisorBackend {
         protected long size;
     }
 
-    @ApiTimeout(apiClasses = {APICreateDataVolumeFromVolumeSnapshotMsg.class})
     public static class MergeSnapshotCmd extends AgentCmd {
         public String volumeUuid;
         public String snapshotInstallPath;
@@ -185,7 +172,6 @@ public class KvmBackend extends HypervisorBackend {
         public long size;
     }
 
-    @ApiTimeout(apiClasses = {APICreateDataVolumeFromVolumeSnapshotMsg.class, APIDeleteVolumeSnapshotMsg.class})
     public static class OfflineMergeSnapshotCmd extends AgentCmd implements HasThreadContext {
         public String srcPath;
         public String destPath;
@@ -261,7 +247,6 @@ public class KvmBackend extends HypervisorBackend {
         msg.setPath(path);
         msg.setNoStatusCheck(noCheckStatus);
         msg.setCommand(cmd);
-        msg.setCommandTimeout(timeoutManager.getTimeout(cmd.getClass(), "5m"));
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override

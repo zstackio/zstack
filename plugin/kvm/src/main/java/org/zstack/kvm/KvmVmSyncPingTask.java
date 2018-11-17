@@ -99,7 +99,6 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         VmSyncCmd cmd = new VmSyncCmd();
         msg.setCommand(cmd);
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         msg.setNoStatusCheck(true);
         msg.setHostUuid(host.getUuid());
         msg.setPath(KVMConstant.KVM_VM_SYNC_PATH);

@@ -1,5 +1,6 @@
 package org.zstack.test.integration.kvm.vm
 
+import org.apache.logging.log4j.ThreadContext
 import org.springframework.http.HttpEntity
 import org.zstack.compute.host.HostGlobalConfig
 import org.zstack.compute.host.HostTrackImpl
@@ -10,12 +11,16 @@ import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
 import org.zstack.core.errorcode.ErrorFacade
+import org.zstack.core.rest.RESTFacadeImpl
+import org.zstack.core.timeout.ApiTimeoutManager
 import org.zstack.header.core.NoErrorCompletion
 import org.zstack.header.host.CheckVmStateOnHypervisorMsg
 import org.zstack.header.host.CheckVmStateOnHypervisorReply
 import org.zstack.header.host.HostErrors
 import org.zstack.header.host.HostVO
 import org.zstack.header.network.service.NetworkServiceType
+import org.zstack.header.rest.BeforeAsyncJsonPostInterceptor
+import org.zstack.header.rest.RESTFacade
 import org.zstack.header.vm.DestroyVmOnHypervisorMsg
 import org.zstack.header.vm.DestroyVmOnHypervisorReply
 import org.zstack.header.vm.VmInstance
@@ -35,6 +40,7 @@ import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
+import org.zstack.testlib.util.TProxy
 import org.zstack.testlib.util.TimeUnitUtil
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
@@ -179,7 +185,6 @@ class VmDestroyingCase extends SubCase {
             vm = env.inventoryByName("vm") as VmInstanceInventory
             errf = bean(ErrorFacade.class)
             testDestroyingVmWillBeSetToDestroyedIfDestroyingFailButVmSyncMsgReturnStopped()
-            testSubmitDestroyVmGCWhenTimeout()
         }
     }
 
@@ -234,35 +239,5 @@ class VmDestroyingCase extends SubCase {
         assert vo.state == VmInstanceState.Running
 
         env.cleanSimulatorAndMessageHandlers()
-    }
-
-    void testSubmitDestroyVmGCWhenTimeout(){
-        CoreGlobalProperty.REST_FACADE_READ_TIMEOUT = TimeUnit.SECONDS.toMillis(2)
-
-        env.simulator(KVMConstant.KVM_DESTROY_VM_PATH) {
-            TimeUnitUtil.sleepSeconds(3)
-            return new KVMAgentCommands.DestroyVmResponse()
-        }
-
-        destroyVmInstance {
-            uuid = vm.uuid
-        }
-        CoreGlobalProperty.REST_FACADE_READ_TIMEOUT = 300000
-
-        assert Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm.uuid).select(VmInstanceVO_.state).findValue() == VmInstanceState.Destroyed
-
-        boolean called = false
-        env.simulator(KVMConstant.KVM_DESTROY_VM_PATH) {
-            called = true
-            return new KVMAgentCommands.DestroyVmResponse()
-        }
-
-        reconnectHost {
-            uuid = vm.hostUuid
-        }
-
-        retryInSecs(3){
-            assert called
-        }
     }
 }

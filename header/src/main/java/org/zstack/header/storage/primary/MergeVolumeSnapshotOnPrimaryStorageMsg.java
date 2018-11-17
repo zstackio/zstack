@@ -1,14 +1,11 @@
 package org.zstack.header.storage.primary;
 
-import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.message.NeedReplyMessage;
-import org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotMsg;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.volume.VolumeInventory;
 
 /**
  */
-@ApiTimeout(apiClasses = {APIDeleteVolumeSnapshotMsg.class})
 public class MergeVolumeSnapshotOnPrimaryStorageMsg extends NeedReplyMessage implements PrimaryStorageMessage {
     private VolumeSnapshotInventory from;
     private VolumeInventory to;

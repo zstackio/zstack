@@ -19,6 +19,7 @@ interface Constants {
 
     String HEADER_JSON_SCHEMA = "X-JSON-Schema";
     String HEADER_JOB_UUID = "X-Job-UUID";
+    String HEADER_API_TIMEOUT = "X-API-Timeout";
     String HEADER_WEBHOOK = "X-Web-Hook";
     String HEADER_JOB_SUCCESS = "X-Job-Success";
 }

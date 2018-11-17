@@ -46,7 +46,6 @@ public class VyosChangePrivateL3FirewallDefaultActionExtensionPoint implements V
 
         VirtualRouterAsyncHttpCallMsg cmsg = new VirtualRouterAsyncHttpCallMsg();
         cmsg.setCommand(cmd);
-        cmsg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
         cmsg.setPath(VirtualRouterConstant.VR_CONFIGURE_NIC_FIREWALL_DEFAULT_ACTION_PATH);
         cmsg.setVmInstanceUuid(nic.getVmInstanceUuid());
         bus.makeTargetServiceIdByResourceUuid(cmsg, VmInstanceConstant.SERVICE_ID, nic.getVmInstanceUuid());

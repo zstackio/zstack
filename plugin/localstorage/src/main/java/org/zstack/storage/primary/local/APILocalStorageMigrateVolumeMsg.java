@@ -6,6 +6,7 @@ import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.message.APIDefaultTimeout;
 import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.APINoSee;
@@ -14,6 +15,8 @@ import org.zstack.header.storage.primary.PrimaryStorageMessage;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeVO;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by frank on 11/16/2015.
@@ -25,6 +28,7 @@ import org.zstack.header.volume.VolumeVO;
         responseClass = APILocalStorageMigrateVolumeEvent.class,
         isAction = true
 )
+@APIDefaultTimeout(timeunit = TimeUnit.HOURS, value = 24)
 public class APILocalStorageMigrateVolumeMsg extends APIMessage implements PrimaryStorageMessage, APIAuditor {
     @APIParam(resourceType = VolumeVO.class, checkAccount = true, operationTarget = true)
     private String volumeUuid;

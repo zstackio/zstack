@@ -545,7 +545,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
     }
 
     @Override
-    public Long getApiTimeout(Class claz) {
+    public Long getApiTimeout() {
         String type = ThreadContext.get(Constants.THREAD_CONTEXT_TASK_NAME);
         if (type != null && longJobClasses.contains(type)) {
             // default input unit is second should be changed to millis
