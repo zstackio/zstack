@@ -48,6 +48,14 @@
 
     <config>
         <category>kvm</category>
+        <name>vm.createConcurrency</name>
+        <description>The number of VMs that can be created concurrently on KVM host.</description>
+        <type>java.lang.Integer</type>
+        <defaultValue>2</defaultValue>
+    </config>
+
+    <config>
+        <category>kvm</category>
         <name>host.DNSCheckList</name>
         <description>DNS or IP check list. When adding a KVM host, if all DNS/IP in the list are failed to ping, the adding host will fail.</description>
         <defaultValue>yahoo.com,google.com,baidu.com</defaultValue>
