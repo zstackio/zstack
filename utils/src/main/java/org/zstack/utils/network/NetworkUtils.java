@@ -164,13 +164,13 @@ public class NetworkUtils {
         }
     }
 
-    private static void validateIpRange(String startIp, String endIp) {
+    public static void validateIpRange(String startIp, String endIp) {
         validateIp(startIp);
         validateIp(endIp);
         long s = ipv4StringToLong(startIp);
         long e = ipv4StringToLong(endIp);
         if (s > e) {
-            throw new IllegalArgumentException(String.format("[%s, %s] is not an invalid ip range, end ip must be greater than start ip", startIp, endIp));
+            throw new IllegalArgumentException(String.format("[%s, %s] is not a valid ip range, end ip must be greater than start ip", startIp, endIp));
         }
     }
 
