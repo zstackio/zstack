@@ -128,7 +128,6 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
         VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
         msg.setPath(VirtualRouterConstant.VR_REMOVE_VIP);
         msg.setCommand(cmd);
-        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
         msg.setVmInstanceUuid(vr.getUuid());
         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
@@ -165,7 +164,6 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
         VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
         msg.setVmInstanceUuid(vr.getUuid());
         msg.setCommand(cmd);
-        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
         msg.setPath(VirtualRouterConstant.VR_CREATE_VIP);
         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {

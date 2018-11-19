@@ -2,10 +2,7 @@ package org.zstack.header.image;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
-import org.zstack.header.message.APICreateMessage;
-import org.zstack.header.message.APIEvent;
-import org.zstack.header.message.APIMessage;
-import org.zstack.header.message.APIParam;
+import org.zstack.header.message.*;
 import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
@@ -14,6 +11,7 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  */
@@ -24,6 +22,7 @@ import java.util.List;
         method = HttpMethod.POST,
         parameterName = "params"
 )
+@APIDefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)
 public class APICreateRootVolumeTemplateFromVolumeSnapshotMsg extends APICreateMessage implements APIAuditor {
     @APIParam(resourceType = VolumeSnapshotVO.class, checkAccount = true, operationTarget = true)
     private String snapshotUuid;

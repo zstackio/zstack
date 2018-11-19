@@ -51,7 +51,6 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         msg.setPath(KVMConstant.KVM_REALIZE_L2NOVLAN_NETWORK_PATH);
         msg.setNoStatusCheck(noStatusCheck);
         msg.setHostUuid(hostUuid);
@@ -103,7 +102,6 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setNoStatusCheck(noStatusCheck);
         msg.setCommand(cmd);
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         msg.setHostUuid(hostUuid);
         msg.setPath(KVMConstant.KVM_CHECK_L2NOVLAN_NETWORK_PATH);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);

@@ -365,7 +365,6 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
             KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
             msg.setHostUuid(struct.getHostUuid());
             msg.setCommand(cmd);
-            msg.setCommandTimeout(TimeUnit.MINUTES.toMillis(5));
             msg.setPath(RELEASE_USER_DATA);
             bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, struct.getHostUuid());
             bus.send(msg, new CloudBusCallBack(completion) {
@@ -564,7 +563,6 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                         msg.setHostUuid(struct.getHostUuid());
                         msg.setCommand(cmd);
-                        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
                         msg.setPath(APPLY_USER_DATA);
                         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, struct.getHostUuid());
                         bus.send(msg, new CloudBusCallBack(trigger) {
@@ -632,7 +630,6 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                         msg.setHostUuid(struct.getHostUuid());
                         msg.setCommand(cmd);
-                        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
                         msg.setPath(RELEASE_USER_DATA);
                         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, struct.getHostUuid());
                         bus.send(msg, new CloudBusCallBack(trigger) {

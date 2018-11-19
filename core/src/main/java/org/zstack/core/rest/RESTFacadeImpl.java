@@ -68,7 +68,7 @@ public class RESTFacadeImpl implements RESTFacade {
 
     private Map<String, HttpCallStatistic> statistics = new ConcurrentHashMap<String, HttpCallStatistic>();
     private Map<String, HttpCallHandlerWrapper> httpCallhandlers = new ConcurrentHashMap<String, HttpCallHandlerWrapper>();
-    private List<BeforeAsyncJsonPostInterceptor> interceptors = new ArrayList<BeforeAsyncJsonPostInterceptor>();
+    private final List<BeforeAsyncJsonPostInterceptor> interceptors = new ArrayList<BeforeAsyncJsonPostInterceptor>();
 
     private interface AsyncHttpWrapper {
         void fail(ErrorCode err);
@@ -194,10 +194,6 @@ public class RESTFacadeImpl implements RESTFacade {
 
     @Override
     public void asyncJsonPost(String url, Object body, Map<String, String> headers, AsyncRESTCallback callback, TimeUnit unit, long timeout) {
-        for (BeforeAsyncJsonPostInterceptor ic : interceptors) {
-            ic.beforeAsyncJsonPost(url, body, unit, timeout);
-        }
-
         // for unit test finding invocation chain
         MessageCommandRecorder.record(body.getClass());
         String bodyStr = JSONObjectUtil.toJsonString(body);
@@ -229,8 +225,10 @@ public class RESTFacadeImpl implements RESTFacade {
     }
 
     public void asyncJson(final String url, final String body, Map<String, String> headers, HttpMethod method, final AsyncRESTCallback callback, final TimeUnit unit, final long timeout) {
-        for (BeforeAsyncJsonPostInterceptor ic : interceptors) {
-            ic.beforeAsyncJsonPost(url, body, unit, timeout);
+        synchronized (interceptors) {
+            for (BeforeAsyncJsonPostInterceptor ic : interceptors) {
+                ic.beforeAsyncJsonPost(url, body, unit, timeout);
+            }
         }
 
         long stime = 0;
@@ -385,19 +383,20 @@ public class RESTFacadeImpl implements RESTFacade {
 
     @Override
     public void asyncJsonPost(String url, Object body, Map<String, String> headers, AsyncRESTCallback callback) {
-        Long timeout = timeoutMgr.getTimeout(body.getClass());
-        asyncJsonPost(url, body, headers, callback, TimeUnit.MILLISECONDS, timeout == null ? CoreGlobalProperty.REST_FACADE_READ_TIMEOUT : timeout);
+        Long timeout = timeoutMgr.getTimeout();
+        asyncJsonPost(url, body, headers, callback, TimeUnit.MILLISECONDS, timeout);
     }
 
     @Override
     public void asyncJsonPost(String url, Object body, AsyncRESTCallback callback) {
-        Long timeout = timeoutMgr.getTimeout(body.getClass());
-        asyncJsonPost(url, body, callback, TimeUnit.MILLISECONDS, timeout == null ? CoreGlobalProperty.REST_FACADE_READ_TIMEOUT : timeout);
+        Long timeout = timeoutMgr.getTimeout();
+        asyncJsonPost(url, body, callback, TimeUnit.MILLISECONDS, timeout);
     }
 
     @Override
     public void asyncJsonPost(String url, String body, AsyncRESTCallback callback) {
-        asyncJsonPost(url, body, callback, TimeUnit.SECONDS, 300);
+        Long timeout = timeoutMgr.getTimeout();
+        asyncJsonPost(url, body, callback, TimeUnit.MILLISECONDS, timeout);
     }
 
     @Override
@@ -644,7 +643,15 @@ public class RESTFacadeImpl implements RESTFacade {
     }
 
     @Override
-    public void installBeforeAsyncJsonPostInterceptor(BeforeAsyncJsonPostInterceptor interceptor) {
-        interceptors.add(interceptor);
+    public Runnable installBeforeAsyncJsonPostInterceptor(BeforeAsyncJsonPostInterceptor interceptor) {
+        synchronized (interceptors) {
+            interceptors.add(interceptor);
+        }
+
+        return () -> {
+            synchronized (interceptors) {
+                interceptors.remove(interceptor);
+            }
+        };
     }
 }

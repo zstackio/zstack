@@ -7,17 +7,13 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.HasThreadContext;
-import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.host.HostConstant;
-import org.zstack.header.image.APICreateRootVolumeTemplateFromRootVolumeMsg;
-import org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotMsg;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStorageConstant;
 import org.zstack.header.storage.backup.BackupStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
-import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
@@ -33,7 +29,6 @@ import static org.zstack.utils.CollectionDSL.list;
 /**
  * Created by frank on 7/1/2015.
  */
-@ApiTimeout(apiClasses = {APICreateVmInstanceMsg.class})
 public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorageBackupStorageMediator {
     @Autowired
     private CloudBus bus;
@@ -47,7 +42,6 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
     public static final String UPLOAD_BIT_PATH = "/localstorage/sftp/upload";
     public static final String DOWNLOAD_BIT_PATH = "/localstorage/sftp/download";
 
-    @ApiTimeout(apiClasses = {APICreateVmInstanceMsg.class, APILocalStorageMigrateVolumeMsg.class})
     public static class SftpDownloadBitsCmd extends LocalStorageKvmBackend.AgentCommand implements HasThreadContext {
         private String sshKey;
         private String username;
@@ -104,10 +98,6 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
 
     }
 
-    @ApiTimeout(apiClasses = {
-            APICreateRootVolumeTemplateFromVolumeSnapshotMsg.class,
-            APICreateRootVolumeTemplateFromRootVolumeMsg.class
-    })
     public static class SftpUploadBitsCmd extends LocalStorageKvmBackend.AgentCommand implements HasThreadContext{
         private String primaryStorageInstallPath;
         private String backupStorageInstallPath;
@@ -199,7 +189,6 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
                 msg.setHostUuid(hostUuid);
                 msg.setPath(DOWNLOAD_BIT_PATH);
                 msg.setCommand(cmd);
-                msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
                 bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
                 bus.send(msg, new CloudBusCallBack(completion) {
                     @Override
@@ -248,7 +237,6 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
 
                 KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                 msg.setCommand(cmd);
-                msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
                 msg.setPath(UPLOAD_BIT_PATH);
                 msg.setHostUuid(hostUuid);
                 bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);

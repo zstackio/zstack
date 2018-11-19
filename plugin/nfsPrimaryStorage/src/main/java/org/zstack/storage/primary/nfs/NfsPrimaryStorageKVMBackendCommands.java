@@ -1,15 +1,7 @@
 package org.zstack.storage.primary.nfs;
 
 import org.zstack.header.HasThreadContext;
-import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.core.validation.Validation;
-import org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeMsg;
-import org.zstack.header.image.APICreateRootVolumeTemplateFromRootVolumeMsg;
-import org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotMsg;
-import org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotMsg;
-import org.zstack.header.vm.APICreateVmInstanceMsg;
-import org.zstack.header.vm.APIExpungeVmInstanceMsg;
-import org.zstack.header.volume.APICreateDataVolumeFromVolumeSnapshotMsg;
 import org.zstack.kvm.KVMAgentCommands.AgentCommand;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
 
@@ -115,10 +107,6 @@ public class NfsPrimaryStorageKVMBackendCommands {
     public static class UnmountResponse extends NfsPrimaryStorageAgentResponse {
     }
 
-    @ApiTimeout(apiClasses = {
-            APICreateRootVolumeTemplateFromRootVolumeMsg.class,
-            APICreateDataVolumeTemplateFromVolumeMsg.class
-    })
     public static class CreateTemplateFromVolumeCmd extends NfsPrimaryStorageAgentCommand implements HasThreadContext{
         private String installPath;
         private String rootVolumePath;
@@ -140,7 +128,6 @@ public class NfsPrimaryStorageKVMBackendCommands {
     public static class CreateTemplateFromVolumeRsp extends NfsPrimaryStorageAgentResponse {
     }
 
-    @ApiTimeout(apiClasses = {APICreateVmInstanceMsg.class})
     public static class DownloadBitsFromSftpBackupStorageCmd extends NfsPrimaryStorageAgentCommand {
         private String sshKey;
         private String hostname;
@@ -221,7 +208,6 @@ public class NfsPrimaryStorageKVMBackendCommands {
         }
     }
 
-    @ApiTimeout(apiClasses = {APICreateVmInstanceMsg.class})
     public static class CreateRootVolumeFromTemplateCmd extends NfsPrimaryStorageAgentCommand {
         private String templatePathInCache;
         private long timeout;
@@ -320,7 +306,6 @@ public class NfsPrimaryStorageKVMBackendCommands {
     public static class CreateEmptyVolumeResponse extends NfsPrimaryStorageAgentResponse {
     }
 
-    @ApiTimeout(apiClasses = {APICreateDataVolumeFromVolumeSnapshotMsg.class, APIExpungeVmInstanceMsg.class})
     public static class DeleteCmd extends NfsPrimaryStorageAgentCommand {
         private boolean folder;
         private String installPath;
@@ -439,10 +424,6 @@ public class NfsPrimaryStorageKVMBackendCommands {
         }
     }
 
-    @ApiTimeout(apiClasses = {
-            APICreateRootVolumeTemplateFromRootVolumeMsg.class,
-            APICreateDataVolumeTemplateFromVolumeMsg.class,
-    })
     public static class UploadToSftpCmd extends NfsPrimaryStorageAgentCommand implements HasThreadContext{
         private String primaryStorageInstallPath;
         private String backupStorageInstallPath;
@@ -498,10 +479,6 @@ public class NfsPrimaryStorageKVMBackendCommands {
     public static class UploadToSftpResponse extends NfsPrimaryStorageAgentResponse {
     }
 
-    @ApiTimeout(apiClasses = {
-            APICreateDataVolumeFromVolumeSnapshotMsg.class,
-            APICreateRootVolumeTemplateFromVolumeSnapshotMsg.class
-    })
     public static class MergeSnapshotCmd extends NfsPrimaryStorageAgentCommand {
         private String volumeUuid;
         private String snapshotInstallPath;
@@ -553,10 +530,6 @@ public class NfsPrimaryStorageKVMBackendCommands {
         }
     }
 
-    @ApiTimeout(apiClasses = {
-            APICreateDataVolumeFromVolumeSnapshotMsg.class,
-            APICreateRootVolumeTemplateFromVolumeSnapshotMsg.class
-    })
     public static class RebaseAndMergeSnapshotsCmd extends NfsPrimaryStorageAgentCommand {
         private String volumeUuid;
         private List<String> snapshotInstallPaths;
@@ -632,7 +605,6 @@ public class NfsPrimaryStorageKVMBackendCommands {
     public static class MoveBitsRsp extends NfsPrimaryStorageAgentResponse {
     }
 
-    @ApiTimeout(apiClasses = {APIDeleteVolumeSnapshotMsg.class})
     public static class OfflineMergeSnapshotCmd extends NfsPrimaryStorageAgentCommand implements HasThreadContext {
         private String srcPath;
         private String destPath;
@@ -715,6 +687,10 @@ public class NfsPrimaryStorageKVMBackendCommands {
     public static class NfsToNfsMigrateBitsCmd extends NfsPrimaryStorageAgentCommand implements HasThreadContext {
         public String srcFolderPath;
         public String dstFolderPath;
+        public boolean isMounted = false;
+        public String url;
+        public String options;
+        public String mountPath;
     }
 
     public static class NfsToNfsMigrateBitsRsp extends NfsPrimaryStorageAgentResponse {

@@ -20,12 +20,16 @@ public class CephCapacityUpdater {
     @Autowired
     private PluginRegistry pluginRgty;
 
-    public void update(String fsid, long total, long avail, List<CephPoolCapacity> poolCapacities) {
-        update(fsid, total, avail, poolCapacities, true);
+    public void update(CephCapacity cephCapacity) {
+        update(cephCapacity, true);
     }
 
     @Transactional
-    public void update(String fsid, long total, long avail, List<CephPoolCapacity> poolCapacities, boolean updatedAnyway) {
+    public void update(CephCapacity cephCapacity, boolean updatedAnyway) {
+        String fsid = cephCapacity.getFsid();
+        long total = cephCapacity.getTotalCapacity();
+        long avail = cephCapacity.getAvailableCapacity();
+
         CephCapacityVO vo = dbf.getEntityManager().find(CephCapacityVO.class, fsid, LockModeType.PESSIMISTIC_WRITE);
         boolean updated = false;
 
@@ -63,7 +67,7 @@ public class CephCapacityUpdater {
 
         if (updatedAnyway || updated) {
             for (CephCapacityUpdateExtensionPoint ext : pluginRgty.getExtensionList(CephCapacityUpdateExtensionPoint.class)) {
-                ext.update(fsid, total, avail, poolCapacities);
+                ext.update(cephCapacity);
             }
         }
     }

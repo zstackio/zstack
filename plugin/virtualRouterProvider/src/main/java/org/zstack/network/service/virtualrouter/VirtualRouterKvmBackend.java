@@ -91,7 +91,6 @@ public class VirtualRouterKvmBackend implements VirtualRouterHypervisorBackend {
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
-		msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         msg.setPath(VirtualRouterConstant.VR_KVM_CREATE_BOOTSTRAP_ISO_PATH);
         msg.setHostUuid(vrSpec.getDestHost().getUuid());
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, vrSpec.getDestHost().getUuid());
@@ -125,7 +124,6 @@ public class VirtualRouterKvmBackend implements VirtualRouterHypervisorBackend {
 		final String hostUuid = vrSpec.getHostUuid() == null ? vrSpec.getLastHostUuid() : vrSpec.getHostUuid();
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
-		msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         msg.setPath(VirtualRouterConstant.VR_KVM_DELETE_BOOTSTRAP_ISO_PATH);
         msg.setHostUuid(hostUuid);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);

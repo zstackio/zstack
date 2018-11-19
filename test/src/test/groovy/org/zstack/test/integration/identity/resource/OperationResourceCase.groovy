@@ -45,8 +45,21 @@ class OperationResourceCase extends SubCase {
         }
         VmInstanceVO vmVo = dbf.findByUuid(vm.uuid, VmInstanceVO.class)
         vmVo.setState(VmInstanceState.Starting)
-        dbf.update(vmVo)
+        vmVo = dbf.updateAndRefresh(vmVo)
+
         changeResourceOwner{
+            accountUuid = accountInventory.uuid
+            resourceUuid = vmVo.uuid
+        }
+
+        accountInventory = createAccount {
+            name = "test2"
+            password = "password"
+        }
+
+        vmVo.setState(VmInstanceState.Paused)
+        vmVo = dbf.updateAndRefresh(vmVo)
+        changeResourceOwner {
             accountUuid = accountInventory.uuid
             resourceUuid = vmVo.uuid
         }

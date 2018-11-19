@@ -21,6 +21,8 @@ import java.util.List;
                 foreignKey = "uuid", expandedInventoryKey = "loadBalancerUuid"),
         @ExpandedQuery(expandedField = "vip", inventoryClass = VipInventory.class,
                 foreignKey = "vipUuid", expandedInventoryKey = "uuid"),
+        @ExpandedQuery(target = VipInventory.class, expandedField = "loadBalancer",
+                inventoryClass = LoadBalancerInventory.class, foreignKey = "uuid", expandedInventoryKey = "vipUuid")
 })
 public class LoadBalancerInventory {
     private String name;

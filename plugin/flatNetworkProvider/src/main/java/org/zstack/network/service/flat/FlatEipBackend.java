@@ -440,7 +440,6 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
         msg.setHostUuid(hostUuid);
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         msg.setPath(BATCH_DELETE_EIP_PATH);
         msg.setNoStatusCheck(noHostStatusCheck);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
@@ -489,7 +488,6 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
         msg.setHostUuid(hostUuid);
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         msg.setPath(BATCH_APPLY_EIP_PATH);
         msg.setNoStatusCheck(noHostStatusCheck);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
@@ -625,7 +623,6 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         msg.setCommand(cmd);
         msg.setHostUuid(hostUuid);
         msg.setPath(APPLY_EIP_PATH);
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
@@ -670,7 +667,6 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         msg.setCommand(cmd);
         msg.setHostUuid(getHostUuidByVmUuid(cmd.eip.vmUuid));
         msg.setPath(DELETE_EIP_PATH);
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override

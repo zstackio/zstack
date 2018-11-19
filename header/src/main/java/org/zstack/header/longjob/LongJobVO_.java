@@ -1,6 +1,5 @@
 package org.zstack.header.longjob;
 
-import org.apache.commons.net.ntp.TimeStamp;
 import org.zstack.header.vo.ResourceVO_;
 
 import javax.persistence.metamodel.SingularAttribute;
@@ -22,5 +21,5 @@ public class LongJobVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<LongJobVO, String> targetResourceUuid;
     public static volatile SingularAttribute<LongJobVO, String> managementNodeUuid;
     public static volatile SingularAttribute<LongJobVO, Timestamp> createDate;
-    public static volatile SingularAttribute<LongJobVO, TimeStamp> lastOpDate;
+    public static volatile SingularAttribute<LongJobVO, Timestamp> lastOpDate;
 }

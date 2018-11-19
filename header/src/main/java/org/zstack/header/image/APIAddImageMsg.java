@@ -2,10 +2,7 @@ package org.zstack.header.image;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
-import org.zstack.header.message.APICreateMessage;
-import org.zstack.header.message.APIEvent;
-import org.zstack.header.message.APIMessage;
-import org.zstack.header.message.APIParam;
+import org.zstack.header.message.*;
 import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
@@ -15,6 +12,7 @@ import org.zstack.header.tag.TagResourceType;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @TagResourceType(ImageVO.class)
 @Action(category = ImageConstant.ACTION_CATEGORY)
@@ -24,6 +22,7 @@ import java.util.List;
         parameterName = "params",
         responseClass = APIAddImageEvent.class
 )
+@APIDefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)
 public class APIAddImageMsg extends APICreateMessage implements APIAuditor {
     @APIParam(maxLength = 255)
     private String name;

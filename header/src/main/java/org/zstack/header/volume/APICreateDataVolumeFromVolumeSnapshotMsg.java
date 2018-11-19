@@ -2,16 +2,15 @@ package org.zstack.header.volume;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
-import org.zstack.header.message.APICreateMessage;
-import org.zstack.header.message.APIEvent;
-import org.zstack.header.message.APIMessage;
-import org.zstack.header.message.APIParam;
+import org.zstack.header.message.*;
 import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.notification.NotificationConstant;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * @api create data volume from a volume snapshot
@@ -48,6 +47,7 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
         method = HttpMethod.POST,
         parameterName = "params"
 )
+@APIDefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)
 public class APICreateDataVolumeFromVolumeSnapshotMsg extends APICreateMessage implements APIAuditor {
     /**
      * @desc max length of 255 characters

@@ -20,6 +20,8 @@ public class KVMGlobalConfig {
     public static GlobalConfig MAX_DATA_VOLUME_NUM = new GlobalConfig(CATEGORY, "dataVolume.maxNum");
     @GlobalConfigValidation(numberGreaterThan = 2)
     public static GlobalConfig HOST_SYNC_LEVEL = new GlobalConfig(CATEGORY, "host.syncLevel");
+    @GlobalConfigValidation(inNumberRange = {1, 10})
+    public static GlobalConfig VM_CREATE_CONCURRENCY = new GlobalConfig(CATEGORY, "vm.createConcurrency");
     @GlobalConfigValidation
     public static GlobalConfig HOST_DNS_CHECK_ALIYUN = new GlobalConfig(CATEGORY, "host.DNSCheckAliyun");
     @GlobalConfigValidation

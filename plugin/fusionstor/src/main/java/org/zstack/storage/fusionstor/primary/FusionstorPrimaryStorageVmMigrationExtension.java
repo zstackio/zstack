@@ -80,7 +80,6 @@ public class FusionstorPrimaryStorageVmMigrationExtension implements VmInstanceM
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         msg.setPath(KVM_FUSIONSTOR_QUERY_PATH);
         msg.setHostUuid(destHostUuid);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, destHostUuid);

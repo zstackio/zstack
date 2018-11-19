@@ -1,6 +1,5 @@
 package org.zstack.header.image;
 
-import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.message.NeedReplyMessage;
 
@@ -10,7 +9,6 @@ import java.util.List;
  * Created by camile on 2/5/2018.
  * copy by APICreateRootVolumeTemplateFromRootVolumeMsg
  */
-@ApiTimeout(apiClasses = {APICreateRootVolumeTemplateFromRootVolumeMsg.class})
 public class CreateRootVolumeTemplateFromRootVolumeMsg extends NeedReplyMessage {
     private String name;
     private String description;

@@ -44,7 +44,6 @@ import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.*;
-import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
@@ -142,6 +141,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         Long totalCapacity;
         Long availableCapacity;
         List<CephPoolCapacity> poolCapacities;
+        boolean xsky = false;
 
         public String getError() {
             return error;
@@ -182,6 +182,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         public void setPoolCapacities(List<CephPoolCapacity> poolCapacities) {
             this.poolCapacities = poolCapacities;
+        }
+
+        public boolean isXsky() {
+            return xsky;
+        }
+
+        public void setXsky(boolean xsky) {
+            this.xsky = xsky;
         }
     }
 
@@ -311,7 +319,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static class CreateEmptyVolumeRsp extends AgentResponse {
     }
 
-    @ApiTimeout(apiClasses = {APIDeleteVolumeSnapshotMsg.class})
     public static class DeleteCmd extends AgentCommand {
         String installPath;
 
@@ -328,7 +335,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     }
 
-    @ApiTimeout(apiClasses = {APICreateVmInstanceMsg.class})
     public static class CloneCmd extends AgentCommand {
         String srcPath;
         String dstPath;
@@ -429,10 +435,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static class SftpDownloadRsp extends AgentResponse {
     }
 
-    @ApiTimeout(apiClasses = {
-            APICreateRootVolumeTemplateFromRootVolumeMsg.class,
-            APICreateDataVolumeTemplateFromVolumeMsg.class
-    })
     public static class SftpUpLoadCmd extends AgentCommand implements HasThreadContext{
         String sendCommandUrl;
         String primaryStorageInstallPath;
@@ -502,10 +504,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static class SftpUploadRsp extends AgentResponse {
     }
 
-    @ApiTimeout(apiClasses = {
-            APICreateVolumeSnapshotMsg.class,
-            APICreateVmInstanceMsg.class
-    })
     public static class CreateSnapshotCmd extends AgentCommand {
         boolean skipOnExisting;
         String snapshotPath;
@@ -572,7 +570,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static class DeleteSnapshotRsp extends AgentResponse {
     }
 
-    @ApiTimeout(apiClasses = {APICreateVmInstanceMsg.class})
     public static class ProtectSnapshotCmd extends AgentCommand {
         String snapshotPath;
         boolean ignoreError;
@@ -612,12 +609,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static class UnprotectedSnapshotRsp extends AgentResponse {
     }
 
-    @ApiTimeout(apiClasses = {
-            APICreateRootVolumeTemplateFromRootVolumeMsg.class,
-            APICreateDataVolumeTemplateFromVolumeMsg.class,
-            APICreateDataVolumeFromVolumeSnapshotMsg.class,
-            APICreateRootVolumeTemplateFromVolumeSnapshotMsg.class
-    })
     public static class CpCmd extends AgentCommand implements HasThreadContext{
         String sendCommandUrl;
         String resourceUuid;
@@ -625,12 +616,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         String dstPath;
     }
 
-    @ApiTimeout(apiClasses = {
-            APICreateRootVolumeTemplateFromRootVolumeMsg.class,
-            APICreateDataVolumeTemplateFromVolumeMsg.class,
-            APICreateDataVolumeFromVolumeSnapshotMsg.class,
-            APICreateRootVolumeTemplateFromVolumeSnapshotMsg.class
-    })
     public static class UploadCmd extends AgentCommand implements HasThreadContext{
         public String sendCommandUrl;
         public String imageUuid;
@@ -646,7 +631,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public String installPath;
     }
 
-    @ApiTimeout(apiClasses = {APIRevertVolumeFromSnapshotMsg.class})
     public static class RollbackSnapshotCmd extends AgentCommand implements HasThreadContext {
         String snapshotPath;
 
@@ -2394,7 +2378,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     private void updateCapacityIfNeeded(AgentResponse rsp) {
         if (rsp.totalCapacity != null && rsp.availableCapacity != null) {
-            new CephCapacityUpdater().update(getSelf().getFsid(), rsp.totalCapacity, rsp.availableCapacity, rsp.getPoolCapacities());
+            CephCapacity cephCapacity = new CephCapacity();
+            cephCapacity.setFsid(getSelf().getFsid());
+            cephCapacity.setAvailableCapacity(rsp.availableCapacity);
+            cephCapacity.setTotalCapacity(rsp.totalCapacity);
+            cephCapacity.setPoolCapacities(rsp.poolCapacities);
+            cephCapacity.setXsky(rsp.isXsky());
+            new CephCapacityUpdater().update(cephCapacity);
         }
     }
 
@@ -2646,7 +2636,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 self = dbf.updateAndRefresh(self);
 
                                 CephCapacityUpdater updater = new CephCapacityUpdater();
-                                updater.update(ret.fsid, ret.totalCapacity, ret.availableCapacity, ret.getPoolCapacities(), true);
+                                CephCapacity cephCapacity = new CephCapacity();
+                                cephCapacity.setFsid(ret.fsid);
+                                cephCapacity.setAvailableCapacity(ret.availableCapacity);
+                                cephCapacity.setTotalCapacity(ret.totalCapacity);
+                                cephCapacity.setPoolCapacities(ret.poolCapacities);
+                                cephCapacity.setXsky(ret.isXsky());
+                                updater.update(cephCapacity, true);
                                 trigger.next();
                             }
                         });
@@ -3787,7 +3783,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 msg.setPath(KVM_CREATE_SECRET_PATH);
                 msg.setHostUuid(huuid);
                 msg.setNoStatusCheck(true);
-                msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
                 bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, huuid);
                 return msg;
             }

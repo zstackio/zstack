@@ -47,7 +47,6 @@ public class ApplianceVmKvmBootstrapFlow extends NoRollbackFlow {
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setPath(cmd.PATH);
         msg.setCommand(cmd);
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         msg.setHostUuid(spec.getDestHost().getUuid());
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, spec.getDestHost().getUuid());
         bus.send(msg, new CloudBusCallBack(chain) {

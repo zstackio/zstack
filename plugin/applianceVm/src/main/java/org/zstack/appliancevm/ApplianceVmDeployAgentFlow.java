@@ -87,7 +87,6 @@ public class ApplianceVmDeployAgentFlow extends NoRollbackFlow {
                         ApplianceVmAsyncHttpCallMsg msg = new ApplianceVmAsyncHttpCallMsg();
                         msg.setVmInstanceUuid(apvmUuid);
                         msg.setCommand(cmd);
-                        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "5m"));
                         msg.setCheckStatus(false);
                         msg.setPath(ApplianceVmConstant.INIT_PATH);
                         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, apvmUuid);

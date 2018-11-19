@@ -40,4 +40,11 @@ public class ApiTimeoutGlobalProperty {
 
     @GlobalProperty(name="ApiTimeout.org.zstack.header.cluster.APIUpdateClusterOSMsg", defaultValue = "timeout::24h")
     public static String APIUpdateClusterOSMsg;
+
+    @GlobalProperty(name="api.timeout.syncCallAPI", defaultValue = "5m")
+    public static String SYNCCALL_API_TIMEOUT;
+    @GlobalProperty(name="api.timeout.internalMessage", defaultValue = "30m")
+    public static String INTERNAL_MESSAGE_TIMEOUT;
+    @GlobalProperty(name="api.timeout.minimal", defaultValue = "5m")
+    public static String MINIMAL_TIMEOUT;
 }

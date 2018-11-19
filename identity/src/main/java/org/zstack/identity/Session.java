@@ -3,6 +3,7 @@ package org.zstack.identity;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -142,22 +143,17 @@ public class Session {
     }
 
     public static SessionInventory getSession(String uuid) {
-        return new SQLBatchWithReturn<SessionInventory>() {
-            @Override
-            protected SessionInventory scripts() {
-                SessionInventory s = sessions.get(uuid);
-                if (s == null) {
-                    SessionVO vo = findByUuid(uuid, SessionVO.class);
-                    if (vo == null) {
-                        return null;
-                    }
-
-                    s = SessionInventory.valueOf(vo);
-                    sessions.put(s.getUuid(), s);
-                }
-
-                return s;
+        SessionInventory s = sessions.get(uuid);
+        if (s == null) {
+            SessionVO vo = Q.New(SessionVO.class).eq(SessionVO_.uuid, uuid).find();
+            if (vo == null) {
+                return null;
             }
-        }.execute();
+
+            s = SessionInventory.valueOf(vo);
+            sessions.put(s.getUuid(), s);
+        }
+
+        return s;
     }
 }

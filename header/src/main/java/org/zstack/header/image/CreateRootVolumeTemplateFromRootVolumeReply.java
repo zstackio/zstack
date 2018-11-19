@@ -1,12 +1,10 @@
 package org.zstack.header.image;
 
-import org.zstack.header.core.ApiTimeout;
 import org.zstack.header.message.MessageReply;
 
 /**
  * Created by camile on 2/6/2018.
  */
-@ApiTimeout(apiClasses = {APIAddImageMsg.class})
 public class CreateRootVolumeTemplateFromRootVolumeReply extends MessageReply {
     private ImageInventory inventory;
 

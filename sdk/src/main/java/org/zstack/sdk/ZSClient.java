@@ -199,6 +199,10 @@ public class ZSClient {
                     .addHeader(Constants.HEADER_JOB_UUID, jobUuid)
                     .addHeader(Constants.HEADER_JSON_SCHEMA, Boolean.TRUE.toString());
 
+            if (action.apiTimeout != null) {
+                reqBuilder.addHeader(Constants.HEADER_API_TIMEOUT, action.apiTimeout.toString());
+            }
+
             if (config.webHook != null) {
                 reqBuilder.addHeader(Constants.HEADER_WEBHOOK, config.webHook);
             }

@@ -156,7 +156,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
                     public Class<LinkedHashMap> getReturnClass() {
                         return LinkedHashMap.class;
                     }
-                }, TimeUnit.SECONDS, msg.getCommandTimeout());
+                });
             }
 
             @Override

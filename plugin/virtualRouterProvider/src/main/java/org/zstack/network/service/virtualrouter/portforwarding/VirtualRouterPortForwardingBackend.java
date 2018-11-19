@@ -364,7 +364,6 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
         VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
         msg.setPath(VirtualRouterConstant.VR_CREATE_PORT_FORWARDING);
         msg.setCommand(cmd);
-        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
         msg.setVmInstanceUuid(vrVO.getUuid());
         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vrVO.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
@@ -432,7 +431,6 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
         VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
         msg.setPath(VirtualRouterConstant.VR_REVOKE_PORT_FORWARDING);
         msg.setCommand(cmd);
-        msg.setCommandTimeout(apiTimeoutManager.getTimeout(cmd.getClass(), "30m"));
         msg.setVmInstanceUuid(vrVO.getUuid());
         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vrVO.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {

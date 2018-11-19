@@ -162,7 +162,6 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
             KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
             kmsg.setHostUuid(vtep.getHostUuid());
             kmsg.setCommand(cmd);
-            kmsg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
             kmsg.setPath(VXLAN_KVM_POPULATE_FDB_L2VXLAN_NETWORKS_PATH);
             kmsg.setNoStatusCheck(true);
             bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, vtep.getHostUuid());

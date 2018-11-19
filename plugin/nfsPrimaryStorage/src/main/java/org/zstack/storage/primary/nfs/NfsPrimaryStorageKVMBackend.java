@@ -407,7 +407,6 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
             KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
             msg.setCommand(cmd);
-            msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
             msg.setPath(PING_PATH);
             msg.setHostUuid(huuid);
             bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, huuid);
@@ -614,70 +613,37 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 .eq(PrimaryStorageClusterRefVO_.clusterUuid, host.getClusterUuid())
                 .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, dstPsInv.getUuid())
                 .isExists();
-        if (mounted) {
-            logger.info(String.format("no need to mount nfs ps[uuid:%s] to host[uuid:%s]", dstPsInv.getUuid(), host.getUuid()));
-            // copy volume folder
-            NfsToNfsMigrateBitsCmd cmd = new NfsToNfsMigrateBitsCmd();
-            cmd.srcFolderPath = msg.getSrcFolderPath();
-            cmd.dstFolderPath = msg.getDstFolderPath();
-            new KvmCommandSender(host.getUuid()).send(cmd, NFS_TO_NFS_MIGRATE_BITS_PATH, new KvmCommandFailureChecker() {
-                @Override
-                public ErrorCode getError(KvmResponseWrapper wrapper) {
-                    NfsToNfsMigrateBitsRsp rsp = wrapper.getResponse(NfsToNfsMigrateBitsRsp.class);
-                    return rsp.isSuccess() ? null : operr(rsp.getError());
-                }
-            }, msg.getTimeout(), new ReturnValueCompletion<KvmResponseWrapper>(completion) {
-                @Override
-                public void success(KvmResponseWrapper w) {
-                    logger.info("successfully copyed volume folder to nfs ps " + dstPsInv.getUuid());
-                    NfsToNfsMigrateBitsReply reply = new NfsToNfsMigrateBitsReply();
-                    completion.success(reply);
-                }
-                @Override
-                public void fail(ErrorCode errorCode) {
-                    logger.error("failed to copy volume folder to nfs ps " + dstPsInv.getUuid());
-                    completion.fail(errorCode);
-                }
-            });
-            return;
+
+        if (logger.isTraceEnabled()) {
+            if (mounted) {
+                logger.info(String.format("no need to mount nfs ps[uuid:%s] to host[uuid:%s]", dstPsInv.getUuid(), host.getUuid()));
+            }
         }
 
-        // mount ps to host
-        mount(dstPsInv, host.getUuid(), new Completion(completion) {
-            @Override
-            public void success() {
-                logger.info(String.format("successfully mounted nfs ps[uuid:%s] to host[uuid:%s]", dstPsInv.getUuid(), host.getUuid()));
-                // copy volume folder
-                NfsToNfsMigrateBitsCmd cmd = new NfsToNfsMigrateBitsCmd();
-                cmd.srcFolderPath = msg.getSrcFolderPath();
-                cmd.dstFolderPath = msg.getDstFolderPath();
-                new KvmCommandSender(host.getUuid()).send(cmd, NFS_TO_NFS_MIGRATE_BITS_PATH, new KvmCommandFailureChecker() {
-                    @Override
-                    public ErrorCode getError(KvmResponseWrapper wrapper) {
-                        NfsToNfsMigrateBitsRsp rsp = wrapper.getResponse(NfsToNfsMigrateBitsRsp.class);
-                        return rsp.isSuccess() ? null : operr(rsp.getError());
-                    }
-                }, msg.getTimeout(), new ReturnValueCompletion<KvmResponseWrapper>(completion) {
-                    @Override
-                    public void success(KvmResponseWrapper w) {
-                        logger.info("successfully copyed volume folder to nfs ps " + dstPsInv.getUuid());
-                        // umount ps from host
-                        logger.debug(String.format("try to umount nfs ps[uuid:%s] from host[uuid:%s]", dstPsInv.getUuid(), host.getUuid()));
-                        unmount(dstPsInv, host.getUuid());
-                        NfsToNfsMigrateBitsReply reply = new NfsToNfsMigrateBitsReply();
-                        completion.success(reply);
-                    }
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        logger.error("failed to copy volume folder to nfs ps " + dstPsInv.getUuid());
-                        completion.fail(errorCode);
-                    }
-                });
-            }
+        NfsToNfsMigrateBitsCmd cmd = new NfsToNfsMigrateBitsCmd();
+        cmd.srcFolderPath = msg.getSrcFolderPath();
+        cmd.dstFolderPath = msg.getDstFolderPath();
+        cmd.isMounted = mounted;
 
+        if (!mounted) {
+            cmd.options = NfsSystemTags.MOUNT_OPTIONS.getTokenByResourceUuid(dstPsInv.getUuid(), NfsSystemTags.MOUNT_OPTIONS_TOKEN);
+            cmd.url = dstPsInv.getUrl();
+            cmd.mountPath = dstPsInv.getMountPath();
+        }
+
+        new KvmCommandSender(host.getUuid()).send(cmd, NFS_TO_NFS_MIGRATE_BITS_PATH, wrapper -> {
+            NfsToNfsMigrateBitsRsp rsp = wrapper.getResponse(NfsToNfsMigrateBitsRsp.class);
+            return rsp.isSuccess() ? null : operr(rsp.getError());
+        }, msg.getTimeout(), new ReturnValueCompletion<KvmResponseWrapper>(completion) {
+            @Override
+            public void success(KvmResponseWrapper w) {
+                logger.info("successfully copyed volume folder to nfs ps " + dstPsInv.getUuid());
+                NfsToNfsMigrateBitsReply reply = new NfsToNfsMigrateBitsReply();
+                completion.success(reply);
+            }
             @Override
             public void fail(ErrorCode errorCode) {
-                logger.error(String.format("failed to mount nfs ps[uuid:%s] to host[uuid:%s]", dstPsInv.getUuid(), host.getUuid()));
+                logger.error("failed to copy volume folder to nfs ps " + dstPsInv.getUuid());
                 completion.fail(errorCode);
             }
         });
@@ -726,7 +692,6 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         msg.setHostUuid(host.getUuid());
         msg.setPath(GET_CAPACITY_PATH);
         msg.setCommand(cmd);
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
@@ -760,7 +725,6 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         msg.setPath(CHECK_BITS_PATH);
         msg.setHostUuid(host.getUuid());
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
@@ -867,7 +831,6 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         msg.setCommand(cmd);
         msg.setPath(CREATE_EMPTY_VOLUME_PATH);
         msg.setHostUuid(host.getUuid());
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
         bus.send(msg, new CloudBusCallBack(complete) {
             @Override
@@ -970,7 +933,6 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         msg.setCommand(cmd);
         msg.setPath(DELETE_PATH);
         msg.setHostUuid(host.getUuid());
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
@@ -1014,7 +976,6 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         msg.setCommand(cmd);
         msg.setPath(LIST_PATH);
         msg.setHostUuid(host.getUuid());
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
@@ -1046,7 +1007,6 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         msg.setCommand(cmd);
         msg.setPath(REVERT_VOLUME_FROM_SNAPSHOT_PATH);
         msg.setHostUuid(host.getUuid());
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
@@ -1084,7 +1044,6 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         msg.setCommand(cmd);
         msg.setPath(REINIT_IMAGE_PATH);
         msg.setHostUuid(host.getUuid());
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
@@ -1120,7 +1079,6 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         msg.setCommand(cmd);
         msg.setHostUuid(destHost.getUuid());
         msg.setPath(CREATE_TEMPLATE_FROM_VOLUME_PATH);
-        msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, destHost.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
@@ -1183,7 +1141,6 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             msg.setCommand(cmd);
             msg.setPath(OFFLINE_SNAPSHOT_MERGE);
             msg.setHostUuid(host.getUuid());
-            msg.setCommandTimeout(timeoutMgr.getTimeout(cmd.getClass(), "5m"));
             bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
             bus.send(msg, new CloudBusCallBack(completion) {
                 @Override
@@ -1402,7 +1359,6 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         msg.setPath(path);
         msg.setNoStatusCheck(noCheckStatus);
         msg.setCommand(cmd);
-        msg.setCommandTimeout(timeoutManager.getTimeout(cmd.getClass(), "5m"));
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override

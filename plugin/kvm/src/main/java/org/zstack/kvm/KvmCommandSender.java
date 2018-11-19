@@ -70,14 +70,9 @@ public class KvmCommandSender {
     }
 
     public void send(final Object cmd, final String path, final KvmCommandFailureChecker checker, final SteppingSendCallback<KvmResponseWrapper> completion) {
-        send(cmd, path, checker, TimeUnit.MINUTES.toMillis(5), completion);
-    }
-
-    public void send(final Object cmd, final String path, final KvmCommandFailureChecker checker , final long defaulTimeout, final SteppingSendCallback<KvmResponseWrapper> completion) {
         List<KVMHostAsyncHttpCallMsg> msgs = hostUuids.stream().map(huuid -> {
             KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
             msg.setCommand(cmd);
-            msg.setCommandTimeout(timeoutManager.getTimeout(cmd.getClass(), defaulTimeout));
             msg.setHostUuid(huuid);
             msg.setPath(path);
             msg.setNoStatusCheck(noStatusCheck);
@@ -126,7 +121,6 @@ public class KvmCommandSender {
         String huuid = hostUuids.get(0);
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
-        msg.setCommandTimeout(timeoutManager.getTimeout(cmd.getClass(), defaulTimeout));
         msg.setHostUuid(huuid);
         msg.setPath(path);
         msg.setNoStatusCheck(noStatusCheck);

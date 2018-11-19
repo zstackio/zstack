@@ -3,6 +3,7 @@ package org.zstack.core.aspect;
 import org.zstack.core.thread.Task;
 import org.zstack.header.HasThreadContext;
 import org.apache.logging.log4j.ThreadContext;
+import org.zstack.utils.TaskContext;
 
 import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.FlowRollback;
@@ -20,6 +21,10 @@ public aspect SetThreadContextAspect {
             ThreadContext.setStack(tc.threadContextStack);
         } else {
             ThreadContext.clearStack();
+        }
+
+        if (tc.taskContext != null) {
+            TaskContext.setTaskContext(tc.taskContext);
         }
     }
 

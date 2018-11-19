@@ -263,15 +263,11 @@ public class KVMHost extends HostBase implements Host {
         AgentCommand cmd;
         Class<T> responseClass;
         String commandStr;
-        TimeUnit unit;
-        Long timeout;
 
-        public Http(String path, String cmd, Class<T> rspClz, TimeUnit unit, Long timeout) {
+        public Http(String path, String cmd, Class<T> rspClz) {
             this.path = path;
             this.commandStr = cmd;
             this.responseClass = rspClz;
-            this.unit = unit;
-            this.timeout = timeout;
         }
 
         public Http(String path, AgentCommand cmd, Class<T> rspClz) {
@@ -304,7 +300,7 @@ public class KVMHost extends HostBase implements Host {
                     public Class<T> getReturnClass() {
                         return responseClass;
                     }
-                }, unit, timeout);
+                }, TimeUnit.MILLISECONDS, timeoutManager.getTimeout());
             } else {
                 restf.asyncJsonPost(path, cmd, header, new JsonAsyncRESTCallback<T>(completion) {
                     @Override
@@ -345,12 +341,6 @@ public class KVMHost extends HostBase implements Host {
                         kvmHostAddon.put(key, tmpHashMap.get(key));
                     }));
                 }
-            }
-
-            unit = unit == null ? TimeUnit.MILLISECONDS : unit;
-            if (timeout == null) {
-                int defaultTimeout = CoreGlobalProperty.REST_FACADE_READ_TIMEOUT;
-                timeout = cmd == null ? defaultTimeout : timeoutManager.getTimeout(cmd.getClass(), defaultTimeout);
             }
 
             if (commandStr.equals("{}")) {
@@ -907,7 +897,7 @@ public class KVMHost extends HostBase implements Host {
 
         String url = buildUrl(msg.getPath());
         MessageCommandRecorder.record(msg.getCommandClassName());
-        new Http<>(url, msg.getCommand(), LinkedHashMap.class, TimeUnit.MILLISECONDS, msg.getCommandTimeout())
+        new Http<>(url, msg.getCommand(), LinkedHashMap.class)
                 .call(new ReturnValueCompletion<LinkedHashMap>(msg, completion) {
             @Override
             public void success(LinkedHashMap ret) {
@@ -1191,7 +1181,7 @@ public class KVMHost extends HostBase implements Host {
                         cmd.setVmUuid(vmUuid);
                         cmd.setAutoConverge(KVMGlobalConfig.MIGRATE_AUTO_CONVERGE.value(Boolean.class));
                         cmd.setUseNuma(VmGlobalConfig.NUMA.value(Boolean.class));
-                        cmd.setTimeout(timeoutManager.getTimeout(cmd.getClass(), TimeUnit.SECONDS));
+                        cmd.setTimeout(timeoutManager.getTimeout());
 
                         UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(migrateVmPath);
                         ub.host(migrateFromDestination ? dstHostMnIp : srcHostMnIp);
@@ -2068,7 +2058,6 @@ public class KVMHost extends HostBase implements Host {
         final StartVmCmd cmd = new StartVmCmd();
 
         boolean virtio;
-        String consoleMode;
         String nestedVirtualization;
         String platform = spec.getVmInventory().getPlatform() == null ? spec.getImageSpec().getInventory().getPlatform() :
                 spec.getVmInventory().getPlatform();
@@ -2264,7 +2253,7 @@ public class KVMHost extends HostBase implements Host {
 
             @Override
             protected int getSyncLevel() {
-                return getHostSyncLevel();
+                return KVMGlobalConfig.VM_CREATE_CONCURRENCY.value(Integer.class);
             }
         });
     }

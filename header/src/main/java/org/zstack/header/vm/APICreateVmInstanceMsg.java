@@ -7,10 +7,7 @@ import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.Action;
 import org.zstack.header.image.ImageVO;
-import org.zstack.header.message.APICreateMessage;
-import org.zstack.header.message.APIEvent;
-import org.zstack.header.message.APIMessage;
-import org.zstack.header.message.APIParam;
+import org.zstack.header.message.*;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.other.APIAuditor;
@@ -20,6 +17,7 @@ import org.zstack.header.tag.TagResourceType;
 import org.zstack.header.zone.ZoneVO;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
 
@@ -79,6 +77,7 @@ import static java.util.Arrays.asList;
         responseClass = APICreateVmInstanceEvent.class,
         parameterName = "params"
 )
+@APIDefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)
 public class APICreateVmInstanceMsg extends APICreateMessage implements APIAuditor, NewVmInstanceMessage {
     /**
      * @desc max length of 255 characters
