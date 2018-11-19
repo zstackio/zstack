@@ -42,4 +42,8 @@ public class VolumeVO extends VolumeAO implements OwnedByAccount {
         this.accountUuid = accountUuid;
     }
 
+    @Override
+    public Class getResourceTypeClass() {
+        return null;
+    }
 }

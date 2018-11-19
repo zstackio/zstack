@@ -70,6 +70,9 @@ public class VolumeAO extends ResourceVO implements ShadowEntity {
     @Column
     private boolean isShareable;
 
+    @Column
+    private String volumeQos;
+
     @Transient
     private VolumeAO shadow;
 
@@ -229,5 +232,13 @@ public class VolumeAO extends ResourceVO implements ShadowEntity {
 
     public void setStatus(VolumeStatus status) {
         this.status = status;
+    }
+
+    public String getVolumeQos() {
+        return volumeQos;
+    }
+
+    public void setVolumeQos(String volumeQos) {
+        this.volumeQos = volumeQos;
     }
 }

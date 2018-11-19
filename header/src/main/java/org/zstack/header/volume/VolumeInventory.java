@@ -142,6 +142,8 @@ public class VolumeInventory implements Serializable {
 
     private Boolean isShareable;
 
+    private String volumeQos;
+
     public VolumeInventory() {
     }
 
@@ -164,6 +166,7 @@ public class VolumeInventory implements Serializable {
         this.createDate = other.createDate;
         this.lastOpDate = other.lastOpDate;
         this.isShareable = other.isShareable;
+        this.volumeQos = other.volumeQos;
     }
 
 
@@ -188,6 +191,7 @@ public class VolumeInventory implements Serializable {
         inv.setStatus(vo.getStatus().toString());
         inv.setFormat(vo.getFormat());
         inv.setShareable(vo.isShareable());
+        inv.setVolumeQos(vo.getVolumeQos());
         return inv;
     }
 
@@ -345,5 +349,13 @@ public class VolumeInventory implements Serializable {
 
     public void setShareable(boolean shareable) {
         isShareable = shareable;
+    }
+
+    public String getVolumeQos() {
+        return volumeQos;
+    }
+
+    public void setVolumeQos(String volumeQos) {
+        this.volumeQos = volumeQos;
     }
 }
