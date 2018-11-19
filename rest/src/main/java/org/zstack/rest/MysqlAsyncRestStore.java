@@ -8,28 +8,22 @@ import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.UpdateQuery;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.Component;
 import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIEvent;
-import org.zstack.header.message.APIMessage;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Query;
+import java.sql.Timestamp;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-
-import static org.zstack.utils.CollectionDSL.e;
-import static org.zstack.utils.CollectionDSL.map;
 
 /**
  * Created by xing5 on 2016/12/8.
@@ -169,12 +163,18 @@ public class MysqlAsyncRestStore implements AsyncRestApiStore, Component {
                 }
             }
 
+            private Timestamp getCurrentSqlTime() {
+                Query q = dbf.getEntityManager().createNativeQuery("select current_timestamp()");
+                return (Timestamp) q.getSingleResult();
+            }
+
             @Transactional
             private void cleanup() {
-                String sql = "DELETE FROM AsyncRestVO vo WHERE vo.state = :state and vo.createDate < (NOW() - INTERVAL :period SECOND)";
+                Integer expiredPeriod = RestGlobalConfig.COMPLETED_API_EXPIRED_PERIOD.value(Integer.class);
+                String sql = "DELETE FROM AsyncRestVO vo WHERE vo.state = :state and vo.createDate < :date";
                 Query q = dbf.getEntityManager().createQuery(sql);
                 q.setParameter("state", AsyncRestState.done);
-                q.setParameter("period", RestGlobalConfig.COMPLETED_API_EXPIRED_PERIOD.value(Integer.class));
+                q.setParameter("date", new Timestamp(getCurrentSqlTime().getTime() - expiredPeriod * 1000L));
                 q.executeUpdate();
             }
         });
