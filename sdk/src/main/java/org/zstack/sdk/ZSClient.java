@@ -257,7 +257,7 @@ public class ZSClient {
                     resultFromWebHook = new ApiResult();
                     resultFromWebHook.error = errorCode(
                             Constants.POLLING_TIMEOUT_ERROR,
-                            "timeout of polling async API result",
+                            "timeout of polling webhook result",
                             String.format("polling result of api[%s] timeout after %s ms", action.getClass().getSimpleName(), timeout)
                     );
                 }
@@ -502,7 +502,7 @@ public class ZSClient {
                                 ApiResult res = new ApiResult();
                                 res.error = errorCode(
                                         Constants.POLLING_TIMEOUT_ERROR,
-                                        "timeout of polling async API result",
+                                        "timeout of async polling API result",
                                         String.format("polling result of api[%s] timeout after %s ms", action.getClass().getSimpleName(), timeout)
                                 );
 
@@ -575,7 +575,7 @@ public class ZSClient {
             ApiResult res = new ApiResult();
             res.error = errorCode(
                     Constants.POLLING_TIMEOUT_ERROR,
-                    "timeout of polling async API result",
+                    "timeout of sync polling API result",
                     String.format("polling result of api[%s] timeout after %s ms", action.getClass().getSimpleName(), timeout)
             );
 
