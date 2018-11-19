@@ -337,7 +337,6 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
                 "completedTasks: %s, pendingTasks: %s, queueTasks: %s", _pool.getPoolSize(), _pool.getActiveCount(),
                 _pool.getCorePoolSize(), _pool.getMaximumPoolSize(), completedTask, pendingTask, _pool.getQueue().size()));
 
-
         _logger.debug(builder.toString());
     }
 }

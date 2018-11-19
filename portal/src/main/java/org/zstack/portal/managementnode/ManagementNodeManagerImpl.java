@@ -784,8 +784,6 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                         }
                     }
 
-                    printThreadAndTasks();
-
                     sleepAHeartbeatInterval();
 
                     if (heartBeatTask.isCancelled()) {
@@ -797,10 +795,6 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
                 stop();
                 return null;
-            }
-
-            private void printThreadAndTasks() {
-                thdf.printThreadsAndTasks();
             }
 
             private void sleepAHeartbeatInterval() {
