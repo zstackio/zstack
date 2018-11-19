@@ -7,6 +7,7 @@ import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
@@ -24,6 +25,8 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.identity.AccountResourceRefVO;
+import org.zstack.header.identity.AccountResourceRefVO_;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -39,10 +42,7 @@ import org.zstack.utils.VipUseForList;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.zstack.core.Platform.operr;
 
@@ -69,6 +69,8 @@ public class VipBase {
     protected VipManager vipMgr;
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    protected EventFacade evtf;
 
     protected String getThreadSyncSignature() {
         return String.format("vip-%s-%s", self.getName(), self.getUuid());
@@ -368,6 +370,12 @@ public class VipBase {
 
     protected void handle(VipDeletionMsg msg) {
         VipDeletionReply reply = new VipDeletionReply();
+        VipInventory inventory = VipInventory.valueOf(self);
+        String accountUuid = Q.New(AccountResourceRefVO.class)
+                .select(AccountResourceRefVO_.accountUuid)
+                .eq(AccountResourceRefVO_.resourceUuid, msg.getVipUuid())
+                .findValue();
+
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
@@ -380,6 +388,15 @@ public class VipBase {
                     @Override
                     public void success() {
                         bus.reply(msg, reply);
+
+                        VipCanonicalEvents.VipEventData vipEventData = new VipCanonicalEvents.VipEventData();
+                        vipEventData.setVipUuid(msg.getVipUuid());
+                        vipEventData.setCurrentStatus(VipCanonicalEvents.VIP_STATUS_DELETED);
+                        vipEventData.setInventory(inventory);
+                        vipEventData.setDate(new Date());
+                        vipEventData.setAccountUuid(accountUuid);
+                        evtf.fire(VipCanonicalEvents.VIP_DELETED_PATH, vipEventData);
+
                         chain.next();
                     }
 
