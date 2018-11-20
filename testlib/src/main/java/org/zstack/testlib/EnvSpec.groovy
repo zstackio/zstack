@@ -457,6 +457,11 @@ class EnvSpec implements Node, ApiHelper {
         new While<GlobalConfigInventory>(res.value.inventories).all(new While.Do<GlobalConfigInventory>() {
             @Override
             void accept(GlobalConfigInventory config, WhileCompletion completion) {
+                if (config.value == config.defaultValue) {
+                    completion.done()
+                    return
+                }
+
                 def ua = new UpdateGlobalConfigAction()
                 ua.category = config.category
                 ua.name = config.name
