@@ -36,6 +36,22 @@ public class DatabaseBackupStruct  {
         return this.type;
     }
 
+    public java.lang.Long size;
+    public void setSize(java.lang.Long size) {
+        this.size = size;
+    }
+    public java.lang.Long getSize() {
+        return this.size;
+    }
+
+    public java.lang.String md5;
+    public void setMd5(java.lang.String md5) {
+        this.md5 = md5;
+    }
+    public java.lang.String getMd5() {
+        return this.md5;
+    }
+
     public java.sql.Timestamp createdTime;
     public void setCreatedTime(java.sql.Timestamp createdTime) {
         this.createdTime = createdTime;

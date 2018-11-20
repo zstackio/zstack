@@ -58,6 +58,7 @@ CREATE TABLE IF NOT EXISTS `OssBucketDomainVO` (
 
 ALTER TABLE DataCenterVO ADD COLUMN `endpoint` VARCHAR(127) DEFAULT NULL;
 UPDATE GlobalConfigVO SET category='aliyunNas' WHERE category ='aliyunNasPrimaryStorage';
+
 ALTER TABLE VolumeEO ADD COLUMN volumeQos VARCHAR(128) DEFAULT NULL COMMENT 'volumeQos format like total=1048576';
 
 DROP VIEW IF EXISTS `zstack`.`VolumeVO`;
@@ -96,3 +97,5 @@ CREATE TABLE IF NOT EXISTS `zstack`.`PubIpVipBandwidthUsageVO` (
     `createDate` timestamp,
     PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `VolumeBackupVO` ADD COLUMN `mode` VARCHAR(32) DEFAULT 'incremental';
