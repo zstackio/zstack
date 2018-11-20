@@ -30,7 +30,10 @@ import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.configuration.DiskOfferingVO_;
 import org.zstack.header.configuration.InstanceOfferingVO;
-import org.zstack.header.core.*;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.NopeNoErrorCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -49,7 +52,6 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
-import org.zstack.header.notification.NotificationConstant;
 import org.zstack.header.search.SearchOp;
 import org.zstack.header.storage.backup.BackupStorageType;
 import org.zstack.header.storage.backup.BackupStorageVO;
@@ -300,7 +302,12 @@ public class VmInstanceManagerImpl extends AbstractService implements
             vms.addAll(vmq.getResultList());
         }
 
-        reply.setInventories(VmInstanceInventory.valueOf(vms));
+        List<VmInstanceInventory> result = VmInstanceInventory.valueOf(vms);
+
+        for (VmAttachIsoExtensionPoint ext : pluginRgty.getExtensionList(VmAttachIsoExtensionPoint.class)) {
+            ext.filtCandidateVms(msg.getIsoUuid(), result);
+        }
+        reply.setInventories(result);
         bus.reply(msg, reply);
     }
 
