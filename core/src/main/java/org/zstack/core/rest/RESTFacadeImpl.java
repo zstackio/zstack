@@ -353,7 +353,7 @@ public class RESTFacadeImpl implements RESTFacade {
             wrappers.put(taskUuid, wrapper);
 
             if (logger.isTraceEnabled()) {
-                logger.trace(String.format("json post[%s], %s", url, req.toString()));
+                logger.trace(String.format("json %s [%s], %s", method.toString(), url, req.toString()));
             }
 
             ResponseEntity<String> rsp;
