@@ -2599,6 +2599,10 @@ public class VmInstanceBase extends AbstractVmInstance {
                 .filter(iso -> !vmIsoList.contains(iso.getUuid()))
                 .collect(Collectors.toList());
 
+        for (VmAttachIsoExtensionPoint ext : pluginRgty.getExtensionList(VmAttachIsoExtensionPoint.class)) {
+            ext.filtCandidateIsos(msg.getVmInstanceUuid(), result);
+        }
+
         reply.setInventories(result);
         bus.reply(msg, reply);
     }
