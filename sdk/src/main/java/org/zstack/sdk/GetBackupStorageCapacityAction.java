@@ -40,8 +40,14 @@ public class GetBackupStorageCapacityAction extends AbstractAction {
     @Param(required = false)
     public java.util.List userTags;
 
-    @Param(required = true)
+    @Param(required = false)
     public String sessionId;
+
+    @Param(required = false)
+    public String accessKeyId;
+
+    @Param(required = false)
+    public String accessKeySecret;
 
 
     private Result makeResult(ApiResult res) {

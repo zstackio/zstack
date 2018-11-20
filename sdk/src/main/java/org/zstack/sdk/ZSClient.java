@@ -1,13 +1,20 @@
 package org.zstack.sdk;
 
+import org.apache.commons.codec.binary.Base64;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import okhttp3.*;
+import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
+import org.zstack.utils.logging.CLogger;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -18,6 +25,7 @@ import java.util.regex.Pattern;
  * Created by xing5 on 2016/12/9.
  */
 public class ZSClient {
+    private static final CLogger logger = Utils.getLogger(ZSClient.class);
     private static OkHttpClient http = new OkHttpClient();
 
     static final Gson gson;
@@ -207,10 +215,14 @@ public class ZSClient {
                 reqBuilder.addHeader(Constants.HEADER_WEBHOOK, config.webHook);
             }
 
-            if (action instanceof QueryAction) {
-                fillQueryApiRequestBuilder(reqBuilder);
-            } else {
-                fillNonQueryApiRequestBuilder(reqBuilder);
+            try {
+                if (action instanceof QueryAction) {
+                    fillQueryApiRequestBuilder(reqBuilder);
+                } else {
+                    fillNonQueryApiRequestBuilder(reqBuilder);
+                }
+            } catch (Exception e) {
+                throw new ApiException(e);
             }
 
             Request request = reqBuilder.build();
@@ -276,7 +288,27 @@ public class ZSClient {
             }
         }
 
-        private void fillQueryApiRequestBuilder(Request.Builder reqBuilder) {
+        private void calculateAccessKeySignature(Request.Builder reqBuilder, String accessKeyId, String accessKeySecret, String path) throws Exception{
+            Date date = new Date();
+            SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz");
+            String dateStr = sdf.format(date);
+
+            StringBuilder sb = new StringBuilder();
+            sb.append(info.httpMethod).append("\n");
+            sb.append("\n");
+            sb.append("application/json; charset=UTF-8").append("\n");
+            sb.append(dateStr).append("\n").append("/v1").append(path);
+
+            Mac mac = Mac.getInstance(Constants.ACCESS_KEY_ALGORITHM);
+            SecretKeySpec secret = new SecretKeySpec(accessKeySecret.getBytes(), Constants.ACCESS_KEY_ALGORITHM);
+            mac.init(secret);
+            String sign = new String(Base64.encodeBase64(mac.doFinal(sb.toString().getBytes())));
+            reqBuilder.addHeader(Constants.HEADER_DATE, dateStr);
+            reqBuilder.addHeader(Constants.HEADER_CONTENT_TYPE, "application/json; charset=UTF-8");
+            reqBuilder.addHeader(Constants.HEADER_AUTHORIZATION, String.format("%s %s:%s", Constants.ACCESS_KEY_OAUTH, accessKeyId, sign));
+        }
+
+        private void fillQueryApiRequestBuilder(Request.Builder reqBuilder) throws Exception {
             QueryAction qaction = (QueryAction) action;
 
             HttpUrl.Builder urlBuilder = new HttpUrl.Builder().scheme("http")
@@ -322,11 +354,15 @@ public class ZSClient {
                 urlBuilder.addQueryParameter("fields", join(qaction.fields, ","));
             }
 
-            reqBuilder.addHeader(Constants.HEADER_AUTHORIZATION, String.format("%s %s", Constants.OAUTH, qaction.sessionId));
+            if (qaction.accessKeyId != null && qaction.accessKeySecret != null) {
+                calculateAccessKeySignature(reqBuilder, qaction.accessKeyId, qaction.accessKeySecret, info.path);
+            } else {
+                reqBuilder.addHeader(Constants.HEADER_AUTHORIZATION, String.format("%s %s", Constants.OAUTH, qaction.sessionId));
+            }
             reqBuilder.url(urlBuilder.build()).get();
         }
 
-        private void fillNonQueryApiRequestBuilder(Request.Builder reqBuilder) {
+        private void fillNonQueryApiRequestBuilder(Request.Builder reqBuilder) throws Exception {
             HttpUrl.Builder builder = new HttpUrl.Builder()
                     .scheme("http")
                     .host(config.hostname)
@@ -342,6 +378,7 @@ public class ZSClient {
             builder.addPathSegment("v1");
 
             List<String> varNames = getVarNamesFromUrl(info.path);
+            String path = info.path;
             if (!varNames.isEmpty()) {
                 Map<String, Object> vars = new HashMap<>();
                 for (String vname : varNames) {
@@ -354,7 +391,7 @@ public class ZSClient {
                     vars.put(vname, value);
                 }
 
-                String path = substituteUrl(info.path, vars);
+                path = substituteUrl(info.path, vars);
                 builder.addPathSegments(path.replaceFirst("/", ""));
             } else {
                 builder.addPathSegments(info.path.replaceFirst("/", ""));
@@ -365,6 +402,10 @@ public class ZSClient {
             for (String pname : action.getAllParameterNames()) {
                 if (varNames.contains(pname) || Constants.SESSION_ID.equals(pname)) {
                     // the field is set in URL variables
+                    continue;
+                }
+
+                if (Constants.ACCESS_KEY_KEYID.equals(pname) || Constants.ACCESS_KEY_KEY_SECRET.equals(pname)) {
                     continue;
                 }
 
@@ -419,7 +460,15 @@ public class ZSClient {
                 reqBuilder.url(builder.build()).method(info.httpMethod, RequestBody.create(Constants.JSON, gson.toJson(m)));
             }
 
-            if (info.needSession) {
+            if (!info.needSession) {
+                return;
+            }
+
+            String accessKeyId = (String) action.getParameterValue(Constants.ACCESS_KEY_KEYID);;
+            String accessKeySecret = (String) action.getParameterValue(Constants.ACCESS_KEY_KEY_SECRET);;
+            if (accessKeyId != null && accessKeySecret != null) {
+                calculateAccessKeySignature(reqBuilder, accessKeyId, accessKeySecret, path);
+            } else {
                 Object sessionId = action.getParameterValue(Constants.SESSION_ID);
                 reqBuilder.addHeader(Constants.HEADER_AUTHORIZATION, String.format("%s %s", Constants.OAUTH, sessionId));
             }

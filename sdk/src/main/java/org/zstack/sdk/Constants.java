@@ -22,4 +22,12 @@ interface Constants {
     String HEADER_API_TIMEOUT = "X-API-Timeout";
     String HEADER_WEBHOOK = "X-Web-Hook";
     String HEADER_JOB_SUCCESS = "X-Job-Success";
+    String HEADER_DATE = "date";
+    String HEADER_CONTENT_TYPE = "Content-Type";
+
+    String ACCESS_KEY_ALGORITHM = "HmacSHA1";
+    String ACCESS_KEY_OAUTH = "ZStack";
+    String ACCESS_KEY_KEYID = "accessKeyId";
+    String ACCESS_KEY_KEY_SECRET = "accessKeySecret";
+    String IS_SUPPRESS_CREDENTIAL_CHECK = "isSuppressCredentialCheck";
 }
