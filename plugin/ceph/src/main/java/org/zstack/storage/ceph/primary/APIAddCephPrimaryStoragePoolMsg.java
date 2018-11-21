@@ -29,6 +29,8 @@ public class APIAddCephPrimaryStoragePoolMsg extends APICreateMessage implements
     private String aliasName;
     @APIParam(maxLength = 2048, required = false)
     private String description;
+    @APIParam(validValues = {"Root", "Data"})
+    private String type;
 
     private boolean isCreate;
 
@@ -70,6 +72,14 @@ public class APIAddCephPrimaryStoragePoolMsg extends APICreateMessage implements
         return aliasName;
     }
 
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
     public void setAliasName(String aliasName) {
         this.aliasName = aliasName;
     }
@@ -80,6 +90,7 @@ public class APIAddCephPrimaryStoragePoolMsg extends APICreateMessage implements
         msg.setAliasName("alias pool name");
         msg.setDescription("for high performance data volumes");
         msg.setPrimaryStorageUuid(uuid());
+        msg.setType("Data");
         msg.setCreate(true);
         return msg;
     }

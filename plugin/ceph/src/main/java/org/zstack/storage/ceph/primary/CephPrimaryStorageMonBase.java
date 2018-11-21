@@ -366,6 +366,7 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
                 .select(CephPrimaryStoragePoolVO_.poolName)
                 .eq(CephPrimaryStoragePoolVO_.primaryStorageUuid, primaryStorageUuid)
                 .eq(CephPrimaryStoragePoolVO_.type, CephPrimaryStoragePoolType.Root.toString())
+                .limit(1)
                 .findValue();
 
         PingCmd cmd = new PingCmd();

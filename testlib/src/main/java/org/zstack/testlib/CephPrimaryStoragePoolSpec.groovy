@@ -11,6 +11,8 @@ class CephPrimaryStoragePoolSpec extends Spec {
     String poolName
     @SpecParam
     String description
+    @SpecParam(required = true)
+    String type
 
     CephPrimaryStoragePoolInventory inventory
 
@@ -37,6 +39,7 @@ class CephPrimaryStoragePoolSpec extends Spec {
             delegate.userTags = userTags
             delegate.resourceUuid = uuid
             delegate.sessionId = sessionId
+            delegate.type = type
         }
 
         return id(poolName, inventory.uuid)
