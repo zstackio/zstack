@@ -3404,6 +3404,15 @@ public class VmInstanceBase extends AbstractVmInstance {
         checkIfIsoAttachable(isoUuid);
         IsoOperator.checkAttachIsoToVm(self.getUuid(), isoUuid);
 
+        List<VmInstanceInventory> vms = list(VmInstanceInventory.valueOf(self));
+        for (VmAttachIsoExtensionPoint ext : pluginRgty.getExtensionList(VmAttachIsoExtensionPoint.class)) {
+            ErrorCode err = ext.filtCandidateVms(isoUuid, vms);
+            if (err != null) {
+                completion.fail(err);
+                return;
+            }
+        }
+
         if (self.getState() == VmInstanceState.Stopped) {
             new IsoOperator().attachIsoToVm(self.getUuid(), isoUuid);
             completion.success();
