@@ -74,6 +74,13 @@ public class VmAttachL3NetworkToNicFlow implements Flow {
             @Override
             public void done() {
                 if (errorCodeList.isEmpty()) {
+                    /* refresh the spec.destNics because there is new l3 network attached to nic */
+                    List<VmNicInventory> nics = new ArrayList<>();
+                    for (VmNicInventory nic : spec.getDestNics()) {
+                        VmNicVO nicVO = dbf.findByUuid(nic.getUuid(), VmNicVO.class);
+                        nics.add(VmNicInventory.valueOf(nicVO));
+                    }
+                    spec.setDestNics(nics);
                     trigger.next();
                 } else {
                     trigger.fail(errorCodeList.get(0));
