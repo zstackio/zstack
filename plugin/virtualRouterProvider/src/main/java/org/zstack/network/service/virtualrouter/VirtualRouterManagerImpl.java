@@ -871,7 +871,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             @Override
             public void run(final SyncTaskChain chain) {
                 final GLock lock = new GLock(syncName, TimeUnit.HOURS.toSeconds(1));
-                lock.setSeparateThreadEnabled(false);
+                lock.setAlsoUseMemoryLock(false);
                 lock.lock();
                 acquireVirtualRouterVmInternal(struct, new ReturnValueCompletion<VirtualRouterVmInventory>(chain, completion) {
                     @Override
