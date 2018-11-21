@@ -5,6 +5,10 @@ import org.zstack.compute.vm.VmGlobalConfig
 import org.zstack.compute.vm.VmQuotaConstant
 import org.zstack.compute.vm.VmSystemTags
 import org.zstack.core.db.DatabaseFacade
+import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
+import org.zstack.header.allocator.HostCapacityVO
+import org.zstack.header.allocator.HostCapacityVO_
 import org.zstack.header.host.HostVO
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.header.vm.VmInstanceState
@@ -15,6 +19,7 @@ import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.InstanceOfferingInventory
+import org.zstack.sdk.KVMHostInventory
 import org.zstack.sdk.SystemTagInventory
 import org.zstack.sdk.UpdateVmInstanceAction
 import org.zstack.sdk.VmInstanceInventory
@@ -187,7 +192,66 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
             testUpdateCpuOrMemoryWhenVMisUnknownOrDestroy()
             testDecreaseVmCpuAndMemoryReturnFail()
             testVmChangeCpuMemoryQuota()
+            testVmChangeCpuMemoryWhenHostAvailableIsZero()
         }
+    }
+
+    /**
+     * Test allocate host capacity when cpu/memory on available but require 0 should success
+     * 1. Create vm
+     * 2. Make host available memory to 0
+     * 3. Increase vm cpu success
+     * 4. Free host available capacity
+     * 5. Make host available cpu to 0
+     * 6. Increase vm memory success
+     */
+    void testVmChangeCpuMemoryWhenHostAvailableIsZero() {
+        def image = env.inventoryByName("image1")
+        def l3 = env.inventoryByName("l3")
+        def instance = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
+        def kvm = env.inventoryByName("kvm") as KVMHostInventory
+
+        def capacityVm = createVmInstance {
+            name = "cap"
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3.uuid]
+            instanceOfferingUuid = instance.uuid
+        } as VmInstanceInventory
+
+        def memoryBefore = Q.New(HostCapacityVO.class)
+                .select(HostCapacityVO_.availableMemory)
+                .eq(HostCapacityVO_.uuid, kvm.uuid)
+                .findValue()
+        SQL.New(HostCapacityVO.class)
+                .eq(HostCapacityVO_.uuid, kvm.uuid)
+                .set(HostCapacityVO_.availableMemory, 0L).update()
+
+        updateVmInstance {
+            uuid = capacityVm.uuid
+            cpuNum = instance.cpuNum + 1
+        }
+
+        SQL.New(HostCapacityVO.class)
+                .eq(HostCapacityVO_.uuid, kvm.uuid)
+                .set(HostCapacityVO_.availableMemory, memoryBefore).update()
+
+
+        def cpuBefore = Q.New(HostCapacityVO.class)
+                .select(HostCapacityVO_.availableCpu)
+                .eq(HostCapacityVO_.uuid, kvm.uuid)
+                .findValue()
+        SQL.New(HostCapacityVO.class)
+                .eq(HostCapacityVO_.uuid, kvm.uuid)
+                .set(HostCapacityVO_.availableCpu, 0L).update()
+
+        updateVmInstance {
+            uuid = capacityVm.uuid
+            memorySize = instance.memorySize + SizeUnit.GIGABYTE.toByte(1)
+        }
+
+        SQL.New(HostCapacityVO.class)
+                .eq(HostCapacityVO_.uuid, kvm.uuid)
+                .set(HostCapacityVO_.availableCpu, cpuBefore).update()
     }
 
     void testVmChangeCpuMemoryQuota() {

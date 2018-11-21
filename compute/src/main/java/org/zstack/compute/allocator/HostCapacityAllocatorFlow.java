@@ -30,8 +30,8 @@ public class HostCapacityAllocatorFlow extends AbstractHostAllocatorFlow {
 
     private List<HostVO> allocate(List<HostVO> vos, long cpu, long memory) {
         List<HostVO> ret = vos.stream()
-                .filter(hvo -> hvo.getCapacity().getAvailableCpu() >= cpu
-                        && ratioMgr.calculateHostAvailableMemoryByRatio(hvo.getUuid(), hvo.getCapacity().getAvailableMemory()) >= memory)
+                .filter(hvo -> (cpu == 0 || hvo.getCapacity().getAvailableCpu() >= cpu)
+                        && (memory == 0 || ratioMgr.calculateHostAvailableMemoryByRatio(hvo.getUuid(), hvo.getCapacity().getAvailableMemory()) >= memory))
                 .collect(Collectors.toList());
 
         return ret;
