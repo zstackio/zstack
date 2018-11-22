@@ -20,7 +20,6 @@ DELETE FROM `zstack`.`BaremetalImageCacheVO`;
 ALTER TABLE `zstack`.`BaremetalImageCacheVO` ADD COLUMN `pxeServerUuid` varchar(32) NOT NULL;
 ALTER TABLE `zstack`.`BaremetalImageCacheVO` ADD CONSTRAINT fkBaremetalImageCacheVOBaremetalPxeServerVO FOREIGN KEY (pxeServerUuid) REFERENCES BaremetalPxeServerVO (uuid) ON DELETE CASCADE;
 
-UPDATE `zstack`.`BaremetalChassisVO` SET state = 'NoPxeServer';
 ALTER TABLE `zstack`.`BaremetalChassisVO` ADD COLUMN `pxeServerUuid` varchar(32) DEFAULT NULL;
 ALTER TABLE `zstack`.`BaremetalChassisVO` ADD CONSTRAINT fkBaremetalChassisVOBaremetalPxeServerVO FOREIGN KEY (pxeServerUuid) REFERENCES BaremetalPxeServerVO (uuid) ON DELETE SET NULL;
 ALTER TABLE `zstack`.`BaremetalInstanceVO` ADD COLUMN `pxeServerUuid` varchar(32) DEFAULT NULL;
