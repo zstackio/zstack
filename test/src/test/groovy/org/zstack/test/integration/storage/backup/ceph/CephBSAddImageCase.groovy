@@ -1,6 +1,6 @@
-
 package org.zstack.test.integration.storage.backup.ceph
 
+import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
 import org.zstack.header.image.*
@@ -9,17 +9,20 @@ import org.zstack.header.storage.backup.BackupStorageVO_
 import org.zstack.sdk.BackupStorageInventory
 import org.zstack.sdk.ImageInventory
 import org.zstack.storage.ceph.backup.CephBackupStorageBase
+import org.zstack.storage.ceph.backup.CephBackupStorageMonVO
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
+import org.zstack.utils.gson.JSONObjectUtil
 
 /**
  * Created by lining on 2017/3/31.
  */
 class CephBSAddImageCase extends SubCase{
-
     EnvSpec env
+    int failCount = 0
+    final bsMonsCount = 2
 
     @Override
     void setup() {
@@ -59,7 +62,7 @@ class CephBSAddImageCase extends SubCase{
                 availableCapacity= SizeUnit.GIGABYTE.toByte(100)
                 url = "/bk"
                 fsid ="7ff218d9-f525-435f-8a40-3618d1772a64"
-                monUrls = ["root:password@localhost/?monPort=7777"]
+                monUrls = ["root:password@localhost/?monPort=7777", "root:password@127.0.0.2/?monPort=7777"]
 
                 image {
                     name = "test-iso"
@@ -76,10 +79,26 @@ class CephBSAddImageCase extends SubCase{
     @Override
     void test() {
         env.create {
+            simulatorEnv()
             testImageBackupStorageRefVOWhenAddImage()
             testUploadImage()
             testAddImageButBSHasNoAvailableCapacity()
+        }
+    }
 
+    void simulatorEnv() {
+        List<CephBackupStorageMonVO> mons = Q.New(CephBackupStorageMonVO.class).list()
+        env.afterSimulator(CephBackupStorageBase.DOWNLOAD_IMAGE_PATH) { rsp, HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, CephBackupStorageBase.DownloadCmd.class)
+            if (cmd.url.startsWith("file:/")) {
+                if (++failCount < bsMonsCount) {
+                    rsp.setError("on purpose")
+                } else {
+                    failCount = 0
+                }
+            }
+
+            return rsp
         }
     }
 
