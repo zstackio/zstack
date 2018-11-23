@@ -9,6 +9,7 @@ import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
 import org.zstack.core.db.*;
+import org.zstack.core.progress.ProgressReportService;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
@@ -62,6 +63,8 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
     private ThreadFacade thdf;
     @Autowired
     private TagManager tagMgr;
+    @Autowired
+    private ProgressReportService progRpt;
     @Autowired
     private transient ResourceDestinationMaker destinationMaker;
 
@@ -271,6 +274,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             vo = dbf.findByUuid(msg.getResourceUuid(), LongJobVO.class);
             vo.setApiId(ThreadContext.getImmutableContext().get(Constants.THREAD_CONTEXT_API));
             vo.setState(LongJobState.Waiting);
+            vo.setExecuteTime(null);
             vo.setJobResult(null);
             Timestamp now = Timestamp.valueOf(LocalDateTime.now());
             vo.setCreateDate(now);
@@ -396,7 +400,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
 
         dbf.installEntityLifeCycleCallback(LongJobVO.class, EntityEvent.PRE_UPDATE, (evt, o) -> {
             LongJobVO job = (LongJobVO) o;
-            if (jobCompleted(job) && job.getExecuteTime() == null) {
+            if (job.getExecuteTime() == null && jobCompleted(job)) {
                 long time = (System.currentTimeMillis() - job.getCreateDate().getTime()) / 1000;
                 job.setExecuteTime(time);
                 logger.info(String.format("longjob [uuid:%s] set execute time:%d", job.getUuid(), time));
