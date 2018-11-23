@@ -108,9 +108,25 @@ public abstract class AbstractAction {
         initializeParametersIfNot();
 
         try {
+            boolean sessionIdFound = false;
+            boolean accessKeyIdFound = false;
+            boolean accessKeySecretFound = false;
+            boolean isSuppressCredentialCheck = getNonAPIParameterMap().get(Constants.IS_SUPPRESS_CREDENTIAL_CHECK) != null;
             for (Parameter p : getParameterMap().values()) {
                 Object value = p.field.get(this);
                 Param at = p.annotation;
+
+                if (p.field.getName().equals(Constants.SESSION_ID) && value != null) {
+                    sessionIdFound = true;
+                }
+
+                if (p.field.getName().equals(Constants.ACCESS_KEY_KEYID) && value != null) {
+                    accessKeyIdFound = true;
+                }
+
+                if (p.field.getName().equals(Constants.ACCESS_KEY_KEY_SECRET) && value != null) {
+                    accessKeySecretFound = true;
+                }
 
                 if (at.required() && value == null) {
                     throw new ApiException(String.format("missing mandatory field[%s]", p.field.getName()));
@@ -202,6 +218,11 @@ public abstract class AbstractAction {
 
                     }
                 }
+            }
+
+            /* if SuppressCredentialCheck is not set, sessionId or accessKey must be provided */
+            if (!isSuppressCredentialCheck && !sessionIdFound && !(accessKeyIdFound && accessKeySecretFound)) {
+                throw new ApiException(String.format("sessionId or accessKey must be provided"));
             }
         } catch (ApiException e) {
             throw e;

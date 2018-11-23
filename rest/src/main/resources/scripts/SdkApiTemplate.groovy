@@ -194,8 +194,21 @@ class SdkApiTemplate implements SdkTemplate {
 
         if (!apiMessageClass.isAnnotationPresent(SuppressCredentialCheck.class)) {
             output.add("""\
-    @Param(required = true)
+    @Param(required = false)
     public String sessionId;
+""")
+            output.add("""\
+    @Param(required = false)
+    public String accessKeyId;
+""")
+            output.add("""\
+    @Param(required = false)
+    public String accessKeySecret;
+""")
+        } else {
+            output.add("""\
+    @NonAPIParam
+    public boolean isSuppressCredentialCheck = true;
 """)
         }
 
