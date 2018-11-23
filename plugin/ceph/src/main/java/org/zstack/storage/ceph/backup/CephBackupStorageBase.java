@@ -116,6 +116,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
         }
 
         public void setError(String error) {
+            this.success = false;
             this.error = error;
         }
 
@@ -637,70 +638,111 @@ public class CephBackupStorageBase extends BackupStorageBase {
     }
 
     private <T extends AgentResponse> void httpCall(final String path, final AgentCommand cmd, final Class<T> retClass, final ReturnValueCompletion<T> callback, TimeUnit unit, long timeout) {
-        cmd.setFsid(getSelf().getFsid());
-        cmd.setUuid(self.getUuid());
+        new HttpCaller<>(path, cmd, retClass, callback, unit, timeout).call();
+    }
 
-        final List<CephBackupStorageMonBase> mons = new ArrayList<CephBackupStorageMonBase>();
-        for (CephBackupStorageMonVO monvo : getSelf().getMons()) {
-            if (monvo.getStatus() == MonStatus.Connected) {
+    protected class HttpCaller<T extends AgentResponse> {
+        private Iterator<CephBackupStorageMonBase> it;
+        private List<ErrorCode> errorCodes = new ArrayList<ErrorCode>();
+
+        private final String path;
+        private final AgentCommand cmd;
+        private final Class<T> retClass;
+        private final ReturnValueCompletion<T> callback;
+        private final TimeUnit unit;
+        private final long timeout;
+
+        private boolean tryNext = false;
+
+        HttpCaller(String path, AgentCommand cmd, Class<T> retClass, ReturnValueCompletion<T> callback) {
+            this(path, cmd, retClass, callback, null, 0);
+        }
+
+        HttpCaller(String path, AgentCommand cmd, Class<T> retClass, ReturnValueCompletion<T> callback, TimeUnit unit, long timeout) {
+            this.path = path;
+            this.cmd = cmd;
+            this.retClass = retClass;
+            this.callback = callback;
+            this.unit = unit;
+            this.timeout = timeout;
+        }
+
+        void call() {
+            it = prepareMons().iterator();
+            prepareCmd();
+            doCall();
+        }
+
+        HttpCaller<T> tryNext() {
+            this.tryNext = true;
+            return this;
+        }
+
+        private void prepareCmd() {
+            cmd.uuid = self.getUuid();
+            cmd.fsid = getSelf().getFsid();
+        }
+
+        private List<CephBackupStorageMonBase> prepareMons() {
+            final List<CephBackupStorageMonBase> mons = new ArrayList<CephBackupStorageMonBase>();
+            for (CephBackupStorageMonVO monvo : getSelf().getMons()) {
                 mons.add(new CephBackupStorageMonBase(monvo));
             }
+
+            Collections.shuffle(mons);
+
+            mons.removeIf(it -> it.getSelf().getStatus() != MonStatus.Connected);
+            if (mons.isEmpty()) {
+                throw new OperationFailureException(
+                        operr("all ceph mons are Disconnected in ceph backup storage[uuid:%s]", self.getUuid())
+                );
+            }
+            return mons;
         }
 
-        if (mons.isEmpty()) {
-            throw new OperationFailureException(
-                    operr("all ceph mons are Disconnected in ceph backup storage[uuid:%s]", self.getUuid())
-            );
-        }
+        private void doCall() {
+            if (!it.hasNext()) {
+                callback.fail(operr("all mons failed to execute http call[%s], errors are %s",
+                        path, JSONObjectUtil.toJsonString(errorCodes)));
 
-        Collections.shuffle(mons);
+                return;
+            }
 
-        class HttpCaller {
-            Iterator<CephBackupStorageMonBase> it = mons.iterator();
-            List<ErrorCode> errorCodes = new ArrayList<ErrorCode>();
+            CephBackupStorageMonBase base = it.next();
 
-            void call() {
-                if (!it.hasNext()) {
-                    callback.fail(operr("all mons failed to execute http call[%s], errors are %s", path, JSONObjectUtil.toJsonString(errorCodes)));
+            ReturnValueCompletion<T> completion = new ReturnValueCompletion<T>(callback) {
+                @Override
+                public void success(T ret) {
+                    if (!ret.success) {
+                        if (tryNext) {
+                            doCall();
+                        } else {
+                            callback.fail(operr("operation error, because:%s", ret.error));
+                        }
+                        return;
+                    }
 
-                    return;
+                    if (!(cmd instanceof InitCmd)) {
+                        updateCapacityIfNeeded(ret);
+                    }
+                    callback.success(ret);
                 }
 
-                CephBackupStorageMonBase base = it.next();
-                ReturnValueCompletion<T> completion = new ReturnValueCompletion<T>(callback) {
-                    @Override
-                    public void success(T ret) {
-                        if (!ret.success) {
-                            // not an IO error but an operation error, return it
-                            String details = String.format("[mon:%s], %s", base.getSelf().getHostname(), ret.error);
-                            callback.fail(operr(details));
-                        } else {
-                            if (!(cmd instanceof InitCmd)) {
-                                updateCapacityIfNeeded(ret);
-                            }
-
-                            callback.success(ret);
-                        }
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        String details = String.format("[mon:%s], %s", base.getSelf().getHostname(), errorCode.getDetails());
-                        errorCode.setDetails(details);
-                        errorCodes.add(errorCode);
-                        call();
-                    }
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    String details = String.format("[mon:%s], %s", base.getSelf().getHostname(), errorCode.getDetails());
+                    errorCode.setDetails(details);
+                    errorCodes.add(errorCode);
+                    doCall();
+                }
                 };
 
-                if (unit == null) {
-                    base.httpCall(path, cmd, retClass, completion);
-                } else {
-                    base.httpCall(path, cmd, retClass, completion, unit, timeout);
-                }
+            if (unit == null) {
+                base.httpCall(path, cmd, retClass, completion);
+            } else {
+                base.httpCall(path, cmd, retClass, completion, unit, timeout);
             }
         }
-
-        new HttpCaller().call();
     }
 
     public CephBackupStorageBase(BackupStorageVO self) {
@@ -950,7 +992,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                 .update();
 
         final DownloadImageReply reply = new DownloadImageReply();
-        httpCall(DOWNLOAD_IMAGE_PATH, cmd, DownloadRsp.class, new ReturnValueCompletion<DownloadRsp>(msg) {
+        HttpCaller<DownloadRsp> caller = new HttpCaller<>(DOWNLOAD_IMAGE_PATH, cmd, DownloadRsp.class, new ReturnValueCompletion<DownloadRsp>(msg) {
             @Override
             public void fail(ErrorCode err) {
                 reply.setError(err);
@@ -975,6 +1017,12 @@ public class CephBackupStorageBase extends BackupStorageBase {
                 bus.reply(msg, reply);
             }
         });
+
+        if (cmd.url.startsWith("file:///") || cmd.url.startsWith("/")) {
+            caller.tryNext();
+        }
+
+        caller.call();
     }
 
     @Override
