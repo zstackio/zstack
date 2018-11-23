@@ -79,6 +79,8 @@ class EnvSpec implements Node, ApiHelper {
     protected ConcurrentHashMap<Class, List<Tuple>> messageHandlers = [:]
     protected ConcurrentHashMap<Class, List<Closure>> notifiersOfReceivedMessages = [:]
     private ConcurrentHashMap<Class, List<Tuple>> defaultMessageHandlers = [:]
+    private ConcurrentHashMap<String, List<Tuple>> httpConditionHandlers = [:]
+    private ConcurrentHashMap<String, List<Tuple>> defaultHttpConditionHandlers = [:]
     private static RestTemplate restTemplate
     protected static Set<Class> simulatorClasses = Platform.reflections.getSubTypesOf(Simulator.class)
 
@@ -221,10 +223,16 @@ class EnvSpec implements Node, ApiHelper {
         messageHandlers.putAll(defaultMessageHandlers)
     }
 
+    void cleanHttpConditionHandlers() {
+        httpConditionHandlers.clear()
+        httpConditionHandlers.putAll(defaultHttpConditionHandlers)
+    }
+
     void cleanSimulatorAndMessageHandlers() {
         cleanSimulatorHandlers()
         cleanAfterSimulatorHandlers()
         cleanMessageHandlers()
+        cleanHttpConditionHandlers()
     }
 
     void identities(@DelegatesTo(strategy = Closure.DELEGATE_FIRST, value = IdentitySpec.class) Closure c) {
@@ -560,6 +568,8 @@ class EnvSpec implements Node, ApiHelper {
         defaultHttpPostHandlers.putAll(httpPostHandlers)
         defaultMessageHandlers = [:]
         defaultMessageHandlers.putAll(messageHandlers)
+        defaultHttpConditionHandlers = [:]
+        defaultHttpConditionHandlers.putAll(httpConditionHandlers)
 
         if (cl != null) {
             cl.delegate = this
@@ -786,19 +796,53 @@ class EnvSpec implements Node, ApiHelper {
         httpPostHandlers[path] = c
     }
 
+    void conditionSimulator(String path, Closure condition, Closure c) {
+        def lst = httpConditionHandlers[path]
+        if (lst == null) {
+            lst = []
+            httpConditionHandlers[path] = lst
+        } else {
+            // deduplication
+            def ele = lst.find { it -> it.get(0) == condition }
+            if (ele != null) {
+                lst.remove(ele)
+            }
+        }
+
+        lst.add(new Tuple(condition, c))
+    }
+
     void mockFactory(Class clz, Closure c) {
         Test.functionForMockTestObjectFactory.put(clz, c)
         cleanupClosures.add({ Test.functionForMockTestObjectFactory.remove(clz) })
     }
 
-    void handleSimulatorHttpRequests(HttpServletRequest req, HttpServletResponse rsp) {
-        def url = req.getRequestURI()
-        def handler = httpHandlers[url]
-        if (handler == null) {
-            rsp.sendError(HttpStatus.NOT_FOUND.value(), "no handler found for the path $url")
-            return
+    Closure conditionHandler(List<Tuple> handlers, HttpEntity entity, HttpServletRequest req) {
+        Closure handler
+        handlers.each {
+            if (it.get(0) == null) {
+                handler = it.get(1)
+                return
+            }
         }
 
+        if (handler != null) {
+            return (Closure)handler
+        }
+
+        handlers.each {
+            Closure cond = it.get(0)
+
+            if (cond != null && cond(entity)) {
+                handler = it.get(1)
+                return
+            }
+        }
+
+        return handler == null ? null : (Closure)handler
+    }
+
+    HttpEntity<String> getEntityFromRequest(HttpServletRequest req) {
         StringBuilder sb = new StringBuilder()
         String line
         while ((line = req.getReader().readLine()) != null) {
@@ -811,8 +855,30 @@ class EnvSpec implements Node, ApiHelper {
             String name = e.nextElement().toString()
             header.add(name, req.getHeader(name))
         }
+        return new HttpEntity<String>(sb.toString(), header)
+    }
 
-        def entity = new HttpEntity<String>(sb.toString(), header)
+    void handleConditionSimulatorHttpRequests(HttpServletRequest req, HttpEntity entity, HttpServletResponse rsp) {
+        def url = req.getRequestURI()
+        if (httpConditionHandlers[url] == null || httpConditionHandlers[url].isEmpty()) {
+            rsp.sendError(HttpStatus.NOT_FOUND.value(), "no handler found for the path $url")
+            return
+        }
+        def handler = conditionHandler(httpConditionHandlers[url], entity, req)
+
+        handleNoConditionSimulatorHttpRequests(req, handler, entity, rsp)
+    }
+
+    void handleNoConditionSimulatorHttpRequests(HttpServletRequest req, Closure handler, HttpEntity entity, HttpServletResponse rsp) {
+        def url = req.getRequestURI()
+
+        if (handler == null) {
+            def warning = "cannot find handlers for[$url] satisfied for their conditions"
+            logger.warn(warning)
+            rsp.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), warning)
+            return
+        }
+
         try {
             def ret
             if (handler.maximumNumberOfParameters == 0) {
@@ -845,6 +911,17 @@ class EnvSpec implements Node, ApiHelper {
         } catch (Throwable t) {
             logger.warn("error happened when handling $url", t)
             rsp.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), t.message)
+        }
+    }
+
+    void handleSimulatorHttpRequests(HttpServletRequest req, HttpServletResponse rsp) {
+        def url = req.getRequestURI()
+        def entity = getEntityFromRequest(req)
+        def handler = httpHandlers[url]
+        if (handler == null) {
+            handleConditionSimulatorHttpRequests(req, entity, rsp)
+        } else {
+            handleNoConditionSimulatorHttpRequests(req, handler, entity, rsp)
         }
     }
 

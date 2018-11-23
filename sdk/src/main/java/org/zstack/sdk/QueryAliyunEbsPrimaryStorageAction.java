@@ -65,7 +65,7 @@ public class QueryAliyunEbsPrimaryStorageAction extends QueryAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/primary-storage/aliyun-ebs";
+        info.path = "/primary-storage/aliyun/ebs";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

@@ -4,4 +4,6 @@ public enum HybridType {
 	aliyun,
 	privateAliyun,
 	daho,
+	AliyunNAS,
+	AliyunEBS,
 }

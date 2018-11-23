@@ -40,6 +40,14 @@ abstract class Spec implements Node, CreateAction, Tag, ApiHelper, DeleteAction 
         envSpec.simulator(path, cl)
     }
 
+    void conditionSimulator(String path, Closure cond, Closure cl) {
+        envSpec.conditionSimulator(path, cond, cl)
+    }
+
+    void mockFactory(Class clz, Closure c) {
+        envSpec.mockFactory(clz, c)
+    }
+
     final static void checkHttpCallType(HttpEntity<String> e, boolean isSync) {
         if (isSync) {
             assert e.getHeaders().getFirst(RESTConstant.TASK_UUID) == null: "you cannot send a KVMHostAsyncHttpCallMsg to a sync uri in agent"

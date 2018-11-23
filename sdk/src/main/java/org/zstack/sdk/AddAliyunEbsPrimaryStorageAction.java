@@ -25,20 +25,17 @@ public class AddAliyunEbsPrimaryStorageAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String appName;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String panguPartitionUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String identityZoneUuid;
+
+    @Param(required = false, validValues = {"io7","io8"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String defaultIoType;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String aZone;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String oceanUrl;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String secretKey;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String riverClusterId;
+    public java.lang.String tdcConfigContent;
 
     @Param(required = true, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String url;
@@ -112,7 +109,7 @@ public class AddAliyunEbsPrimaryStorageAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/primary-storage/aliyun-ebs";
+        info.path = "/primary-storage/aliyun/ebs";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
