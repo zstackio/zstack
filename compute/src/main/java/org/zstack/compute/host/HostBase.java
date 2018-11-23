@@ -312,6 +312,45 @@ public abstract class HostBase extends AbstractHost {
                     }
                 });
 
+                flow(new NoRollbackFlow() {
+                    String __name__ = "run-extension-point-after-maintenance";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        runExtensionPoints(pluginRgty.getExtensionList(HostAfterMaintenanceExtensionPoint.class).iterator(), new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+
+                    private void runExtensionPoints(Iterator<HostAfterMaintenanceExtensionPoint> it, Completion completion1) {
+                        if (!it.hasNext()) {
+                            completion1.success();
+                            return;
+                        }
+
+                        HostAfterMaintenanceExtensionPoint ext = it.next();
+                        ext.afterMaintenanceExtensionPoint(getSelfInventory(), new Completion(completion1) {
+                            @Override
+                            public void success() {
+                                runExtensionPoints(it, completion1);
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                completion1.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
                 done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
