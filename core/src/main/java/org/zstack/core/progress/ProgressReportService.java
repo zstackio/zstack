@@ -20,6 +20,7 @@ import org.zstack.header.AbstractService;
 import org.zstack.header.Constants;
 import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.core.progress.*;
+import org.zstack.header.longjob.APISubmitLongJobEvent;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.*;
 import org.zstack.header.rest.RESTFacade;
@@ -30,6 +31,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Query;
+import javax.persistence.Tuple;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.Future;
@@ -156,19 +158,11 @@ public class ProgressReportService extends AbstractService implements Management
             @Override
             @ExceptionSafe
             public void beforePublishEvent(Event evt) {
-                if (!(evt instanceof APIEvent)) {
+                if (!(evt instanceof APIEvent) || evt instanceof APISubmitLongJobEvent) {
                     return;
                 }
 
-                new SQLBatch() {
-                    @Override
-                    protected void scripts() {
-                        Query query = dbf.getEntityManager().createNativeQuery("select unix_timestamp()");
-                        Long current = ((BigInteger) query.getSingleResult()).longValue() * 1000;
-                        sql(TaskProgressVO.class).eq(TaskProgressVO_.apiId, ((APIEvent) evt).getApiId()).set(TaskProgressVO_.timeToDelete,
-                                current + TimeUnit.SECONDS.toMillis(DELETE_DELAY)).update();
-                    }
-                }.execute();
+                cleanTaskProgress(((APIEvent) evt).getApiId());
             }
         });
 
@@ -182,6 +176,18 @@ public class ProgressReportService extends AbstractService implements Management
         startCleanupThread();
 
         return true;
+    }
+
+    @Transactional
+    public void cleanTaskProgress(String apiId) {
+        if (apiId == null) {
+            return;
+        }
+
+        Query query = dbf.getEntityManager().createNativeQuery("select unix_timestamp()");
+        Long current = ((BigInteger) query.getSingleResult()).longValue() * 1000;
+        SQL.New(TaskProgressVO.class).eq(TaskProgressVO_.apiId, apiId).set(TaskProgressVO_.timeToDelete,
+                current + TimeUnit.SECONDS.toMillis(DELETE_DELAY)).update();
     }
 
     @Override
@@ -459,24 +465,29 @@ public class ProgressReportService extends AbstractService implements Management
             @Deferred
             public boolean run() {
                 // get current progress
-                String res = SQL.New("SELECT content FROM TaskProgressVO" +
+                Tuple res = SQL.New("SELECT content, timeToDelete FROM TaskProgressVO" +
                         " WHERE apiId = :apiId" +
-                        " ORDER BY CAST(content AS int) DESC")
+                        " ORDER BY CAST(content AS int) DESC", Tuple.class)
                         .param("apiId", apiId)
                         .limit(1)
                         .find();
 
-                int currentPecent = res == null ? 0 : new Double(res).intValue();
+                if (res != null && res.get(1) != null) {
+                    // FIXME: race condition here.
+                    return true;
+                }
+
+                int currentPercent = res == null ? 0 : new Double(res.get(0, String.class)).intValue();
 
                 Runnable cleanup = saveThreadContext();
                 Defer.defer(cleanup);
                 ThreadContext.put(THREAD_CONTEXT_API, apiId);
                 ThreadContext.put(THREAD_CONTEXT_TASK_NAME, taskName);
-                if (endPercent <= currentPecent) {
+                if (endPercent <= currentPercent) {
                     reportProgress(String.valueOf(endPercent));
                     return true;
                 } else {
-                    ProgressReportService.reportProgress(String.valueOf(currentPecent + 1));
+                    reportProgress(String.valueOf(currentPercent + 1));
                     return false;
                 }
             }
