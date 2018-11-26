@@ -233,13 +233,20 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
             }
         }
 
-        Long apiTimeout = (Long) TaskContext.getTaskContextItem(TASK_CONTEXT_API_TIMEOUT);
+        Long apiTimeout = parseObjectToLong(TaskContext.getTaskContextItem(TASK_CONTEXT_API_TIMEOUT));
         if (apiTimeout != null) {
             return apiTimeout;
         } else {
             // this is an internal message
             return parseTimeout(ApiTimeoutGlobalProperty.INTERNAL_MESSAGE_TIMEOUT);
         }
+    }
+
+    private static Long parseObjectToLong(Object o) {
+        if (o == null) {
+            return null;
+        }
+        return Long.parseLong(String.format(o.toString().split("\\.")[0]));
     }
 
     @Override
