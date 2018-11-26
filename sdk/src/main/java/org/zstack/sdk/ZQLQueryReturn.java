@@ -12,6 +12,14 @@ public class ZQLQueryReturn  {
         return this.inventories;
     }
 
+    public java.util.List inventoryCounts;
+    public void setInventoryCounts(java.util.List inventoryCounts) {
+        this.inventoryCounts = inventoryCounts;
+    }
+    public java.util.List getInventoryCounts() {
+        return this.inventoryCounts;
+    }
+
     public java.lang.Long total;
     public void setTotal(java.lang.Long total) {
         this.total = total;

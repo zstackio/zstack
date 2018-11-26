@@ -16,6 +16,7 @@ public class CountVisitor extends ZQLBaseVisitor<ASTNode.Query> {
         q.setOrderBy(ctx.orderBy() == null ? null : ctx.orderBy().accept(new OrderByVisitor()));
         q.setLimit(ctx.limit() == null ? null : ctx.limit().accept(new LimitVisitor()));
         q.setOffset(ctx.offset() == null ? null : ctx.offset().accept(new OffsetVisitor()));
+        q.setGroupBy(ctx.groupBy() == null ? null : ctx.groupBy().accept(new GroupByVisitor()));
         q.setName(ctx.namedAs() == null ? null : ctx.namedAs().accept(new NamedAsVisitor()));
         return q;
     }

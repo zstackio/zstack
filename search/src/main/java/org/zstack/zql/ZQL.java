@@ -41,6 +41,9 @@ import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import java.util.stream.LongStream;
+
+import static org.zstack.utils.CollectionDSL.e;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class ZQL {
@@ -93,29 +96,33 @@ public class ZQL {
         List ret = new ArrayList();
         if (astResult.targetFieldNames != null && !astResult.targetFieldNames.isEmpty()) {
             vos.forEach(it -> {
-                try {
-                    ZQLMetadata.InventoryMetadata inventoryMetadata = astResult.inventoryMetadata;
-                    Object inv = inventoryMetadata.selfInventoryClass.getConstructor().newInstance();
-                    if (it instanceof Object[]) {
-                        Object[] fieldValues = (Object[]) it;
-                        for (int i = 0; i < astResult.targetFieldNames.size(); i++) {
-                            String fieldName = astResult.targetFieldNames.get(i);
-                            BeanUtils.setProperty(inv, fieldName, inventoryMetadata.toInventoryFieldObject(fieldName, fieldValues[i]));
-                        }
-                    } else {
-                        String fieldName =  astResult.targetFieldNames.get(0);
-                        BeanUtils.setProperty(inv, fieldName, astResult.inventoryMetadata.toInventoryFieldObject(fieldName, it));
-                    }
-                    ret.add(inv);
-                } catch (Exception e) {
-                    throw new CloudRuntimeException(e);
-                }
+                ret.add(entityVOtoInventory(it));
             });
         } else {
             vos.forEach(it -> ret.add(ToInventory.toInventory(it)));
         }
 
         return ret;
+    }
+
+    private Object entityVOtoInventory(Object vo) {
+        try {
+            ZQLMetadata.InventoryMetadata inventoryMetadata = astResult.inventoryMetadata;
+            Object inv = inventoryMetadata.selfInventoryClass.getConstructor().newInstance();
+            if (vo instanceof Object[]) {
+                Object[] fieldValues = (Object[]) vo;
+                for (int i = 0; i < astResult.targetFieldNames.size(); i++) {
+                    String fieldName = astResult.targetFieldNames.get(i);
+                    BeanUtils.setProperty(inv, fieldName, inventoryMetadata.toInventoryFieldObject(fieldName, fieldValues[i]));
+                }
+            } else {
+                String fieldName =  astResult.targetFieldNames.get(0);
+                BeanUtils.setProperty(inv, fieldName, astResult.inventoryMetadata.toInventoryFieldObject(fieldName, vo));
+            }
+            return inv;
+        } catch (Exception e) {
+            throw new CloudRuntimeException(e);
+        }
     }
 
     private static void callExtensions(ASTNode.Query node) {
@@ -236,15 +243,24 @@ public class ZQL {
                     @Override
                     protected void scripts() {
                         Query q = astResult.createCountQuery.apply(databaseFacade.getEntityManager());
-                        ret.count = (Long) q.getSingleResult();
+                        List results = q.getResultList();
+                        if (results.size() == 1 && results.get(0) instanceof Long) {
+                            ret.count = (Long)results.get(0);
+                        } else {
+                            List<Object[]> result = q.getResultList();
+                            int countIndex = result.isEmpty() ? 0 : result.get(0).length - 1;
+                            qr.inventoryCounts = result.stream().collect(Collectors.toMap(it -> entityVOtoInventory(it),
+                                    it -> (Long)it[countIndex]));
+
+                            Query totalCountQuery = astResult.createSimpleCountQuery.apply(databaseFacade.getEntityManager());
+                            ret.count = (Long) totalCountQuery.getSingleResult();
+                        }
                     }
                 }.execute();
 
                 qr.name = query.getName();
 
                 clean.run();
-
-                qr.inventories = ret.vos != null ? entityVOtoInventories(ret.vos) : null;
             } else if (ctx instanceof ZQLParser.QueryGrammarContext) {
                 ASTNode.Query query = ((ZQLParser.QueryGrammarContext) ctx).query().accept(new org.zstack.zql.ast.parser.visitors.QueryVisitor());
                 ReturnWithQueryNodeWrapper wrapper = new ReturnWithQueryNodeWrapper(query);
@@ -266,8 +282,8 @@ public class ZQL {
                         Query q = astResult.createJPAQuery.apply(databaseFacade.getEntityManager());
                         ret.vos = q.getResultList();
 
-                        if (astResult.createCountQuery != null) {
-                            q = astResult.createCountQuery.apply(databaseFacade.getEntityManager());
+                        if (astResult.createSimpleCountQuery != null) {
+                            q = astResult.createSimpleCountQuery.apply(databaseFacade.getEntityManager());
                             ret.count = (Long) q.getSingleResult();
                         }
                     }

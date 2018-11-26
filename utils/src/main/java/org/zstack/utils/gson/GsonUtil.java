@@ -31,6 +31,11 @@ public class GsonUtil {
         _gsonBuilder.registerTypeAdapter(clazz, creator);
         return this;
     }
+
+    public GsonUtil enableComplexMapKeySerialization() {
+        _gsonBuilder.enableComplexMapKeySerialization();
+        return this;
+    }
     
     public GsonUtil enableNullDecoder() {
         _gsonBuilder.serializeNulls();

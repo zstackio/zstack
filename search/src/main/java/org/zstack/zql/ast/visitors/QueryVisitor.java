@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 public class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
     private static final CLogger logger = Utils.getLogger(QueryVisitor.class);
 
-    private static Map<QueryVisitorPlugin.ClauseType, Class> plugins = new HashMap<>();
+    private static Map<QueryVisitorPlugin.ClauseType, Class<? extends QueryVisitorPlugin>> plugins = new HashMap<>();
 
     @StaticInit
     static void staticInit() {
@@ -41,13 +41,13 @@ public class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
     }
 
     private QueryVisitorPlugin getPlugin(QueryVisitorPlugin.ClauseType type, ASTNode.Query node) {
-        Class clz = plugins.get(type);
+        Class<? extends QueryVisitorPlugin> clz = plugins.get(type);
         if (clz == null) {
             throw new CloudRuntimeException(String.format("cannot find plugin for ClauseType[%s]", type));
         }
 
         try {
-            return (QueryVisitorPlugin) clz.getConstructor(ASTNode.Query.class).newInstance(node);
+            return clz.getConstructor(ASTNode.Query.class).newInstance(node);
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }
@@ -112,12 +112,12 @@ public class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
         }
 
         String groupBy = plugin.groupBy();
-        if (groupBy != null) {
+        if (groupBy != null && ctype != QueryVisitorPlugin.ClauseType.SIMPLE_COUNT) {
             sqlClauses.add(groupBy);
         }
 
         String orderBy = plugin.orderBy();
-        if (orderBy != null) {
+        if (orderBy != null && ctype != QueryVisitorPlugin.ClauseType.SIMPLE_COUNT) {
             sqlClauses.add(orderBy);
         }
 
@@ -147,13 +147,7 @@ public class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
         ret.sql = st.sql;
         ret.createJPAQuery = (EntityManager emgr) -> {
             Query q = emgr.createQuery(st.jpql);
-            if (st.limit != null) {
-                q.setMaxResults(st.limit);
-            }
-            if (st.offset != null) {
-                q.setFirstResult(st.offset);
-            }
-
+            setPaging(q, st);
             return q;
         };
 
@@ -161,10 +155,19 @@ public class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
             ret.returnWith = (List<ReturnWithResult>) node.getReturnWith().accept(new ReturnWithVisitor());
         }
 
-        if (countQuery || (ret.returnWith != null && ret.returnWith.stream().anyMatch(it->it.name.equals("total")))) {
+        if (countQuery || ret.returnWith != null && ret.returnWith.stream().anyMatch(it->it.name.equals("total"))) {
+            ret.createSimpleCountQuery = (EntityManager emgr) -> {
+                SQLText cst = makeSQL(node, QueryVisitorPlugin.ClauseType.SIMPLE_COUNT);
+                return emgr.createQuery(cst.jpql);
+            };
+        }
+
+        if (countQuery) {
             ret.createCountQuery = (EntityManager emgr) -> {
                 SQLText cst = makeSQL(node, QueryVisitorPlugin.ClauseType.COUNT);
-                return emgr.createQuery(cst.jpql);
+                Query q = emgr.createQuery(cst.jpql);
+                setPaging(q, cst);
+                return q;
             };
         }
 
@@ -174,5 +177,14 @@ public class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
         }
 
         return ret;
+    }
+
+    private void setPaging(Query q, SQLText st) {
+        if (st.limit != null) {
+            q.setMaxResults(st.limit);
+        }
+        if (st.offset != null) {
+            q.setFirstResult(st.offset);
+        }
     }
 }
