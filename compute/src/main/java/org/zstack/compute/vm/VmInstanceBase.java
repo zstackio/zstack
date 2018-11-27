@@ -3510,6 +3510,9 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void handle(final APIDetachL3NetworkFromVmMsg msg) {
+        VmNicVO vmNicVO = dbf.findByUuid(msg.getVmNicUuid(), VmNicVO.class);
+        String vmNicAccountUuid = acntMgr.getOwnerAccountUuidOfResource(vmNicVO.getUuid());
+
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
@@ -3576,6 +3579,13 @@ public class VmInstanceBase extends AbstractVmInstance {
                         evt.setInventory(VmInstanceInventory.valueOf(self));
                         bus.publish(evt);
                         chain.next();
+
+                        VmNicInventory vmNicInventory = VmNicInventory.valueOf(vmNicVO);
+                        VmNicCanonicalEvents.VmNicEventData vmNicEventData = new VmNicCanonicalEvents.VmNicEventData();
+                        vmNicEventData.setCurrentStatus(VmInstanceState.Destroyed.toString());
+                        vmNicEventData.setAccountUuid(vmNicAccountUuid);
+                        vmNicEventData.setInventory(vmNicInventory);
+                        evtf.fire(VmNicCanonicalEvents.VM_NIC_DELETED_PATH, vmNicEventData);
                     }
                 }).error(new FlowErrorHandler(msg) {
                     @Override
@@ -4372,6 +4382,14 @@ public class VmInstanceBase extends AbstractVmInstance {
                 self = dbf.reload(self);
                 evt.setInventory(VmInstanceInventory.valueOf(self));
                 bus.publish(evt);
+
+                VmNicInventory vmNicInventory = (VmNicInventory) data.get(vmNicInvKey);
+                VmNicCanonicalEvents.VmNicEventData vmNicEventData = new VmNicCanonicalEvents.VmNicEventData();
+                vmNicEventData.setCurrentStatus(self.getState().toString());
+                String vmNicAccountUuid = acntMgr.getOwnerAccountUuidOfResource(vmNicInventory.getUuid());
+                vmNicEventData.setAccountUuid(vmNicAccountUuid);
+                vmNicEventData.setInventory(vmNicInventory);
+                evtf.fire(VmNicCanonicalEvents.VM_NIC_CREATED_PATH, vmNicEventData);
             }
         }).error(new FlowErrorHandler(msg) {
             @Override
