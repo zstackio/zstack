@@ -18,6 +18,7 @@ import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.argerr;
 
+import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -246,7 +247,9 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
         if (o == null) {
             return null;
         }
-        return Long.parseLong(String.format(o.toString().split("\\.")[0]));
+        DecimalFormat df = new DecimalFormat("#");
+        df.setMaximumFractionDigits(0);
+        return Long.parseLong(df.format(o).split("\\.")[0]);
     }
 
     @Override
