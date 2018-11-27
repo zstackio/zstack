@@ -91,4 +91,11 @@
         <defaultValue>500</defaultValue>
         <type>java.lang.Integer</type>
     </config>
+    <config>
+        <category>host</category>
+        <name>host.maintenance.policy</name>
+        <description>the behavior of maintain a host, options are [JustMigrate, StopVmOnMigrationFailure]. JustMigrate: just try to migrate all vm on the host, if there is any migration failure, host will fail to change to maintenance state; StopVmOnMigrationFailure: when migrate vm from current host fail, try to stop vm on the host.</description>
+        <defaultValue>StopVmOnMigrationFailure</defaultValue>
+        <type>java.lang.String</type>
+    </config>
 </globalConfig>
