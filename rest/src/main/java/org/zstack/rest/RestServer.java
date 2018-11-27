@@ -251,7 +251,7 @@ public class RestServer implements Component, CloudBusEventListener {
             response.setError(evt.getError());
         }
 
-        String body = CloudBusGson.toJson(response);
+        String body = CloudBusGson.toJsonForHttpResponse(response);
         HttpUrl url = HttpUrl.parse(d.webHook);
         Request.Builder rb = new Request.Builder().url(url)
                 .post(RequestBody.create(JSON, body))
@@ -269,6 +269,7 @@ public class RestServer implements Component, CloudBusEventListener {
                 try {
                     if (requestLogger.isTraceEnabled()) {
                         StringBuilder sb = new StringBuilder(String.format("Call Web-Hook[%s] (to %s%s)", d.webHook, d.requestInfo.remoteHost, d.requestInfo.requestUrl));
+                        String body = CloudBusGson.toJson(response);
                         sb.append(String.format(" Body: %s", body));
 
                         requestLogger.trace(sb.toString());
