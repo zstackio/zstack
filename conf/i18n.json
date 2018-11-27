@@ -14664,14 +14664,14 @@
     "fileName": "src/zstack/./premium/v2v/src/main/java/org/zstack/v2v/V2VManagerImpl.java"
   },
   {
-    "raw": "invalid network bandwidth[%s], it must be greater than 8192",
-    "en_US": "invalid network bandwidth[{0}], it must be greater than 8192",
-    "zh_CN": "错误的网络带宽[{0}]，这个数字必须超过8192",
+    "raw": "invalid network bandwidth[%s], it must be greater than or equal to 8192",
+    "en_US": "invalid network bandwidth[{0}], it must be greater than or equal to 8192",
+    "zh_CN": "错误的网络带宽[{0}],这个数字必须大于等于8K",
     "arguments": [
       "bandwidth"
     ],
-    "line": 974,
-    "fileName": "src/zstack/./premium/v2v/src/main/java/org/zstack/v2v/V2VManagerImpl.java"
+    "line": 1018,
+    "fileName": "src/main/java/org/zstack/v2v/V2VManagerImpl.java"
   },
   {
     "raw": "networkInboundBandwidth execeds the max value 32G bps",
