@@ -2037,6 +2037,7 @@ public class KVMHost extends HostBase implements Host {
         return L2NetworkInventory.valueOf(l2vo);
     }
 
+    @Transactional(readOnly = true)
     private NicTO completeNicInfo(VmNicInventory nic) {
         /* all l3 networks of the nic has same l2 network */
         L2NetworkInventory l2inv = getL2NetworkTypeFromL3NetworkUuid(nic.getL3NetworkUuid());
@@ -2050,13 +2051,27 @@ public class KVMHost extends HostBase implements Host {
             String platform = q.findValue();
 
             to.setUseVirtio(ImagePlatform.valueOf(platform).isParaVirtualization());
-            String tagValue = VmSystemTags.CLEAN_TRAFFIC.getTokenByResourceUuid(nic.getVmInstanceUuid(), VmSystemTags.CLEAN_TRAFFIC_TOKEN);
-            if (Boolean.valueOf(tagValue) || (tagValue == null && VmGlobalConfig.VM_CLEAN_TRAFFIC.value(Boolean.class))) {
-                to.setIp(nic.getIp());
-            }
+            to.setIp(getCleanTrafficIp(nic));
         }
 
         return to;
+    }
+
+    private String getCleanTrafficIp(VmNicInventory nic) {
+        boolean isUserVm = Q.New(VmInstanceVO.class)
+                .eq(VmInstanceVO_.uuid, nic.getVmInstanceUuid()).select(VmInstanceVO_.type)
+                .findValue().equals(VmInstanceConstant.USER_VM_TYPE);
+
+        if (!isUserVm) {
+            return null;
+        }
+
+        String tagValue = VmSystemTags.CLEAN_TRAFFIC.getTokenByResourceUuid(nic.getVmInstanceUuid(), VmSystemTags.CLEAN_TRAFFIC_TOKEN);
+        if (Boolean.valueOf(tagValue) || (tagValue == null && VmGlobalConfig.VM_CLEAN_TRAFFIC.value(Boolean.class))) {
+            return nic.getIp();
+        }
+
+        return null;
     }
 
     private String getVolumeTOType(VolumeInventory vol) {
@@ -2156,9 +2171,6 @@ public class KVMHost extends HostBase implements Host {
         List<NicTO> nics = new ArrayList<>(spec.getDestNics().size());
         for (VmNicInventory nic : spec.getDestNics()) {
             NicTO to = completeNicInfo(nic);
-            if (!spec.getVmInventory().getType().equals(VmInstanceConstant.USER_VM_TYPE)) {
-                to.setIp("");
-            }
             nics.add(to);
         }
         nics = nics.stream().sorted(Comparator.comparing(NicTO::getDeviceId)).collect(Collectors.toList());
