@@ -58,3 +58,8 @@ CREATE TABLE IF NOT EXISTS `OssBucketDomainVO` (
 
 ALTER TABLE DataCenterVO ADD COLUMN `endpoint` VARCHAR(127) DEFAULT NULL;
 UPDATE GlobalConfigVO SET category='aliyunNas' WHERE category ='aliyunNasPrimaryStorage';
+ALTER TABLE VolumeEO ADD COLUMN volumeQos VARCHAR(128) DEFAULT NULL COMMENT 'volumeQos format like total=1048576';
+
+DROP VIEW IF EXISTS `zstack`.`VolumeVO`;
+CREATE VIEW `zstack`.`VolumeVO` AS SELECT uuid, name, description, primaryStorageUuid, vmInstanceUuid, diskOfferingUuid, rootImageUuid, installPath, type, status, size, actualSize, deviceId, format, state, createDate, lastOpDate, isShareable, volumeQos FROM `zstack`.`VolumeEO` WHERE deleted IS NULL;
+
