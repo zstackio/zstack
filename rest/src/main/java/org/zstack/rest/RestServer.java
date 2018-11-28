@@ -649,7 +649,20 @@ public class RestServer implements Component, CloudBusEventListener {
     }
 
     private void sendResponse(int statusCode, ApiResponse response, HttpServletResponse rsp) throws IOException {
-        sendResponse(statusCode, response.isEmpty() ? "" : CloudBusGson.toJson(response), rsp);
+        RequestInfo info = requestInfo.get();
+        if (requestLogger.isTraceEnabled() && needLog(info)) {
+            String body = CloudBusGson.toJson(response);
+            StringBuilder sb = new StringBuilder(String.format("[ID: %s] Response to %s (%s),", info.session.getId(),
+                    info.remoteHost, info.requestUrl));
+            sb.append(String.format(" Status Code: %s,", statusCode));
+            sb.append(String.format(" Body: %s", body == null || body.isEmpty() ? null : body));
+
+            requestLogger.trace(sb.toString());
+        }
+
+        String body = CloudBusGson.toJsonForHttpResponse(response);
+        rsp.setStatus(statusCode);
+        rsp.getWriter().write(body == null ? "" : body);
     }
 
     private void handleNonUniqueApi(Collection<Api> apis, HttpEntity<String> entity, HttpServletRequest req, HttpServletResponse rsp) throws RestException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, IOException {
