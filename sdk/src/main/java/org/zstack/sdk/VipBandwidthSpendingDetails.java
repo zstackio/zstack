@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class VmNicBandwidthSpendingDetails  {
+public class VipBandwidthSpendingDetails  {
 
     public long startTime;
     public void setStartTime(long startTime) {

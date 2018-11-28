@@ -29,4 +29,12 @@ public class CloneVmInstanceInventory  {
         return this.started;
     }
 
+    public java.lang.String volumeQos;
+    public void setVolumeQos(java.lang.String volumeQos) {
+        this.volumeQos = volumeQos;
+    }
+    public java.lang.String getVolumeQos() {
+        return this.volumeQos;
+    }
+
 }

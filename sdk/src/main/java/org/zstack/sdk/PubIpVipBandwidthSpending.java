@@ -2,14 +2,14 @@ package org.zstack.sdk;
 
 
 
-public class PubIpVmNicBandwidthSpending extends org.zstack.sdk.SpendingDetails {
+public class PubIpVipBandwidthSpending extends org.zstack.sdk.SpendingDetails {
 
-    public java.lang.String vmNicIp;
-    public void setVmNicIp(java.lang.String vmNicIp) {
-        this.vmNicIp = vmNicIp;
+    public java.lang.String vipIp;
+    public void setVipIp(java.lang.String vipIp) {
+        this.vipIp = vipIp;
     }
-    public java.lang.String getVmNicIp() {
-        return this.vmNicIp;
+    public java.lang.String getVipIp() {
+        return this.vipIp;
     }
 
     public java.util.List bandwidthInInventory;

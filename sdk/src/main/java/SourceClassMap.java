@@ -36,16 +36,18 @@ public class SourceClassMap {
 			put("org.zstack.billing.PciDeviceSpendingInventory", "org.zstack.sdk.PciDeviceSpendingInventory");
 			put("org.zstack.billing.PriceInventory", "org.zstack.sdk.PriceInventory");
 			put("org.zstack.billing.PricePciDeviceOfferingRefInventory", "org.zstack.sdk.PricePciDeviceOfferingRefInventory");
-			put("org.zstack.billing.PubIpVmNicBandwidthSpending", "org.zstack.sdk.PubIpVmNicBandwidthSpending");
 			put("org.zstack.billing.RootVolumeSpending", "org.zstack.sdk.RootVolumeSpending");
 			put("org.zstack.billing.RootVolumeSpendingInventory", "org.zstack.sdk.RootVolumeSpendingInventory");
 			put("org.zstack.billing.SnapShotSpendingInventory", "org.zstack.sdk.SnapShotSpendingInventory");
 			put("org.zstack.billing.SnapshotSpending", "org.zstack.sdk.SnapshotSpending");
 			put("org.zstack.billing.Spending", "org.zstack.sdk.Spending");
 			put("org.zstack.billing.SpendingDetails", "org.zstack.sdk.SpendingDetails");
-			put("org.zstack.billing.VmNicBandwidthSpendingDetails", "org.zstack.sdk.VmNicBandwidthSpendingDetails");
 			put("org.zstack.billing.VmSpending", "org.zstack.sdk.VmSpending");
 			put("org.zstack.billing.VmSpendingDetails", "org.zstack.sdk.VmSpendingDetails");
+			put("org.zstack.billing.vip.PubIpVipBandwidthSpending", "org.zstack.sdk.PubIpVipBandwidthSpending");
+			put("org.zstack.billing.vip.VipBandwidthSpendingDetails", "org.zstack.sdk.VipBandwidthSpendingDetails");
+			put("org.zstack.billing.vmnic.PubIpVmNicBandwidthSpending", "org.zstack.sdk.PubIpVmNicBandwidthSpending");
+			put("org.zstack.billing.vmnic.VmNicBandwidthSpendingDetails", "org.zstack.sdk.VmNicBandwidthSpendingDetails");
 			put("org.zstack.cloudformation.template.struct.ActionStruct", "org.zstack.sdk.ActionStruct");
 			put("org.zstack.cloudformation.template.struct.ResourceStruct", "org.zstack.sdk.ResourceStruct");
 			put("org.zstack.cloudformation.template.struct.ResourceType", "org.zstack.sdk.ResourceType");
@@ -524,7 +526,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.PrimaryStorageHostStatus", "org.zstack.header.storage.primary.PrimaryStorageHostStatus");
 			put("org.zstack.sdk.PrimaryStorageInventory", "org.zstack.header.storage.primary.PrimaryStorageInventory");
 			put("org.zstack.sdk.ProgressProperty", "org.zstack.header.aliyun.image.ProgressProperty");
-			put("org.zstack.sdk.PubIpVmNicBandwidthSpending", "org.zstack.billing.PubIpVmNicBandwidthSpending");
+			put("org.zstack.sdk.PubIpVipBandwidthSpending", "org.zstack.billing.vip.PubIpVipBandwidthSpending");
+			put("org.zstack.sdk.PubIpVmNicBandwidthSpending", "org.zstack.billing.vmnic.PubIpVmNicBandwidthSpending");
 			put("org.zstack.sdk.QuotaInventory", "org.zstack.header.identity.QuotaInventory");
 			put("org.zstack.sdk.QuotaUsage", "org.zstack.header.identity.Quota$QuotaUsage");
 			put("org.zstack.sdk.RemovalInstanceRuleInventory", "org.zstack.autoscaling.group.rule.RemovalInstanceRuleInventory");
@@ -586,6 +589,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VRouterRouteEntryInventory", "org.zstack.vrouterRoute.VRouterRouteEntryInventory");
 			put("org.zstack.sdk.VRouterRouteEntryType", "org.zstack.vrouterRoute.VRouterRouteEntryType");
 			put("org.zstack.sdk.VRouterRouteTableInventory", "org.zstack.vrouterRoute.VRouterRouteTableInventory");
+			put("org.zstack.sdk.VipBandwidthSpendingDetails", "org.zstack.billing.vip.VipBandwidthSpendingDetails");
 			put("org.zstack.sdk.VipInventory", "org.zstack.network.service.vip.VipInventory");
 			put("org.zstack.sdk.VipPortRangeInventory", "org.zstack.network.service.virtualrouter.APIGetVipUsedPortsReply$VipPortRangeInventory");
 			put("org.zstack.sdk.VipQosInventory", "org.zstack.header.vipQos.VipQosInventory");
@@ -594,7 +598,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VirtualRouterVRouterRouteTableRefInventory", "org.zstack.vrouterRoute.VirtualRouterVRouterRouteTableRefInventory");
 			put("org.zstack.sdk.VirtualRouterVmInventory", "org.zstack.network.service.virtualrouter.VirtualRouterVmInventory");
 			put("org.zstack.sdk.VmInstanceInventory", "org.zstack.header.vm.VmInstanceInventory");
-			put("org.zstack.sdk.VmNicBandwidthSpendingDetails", "org.zstack.billing.VmNicBandwidthSpendingDetails");
+			put("org.zstack.sdk.VmNicBandwidthSpendingDetails", "org.zstack.billing.vmnic.VmNicBandwidthSpendingDetails");
 			put("org.zstack.sdk.VmNicInventory", "org.zstack.header.vm.VmNicInventory");
 			put("org.zstack.sdk.VmNicSecurityGroupRefInventory", "org.zstack.network.securitygroup.VmNicSecurityGroupRefInventory");
 			put("org.zstack.sdk.VmSpending", "org.zstack.billing.VmSpending");
