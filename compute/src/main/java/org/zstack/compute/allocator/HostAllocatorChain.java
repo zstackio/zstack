@@ -85,7 +85,7 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
             @Override
             public HostCapacityVO call(HostCapacityVO cap) {
                 long availCpu = cap.getAvailableCpu() - requestCpu;
-                if (availCpu < 0) {
+                if (requestCpu != 0 && availCpu < 0) {
                     throw new UnableToReserveHostCapacityException(
                             String.format("no enough CPU[%s] on the host[uuid:%s]", requestCpu, hostUuid));
                 }
@@ -93,7 +93,7 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
                 cap.setAvailableCpu(availCpu);
 
                 long availMemory = cap.getAvailableMemory() - ratioMgr.calculateMemoryByRatio(hostUuid, requestMemory);
-                if (availMemory - SizeUtils.sizeStringToBytes(reservedMemoryOfGlobalConfig) < 0) {
+                if (requestMemory != 0 && availMemory - SizeUtils.sizeStringToBytes(reservedMemoryOfGlobalConfig) < 0) {
                     throw new UnableToReserveHostCapacityException(
                             String.format("no enough memory[%s] on the host[uuid:%s]", requestMemory, hostUuid));
                 }
