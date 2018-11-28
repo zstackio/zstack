@@ -45,6 +45,7 @@ class CpuMemoryCapacityCase extends SubCase {
     void test() {
         env.create {
             KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.updateValue("1G")
+            KVMGlobalConfig.KVM_IGNORE_MSRS.updateValue(true)
             HostGlobalConfig.AUTO_RECONNECT_ON_ERROR.updateValue(false)
             HostGlobalConfig.PING_HOST_INTERVAL.updateValue(5)
             setHostDisconnecedAndGetCorrectlyCpuMemoryCapacity()
@@ -93,6 +94,8 @@ class CpuMemoryCapacityCase extends SubCase {
         reconnectHostAction.uuid = kvm2Inv.uuid
         reconnectRes = reconnectHostAction.call()
         reconnectRes.error !=null
+
+        assert connectCmd.ignoreMsrs
 
         retryInSecs{
             assert Q.New(HostVO.class).select(HostVO_.status).eq(HostVO_.uuid, kvm1Inv.uuid).findValue().toString() == HostStatus.Disconnected.toString()

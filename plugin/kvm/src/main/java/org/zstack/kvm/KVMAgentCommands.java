@@ -165,6 +165,15 @@ public class KVMAgentCommands {
         private String hostUuid;
         private String sendCommandUrl;
         private List<String> iptablesRules;
+        private boolean ignoreMsrs;
+
+        public boolean isIgnoreMsrs() {
+            return ignoreMsrs;
+        }
+
+        public void setIgnoreMsrs(boolean ignoreMsrs) {
+            this.ignoreMsrs = ignoreMsrs;
+        }
 
         public List<String> getIptablesRules() {
             return iptablesRules;
@@ -271,15 +280,6 @@ public class KVMAgentCommands {
     }
 
     public static class HostFactCmd extends AgentCommand {
-        private boolean ignoreMsrs;
-
-        public boolean isIgnoreMsrs() {
-            return ignoreMsrs;
-        }
-
-        public void setIgnoreMsrs(boolean ignoreMsrs) {
-            this.ignoreMsrs = ignoreMsrs;
-        }
     }
 
     public static class HostFactResponse extends AgentResponse {
