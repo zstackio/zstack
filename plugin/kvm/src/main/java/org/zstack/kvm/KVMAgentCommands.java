@@ -166,6 +166,7 @@ public class KVMAgentCommands {
         private String sendCommandUrl;
         private List<String> iptablesRules;
         private boolean ignoreMsrs;
+        private boolean pageTableExtensionDisabled;
 
         public boolean isIgnoreMsrs() {
             return ignoreMsrs;
@@ -198,11 +199,20 @@ public class KVMAgentCommands {
         public void setHostUuid(String hostUuid) {
             this.hostUuid = hostUuid;
         }
+
+        public boolean isPageTableExtensionDisabled() {
+            return pageTableExtensionDisabled;
+        }
+
+        public void setPageTableExtensionDisabled(boolean pageTableExtensionDisabled) {
+            this.pageTableExtensionDisabled = pageTableExtensionDisabled;
+        }
     }
 
     public static class ConnectResponse extends AgentResponse {
         private String libvirtVersion;
         private String qemuVersion;
+        private boolean iptablesSucc;
 
         public boolean isIptablesSucc() {
             return iptablesSucc;
@@ -211,8 +221,6 @@ public class KVMAgentCommands {
         public void setIptablesSucc(boolean iptablesSucc) {
             this.iptablesSucc = iptablesSucc;
         }
-
-        boolean iptablesSucc;
 
         public String getLibvirtVersion() {
             return libvirtVersion;

@@ -2612,10 +2612,11 @@ public class KVMHost extends HostBase implements Host {
             cmd.setSendCommandUrl(restf.getSendCommandUrl());
             cmd.setIptablesRules(KVMGlobalProperty.IPTABLES_RULES);
             cmd.setIgnoreMsrs(KVMGlobalConfig.KVM_IGNORE_MSRS.value(Boolean.class));
+            cmd.setPageTableExtensionDisabled(HostSystemTags.PAGE_TABLE_EXTENSION_DISABLED.hasTag(self.getUuid(), HostVO.class));
             ConnectResponse rsp = restf.syncJsonPost(connectPath, cmd, ConnectResponse.class);
             if (!rsp.isSuccess() || !rsp.isIptablesSucc()) {
-                errCode = operr("unable to connect to kvm host[uuid:%s, ip:%s, url:%s], because %s", self.getUuid(), self.getManagementIp(), connectPath,
-                        rsp.getError());
+                errCode = operr("unable to connect to kvm host[uuid:%s, ip:%s, url:%s], because %s",
+                        self.getUuid(), self.getManagementIp(), connectPath, rsp.getError());
             } else {
                 VersionComparator libvirtVersion = new VersionComparator(rsp.getLibvirtVersion());
                 VersionComparator qemuVersion = new VersionComparator(rsp.getQemuVersion());
