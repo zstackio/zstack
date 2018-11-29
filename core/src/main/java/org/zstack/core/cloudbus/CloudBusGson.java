@@ -46,6 +46,46 @@ public class CloudBusGson {
             }
     }).create();
 
+    private static Gson httpGson = new GsonUtil().setCoder(Message.class, new GsonTypeCoder<Message>() {
+
+        @Override
+        public JsonElement serialize(Message message, Type type, JsonSerializationContext jsonSerializationContext) {
+            JsonObject jObj = new JsonObject();
+            jObj.add(message.getClass().getName(), gson.toJsonTree(message));
+            return jObj;
+        }
+
+        @Override
+        public Message deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
+            JsonObject jObj = jsonElement.getAsJsonObject();
+            Map.Entry<String, JsonElement> entry = jObj.entrySet().iterator().next();
+            String className = entry.getKey();
+            Class<?> clazz;
+            try {
+                clazz = Class.forName(className);
+            } catch (ClassNotFoundException e) {
+                throw new JsonParseException(String.format("Unable to deserialize class[%s]", className), e);
+            }
+            return (Message) gson.fromJson(entry.getValue(), clazz);
+        }
+    }).setExclusionStrategies(new ExclusionStrategy[]{
+            new ExclusionStrategy() {
+                @Override
+                public boolean shouldSkipField(FieldAttributes fieldAttributes) {
+                    GsonTransient g = fieldAttributes.getAnnotation(GsonTransient.class);
+                    if (g != null && g.transientInHttpResponse()) {
+                        return true;
+                    }
+                    return false;
+                }
+
+                @Override
+                public boolean shouldSkipClass(Class<?> aClass) {
+                    return false;
+                }
+            }
+    }).create();
+
     public static Message fromJson(String json) {
         return gson.fromJson(json, Message.class);
     }
@@ -59,6 +99,14 @@ public class CloudBusGson {
             return gson.toJson(obj, Message.class);
         } else {
             return gson.toJson(obj);
+        }
+    }
+
+    public static String toJsonForHttpResponse(Object obj) {
+        if (obj instanceof Message) {
+            return httpGson.toJson(obj, Message.class);
+        } else {
+            return httpGson.toJson(obj);
         }
     }
 }

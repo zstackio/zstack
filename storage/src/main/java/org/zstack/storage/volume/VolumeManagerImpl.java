@@ -7,7 +7,10 @@ import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
-import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.DbEntityLister;
+import org.zstack.core.db.SQLBatchWithReturn;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.CancelablePeriodicTask;
@@ -33,7 +36,6 @@ import org.zstack.header.storage.backup.BackupStorageStatus;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
 import org.zstack.header.volume.APIGetVolumeFormatReply.VolumeFormatReplyStruct;
 import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
@@ -51,7 +53,9 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -424,8 +428,9 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
 
         List<CreateDataVolumeExtensionPoint> exts = pluginRgty.getExtensionList(CreateDataVolumeExtensionPoint.class);
         for (CreateDataVolumeExtensionPoint ext : exts) {
-            ext.afterCreateVolume(VolumeInventory.valueOf(dbf.findByUuid(vo.getUuid(), VolumeVO.class)));
+            ext.afterCreateVolume(vo);
         }
+        vo = dbf.reload(vo);
 
         new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(null, VolumeInventory.valueOf(vo));
 
@@ -638,8 +643,9 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         }.execute();
 
         for (CreateDataVolumeExtensionPoint ext : exts) {
-            ext.afterCreateVolume(VolumeInventory.valueOf(dbf.findByUuid(vo.getUuid(), VolumeVO.class)));
+            ext.afterCreateVolume(vo);
         }
+        dbf.reload(vo);
 
         if (msg.getPrimaryStorageUuid() == null) {
             new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(null, VolumeInventory.valueOf(vo));

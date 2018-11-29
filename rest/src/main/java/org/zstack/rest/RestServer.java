@@ -251,7 +251,7 @@ public class RestServer implements Component, CloudBusEventListener {
             response.setError(evt.getError());
         }
 
-        String body = CloudBusGson.toJson(response);
+        String body = CloudBusGson.toJsonForHttpResponse(response);
         HttpUrl url = HttpUrl.parse(d.webHook);
         Request.Builder rb = new Request.Builder().url(url)
                 .post(RequestBody.create(JSON, body))
@@ -269,6 +269,7 @@ public class RestServer implements Component, CloudBusEventListener {
                 try {
                     if (requestLogger.isTraceEnabled()) {
                         StringBuilder sb = new StringBuilder(String.format("Call Web-Hook[%s] (to %s%s)", d.webHook, d.requestInfo.remoteHost, d.requestInfo.requestUrl));
+                        String body = CloudBusGson.toJson(response);
                         sb.append(String.format(" Body: %s", body));
 
                         requestLogger.trace(sb.toString());
@@ -648,7 +649,20 @@ public class RestServer implements Component, CloudBusEventListener {
     }
 
     private void sendResponse(int statusCode, ApiResponse response, HttpServletResponse rsp) throws IOException {
-        sendResponse(statusCode, response.isEmpty() ? "" : CloudBusGson.toJson(response), rsp);
+        RequestInfo info = requestInfo.get();
+        if (requestLogger.isTraceEnabled() && needLog(info)) {
+            String body = CloudBusGson.toJson(response);
+            StringBuilder sb = new StringBuilder(String.format("[ID: %s] Response to %s (%s),", info.session.getId(),
+                    info.remoteHost, info.requestUrl));
+            sb.append(String.format(" Status Code: %s,", statusCode));
+            sb.append(String.format(" Body: %s", body == null || body.isEmpty() ? null : body));
+
+            requestLogger.trace(sb.toString());
+        }
+
+        String body = CloudBusGson.toJsonForHttpResponse(response);
+        rsp.setStatus(statusCode);
+        rsp.getWriter().write(body == null ? "" : body);
     }
 
     private void handleNonUniqueApi(Collection<Api> apis, HttpEntity<String> entity, HttpServletRequest req, HttpServletResponse rsp) throws RestException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, IOException {
