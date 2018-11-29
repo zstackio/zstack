@@ -9,6 +9,8 @@ public class BackupStorageAskInstallPathMsg extends NeedReplyMessage implements 
     private String imageMediaType;
     private String imageUuid;
     private String backupStorageUuid;
+    private String snapshotId; // used by aliyun ebs
+    private String zoneId; // used by aliyun ebs
 
     public String getImageMediaType() {
         return imageMediaType;
@@ -33,5 +35,21 @@ public class BackupStorageAskInstallPathMsg extends NeedReplyMessage implements 
     @Override
     public String getBackupStorageUuid() {
         return backupStorageUuid;
+    }
+
+    public String getSnapshotId() {
+        return snapshotId;
+    }
+
+    public void setSnapshotId(String snapshotId) {
+        this.snapshotId = snapshotId;
+    }
+
+    public String getZoneId() {
+        return zoneId;
+    }
+
+    public void setZoneId(String zoneId) {
+        this.zoneId = zoneId;
     }
 }

@@ -52,6 +52,14 @@ public class DataCenterInventory  {
         return this.description;
     }
 
+    public java.lang.String endpoint;
+    public void setEndpoint(java.lang.String endpoint) {
+        this.endpoint = endpoint;
+    }
+    public java.lang.String getEndpoint() {
+        return this.endpoint;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

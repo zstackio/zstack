@@ -25,7 +25,7 @@ public class CreateResourcePriceAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, validValues = {"cpu","memory","rootVolume","dataVolume","snapShot","gpu"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"cpu","memory","rootVolume","dataVolume","snapShot","gpu","pubIpVmNicBandwidthOut","pubIpVmNicBandwidthIn","pubIpVipBandwidthOut","pubIpVipBandwidthIn"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String resourceName;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
@@ -49,8 +49,14 @@ public class CreateResourcePriceAction extends AbstractAction {
     @Param(required = false)
     public java.util.List userTags;
 
-    @Param(required = true)
+    @Param(required = false)
     public String sessionId;
+
+    @Param(required = false)
+    public String accessKeyId;
+
+    @Param(required = false)
+    public String accessKeySecret;
 
     @NonAPIParam
     public long timeout = -1;

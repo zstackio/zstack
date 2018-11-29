@@ -76,6 +76,8 @@ public abstract class HostBase extends AbstractHost {
     protected PluginRegistry pluginRgty;
     @Autowired
     protected EventFacade evtf;
+    @Autowired
+    protected HostMaintenancePolicyManager hostMaintenancePolicyMgr;
 
     public static class HostDisconnectedCanonicalEvent extends CanonicalEventEmitter {
         HostCanonicalEvents.HostDisconnectedData data;
@@ -244,6 +246,12 @@ public abstract class HostBase extends AbstractHost {
                             @Override
                             public void done() {
                                 if (!vmFailedToMigrate.isEmpty()) {
+                                    if (HostMaintenancePolicyManager.HostMaintenancePolicy.JustMigrate.equals(hostMaintenancePolicyMgr.getHostMaintenancePolicy(self.getUuid()))) {
+                                        trigger.fail(operr("failed to migrate vm[uuids:%s] on host[uuid:%s, name:%s, ip:%s], will try stopping it.",
+                                                vmFailedToMigrate, self.getUuid(), self.getName(), self.getManagementIp()));
+                                        return;
+                                    }
+
                                     logger.warn(String.format("failed to migrate vm[uuids:%s] on host[uuid:%s, name:%s, ip:%s], will try stopping it.",
                                             vmFailedToMigrate, self.getUuid(), self.getName(), self.getManagementIp()));
                                     policyVmMap.get(HostMaintenancePolicy.StopVm).addAll(vmFailedToMigrate);

@@ -5,6 +5,7 @@ import org.zstack.core.db.Q
 import org.zstack.header.storage.backup.*
 import org.zstack.sdk.BackupStorageInventory
 import org.zstack.storage.backup.BackupStorageGlobalConfig
+import org.zstack.storage.backup.BackupStorageManagerImpl
 import org.zstack.storage.backup.BackupStoragePingTracker
 import org.zstack.storage.backup.sftp.SftpBackupStorageCommands
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant
@@ -49,11 +50,25 @@ class BackupStoragePingCase extends SubCase {
                 }
             }
 
+            sftpBackupStorage {
+                name = "sftp2"
+                url = "/sftp"
+                username = "root"
+                password = "password"
+                hostname = "127.0.0.2"
+
+                image {
+                    name = "image1"
+                    url = "http://zstack.org/download/test.qcow2"
+                }
+            }
+
             zone {
                 name = "zone"
                 description = "test"
 
                 attachBackupStorage("sftp")
+                attachBackupStorage("sftp2")
             }
         }
     }
@@ -66,8 +81,8 @@ class BackupStoragePingCase extends SubCase {
             prepareEnv()
             testNoPingAfterBSDeleted()
             testPingAfterRescan()
-            testPingSuccessBSReconnectCondition()
             testPingAfterManagementNodeReady()
+            testPingSuccessBSReconnectCondition()
         }
     }
 
@@ -83,6 +98,7 @@ class BackupStoragePingCase extends SubCase {
     void testPingAfterManagementNodeReady() {
         BackupStorageInventory bs = env.inventoryByName("sftp")
         BackupStoragePingTracker tracker = bean(BackupStoragePingTracker.class)
+        BackupStorageManagerImpl backupStorageManager = bean(BackupStorageManagerImpl.class)
 
         // untrack all bs
         tracker.untrackAll()
@@ -98,14 +114,27 @@ class BackupStoragePingCase extends SubCase {
 
         assert count == 0
 
-        // check management node ready
+        def connectCount = 0
+        def cleanup2 = notifyWhenReceivedMessage(ConnectBackupStorageMsg.class) { ConnectBackupStorageMsg msg ->
+            connectCount ++
+        }
+
+        // check management node ready will connect all bs
         tracker.managementNodeReady()
 
         retryInSecs {
             assert count > 0
         }
 
+        backupStorageManager.managementNodeReady()
+
+        retryInSecs {
+            assert connectCount == 2
+            assert Q.New(BackupStorageVO.class).eq(BackupStorageVO_.status, BackupStorageStatus.Connected).count() == 2
+        }
+
         cleanup()
+        cleanup2()
     }
 
     void testPingSuccessBSReconnectCondition() {

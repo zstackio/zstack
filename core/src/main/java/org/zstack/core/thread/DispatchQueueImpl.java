@@ -70,6 +70,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
         }
         sb.append(StringUtils.join(asyncTasks, "\n"));
         sb.append("\n================= END TASK QUEUE DUMP ==================\n");
+        _threadFacade.printThreadsAndTasks();
         logger.debug(sb.toString());
     }
 

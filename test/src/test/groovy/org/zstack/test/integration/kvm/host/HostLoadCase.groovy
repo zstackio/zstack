@@ -165,7 +165,7 @@ class HostLoadCase extends SubCase {
 
         assert kvm1Connected
         // kvm2 is in status of Connected, which should not be reconnected
-        assert !kvm2Connected
+        assert kvm2Connected
 
         cleanup()
     }

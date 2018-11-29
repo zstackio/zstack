@@ -2,12 +2,19 @@ package org.zstack.test.integration.storage.primary.local.datavolume
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
+import org.zstack.header.identity.AccountResourceRefVO
+import org.zstack.header.identity.AccountResourceRefVO_
 import org.zstack.header.image.ImageVO
+import org.zstack.image.ImageQuotaConstant
+import org.zstack.sdk.AccountInventory
 import org.zstack.sdk.BackupStorageInventory
 import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.ImageInventory
+import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.KVMHostInventory
+import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.PrimaryStorageInventory
+import org.zstack.sdk.SessionInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VolumeInventory
 import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl
@@ -15,6 +22,7 @@ import org.zstack.test.integration.storage.Env
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
+import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 
 /**
@@ -42,6 +50,126 @@ class CreateDataVolumeTemplateCase extends SubCase {
     void test() {
         env.create {
             testCreateDataVolumeTemplate()
+            testCreateDataVolumeTemplateQuota()
+        }
+    }
+
+    /**
+     * 1. create account
+     * 2. create vm use the account
+     * 3. create data volume use the account
+     * 4. update image size quota of the account to 0
+     * 5. create template of root or data volume will fail
+     * 6. recover image size quota of the account
+     * and set image number quota as the used image of the account
+     * 7. create template of root or data volume will fail
+     */
+    void testCreateDataVolumeTemplateQuota() {
+        def ps = env.inventoryByName("local") as PrimaryStorageInventory
+        def disk = env.inventoryByName("diskOffering") as DiskOfferingInventory
+        def bs = env.inventoryByName("sftp") as BackupStorageInventory
+        def kvm = env.inventoryByName("kvm") as KVMHostInventory
+        def vm = env.inventoryByName("test-vm") as VmInstanceInventory
+        def image = env.inventoryByName("test-iso") as ImageInventory
+        def offer = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
+        def l3 = env.inventoryByName("pubL3") as L3NetworkInventory
+
+        shareResource {
+            resourceUuids = [offer.uuid, disk.uuid, image.uuid]
+            toPublic = true
+        }
+
+        def account = createAccount {
+            name = "test"
+            password = "test"
+        } as AccountInventory
+
+        def session = logInByAccount {
+            accountName = "test"
+            password = "test"
+        } as SessionInventory
+
+        def vm1 = createVmInstance {
+            name = "vm1"
+            l3NetworkUuids = [l3.uuid]
+            instanceOfferingUuid = offer.uuid
+            imageUuid = image.uuid
+            rootDiskOfferingUuid = disk.uuid
+            sessionId = session.uuid
+        } as VmInstanceInventory
+
+        def dataVolume = createDataVolume {
+            name = "1G"
+            diskOfferingUuid = disk.uuid
+            primaryStorageUuid = ps.uuid
+            systemTags = Arrays.asList("localStorage::hostUuid::" + kvm.uuid)
+            sessionId = session.uuid
+        } as VolumeInventory
+
+        updateQuota {
+            identityUuid = account.uuid
+            name = ImageQuotaConstant.IMAGE_SIZE
+            value = 0
+        }
+
+        expect(AssertionError.class) {
+            createDataVolumeTemplateFromVolume {
+                name = "data-volume"
+                volumeUuid = dataVolume.uuid
+                backupStorageUuids = [bs.uuid]
+                sessionId = session.uuid
+            } as ImageInventory
+        }
+
+        expect(AssertionError.class) {
+            createRootVolumeTemplateFromRootVolume {
+                name = "data-volume"
+                rootVolumeUuid = vm1.getRootVolumeUuid()
+                backupStorageUuids = [bs.uuid]
+                sessionId = session.uuid
+            } as ImageInventory
+        }
+
+        updateQuota {
+            identityUuid = account.uuid
+            name = ImageQuotaConstant.IMAGE_SIZE
+            value = SizeUnit.GIGABYTE.toByte(1000)
+        }
+
+        createDataVolumeTemplateFromVolume {
+            name = "root-volume"
+            volumeUuid = dataVolume.uuid
+            backupStorageUuids = [bs.uuid]
+            sessionId = session.uuid
+        } as ImageInventory
+
+        def count = Q.New(AccountResourceRefVO.class)
+                .eq(AccountResourceRefVO_.resourceType, ImageVO.class.getSimpleName())
+                .eq(AccountResourceRefVO_.accountUuid, account.uuid)
+                .count()
+
+        updateQuota {
+            identityUuid = account.uuid
+            name = ImageQuotaConstant.IMAGE_NUM
+            value = count
+        }
+
+        expect(AssertionError.class) {
+            createDataVolumeTemplateFromVolume {
+                name = "data-volume"
+                volumeUuid = dataVolume.uuid
+                backupStorageUuids = [bs.uuid]
+                sessionId = session.uuid
+            } as ImageInventory
+        }
+
+        expect(AssertionError.class) {
+            createRootVolumeTemplateFromRootVolume {
+                name = "root-volume"
+                rootVolumeUuid = vm1.getRootVolumeUuid()
+                backupStorageUuids = [bs.uuid]
+                sessionId = session.uuid
+            } as ImageInventory
         }
     }
 

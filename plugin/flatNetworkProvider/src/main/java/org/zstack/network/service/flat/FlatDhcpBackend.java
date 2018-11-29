@@ -14,11 +14,9 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.notification.N;
 import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.ThreadFacade;
-import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
@@ -39,14 +37,15 @@ import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperation;
 import org.zstack.kvm.*;
 import org.zstack.kvm.KvmCommandSender.SteppingSendCallback;
-import org.zstack.network.service.*;
+import org.zstack.network.service.MtuGetter;
+import org.zstack.network.service.NetworkProviderFinder;
+import org.zstack.network.service.NetworkServiceProviderLookup;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.TagUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
@@ -56,7 +55,6 @@ import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -75,13 +73,9 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     @Autowired
     private CloudBus bus;
     @Autowired
-    private ErrorFacade errf;
-    @Autowired
     private DatabaseFacade dbf;
     @Autowired
     private ThreadFacade thdf;
-    @Autowired
-    private ApiTimeoutManager timeoutMgr;
     @Autowired
     private PluginRegistry pluginRgty;
 
@@ -192,9 +186,9 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 L3NetworkVO l3 = l3Map.get(ip.getL3NetworkUuid());
                 info.dnsDomain = l3.getDnsDomain();
                 info.dns = getL3NetworkDns(ip.getL3NetworkUuid());
-                info.firstIp = NetworkUtils.getSmallestIp(l3.getIpRanges().stream().map(r -> r.getStartIp()).collect(Collectors.toList()));
-                info.endIp = NetworkUtils.getBiggesttIp(l3.getIpRanges().stream().map(r -> r.getEndIp()).collect(Collectors.toList()));
-                info.prefixLength = l3.getIpRanges().stream().findAny().get().getPrefixLen();
+                info.firstIp = NetworkUtils.getSmallestIp(l3.getIpRanges().stream().map(IpRangeAO::getStartIp).collect(Collectors.toList()));
+                info.endIp = NetworkUtils.getBiggesttIp(l3.getIpRanges().stream().map(IpRangeAO::getEndIp).collect(Collectors.toList()));
+                info.prefixLength = l3.getIpRanges().stream().findAny().map(IpRangeAO::getPrefixLen).orElse(null);
 
                 if (info.isDefaultL3Network) {
                     info.hostname = hostnames.get(nic.getVmInstanceUuid());
@@ -281,10 +275,10 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     }
 
     @Deferred
-    public UsedIpInventory allocateDhcpIp(String l3Uuid) {
+    UsedIpInventory allocateDhcpIp(String l3Uuid) {
         L3NetworkVO l3 = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3Uuid).find();
 
-        if (!isProvidedbyMe(L3NetworkInventory.valueOf(l3))) {
+        if (!isProvidedByMe(L3NetworkInventory.valueOf(l3))) {
             return null;
         }
 
@@ -337,7 +331,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     private void handle(final FlatDhcpAcquireDhcpServerIpMsg msg) {
         thdf.syncSubmit(new SyncTask<Void>() {
             @Override
-            public Void call() throws Exception {
+            public Void call() {
                 dealMessage(msg);
                 return null;
             }
@@ -390,7 +384,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     }
 
     @Override
-    public String preDeleteL3Network(L3NetworkInventory inventory) throws L3NetworkException {
+    public String preDeleteL3Network(L3NetworkInventory inventory) {
         return null;
     }
 
@@ -398,14 +392,14 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     public void beforeDeleteL3Network(L3NetworkInventory inventory) {
     }
 
-    private boolean isProvidedbyMe(L3NetworkInventory l3) {
+    private boolean isProvidedByMe(L3NetworkInventory l3) {
         String providerType = new NetworkProviderFinder().getNetworkProviderTypeByNetworkServiceType(l3.getUuid(), NetworkServiceType.DHCP.toString());
         return FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING.equals(providerType);
     }
 
     @Override
     public void afterDeleteL3Network(L3NetworkInventory inventory) {
-        if (!isProvidedbyMe(inventory)) {
+        if (!isProvidedByMe(inventory)) {
             return;
         }
 
@@ -494,7 +488,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         List<VmNicVO> nics = nq.getResultList();
 
         if (l3Uuid != null) {
-            nics = nics.stream().filter(nic -> nic.getUsedIps().stream().map(ip -> ip.getL3NetworkUuid()).collect(Collectors.toList()).contains(l3Uuid)).collect(Collectors.toList());
+            nics = nics.stream().filter(nic -> nic.getUsedIps().stream().map(UsedIpVO::getL3NetworkUuid).collect(Collectors.toList()).contains(l3Uuid)).collect(Collectors.toList());
         }
 
         if (nics.isEmpty()) {
@@ -562,9 +556,9 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 L3NetworkVO l3 = l3Map.get(ip.getL3NetworkUuid());
                 info.dnsDomain = l3.getDnsDomain();
                 info.dns = getL3NetworkDns(ip.getL3NetworkUuid());
-                info.firstIp = NetworkUtils.getSmallestIp(l3.getIpRanges().stream().map(r -> r.getStartIp()).collect(Collectors.toList()));
-                info.endIp = NetworkUtils.getBiggesttIp(l3.getIpRanges().stream().map(r -> r.getEndIp()).collect(Collectors.toList()));
-                info.prefixLength = l3.getIpRanges().stream().findAny().get().getPrefixLen();
+                info.firstIp = NetworkUtils.getSmallestIp(l3.getIpRanges().stream().map(IpRangeAO::getStartIp).collect(Collectors.toList()));
+                info.endIp = NetworkUtils.getBiggesttIp(l3.getIpRanges().stream().map(IpRangeAO::getEndIp).collect(Collectors.toList()));
+                info.prefixLength = l3.getIpRanges().stream().findAny().map(IpRangeAO::getPrefixLen).orElse(null);
 
                 if (info.isDefaultL3Network) {
                     info.hostname = hostnames.get(nic.getVmInstanceUuid());

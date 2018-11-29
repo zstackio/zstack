@@ -15,7 +15,11 @@
     http://zstack.org/schema/zstack/plugin.xsd"
     default-init-method="init" default-destroy-method="destroy">
 
-    <bean id="MysqlAsyncRestStore" class="org.zstack.rest.MysqlAsyncRestStore" />
+    <bean id="MysqlAsyncRestStore" class="org.zstack.rest.MysqlAsyncRestStore">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component"/>
+        </zstack:plugin>
+    </bean>
 
     <bean id="RestServer" class="org.zstack.rest.RestServer">
         <zstack:plugin>

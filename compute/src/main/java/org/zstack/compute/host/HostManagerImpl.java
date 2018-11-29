@@ -702,7 +702,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     @AsyncThread
     public void managementNodeReady() {
         logger.debug(String.format("Management node[uuid:%s] joins, start loading host...", Platform.getManagementServerId()));
-        loadHost(true);
+        loadHost(false);
     }
 
     @Override

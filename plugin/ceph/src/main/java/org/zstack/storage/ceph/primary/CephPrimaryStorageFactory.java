@@ -659,7 +659,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     }
 
     @Override
-    public void beforeTakeLiveSnapshotsOnVolumes(CreateVolumesSnapshotOverlayInnerMsg msg, Map flowData, Completion completion) {
+    public void beforeTakeLiveSnapshotsOnVolumes(CreateVolumesSnapshotOverlayInnerMsg msg, TakeVolumesSnapshotOnKvmMsg otmsg, Map flowData, Completion completion) {
         Integer isCephPs = 0;
         for (CreateVolumesSnapshotsJobStruct struct : msg.getVolumeSnapshotJobs()) {
             if (Q.New(CephPrimaryStorageVO.class)

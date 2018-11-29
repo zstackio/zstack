@@ -137,7 +137,12 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
                 .addColumnConverter("managementIps", it -> IpRangeSet.listAllIps(it, limit), AddHostMsg::setManagementIp);
 
         extensionTagMappers.forEach((columnName, builder) ->
-                form.addColumnConverter(columnName, (it, value) -> it.addSystemTag(builder.call(value))));
+                form.addColumnConverter(columnName, (it, value) -> {
+                    String tag = builder.call(value);
+                    if (tag != null) {
+                        it.addSystemTag(tag);
+                    }
+                }));
 
         return form.withValidator(validator).load();
     }

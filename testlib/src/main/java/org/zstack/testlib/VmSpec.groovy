@@ -168,6 +168,7 @@ class VmSpec extends Spec implements HasSession {
             delegate.dataDiskOfferingUuids = diskOfferings()
             delegate.l3NetworkUuids = l3Networks()
             delegate.defaultL3NetworkUuid = defaultL3Network()
+            delegate.systemTags = systemTags
         }
 
         postCreate {

@@ -25,8 +25,11 @@ public class GetDataCenterFromRemoteAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, validValues = {"aliyun","privateAliyun"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String endpoint;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -34,8 +37,14 @@ public class GetDataCenterFromRemoteAction extends AbstractAction {
     @Param(required = false)
     public java.util.List userTags;
 
-    @Param(required = true)
+    @Param(required = false)
     public String sessionId;
+
+    @Param(required = false)
+    public String accessKeyId;
+
+    @Param(required = false)
+    public String accessKeySecret;
 
 
     private Result makeResult(ApiResult res) {

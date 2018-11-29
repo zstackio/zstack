@@ -560,15 +560,19 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     public void nodeLeft(ManagementNodeInventory inv) {
         logger.debug(String.format("management node[uuid:%s] left, node[uuid:%s] starts taking over primary storage...",
                 inv.getUuid(), Platform.getManagementServerId()));
-        loadPrimaryStorage();
+        loadPrimaryStorage(true);
     }
 
-    private List<String> getPrimaryStorageManagedByUs() {
+    private List<String> getPrimaryStorageManagedByUs(boolean skipConnected) {
         List<String> ret = new ArrayList<>();
         SimpleQuery<PrimaryStorageVO> q = dbf.createQuery(PrimaryStorageVO.class);
         q.select(PrimaryStorageVO_.uuid);
-        // treat connecting as disconnected
-        q.add(PrimaryStorageVO_.status, Op.NOT_EQ, PrimaryStorageStatus.Connected);
+
+        if (skipConnected) {
+            // treat connecting as disconnected
+            q.add(PrimaryStorageVO_.status, Op.NOT_EQ, PrimaryStorageStatus.Connected);
+        }
+
         List<String> uuids = q.listValue();
         for (String uuid : uuids) {
             if (destMaker.isManagedByUs(uuid)) {
@@ -579,8 +583,8 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         return ret;
     }
 
-    private void loadPrimaryStorage() {
-        List<String> uuids = getPrimaryStorageManagedByUs();
+    private void loadPrimaryStorage(boolean skipConnected) {
+        List<String> uuids = getPrimaryStorageManagedByUs(skipConnected);
         if (uuids.isEmpty()) {
             return;
         }
@@ -612,7 +616,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     public void managementNodeReady() {
         logger.debug(String.format("management node[uuid:%s] joins, starts load primary storage ...",
                 Platform.getManagementServerId()));
-        loadPrimaryStorage();
+        loadPrimaryStorage(false);
     }
 
     private void checkVmAllVolumePrimaryStorageState(String vmUuid) {

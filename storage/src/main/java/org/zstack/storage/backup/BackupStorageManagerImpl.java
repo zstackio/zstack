@@ -399,12 +399,16 @@ public class BackupStorageManagerImpl extends AbstractService implements BackupS
         return factory;
     }
 
-    private List<String> getBackupStorageManagedByUs() {
+    private List<String> getBackupStorageManagedByUs(boolean skipConnected) {
         List<String> ret = new ArrayList<String>();
         SimpleQuery<BackupStorageVO> q = dbf.createQuery(BackupStorageVO.class);
         q.select(BackupStorageVO_.uuid);
-        // treat connecting as disconnected
-        q.add(BackupStorageVO_.status, SimpleQuery.Op.NOT_EQ, BackupStorageStatus.Connected);
+
+        if (skipConnected) {
+            // treat connecting as disconnected
+            q.add(BackupStorageVO_.status, SimpleQuery.Op.NOT_EQ, BackupStorageStatus.Connected);
+        }
+
         List<String> uuids = q.listValue();
         for (String uuid : uuids) {
             if (destMaker.isManagedByUs(uuid)) {
@@ -415,8 +419,8 @@ public class BackupStorageManagerImpl extends AbstractService implements BackupS
         return ret;
     }
 
-    private void loadBackupStorage() {
-        List<String> uuids = getBackupStorageManagedByUs();
+    private void loadBackupStorage(boolean skipConnected) {
+        List<String> uuids = getBackupStorageManagedByUs(skipConnected);
         if (uuids.isEmpty()) {
             return;
         }
@@ -440,7 +444,7 @@ public class BackupStorageManagerImpl extends AbstractService implements BackupS
     @Override
     public void nodeLeft(ManagementNodeInventory inv) {
         logger.debug(String.format("management node[uuid:%s] left, node[uuid:%s] starts taking over backup storage...", inv.getUuid(), Platform.getManagementServerId()));
-        loadBackupStorage();
+        loadBackupStorage(true);
     }
 
     @Override
@@ -456,6 +460,6 @@ public class BackupStorageManagerImpl extends AbstractService implements BackupS
     @AsyncThread
     public void managementNodeReady() {
         logger.debug(String.format("management node[uuid:%s] joins, starts load backup storage...", Platform.getManagementServerId()));
-        loadBackupStorage();
+        loadBackupStorage(false);
     }
 }

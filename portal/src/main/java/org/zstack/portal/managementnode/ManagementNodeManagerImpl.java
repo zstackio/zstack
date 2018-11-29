@@ -170,7 +170,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
     }
 
     private void handle(ManagementNodeExitMsg msg) {
-        logger.debug(getId() + " received ManagementNodeExitMsg, going to exit");
+        logger.debug(getId() + " received ManagementNodeExitMsg, going to exit. Details: " + msg.getDetails());
         notifyStop();
     }
 
@@ -573,7 +573,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
         AtomicBoolean destroyed = new AtomicBoolean(false);
         private ExecutorService connectionTimeoutExecutor;
 
-        public HeartBeatDBSource() {
+        HeartBeatDBSource() {
             try {
                 connectionTimeoutExecutor = Executors.newFixedThreadPool(3);
                 conn = dbf.getExtraDataSource().getConnection();
@@ -712,8 +712,8 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
                     Timestamp curr = getCurrentSqlTime();
                     Timestamp lastHeartbeat = vo.getHeartBeat();
-                    long end = lastHeartbeat.getTime() + TimeUnit.SECONDS.toMillis(PortalGlobalProperty.MAX_HEARTBEAT_FAILURE * ManagementNodeGlobalConfig.NODE_HEARTBEAT_INTERVAL.value(Integer.class));
-                    if (end < curr.getTime()) {
+                    final long delta = TimeUnit.SECONDS.toMillis(PortalGlobalProperty.MAX_HEARTBEAT_FAILURE * ManagementNodeGlobalConfig.NODE_HEARTBEAT_INTERVAL.value(Integer.class));
+                    if (Math.abs(lastHeartbeat.getTime() - curr.getTime()) > delta) {
                         suspects.add(vo);
                         logger.warn(String.format("management node[uuid:%s, hostname: %s]'s heart beat has stopped for %s secs, add it in suspicious list",
                                 vo.getUuid(), vo.getHostName(), TimeUnit.MILLISECONDS.toSeconds(curr.getTime() - lastHeartbeat.getTime())));
@@ -784,8 +784,6 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                         }
                     }
 
-                    printThreadAndTasks();
-
                     sleepAHeartbeatInterval();
 
                     if (heartBeatTask.isCancelled()) {
@@ -799,14 +797,10 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 return null;
             }
 
-            private void printThreadAndTasks() {
-                thdf.printThreadsAndTasks();
-            }
-
             private void sleepAHeartbeatInterval() {
                 try {
                     TimeUnit.SECONDS.sleep(ManagementNodeGlobalConfig.NODE_HEARTBEAT_INTERVAL.value(Long.class));
-                } catch (InterruptedException ie) {
+                } catch (InterruptedException ignored) {
                 }
             }
 
@@ -898,7 +892,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
         logger.debug(String.format("start stopping the management node[uuid:%s]", node().getUuid()));
 
         class Stopper {
-            void stop() {
+            private void stop() {
                 stopApiOnCloudBus();
                 stopApi();
                 iAmDead();
@@ -992,7 +986,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
         }
 
         if (isNodeRunning == NODE_FAILED) {
-            logger.debug(String.format("error happened when starting node, stop the management node now"));
+            logger.debug("error happened when starting node, stop the management node now");
             stop();
             throw new CloudRuntimeException("failed to start management node");
         }

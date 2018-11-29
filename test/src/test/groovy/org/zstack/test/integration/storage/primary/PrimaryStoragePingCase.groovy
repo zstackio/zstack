@@ -8,6 +8,7 @@ import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.storage.primary.PrimaryStorageGlobalConfig
+import org.zstack.storage.primary.PrimaryStorageManagerImpl
 import org.zstack.storage.primary.PrimaryStoragePingTracker
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackend
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands
@@ -80,12 +81,18 @@ class PrimaryStoragePingCase extends SubCase {
                     }
 
                     attachPrimaryStorage("local")
+                    attachPrimaryStorage("local2")
                     attachL2Network("l2")
                 }
 
                 localPrimaryStorage {
                     name = "local"
                     url = "/local_ps"
+                }
+
+                localPrimaryStorage {
+                    name = "local2"
+                    url = "/local_ps_2"
                 }
 
                 l2NoVlanNetwork {
@@ -168,14 +175,15 @@ class PrimaryStoragePingCase extends SubCase {
 
             testNoPingAfterPSDeleted()
             testPingAfterRescan()
-            testPingSuccessBSReconnectCondition()
             testPingAfterManagementNodeReady()
+            testPingSuccessPSReconnectCondition()
         }
     }
 
     void testPingAfterManagementNodeReady() {
         PrimaryStorageInventory ps = env.inventoryByName("local")
         PrimaryStoragePingTracker tracker = bean(PrimaryStoragePingTracker.class)
+        PrimaryStorageManagerImpl primaryStorageManager = bean(PrimaryStorageManagerImpl.class)
 
         // untrack all bs
         tracker.untrackAll()
@@ -191,6 +199,11 @@ class PrimaryStoragePingCase extends SubCase {
 
         assert count == 0
 
+        def connectCount = 0
+        def cleanup2 = notifyWhenReceivedMessage(ConnectPrimaryStorageMsg.class) { ConnectPrimaryStorageMsg msg ->
+            connectCount ++
+        }
+
         // check management node ready
         tracker.managementNodeReady()
 
@@ -198,10 +211,18 @@ class PrimaryStoragePingCase extends SubCase {
             assert count > 0
         }
 
+        primaryStorageManager.managementNodeReady()
+
+        retryInSecs {
+            assert connectCount == 2
+            assert Q.New(PrimaryStorageVO.class).eq(PrimaryStorageVO_.status, PrimaryStorageStatus.Connected).count() == 2
+        }
+
         cleanup()
+        cleanup2()
     }
 
-    void testPingSuccessBSReconnectCondition() {
+    void testPingSuccessPSReconnectCondition() {
         def zone = env.inventoryByName("zone")
         def cluster = env.inventoryByName("cluster")
 

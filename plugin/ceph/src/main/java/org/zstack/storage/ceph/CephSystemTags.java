@@ -3,6 +3,7 @@ package org.zstack.storage.ceph;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.tag.TagDefinition;
+import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.tag.PatternedSystemTag;
 
@@ -33,4 +34,7 @@ public class CephSystemTags {
 
     public static final String NO_CEPHX_TOKEN = "ceph::nocephx";
     public static PatternedSystemTag NO_CEPHX = new PatternedSystemTag(NO_CEPHX_TOKEN, PrimaryStorageVO.class);
+
+    public static final String USE_CEPH_ROOT_POOL_TOKEN = "rootPoolName";
+    public static PatternedSystemTag USE_CEPH_ROOT_POOL = new PatternedSystemTag(String.format("ceph::rootPoolName::{%s}", USE_CEPH_ROOT_POOL_TOKEN), VolumeVO.class);
 }

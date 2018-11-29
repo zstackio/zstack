@@ -1293,6 +1293,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 fchain.setName(String.format("update-vmNic-%s-to-backend", msg.getVmInstanceUuid()));
                 fchain.getData().put(Params.VmInstanceSpec.toString(), spec);
                 fchain.then(new VmInstantiateResourceOnAttachingNicFlow());
+                fchain.then(new VmUpdateNicOnHypervisorFlow());
                 fchain.done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
@@ -1740,7 +1741,6 @@ public class VmInstanceBase extends AbstractVmInstance {
                 flowChain.setName(String.format("attachNic-vm-%s-l3-%s", self.getUuid(), l3Uuid));
                 flowChain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
                 flowChain.then(new VmAllocateNicFlow());
-                flowChain.then(new VmAttachL3NetworkToNicFlow());
                 flowChain.then(new VmSetDefaultL3NetworkOnAttachingFlow());
                 if (self.getState() == VmInstanceState.Running) {
                     flowChain.then(new VmInstantiateResourceOnAttachingNicFlow());
@@ -2599,6 +2599,10 @@ public class VmInstanceBase extends AbstractVmInstance {
                 .filter(iso -> !vmIsoList.contains(iso.getUuid()))
                 .collect(Collectors.toList());
 
+        for (VmAttachIsoExtensionPoint ext : pluginRgty.getExtensionList(VmAttachIsoExtensionPoint.class)) {
+            ext.filtCandidateIsos(msg.getVmInstanceUuid(), result);
+        }
+
         reply.setInventories(result);
         bus.reply(msg, reply);
     }
@@ -3400,6 +3404,15 @@ public class VmInstanceBase extends AbstractVmInstance {
         checkIfIsoAttachable(isoUuid);
         IsoOperator.checkAttachIsoToVm(self.getUuid(), isoUuid);
 
+        List<VmInstanceInventory> vms = list(VmInstanceInventory.valueOf(self));
+        for (VmAttachIsoExtensionPoint ext : pluginRgty.getExtensionList(VmAttachIsoExtensionPoint.class)) {
+            ErrorCode err = ext.filtCandidateVms(isoUuid, vms);
+            if (err != null) {
+                completion.fail(err);
+                return;
+            }
+        }
+
         if (self.getState() == VmInstanceState.Stopped) {
             new IsoOperator().attachIsoToVm(self.getUuid(), isoUuid);
             completion.success();
@@ -3497,6 +3510,9 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void handle(final APIDetachL3NetworkFromVmMsg msg) {
+        VmNicVO vmNicVO = dbf.findByUuid(msg.getVmNicUuid(), VmNicVO.class);
+        String vmNicAccountUuid = acntMgr.getOwnerAccountUuidOfResource(vmNicVO.getUuid());
+
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
@@ -3563,6 +3579,13 @@ public class VmInstanceBase extends AbstractVmInstance {
                         evt.setInventory(VmInstanceInventory.valueOf(self));
                         bus.publish(evt);
                         chain.next();
+
+                        VmNicInventory vmNicInventory = VmNicInventory.valueOf(vmNicVO);
+                        VmNicCanonicalEvents.VmNicEventData vmNicEventData = new VmNicCanonicalEvents.VmNicEventData();
+                        vmNicEventData.setCurrentStatus(VmInstanceState.Destroyed.toString());
+                        vmNicEventData.setAccountUuid(vmNicAccountUuid);
+                        vmNicEventData.setInventory(vmNicInventory);
+                        evtf.fire(VmNicCanonicalEvents.VM_NIC_DELETED_PATH, vmNicEventData);
                     }
                 }).error(new FlowErrorHandler(msg) {
                     @Override
@@ -4359,6 +4382,14 @@ public class VmInstanceBase extends AbstractVmInstance {
                 self = dbf.reload(self);
                 evt.setInventory(VmInstanceInventory.valueOf(self));
                 bus.publish(evt);
+
+                VmNicInventory vmNicInventory = (VmNicInventory) data.get(vmNicInvKey);
+                VmNicCanonicalEvents.VmNicEventData vmNicEventData = new VmNicCanonicalEvents.VmNicEventData();
+                vmNicEventData.setCurrentStatus(self.getState().toString());
+                String vmNicAccountUuid = acntMgr.getOwnerAccountUuidOfResource(vmNicInventory.getUuid());
+                vmNicEventData.setAccountUuid(vmNicAccountUuid);
+                vmNicEventData.setInventory(vmNicInventory);
+                evtf.fire(VmNicCanonicalEvents.VM_NIC_CREATED_PATH, vmNicEventData);
             }
         }).error(new FlowErrorHandler(msg) {
             @Override
@@ -4450,9 +4481,21 @@ public class VmInstanceBase extends AbstractVmInstance {
         VolumeVO vvo = dbf.findByUuid(volume.getUuid(), VolumeVO.class);
         // the volume is already detached, skip the bellow actions, except sharable
         if (vvo.getVmInstanceUuid() == null && !vvo.isShareable()) {
-            extEmitter.afterDetachVolume(getSelfInventory(), volume);
-            bus.reply(msg, reply);
-            completion.done();
+            extEmitter.afterDetachVolume(getSelfInventory(), volume, new Completion(completion) {
+                @Override
+                public void success() {
+                    bus.reply(msg, reply);
+                    completion.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    reply.setError(errorCode);
+                    bus.reply(msg, reply);
+                    completion.done();
+                }
+            });
+
             return;
         }
 
@@ -4460,9 +4503,20 @@ public class VmInstanceBase extends AbstractVmInstance {
         extEmitter.beforeDetachVolume(getSelfInventory(), volume);
 
         if (self.getState() == VmInstanceState.Stopped) {
-            extEmitter.afterDetachVolume(getSelfInventory(), volume);
-            bus.reply(msg, reply);
-            completion.done();
+            extEmitter.afterDetachVolume(getSelfInventory(), volume, new Completion(completion) {
+                @Override
+                public void success() {
+                    bus.reply(msg, reply);
+                    completion.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    reply.setError(errorCode);
+                    bus.reply(msg, reply);
+                    completion.done();
+                }
+            });
             return;
         }
 
@@ -4479,16 +4533,27 @@ public class VmInstanceBase extends AbstractVmInstance {
                 if (!r.isSuccess()) {
                     reply.setError(r.getError());
                     extEmitter.failedToDetachVolume(getSelfInventory(), volume, r.getError());
+                    bus.reply(msg, reply);
+                    completion.done();
                 } else {
-                    extEmitter.afterDetachVolume(getSelfInventory(), volume);
+                    extEmitter.afterDetachVolume(getSelfInventory(), volume, new Completion(completion) {
+                        @Override
+                        public void success() {
+                            // update Volumevo before exit message queue
+                            vvo.setVmInstanceUuid(null);
+                            dbf.updateAndRefresh(vvo);
+                            bus.reply(msg, reply);
+                            completion.done();
+                        }
 
-                    // update Volumevo before exit message queue
-                    vvo.setVmInstanceUuid(null);
-                    dbf.updateAndRefresh(vvo);
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            reply.setError(errorCode);
+                            bus.reply(msg, reply);
+                            completion.done();
+                        }
+                    });
                 }
-
-                bus.reply(msg, reply);
-                completion.done();
             }
         });
     }

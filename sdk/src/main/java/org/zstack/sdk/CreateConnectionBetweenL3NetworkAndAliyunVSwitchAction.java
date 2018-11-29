@@ -55,8 +55,14 @@ public class CreateConnectionBetweenL3NetworkAndAliyunVSwitchAction extends Abst
     @Param(required = false)
     public java.util.List userTags;
 
-    @Param(required = true)
+    @Param(required = false)
     public String sessionId;
+
+    @Param(required = false)
+    public String accessKeyId;
+
+    @Param(required = false)
+    public String accessKeySecret;
 
     @NonAPIParam
     public long timeout = -1;

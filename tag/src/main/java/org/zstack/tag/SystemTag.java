@@ -119,29 +119,6 @@ public class SystemTag {
         return q.isExists();
     }
 
-    public void simpleCopy(String srcUuid, Class srcClass, String dstUuid, Class dstClass, boolean inherent) {
-        tagMgr.copySystemTag(srcUuid, srcClass.getSimpleName(), dstUuid, dstClass.getSimpleName(), inherent);
-    }
-
-    public void simpleCopyTag(String srcUuid, Class srcClass, String dstUuid, Class dstClass, String tag) {
-        SystemTagVO systemTagVO = Q.New(SystemTagVO.class)
-                .eq(SystemTagVO_.resourceUuid, srcUuid)
-                .eq(SystemTagVO_.resourceType, srcClass.getSimpleName())
-                .eq(SystemTagVO_.tag, tag)
-                .find();
-
-        if (systemTagVO == null) {
-            logger.debug(String.format("can not find tag[%s] from resource[uuid:%s, type:%s]", tag, srcClass.getSimpleName(), srcUuid));
-            return;
-        }
-
-        SystemTagVO ntag = new SystemTagVO(systemTagVO);
-        ntag.setUuid(Platform.getUuid());
-        ntag.setResourceType(dstClass.getSimpleName());
-        ntag.setResourceUuid(dstUuid);
-        dbf.getEntityManager().persist(ntag);
-    }
-
     public void copy(String srcUuid, Class srcClass, String dstUuid, Class dstClass) {
         SimpleQuery<SystemTagVO> q = dbf.createQuery(SystemTagVO.class);
         q.add(SystemTagVO_.resourceType, Op.EQ, srcClass.getSimpleName());

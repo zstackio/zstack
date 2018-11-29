@@ -1,4 +1,4 @@
-# create VpcRouterVmVO from ApplianceVmVO
+-- create VpcRouterVmVO from ApplianceVmVO
 DELIMITER $$
 CREATE PROCEDURE generateVpcRouterVmVO()
     BEGIN
@@ -13,12 +13,11 @@ CREATE PROCEDURE generateVpcRouterVmVO()
                 LEAVE read_loop;
             END IF;
 
-            INSERT INTO zstack.VpcRouterVmVO (uuid) values (vrUuid);
-            UPDATE zstack.ResourceVO set resourceType='VpcRouterVmVO' where uuid= vrUuid;
+            INSERT IGNORE INTO zstack.VpcRouterVmVO (uuid) values (vrUuid);
 
         END LOOP;
         CLOSE cur;
-        # work around a bug of mysql : jira.mariadb.org/browse/MDEV-4602
+        -- work around a bug of mysql : jira.mariadb.org/browse/MDEV-4602
         SELECT CURTIME();
     END $$
 DELIMITER ;

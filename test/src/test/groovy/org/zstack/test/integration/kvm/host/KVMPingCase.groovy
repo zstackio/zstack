@@ -2,6 +2,7 @@ package org.zstack.test.integration.kvm.host
 
 import org.springframework.http.HttpEntity
 import org.zstack.compute.host.HostGlobalConfig
+import org.zstack.compute.host.HostManagerImpl
 import org.zstack.compute.host.HostReconnectTask
 import org.zstack.compute.host.HostTrackImpl
 import org.zstack.core.cloudbus.CloudBus
@@ -331,6 +332,24 @@ class KVMPingCase extends SubCase {
         recoverHostToConnected(kvm1.uuid)
     }
 
+    void testManagementNodeReadyConnectAllHost() {
+        HostManagerImpl hostManager = bean(HostManagerImpl.class)
+
+        def count = 0
+        def cleanup = notifyWhenReceivedMessage(ConnectHostMsg.class) { ConnectHostMsg msg ->
+            count++
+        }
+
+        hostManager.managementNodeReady()
+
+        retryInSecs {
+            assert count == 2
+            assert Q.New(HostVO.class).eq(HostVO_.status, HostStatus.Connected).count() == 2
+        }
+
+        cleanup()
+    }
+
     static class HostReconnectTaskForTest extends HostReconnectTask {
         @Override
         protected HostReconnectTask.CanDoAnswer canDoReconnect() {
@@ -374,6 +393,7 @@ class KVMPingCase extends SubCase {
             testHostReconnectAfterPingFailure()
             testContinuePingIfHostNoReconnect()
             testNoPingIfHostNotReadyToReconnect()
+            testManagementNodeReadyConnectAllHost()
 
             canDoReconnectFunc = null
         }
