@@ -2,6 +2,7 @@ package org.zstack.testlib
 
 import com.google.common.base.Charsets
 import com.google.common.io.Resources
+import org.apache.commons.lang.StringEscapeUtils
 import org.apache.commons.lang.StringUtils
 import org.zstack.core.Platform
 import org.zstack.header.identity.SuppressCredentialCheck
@@ -47,7 +48,8 @@ class PythonSdkGenerator {
                     ap.add("valid_values=[${apiParam.validValues().collect { "'" + it + "'" }.join(",")}]")
                 }
                 if (!apiParam.validRegexValues().isEmpty()) {
-                    ap.add("valid_regex_values=r'${apiParam.validRegexValues()}'")
+                    String regex = apiParam.validRegexValues().replace("'", "\\\'")
+                    ap.add("valid_regex_values=r'${regex}'")
                 }
                 if (apiParam.maxLength() != Integer.MIN_VALUE) {
                     ap.add("max_length=${apiParam.maxLength()}")
@@ -69,7 +71,11 @@ class PythonSdkGenerator {
 
         if (!clz.isAnnotationPresent(SuppressCredentialCheck.class)) {
             fieldList.add("self.sessionId = None")
-            annotationList.add("'sessionId': ParamAnnotation(required=True)")
+            annotationList.add("'sessionId': ParamAnnotation(required=False)")
+            fieldList.add("self.accessKeyId = None")
+            annotationList.add("'accessKeyId': ParamAnnotation(required=False)")
+            fieldList.add("self.accessKeySecret = None")
+            annotationList.add("'accessKeySecret': ParamAnnotation(required=False)")
         }
     }
 
