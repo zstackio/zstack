@@ -1293,6 +1293,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 fchain.setName(String.format("update-vmNic-%s-to-backend", msg.getVmInstanceUuid()));
                 fchain.getData().put(Params.VmInstanceSpec.toString(), spec);
                 fchain.then(new VmInstantiateResourceOnAttachingNicFlow());
+                fchain.then(new VmUpdateNicOnHypervisorFlow());
                 fchain.done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
@@ -1740,7 +1741,6 @@ public class VmInstanceBase extends AbstractVmInstance {
                 flowChain.setName(String.format("attachNic-vm-%s-l3-%s", self.getUuid(), l3Uuid));
                 flowChain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
                 flowChain.then(new VmAllocateNicFlow());
-                flowChain.then(new VmAttachL3NetworkToNicFlow());
                 flowChain.then(new VmSetDefaultL3NetworkOnAttachingFlow());
                 if (self.getState() == VmInstanceState.Running) {
                     flowChain.then(new VmInstantiateResourceOnAttachingNicFlow());

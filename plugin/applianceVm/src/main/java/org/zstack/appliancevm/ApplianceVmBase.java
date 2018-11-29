@@ -511,11 +511,9 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
         chain.setName(String.format("reboot-appliancevm-%s", inv.getUuid()));
         chain.insert(new Flow() {
             String __name__ = "change-appliancevm-status-to-disconnected";
-            ApplianceVmStatus originStatus;
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                originStatus = getSelf().getStatus();
                 getSelf().setStatus(ApplianceVmStatus.Disconnected);
                 self = dbf.updateAndRefresh(self);
                 trigger.next();
@@ -524,7 +522,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
             @Override
             public void rollback(FlowRollback trigger, Map data) {
                 self = dbf.reload(self);
-                getSelf().setStatus(originStatus);
+                getSelf().setStatus(ApplianceVmStatus.Disconnected);
                 self = dbf.updateAndRefresh(self);
                 trigger.rollback();
             }
@@ -564,7 +562,6 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
         chain.setName(String.format("start-appliancevm-%s", inv.getUuid()));
         chain.insert(new Flow() {
             String __name__ = "change-appliancevm-status-to-connecting";
-            ApplianceVmStatus originStatus = getSelf().getStatus();
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
@@ -576,7 +573,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
             @Override
             public void rollback(FlowRollback trigger, Map data) {
                 self = dbf.reload(self);
-                getSelf().setStatus(originStatus);
+                getSelf().setStatus(ApplianceVmStatus.Disconnected);
                 self = dbf.updateAndRefresh(self);
                 trigger.rollback();
             }
