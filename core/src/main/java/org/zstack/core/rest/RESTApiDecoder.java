@@ -94,7 +94,10 @@ public class RESTApiDecoder {
     
     private RESTApiDecoder() {
         Encoder encoder = new Encoder();
-        gsonEncoder = new GsonUtil().setCoder(Message.class, encoder).setExclusionStrategies(new ExclusionStrategy[]{encoder}).create();
+        gsonEncoder = new GsonUtil().setCoder(Message.class, encoder)
+                .setExclusionStrategies(new ExclusionStrategy[]{encoder})
+                .enableComplexMapKeySerialization()
+                .create();
         encoder.setGson(gsonEncoder);
         
         Decoder decoder = new Decoder();

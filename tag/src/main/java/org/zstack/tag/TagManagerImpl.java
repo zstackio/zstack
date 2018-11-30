@@ -24,7 +24,6 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.query.APIQueryReply;
 import org.zstack.header.tag.*;
-import org.zstack.identity.AccountManagerImpl;
 import org.zstack.identity.Session;
 import org.zstack.query.QueryFacade;
 import org.zstack.utils.*;
@@ -532,9 +531,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     }
 
     private void handleApiMessage(APIMessage msg) {
-        if (msg instanceof APIQueryTagMsg) {
-            handle((APIQueryTagMsg) msg);
-        } else if (msg instanceof APICreateUserTagMsg) {
+        if (msg instanceof APICreateUserTagMsg) {
             handle((APICreateUserTagMsg) msg);
         } else if (msg instanceof APICreateSystemTagMsg) {
             handle((APICreateSystemTagMsg) msg);
@@ -598,27 +595,13 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
         dbf.removeByPrimaryKey(msg.getUuid(), SystemTagVO.class);
         dbf.removeByPrimaryKey(msg.getUuid(), UserTagVO.class);
+        dbf.removeByPrimaryKey(msg.getUuid(), TagPatternVO.class);
 
         if (stag != null) {
             fireTagDeleted(list(SystemTagInventory.valueOf(stag)));
         }
 
         bus.publish(evt);
-    }
-
-    private void handle(APIQueryTagMsg msg) {
-        Class tagClass = msg.isSystemTag() ? SystemTagInventory.class : UserTagInventory.class;
-        if (msg.isCount()) {
-            APIQueryReply reply = new APIQueryReply();
-            long count = qf.count(msg, tagClass);
-            reply.setTotal(count);
-            bus.reply(msg, reply);
-        } else {
-            List invs = qf.query(msg, tagClass);
-            APIQueryTagReply reply = new APIQueryTagReply();
-            reply.setInventories(invs);
-            bus.reply(msg, reply);
-        }
     }
 
     @Override

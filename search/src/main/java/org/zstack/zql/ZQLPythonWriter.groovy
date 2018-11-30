@@ -55,7 +55,7 @@ class ZQLPythonWriter implements PythonApiBindingWriter {
 
             def primitiveFields = (it.selfInventoryFieldNames - expandedFields).collect {"'" + it + "'"}.join(",")
             sb.append("""class QueryObject${it.simpleInventoryName()}(object):
-    PRIMITIVE_FIELDS = [${primitiveFields}, '__systemTag__', '__userTag__']
+    PRIMITIVE_FIELDS = [${primitiveFields}, '${ZQLMetadata.SYS_TAG_NAME}', '${ZQLMetadata.USER_TAG_NAME}', '${ZQLMetadata.TAG_PATTERN_UUID}']
     EXPANDED_FIELDS = [${expandedFieldsStr}]
     QUERY_OBJECT_MAP = {
 ${queryObjectMapStr}

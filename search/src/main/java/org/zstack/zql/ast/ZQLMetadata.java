@@ -22,6 +22,7 @@ public class ZQLMetadata {
     private static final CLogger logger = Utils.getLogger(ZQLMetadata.class);
     public static final String USER_TAG_NAME = "__userTag__";
     public static final String SYS_TAG_NAME = "__systemTag__";
+    public static final String TAG_PATTERN_UUID = "__tagUuid__";
 
     public static class ExpandQueryMetadata {
         public Class selfVOClass;
@@ -100,7 +101,7 @@ public class ZQLMetadata {
         }
 
         public boolean hasInventoryField(String fname) {
-            if (fname.equals(SYS_TAG_NAME) || fname.equals(USER_TAG_NAME)) {
+            if (fname.equals(SYS_TAG_NAME) || fname.equals(USER_TAG_NAME) || fname.equals(TAG_PATTERN_UUID)) {
                 return true;
             } else {
                 return selfInventoryFieldNames.contains(fname);

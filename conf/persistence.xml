@@ -110,6 +110,7 @@
         <class>org.zstack.header.storage.snapshot.VolumeSnapshotBackupStorageRefVO</class>
         <class>org.zstack.header.tag.UserTagVO</class>
         <class>org.zstack.header.tag.SystemTagVO</class>
+        <class>org.zstack.header.tag.TagPatternVO</class>
         <class>org.zstack.network.service.virtualrouter.VirtualRouterVmVO</class>
         <class>org.zstack.storage.primary.local.LocalStorageResourceRefVO</class>
         <class>org.zstack.storage.primary.local.LocalStorageHostRefVO</class>
