@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddSchedulerJobToSchedulerTriggerAction extends AbstractAction {
+public class DetachTagFromResourcesAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddSchedulerJobToSchedulerTriggerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddSchedulerJobToSchedulerTriggerResult value;
+        public org.zstack.sdk.DetachTagFromResourcesResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,13 +26,10 @@ public class AddSchedulerJobToSchedulerTriggerAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String schedulerJobUuid;
+    public java.lang.String tagUuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String schedulerTriggerUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean triggerNow = false;
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List resourceUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -63,8 +60,8 @@ public class AddSchedulerJobToSchedulerTriggerAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddSchedulerJobToSchedulerTriggerResult value = res.getResult(org.zstack.sdk.AddSchedulerJobToSchedulerTriggerResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddSchedulerJobToSchedulerTriggerResult() : value; 
+        org.zstack.sdk.DetachTagFromResourcesResult value = res.getResult(org.zstack.sdk.DetachTagFromResourcesResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DetachTagFromResourcesResult() : value; 
 
         return ret;
     }
@@ -93,11 +90,11 @@ public class AddSchedulerJobToSchedulerTriggerAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/scheduler/jobs/{schedulerJobUuid}/scheduler/triggers/{schedulerTriggerUuid}";
+        info.httpMethod = "DELETE";
+        info.path = "/tags/{tagUuid}/resources";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

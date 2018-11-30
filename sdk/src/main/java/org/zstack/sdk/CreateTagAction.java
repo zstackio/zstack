@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddSchedulerJobToSchedulerTriggerAction extends AbstractAction {
+public class CreateTagAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddSchedulerJobToSchedulerTriggerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddSchedulerJobToSchedulerTriggerResult value;
+        public org.zstack.sdk.CreateTagResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,14 +25,23 @@ public class AddSchedulerJobToSchedulerTriggerAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String schedulerJobUuid;
+    @Param(required = true, maxLength = 128, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String schedulerTriggerUuid;
+    @Param(required = true, maxLength = 128, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String value;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean triggerNow = false;
+    public java.lang.String color;
+
+    @Param(required = false, validValues = {"simple","withToken"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String type = "simple";
+
+    @Param(required = false)
+    public java.lang.String resourceUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -63,8 +72,8 @@ public class AddSchedulerJobToSchedulerTriggerAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddSchedulerJobToSchedulerTriggerResult value = res.getResult(org.zstack.sdk.AddSchedulerJobToSchedulerTriggerResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddSchedulerJobToSchedulerTriggerResult() : value; 
+        org.zstack.sdk.CreateTagResult value = res.getResult(org.zstack.sdk.CreateTagResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateTagResult() : value; 
 
         return ret;
     }
@@ -94,7 +103,7 @@ public class AddSchedulerJobToSchedulerTriggerAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/scheduler/jobs/{schedulerJobUuid}/scheduler/triggers/{schedulerTriggerUuid}";
+        info.path = "/tags";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

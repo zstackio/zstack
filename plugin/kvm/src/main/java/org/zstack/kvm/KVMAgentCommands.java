@@ -926,6 +926,15 @@ public class KVMAgentCommands {
         private boolean isApplianceVm;
         private String systemSerialNumber;
         private String bootMode;
+        private boolean fromForeignHypervisor;
+
+        public boolean isFromForeignHypervisor() {
+            return fromForeignHypervisor;
+        }
+
+        public void setFromForeignHypervisor(boolean fromForeignHypervisor) {
+            this.fromForeignHypervisor = fromForeignHypervisor;
+        }
 
         public boolean isAdditionalQmp() {
             return additionalQmp;

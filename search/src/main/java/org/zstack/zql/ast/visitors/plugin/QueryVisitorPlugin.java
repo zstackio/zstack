@@ -8,7 +8,8 @@ public abstract class QueryVisitorPlugin {
     public enum ClauseType {
         QUERY,
         SUM,
-        COUNT
+        COUNT,
+        SIMPLE_COUNT,
     }
 
     protected ASTNode.Query node;

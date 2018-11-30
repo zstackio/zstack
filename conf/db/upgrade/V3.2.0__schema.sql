@@ -58,6 +58,7 @@ CREATE TABLE IF NOT EXISTS `OssBucketDomainVO` (
 
 ALTER TABLE DataCenterVO ADD COLUMN `endpoint` VARCHAR(127) DEFAULT NULL;
 UPDATE GlobalConfigVO SET category='aliyunNas' WHERE category ='aliyunNasPrimaryStorage';
+
 ALTER TABLE VolumeEO ADD COLUMN volumeQos VARCHAR(128) DEFAULT NULL COMMENT 'volumeQos format like total=1048576';
 
 DROP VIEW IF EXISTS `zstack`.`VolumeVO`;
@@ -96,3 +97,63 @@ CREATE TABLE IF NOT EXISTS `zstack`.`PubIpVipBandwidthUsageVO` (
     `createDate` timestamp,
     PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `VolumeBackupVO` ADD COLUMN `mode` VARCHAR(32) DEFAULT 'incremental';
+
+ALTER TABLE IdentityZoneVO MODIFY COLUMN zoneId VARCHAR(64) NOT NULL;
+ALTER TABLE DataCenterVO MODIFY COLUMN regionId VARCHAR(64) NOT NULL;
+
+CREATE TABLE IF NOT EXISTS `TagPatternVO` (
+    `uuid` VARCHAR(32) NOT NULL,
+    `name` VARCHAR(128) NOT NULL,
+    `value` VARCHAR(128) NOT NULL,
+    `description` VARCHAR(2048) DEFAULT NULL,
+    `color` VARCHAR(32) DEFAULT NULL,
+    `type` VARCHAR(32) NOT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `zstack`.`UserTagVO` ADD COLUMN `tagPatternUuid` varchar(32) DEFAULT NULL;
+
+ALTER TABLE `zstack`.`UserTagVO` ADD CONSTRAINT fkUserTagVOTagPatternVO FOREIGN KEY (tagPatternUuid) REFERENCES TagPatternVO (uuid) ON DELETE CASCADE;
+
+DELIMITER $$
+CREATE PROCEDURE migrateUserTagVO()
+    BEGIN
+        DECLARE done INT DEFAULT FALSE;
+        DECLARE patternUuid VARCHAR(32);
+        DECLARE accountUuid VARCHAR(32);
+        DECLARE patternTag VARCHAR(128);
+        DECLARE cur CURSOR FOR SELECT DISTINCT utag.tag, ref.accountUuid FROM zstack.UserTagVO utag, AccountResourceRefVO ref WHERE utag.resourceUuid = ref.resourceUuid;
+        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+        OPEN cur;
+        read_loop: LOOP
+            FETCH cur INTO patternTag, accountUuid;
+            IF done THEN
+                LEAVE read_loop;
+            END IF;
+
+            INSERT zstack.ResourceVO(uuid, resourceName, resourceType, concreteResourceType)
+            VALUES (patternUuid, patternTag, 'TagPatternVO', 'org.zstack.header.tag.TagPatternVO');
+
+            INSERT TagPatternVO (uuid, name, value, color, type, createDate, lastOpDate)
+            VALUES(patternUuid, patternTag, patternTag, '#186EAE', 'simple', NOW(), NOW());
+
+            INSERT zstack.AccountResourceRefVO(accountUuid, ownerAccountUuid, resourceUuid, resourceType, concreteResourceType, permission, isShared, createDate, lastOpDate)
+            VALUES(accountUuid, accountUuid, patternUuid,  'TagPatternVO', 'org.zstack.header.tag.TagPatternVO', 2, 0, NOW(), NOW());
+
+            UPDATE zstack.UserTagVO utag, AccountResourceRefVO ref SET utag.tagPatternUuid = patternUuid
+            WHERE utag.tag = patternTag
+            AND utag.resourceUuid = ref.resourceUuid
+            AND ref.accountUuid = accountUuid;
+
+        END LOOP;
+        CLOSE cur;
+        SELECT CURTIME();
+    END $$
+DELIMITER ;
+
+call migrateUserTagVO();
+DROP PROCEDURE IF EXISTS migrateUserTagVO;

@@ -141,6 +141,7 @@ class EnvSpec implements Node, ApiHelper {
             [UpdateClusterOSAction.metaClass, UpdateClusterOSAction.Result.metaClass, DeleteLongJobAction.class],
             [BatchCreateBaremetalChassisAction.metaClass, BatchCreateBaremetalChassisAction.Result.metaClass, DeleteLongJobAction.class],
             [AddSharedBlockGroupPrimaryStorageAction.metaClass, AddSharedBlockGroupPrimaryStorageAction.Result.metaClass, DeletePrimaryStorageAction.class],
+            [CreateTagAction.metaClass, CreateTagAction.Result.metaClass, DeleteTagAction.class]
     ]
 
     static Closure GLOBAL_DELETE_HOOK
