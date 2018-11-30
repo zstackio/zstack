@@ -1,11 +1,14 @@
 package org.zstack.header.rest;
 
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.impl.client.HttpClients;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 import org.zstack.header.core.Completion;
 
+import javax.net.ssl.SSLContext;
 import javax.servlet.http.HttpServletRequest;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -79,6 +82,16 @@ public interface RESTFacade {
         HttpComponentsClientHttpRequestFactory factory = new TimeoutHttpComponentsClientHttpRequestFactory();
         factory.setReadTimeout(readTimeout);
         factory.setConnectTimeout(connectTimeout);
+
+        SSLContext sslContext = DefaultSSLVerifier.getSSLContext(DefaultSSLVerifier.trustAllCerts);
+
+        if (sslContext != null) {
+            factory.setHttpClient(HttpClients.custom()
+                    .setSSLHostnameVerifier(new NoopHostnameVerifier())
+                    .setSSLContext(sslContext)
+                    .build());
+        }
+
         TimeoutRestTemplate template = new TimeoutRestTemplate(factory);
 
         StringHttpMessageConverter stringHttpMessageConverter = new StringHttpMessageConverter(StandardCharsets.UTF_8);
