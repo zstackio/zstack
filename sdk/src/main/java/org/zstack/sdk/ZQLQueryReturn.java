@@ -12,11 +12,11 @@ public class ZQLQueryReturn  {
         return this.inventories;
     }
 
-    public java.util.List inventoryCounts;
-    public void setInventoryCounts(java.util.List inventoryCounts) {
+    public java.util.Map inventoryCounts;
+    public void setInventoryCounts(java.util.Map inventoryCounts) {
         this.inventoryCounts = inventoryCounts;
     }
-    public java.util.List getInventoryCounts() {
+    public java.util.Map getInventoryCounts() {
         return this.inventoryCounts;
     }
 

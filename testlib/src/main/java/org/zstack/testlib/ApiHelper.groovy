@@ -2663,6 +2663,33 @@ trait ApiHelper {
     }
 
 
+    def attachTagToResources(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.AttachTagToResourcesAction.class) Closure c) {
+        def a = new org.zstack.sdk.AttachTagToResourcesAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def attachUsbDeviceToVm(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.AttachUsbDeviceToVmAction.class) Closure c) {
         def a = new org.zstack.sdk.AttachUsbDeviceToVmAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -5822,33 +5849,6 @@ trait ApiHelper {
     }
 
 
-    def attachTagToResources(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.AttachTagToResourcesAction.class) Closure c) {
-        def a = new org.zstack.sdk.AttachTagToResourcesAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
     def createVRouterRouteTable(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateVRouterRouteTableAction.class) Closure c) {
         def a = new org.zstack.sdk.CreateVRouterRouteTableAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -8846,33 +8846,6 @@ trait ApiHelper {
     }
 
 
-    def detachTagFromResources(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DetachTagFromResourcesAction.class) Closure c) {
-        def a = new org.zstack.sdk.DetachTagFromResourcesAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
     def deleteV2VConversionHost(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteV2VConversionHostAction.class) Closure c) {
         def a = new org.zstack.sdk.DeleteV2VConversionHostAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -10333,6 +10306,33 @@ trait ApiHelper {
 
     def detachSecurityGroupFromL3Network(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DetachSecurityGroupFromL3NetworkAction.class) Closure c) {
         def a = new org.zstack.sdk.DetachSecurityGroupFromL3NetworkAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def detachTagFromResources(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DetachTagFromResourcesAction.class) Closure c) {
+        def a = new org.zstack.sdk.DetachTagFromResourcesAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -17282,6 +17282,35 @@ trait ApiHelper {
 
     def querySystemTag(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QuerySystemTagAction.class) Closure c) {
         def a = new org.zstack.sdk.QuerySystemTagAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+        a.conditions = a.conditions.collect { it.toString() }
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def queryTag(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryTagAction.class) Closure c) {
+        def a = new org.zstack.sdk.QueryTagAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a

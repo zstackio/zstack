@@ -300,6 +300,7 @@ public class SourceClassMap {
 			put("org.zstack.storage.primary.sharedblock.SharedBlockState", "org.zstack.sdk.SharedBlockState");
 			put("org.zstack.storage.primary.sharedblock.SharedBlockStatus", "org.zstack.sdk.SharedBlockStatus");
 			put("org.zstack.storage.primary.sharedblock.SharedBlockType", "org.zstack.sdk.SharedBlockType");
+			put("org.zstack.tag2.AttachTagResult", "org.zstack.sdk.AttachTagResult");
 			put("org.zstack.ticket.entity.ArchiveTicketInventory", "org.zstack.sdk.ticket.entity.ArchiveTicketInventory");
 			put("org.zstack.ticket.entity.ArchiveTicketStatusHistoryInventory", "org.zstack.sdk.ticket.entity.ArchiveTicketStatusHistoryInventory");
 			put("org.zstack.ticket.entity.TicketFlowCollectionInventory", "org.zstack.sdk.ticket.entity.TicketFlowCollectionInventory");
@@ -384,6 +385,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.AliyunRouterInterfaceInventory", "org.zstack.header.aliyun.network.connection.AliyunRouterInterfaceInventory");
 			put("org.zstack.sdk.AliyunSnapshotInventory", "org.zstack.header.aliyun.storage.snapshot.AliyunSnapshotInventory");
 			put("org.zstack.sdk.ApplianceVmInventory", "org.zstack.appliancevm.ApplianceVmInventory");
+			put("org.zstack.sdk.AttachTagResult", "org.zstack.tag2.AttachTagResult");
 			put("org.zstack.sdk.AutoScalingGroupActivityInventory", "org.zstack.autoscaling.group.activity.AutoScalingGroupActivityInventory");
 			put("org.zstack.sdk.AutoScalingGroupInstanceInventory", "org.zstack.autoscaling.group.instance.AutoScalingGroupInstanceInventory");
 			put("org.zstack.sdk.AutoScalingGroupInventory", "org.zstack.autoscaling.group.AutoScalingGroupInventory");

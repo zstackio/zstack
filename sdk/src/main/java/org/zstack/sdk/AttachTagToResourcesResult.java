@@ -3,12 +3,12 @@ package org.zstack.sdk;
 
 
 public class AttachTagToResourcesResult {
-    public java.util.List inventories;
-    public void setInventories(java.util.List inventories) {
-        this.inventories = inventories;
+    public java.util.List results;
+    public void setResults(java.util.List results) {
+        this.results = results;
     }
-    public java.util.List getInventories() {
-        return this.inventories;
+    public java.util.List getResults() {
+        return this.results;
     }
 
 }
