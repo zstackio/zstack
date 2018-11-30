@@ -156,6 +156,7 @@ public class SourceClassMap {
 			put("org.zstack.header.scheduler.SchedulerJobSchedulerTriggerInventory", "org.zstack.sdk.SchedulerJobSchedulerTriggerInventory");
 			put("org.zstack.header.scheduler.SchedulerTriggerInventory", "org.zstack.sdk.SchedulerTriggerInventory");
 			put("org.zstack.header.simulator.SimulatorHostInventory", "org.zstack.sdk.SimulatorHostInventory");
+			put("org.zstack.header.storage.backup.BackupMode", "org.zstack.sdk.BackupMode");
 			put("org.zstack.header.storage.backup.BackupStorageInventory", "org.zstack.sdk.BackupStorageInventory");
 			put("org.zstack.header.storage.backup.VolumeBackupInventory", "org.zstack.sdk.VolumeBackupInventory");
 			put("org.zstack.header.storage.backup.VolumeBackupStorageRefInventory", "org.zstack.sdk.VolumeBackupStorageRefInventory");
@@ -391,6 +392,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.AutoScalingRuleTriggerInventory", "org.zstack.autoscaling.group.rule.trigger.AutoScalingRuleTriggerInventory");
 			put("org.zstack.sdk.AutoScalingTemplateInventory", "org.zstack.autoscaling.template.AutoScalingTemplateInventory");
 			put("org.zstack.sdk.AutoScalingVmTemplateInventory", "org.zstack.autoscaling.template.AutoScalingVmTemplateInventory");
+			put("org.zstack.sdk.BackupMode", "org.zstack.header.storage.backup.BackupMode");
 			put("org.zstack.sdk.BackupStorageInventory", "org.zstack.header.storage.backup.BackupStorageInventory");
 			put("org.zstack.sdk.BaremetalChassisInventory", "org.zstack.header.baremetal.chassis.BaremetalChassisInventory");
 			put("org.zstack.sdk.BaremetalException", "org.zstack.header.baremetal.BaremetalException");

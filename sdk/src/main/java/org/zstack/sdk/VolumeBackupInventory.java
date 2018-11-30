@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-
+import org.zstack.sdk.BackupMode;
 
 public class VolumeBackupInventory  {
 
@@ -82,6 +82,14 @@ public class VolumeBackupInventory  {
     }
     public java.lang.String getGroupUuid() {
         return this.groupUuid;
+    }
+
+    public BackupMode mode;
+    public void setMode(BackupMode mode) {
+        this.mode = mode;
+    }
+    public BackupMode getMode() {
+        return this.mode;
     }
 
     public java.sql.Timestamp createDate;
