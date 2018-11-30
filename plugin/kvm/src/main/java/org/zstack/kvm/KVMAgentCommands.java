@@ -165,6 +165,16 @@ public class KVMAgentCommands {
         private String hostUuid;
         private String sendCommandUrl;
         private List<String> iptablesRules;
+        private boolean ignoreMsrs;
+        private boolean pageTableExtensionDisabled;
+
+        public boolean isIgnoreMsrs() {
+            return ignoreMsrs;
+        }
+
+        public void setIgnoreMsrs(boolean ignoreMsrs) {
+            this.ignoreMsrs = ignoreMsrs;
+        }
 
         public List<String> getIptablesRules() {
             return iptablesRules;
@@ -189,11 +199,20 @@ public class KVMAgentCommands {
         public void setHostUuid(String hostUuid) {
             this.hostUuid = hostUuid;
         }
+
+        public boolean isPageTableExtensionDisabled() {
+            return pageTableExtensionDisabled;
+        }
+
+        public void setPageTableExtensionDisabled(boolean pageTableExtensionDisabled) {
+            this.pageTableExtensionDisabled = pageTableExtensionDisabled;
+        }
     }
 
     public static class ConnectResponse extends AgentResponse {
         private String libvirtVersion;
         private String qemuVersion;
+        private boolean iptablesSucc;
 
         public boolean isIptablesSucc() {
             return iptablesSucc;
@@ -202,8 +221,6 @@ public class KVMAgentCommands {
         public void setIptablesSucc(boolean iptablesSucc) {
             this.iptablesSucc = iptablesSucc;
         }
-
-        boolean iptablesSucc;
 
         public String getLibvirtVersion() {
             return libvirtVersion;
@@ -271,15 +288,6 @@ public class KVMAgentCommands {
     }
 
     public static class HostFactCmd extends AgentCommand {
-        private boolean ignoreMsrs;
-
-        public boolean isIgnoreMsrs() {
-            return ignoreMsrs;
-        }
-
-        public void setIgnoreMsrs(boolean ignoreMsrs) {
-            this.ignoreMsrs = ignoreMsrs;
-        }
     }
 
     public static class HostFactResponse extends AgentResponse {
@@ -523,7 +531,7 @@ public class KVMAgentCommands {
 
     public static class NicTO {
         private String mac;
-        private String ip;
+        private List<String> ips;
         private String bridgeName;
         private String uuid;
         private String nicInternalName;
@@ -531,12 +539,12 @@ public class KVMAgentCommands {
         private String metaData;
         private Boolean useVirtio;
 
-        public String getIp() {
-            return ip;
+        public List<String> getIps() {
+            return ips;
         }
 
-        public void setIp(String ip) {
-            this.ip = ip;
+        public void setIps(List<String> ips) {
+            this.ips = ips;
         }
 
         public String getUuid() {
@@ -664,6 +672,7 @@ public class KVMAgentCommands {
         public static final String FUSIONSTOR = "fusionstor";
         public static final String SHAREDBLOCK = "sharedblock";
         public static final String SCSILUN = "scsilun";
+        public static final String BLOCK = "block";
 
         private String installPath;
         private int deviceId;

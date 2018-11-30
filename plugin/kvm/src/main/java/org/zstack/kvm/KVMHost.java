@@ -1578,6 +1578,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setVolume(to);
         cmd.setVmUuid(vm.getUuid());
         extEmitter.beforeDetachVolume((KVMHostInventory) getSelfInventory(), vm, vol, cmd);
+
         new Http<>(detachDataVolumePath, cmd, DetachDataVolumeResponse.class).call(new ReturnValueCompletion<DetachDataVolumeResponse>(msg, completion) {
             @Override
             public void success(DetachDataVolumeResponse ret) {
@@ -1586,18 +1587,20 @@ public class KVMHost extends HostBase implements Host {
                             vol.getUuid(), vol.getInstallPath(), vm.getUuid(), vm.getName(), getSelf().getUuid(), getSelf().getManagementIp(), ret.getError());
                     reply.setError(err);
                     extEmitter.detachVolumeFailed((KVMHostInventory) getSelfInventory(), vm, vol, cmd, reply.getError());
+                    bus.reply(msg, reply);
+                    completion.done();
                 } else {
                     extEmitter.afterDetachVolume((KVMHostInventory) getSelfInventory(), vm, vol, cmd);
+                    bus.reply(msg, reply);
+                    completion.done();
                 }
-                bus.reply(msg, reply);
-                completion.done();
             }
 
             @Override
             public void fail(ErrorCode err) {
                 reply.setError(err);
+                extEmitter.detachVolumeFailed((KVMHostInventory) getSelfInventory(), vm, vol, cmd, reply.getError());
                 bus.reply(msg, reply);
-                extEmitter.detachVolumeFailed((KVMHostInventory) getSelfInventory(), vm, vol, cmd, err);
                 completion.done();
             }
         });
@@ -2027,6 +2030,7 @@ public class KVMHost extends HostBase implements Host {
         return L2NetworkInventory.valueOf(l2vo);
     }
 
+    @Transactional(readOnly = true)
     private NicTO completeNicInfo(VmNicInventory nic) {
         /* all l3 networks of the nic has same l2 network */
         L2NetworkInventory l2inv = getL2NetworkTypeFromL3NetworkUuid(nic.getL3NetworkUuid());
@@ -2040,13 +2044,27 @@ public class KVMHost extends HostBase implements Host {
             String platform = q.findValue();
 
             to.setUseVirtio(ImagePlatform.valueOf(platform).isParaVirtualization());
-            String tagValue = VmSystemTags.CLEAN_TRAFFIC.getTokenByResourceUuid(nic.getVmInstanceUuid(), VmSystemTags.CLEAN_TRAFFIC_TOKEN);
-            if (Boolean.valueOf(tagValue) || (tagValue == null && VmGlobalConfig.VM_CLEAN_TRAFFIC.value(Boolean.class))) {
-                to.setIp(nic.getIp());
-            }
+            to.setIps(getCleanTrafficIp(nic));
         }
 
         return to;
+    }
+
+    private List<String> getCleanTrafficIp(VmNicInventory nic) {
+        boolean isUserVm = Q.New(VmInstanceVO.class)
+                .eq(VmInstanceVO_.uuid, nic.getVmInstanceUuid()).select(VmInstanceVO_.type)
+                .findValue().equals(VmInstanceConstant.USER_VM_TYPE);
+
+        if (!isUserVm) {
+            return null;
+        }
+
+        String tagValue = VmSystemTags.CLEAN_TRAFFIC.getTokenByResourceUuid(nic.getVmInstanceUuid(), VmSystemTags.CLEAN_TRAFFIC_TOKEN);
+        if (Boolean.valueOf(tagValue) || (tagValue == null && VmGlobalConfig.VM_CLEAN_TRAFFIC.value(Boolean.class))) {
+            return VmNicHelper.getIpAddresses(nic);
+        }
+
+        return null;
     }
 
     private String getVolumeTOType(VolumeInventory vol) {
@@ -2145,9 +2163,6 @@ public class KVMHost extends HostBase implements Host {
         List<NicTO> nics = new ArrayList<>(spec.getDestNics().size());
         for (VmNicInventory nic : spec.getDestNics()) {
             NicTO to = completeNicInfo(nic);
-            if (!spec.getVmInventory().getType().equals(VmInstanceConstant.USER_VM_TYPE)) {
-                to.setIp("");
-            }
             nics.add(to);
         }
         nics = nics.stream().sorted(Comparator.comparing(NicTO::getDeviceId)).collect(Collectors.toList());
@@ -2596,10 +2611,12 @@ public class KVMHost extends HostBase implements Host {
             cmd.setHostUuid(self.getUuid());
             cmd.setSendCommandUrl(restf.getSendCommandUrl());
             cmd.setIptablesRules(KVMGlobalProperty.IPTABLES_RULES);
+            cmd.setIgnoreMsrs(KVMGlobalConfig.KVM_IGNORE_MSRS.value(Boolean.class));
+            cmd.setPageTableExtensionDisabled(HostSystemTags.PAGE_TABLE_EXTENSION_DISABLED.hasTag(self.getUuid(), HostVO.class));
             ConnectResponse rsp = restf.syncJsonPost(connectPath, cmd, ConnectResponse.class);
             if (!rsp.isSuccess() || !rsp.isIptablesSucc()) {
-                errCode = operr("unable to connect to kvm host[uuid:%s, ip:%s, url:%s], because %s", self.getUuid(), self.getManagementIp(), connectPath,
-                        rsp.getError());
+                errCode = operr("unable to connect to kvm host[uuid:%s, ip:%s, url:%s], because %s",
+                        self.getUuid(), self.getManagementIp(), connectPath, rsp.getError());
             } else {
                 VersionComparator libvirtVersion = new VersionComparator(rsp.getLibvirtVersion());
                 VersionComparator qemuVersion = new VersionComparator(rsp.getQemuVersion());
@@ -3003,7 +3020,6 @@ public class KVMHost extends HostBase implements Host {
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
                             HostFactCmd cmd = new HostFactCmd();
-                            cmd.setIgnoreMsrs(KVMGlobalConfig.KVM_IGNORE_MSRS.value(Boolean.class));
                             new Http<>(hostFactPath, cmd, HostFactResponse.class)
                                     .call(new ReturnValueCompletion<HostFactResponse>(trigger) {
                                 @Override

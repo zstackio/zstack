@@ -5,6 +5,7 @@ import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.compute.vm.VmQuotaUtil;
 import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.AsyncBatchRunner;
@@ -738,16 +739,56 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 new ImageQuotaUtil().checkImageSizeQuotaUseHttpHead(msg, pairs);
             }
 
+            @Transactional(readOnly = true)
             private void check(APICreateRootVolumeTemplateFromRootVolumeMsg msg, Map<String, Quota.QuotaPair> pairs) {
                 checkImageNumQuota(msg.getSession().getAccountUuid(),
                         msg.getSession().getAccountUuid(),
                         pairs);
+
+                Long templateSize = Q.New(VolumeVO.class)
+                        .select(VolumeVO_.size)
+                        .eq(VolumeVO_.uuid, msg.getRootVolumeUuid())
+                        .findValue();
+
+                checkImageSizeQuota(templateSize == null ? 0 : templateSize,
+                        msg.getSession().getAccountUuid(),
+                        msg.getSession().getAccountUuid(),
+                        pairs);
             }
 
+            @Transactional(readOnly = true)
             private void check(APICreateDataVolumeTemplateFromVolumeMsg msg, Map<String, Quota.QuotaPair> pairs) {
                 checkImageNumQuota(msg.getSession().getAccountUuid(),
                         msg.getSession().getAccountUuid(),
                         pairs);
+
+                Long templateSize = Q.New(VolumeVO.class)
+                        .select(VolumeVO_.size)
+                        .eq(VolumeVO_.uuid, msg.getVolumeUuid())
+                        .findValue();
+
+                checkImageSizeQuota(templateSize == null ? 0 : templateSize,
+                        msg.getSession().getAccountUuid(),
+                        msg.getSession().getAccountUuid(),
+                        pairs);
+            }
+
+            @Transactional(readOnly = true)
+            private void checkImageSizeQuota(long requiredImageSize,
+                                             String currentAccountUuid,
+                                             String resourceTargetOwnerAccountUuid,
+                                             Map<String, Quota.QuotaPair> pairs) {
+                long imageSizeQuota = pairs.get(ImageQuotaConstant.IMAGE_SIZE).getValue();
+                long imageSizeUsed = new ImageQuotaUtil().getUsedImageSize(resourceTargetOwnerAccountUuid);
+
+                QuotaUtil.QuotaCompareInfo quotaCompareInfo = new QuotaUtil.QuotaCompareInfo();
+                quotaCompareInfo.currentAccountUuid = currentAccountUuid;
+                quotaCompareInfo.resourceTargetOwnerAccountUuid = resourceTargetOwnerAccountUuid;
+                quotaCompareInfo.quotaName = ImageQuotaConstant.IMAGE_SIZE;
+                quotaCompareInfo.quotaValue = imageSizeQuota;
+                quotaCompareInfo.currentUsed = imageSizeUsed;
+                quotaCompareInfo.request = requiredImageSize;
+                new QuotaUtil().CheckQuota(quotaCompareInfo);
             }
 
             @Transactional(readOnly = true)

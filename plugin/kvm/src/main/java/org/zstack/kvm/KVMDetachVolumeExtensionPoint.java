@@ -3,7 +3,6 @@ package org.zstack.kvm;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
-import org.zstack.kvm.KVMAgentCommands.AttachDataVolumeCmd;
 import org.zstack.kvm.KVMAgentCommands.DetachDataVolumeCmd;
 
 /**

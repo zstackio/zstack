@@ -2,6 +2,7 @@ package org.zstack.core;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.LocaleUtils;
+import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
 import org.reflections.Reflections;
 import org.springframework.beans.factory.BeanFactory;
@@ -724,5 +725,9 @@ public class Platform {
         new BootErrorLog().write(reason);
         System.setProperty(EXIT_REASON, reason);
         System.exit(1);
+    }
+
+    public static String randomAlphanumeric(int count) {
+        return RandomStringUtils.randomAlphanumeric(count);
     }
 }

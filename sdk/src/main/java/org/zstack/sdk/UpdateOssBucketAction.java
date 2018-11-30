@@ -31,14 +31,29 @@ public class UpdateOssBucketAction extends AbstractAction {
     @Param(required = false, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
+    @Param(required = false, maxLength = 256, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String ossDomain;
+
+    @Param(required = false, maxLength = 127, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String ossKey;
+
+    @Param(required = false, maxLength = 127, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String ossSecret;
+
     @Param(required = false)
     public java.util.List systemTags;
 
     @Param(required = false)
     public java.util.List userTags;
 
-    @Param(required = true)
+    @Param(required = false)
     public String sessionId;
+
+    @Param(required = false)
+    public String accessKeyId;
+
+    @Param(required = false)
+    public String accessKeySecret;
 
     @NonAPIParam
     public long timeout = -1;

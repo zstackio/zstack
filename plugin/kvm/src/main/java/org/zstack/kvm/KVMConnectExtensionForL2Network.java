@@ -15,8 +15,6 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.*;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
-import org.zstack.utils.Utils;
-import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
 import java.util.*;

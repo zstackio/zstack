@@ -36,4 +36,6 @@ public class HostGlobalConfig {
     public static GlobalConfig HOST_UPDATE_OS_PARALLELISM_DEGREE = new GlobalConfig(CATEGORY, "update.os.parallelismDegree");
     @GlobalConfigValidation(numberLessThan = 4096)
     public static GlobalConfig BATCH_ADD_HOST_LIMIT = new GlobalConfig(CATEGORY, "add.batchLimit");
+    @GlobalConfigValidation(validValues = {"JustMigrate", "StopVmOnMigrationFailure"})
+    public static GlobalConfig HOST_MAINTENANCE_POLICY = new GlobalConfig(CATEGORY, "host.maintenance.policy");
 }

@@ -395,6 +395,33 @@ trait ApiHelper {
     }
 
 
+    def addAliyunEbsBackupStorage(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.AddAliyunEbsBackupStorageAction.class) Closure c) {
+        def a = new org.zstack.sdk.AddAliyunEbsBackupStorageAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def addAliyunEbsPrimaryStorage(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.AddAliyunEbsPrimaryStorageAction.class) Closure c) {
         def a = new org.zstack.sdk.AddAliyunEbsPrimaryStorageAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -532,6 +559,33 @@ trait ApiHelper {
 
     def addAliyunNasPrimaryStorage(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.AddAliyunNasPrimaryStorageAction.class) Closure c) {
         def a = new org.zstack.sdk.AddAliyunNasPrimaryStorageAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def addAliyunPanguPartition(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.AddAliyunPanguPartitionAction.class) Closure c) {
+        def a = new org.zstack.sdk.AddAliyunPanguPartitionAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -2852,6 +2906,33 @@ trait ApiHelper {
     }
 
 
+    def changeAccessKeyState(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ChangeAccessKeyStateAction.class) Closure c) {
+        def a = new org.zstack.sdk.ChangeAccessKeyStateAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def changeAffinityGroupState(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ChangeAffinityGroupStateAction.class) Closure c) {
         def a = new org.zstack.sdk.ChangeAffinityGroupStateAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -3853,6 +3934,33 @@ trait ApiHelper {
 
     def convertVmFromForeignHypervisor(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ConvertVmFromForeignHypervisorAction.class) Closure c) {
         def a = new org.zstack.sdk.ConvertVmFromForeignHypervisorAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def createAccessKey(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateAccessKeyAction.class) Closure c) {
+        def a = new org.zstack.sdk.CreateAccessKeyAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -6173,6 +6281,33 @@ trait ApiHelper {
     }
 
 
+    def deleteAccessKey(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteAccessKeyAction.class) Closure c) {
+        def a = new org.zstack.sdk.DeleteAccessKeyAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def deleteAccount(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteAccountAction.class) Closure c) {
         def a = new org.zstack.sdk.DeleteAccountAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -6364,6 +6499,33 @@ trait ApiHelper {
 
     def deleteAliyunNasAccessGroupRule(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteAliyunNasAccessGroupRuleAction.class) Closure c) {
         def a = new org.zstack.sdk.DeleteAliyunNasAccessGroupRuleAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def deleteAliyunPanguPartition(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteAliyunPanguPartitionAction.class) Closure c) {
+        def a = new org.zstack.sdk.DeleteAliyunPanguPartitionAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -13760,6 +13922,35 @@ trait ApiHelper {
     }
 
 
+    def queryAccessKey(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryAccessKeyAction.class) Closure c) {
+        def a = new org.zstack.sdk.QueryAccessKeyAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+        a.conditions = a.conditions.collect { it.toString() }
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def queryAccount(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryAccountAction.class) Closure c) {
         def a = new org.zstack.sdk.QueryAccountAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -13905,6 +14096,35 @@ trait ApiHelper {
     }
 
 
+    def queryAliyunEbsBackupStorage(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryAliyunEbsBackupStorageAction.class) Closure c) {
+        def a = new org.zstack.sdk.QueryAliyunEbsBackupStorageAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+        a.conditions = a.conditions.collect { it.toString() }
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def queryAliyunEbsPrimaryStorage(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryAliyunEbsPrimaryStorageAction.class) Closure c) {
         def a = new org.zstack.sdk.QueryAliyunEbsPrimaryStorageAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -13936,6 +14156,35 @@ trait ApiHelper {
 
     def queryAliyunNasAccessGroup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryAliyunNasAccessGroupAction.class) Closure c) {
         def a = new org.zstack.sdk.QueryAliyunNasAccessGroupAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+        a.conditions = a.conditions.collect { it.toString() }
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def queryAliyunPanguPartition(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryAliyunPanguPartitionAction.class) Closure c) {
+        def a = new org.zstack.sdk.QueryAliyunPanguPartitionAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -20879,6 +21128,33 @@ trait ApiHelper {
     }
 
 
+    def updateAliyunEbsBackupStorage(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateAliyunEbsBackupStorageAction.class) Closure c) {
+        def a = new org.zstack.sdk.UpdateAliyunEbsBackupStorageAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def updateAliyunEbsPrimaryStorage(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateAliyunEbsPrimaryStorageAction.class) Closure c) {
         def a = new org.zstack.sdk.UpdateAliyunEbsPrimaryStorageAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -20962,6 +21238,33 @@ trait ApiHelper {
 
     def updateAliyunNasAccessGroup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateAliyunNasAccessGroupAction.class) Closure c) {
         def a = new org.zstack.sdk.UpdateAliyunNasAccessGroupAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def updateAliyunPanguPartition(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateAliyunPanguPartitionAction.class) Closure c) {
+        def a = new org.zstack.sdk.UpdateAliyunPanguPartitionAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -27336,6 +27639,33 @@ trait ApiHelper {
 
     def updateSNSTextTemplate(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.zwatch.alarm.sns.UpdateSNSTextTemplateAction.class) Closure c) {
         def a = new org.zstack.sdk.zwatch.alarm.sns.UpdateSNSTextTemplateAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def deleteMetricData(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.zwatch.api.DeleteMetricDataAction.class) Closure c) {
+        def a = new org.zstack.sdk.zwatch.api.DeleteMetricDataAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a

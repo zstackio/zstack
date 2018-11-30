@@ -6,6 +6,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginExtension;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -32,16 +33,12 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.network.l3.*;
-import org.zstack.header.vm.ReleaseNetworkServiceOnDetachingNicExtensionPoint;
-import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceSpec;
-import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.NetworkUtils;
@@ -72,6 +69,8 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
     private CascadeFacade casf;
     @Autowired
     private TagManager tagMgr;
+    @Autowired
+    protected EventFacade evtf;
 
     private Map<String, VipReleaseExtensionPoint> vipReleaseExts = new HashMap<String, VipReleaseExtensionPoint>();
     private Map<String, VipBackend> vipBackends = new HashMap<String, VipBackend>();
@@ -277,6 +276,14 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
                         }.execute();
 
                         vip = VipInventory.valueOf(vipvo);
+
+                        VipCanonicalEvents.VipEventData vipEventData = new VipCanonicalEvents.VipEventData();
+                        vipEventData.setVipUuid(vipvo.getUuid());
+                        vipEventData.setCurrentStatus(VipCanonicalEvents.VIP_STATUS_CREATED);
+                        vipEventData.setInventory(vip);
+                        vipEventData.setDate(new Date());
+                        evtf.fire(VipCanonicalEvents.VIP_CREATED_PATH, vipEventData);
+
                         trigger.next();
                     }
                 });

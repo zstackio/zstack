@@ -4,9 +4,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.GLock;
-import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostConstant;
@@ -23,7 +20,6 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.operr;
-
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -33,11 +29,7 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
-    private ErrorFacade errf;
-    @Autowired
     private CloudBus bus;
-    @Autowired
-    private ApiTimeoutManager timeoutMgr;
 
     private String makeBridgeName(String physicalInterfaceName, int vlan) {
         physicalInterfaceName = physicalInterfaceName.substring(0, Math.min(physicalInterfaceName.length(), 7));

@@ -221,11 +221,42 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                     }
 
                 } catch (ShellException se) {
-                    logger.warn(se.getMessage(), se);
-                    throw new OperationFailureException(operr(se.getMessage()));
+                    String errMsg = hidePassword(se.getMessage());
+                    logger.warn(errMsg, se);
+                    throw new OperationFailureException(operr(errMsg));
                 }
 
                 completion.success();
+            }
+
+            private String hidePassword(String message) {
+                String errMsg = message;
+                if (errMsg.contains("remote_pass")) {
+                    String[] s = errMsg.trim().split(",");
+                    if (s.length > 1) {
+                        List<String> replaces = new ArrayList<>();
+                        boolean simple = false;
+                        for (int i = 0; i < s.length; i ++) {
+                            if (s[i].startsWith("\\\"remote_pass\\\":")) {
+                                replaces.add(s[i]);
+                            } else if (s[i].startsWith("\"remote_pass\":")) {
+                                replaces.add(s[i]);
+                                simple = true;
+                            }
+                        }
+                        if (!replaces.isEmpty()) {
+                            for (String replace: replaces) {
+                                if (simple) {
+                                    errMsg = errMsg.replaceFirst(replace, "\"remote_pass\":\"******\"");
+                                } else {
+                                    errMsg = errMsg.replaceFirst(replace, "\\\"remote_pass\\\":\\\"******\\\"");
+                                }
+
+                            }
+                        }
+                    }
+                }
+                return errMsg;
             }
 
             @Override

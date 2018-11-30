@@ -76,6 +76,8 @@ public abstract class HostBase extends AbstractHost {
     protected PluginRegistry pluginRgty;
     @Autowired
     protected EventFacade evtf;
+    @Autowired
+    protected HostMaintenancePolicyManager hostMaintenancePolicyMgr;
 
     public static class HostDisconnectedCanonicalEvent extends CanonicalEventEmitter {
         HostCanonicalEvents.HostDisconnectedData data;
@@ -244,6 +246,12 @@ public abstract class HostBase extends AbstractHost {
                             @Override
                             public void done() {
                                 if (!vmFailedToMigrate.isEmpty()) {
+                                    if (HostMaintenancePolicyManager.HostMaintenancePolicy.JustMigrate.equals(hostMaintenancePolicyMgr.getHostMaintenancePolicy(self.getUuid()))) {
+                                        trigger.fail(operr("failed to migrate vm[uuids:%s] on host[uuid:%s, name:%s, ip:%s], will try stopping it.",
+                                                vmFailedToMigrate, self.getUuid(), self.getName(), self.getManagementIp()));
+                                        return;
+                                    }
+
                                     logger.warn(String.format("failed to migrate vm[uuids:%s] on host[uuid:%s, name:%s, ip:%s], will try stopping it.",
                                             vmFailedToMigrate, self.getUuid(), self.getName(), self.getManagementIp()));
                                     policyVmMap.get(HostMaintenancePolicy.StopVm).addAll(vmFailedToMigrate);
@@ -299,6 +307,45 @@ public abstract class HostBase extends AbstractHost {
                                                     vmFailedToStop, self.getUuid(), self.getName(), self.getManagementIp()),
                                             errors));
                                 }
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "run-extension-point-after-maintenance";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        runExtensionPoints(pluginRgty.getExtensionList(HostAfterMaintenanceExtensionPoint.class).iterator(), new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+
+                    private void runExtensionPoints(Iterator<HostAfterMaintenanceExtensionPoint> it, Completion completion1) {
+                        if (!it.hasNext()) {
+                            completion1.success();
+                            return;
+                        }
+
+                        HostAfterMaintenanceExtensionPoint ext = it.next();
+                        ext.afterMaintenanceExtensionPoint(getSelfInventory(), new Completion(completion1) {
+                            @Override
+                            public void success() {
+                                runExtensionPoints(it, completion1);
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                completion1.fail(errorCode);
                             }
                         });
                     }

@@ -31,6 +31,9 @@ public class GetLicenseAddOnsAction extends AbstractAction {
     @Param(required = false)
     public java.util.List userTags;
 
+    @NonAPIParam
+    public boolean isSuppressCredentialCheck = true;
+
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();

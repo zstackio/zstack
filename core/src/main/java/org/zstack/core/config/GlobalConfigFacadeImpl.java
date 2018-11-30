@@ -5,7 +5,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.GLock;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.errorcode.ErrorCode;
@@ -43,7 +43,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
     private ErrorFacade errf;
 
     private JAXBContext context;
-    private Map<String, GlobalConfig> allConfigs = new ConcurrentHashMap<>();
+    private Map<String, GlobalConfig> allConfig = new ConcurrentHashMap<>();
 
     private static final String CONFIG_FOLDER = "globalConfig";
     private static final String OTHER_CATEGORY = "Others";
@@ -66,7 +66,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
     }
 
     private void handle(APIGetGlobalConfigMsg msg) {
-        GlobalConfig c = allConfigs.get(msg.getIdentity());
+        GlobalConfig c = allConfig.get(msg.getIdentity());
         APIGetGlobalConfigReply reply = new APIGetGlobalConfigReply();
         if (c == null) {
             ErrorCode err = argerr("unable to find GlobalConfig[category:%s, name:%s]", msg.getCategory(), msg.getName());
@@ -98,7 +98,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
     private void handle(APIResetGlobalConfigMsg msg) {
         APIResetGlobalConfigEvent evt = new APIResetGlobalConfigEvent(msg.getId());
 
-        for(GlobalConfig globalConfig: allConfigs.values()) {
+        for(GlobalConfig globalConfig: allConfig.values()) {
                 globalConfig.updateValue(globalConfig.getDefaultValue());
         }
 
@@ -108,7 +108,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
 
     private void handle(APIUpdateGlobalConfigMsg msg) {
         APIUpdateGlobalConfigEvent evt = new APIUpdateGlobalConfigEvent(msg.getId());
-        GlobalConfig globalConfig = allConfigs.get(msg.getIdentity());
+        GlobalConfig globalConfig = allConfig.get(msg.getIdentity());
         if (globalConfig == null) {
             ErrorCode err = argerr("Unable to find GlobalConfig[category: %s, name: %s]", msg.getCategory(), msg.getName());
             evt.setError(err);
@@ -156,7 +156,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                     mergeXmlDatabase();
                     link();
                     initAllConfig(); // don't run before link()
-                    allConfigs.putAll(configsFromXml);
+                    allConfig.putAll(configsFromXml);
                     // re-validate after merging xml's with db's
                     validateAll();
                 } catch (IllegalArgumentException ie) {
@@ -250,7 +250,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
             }
 
             private void validateAll() {
-                for (GlobalConfig g : allConfigs.values()) {
+                for (GlobalConfig g : allConfig.values()) {
                     g.normalize();
 
                     try {
@@ -276,9 +276,21 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
             }
 
             private void persistConfigInXmlButNotInDatabase() {
-                List<GlobalConfigVO> toSave = new ArrayList<GlobalConfigVO>();
+                List<GlobalConfigVO> toSave = new ArrayList<GlobalConfigVO>();  // new config options
+                List<GlobalConfig> toRemove = new ArrayList<>(); // obsolete config options
+                List<GlobalConfig> toUpdate = new ArrayList<>(); // configs with changed default value
+
                 for (GlobalConfig config : configsFromXml.values()) {
-                    if (configsFromDatabase.containsKey(config.getIdentity())) {
+                    GlobalConfig dbcfg = configsFromDatabase.get(config.getIdentity());
+                    if (dbcfg != null) {
+                        if (dbcfg.getDefaultValue().equals(dbcfg.value()) && !dbcfg.value().equals(config.getDefaultValue())) {
+                            if (logger.isTraceEnabled()) {
+                                logger.trace(String.format("Will update a global config to database: %s", config.toString()));
+                            }
+
+                            toUpdate.add(config);
+                        }
+
                         continue;
                     }
 
@@ -289,8 +301,34 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                     toSave.add(config.toVO());
                 }
 
+                for (GlobalConfig config : configsFromDatabase.values()) {
+                    if (!configsFromXml.containsKey(config.getIdentity())) {
+                        if (logger.isTraceEnabled()) {
+                            logger.trace(String.format("Will remove an old global config from database: %s", config.toString()));
+                        }
+
+                        toRemove.add(config);
+                    }
+                }
+
                 if (!toSave.isEmpty()) {
                     dbf.persistCollection(toSave);
+                }
+
+                for (GlobalConfig config : toRemove) {
+                    SQL.New(GlobalConfigVO.class)
+                            .eq(GlobalConfigVO_.category, config.getCategory())
+                            .eq(GlobalConfigVO_.name, config.getName())
+                            .delete();
+                }
+
+                for (GlobalConfig config : toUpdate) {
+                    SQL.New(GlobalConfigVO.class)
+                            .eq(GlobalConfigVO_.category, config.getCategory())
+                            .eq(GlobalConfigVO_.name, config.getName())
+                            .set(GlobalConfigVO_.defaultValue, config.getDefaultValue())
+                            .set(GlobalConfigVO_.value, config.value())
+                            .update();
                 }
             }
 
@@ -462,7 +500,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                         old.getCategory(), old.getName(), field.getDeclaringClass().getName(), field.getName()));
                 final GlobalConfig config = old.copy(xmlConfig);
                 field.set(null, config);
-                // all global config base on Field allConfigs which is origin from configsFromXml, so update its value
+                // all global config base on Field allConfig which is origin from configsFromXml, so update its value
                 configsFromXml.put(old.getIdentity(), config);
 
                 final GlobalConfigValidation at = field.getAnnotation(GlobalConfigValidation.class);
@@ -588,12 +626,12 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
 
     @Override
     public Map<String, GlobalConfig> getAllConfig() {
-        return allConfigs;
+        return allConfig;
     }
 
     @Override
     public <T> T getConfigValue(String category, String name, Class<T> clz) {
-        GlobalConfig c = allConfigs.get(GlobalConfig.produceIdentity(category, name));
+        GlobalConfig c = allConfig.get(GlobalConfig.produceIdentity(category, name));
         DebugUtils.Assert(c!=null, String.format("cannot find GlobalConfig[category:%s, name:%s]", category, name));
         return c.value(clz);
     }
@@ -602,13 +640,13 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
     public GlobalConfig createGlobalConfig(GlobalConfigVO vo) {
         vo = dbf.persistAndRefresh(vo);
         GlobalConfig c = GlobalConfig.valueOf(vo);
-        allConfigs.put(GlobalConfig.produceIdentity(vo.getCategory(), vo.getName()), c);
+        allConfig.put(GlobalConfig.produceIdentity(vo.getCategory(), vo.getName()), c);
         return c;
     }
 
     @Override
     public String updateConfig(String category, String name, String value) {
-        GlobalConfig c = allConfigs.get(GlobalConfig.produceIdentity(category,name));
+        GlobalConfig c = allConfig.get(GlobalConfig.produceIdentity(category,name));
         DebugUtils.Assert(c != null, String.format("cannot find GlobalConfig[category:%s, name:%s]", category, name));
         c.updateValue(value);
         return c.value();

@@ -1,5 +1,6 @@
 package org.zstack.storage.ceph.primary;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
@@ -1454,9 +1455,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     private String makeRootVolumeInstallPath(String volUuid) {
-        return String.format("ceph://%s/%s",
-                getDefaultRootVolumePoolName(),
-                volUuid);
+        String poolName = CephSystemTags.USE_CEPH_ROOT_POOL.getTokenByResourceUuid(volUuid, CephSystemTags.USE_CEPH_ROOT_POOL_TOKEN);
+        return String.format("ceph://%s/%s",getPoolName(poolName, getDefaultRootVolumePoolName()), volUuid);
     }
 
     private String makeResetImageRootVolumeInstallPath(String volUuid) {
@@ -1466,14 +1466,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 System.currentTimeMillis());
     }
 
-    private String makeDataVolumeInstallPath(String volUuid, String poolName) {
-        return String.format("ceph://%s/%s", poolName, volUuid);
+    private String makeDataVolumeInstallPath(String volUuid) {
+        String poolName = CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL.getTokenByResourceUuid(volUuid, CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL_TOKEN);
+        return String.format("ceph://%s/%s",getPoolName(poolName, getDefaultDataVolumePoolName()), volUuid);
     }
 
-    private String makeDataVolumeInstallPath(String volUuid) {
-        return makeDataVolumeInstallPath(volUuid,
-                getDefaultDataVolumePoolName()
-        );
+    private String getPoolName(String customPoolName, String defaultPoolName){
+        return  customPoolName != null ? customPoolName : defaultPoolName;
     }
 
     private String makeCacheInstallPath(String uuid) {
@@ -1512,17 +1511,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         if (VolumeType.Root.toString().equals(msg.getVolume().getType())) {
             cmd.installPath = makeRootVolumeInstallPath(msg.getVolume().getUuid());
         } else {
-            if (msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()) {
-                Optional<String> opt = msg.getSystemTags().stream().filter(s -> CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL.isMatch(s))
-                        .findAny();
-                cmd.installPath = opt.isPresent() ?
-                        makeDataVolumeInstallPath(
-                                msg.getVolume().getUuid(),
-                                CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL.getTokenByTag(opt.get(), CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL_TOKEN)
-                        ) : makeDataVolumeInstallPath(msg.getVolume().getUuid());
-            } else {
-                cmd.installPath = makeDataVolumeInstallPath(msg.getVolume().getUuid());
-            }
+            cmd.installPath = makeDataVolumeInstallPath(msg.getVolume().getUuid());
         }
 
         cmd.size = msg.getVolume().getSize();
@@ -2937,7 +2926,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         if (msg.getDescription() != null) {
             vo.setDescription(msg.getDescription());
         }
-        vo.setType(CephPrimaryStoragePoolType.Data.toString());
+        vo.setType(msg.getType());
         vo.setPrimaryStorageUuid(self.getUuid());
         vo = dbf.persistAndRefresh(vo);
 

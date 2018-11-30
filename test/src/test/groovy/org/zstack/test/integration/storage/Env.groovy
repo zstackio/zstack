@@ -424,6 +424,7 @@ class Env {
 
                 image {
                     name = "test-iso"
+                    format = ImageConstant.ISO_FORMAT_STRING
                     url  = "http://zstack.org/download/test.iso"
                 }
 
