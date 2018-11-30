@@ -1,11 +1,11 @@
-package org.zstack.test.unittest.org.zstack.test.unittest
+package org.zstack.test.unittest
 
 import org.junit.runner.JUnitCore
 import org.junit.runner.Result
 import org.junit.runner.RunWith
 import org.junit.runner.notification.Failure
 import org.junit.runners.Suite
-import org.zstack.test.unittest.org.zstack.test.unittest.utils.NetworkUtilsCase
+import org.zstack.test.unittest.utils.NetworkUtilsCase
 
 import java.util.stream.Collectors
 

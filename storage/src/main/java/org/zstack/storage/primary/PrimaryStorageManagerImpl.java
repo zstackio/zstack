@@ -43,8 +43,7 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
 
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 
 public class PrimaryStorageManagerImpl extends AbstractService implements PrimaryStorageManager,
         ManagementNodeChangeListener, ManagementNodeReadyExtensionPoint, VmInstanceStartExtensionPoint {
@@ -223,8 +222,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
         Message msg = (Message) pmsg;
         if (vo == null) {
-            String err = String.format("Cannot find primary storage[uuid:%s], it may have been deleted", pmsg.getPrimaryStorageUuid());
-            bus.replyErrorByMessageType(msg, errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND, err));
+            bus.replyErrorByMessageType(msg, err(SysErrors.RESOURCE_NOT_FOUND, "Cannot find primary storage[uuid:%s], it may have been deleted", pmsg.getPrimaryStorageUuid()));
             return;
         }
 

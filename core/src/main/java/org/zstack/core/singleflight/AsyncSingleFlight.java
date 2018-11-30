@@ -13,6 +13,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
+import static org.zstack.core.Platform.operr;
+
 /**
  * AsyncSingleFlight implemented an asynchronous single flight that won't
  * block the caller.
@@ -64,7 +66,7 @@ public class AsyncSingleFlight<V> {
 
     @AsyncThread
     private void fail(ReturnValueCompletion<V> consumer, Exception ex) {
-        consumer.fail(errf.throwableToOperationError(ex));
+        consumer.fail(operr(ex.getMessage()));
     }
 
     private void notifyResult(Collection<ReturnValueCompletion<V>> consumers, final V v) {

@@ -1,0 +1,22 @@
+[
+  {
+    "category": "VM",
+    "code": "1000",
+    "regex": "The state of vm[uuid:%s] is %s. Only these state[Running,Stopped] is allowed to update cpu or memory.",
+    "message_cn": "云主机的状态为%2$s,只有状态[Running,Stopped]允许升级CPU/内存",
+    "message_en": "vm status is %2$s now, only states[Running,Stopped] is allowed to update cpu or memory",
+    "operation_cn": "等待云主机进入[Running,Stopped]状态后，再升级CPU/内存",
+    "operation_en": "update cpu / memory until vm arrival states [Running, Stopped]"
+  },
+  {
+    "category": "VM",
+    "code": "1001",
+    "regex": "unable to allocate hosts; due to pagination is enabled, there might be several allocation failures happened before; the error list is [{no Enabled hosts found in the [1] candidate hosts}]",
+    "message_cn": "找不到合适的host来启动vm",
+    "message_en": "unable to allocate hosts",
+    "operation_cn": "请将合适的host置于Enable状态",
+    "operation_en": "please set host to Enabled state",
+    "causes_cn": "能用于启动该vm的host都不处于Enabled状态",
+    "causes_en": "no Enabled hosts found in the candidate hosts"
+  }
+]

@@ -32,8 +32,7 @@ import org.zstack.utils.network.NetworkUtils;
 import javax.persistence.Tuple;
 import java.util.List;
 
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -60,7 +59,7 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
     private void validate(APIUpdateVirtualRouterOfferingMsg msg) {
         if (msg.getIsDefault() != null) {
             if (!new QuotaUtil().isAdminAccount(msg.getSession().getAccountUuid())) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.PERMISSION_DENIED,
+                throw new ApiMessageInterceptionException(err(IdentityErrors.PERMISSION_DENIED,
                         "cannot change the default field of a virtual router offering; only admin can do the operation"
                 ));
             }
@@ -108,7 +107,7 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
     private void validate(APICreateVirtualRouterOfferingMsg msg) {
         if (msg.isDefault() != null) {
             if (!new QuotaUtil().isAdminAccount(msg.getSession().getAccountUuid())) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.PERMISSION_DENIED,
+                throw new ApiMessageInterceptionException(err(IdentityErrors.PERMISSION_DENIED,
                         "cannot create a virtual router offering with the default field set; only admin can do the operation"
                 ));
             }

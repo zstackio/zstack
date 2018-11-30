@@ -47,7 +47,7 @@ import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 
-import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -80,8 +80,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
     private void passThrough(VolumeSnapshotMessage msg) {
         VolumeSnapshotVO vo = dbf.findByUuid(msg.getSnapshotUuid(), VolumeSnapshotVO.class);
         if (vo == null) {
-            throw new OperationFailureException(errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND,
-                    String.format("cannot find volume snapshot[uuid:%s]", msg.getSnapshotUuid())
+            throw new OperationFailureException(err(SysErrors.RESOURCE_NOT_FOUND,
+                    "cannot find volume snapshot[uuid:%s]", msg.getSnapshotUuid()
             ));
         }
 
@@ -226,9 +226,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         final Integer maxIncrementalSnapshotNum = getMaxIncrementalSnapshotNum(vo.getVolumeUuid());
         if (!CoreGlobalProperty.UNIT_TEST_ON) {
             if (maxIncrementalSnapshotNum <= 1) {
-                throw new OperationFailureException(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
-                        String.format("Unsupported maximum snapshot number (%d) for volume [uuid:%s]",
-                                maxIncrementalSnapshotNum, vo.getVolumeUuid())
+                throw new OperationFailureException(operr("Unsupported maximum snapshot number (%d) for volume [uuid:%s]",
+                        maxIncrementalSnapshotNum, vo.getVolumeUuid()
                 ));
             }
         }
@@ -510,9 +509,9 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                         bus.makeTargetServiceIdByResourceUuid(askMsg, PrimaryStorageConstant.SERVICE_ID, primaryStorageUuid);
                         MessageReply reply = bus.call(askMsg);
                         if (!reply.isSuccess()) {
-                            ret.setError(errf.stringToOperationError(
-                                    String.format("cannot ask primary storage[uuid:%s] for volume snapshot capability",
-                                            vol.getUuid()), reply.getError()));
+                            ret.setError(operr(reply.getError(),
+                                    "cannot ask primary storage[uuid:%s] for volume snapshot capability",
+                                    vol.getUuid()));
                             bus.reply(msg, ret);
                             trigger.fail(ret.getError());
                             return;

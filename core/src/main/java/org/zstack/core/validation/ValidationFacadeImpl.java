@@ -14,6 +14,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.zstack.core.Platform.inerr;
+
 /**
  */
 public class ValidationFacadeImpl implements ValidationFacade, Component {
@@ -48,7 +50,7 @@ public class ValidationFacadeImpl implements ValidationFacade, Component {
                 for (Validator v : vs) {
                     String err = v.validate(obj);
                     if (err != null) {
-                        return errf.stringToInternalError(err);
+                        return inerr(err);
                     }
                 }
             }

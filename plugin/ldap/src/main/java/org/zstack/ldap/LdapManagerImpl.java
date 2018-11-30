@@ -8,12 +8,14 @@ import org.springframework.ldap.control.PagedResultsDirContextProcessor;
 import org.springframework.ldap.core.DirContextOperations;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.core.support.AbstractContextMapper;
-import org.springframework.ldap.filter.*;
+import org.springframework.ldap.filter.AndFilter;
+import org.springframework.ldap.filter.EqualsFilter;
+import org.springframework.ldap.filter.Filter;
+import org.springframework.ldap.filter.HardcodedFilter;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
-import org.zstack.header.core.captcha.Captcha;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -21,9 +23,8 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.AbstractService;
-import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.captcha.Captcha;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
@@ -38,6 +39,7 @@ import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+
 import javax.naming.NamingEnumeration;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.SearchControls;
@@ -46,6 +48,8 @@ import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
+import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -63,8 +67,6 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
     private TagManager tagMgr;
     @Autowired
     private CloudBus bus;
-    @Autowired
-    private ErrorFacade errf;
     @Autowired
     private PluginRegistry pluginRgty;
     @Autowired
@@ -212,7 +214,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
             if (result.size() == 1) {
                 dn = result.get(0).toString();
             } else if (result.size() > 1) {
-                throw new OperationFailureException(errf.instantiateErrorCode(
+                throw new OperationFailureException(err(
                         LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID, "More than one ldap search result"));
             } else {
                 return "";
@@ -220,13 +222,11 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
             logger.info(String.format("getDn success filter:%s, dn:%s", filter, dn));
         } catch (NamingException e) {
             LdapServerVO ldapServerVO = getLdapServer();
-            String errString = String.format(
-                    "You'd better check the ldap server[url:%s, baseDN:%s, encryption:%s, username:%s, password:******]" +
+            throw new OperationFailureException(err(
+                    LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID, "You'd better check the ldap server[url:%s, baseDN:%s, encryption:%s, username:%s, password:******]" +
                             " configuration and test connection first.getDn error filter:%s",
                     ldapServerVO.getUrl(), ldapServerVO.getBase(),
-                    ldapServerVO.getEncryption(), ldapServerVO.getUsername(), filter);
-            throw new OperationFailureException(errf.instantiateErrorCode(
-                    LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID, errString));
+                    ldapServerVO.getEncryption(), ldapServerVO.getUsername(), filter));
         }
         return dn;
     }
@@ -373,7 +373,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
 
         String ldapLoginName = msg.getUid();
         if (!isValid(ldapLoginName, msg.getPassword())) {
-            reply.setError(errf.instantiateErrorCode(IdentityErrors.AUTHENTICATION_ERROR,
+            reply.setError(err(IdentityErrors.AUTHENTICATION_ERROR,
                     "Login validation failed in LDAP"));
             bus.reply(msg, reply);
             return;
@@ -384,7 +384,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         LdapAccountRefVO vo = findLdapAccountRefVO(dn);
 
         if (vo == null) {
-            reply.setError(errf.instantiateErrorCode(IdentityErrors.AUTHENTICATION_ERROR,
+            reply.setError(err(IdentityErrors.AUTHENTICATION_ERROR,
                     "The ldapUid does not have a binding account."));
             bus.reply(msg, reply);
             return;
@@ -409,7 +409,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         SimpleQuery<LdapServerVO> sq = dbf.createQuery(LdapServerVO.class);
         List<LdapServerVO> ldapServers = sq.list();
         if (!ldapServers.isEmpty()) {
-            evt.setError(errf.instantiateErrorCode(LdapErrors.MORE_THAN_ONE_LDAP_SERVER,
+            evt.setError(err(LdapErrors.MORE_THAN_ONE_LDAP_SERVER,
                     "There has been a ldap server record. " +
                             "You'd better remove it before adding a new one!"));
             bus.publish(evt);
@@ -647,7 +647,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         sq.add(AccountVO_.uuid, SimpleQuery.Op.EQ, msg.getAccountUuid());
         AccountVO avo = sq.find();
         if (avo == null) {
-            evt.setError(errf.instantiateErrorCode(LdapErrors.CANNOT_FIND_ACCOUNT,
+            evt.setError(err(LdapErrors.CANNOT_FIND_ACCOUNT,
                     String.format("cannot find the specified account[uuid:%s]", msg.getAccountUuid())));
             bus.publish(evt);
             return;
@@ -659,17 +659,17 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration();
         String fullDn = msg.getLdapUid();
         if (!validateDnExist(ldapTemplateContextSource, fullDn)) {
-            throw new OperationFailureException(errf.instantiateErrorCode(LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID,
-                    String.format("cannot find dn[%s] on ldap server[Address:%s, BaseDN:%s].", fullDn,
-                            String.join(", ", ldapTemplateContextSource.getLdapContextSource().getUrls()),
-                            ldapTemplateContextSource.getLdapContextSource().getBaseLdapPathAsString())));
+            throw new OperationFailureException(err(LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID,
+                    "cannot find dn[%s] on ldap server[Address:%s, BaseDN:%s].", fullDn,
+                    String.join(", ", ldapTemplateContextSource.getLdapContextSource().getUrls()),
+                    ldapTemplateContextSource.getLdapContextSource().getBaseLdapPathAsString()));
         }
         try {
             evt.setInventory(bindLdapAccount(msg.getAccountUuid(), fullDn));
             logger.info(String.format("create ldap binding[ldapUid=%s, ldapUseAsLoginName=%s] success", fullDn, ldapUseAsLoginName));
         } catch (JpaSystemException e) {
             if (e.getRootCause() instanceof MySQLIntegrityConstraintViolationException) {
-                evt.setError(errf.instantiateErrorCode(LdapErrors.BIND_SAME_LDAP_UID_TO_MULTI_ACCOUNT,
+                evt.setError(err(LdapErrors.BIND_SAME_LDAP_UID_TO_MULTI_ACCOUNT,
                         "The ldap uid has been bound to an account. "));
             } else {
                 throw e;
@@ -773,9 +773,9 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
 
         LdapServerVO ldapServerVO = dbf.findByUuid(msg.getLdapServerUuid(), LdapServerVO.class);
         if (ldapServerVO == null) {
-            evt.setError(errf.instantiateErrorCode(LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_SERVER_RECORD,
-                    String.format("Cannot find the specified ldap server[uuid:%s] in database.",
-                            msg.getLdapServerUuid())));
+            evt.setError(err(LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_SERVER_RECORD,
+                    "Cannot find the specified ldap server[uuid:%s] in database.",
+                    msg.getLdapServerUuid()));
             bus.publish(evt);
             return;
         }

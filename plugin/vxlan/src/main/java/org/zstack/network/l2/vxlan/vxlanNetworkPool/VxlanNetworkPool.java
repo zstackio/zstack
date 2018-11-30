@@ -48,6 +48,7 @@ import java.util.stream.Collectors;
 import static org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant.VXLAN_KVM_POPULATE_FDB_L2VXLAN_NETWORKS_PATH;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.core.Platform.err;
 
 /**
  * Created by weiwang on 01/03/2017.
@@ -204,7 +205,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         AllocateVniReply reply = new AllocateVniReply();
         Integer vni = vas.allocateVni(msg);
         if (vni == null) {
-            reply.setError(errf.instantiateErrorCode(L2Errors.ALLOCATE_VNI_ERROR, String.format("Vni allocator strategy[%s] returns nothing, because no vni is available in this VxlanNetwork[name:%s, uuid:%s]", strategyType, self.getName(), self.getUuid())));
+            reply.setError(err(L2Errors.ALLOCATE_VNI_ERROR, "Vni allocator strategy[%s] returns nothing, because no vni is available in this VxlanNetwork[name:%s, uuid:%s]", strategyType, self.getName(), self.getUuid()));
         } else {
             logger.debug(String.format("Vni allocator strategy[%s] successfully allocates an vni[%s]", strategyType, vni));
             reply.setVni(vni);
@@ -487,7 +488,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
                 for (String tag : msg.getSystemTags()) {
                     VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.delete(msg.getL2NetworkUuid(), tag);
                 }
-                evt.setError(errf.instantiateErrorCode(L2Errors.ATTACH_ERROR, errorCode));
+                evt.setError(err(L2Errors.ATTACH_ERROR, errorCode, errorCode.getDetails()));
                 bus.publish(evt);
             }
         });

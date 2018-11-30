@@ -76,8 +76,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 import static org.zstack.core.progress.ProgressReportService.getTaskStage;
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.header.Constants.THREAD_CONTEXT_API;
@@ -443,9 +442,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         }
 
         if (vo == null) {
-            String err = String.format("Cannot find image[uuid:%s], it may have been deleted", msg.getImageUuid());
-            logger.warn(err);
-            bus.replyErrorByMessageType((Message) msg, errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND, err));
+            ErrorCode err = err(SysErrors.RESOURCE_NOT_FOUND, "Cannot find image[uuid:%s], it may have been deleted", msg.getImageUuid());
+            logger.warn(err.getDetails());
+            bus.replyErrorByMessageType((Message) msg, err);
             return;
         }
 
@@ -1263,7 +1262,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                         try {
                                             addTrackTask(ivo.getName(), ivo.getUuid(), ref.getBackupStorageUuid(), re.getInstallPath());
                                         } catch (URISyntaxException e) {
-                                            throw new OperationFailureException(errf.throwableToOperationError(e));
+                                            throw new OperationFailureException(operr(e.getMessage()));
                                         }
                                     } else {
                                         ref.setStatus(ImageStatus.Ready);
@@ -1890,7 +1889,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                         }
                                         trigger.next();
                                     } else {
-                                        trigger.fail(errf.stringToOperationError("cannot find proper backup storage", reply.getError()));
+                                        trigger.fail(operr(reply.getError(), "cannot find proper backup storage"));
                                     }
                                 }
                             });

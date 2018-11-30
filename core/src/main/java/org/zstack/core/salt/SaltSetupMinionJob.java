@@ -24,6 +24,9 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.zstack.core.Platform.inerr;
+import static org.zstack.core.Platform.operr;
+
 /**
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -77,7 +80,7 @@ public class SaltSetupMinionJob implements Job {
                     .setUsername(username).setPort(port);
             SshResult ret = ssh.checkTool("scp").run();
             if (ret.getReturnCode() != 0) {
-                completion.fail(errf.stringToOperationError(String.format("scp is not found on system[%s], unable to setup salt", targetIp)));
+                completion.fail(operr("scp is not found on system[%s], unable to setup salt", targetIp));
                 return;
             }
 
@@ -132,11 +135,11 @@ public class SaltSetupMinionJob implements Job {
         } catch (SshException e) {
             String err = String.format("failed to setup minion on target system[%s], because %s", targetIp, e.getMessage());
             logger.warn(err, e);
-            completion.fail(errf.throwableToOperationError(e));
+            completion.fail(operr(e.getMessage()));
         } catch (IOException ie) {
             String err = String.format("failed to setup minion on target system[%s], because %s", targetIp, ie.getMessage());
             logger.warn(err, ie);
-            completion.fail(errf.throwableToInternalError(ie));
+            completion.fail(inerr(ie.getMessage()));
         } finally {
             if (tmpt != null) {
                 tmpt.delete();

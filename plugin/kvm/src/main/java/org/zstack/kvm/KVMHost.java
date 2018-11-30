@@ -488,7 +488,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(DestroyVmResponse ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(errf.instantiateErrorCode(HostErrors.FAILED_TO_DESTROY_VM_ON_HYPERVISOR, ret.getError()));
+                    reply.setError(err(HostErrors.FAILED_TO_DESTROY_VM_ON_HYPERVISOR, ret.getError()));
                 }
 
                 bus.reply(msg, reply);
@@ -856,7 +856,7 @@ public class KVMHost extends HostBase implements Host {
             public void fail(ErrorCode err) {
                 KVMHostAsyncHttpCallReply reply = new KVMHostAsyncHttpCallReply();
                 if (err.isError(SysErrors.HTTP_ERROR, SysErrors.IO_ERROR)) {
-                    reply.setError(errf.instantiateErrorCode(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, "cannot do the operation on the KVM host", err));
+                    reply.setError(err(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, err, "cannot do the operation on the KVM host"));
                 } else {
                     reply.setError(err);
                 }
@@ -992,9 +992,9 @@ public class KVMHost extends HostBase implements Host {
 
             if (!HostSystemTags.LIVE_SNAPSHOT.hasTag(self.getUuid())) {
                 if (vmState != VmInstanceState.Stopped) {
-                    throw new OperationFailureException(errf.instantiateErrorCode(SysErrors.NO_CAPABILITY_ERROR,
-                            String.format("kvm host[uuid:%s, name:%s, ip:%s] doesn't not support live snapshot. please stop vm[uuid:%s] and try again",
-                                    self.getUuid(), self.getName(), self.getManagementIp(), msg.getVmUuid())
+                    throw new OperationFailureException(err(SysErrors.NO_CAPABILITY_ERROR,
+                            "kvm host[uuid:%s, name:%s, ip:%s] doesn't not support live snapshot. please stop vm[uuid:%s] and try again",
+                                    self.getUuid(), self.getName(), self.getManagementIp(), msg.getVmUuid()
                     ));
                 }
             }
@@ -1126,9 +1126,9 @@ public class KVMHost extends HostBase implements Host {
                             @Override
                             public void success(MigrateVmResponse ret) {
                                 if (!ret.isSuccess()) {
-                                    ErrorCode err = errf.instantiateErrorCode(HostErrors.FAILED_TO_MIGRATE_VM_ON_HYPERVISOR,
-                                            String.format("failed to migrate vm[uuid:%s] from kvm host[uuid:%s, ip:%s] to dest host[ip:%s], %s",
-                                                    vmUuid, self.getUuid(), self.getManagementIp(), dstHostMigrateIp, ret.getError())
+                                    ErrorCode err = err(HostErrors.FAILED_TO_MIGRATE_VM_ON_HYPERVISOR,
+                                            "failed to migrate vm[uuid:%s] from kvm host[uuid:%s, ip:%s] to dest host[ip:%s], %s",
+                                            vmUuid, self.getUuid(), self.getManagementIp(), dstHostMigrateIp, ret.getError()
                                     );
 
                                     trigger.fail(err);
@@ -1597,9 +1597,8 @@ public class KVMHost extends HostBase implements Host {
             public void success(DestroyVmResponse ret) {
                 DestroyVmOnHypervisorReply reply = new DestroyVmOnHypervisorReply();
                 if (!ret.isSuccess()) {
-                    String err = String.format("unable to destroy vm[uuid:%s,  name:%s] on kvm host [uuid:%s, ip:%s], because %s", vminv.getUuid(),
-                            vminv.getName(), self.getUuid(), self.getManagementIp(), ret.getError());
-                    reply.setError(errf.instantiateErrorCode(HostErrors.FAILED_TO_DESTROY_VM_ON_HYPERVISOR, err));
+                    reply.setError(err(HostErrors.FAILED_TO_DESTROY_VM_ON_HYPERVISOR, "unable to destroy vm[uuid:%s,  name:%s] on kvm host [uuid:%s, ip:%s], because %s", vminv.getUuid(),
+                            vminv.getName(), self.getUuid(), self.getManagementIp(), ret.getError()));
                     extEmitter.destroyVmOnKvmFailed(KVMHostInventory.valueOf(getSelf()), vminv, reply.getError());
                 } else {
                     logger.debug(String.format("successfully destroyed vm[uuid:%s] on kvm host[uuid:%s]", vminv.getUuid(), self.getUuid()));
@@ -1614,7 +1613,7 @@ public class KVMHost extends HostBase implements Host {
                 DestroyVmOnHypervisorReply reply = new DestroyVmOnHypervisorReply();
 
                 if (err.isError(SysErrors.HTTP_ERROR, SysErrors.IO_ERROR, SysErrors.TIMEOUT)) {
-                    err = errf.instantiateErrorCode(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, "unable to destroy a vm", err);
+                    err = err(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, err, "unable to destroy a vm");
                 }
 
                 reply.setError(err);
@@ -1674,9 +1673,8 @@ public class KVMHost extends HostBase implements Host {
             public void success(RebootVmResponse ret) {
                 RebootVmOnHypervisorReply reply = new RebootVmOnHypervisorReply();
                 if (!ret.isSuccess()) {
-                    String err = String.format("unable to reboot vm[uuid:%s, name:%s] on kvm host[uuid:%s, ip:%s], because %s", vminv.getUuid(),
-                            vminv.getName(), self.getUuid(), self.getManagementIp(), ret.getError());
-                    reply.setError(errf.instantiateErrorCode(HostErrors.FAILED_TO_REBOOT_VM_ON_HYPERVISOR, err));
+                    reply.setError(err(HostErrors.FAILED_TO_REBOOT_VM_ON_HYPERVISOR, "unable to reboot vm[uuid:%s, name:%s] on kvm host[uuid:%s, ip:%s], because %s", vminv.getUuid(),
+                            vminv.getName(), self.getUuid(), self.getManagementIp(), ret.getError()));
                     extEmitter.rebootVmOnKvmFailed(KVMHostInventory.valueOf(getSelf()), vminv, reply.getError());
                 } else {
                     extEmitter.rebootVmOnKvmSuccess(KVMHostInventory.valueOf(getSelf()), vminv);
@@ -1728,10 +1726,9 @@ public class KVMHost extends HostBase implements Host {
             public void success(StopVmResponse ret) {
                 StopVmOnHypervisorReply reply = new StopVmOnHypervisorReply();
                 if (!ret.isSuccess()) {
-                    String err = String.format("unable to stop vm[uuid:%s,  name:%s] on kvm host[uuid:%s, ip:%s], because %s", vminv.getUuid(),
-                            vminv.getName(), self.getUuid(), self.getManagementIp(), ret.getError());
-                    reply.setError(errf.instantiateErrorCode(HostErrors.FAILED_TO_STOP_VM_ON_HYPERVISOR, err));
-                    logger.warn(err);
+                    reply.setError(err(HostErrors.FAILED_TO_STOP_VM_ON_HYPERVISOR, "unable to stop vm[uuid:%s,  name:%s] on kvm host[uuid:%s, ip:%s], because %s", vminv.getUuid(),
+                            vminv.getName(), self.getUuid(), self.getManagementIp(), ret.getError()));
+                    logger.warn(reply.getError().getDetails());
                     extEmitter.stopVmOnKvmFailed(KVMHostInventory.valueOf(getSelf()), vminv, reply.getError());
                 } else {
                     extEmitter.stopVmOnKvmSuccess(KVMHostInventory.valueOf(getSelf()), vminv);
@@ -1744,7 +1741,7 @@ public class KVMHost extends HostBase implements Host {
             public void fail(ErrorCode err) {
                 StopVmOnHypervisorReply reply = new StopVmOnHypervisorReply();
                 if (err.isError(SysErrors.IO_ERROR, SysErrors.HTTP_ERROR)) {
-                    err = errf.instantiateErrorCode(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, "unable to stop a vm", err);
+                    err = err(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE, err, "unable to stop a vm");
                 }
 
                 reply.setError(err);
@@ -1983,11 +1980,10 @@ public class KVMHost extends HostBase implements Host {
                     logger.debug(info);
                     extEmitter.startVmOnKvmSuccess(KVMHostInventory.valueOf(getSelf()), spec);
                 } else {
-                    String err = String.format("failed to start vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s], because %s",
+                    reply.setError(err(HostErrors.FAILED_TO_START_VM_ON_HYPERVISOR, "failed to start vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s], because %s",
                             spec.getVmInventory().getUuid(), spec.getVmInventory().getName(),
-                            self.getUuid(), self.getManagementIp(), ret.getError());
-                    reply.setError(errf.instantiateErrorCode(HostErrors.FAILED_TO_START_VM_ON_HYPERVISOR, err));
-                    logger.warn(err);
+                            self.getUuid(), self.getManagementIp(), ret.getError()));
+                    logger.warn(reply.getError().getDetails());
                     extEmitter.startVmOnKvmFailed(KVMHostInventory.valueOf(getSelf()), spec, reply.getError());
                 }
                 bus.reply(msg, reply);
@@ -2077,10 +2073,9 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(PauseVmResponse ret) {
                 if (!ret.isSuccess()) {
-                    String err = String.format("unable to pause vm[uuid:%s,  name:%s] on kvm host[uuid:%s, ip:%s], because %s", vminv.getUuid(),
-                            vminv.getName(), self.getUuid(), self.getManagementIp(), ret.getError());
-                    reply.setError(errf.instantiateErrorCode(HostErrors.FAILED_TO_STOP_VM_ON_HYPERVISOR, err));
-                    logger.warn(err);
+                    reply.setError(err(HostErrors.FAILED_TO_STOP_VM_ON_HYPERVISOR, "unable to pause vm[uuid:%s,  name:%s] on kvm host[uuid:%s, ip:%s], because %s", vminv.getUuid(),
+                            vminv.getName(), self.getUuid(), self.getManagementIp(), ret.getError()));
+                    logger.warn(reply.getError().getDetails());
                 }
                 bus.reply(msg, reply);
                 completion.done();
@@ -2129,10 +2124,9 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(ResumeVmResponse ret) {
                 if (!ret.isSuccess()) {
-                    String err = String.format("unable to resume vm[uuid:%s,  name:%s] on kvm host[uuid:%s, ip:%s], because %s", vminv.getUuid(),
-                            vminv.getName(), self.getUuid(), self.getManagementIp(), ret.getError());
-                    reply.setError(errf.instantiateErrorCode(HostErrors.FAILED_TO_STOP_VM_ON_HYPERVISOR, err));
-                    logger.warn(err);
+                    reply.setError(err(HostErrors.FAILED_TO_STOP_VM_ON_HYPERVISOR, "unable to resume vm[uuid:%s,  name:%s] on kvm host[uuid:%s, ip:%s], because %s", vminv.getUuid(),
+                            vminv.getName(), self.getUuid(), self.getManagementIp(), ret.getError()));
+                    logger.warn(reply.getError().getDetails());
                 }
                 bus.reply(msg, reply);
                 completion.done();
@@ -2157,8 +2151,8 @@ public class KVMHost extends HostBase implements Host {
             if (rsp.getFailedInterfaceNames().isEmpty()) {
                 reply.setError(operr("operation error, because:%s", rsp.getError()));
             } else {
-                reply.setError(operr("%s, failed to check physical network interfaces[names : %s] on kvm host[uuid:%s, ip:%s]",
-                        rsp.getError(), msg.getPhysicalInterface(), context.getInventory().getUuid(), context.getInventory().getManagementIp()));
+                reply.setError(operr("failed to check physical network interfaces[names : %s] on kvm host[uuid:%s, ip:%s]",
+                        msg.getPhysicalInterface(), context.getInventory().getUuid(), context.getInventory().getManagementIp()));
             }
         }
         bus.reply(msg, reply);
@@ -2368,7 +2362,7 @@ public class KVMHost extends HostBase implements Host {
                     connectPath, e.getMessage());
         } catch (Throwable t) {
             logger.warn(t.getMessage(), t);
-            errCode = errf.throwableToInternalError(t);
+            errCode = inerr(t.getMessage());
         }
 
         return errCode;
@@ -2406,9 +2400,8 @@ public class KVMHost extends HostBase implements Host {
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                String err = String.format("connection error for KVM host[uuid:%s, ip:%s]", self.getUuid(),
-                        self.getManagementIp());
-                completion.fail(errf.instantiateErrorCode(HostErrors.CONNECTION_ERROR, err, errCode));
+                completion.fail(err(HostErrors.CONNECTION_ERROR, errCode, "connection error for KVM host[uuid:%s, ip:%s]", self.getUuid(),
+                        self.getManagementIp()));
             }
         }).start();
     }

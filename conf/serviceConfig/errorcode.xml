@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>errorcode</id>
+
+    <message>
+        <name>org.zstack.core.errorcode.APIReloadElaborationMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.core.errorcode.APIGetElaborationCategoriesMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.core.errorcode.APIGetElaborationsMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.core.errorcode.APIGetMissedElaborationMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.core.errorcode.APICheckElaborationContentMsg</name>
+    </message>
+
+</service>

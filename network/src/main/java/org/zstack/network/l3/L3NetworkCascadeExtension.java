@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
 
+import static org.zstack.core.Platform.inerr;
 /**
  */
 public class L3NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
@@ -117,7 +118,7 @@ public class L3NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
 
             completion.success();
         } catch (L3NetworkException e) {
-            completion.fail(errf.throwableToInternalError(e));
+            completion.fail(inerr(e.getMessage()));
         }
     }
 

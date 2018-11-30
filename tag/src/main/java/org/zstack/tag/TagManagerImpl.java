@@ -22,9 +22,7 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
-import org.zstack.header.query.APIQueryReply;
 import org.zstack.header.tag.*;
-import org.zstack.identity.Session;
 import org.zstack.query.QueryFacade;
 import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
@@ -38,8 +36,7 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.CollectionUtils.removeDuplicateFromList;
 
@@ -788,9 +785,9 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
             Class resourceType = resourceTypeCreateMessageMap.get(cmsg.getClass());
             if (resourceType == null) {
-                throw new ApiMessageInterceptionException(errf.stringToInternalError(
-                        String.format("API message[%s] doesn't define resource type by @TagResourceType",
-                                cmsg.getClass().getName())
+                throw new ApiMessageInterceptionException(inerr(
+                        "API message[%s] doesn't define resource type by @TagResourceType",
+                        cmsg.getClass().getName()
                 ));
             }
 

@@ -1,0 +1,35 @@
+[
+  {
+    "category": "L2Network",
+    "code": "1000",
+    "regex": "There has been a L2VlanNetwork[uuid:%s, name:%s] attached to cluster[uuid:%s] that has physical interface[%s], vlan[%s]. Failed to attach L2VlanNetwork[uuid:%s]",
+    "message_cn": "L2网络(vlan)挂载失败",
+    "message_en": "L2VlanNetwork attached failed",
+    "operation_cn": "请更换L2网络(vlan)的物理接口，或将该网络挂载到其它集群上",
+    "operation_en": "Please change the L2 physical interface, or attach it to an other cluster",
+    "causes_cn": "L2网络的物理接口[eth0]已经挂载到集群上",
+    "causes_en": "the physical interface[eth0] has already been attached to the cluster"
+  },
+  {
+    "category": "L2Network",
+    "code": "1001",
+    "regex": "There has been a l2Network[uuid:%s, name:%s] attached to cluster[uuid:%s] that has physical interface[eth0]. Failed to attach l2Network[uuid:%s]",
+    "message_cn": "L2网络挂载失败",
+    "message_en": "L2 Network attached failed",
+    "operation_cn": "请更换L2网络的物理接口，或将该网络挂载到其它集群上",
+    "operation_en": "Please change the L2 physical interface, or attach it to an other cluster",
+    "causes_cn": "L2网络的物理接口[eth0]已经挂载到集群上",
+    "causes_en": "the physical interface[eth0] has already been attached to the cluster"
+  },
+  {
+    "category": "L2Network",
+    "code": "1002",
+    "regex": "failed to check physical network interfaces[names : %s] on kvm host[uuid:%s, ip:%s]",
+    "message_cn": "L2网络挂载失败",
+    "message_en": "L2 Network attached failed",
+    "operation_cn": "请检查输入的host上的网络物理接口: [%1$s] 是否存在",
+    "operation_en": "Please check the network interface [%1$s] is existed on kvm host",
+    "causes_cn": "没有在kvm host上找到这个网络物理接口: [%1$s]",
+    "causes_en": "failed to check physical network interfaces on kvm host: [%1$s]"
+  }
+]

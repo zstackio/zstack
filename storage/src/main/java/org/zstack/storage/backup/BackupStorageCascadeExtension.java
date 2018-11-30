@@ -16,6 +16,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.zstack.core.Platform.inerr;
+
 /**
  */
 public class BackupStorageCascadeExtension extends AbstractAsyncCascadeExtension {
@@ -105,7 +107,7 @@ public class BackupStorageCascadeExtension extends AbstractAsyncCascadeExtension
 
             completion.success();
         } catch (BackupStorageException e) {
-            completion.fail(errf.throwableToInternalError(e));
+            completion.fail(inerr(e.getMessage()));
         }
     }
 

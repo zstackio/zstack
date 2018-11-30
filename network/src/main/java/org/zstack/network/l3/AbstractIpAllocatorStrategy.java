@@ -10,16 +10,14 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.network.l3.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
+
+import static org.zstack.core.Platform.err;
 
 /**
  */
@@ -61,8 +59,8 @@ public abstract class AbstractIpAllocatorStrategy implements IpAllocatorStrategy
         }
 
         if (ipr == null) {
-            throw new OperationFailureException(errf.instantiateErrorCode(L3Errors.ALLOCATE_IP_ERROR,
-                    String.format("cannot find ip range that has ip[%s] in l3Network[uuid:%s]", msg.getRequiredIp(), msg.getL3NetworkUuid())
+            throw new OperationFailureException(err(L3Errors.ALLOCATE_IP_ERROR,
+                    "cannot find ip range that has ip[%s] in l3Network[uuid:%s]", msg.getRequiredIp(), msg.getL3NetworkUuid()
             ));
         }
 
@@ -95,8 +93,8 @@ public abstract class AbstractIpAllocatorStrategy implements IpAllocatorStrategy
         }
 
         if (ipr == null) {
-            throw new OperationFailureException(errf.instantiateErrorCode(L3Errors.ALLOCATE_IP_ERROR,
-                    String.format("cannot find ip range that has ip[%s] in l3Network[uuid:%s]", msg.getRequiredIp(), msg.getL3NetworkUuid())
+            throw new OperationFailureException(err(L3Errors.ALLOCATE_IP_ERROR,
+                    "cannot find ip range that has ip[%s] in l3Network[uuid:%s]", msg.getRequiredIp(), msg.getL3NetworkUuid()
             ));
         }
 

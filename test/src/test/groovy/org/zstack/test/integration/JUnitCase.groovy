@@ -1,6 +1,6 @@
 package org.zstack.test.integration
 
-import org.zstack.test.unittest.org.zstack.test.unittest.JUnitTestSuite
+import org.zstack.test.unittest.JUnitTestSuite
 import org.zstack.testlib.SubCase
 
 /**

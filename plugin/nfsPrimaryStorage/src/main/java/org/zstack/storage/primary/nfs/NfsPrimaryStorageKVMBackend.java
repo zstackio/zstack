@@ -26,7 +26,6 @@ import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.core.workflow.WhileCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.host.*;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.MessageReply;
@@ -63,6 +62,7 @@ import java.util.stream.Collectors;
 
 import static java.lang.Integer.min;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.touterr;
 
 public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         KVMHostConnectExtensionPoint, HostConnectionReestablishExtensionPoint {
@@ -133,8 +133,8 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             public void fail(ErrorCode errorCode) {
                 if (errorCode.getDetails().contains("java.net.SocketTimeoutException: Read timed out")) {
                     // socket read timeout is caused by timeout of mounting a wrong URL
-                    errorCode = errf.instantiateErrorCode(SysErrors.TIMEOUT, String.format("mount timeout. Please the check if the URL[%s] is" +
-                            " valid to mount", inv.getUrl()), errorCode);
+                    errorCode = touterr(errorCode, "mount timeout. Please the check if the URL[%s] is" +
+                            " valid to mount", inv.getUrl());
                 }
                 completion.fail(errorCode);
             }

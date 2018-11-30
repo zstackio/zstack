@@ -18,6 +18,7 @@ import org.zstack.utils.logging.CLogger;
 import java.util.List;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.err;
 
 /**
  */
@@ -70,7 +71,7 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
         ErrorCode errorCode = testAddLdapServerConnection(inv);
         if (errorCode != null) {
             throw new ApiMessageInterceptionException(
-                    errf.instantiateErrorCode(LdapErrors.TEST_LDAP_CONNECTION_FAILED,
+                    err(LdapErrors.TEST_LDAP_CONNECTION_FAILED,
                             errorCode.getDetails()));
         }
 

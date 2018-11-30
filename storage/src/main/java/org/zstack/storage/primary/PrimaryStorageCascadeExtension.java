@@ -1,7 +1,9 @@
 package org.zstack.storage.primary;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.core.cascade.*;
+import org.zstack.core.cascade.AbstractAsyncCascadeExtension;
+import org.zstack.core.cascade.CascadeAction;
+import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
@@ -20,6 +22,8 @@ import org.zstack.utils.logging.CLogger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import static org.zstack.core.Platform.inerr;
 
 /**
  */
@@ -141,7 +145,7 @@ public class PrimaryStorageCascadeExtension extends AbstractAsyncCascadeExtensio
 
             completion.success();
         } catch (PrimaryStorageException e) {
-            completion.fail(errf.throwableToInternalError(e));
+            completion.fail(inerr(e.getMessage()));
         }
     }
 

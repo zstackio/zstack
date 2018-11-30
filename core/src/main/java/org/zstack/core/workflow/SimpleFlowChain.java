@@ -25,6 +25,8 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static org.zstack.core.Platform.inerr;
+
 /**
  * Created with IntelliJ IDEA.
  * User: frank
@@ -323,7 +325,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         } catch (Throwable t) {
             logger.warn(String.format("[FlowChain(%s): %s] unhandled exception when executing flow[%s], start to rollback",
                     id, name, flow.getClass().getName()), t);
-            fail(errf.throwableToInternalError(t));
+            fail(inerr(t.getMessage()));
         }
     }
 

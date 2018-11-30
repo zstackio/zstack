@@ -28,6 +28,8 @@ import org.zstack.utils.network.NetworkUtils;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.zstack.core.Platform.argerr;
+
 /**
  * Created by frank on 7/29/2015.
  */
@@ -74,8 +76,8 @@ public class FusionstorApiInterceptor implements ApiMessageInterceptor {
         q.add(FusionstorPrimaryStorageMonVO_.hostname, Op.IN, hostnames);
         List<String> existing = q.listValue();
         if (!existing.isEmpty()) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("cannot add fusionstor primary storage, there has been some fusionstor primary storage using mon[hostnames:%s]", existing)
+            throw new ApiMessageInterceptionException(argerr(
+                    "cannot add fusionstor primary storage, there has been some fusionstor primary storage using mon[hostnames:%s]", existing
             ));
         }
     }
@@ -98,8 +100,8 @@ public class FusionstorApiInterceptor implements ApiMessageInterceptor {
                 throw new ApiMessageInterceptionException(ae.getErrorCode());
             } catch (Exception e) {
                 logger.warn(e.getMessage(), e);
-                throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                        String.format("invalid monUrl[%s]. A valid url is in format of %s", monUrl, MON_URL_FORMAT)
+                throw new ApiMessageInterceptionException(argerr(
+                        "invalid monUrl[%s]. A valid url is in format of %s", monUrl, MON_URL_FORMAT
                 ));
             }
         }
@@ -107,17 +109,17 @@ public class FusionstorApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APIAddFusionstorPrimaryStorageMsg msg) {
         if (msg.getDataVolumePoolName() != null && msg.getDataVolumePoolName().isEmpty()) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+            throw new ApiMessageInterceptionException(argerr(
                     "dataVolumePoolName can be null but cannot be an empty string"
             ));
         }
         if (msg.getRootVolumePoolName() != null && msg.getRootVolumePoolName().isEmpty()) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+            throw new ApiMessageInterceptionException(argerr(
                     "rootVolumePoolName can be null but cannot be an empty string"
             ));
         }
         if (msg.getImageCachePoolName() != null && msg.getImageCachePoolName().isEmpty()) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+            throw new ApiMessageInterceptionException(argerr(
                     "imageCachePoolName can be null but cannot be an empty string"
             ));
         }
@@ -140,15 +142,15 @@ public class FusionstorApiInterceptor implements ApiMessageInterceptor {
         q.add(FusionstorBackupStorageMonVO_.hostname, Op.IN, hostnames);
         List<String> existing = q.listValue();
         if (!existing.isEmpty()) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("cannot add fusionstor backup storage, there has been some fusionstor backup storage using mon[hostnames:%s]", existing)
+            throw new ApiMessageInterceptionException(argerr(
+                    "cannot add fusionstor backup storage, there has been some fusionstor backup storage using mon[hostnames:%s]", existing
             ));
         }
     }
 
     private void validate(APIAddFusionstorBackupStorageMsg msg) {
         if (msg.getPoolName() != null && msg.getPoolName().isEmpty()) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+            throw new ApiMessageInterceptionException(argerr(
                     "poolName can be null but cannot be an empty string"
             ));
         }
@@ -159,8 +161,8 @@ public class FusionstorApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APIUpdateFusionstorBackupStorageMonMsg msg) {
         if (msg.getHostname() != null && !NetworkUtils.isIpv4Address(msg.getHostname()) && !NetworkUtils.isHostname(msg.getHostname())) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("hostname[%s] is neither an IPv4 address nor a valid hostname", msg.getHostname())
+            throw new ApiMessageInterceptionException(argerr(
+                    "hostname[%s] is neither an IPv4 address nor a valid hostname", msg.getHostname()
             ));
         }
         SimpleQuery<FusionstorBackupStorageMonVO> q = dbf.createQuery(FusionstorBackupStorageMonVO.class);
@@ -172,8 +174,8 @@ public class FusionstorApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APIUpdateFusionstorPrimaryStorageMonMsg msg) {
         if (msg.getHostname() != null && !NetworkUtils.isIpv4Address(msg.getHostname()) && !NetworkUtils.isHostname(msg.getHostname())) {
-            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
-                    String.format("hostname[%s] is neither an IPv4 address nor a valid hostname", msg.getHostname())
+            throw new ApiMessageInterceptionException(argerr(
+                    "hostname[%s] is neither an IPv4 address nor a valid hostname", msg.getHostname()
             ));
         }
 

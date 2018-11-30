@@ -1,4 +1,4 @@
-package org.zstack.test.unittest.org.zstack.test.unittest.utils
+package org.zstack.test.unittest.utils
 
 import org.junit.Test
 import org.zstack.utils.network.NetworkUtils

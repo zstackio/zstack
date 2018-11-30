@@ -14,6 +14,8 @@ import org.zstack.utils.logging.CLogger
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
+import static org.zstack.core.Platform.operr
+
 /**
  * Created by xing5 on 2017/3/1.
  */
@@ -111,7 +113,7 @@ class EventBasedGarbageCollectorCase extends SubCase {
             if (ret == EventBasedGCInDbBehavior.SUCCESS) {
                 completion.success()
             } else if (ret == EventBasedGCInDbBehavior.FAIL) {
-                completion.fail(errf.stringToOperationError("on purpose"))
+                completion.fail(operr("on purpose"))
             } else if (ret == EventBasedGCInDbBehavior.CANCEL) {
                 completion.cancel()
             } else {
@@ -151,7 +153,7 @@ class EventBasedGarbageCollectorCase extends SubCase {
             if (ret == EventBasedGCInDbBehavior.SUCCESS) {
                 completion.success()
             } else if (ret == EventBasedGCInDbBehavior.FAIL) {
-                completion.fail(errf.stringToOperationError("on purpose"))
+                completion.fail(operr("on purpose"))
             } else if (ret == EventBasedGCInDbBehavior.CANCEL) {
                 completion.cancel()
             } else {
@@ -211,7 +213,7 @@ class EventBasedGarbageCollectorCase extends SubCase {
 
         def gc = new EventBasedGC1()
         gc.testLogic = { GCCompletion completion ->
-            completion.fail(errf.stringToOperationError("testEventBasedGCFailure"))
+            completion.fail(operr("testEventBasedGCFailure"))
             latch.countDown()
         }
         gc.NAME = "testEventBasedGCFailure"
@@ -333,7 +335,7 @@ class EventBasedGarbageCollectorCase extends SubCase {
         gc.testLogic = { GCCompletion completion ->
             count ++
             if (count == 1) {
-                completion.fail(errf.stringToOperationError("testTwoEventsTriggeredGC"))
+                completion.fail(operr("testTwoEventsTriggeredGC"))
             } else {
                 completion.success()
             }

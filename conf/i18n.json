@@ -132,9 +132,9 @@
     "fileName": "src/zstack/./compute/src/main/java/org/zstack/compute/host/HostApiInterceptor.java"
   },
   {
-    "raw": "host is connecting",
-    "en_US": "host is connecting",
-    "zh_CN": "物理机正在连接",
+    "raw": "host is connecting, ping failed",
+    "en_US": "host is connecting, ping failed",
+    "zh_CN": "物理机正在连接, 不能进行ping操作",
     "arguments": [],
     "line": 615,
     "fileName": "src/zstack/./compute/src/main/java/org/zstack/compute/host/HostBase.java"

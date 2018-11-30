@@ -12,6 +12,7 @@ import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.*;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.managementnode.*;
 import org.zstack.header.message.*;
@@ -20,14 +21,15 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.argerr;
-
 import javax.persistence.Query;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.err;
+import static org.zstack.core.Platform.inerr;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -52,9 +54,9 @@ public class ApiMediatorImpl extends AbstractService implements ApiMediator, Glo
         ApiMessageDescriptor desc = processor.getApiMessageDescriptor(msg);
         if (desc == null) {
             Map message = map(e(msg.getClass().getName(), msg));
-            String err = String.format("no service configuration file declares message: %s", JSONObjectUtil.toJsonString(message));
-            logger.warn(err);
-            bus.replyErrorByMessageType(msg, errf.instantiateErrorCode(PortalErrors.NO_SERVICE_FOR_MESSAGE, err));
+            ErrorCode err = err(PortalErrors.NO_SERVICE_FOR_MESSAGE, "no service configuration file declares message: %s", JSONObjectUtil.toJsonString(message));
+            logger.warn(err.getDetails());
+            bus.replyErrorByMessageType(msg, err);
             return;
         }
 
@@ -75,9 +77,9 @@ public class ApiMediatorImpl extends AbstractService implements ApiMediator, Glo
         }
 
         if (msg.getServiceId() == null) {
-            String err = String.format("No service id found for API message[%s], message dump: %s", msg.getMessageName(), JSONObjectUtil.toJsonString(msg));
-            logger.warn(err);
-            bus.replyErrorByMessageType(msg, errf.stringToInternalError(err));
+            ErrorCode err = inerr("No service id found for API message[%s], message dump: %s", msg.getMessageName(), JSONObjectUtil.toJsonString(msg));
+            logger.warn(err.getDetails());
+            bus.replyErrorByMessageType(msg, err);
             return;
         }
 
@@ -183,8 +185,8 @@ public class ApiMediatorImpl extends AbstractService implements ApiMediator, Glo
                 } else {
                     IsManagementNodeReadyReply r = (IsManagementNodeReadyReply) reply;
                     if (!r.isReady()) {
-                        areply.setError(errf.instantiateErrorCode(SysErrors.NOT_READY_ERROR,
-                                String.format("management node[uuid:%s] is not ready yet", fnodeId)));
+                        areply.setError(err(SysErrors.NOT_READY_ERROR,
+                                "management node[uuid:%s] is not ready yet", fnodeId));
                     }
                 }
                 bus.reply(msg, areply);

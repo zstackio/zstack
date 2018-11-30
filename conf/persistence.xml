@@ -154,5 +154,6 @@
         <class>org.zstack.header.identity.role.RolePolicyStatementVO</class>
         <class>org.zstack.header.core.captcha.CaptchaVO</class>
         <class>org.zstack.header.core.captcha.LoginAttemptsVO</class>
+        <class>org.zstack.header.errorcode.ElaborationVO</class>
     </persistence-unit>
 </persistence>

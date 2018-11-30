@@ -3,12 +3,13 @@ package org.zstack.compute.allocator;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.allocator.*;
+import org.zstack.header.allocator.AbstractHostAllocatorFlow;
+import org.zstack.header.allocator.HostAllocatorError;
+import org.zstack.header.allocator.HostAllocatorSpec;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.image.ImageBackupStorageRefInventory;
@@ -22,10 +23,10 @@ import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
-import static org.zstack.core.Platform.operr;
-
-import javax.persistence.TypedQuery;
 import java.util.List;
+
+import static org.zstack.core.Platform.err;
+import static org.zstack.core.Platform.operr;
 
 /**
  */
@@ -99,9 +100,9 @@ public class ImageBackupStorageAllocatorFlow extends AbstractHostAllocatorFlow {
         bsUuids = bq.listValue();
         if (bsUuids.isEmpty()) {
             // we stop allocation on purpose, to prevent further pagination proceeding
-            throw new OperationFailureException(errf.instantiateErrorCode(HostAllocatorError.NO_AVAILABLE_HOST,
-                    String.format("all backup storage that image[uuid:%s] is on can not satisfy conditions[status = %s]",
-                            spec.getImage().getUuid(), BackupStorageStatus.Connected)
+            throw new OperationFailureException(err(HostAllocatorError.NO_AVAILABLE_HOST,
+                    "all backup storage that image[uuid:%s] is on can not satisfy conditions[status = %s]",
+                    spec.getImage().getUuid(), BackupStorageStatus.Connected.toString()
             ));
         }
 

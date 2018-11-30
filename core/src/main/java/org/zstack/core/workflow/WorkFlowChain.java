@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static org.zstack.core.Platform.inerr;
+
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class WorkFlowChain {
     protected static final CLogger logger = Utils.getLogger(WorkFlowChain.class);
@@ -150,7 +152,7 @@ public class WorkFlowChain {
             dbf.update(vo);
             return e.getErrorCode();
         } catch (Throwable t) {
-            ErrorCode err = errf.throwableToInternalError(t);
+            ErrorCode err = inerr(t.getMessage());
             vo.setReason(err.toString());
             vo.setState(flowState.getNextState(vo.getState(), WorkFlowStateEvent.failed));
             logger.debug(String.format("workflow[%s] in chain[%s] failed because of an unhandle exception", flow.getName(), getName()), t);

@@ -37,12 +37,13 @@ import org.zstack.search.SearchQuery;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.operr;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.zstack.core.Platform.err;
+import static org.zstack.core.Platform.operr;
 
 public class NetworkServiceManagerImpl extends AbstractService implements NetworkServiceManager, PreVmInstantiateResourceExtensionPoint,
         VmReleaseResourceExtensionPoint, PostVmInstantiateResourceExtensionPoint, ReleaseNetworkServiceOnDetachingNicExtensionPoint,
@@ -192,10 +193,9 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
 		try {
 			provider.detachFromL2Network(L2NetworkInventory.valueOf(l2vo), msg);
 		} catch (NetworkException e) {
-			String err = String.format("unable to detach network service provider[uuid:%s, name:%s, type:%s] to l2network[uuid:%s, name:%s, type:%s], %s",
-					vo.getUuid(), vo.getName(), vo.getType(), l2vo.getUuid(), l2vo.getName(), l2vo.getType(), e.getMessage());
-			logger.warn(err, e);
-            evt.setError(errf.instantiateErrorCode(NetworkServiceErrors.DETACH_NETWORK_SERVICE_PROVIDER_ERROR, err));
+            evt.setError(err(NetworkServiceErrors.DETACH_NETWORK_SERVICE_PROVIDER_ERROR, "unable to detach network service provider[uuid:%s, name:%s, type:%s] to l2network[uuid:%s, name:%s, type:%s], %s",
+                    vo.getUuid(), vo.getName(), vo.getType(), l2vo.getUuid(), l2vo.getName(), l2vo.getType(), e.getMessage()));
+            logger.warn(evt.getError().getDetails(), e);
 			bus.publish(evt);
 			return;
 		}
@@ -227,10 +227,9 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
 		try {
 			provider.attachToL2Network(L2NetworkInventory.valueOf(l2vo), msg);
 		} catch (NetworkException e) {
-			String err = String.format("unable to attach network service provider[uuid:%s, name:%s, type:%s] to l2network[uuid:%s, name:%s, type:%s], %s",
-					vo.getUuid(), vo.getName(), vo.getType(), l2vo.getUuid(), l2vo.getName(), l2vo.getType(), e.getMessage());
-			logger.warn(err, e);
-            evt.setError(errf.instantiateErrorCode(NetworkServiceErrors.ATTACH_NETWORK_SERVICE_PROVIDER_ERROR, err));
+            evt.setError(err(NetworkServiceErrors.ATTACH_NETWORK_SERVICE_PROVIDER_ERROR, "unable to attach network service provider[uuid:%s, name:%s, type:%s] to l2network[uuid:%s, name:%s, type:%s], %s",
+                    vo.getUuid(), vo.getName(), vo.getType(), l2vo.getUuid(), l2vo.getName(), l2vo.getType(), e.getMessage()));
+            logger.warn(evt.getError().getDetails(), e);
 			bus.publish(evt);
 			return;
 		}

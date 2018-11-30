@@ -9,17 +9,14 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.identity.*;
+import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.tag.*;
 import org.zstack.identity.QuotaUtil;
 
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.i18n;
-import static org.zstack.core.Platform.operr;
-
 import javax.persistence.TypedQuery;
+
+import static org.zstack.core.Platform.*;
 
 /**
  */
@@ -115,9 +112,9 @@ public class TagApiInterceptor implements ApiMessageInterceptor {
         q.setParameter("tuuid", msg.getUuid());
         String accountUuid = q.getSingleResult();
         if (!msg.getSession().getAccountUuid().equals(accountUuid)) {
-            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.PERMISSION_DENIED,
-                    i18n("permission denied. The system tag[uuid: %s] refer to a resource not belonging to the account[uuid: %s]",
-                            msg.getUuid(), msg.getSession().getAccountUuid())
+            throw new ApiMessageInterceptionException(err(IdentityErrors.PERMISSION_DENIED,
+                    "permission denied. The system tag[uuid: %s] refer to a resource not belonging to the account[uuid: %s]",
+                    msg.getUuid(), msg.getSession().getAccountUuid()
             ));
         }
     }
@@ -129,9 +126,9 @@ public class TagApiInterceptor implements ApiMessageInterceptor {
         q.setParameter("tuuid", msg.getUuid());
         String accountUuid = q.getSingleResult();
         if (!msg.getSession().getAccountUuid().equals(accountUuid)) {
-            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.PERMISSION_DENIED,
-                    i18n("permission denied. The user tag[uuid: %s] refer to a resource not belonging to the account[uuid: %s]",
-                            msg.getUuid(), msg.getSession().getAccountUuid())
+            throw new ApiMessageInterceptionException(err(IdentityErrors.PERMISSION_DENIED,
+                    "permission denied. The user tag[uuid: %s] refer to a resource not belonging to the account[uuid: %s]",
+                    msg.getUuid(), msg.getSession().getAccountUuid()
             ));
         }
     }
@@ -142,9 +139,9 @@ public class TagApiInterceptor implements ApiMessageInterceptor {
         q.setParameter("tuuid", msg.getUuid());
         String accountUuid = q.getSingleResult();
         if (!msg.getSession().getAccountUuid().equals(accountUuid)) {
-            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.PERMISSION_DENIED,
-                    i18n("permission denied. The tag pattern[uuid: %s] refer to a resource not belonging to the account[uuid: %s]",
-                            msg.getUuid(), msg.getSession().getAccountUuid())
+            throw new ApiMessageInterceptionException(err(IdentityErrors.PERMISSION_DENIED,
+                    "permission denied. The tag pattern[uuid: %s] refer to a resource not belonging to the account[uuid: %s]",
+                    msg.getUuid(), msg.getSession().getAccountUuid()
             ));
         }
     }

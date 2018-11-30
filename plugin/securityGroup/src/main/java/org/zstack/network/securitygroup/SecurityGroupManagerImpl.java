@@ -26,9 +26,10 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
-import org.zstack.header.identity.*;
+import org.zstack.header.identity.Quota;
 import org.zstack.header.identity.Quota.QuotaOperator;
 import org.zstack.header.identity.Quota.QuotaPair;
+import org.zstack.header.identity.ReportQuotaExtensionPoint;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -50,7 +51,6 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 
-import javax.json.Json;
 import javax.persistence.LockModeType;
 import javax.persistence.Query;
 import javax.persistence.Tuple;
@@ -62,6 +62,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.err;
 import static org.zstack.network.securitygroup.SecurityGroupMembersTO.ACTION_CODE_DELETE_GROUP;
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -1114,8 +1115,8 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 .listValues();
         if (!uuids.containsAll(msg.getVmNicUuids())) {
             msg.getVmNicUuids().removeAll(uuids);
-            throw new OperationFailureException(errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND,
-                    String.format("cannot find vm nics[uuids:%s]", msg.getVmNicUuids())
+            throw new OperationFailureException(err(SysErrors.RESOURCE_NOT_FOUND,
+                    "cannot find vm nics[uuids:%s]", msg.getVmNicUuids()
             ));
         }
 

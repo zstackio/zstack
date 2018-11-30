@@ -272,7 +272,7 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
             throw new ApiMessageInterceptionException(argerr(ie.getMessage(), ie.getArguments()));
         } catch (Exception e) {
             logger.warn(e.getMessage(), e);
-            throw new ApiMessageInterceptionException(errf.throwableToInternalError(e));
+            throw new ApiMessageInterceptionException(inerr(e.getMessage()));
         }
     }
 

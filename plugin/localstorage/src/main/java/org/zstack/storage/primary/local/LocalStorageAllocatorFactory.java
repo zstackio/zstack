@@ -29,6 +29,8 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
 
+import static org.zstack.core.Platform.err;
+
 /**
  * Created by frank on 7/1/2015.
  */
@@ -125,9 +127,9 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                 });
 
                 if (candidates.isEmpty()) {
-                    throw new OperationFailureException(errf.instantiateErrorCode(HostAllocatorError.NO_AVAILABLE_HOST,
-                            String.format("the local primary storage has no hosts with enough disk capacity[%s bytes] required by the vm[uuid:%s]",
-                                    spec.getDiskSize(), spec.getVmInstance().getUuid())
+                    throw new OperationFailureException(err(HostAllocatorError.NO_AVAILABLE_HOST,
+                            "the local primary storage has no hosts with enough disk capacity[%s bytes] required by the vm[uuid:%s]",
+                            spec.getDiskSize(), spec.getVmInstance().getUuid()
                     ));
                 }
             }
@@ -146,9 +148,9 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                     });
 
                     if (candidates.isEmpty()) {
-                        throw new OperationFailureException(errf.instantiateErrorCode(HostAllocatorError.NO_AVAILABLE_HOST,
-                                String.format("the vm[uuid: %s] using local primary storage can only be started on the host[uuid: %s], but the host is either not having enough CPU/memory or in" +
-                                        " the state[Enabled] or status[Connected] to start the vm", spec.getVmInstance().getUuid(), ref.getHostUuid())
+                        throw new OperationFailureException(err(HostAllocatorError.NO_AVAILABLE_HOST,
+                                "the vm[uuid: %s] using local primary storage can only be started on the host[uuid: %s], but the host is either not having enough CPU/memory or in" +
+                                        " the state[Enabled] or status[Connected] to start the vm", spec.getVmInstance().getUuid(), ref.getHostUuid()
                         ));
                     }
                     break;

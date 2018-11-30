@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static org.zstack.core.Platform.operr;
+
 /**
  * Created by frank on 6/16/2015.
  */
@@ -91,7 +93,7 @@ public class FusionstorPrimaryStorageVmMigrationExtension implements VmInstanceM
         KVMHostAsyncHttpCallReply r = reply.castReply();
         FusionstorQueryRsp rsp = r.toResponse(FusionstorQueryRsp.class);
         if (!rsp.isSuccess()) {
-            throw new OperationFailureException(errf.stringToOperationError(rsp.getError()));
+            throw new OperationFailureException(operr(rsp.getError()));
         }
 
         return;

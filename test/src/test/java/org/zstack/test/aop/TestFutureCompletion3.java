@@ -15,6 +15,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.concurrent.TimeUnit;
+import static org.zstack.core.Platform.operr;
 
 /**
  */
@@ -32,7 +33,7 @@ public class TestFutureCompletion3 {
     }
 
     private void complete(Completion completion) {
-        throw new OperationFailureException(errf.stringToOperationError("on purpose"));
+        throw new OperationFailureException(operr("on purpose"));
     }
 
     @Test

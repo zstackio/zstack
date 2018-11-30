@@ -13,6 +13,7 @@ import org.zstack.sdk.GarbageCollectorInventory
 import org.zstack.testlib.SubCase
 
 import java.util.concurrent.TimeUnit
+import static org.zstack.core.Platform.operr
 
 /**
  * Created by xing5 on 2017/3/2.
@@ -41,7 +42,7 @@ class TimeBasedGarbageCollectorCase extends SubCase {
             if (ret == Behavior.SUCCESS) {
                 completion.success()
             } else if (ret == Behavior.FAILURE) {
-                completion.fail(errf.stringToOperationError("failure"))
+                completion.fail(operr("failure"))
             } else if (ret == Behavior.CANCEL) {
                 completion.cancel()
             } else {
@@ -59,7 +60,7 @@ class TimeBasedGarbageCollectorCase extends SubCase {
             if (ret == Behavior.SUCCESS) {
                 completion.success()
             } else if (ret == Behavior.FAILURE) {
-                completion.fail(errf.stringToOperationError("failure"))
+                completion.fail(operr("failure"))
             } else if (ret == Behavior.CANCEL) {
                 completion.cancel()
             } else {

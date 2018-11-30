@@ -94,6 +94,7 @@ import java.util.stream.Collectors;
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.err;
 import static org.zstack.core.progress.ProgressReportService.createSubTaskProgress;
 import static org.zstack.network.service.virtualrouter.VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE;
 import static org.zstack.network.service.virtualrouter.VirtualRouterNicMetaData.GUEST_NIC_MASK;
@@ -295,9 +296,9 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 }.call());
 
                 if (neededService.contains(NetworkServiceType.SNAT.toString()) && offering.getPublicNetworkUuid() == null) {
-                    String err = String.format("L3Network[uuid:%s, name:%s] requires SNAT service, but default virtual router offering[uuid:%s, name:%s] doesn't have a public network", l3Network.getUuid(), l3Network.getName(), offering.getUuid(), offering.getName());
-                    logger.warn(err);
-                    failAndReply(errf.instantiateErrorCode(VirtualRouterErrors.NO_PUBLIC_NETWORK_IN_OFFERING, err));
+                    ErrorCode err = err(VirtualRouterErrors.NO_PUBLIC_NETWORK_IN_OFFERING, "L3Network[uuid:%s, name:%s] requires SNAT service, but default virtual router offering[uuid:%s, name:%s] doesn't have a public network", l3Network.getUuid(), l3Network.getName(), offering.getUuid(), offering.getName());
+                    logger.warn(err.getDetails());
+                    failAndReply(err);
                     return;
                 }
 
@@ -807,10 +808,10 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
         List<VirtualRouterOfferingInventory> offerings = findOfferingByGuestL3Network(l3Nw);
         if (offerings == null) {
-            String err = String.format("unable to find a virtual router offering for l3Network[uuid:%s] in zone[uuid:%s], please at least create a default virtual router offering in that zone",
+            ErrorCode err = err(VirtualRouterErrors.NO_DEFAULT_OFFERING, "unable to find a virtual router offering for l3Network[uuid:%s] in zone[uuid:%s], please at least create a default virtual router offering in that zone",
                     l3Nw.getUuid(), l3Nw.getZoneUuid());
-            logger.warn(err);
-            completion.fail(errf.instantiateErrorCode(VirtualRouterErrors.NO_DEFAULT_OFFERING, err));
+            logger.warn(err.getDetails());
+            completion.fail(err);
             return;
         }
 

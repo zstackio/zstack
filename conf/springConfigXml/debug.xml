@@ -18,4 +18,11 @@
             <zstack:extension interface="org.zstack.header.Service" />
         </zstack:plugin>
     </bean>
+
+    <bean id="ElaborationManager" class="org.zstack.core.errorcode.ElaborationManagerImpl" >
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component"/>
+            <zstack:extension interface="org.zstack.header.Service"/>
+        </zstack:plugin>
+    </bean>
 </beans>

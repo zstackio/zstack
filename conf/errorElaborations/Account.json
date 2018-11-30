@@ -1,0 +1,20 @@
+[
+  {
+    "category": "ACCOUNT",
+    "code": "1000",
+    "regex": "wrong account name or password",
+    "message_cn": "登陆帐号/密码出错",
+    "message_en": "wrong account name or password",
+    "operation_cn": "检查输入的登陆帐号或密码",
+    "operation_en": "check the account / password for login"
+  },
+  {
+    "category": "ACCOUNT",
+    "code": "1001",
+    "regex": "The session is invalid, either wrong session id or the session has been expired",
+    "message_cn": "session过期，或者提供了不正确的session id",
+    "message_en": "The session is invalid, either wrong session id or the session has been expired",
+    "operation_cn": "重新登陆",
+    "operation_en": "need login again"
+  }
+]

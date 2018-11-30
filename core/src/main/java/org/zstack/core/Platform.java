@@ -13,13 +13,17 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.componentloader.ComponentLoaderImpl;
 import org.zstack.core.config.GlobalConfigFacade;
+import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.DatabaseGlobalProperty;
+import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.statemachine.StateMachine;
 import org.zstack.core.statemachine.StateMachineImpl;
 import org.zstack.header.Component;
 import org.zstack.header.core.StaticInit;
 import org.zstack.header.core.encrypt.ENCRYPT;
+import org.zstack.header.errorcode.ElaborationVO;
+import org.zstack.header.errorcode.ElaborationVO_;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -29,6 +33,8 @@ import org.zstack.utils.data.StringTemplate;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
 import org.zstack.utils.path.PathUtil;
+import org.zstack.utils.string.ErrorCodeElaboration;
+import org.zstack.utils.string.StringSimilarity;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -672,13 +678,53 @@ public class Platform {
         }
     }
 
+    private synchronized static void insertLogError(String content, ErrorCodeElaboration err, boolean matched) {
+        DatabaseFacade dbf = getComponentLoader().getComponent(DatabaseFacade.class);
+        String md5Sum = StringDSL.getMd5Sum(content);
+        ElaborationVO mvo = Q.New(ElaborationVO.class).eq(ElaborationVO_.md5sum, md5Sum).find();
+        if (mvo != null) {
+            mvo.setDistance(err.getDistance());
+            mvo.setMatched(matched);
+            mvo.setRepeats(mvo.getRepeats() + 1);
+            dbf.updateAndRefresh(mvo);
+        } else {
+            mvo = new ElaborationVO();
+            mvo.setDistance(err.getDistance());
+            mvo.setRepeats(1L);
+            mvo.setMatched(matched);
+            mvo.setMd5sum(md5Sum);
+            mvo.setErrorInfo(content);
+            dbf.persistAndRefresh(mvo);
+        }
+    }
+
+    private static String elaborate(String details,  Object...args) {
+        ErrorCodeElaboration elaboration = StringSimilarity.findSimilary(details);
+        if (elaboration != null) {
+            String formatStr = elaboration.getFormatSrcError();
+            if (StringSimilarity.matched(elaboration, details)) {
+                insertLogError(formatStr, elaboration, true);
+                return StringSimilarity.formatElaboration(elaboration, args);
+            } else {
+                insertLogError(formatStr, elaboration, false);
+                return null;
+            }
+        }
+        return null;
+    }
+
     public static ErrorCode err(Enum errCode, String fmt, Object...args) {
         ErrorFacade errf = getComponentLoader().getComponent(ErrorFacade.class);
-        if (SysErrors.INTERNAL == errCode) {
-            return errf.instantiateErrorCode(errCode, String.format(fmt, args));
-        } else {
-            return errf.instantiateErrorCode(errCode, toI18nString(fmt, args));
-        }
+        ErrorCode result = errf.instantiateErrorCode(errCode, String.format(fmt, args));
+        result.setElaboration(elaborate(fmt, args));
+        return result;
+    }
+
+    public static ErrorCode err(Enum errCode, ErrorCode cause, String fmt, Object...args) {
+        ErrorFacade errf = getComponentLoader().getComponent(ErrorFacade.class);
+        ErrorCode result = errf.instantiateErrorCode(errCode, String.format(fmt, args), cause);
+        result.setElaboration(elaborate(fmt, args));
+        return result;
     }
 
     public static ErrorCode inerr(String fmt, Object...args) {
@@ -689,8 +735,20 @@ public class Platform {
         return err(SysErrors.OPERATION_ERROR, fmt, args);
     }
 
+    public static ErrorCode operr(ErrorCode cause, String fmt, Object...args) {
+        return err(SysErrors.OPERATION_ERROR, cause, fmt, args);
+    }
+
     public static ErrorCode argerr(String fmt, Object...args) {
         return err(SysErrors.INVALID_ARGUMENT_ERROR, fmt, args);
+    }
+
+    public static ErrorCode touterr(String fmt, Object...args) {
+        return err(SysErrors.TIMEOUT, fmt, args);
+    }
+
+    public static ErrorCode touterr(ErrorCode cause, String fmt, Object...args) {
+        return err(SysErrors.TIMEOUT, cause, fmt, args);
     }
 
     public static ErrorCode ioerr(String fmt, Object...args) {

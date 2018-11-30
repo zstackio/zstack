@@ -24,16 +24,20 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.identity.*;
+import org.zstack.header.identity.Quota;
 import org.zstack.header.identity.Quota.QuotaOperator;
 import org.zstack.header.identity.Quota.QuotaPair;
+import org.zstack.header.identity.ReportQuotaExtensionPoint;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.network.l3.*;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.ReleaseNetworkServiceOnDetachingNicExtensionPoint;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmNicInventory;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.tag.TagManager;
@@ -47,6 +51,7 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.err;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -149,8 +154,8 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
     private void passThrough(VipMessage msg) {
         VipVO vip = dbf.findByUuid(msg.getVipUuid(), VipVO.class);
         if (vip == null) {
-            throw new OperationFailureException(errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND,
-                    String.format("cannot find the vip[uuid:%s], it may have been deleted", msg.getVipUuid())
+            throw new OperationFailureException(err(SysErrors.RESOURCE_NOT_FOUND,
+                    "cannot find the vip[uuid:%s], it may have been deleted", msg.getVipUuid()
             ));
         }
 

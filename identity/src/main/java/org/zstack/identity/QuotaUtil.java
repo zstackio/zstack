@@ -17,8 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.zstack.core.Platform.i18n;
-import static org.zstack.core.Platform.toI18nString;
+import static org.zstack.core.Platform.err;
 
 /**
  * Created by miao on 16-10-9.
@@ -56,13 +55,13 @@ public class QuotaUtil {
 
     public void CheckQuota(QuotaCompareInfo quotaCompareInfo) {
         if (quotaCompareInfo.currentUsed + quotaCompareInfo.request > quotaCompareInfo.quotaValue) {
-            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                    i18n("quota exceeding." +
-                                    "The resource owner(or target resource owner) account[uuid: %s] exceeds a quota[name: %s, value: %s], " +
-                                    "Current used:%s, Request:%s. Please contact the administrator.",
-                            quotaCompareInfo.resourceTargetOwnerAccountUuid,
-                            quotaCompareInfo.quotaName, quotaCompareInfo.quotaValue,
-                            quotaCompareInfo.currentUsed, quotaCompareInfo.request)
+            throw new ApiMessageInterceptionException(err(IdentityErrors.QUOTA_EXCEEDING,
+                    "quota exceeding." +
+                            "The resource owner(or target resource owner) account[uuid: %s] exceeds a quota[name: %s, value: %s], " +
+                            "Current used:%s, Request:%s. Please contact the administrator.",
+                    quotaCompareInfo.resourceTargetOwnerAccountUuid,
+                    quotaCompareInfo.quotaName, quotaCompareInfo.quotaValue,
+                    quotaCompareInfo.currentUsed, quotaCompareInfo.request
             ));
         }
     }
@@ -106,17 +105,17 @@ public class QuotaUtil {
     }
 
     public ErrorCode buildQuataExceedError(String currentAccountUuid, String quotaName, long quotaValue){
-        return errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                i18n("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]. Please contact the administrator.",
-                        currentAccountUuid, quotaName, quotaValue));
+        return err(IdentityErrors.QUOTA_EXCEEDING,
+                "quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]. Please contact the administrator.",
+                currentAccountUuid, quotaName, quotaValue);
     }
 
 
     public ErrorCode buildQuataExceedError(String currentAccountUuid, String quotaName, long quotaValue, long currentUsed, long request){
-        return errf.instantiateErrorCode(IdentityErrors.QUOTA_EXCEEDING,
-                i18n("quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]," +
-                                " Current used:%s, Request:%s. Please contact the administrator.",
-                        currentAccountUuid, quotaName, quotaValue, currentUsed, request));
+        return err(IdentityErrors.QUOTA_EXCEEDING,
+                "quota exceeding. The account[uuid: %s] exceeds a quota[name: %s, value: %s]," +
+                        " Current used:%s, Request:%s. Please contact the administrator.",
+                currentAccountUuid, quotaName, quotaValue, currentUsed, request);
     }
 
 }

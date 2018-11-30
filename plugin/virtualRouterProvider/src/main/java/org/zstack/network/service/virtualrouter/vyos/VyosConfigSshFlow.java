@@ -24,12 +24,12 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
-import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.ssh.Ssh;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 
 /**
@@ -92,8 +92,8 @@ public class VyosConfigSshFlow extends NoRollbackFlow {
                 try {
                     long now = System.currentTimeMillis();
                     if (now > timeout) {
-                        trigger.fail(errf.instantiateErrorCode(ApplianceVmErrors.UNABLE_TO_START, String.format("the SSH port is not" +
-                                " open after %s seconds. Failed to login the vyos router[ip:%s]", timeoutInSeconds, mgmtNicIp)));
+                        trigger.fail(err(ApplianceVmErrors.UNABLE_TO_START, "the SSH port is not" +
+                                " open after %s seconds. Failed to login the vyos router[ip:%s]", timeoutInSeconds, mgmtNicIp));
                         return true;
                     }
 
@@ -112,7 +112,7 @@ public class VyosConfigSshFlow extends NoRollbackFlow {
             private void configAgentSsh() {
                 Boolean  passwordAuth = VirtualRouterGlobalConfig.SSH_LOGIN_PASSWORD.value(Boolean.class);
                 String script;
-                if (passwordAuth == false) {
+                if (!passwordAuth) {
                     script = "sudo sed -i \"/PasswordAuthentication /c PasswordAuthentication no\" /etc/ssh/sshd_config\n"+
                             "sudo service ssh restart\n";
                 } else {

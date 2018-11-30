@@ -8,6 +8,8 @@ import org.zstack.header.host.HostErrors.Opaque;
 import org.zstack.kvm.KVMHostInventory;
 import org.zstack.kvm.KVMPingAgentExtensionPoint;
 
+import static org.zstack.core.Platform.operr;
+
 /**
  * Created by xing5 on 2016/8/6.
  */
@@ -22,7 +24,7 @@ public class KVMPingAgentExtensionForTest implements KVMPingAgentExtensionPoint 
         if (success) {
             completion.success();
         } else {
-            ErrorCode err = errf.stringToOperationError("on purpose");
+            ErrorCode err = operr("on purpose");
             err.putToOpaque(Opaque.NO_RECONNECT_AFTER_PING_FAILURE.toString(), true);
             completion.fail(err);
         }

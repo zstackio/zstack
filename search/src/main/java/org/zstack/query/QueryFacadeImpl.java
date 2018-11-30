@@ -39,6 +39,7 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.inerr;
 
 public class QueryFacadeImpl extends AbstractService implements QueryFacade, GlobalApiMessageInterceptor {
     private static CLogger logger = Utils.getLogger(QueryFacadeImpl.class);
@@ -283,8 +284,8 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             if (setter == null) {
                 setter = replyClass.getDeclaredMethod("setInventories", List.class);
                 if (setter == null) {
-                    throw new OperationFailureException(errf.stringToInternalError(
-                            String.format("query reply[%s] has no method setInventories()", replyClass.getName())
+                    throw new OperationFailureException(inerr(
+                            "query reply[%s] has no method setInventories()", replyClass.getName()
                     ));
                 }
                 setter.setAccessible(true);
@@ -296,7 +297,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             throw of;
         } catch (Exception e) {
             logger.warn(e.getMessage(), e);
-            throw new OperationFailureException(errf.throwableToInternalError(e));
+            throw new OperationFailureException(inerr(e.getMessage()));
         }
     }
 
@@ -305,8 +306,8 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
         if (at == null) {
             at = msg.getClass().getAnnotation(AutoQuery.class);
             if (at == null) {
-                throw new OperationFailureException(errf.stringToInternalError(
-                        String.format("message[%s] is not annotated by @AutoQuery", msg.getClass())
+                throw new OperationFailureException(inerr(
+                        "message[%s] is not annotated by @AutoQuery", msg.getClass()
                 ));
             }
             autoQueryMap.put(msg.getClass(), at);
@@ -488,7 +489,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             try {
                 QueryOp.valueOf(cond.getOp());
             } catch (IllegalArgumentException e) {
-                throw new ApiMessageInterceptionException(errf.throwableToInvalidArgumentError(e));
+                throw new ApiMessageInterceptionException(argerr(e.getMessage()));
             }
 
             if (!QueryOp.NOT_NULL.equals(cond.getOp()) && !QueryOp.IS_NULL.equals(cond.getOp()) && cond.getValue() == null) {

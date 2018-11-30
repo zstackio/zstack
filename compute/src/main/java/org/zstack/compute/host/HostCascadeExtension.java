@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.zstack.core.Platform.inerr;
+
 /**
  */
 public class HostCascadeExtension extends AbstractAsyncCascadeExtension {
@@ -111,7 +113,7 @@ public class HostCascadeExtension extends AbstractAsyncCascadeExtension {
 
             completion.success();
         } catch (HostException e) {
-            completion.fail(errf.throwableToInternalError(e));
+            completion.fail(inerr(e.getMessage()));
         }
     }
 

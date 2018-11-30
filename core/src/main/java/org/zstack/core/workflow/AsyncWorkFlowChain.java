@@ -15,6 +15,8 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.inerr;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -149,7 +151,7 @@ public class AsyncWorkFlowChain {
             }
         } catch (Throwable t) {
             logger.warn(String.format("workflow[%s] in chain[%s] failed because of an unhandle exception", flow.getName(), getName()), t);
-            ErrorCode err = errf.throwableToInternalError(t);
+            ErrorCode err = inerr(t.getMessage());
             try {
                 fail(vo, err);
             } catch (Throwable t1) {

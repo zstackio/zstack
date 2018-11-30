@@ -38,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created by frank on 7/27/2015.
@@ -271,8 +272,8 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
         }
 
         if (mons.isEmpty()) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("all fusionstor mons are Disconnected in fusionstor backup storage[uuid:%s]", self.getUuid())
+            throw new OperationFailureException(operr(
+                    "all fusionstor mons are Disconnected in fusionstor backup storage[uuid:%s]", self.getUuid()
             ));
         }
 
@@ -284,8 +285,8 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
 
             void call() {
                 if (!it.hasNext()) {
-                    callback.fail(errf.stringToOperationError(
-                            String.format("all mons failed to execute http call[%s], errors are %s", path, JSONObjectUtil.toJsonString(errorCodes))
+                    callback.fail(operr(
+                            "all mons failed to execute http call[%s], errors are %s", path, JSONObjectUtil.toJsonString(errorCodes)
                     ));
 
                     return;
@@ -297,8 +298,7 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
                     public void success(T ret) {
                         if (!ret.success) {
                             // not an IO error but an operation error, return it
-                            String details = String.format("[mon:%s], %s", base.getSelf().getHostname(), ret.error);
-                            callback.fail(errf.stringToOperationError(details));
+                            callback.fail(operr("[mon:%s], %s", base.getSelf().getHostname(), ret.error));
                         } else {
                             if (!(cmd instanceof InitCmd)) {
                                 updateCapacityIfNeeded(ret);
@@ -530,9 +530,9 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
             void connect(final FlowTrigger trigger) {
                 if (!it.hasNext()) {
                     if (errorCodes.size() == mons.size()) {
-                        trigger.fail(errf.stringToOperationError(
-                                String.format("unable to connect to the fusionstor backup storage[uuid:%s]. Failed to connect all fusionstor mons. Errors are %s",
-                                        self.getUuid(), JSONObjectUtil.toJsonString(errorCodes))
+                        trigger.fail(operr(
+                                "unable to connect to the fusionstor backup storage[uuid:%s]. Failed to connect all fusionstor mons. Errors are %s",
+                                self.getUuid(), JSONObjectUtil.toJsonString(errorCodes)
                         ));
                     } else {
                         // reload because mon status changed
@@ -607,7 +607,7 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
                                         sb.append(String.format("%s (mon ip) --> %s (fsid)\n", mon.getSelf().getHostname(), fsid));
                                     }
 
-                                    throw new OperationFailureException(errf.stringToOperationError(sb.toString()));
+                                    throw new OperationFailureException(operr(sb.toString()));
                                 }
 
                                 // check if there is another fusion setup having the same fsid
@@ -618,10 +618,10 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
                                 q.add(FusionstorBackupStorageVO_.uuid, Op.NOT_EQ, self.getUuid());
                                 FusionstorBackupStorageVO otherfusion = q.find();
                                 if (otherfusion != null) {
-                                    throw new OperationFailureException(errf.stringToOperationError(
-                                            String.format("there is another Fusionstor backup storage[name:%s, uuid:%s] with the same" +
-                                                            " FSID[%s], you cannot add the same Fusionstor setup as two different backup storage",
-                                                    otherfusion.getName(), otherfusion.getUuid(), fsId)
+                                    throw new OperationFailureException(operr(
+                                            "there is another Fusionstor backup storage[name:%s, uuid:%s] with the same" +
+                                                    " FSID[%s], you cannot add the same Fusionstor setup as two different backup storage",
+                                            otherfusion.getName(), otherfusion.getUuid(), fsId
                                     ));
                                 }
 
@@ -638,7 +638,7 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
                                 public void success(GetFactsRsp rsp) {
                                     if (!rsp.success) {
                                         // one mon cannot get the facts, directly error out
-                                        trigger.fail(errf.stringToOperationError(rsp.error));
+                                        trigger.fail(operr(rsp.error));
                                         return;
                                     }
 
@@ -822,7 +822,7 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
                                 backupStorageDown();
                             } else  {
                                 // this mon is down(success == false, operationFailure == false), but the backup storage may still work as other mons may work
-                                ErrorCode errorCode = errf.stringToOperationError(res.error);
+                                ErrorCode errorCode = operr(res.error);
                                 thisMonIsDown(errorCode);
                             }
                         }
@@ -1034,13 +1034,13 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
                                 @Override
                                 public void success(GetFactsRsp rsp) {
                                     if (!rsp.isSuccess()) {
-                                        errors.add(errf.stringToOperationError(rsp.getError()));
+                                        errors.add(operr(rsp.getError()));
                                     } else {
                                         String fsid = rsp.fsid;
                                         if (!getSelf().getFsid().equals(fsid)) {
-                                            errors.add(errf.stringToOperationError(
-                                                    String.format("the mon[ip:%s] returns a fsid[%s] different from the current fsid[%s] of the cep cluster," +
-                                                            "are you adding a mon not belonging to current cluster mistakenly?", base.getSelf().getHostname(), fsid, getSelf().getFsid())
+                                            errors.add(operr(
+                                                    "the mon[ip:%s] returns a fsid[%s] different from the current fsid[%s] of the cep cluster," +
+                                                            "are you adding a mon not belonging to current cluster mistakenly?", base.getSelf().getHostname(), fsid, getSelf().getFsid()
                                             ));
                                         }
                                     }
