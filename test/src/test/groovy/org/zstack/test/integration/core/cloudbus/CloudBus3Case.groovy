@@ -1,24 +1,23 @@
 package org.zstack.test.integration.core.cloudbus
 
 import org.zstack.core.Platform
-import org.zstack.core.cloudbus.CloudBus
-import org.zstack.core.cloudbus.CloudBus3ManagementNodeLifeCycleTracker
-import org.zstack.core.cloudbus.CloudBusCallBack
-import org.zstack.core.cloudbus.CloudBusGlobalProperty
-import org.zstack.core.cloudbus.CloudBusSteppingCallback
+import org.zstack.core.cloudbus.*
+import org.zstack.core.db.DatabaseFacade
 import org.zstack.header.AbstractService
+import org.zstack.header.errorcode.OperationFailureException
 import org.zstack.header.errorcode.SysErrors
 import org.zstack.header.managementnode.ManagementNodeInventory
-import org.zstack.header.message.APIEvent
-import org.zstack.header.message.Message
-import org.zstack.header.message.MessageReply
-import org.zstack.header.message.NeedReplyMessage
+import org.zstack.header.managementnode.ManagementNodeState
+import org.zstack.header.managementnode.ManagementNodeVO
+import org.zstack.header.message.*
 import org.zstack.header.vm.APIQueryVmInstanceMsg
 import org.zstack.header.vm.APIStartVmInstanceMsg
 import org.zstack.header.vm.StartVmInstanceMsg
 import org.zstack.test.integration.ZStackTest
 import org.zstack.testlib.SubCase
 
+import java.sql.Timestamp
+import java.time.LocalDateTime
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
@@ -192,9 +191,67 @@ class CloudBus3Case extends SubCase {
         CloudBusGlobalProperty.CLOUDBUS3_MESSAGE_TRACKER_CLEANUP_INTERVAL = cleanupInterval
     }
 
+    void testSendToMissingNode() {
+        CloudBus bus = bean(CloudBus.class)
+        DatabaseFacade dbf = bean(DatabaseFacade.class)
+
+        String SERVICE_ID = "testMissingNode"
+
+        def service = new AbstractService() {
+            @Override
+            void handleMessage(Message msg) {
+                bus.reply(msg, new MessageReply())
+            }
+
+            @Override
+            String getId() {
+                return bus.makeLocalServiceId(SERVICE_ID)
+            }
+
+            @Override
+            boolean start() {
+                return true
+            }
+
+            @Override
+            boolean stop() {
+                return true
+            }
+        }
+
+        bus.registerService(service)
+
+        ManagementNodeVO vo = new ManagementNodeVO()
+        vo.setHostName("127.0.0.123")
+        vo.setHeartBeat(Timestamp.valueOf(LocalDateTime.now()))
+        vo.setUuid(Platform.uuid)
+        vo.setPort(8080)
+        vo.setState(ManagementNodeState.RUNNING)
+        dbf.persist(vo)
+
+        def qmsg = new APIQueryVmInstanceMsg()
+        qmsg.setTimeout(1L)
+        bus.makeLocalServiceId(qmsg, SERVICE_ID)
+        bus.makeServiceIdByManagementNodeId(qmsg, SERVICE_ID, vo.getUuid())
+
+        bus.installBeforeSendMessageInterceptor(new AbstractBeforeSendMessageInterceptor() {
+            @Override
+            void beforeSendMessage(Message msg) {
+                dbf.remove(vo)
+            }
+        })
+
+        expect(OperationFailureException.class) {
+            bus.call(qmsg)
+        }
+
+        bus.unregisterService(service)
+    }
+
     @Override
     void test() {
         testStepSend()
         testManagementNodeGone()
+        testSendToMissingNode()
     }
 }
