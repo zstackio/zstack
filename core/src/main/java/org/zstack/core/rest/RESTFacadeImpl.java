@@ -4,6 +4,7 @@ import org.apache.http.HttpStatus;
 import org.apache.poi.ss.formula.functions.T;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.client.*;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.core.CoreGlobalProperty;
@@ -211,6 +212,19 @@ public class RESTFacadeImpl implements RESTFacade {
 
     @Override
     public void asyncJsonPost(final String url, final String body, Map<String, String> headers, final AsyncRESTCallback callback, final TimeUnit unit, final long timeout) {
+        asyncJson(url, body, headers, HttpMethod.POST, callback, unit, timeout);
+    }
+
+    @Override
+    public void asyncJsonDelete(final String url, final String body, Map<String, String> headers, final AsyncRESTCallback callback, final TimeUnit unit, final long timeout) {
+        asyncJson(url, body, headers, HttpMethod.DELETE, callback, unit, timeout);
+    }
+    @Override
+    public void asyncJsonGet(final String url, final String body, Map<String, String> headers, final AsyncRESTCallback callback, final TimeUnit unit, final long timeout) {
+        asyncJson(url, body, headers, HttpMethod.GET, callback, unit, timeout);
+    }
+
+    public void asyncJson(final String url, final String body, Map<String, String> headers, HttpMethod method, final AsyncRESTCallback callback, final TimeUnit unit, final long timeout) {
         synchronized (interceptors) {
             for (BeforeAsyncJsonPostInterceptor ic : interceptors) {
                 ic.beforeAsyncJsonPost(url, body, unit, timeout);
@@ -249,7 +263,7 @@ public class RESTFacadeImpl implements RESTFacade {
             @Override
             @RetryCondition(onExceptions = {ResourceAccessException.class, RestClientException.class, HttpClientErrorException.class})
             protected ResponseEntity<String> call() {
-                return template.exchange(url, HttpMethod.POST, req, String.class, taskUuid, unit.toMillis(timeout), unit.toMillis(timeout));
+                return template.exchange(url, method, req, String.class, taskUuid, unit.toMillis(timeout), unit.toMillis(timeout));
             }
         };
 
@@ -339,7 +353,7 @@ public class RESTFacadeImpl implements RESTFacade {
             wrappers.put(taskUuid, wrapper);
 
             if (logger.isTraceEnabled()) {
-                logger.trace(String.format("json post[%s], %s", url, req.toString()));
+                logger.trace(String.format("json %s [%s], %s", method.toString(), url, req.toString()));
             }
 
             ResponseEntity<String> rsp;
