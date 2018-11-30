@@ -475,6 +475,14 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
         }
 
         void send() {
+            try {
+                doSend();
+            } catch (Throwable th) {
+                replyErrorIfNeeded(errf.throwableToOperationError(th));
+            }
+        }
+
+        private void doSend() {
             if (msg instanceof Event) {
                 eventSend();
                 return;
