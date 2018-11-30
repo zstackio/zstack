@@ -1,4 +1,4 @@
-package org.zstack.rest;
+package org.zstack.header.rest;
 
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -32,14 +32,24 @@ public class DefaultSSLVerifier {
             }
     };
 
-    public static SSLSocketFactory getSSLFactory(TrustManager[] trustManagers) {
+    public static SSLContext getSSLContext(TrustManager[] trustManagers) {
         try {
             SSLContext sslContext = SSLContext.getInstance("TLS");
             sslContext.init(null, trustManagers, new java.security.SecureRandom());
-            return sslContext.getSocketFactory();
+            return sslContext;
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
             logger.warn("getSSLFactory failed", e);
             return null;
         }
+    }
+
+    public static SSLSocketFactory getSSLFactory(TrustManager[] trustManagers) {
+        SSLContext sslContext = getSSLContext(trustManagers);
+
+        if (sslContext != null) {
+            return sslContext.getSocketFactory();
+        }
+
+        return null;
     }
 }
