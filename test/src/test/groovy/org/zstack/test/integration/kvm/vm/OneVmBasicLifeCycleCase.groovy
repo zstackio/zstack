@@ -3,7 +3,10 @@ package org.zstack.test.integration.kvm.vm
 import org.springframework.http.HttpEntity
 import org.zstack.compute.vm.VmSystemTags
 import org.zstack.core.cloudbus.CloudBusGlobalConfig
+import org.zstack.core.db.Q
 import org.zstack.header.vm.VmCreationStrategy
+import org.zstack.header.vm.VmInstanceEO
+import org.zstack.header.vm.VmInstanceEO_
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.kvm.KVMAgentCommands
@@ -45,6 +48,8 @@ test a VM's start/stop/reboot/destroy/recover operations
             testRebootVm()
             testDestroyVm()
             testRecoverVm()
+            testExpungeVm()
+
             testDeleteCreatedVm()
         }
     }
@@ -172,6 +177,28 @@ test a VM's start/stop/reboot/destroy/recover operations
 
         def vmvo = dbFindByUuid(cmd.uuid, VmInstanceVO.class)
         assert vmvo.state == VmInstanceState.Stopped
+    }
+
+    void testExpungeVm() {
+        VmInstanceInventory vm = env.inventoryByName("vm")
+
+        destroyVmInstance {
+            uuid = vm.uuid
+        }
+
+        Long before = Q.New(VmInstanceEO.class).count()
+
+        expungeVmInstance {
+            uuid = vm.uuid
+        }
+
+        boolean eoExists = Q.New(VmInstanceEO.class)
+                .eq(VmInstanceEO_.uuid, vm.uuid)
+                .isExists()
+        assert !eoExists
+
+        Long after = Q.New(VmInstanceEO.class).count()
+        assert before == after + 1
     }
 
     void testDeleteCreatedVm() {
