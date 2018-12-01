@@ -9,9 +9,6 @@ import org.zstack.utils.logging.CLogger;
 
 import java.math.BigInteger;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
 
 public class IPv6NetworkUtils {
     private final static CLogger logger = Utils.getLogger(IPv6NetworkUtils.class);
@@ -207,6 +204,11 @@ public class IPv6NetworkUtils {
         IPv6Network network = IPv6Network.fromString(networkCidr);
         IPv6Address address = IPv6Address.fromString(ip);
         return network.contains(address);
+    }
+
+    public static boolean isIpv6CidrEqual( String cidr1, String cidr2) {
+        IPv6Network network = IPv6Network.fromString(cidr1);
+        return network.equals(IPv6Network.fromString(cidr2));
     }
 
     public static long getIpv6RangeSize(String startIp, String endIp) {
