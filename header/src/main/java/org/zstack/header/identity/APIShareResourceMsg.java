@@ -4,6 +4,7 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.vo.ResourceVO;
 
 import java.util.List;
 
@@ -20,7 +21,7 @@ import static org.zstack.utils.CollectionDSL.list;
         isAction = true
 )
 public class APIShareResourceMsg extends APIMessage implements AccountMessage {
-    @APIParam(nonempty = true, checkAccount = true, operationTarget = true)
+    @APIParam(resourceType = ResourceVO.class, nonempty = true, checkAccount = true, operationTarget = true)
     private List<String> resourceUuids;
     @APIParam(resourceType = AccountVO.class, required = false)
     private List<String> accountUuids;
