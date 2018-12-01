@@ -5,5 +5,6 @@ package org.zstack.header.storage.primary;
  */
 public enum PrimaryStorageHostStatus {
     Connected,
+    Connecting,
     Disconnected
 }
