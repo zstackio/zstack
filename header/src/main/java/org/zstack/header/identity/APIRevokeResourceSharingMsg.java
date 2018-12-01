@@ -6,6 +6,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.vo.ResourceVO;
 
 import java.util.List;
 
@@ -22,7 +23,7 @@ import static org.zstack.utils.CollectionDSL.list;
         responseClass = APIRevokeResourceSharingEvent.class
 )
 public class APIRevokeResourceSharingMsg extends APIMessage implements AccountMessage {
-    @APIParam(nonempty = true)
+    @APIParam(resourceType = ResourceVO.class, nonempty = true)
     private List<String> resourceUuids;
     private boolean toPublic;
     @APIParam(resourceType = AccountVO.class, required = false)
