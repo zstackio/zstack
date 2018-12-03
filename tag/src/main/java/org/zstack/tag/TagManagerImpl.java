@@ -428,6 +428,21 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     }
 
     @Override
+    public void deleteSystemTag(String uuid) {
+        SystemTagVO vo = Q.New(SystemTagVO.class).eq(SystemTagVO_.uuid, uuid).find();
+
+        if (vo == null) {
+            return;
+        }
+
+        preTagDeleted(SystemTagInventory.valueOf(vo));
+
+        dbf.remove(vo);
+
+        fireTagDeleted(Collections.singletonList(SystemTagInventory.valueOf(vo)));
+    }
+
+    @Override
     public void deleteSystemTag(String tag, String resourceUuid, String resourceType, Boolean inherit) {
         deleteSystemTag(tag, resourceUuid, resourceType, inherit, false);
     }

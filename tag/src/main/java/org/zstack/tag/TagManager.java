@@ -41,6 +41,8 @@ public interface TagManager {
 
     boolean hasSystemTag(String resourceUuid, Enum tag);
 
+    void deleteSystemTag(String uuid);
+
     void deleteSystemTag(String tag, String resourceUuid, String resourceType, Boolean inherit);
 
     void deleteSystemTagUseLike(String tag, String resourceUuid, String resourceType, Boolean inherit);
