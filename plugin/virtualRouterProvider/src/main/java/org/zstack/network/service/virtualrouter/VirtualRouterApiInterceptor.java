@@ -1,8 +1,11 @@
 package org.zstack.network.service.virtualrouter;
 
+import junit.framework.Assert;
+import org.apache.commons.net.util.SubnetUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -14,10 +17,7 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.image.ImageVO_;
 import org.zstack.header.message.APIMessage;
-import org.zstack.header.network.l3.IpRangeVO;
-import org.zstack.header.network.l3.IpRangeVO_;
-import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.header.network.l3.L3NetworkVO_;
+import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO_;
 import org.zstack.header.network.service.NetworkServiceType;
@@ -26,14 +26,15 @@ import org.zstack.header.query.QueryOp;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.utils.ShellResult;
 import org.zstack.utils.ShellUtils;
+import org.zstack.utils.network.IPv6Constants;
+import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
-
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.operr;
 
 import javax.persistence.Tuple;
 import java.util.List;
 
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -84,7 +85,29 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
             }
         }
     }
+    private Boolean isNetworkAddressEqual(String networkUuid1, String networkUuid2) {
+        Assert.assertTrue(!(networkUuid1 == null || networkUuid2 == null));
 
+        if (networkUuid1.equals(networkUuid2)) {
+            return true;
+        }
+        L3NetworkVO l3vo1 = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, networkUuid1).find();
+        L3NetworkVO l3vo2 = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, networkUuid2).find();
+        if (!l3vo1.getIpVersion().equals(l3vo2.getIpVersion())) {
+            return false;
+        }
+        List<IpRangeInventory> ipInvs1 = IpRangeInventory.valueOf(l3vo1.getIpRanges());
+        List<IpRangeInventory> ipInvs2 = IpRangeInventory.valueOf(l3vo2.getIpRanges());
+
+        if (l3vo1.getIpVersion() == IPv6Constants.IPv4) {
+            String netAddr1 = new SubnetUtils(ipInvs1.get(0).getGateway(), ipInvs1.get(0).getNetmask()).getInfo().getNetworkAddress();
+            String netAddr2 = new SubnetUtils(ipInvs2.get(0).getGateway(), ipInvs2.get(0).getNetmask()).getInfo().getNetworkAddress();
+            return netAddr1.equals(netAddr2);
+        } else if (l3vo1.getIpVersion() == IPv6Constants.IPv6) {
+            return IPv6NetworkUtils.isIpv6CidrEqual(ipInvs1.get(0).getNetworkCidr(), ipInvs2.get(0).getNetworkCidr());
+        }
+        return false;
+    }
     private void validate(APICreateVirtualRouterOfferingMsg msg) {
         if (msg.isDefault() != null) {
             if (!new QuotaUtil().isAdminAccount(msg.getSession().getAccountUuid())) {
@@ -146,6 +169,12 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
                 } else if (nref.getL3NetworkUuid().equals(msg.getPublicNetworkUuid())) {
                     throw new ApiMessageInterceptionException(argerr("the L3 network[uuid: %s] has the SNAT service enabled, it cannot be used as a public network", msg.getPublicNetworkUuid()));
                 }
+            }
+        }
+
+        if (!msg.getManagementNetworkUuid().equals(msg.getPublicNetworkUuid())) {
+            if (isNetworkAddressEqual(msg.getManagementNetworkUuid(), msg.getPublicNetworkUuid())) {
+     throw new ApiMessageInterceptionException(argerr("the L3 network[uuid: %s] is same network address with [uuid: %s], it cannot be used for virtual router", msg.getManagementNetworkUuid(),msg.getPublicNetworkUuid()));
             }
         }
     }

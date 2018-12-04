@@ -4,14 +4,16 @@ import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
 import org.zstack.sdk.ImageInventory
+import org.zstack.sdk.IpRangeInventory
+import org.zstack.sdk.L2NetworkInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.SessionInventory
 import org.zstack.sdk.VirtualRouterOfferingInventory
+import org.zstack.sdk.ZoneInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
-
 /**
  * Created by weiwang on 20/11/2017
  */
@@ -179,7 +181,43 @@ class VirtualRouterOfferingCase extends SubCase {
     @Override
     void test() {
         env.create {
+            TestCreateVirtualRouterOfferingParameter()
             testVirtualRouterOfferingQueryByOtherAccount()
+        }
+    }
+
+    void  TestCreateVirtualRouterOfferingParameter() {
+        def zone = env.inventoryByName("zone") as ZoneInventory
+        def image = env.inventoryByName("vr-image") as ImageInventory
+        def l2 = env.inventoryByName("l2") as L2NetworkInventory
+        def pub = env.inventoryByName("pubL3-1") as L3NetworkInventory
+
+        L3NetworkInventory l3_11 = createL3Network {
+            delegate.category = "Public"
+            delegate.l2NetworkUuid = l2.uuid
+            delegate.name = "pubL3-11"
+        }
+
+        IpRangeInventory iprInv = addIpRange {
+            delegate.name = "TestIpRange"
+            delegate.l3NetworkUuid = l3_11.uuid
+            delegate.startIp = "12.16.10.101"
+            delegate.endIp = "12.16.10.200"
+            delegate.gateway = "12.16.10.1"
+            delegate.netmask = "255.255.255.0"
+        }
+
+        expect(AssertionError.class) {
+            createVirtualRouterOffering {
+                name = "vro"
+                memorySize = SizeUnit.MEGABYTE.toByte(512)
+                cpuNum = 2
+                managementNetworkUuid = pub.uuid
+                publicNetworkUuid = l3_11.uuid
+                imageUuid = image.uuid
+                zoneUuid = zone.uuid
+                isDefault = true
+            }
         }
     }
 
