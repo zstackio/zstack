@@ -802,7 +802,7 @@ public class RestServer implements Component, CloudBusEventListener {
                 }
 
                 LocalDateTime now = LocalDateTime.now();
-                if (date.isAfter(now) || date.isBefore(now.minus(Duration.ofMinutes(RestConstants.REQUEST_DURATION_MINUTES)))) {
+                if (date.isAfter(now.plus(Duration.ofMinutes(RestConstants.REQUEST_DURATION_MINUTES))) || date.isBefore(now.minus(Duration.ofMinutes(RestConstants.REQUEST_DURATION_MINUTES)))) {
                     throw new RestException(HttpStatus.FORBIDDEN.value(), String.format("requestTimeTooSkewed"));
                 }
 
