@@ -37,16 +37,16 @@ public class CreateVolumeBackupAction extends AbstractAction {
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1024L,9223372036854775807L}, numberRangeUnit = {"Bps", "Bps"}, noTrim = false)
     public java.lang.Long volumeReadBandwidth;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1024L,9223372036854775807L}, numberRangeUnit = {"Bps", "Bps"}, noTrim = false)
     public java.lang.Long volumeWriteBandwidth;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1024L,9223372036854775807L}, numberRangeUnit = {"Bps", "Bps"}, noTrim = false)
     public java.lang.Long networkReadBandwidth;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1024L,9223372036854775807L}, numberRangeUnit = {"Bps", "Bps"}, noTrim = false)
     public java.lang.Long networkWriteBandwidth;
 
     @Param(required = false)
