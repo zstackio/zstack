@@ -5796,7 +5796,7 @@
       "type",
       "ImageMediaType.RootVolumeTemplate"
     ],
-    "line": 130,
+    "line": 154,
     "fileName": "src/zstack/./plugin/virtualRouterProvider/src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterApiInterceptor.java"
   },
   {
@@ -5807,7 +5807,7 @@
       "msg.getImageUuid()",
       "format"
     ],
-    "line": 136,
+    "line": 160,
     "fileName": "src/zstack/./plugin/virtualRouterProvider/src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterApiInterceptor.java"
   },
   {
@@ -5818,7 +5818,7 @@
       "msg.getManagementNetworkUuid()",
       "msg.getZoneUuid()"
     ],
-    "line": 106,
+    "line": 130,
     "fileName": "src/zstack/./plugin/virtualRouterProvider/src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterApiInterceptor.java"
   },
   {
@@ -5829,7 +5829,7 @@
       "msg.getManagementNetworkUuid()",
       "msg.getZoneUuid()"
     ],
-    "line": 119,
+    "line": 143,
     "fileName": "src/zstack/./plugin/virtualRouterProvider/src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterApiInterceptor.java"
   },
   {
@@ -5839,7 +5839,7 @@
     "arguments": [
       "msg.getPublicNetworkUuid()"
     ],
-    "line": 147,
+    "line": 171,
     "fileName": "src/zstack/./plugin/virtualRouterProvider/src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterApiInterceptor.java"
   },
   {
@@ -5849,9 +5849,20 @@
     "arguments": [
       "msg.getManagementNetworkUuid()"
     ],
-    "line": 145,
+    "line": 169,
     "fileName": "src/zstack/./plugin/virtualRouterProvider/src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterApiInterceptor.java"
   },
+  {
+    "raw": "the L3 network[uuid: %s] is same network address with [uuid: %s], it cannot be used for virtual router",
+    "en_US": "the L3 network[uuid: {0}] is same network address with [uuid: {1}], it cannot be used for virtual router",
+    "zh_CN": "L3网络[uuid: {0}] 和 网络 [uuid: {1}] 具有相同的网络地址，无法被用于云路由",
+    "arguments": [
+      "msg.getManagementNetworkUuid()",
+      "msg.getPublicNetworkUuid()"
+    ],
+    "line": 178,
+    "fileName": "src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterApiInterceptor.java"
+  }, 
   {
     "raw": "the management network[uuid:%s] doesn\u0027t have any IP range",
     "en_US": "the management network[uuid:{0}] doesn\u0027t have any IP range",
@@ -5859,7 +5870,7 @@
     "arguments": [
       "managementNetworkUuid"
     ],
-    "line": 158,
+    "line": 188,
     "fileName": "src/zstack/./plugin/virtualRouterProvider/src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterApiInterceptor.java"
   },
   {
@@ -5870,7 +5881,7 @@
       "managementNetworkUuid",
       "gateway"
     ],
-    "line": 175,
+    "line": 205,
     "fileName": "src/zstack/./plugin/virtualRouterProvider/src/main/java/org/zstack/network/service/virtualrouter/VirtualRouterApiInterceptor.java"
   },
   {
