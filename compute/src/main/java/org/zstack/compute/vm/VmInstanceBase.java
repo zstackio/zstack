@@ -3151,7 +3151,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
-        if (self.getState() == VmInstanceState.Stopped) {
+        if (self.getState() == VmInstanceState.Stopped || self.getState() == VmInstanceState.Destroyed) {
             IsoOperator.detachIsoFromVm(self.getUuid(), isoUuid);
             completion.success();
             return;

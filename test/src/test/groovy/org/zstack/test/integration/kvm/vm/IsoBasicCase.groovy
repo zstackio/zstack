@@ -211,6 +211,16 @@ class IsoBasicCase extends SubCase {
 
         rebootVm(newVm.uuid, new HashMap<String, KVMAgentCommands.IsoTO>())
         checkVmIsoNum(newVm.uuid, 0)
+
+        attachIso(newVm.uuid, iso3.uuid, 0)
+        checkVmIsoNum(newVm.uuid, 1)
+
+        destroyVmInstance {
+            uuid = newVm.uuid
+        }
+        deleteImage {
+            uuid = iso3.uuid
+        }
     }
 
     void attachIso(String vmUuid, String iso, int expectIsoDeviceId) {
