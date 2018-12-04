@@ -77,7 +77,7 @@ public abstract class AbstractIpAllocatorStrategy implements IpAllocatorStrategy
         IpRangeVO ipr = CollectionUtils.find(iprs, new Function<IpRangeVO, IpRangeVO>() {
             @Override
             public IpRangeVO call(IpRangeVO arg) {
-                if (IPv6NetworkUtils.isIpv6InCidrRange(msg.getRequiredIp(), arg.getNetworkCidr())) {
+                if (IPv6NetworkUtils.isIpv6InRange(msg.getRequiredIp(), arg.getStartIp(), arg.getEndIp())) {
                     return arg;
                 } else {
                     return null;
