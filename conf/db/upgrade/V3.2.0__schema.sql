@@ -135,6 +135,7 @@ CREATE PROCEDURE migrateUserTagVO()
                 LEAVE read_loop;
             END IF;
 
+            SET patternUuid = (REPLACE(UUID(), '-', ''));
             INSERT zstack.ResourceVO(uuid, resourceName, resourceType, concreteResourceType)
             VALUES (patternUuid, patternTag, 'TagPatternVO', 'org.zstack.header.tag.TagPatternVO');
 
