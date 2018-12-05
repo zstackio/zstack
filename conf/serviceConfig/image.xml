@@ -45,6 +45,10 @@
     </message>
 
     <message>
+        <name>org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeSnapshotMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.header.image.APIUpdateImageMsg</name>
     </message>
 
