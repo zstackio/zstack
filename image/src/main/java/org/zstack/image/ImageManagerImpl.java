@@ -5,7 +5,6 @@ import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.compute.vm.VmQuotaUtil;
 import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.AsyncBatchRunner;
@@ -38,7 +37,6 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
 import org.zstack.header.image.*;
-import org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotEvent.Failure;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageDeletionPolicyManager.ImageDeletionPolicy;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
@@ -84,9 +82,7 @@ import static org.zstack.core.progress.ProgressReportService.getTaskStage;
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.header.Constants.THREAD_CONTEXT_API;
 import static org.zstack.header.Constants.THREAD_CONTEXT_TASK_NAME;
-import static org.zstack.utils.CollectionDSL.e;
-import static org.zstack.utils.CollectionDSL.list;
-import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.CollectionDSL.*;
 
 public class ImageManagerImpl extends AbstractService implements ImageManager, ManagementNodeReadyExtensionPoint,
         ReportQuotaExtensionPoint, ResourceOwnerPreChangeExtensionPoint {
@@ -180,6 +176,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             handle((APICreateRootVolumeTemplateFromVolumeSnapshotMsg) msg);
         } else if (msg instanceof APICreateDataVolumeTemplateFromVolumeMsg) {
             handle((APICreateDataVolumeTemplateFromVolumeMsg) msg);
+        } else if (msg instanceof APICreateDataVolumeTemplateFromVolumeSnapshotMsg) {
+            handle((APICreateDataVolumeTemplateFromVolumeSnapshotMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -189,6 +187,127 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         CreateDataVolumeTemplateFromVolumeLongJobData data = new CreateDataVolumeTemplateFromVolumeLongJobData(msg);
         BeanUtils.copyProperties(msg, data);
         handleCreateDataVolumeTemplateFromVolumeMsg(data, new APICreateDataVolumeTemplateFromVolumeEvent(msg.getId()));
+    }
+
+    private void handle(final APICreateDataVolumeTemplateFromVolumeSnapshotMsg msg) {
+        final APICreateDataVolumeTemplateFromVolumeSnapshotEvent evt = new APICreateDataVolumeTemplateFromVolumeSnapshotEvent(msg.getId());
+
+        class Result {
+            List<CreateTemplateFromVolumeSnapshotMsg> msgs;
+            ImageVO image;
+        }
+
+        Result res = new Result();
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                String format = q(VolumeSnapshotVO.class).select(VolumeSnapshotVO_.format)
+                        .eq(VolumeSnapshotVO_.uuid, msg.getSnapshotUuid()).findValue();
+
+                final ImageVO vo = new ImageVO();
+                if (msg.getResourceUuid() != null) {
+                    vo.setUuid(msg.getResourceUuid());
+                } else {
+                    vo.setUuid(Platform.getUuid());
+                }
+                vo.setName(msg.getName());
+                vo.setSystem(false);
+                vo.setDescription(msg.getDescription());
+                vo.setStatus(ImageStatus.Creating);
+                vo.setState(ImageState.Enabled);
+                vo.setFormat(format);
+                vo.setMediaType(ImageMediaType.DataVolumeTemplate);
+                vo.setType(ImageConstant.ZSTACK_IMAGE_TYPE);
+                vo.setUrl(String.format("volumeSnapshot://%s", msg.getSnapshotUuid()));
+                vo.setAccountUuid(msg.getSession().getAccountUuid());
+                persist(vo);
+
+                tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), ImageVO.class.getSimpleName());
+
+                Tuple t = q(VolumeSnapshotVO.class).select(VolumeSnapshotVO_.volumeUuid, VolumeSnapshotVO_.treeUuid)
+                        .eq(VolumeSnapshotVO_.uuid, msg.getSnapshotUuid()).findTuple();
+                String volumeUuid = t.get(0, String.class);
+                String treeUuid = t.get(1, String.class);
+
+                res.msgs = msg.getBackupStorageUuids().stream().map(bsUuid -> {
+                    CreateTemplateFromVolumeSnapshotMsg cmsg = new CreateTemplateFromVolumeSnapshotMsg();
+                    cmsg.setSnapshotUuid(msg.getSnapshotUuid());
+                    cmsg.setImageUuid(vo.getUuid());
+                    cmsg.setVolumeUuid(volumeUuid);
+                    cmsg.setTreeUuid(treeUuid);
+                    cmsg.setBackupStorageUuid(bsUuid);
+                    String resourceUuid = volumeUuid != null ? volumeUuid : treeUuid;
+                    bus.makeTargetServiceIdByResourceUuid(cmsg, VolumeSnapshotConstant.SERVICE_ID, resourceUuid);
+                    return cmsg;
+                }).collect(Collectors.toList());
+                res.image = vo;
+            }
+        }.execute();
+
+        List<CreateTemplateFromVolumeSnapshotMsg> cmsgs = res.msgs;
+        ImageVO vo = res.image;
+
+        List<APICreateDataVolumeTemplateFromVolumeSnapshotEvent.Failure> failures = new ArrayList<>();
+        AsyncLatch latch = new AsyncLatch(cmsgs.size(), new NoErrorCompletion(msg) {
+            @Override
+            public void done() {
+                if (failures.size() == cmsgs.size()) {
+                    // failed on all
+                    ErrorCodeList error = errf.stringToOperationError(String.format("failed to create template from" +
+                                    " the volume snapshot[uuid:%s] on backup storage[uuids:%s]", msg.getSnapshotUuid(),
+                            msg.getBackupStorageUuids()), failures.stream().map(f -> f.error).collect(Collectors.toList()));
+                    evt.setError(error);
+                    dbf.remove(vo);
+                } else {
+                    ImageVO imvo = dbf.reload(vo);
+                    evt.setInventory(ImageInventory.valueOf(imvo));
+
+                    logger.debug(String.format("successfully created image[uuid:%s, name:%s] from volume snapshot[uuid:%s]",
+                            imvo.getUuid(), imvo.getName(), msg.getSnapshotUuid()));
+                }
+
+                if (!failures.isEmpty()) {
+                    evt.setFailuresOnBackupStorage(failures);
+                }
+
+                bus.publish(evt);
+            }
+        });
+
+        RunOnce once = new RunOnce();
+        for (CreateTemplateFromVolumeSnapshotMsg cmsg : cmsgs) {
+            bus.send(cmsg, new CloudBusCallBack(latch) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        synchronized (failures) {
+                            APICreateDataVolumeTemplateFromVolumeSnapshotEvent.Failure failure =
+                                    new APICreateDataVolumeTemplateFromVolumeSnapshotEvent.Failure();
+                            failure.error = reply.getError();
+                            failure.backupStorageUuid = cmsg.getBackupStorageUuid();
+                            failures.add(failure);
+                        }
+                    } else {
+                        CreateTemplateFromVolumeSnapshotReply cr = reply.castReply();
+                        ImageBackupStorageRefVO ref = new ImageBackupStorageRefVO();
+                        ref.setBackupStorageUuid(cr.getBackupStorageUuid());
+                        ref.setInstallPath(cr.getBackupStorageInstallPath());
+                        ref.setStatus(ImageStatus.Ready);
+                        ref.setImageUuid(vo.getUuid());
+                        dbf.persist(ref);
+
+                        once.run(() -> {
+                            vo.setSize(cr.getSize());
+                            vo.setActualSize(cr.getActualSize());
+                            vo.setStatus(ImageStatus.Ready);
+                            dbf.update(vo);
+                        });
+                    }
+
+                    latch.ack();
+                }
+            });
+        }
     }
 
     private void handle(final APICreateRootVolumeTemplateFromVolumeSnapshotMsg msg) {
@@ -253,7 +372,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         List<CreateTemplateFromVolumeSnapshotMsg> cmsgs = res.msgs;
         ImageVO vo = res.image;
 
-        List<Failure> failures = new ArrayList<>();
+        List<APICreateRootVolumeTemplateFromVolumeSnapshotEvent.Failure> failures = new ArrayList<>();
         AsyncLatch latch = new AsyncLatch(cmsgs.size(), new NoErrorCompletion(msg) {
             @Override
             public void done() {
@@ -287,7 +406,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 public void run(MessageReply reply) {
                     if (!reply.isSuccess()) {
                         synchronized (failures) {
-                            Failure failure = new Failure();
+                            APICreateRootVolumeTemplateFromVolumeSnapshotEvent.Failure failure =
+                                    new APICreateRootVolumeTemplateFromVolumeSnapshotEvent.Failure();
                             failure.error = reply.getError();
                             failure.backupStorageUuid = cmsg.getBackupStorageUuid();
                             failures.add(failure);
@@ -1656,7 +1776,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
         final TaskProgressRange parentStage = getTaskStage();
 
-        List<ImageBackupStorageRefVO> refs = new ArrayList<>();
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("create-data-volume-template-from-volume-%s", msgData.getVolumeUuid()));
         chain.then(new ShareFlow() {
