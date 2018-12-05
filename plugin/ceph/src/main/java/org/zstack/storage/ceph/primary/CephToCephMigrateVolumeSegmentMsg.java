@@ -6,11 +6,10 @@ import org.zstack.header.storage.primary.PrimaryStorageMessage;
 /**
  * Created by GuoYi on 10/19/17.
  */
-public class CephToCephMigrateVolumeSnapshotMsg extends NeedReplyMessage implements PrimaryStorageMessage {
+public class CephToCephMigrateVolumeSegmentMsg extends NeedReplyMessage implements PrimaryStorageMessage {
     private String parentUuid;
-    private String snapshotUuid;
-    private long snapshotSize;
-    private String srcSnapshotPath;
+    private String resourceUuid;
+    private String srcInstallPath;
     private String dstInstallPath;
     private String dstMonHostname;
     private String dstMonSshUsername;
@@ -26,28 +25,20 @@ public class CephToCephMigrateVolumeSnapshotMsg extends NeedReplyMessage impleme
         this.parentUuid = parentUuid;
     }
 
-    public String getSnapshotUuid() {
-        return snapshotUuid;
+    public String getResourceUuid() {
+        return resourceUuid;
     }
 
-    public void setSnapshotUuid(String snapshotUuid) {
-        this.snapshotUuid = snapshotUuid;
+    public void setResourceUuid(String resourceUuid) {
+        this.resourceUuid = resourceUuid;
     }
 
-    public long getSnapshotSize() {
-        return snapshotSize;
+    public String getSrcInstallPath() {
+        return srcInstallPath;
     }
 
-    public void setSnapshotSize(long snapshotSize) {
-        this.snapshotSize = snapshotSize;
-    }
-
-    public String getSrcSnapshotPath() {
-        return srcSnapshotPath;
-    }
-
-    public void setSrcSnapshotPath(String srcSnapshotPath) {
-        this.srcSnapshotPath = srcSnapshotPath;
+    public void setSrcInstallPath(String srcInstallPath) {
+        this.srcInstallPath = srcInstallPath;
     }
 
     public String getDstInstallPath() {
