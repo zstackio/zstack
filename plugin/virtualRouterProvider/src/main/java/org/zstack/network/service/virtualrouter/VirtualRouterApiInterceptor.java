@@ -1,6 +1,5 @@
 package org.zstack.network.service.virtualrouter;
 
-import junit.framework.Assert;
 import org.apache.commons.net.util.SubnetUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
@@ -86,8 +85,6 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
         }
     }
     private Boolean isNetworkAddressEqual(String networkUuid1, String networkUuid2) {
-        Assert.assertTrue(!(networkUuid1 == null || networkUuid2 == null));
-
         if (networkUuid1.equals(networkUuid2)) {
             return true;
         }
