@@ -152,11 +152,6 @@ class Env {
                     name = "image1"
                     url = "http://zstack.org/download/test.qcow2"
                 }
-
-                image {
-                    name = "vr"
-                    url = "http://zstack.org/download/vr.qcow2"
-                }
             }
 
             zone {

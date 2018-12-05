@@ -3,8 +3,10 @@ package org.zstack.compute.vm;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
+import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.network.l3.UsedIpVO;
 import org.zstack.header.network.l3.UsedIpVO_;
+import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
 import org.zstack.utils.Utils;
@@ -13,8 +15,9 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 
 import java.util.List;
+import java.util.Map;
 
-public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint {
+public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, PrepareDbInitialValueExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VmNicManagerImpl.class);
 
     @Override
@@ -80,6 +83,30 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint {
                     .set(VmNicVO_.usedIpUuid, temp.getUuid())
                     .set(VmNicVO_.ipVersion, temp.getIpVersion())
                     .set(VmNicVO_.l3NetworkUuid, temp.getL3NetworkUuid()).update();
+        }
+    }
+
+    @Override
+    public void prepareDbInitialValue() {
+        List<VmNicVO> nics = Q.New(VmNicVO.class).notNull(VmNicVO_.vmInstanceUuid).list();
+        for (VmNicVO nic : nics) {
+            if (nic.getUsedIps().size() <= 1) {
+                continue;
+            }
+
+            /* systemTags for dualStack nic existed */
+            List<String> secondaryL3Uuids = new DualStackNicSecondaryNetworksOperator().getSecondaryNetworksByVmUuidNic(nic.getVmInstanceUuid(), nic.getL3NetworkUuid());
+            if (secondaryL3Uuids != null) {
+                continue;
+            }
+
+            for (UsedIpVO ip : nic.getUsedIps()) {
+                if (ip.getL3NetworkUuid().equals(nic.getL3NetworkUuid())) {
+                    continue;
+                }
+
+                new DualStackNicSecondaryNetworksOperator().createSecondaryNetworksByVmNic(VmNicInventory.valueOf(nic), ip.getL3NetworkUuid());
+            }
         }
     }
 }

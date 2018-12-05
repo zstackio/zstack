@@ -49,6 +49,7 @@ public class VmNicReturnIpFlow extends NoRollbackFlow {
                     ext.afterDelIpAddress(nic.getUuid(), ipInv.getUuid());
                 }
 
+                new DualStackNicSecondaryNetworksOperator().deleteSecondaryNetworksByVmNic(nic, ipInv.getL3NetworkUuid());
                 trigger.next();
             }
         });

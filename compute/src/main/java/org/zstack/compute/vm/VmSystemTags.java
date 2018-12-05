@@ -2,7 +2,6 @@ package org.zstack.compute.vm;
 
 import org.zstack.header.tag.TagDefinition;
 import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.tag.EphemeralSystemTag;
 import org.zstack.tag.PatternedSystemTag;
 
 /**
@@ -88,4 +87,9 @@ public class VmSystemTags {
 
     public static String AUTO_SCALING_GROUP_UUID_TOKEN = "autoScalingGroupUuid";
     public static PatternedSystemTag AUTO_SCALING_GROUP_UUID = new PatternedSystemTag(String.format("autoScalingGroupUuid::{%s}", AUTO_SCALING_GROUP_UUID_TOKEN), VmInstanceVO.class);
+
+    public static String DUAL_STACK_NIC_PRIMARY_L3_TOKEN = "primaryL3NetworkUuid";
+    public static String DUAL_STACK_NIC_SECONDARY_L3_TOKEN = "secondaryL3NetworkUuid";
+    public static String DUAL_STACK_NIC_TOKEN = "dualStackNic";
+    public static PatternedSystemTag DUAL_STACK_NIC = new PatternedSystemTag(String.format("dualStackNic::{%s}::{%s}", DUAL_STACK_NIC_PRIMARY_L3_TOKEN, DUAL_STACK_NIC_SECONDARY_L3_TOKEN), VmInstanceVO.class);
 }

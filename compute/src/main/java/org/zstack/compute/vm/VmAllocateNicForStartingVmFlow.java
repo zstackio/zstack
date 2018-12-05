@@ -166,7 +166,7 @@ public class VmAllocateNicForStartingVmFlow implements Flow {
                 @Override
                 public void run(MessageReply reply) {
                     for (VmNicExtensionPoint ext : pluginRgty.getExtensionList(VmNicExtensionPoint.class)) {
-                        ext.afterAddIpAddress(ip.getVmNicUuid(), ip.getUuid());
+                        ext.afterDelIpAddress(ip.getVmNicUuid(), ip.getUuid());
                     }
                     cmpl.done();
                 }
