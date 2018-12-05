@@ -145,7 +145,7 @@ CREATE PROCEDURE migrateUserTagVO()
             VALUES(accountUuid, accountUuid, patternUuid,  'TagPatternVO', 'org.zstack.header.tag.TagPatternVO', 2, 0, NOW(), NOW());
 
             UPDATE zstack.UserTagVO utag, AccountResourceRefVO ref SET utag.tagPatternUuid = patternUuid
-            WHERE utag.tag = patternTag
+            WHERE left(utag.tag, 128) = patternTag
             AND utag.resourceUuid = ref.resourceUuid
             AND ref.accountUuid = accountUuid;
 
