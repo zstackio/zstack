@@ -72,21 +72,21 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                 rsp.availableCapacity = cspec.availableCapacity
                 List<CephPoolCapacity> poolCapacities = [
                         new CephPoolCapacity(
-                                name : cspec.rootVolumePoolName,
-                                availableCapacity : cspec.availableCapacity,
-                                usedCapacity : cspec.totalCapacity - cspec.availableCapacity,
+                                name: cspec.rootVolumePoolName,
+                                availableCapacity: cspec.availableCapacity,
+                                usedCapacity: cspec.totalCapacity - cspec.availableCapacity,
                                 totalCapacity: cspec.totalCapacity
                         ),
                         new CephPoolCapacity(
-                                name : cspec.dataVolumePoolName,
-                                availableCapacity : 0,
-                                usedCapacity : 0,
+                                name: cspec.dataVolumePoolName,
+                                availableCapacity: 0,
+                                usedCapacity: 0,
                                 totalCapacity: 0
                         ),
                         new CephPoolCapacity(
-                                name : cspec.imageCachePoolName,
-                                availableCapacity : 0,
-                                usedCapacity : 0,
+                                name: cspec.imageCachePoolName,
+                                availableCapacity: 0,
+                                usedCapacity: 0,
                                 totalCapacity: 0
                         ),
                 ]
@@ -109,7 +109,7 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
             }
 
             simulator(CephPrimaryStorageBase.KVM_CREATE_SECRET_PATH) {
-                return new  KVMAgentCommands.AgentResponse()
+                return new KVMAgentCommands.AgentResponse()
             }
 
             simulator(CephPrimaryStorageBase.DELETE_PATH) {
@@ -202,6 +202,14 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
 
             simulator(CephPrimaryStorageBase.CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH) {
                 return new CephPrimaryStorageBase.AgentResponse()
+            }
+
+            simulator(CephPrimaryStorageBase.CEPH_TO_CEPH_MIGRATE_VOLUME_SEGMENT_PATH) {
+                return new CephPrimaryStorageBase.StorageMigrationRsp()
+            }
+
+            simulator(CephPrimaryStorageBase.GET_VOLUME_SNAPINFOS_PATH) {
+                return new CephPrimaryStorageBase.GetVolumeSnapInfosRsp()
             }
         }
     }

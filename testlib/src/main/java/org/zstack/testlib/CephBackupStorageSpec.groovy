@@ -133,6 +133,10 @@ class CephBackupStorageSpec extends BackupStorageSpec {
                 Spec.checkHttpCallType(entity, true)
                 return [:]
             }
+
+            simulator(CephBackupStorageBase.CEPH_TO_CEPH_MIGRATE_IMAGE_PATH) { HttpEntity<String> entity ->
+                return new CephBackupStorageBase.StorageMigrationRsp()
+            }
         }
     }
 
