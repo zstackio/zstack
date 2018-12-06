@@ -18,6 +18,9 @@ import org.zstack.header.storage.backup.BackupStorageState;
 import org.zstack.header.storage.backup.BackupStorageStatus;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.backup.BackupStorageVO_;
+import org.zstack.header.storage.snapshot.VolumeSnapshotState;
+import org.zstack.header.storage.snapshot.VolumeSnapshotStatus;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
@@ -70,7 +73,10 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
             validate((APICreateRootVolumeTemplateFromVolumeSnapshotMsg) msg);
         } else if (msg instanceof APICreateDataVolumeTemplateFromVolumeMsg) {
             validate((APICreateDataVolumeTemplateFromVolumeMsg) msg);
+        } else if (msg instanceof APICreateDataVolumeTemplateFromVolumeSnapshotMsg) {
+            validate((APICreateDataVolumeTemplateFromVolumeSnapshotMsg) msg);
         }
+
 
         setServiceId(msg);
         return msg;
@@ -84,6 +90,17 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
 
         if (VolumeState.Enabled != vol.getState()) {
             throw new ApiMessageInterceptionException(operr("volume[uuid:%s] is not Enabled, it's %s", vol.getUuid(), vol.getState()));
+        }
+    }
+
+    private void validate(APICreateDataVolumeTemplateFromVolumeSnapshotMsg msg) {
+        VolumeSnapshotVO vsvo = dbf.findByUuid(msg.getSnapshotUuid(), VolumeSnapshotVO.class);
+        if (VolumeSnapshotStatus.Ready != vsvo.getStatus()) {
+            throw new ApiMessageInterceptionException(operr("volume snapshot[uuid:%s] is not Ready, it's %s", vsvo.getUuid(), vsvo.getStatus()));
+        }
+
+        if (VolumeSnapshotState.Enabled != vsvo.getState()) {
+            throw new ApiMessageInterceptionException(operr("volume snapshot[uuid:%s] is not Enabled, it's %s", vsvo.getUuid(), vsvo.getState()));
         }
     }
 
