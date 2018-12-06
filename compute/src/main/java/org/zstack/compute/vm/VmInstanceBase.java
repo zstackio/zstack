@@ -5808,10 +5808,54 @@ public class VmInstanceBase extends AbstractVmInstance {
                     }
                 });
 
+                flow(new NoRollbackFlow() {
+                    String __name__ = "sync-volume-size-after-reimage";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        SyncVolumeSizeMsg smsg = new SyncVolumeSizeMsg();
+                        smsg.setVolumeUuid(rootVolumeInventory.getUuid());
+                        bus.makeTargetServiceIdByResourceUuid(smsg, VolumeConstant.SERVICE_ID, rootVolumeInventory.getUuid());
+                        bus.send(smsg, new CloudBusCallBack(msg) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                    return;
+                                }
+
+                                rootVolumeInventory.setSize(((SyncVolumeSizeReply) reply).getSize());
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "return-primary-storage-capacity";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        if (rootVolume.getSize() == rootVolumeInventory.getSize()) {
+                            trigger.next();
+                            return;
+                        }
+
+                        IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+                        imsg.setPrimaryStorageUuid(rootVolume.getPrimaryStorageUuid());
+                        imsg.setDiskSize(rootVolume.getSize() - rootVolumeInventory.getSize());
+                        bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, rootVolume.getPrimaryStorageUuid());
+                        bus.send(imsg);
+
+                        trigger.next();
+                    }
+                });
+
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
                         rootVolume.setInstallPath(newVolumeInstallPath);
+                        rootVolume.setSize(rootVolumeInventory.getSize());
                         dbf.update(rootVolume);
 
                         List<AfterReimageVmInstanceExtensionPoint> list = pluginRgty.getExtensionList(
