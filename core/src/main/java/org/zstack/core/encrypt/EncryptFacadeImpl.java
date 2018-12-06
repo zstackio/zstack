@@ -167,17 +167,20 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
     public boolean start() {
         encryptedFields = getAllEncryptPassword();
 
-        EncryptGlobalConfig.ENABLE_PASSWORD_ENCRYPT.installBeforeUpdateExtension(new GlobalConfigBeforeUpdateExtensionPoint() {
+        EncryptGlobalConfig.ENABLE_PASSWORD_ENCRYPT.installLocalBeforeUpdateExtension(new GlobalConfigBeforeUpdateExtensionPoint() {
             @Override
             public void beforeUpdateExtensionPoint(GlobalConfig oldConfig, String newValue) {
                 // avoid encrypt twice need to do synchronized encrypted(decrypted)
+                // e.g. use javax.persistence.Query set password to update encrypt password
+                // when PasswordConverter check this value is true the password will be encrypt
+                // again before persist, so this beforeUpdateExtension is necessary
                 if (Boolean.valueOf(newValue)) {
                     encryptAllPassword();
                 }
             }
         });
 
-        EncryptGlobalConfig.ENABLE_PASSWORD_ENCRYPT.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
+        EncryptGlobalConfig.ENABLE_PASSWORD_ENCRYPT.installLocalUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
             @Override
             public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
                 if (!newConfig.value(Boolean.class)) {
