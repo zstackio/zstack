@@ -4,11 +4,14 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageVO;
+import org.zstack.header.message.APIDefaultTimeout;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
+
+import java.util.concurrent.TimeUnit;
 
 @Action(category = ImageConstant.ACTION_CATEGORY)
 @RestRequest(
@@ -17,6 +20,7 @@ import org.zstack.header.rest.RestRequest;
         method = HttpMethod.PUT,
         responseClass = APIExportImageFromBackupStorageEvent.class
 )
+@APIDefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)
 public class APIExportImageFromBackupStorageMsg extends APIMessage implements BackupStorageMessage {
     @APIParam(resourceType = BackupStorageVO.class, checkAccount = true, operationTarget = true)
     private String backupStorageUuid;

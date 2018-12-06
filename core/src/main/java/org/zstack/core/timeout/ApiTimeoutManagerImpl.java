@@ -152,6 +152,7 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
                 });
             }
         }.execute();
+        logger.debug("yyyyyyyyyy");
     }
 
     class Value {
@@ -199,20 +200,20 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
 
             String apiName = StringDSL.stripStart(key, "ApiTimeout.").trim();
             Class apiClz;
-            String ERROR_INFO = "The configuration must be in format of \n" +
-                    "   ApiTimeout.full_api_class_name = timeout::the_value_of_timeout(e.g. 1h, 30m)";
             try {
                 apiClz = Class.forName(apiName);
             } catch (ClassNotFoundException ex) {
+                String errInfo = "The configuration must be in format of \n" +
+                        "   ApiTimeout.full_api_class_name = timeout::the_value_of_timeout(e.g. 1h, 30m)";
                 throw new CloudRuntimeException(String.format("Invalid API timeout configuration[invalid key: %s], %s. %s",
-                        key, ex.getMessage(), ERROR_INFO));
+                        key, ex.getMessage(), errInfo));
             }
 
             String value = e.getValue();
             Value val = new Value(key, value);
-            String VALUE_TIMEOUT = "timeout";
-            long timeout = parseTimeout(val.getValue(VALUE_TIMEOUT));
+            long timeout = parseTimeout(val.getValue("timeout"));
             legacyTimeouts.put(apiClz, timeout);
+            logger.debug(String.format("xxxxxxxxxxxxxxxxxxxxxxxxxxxx %s: %s", apiClz, timeout));
         }
     }
 
