@@ -45,6 +45,7 @@ public class GlobalConfig {
     private transient List<GlobalConfigBeforeUpdateExtensionPoint> beforeUpdateExtensions = new ArrayList<>();
     private transient List<GlobalConfigValidatorExtensionPoint> validators = new ArrayList<>();
     private transient List<GlobalConfigUpdateExtensionPoint> localUpdateExtensions = new ArrayList<>();
+    private transient List<GlobalConfigBeforeUpdateExtensionPoint> localBeforeUpdateExtensions = new ArrayList<>();
     private GlobalConfigDef configDef;
 
     @Autowired
@@ -139,6 +140,10 @@ public class GlobalConfig {
 
     public void installBeforeUpdateExtension(GlobalConfigBeforeUpdateExtensionPoint ext) {
         beforeUpdateExtensions.add(ext);
+    }
+
+    public void installLocalBeforeUpdateExtension(GlobalConfigBeforeUpdateExtensionPoint ext) {
+        localBeforeUpdateExtensions.add(ext);
     }
 
     public void installValidateExtension(GlobalConfigValidatorExtensionPoint ext) {
@@ -307,6 +312,16 @@ public class GlobalConfig {
             }
         }
 
+        if (localUpdate) {
+            for (GlobalConfigBeforeUpdateExtensionPoint ext : localBeforeUpdateExtensions) {
+                try {
+                    ext.beforeUpdateExtensionPoint(origin, newValue);
+                } catch (Throwable t) {
+                    logger.warn(String.format("unhandled exception when calling %s", ext.getClass()), t);
+                }
+            }
+        }
+
         value = newValue;
 
         if (localUpdate) {
@@ -399,5 +414,9 @@ public class GlobalConfig {
 
     public List<GlobalConfigUpdateExtensionPoint> getLocalUpdateExtensions() {
         return localUpdateExtensions;
+    }
+
+    public List<GlobalConfigBeforeUpdateExtensionPoint> getLocalBeforeUpdateExtensions() {
+        return localBeforeUpdateExtensions;
     }
 }
