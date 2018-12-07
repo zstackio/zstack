@@ -9,7 +9,9 @@ import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.PeriodicTask;
+import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
@@ -18,11 +20,11 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
@@ -130,7 +132,7 @@ public class GarbageCollectorManagerImpl extends AbstractService
         }
     }
 
-    private void loadOrphanJobs() throws ClassNotFoundException, IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
+    private void loadOrphanJobs() {
         List<GarbageCollectorVO> vos = Q.New(GarbageCollectorVO.class)
                 .eq(GarbageCollectorVO_.status, GCStatus.Idle)
                 .isNull(GarbageCollectorVO_.managementNodeUuid)
@@ -174,7 +176,32 @@ public class GarbageCollectorManagerImpl extends AbstractService
     }
 
     private void handleLocalMessage(Message msg) {
-        bus.dealWithUnknownMessage(msg);
+        if (msg instanceof TriggerGcJobMsg) {
+            handle((TriggerGcJobMsg) msg);
+        } else {
+            bus.dealWithUnknownMessage(msg);
+        }
+    }
+
+    private void handle(final TriggerGcJobMsg msg) {
+        MessageReply reply = new MessageReply();
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getName();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                triggerGC(msg.getUuid());
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public String getName() {
+                return String.format("trigger-gc-job-%s", msg.getUuid());
+            }
+        });
     }
 
     private void handleApiMessage(APIMessage msg) {
@@ -200,12 +227,12 @@ public class GarbageCollectorManagerImpl extends AbstractService
         bus.publish(evt);
     }
 
-    private void handle(APITriggerGCJobMsg msg) {
-        GarbageCollector gc = managedGarbageCollectors.get(msg.getUuid());
+    private void triggerGC(String gcUuid) {
+        GarbageCollector gc = managedGarbageCollectors.get(gcUuid);
         if (gc != null) {
             gc.runTrigger();
         } else {
-            GarbageCollectorVO vo = dbf.findByUuid(msg.getUuid(), GarbageCollectorVO.class);
+            GarbageCollectorVO vo = dbf.findByUuid(gcUuid, GarbageCollectorVO.class);
             if (vo.getStatus() == GCStatus.Done) {
                 throw new OperationFailureException(operr("cannot trigger a finished GC job[uuid:%s, name:%s]",
                         vo.getUuid(), vo.getName()));
@@ -214,9 +241,27 @@ public class GarbageCollectorManagerImpl extends AbstractService
             gc = loadGCJob(vo);
             gc.runTrigger();
         }
+    }
 
+    private void handle(APITriggerGCJobMsg msg) {
         APITriggerGCJobEvent evt = new APITriggerGCJobEvent(msg.getId());
-        bus.publish(evt);
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getName();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                triggerGC(msg.getUuid());
+                bus.publish(evt);
+            }
+
+            @Override
+            public String getName() {
+                return String.format("trigger-gc-job-%s", msg.getUuid());
+            }
+        });
     }
 
     @Override
