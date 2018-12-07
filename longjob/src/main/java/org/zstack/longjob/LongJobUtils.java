@@ -1,11 +1,17 @@
 package org.zstack.longjob;
 
+import org.springframework.beans.factory.annotation.Autowire;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.progress.ProgressReportService;
+import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.longjob.*;
+import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
@@ -13,8 +19,12 @@ import org.zstack.utils.logging.CLogger;
 import java.util.Arrays;
 import java.util.List;
 
+@Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class LongJobUtils {
     private static final CLogger logger = Utils.getLogger(LongJobUtils.class);
+
+    @Autowired
+    private ProgressReportService progRpt;
 
     private static List<LongJobState> completedStates = Arrays.asList(LongJobState.Failed, LongJobState.Succeeded, LongJobState.Canceled);
     private static List<LongJobState> canceledStates = Arrays.asList(LongJobState.Canceled, LongJobState.Canceling);
@@ -47,15 +57,29 @@ public class LongJobUtils {
                 LongJobVO job = findByUuid(uuid, LongJobVO.class);
                 consumer.run(job);
 
-                if (job.getExecuteTime() == null && jobCompleted(job)) {
-                    long time = (System.currentTimeMillis() - job.getCreateDate().getTime()) / 1000;
-                    job.setExecuteTime(time);
-                    logger.info(String.format("longjob [uuid:%s] set execute time:%d.", job.getUuid(), time));
+                if (jobCompleted(job)) {
+                    setExecuteTimeIfNeed(job);
+                    cleanProgress(job);
                 }
+
 
                 merge(job);
                 return job;
             }
         }.execute();
+    }
+
+    private static void setExecuteTimeIfNeed(LongJobVO job) {
+        if (job.getExecuteTime() == null) {
+            long time = (System.currentTimeMillis() - job.getCreateDate().getTime()) / 1000;
+            job.setExecuteTime(time);
+            logger.info(String.format("longjob [uuid:%s] set execute time:%d.", job.getUuid(), time));
+        }
+    }
+
+    @ExceptionSafe
+    private static void cleanProgress(LongJobVO job) {
+        ProgressReportService progRpt = Platform.getComponentLoader().getComponent(ProgressReportService.class);
+        progRpt.cleanTaskProgress(job.getApiId());
     }
 }
