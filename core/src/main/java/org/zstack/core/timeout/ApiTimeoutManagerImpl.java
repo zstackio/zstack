@@ -1,14 +1,15 @@
 package org.zstack.core.timeout;
 
-import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.config.*;
+import org.zstack.core.config.GlobalConfigFacade;
+import org.zstack.core.config.GlobalConfigVO;
+import org.zstack.core.config.GlobalConfigVO_;
+import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.header.Component;
-import org.zstack.header.Constants;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
@@ -16,13 +17,13 @@ import org.zstack.header.message.*;
 import org.zstack.utils.*;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.argerr;
-
 import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static org.zstack.core.Platform.argerr;
 
 /**
  * Created by frank on 2/17/2016.
@@ -213,7 +214,6 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
             Value val = new Value(key, value);
             long timeout = parseTimeout(val.getValue("timeout"));
             legacyTimeouts.put(apiClz, timeout);
-            logger.debug(String.format("xxxxxxxxxxxxxxxxxxxxxxxxxxxx %s: %s", apiClz, timeout));
         }
     }
 
