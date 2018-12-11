@@ -15,6 +15,7 @@ import org.zstack.header.allocator.HostAllocatorFilterExtensionPoint;
 import org.zstack.header.allocator.HostAllocatorSpec;
 import org.zstack.header.allocator.HostAllocatorStrategyExtensionPoint;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
@@ -266,7 +267,10 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     }
 
     @Override
-    public String getAllocatorStrategy() {
+    public String getAllocatorStrategy(HostInventory host) {
+        if (host != null && !"KVM".equals(host.getHypervisorType())) {
+            return null;
+        }
         return LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY;
     }
 
