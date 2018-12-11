@@ -69,7 +69,7 @@ public class ApplianceVmAllocatePrimaryStorageFlow implements Flow {
         DebugUtils.Assert(spec.getDataDiskOfferings().size() == 0, "create appliance vm can not with data volume");
 
         for (PrimaryStorageAllocatorStrategyExtensionPoint ext : pluginRgty.getExtensionList(PrimaryStorageAllocatorStrategyExtensionPoint.class)) {
-            String allocatorStrategyType = ext.getAllocatorStrategy();
+            String allocatorStrategyType = ext.getAllocatorStrategy(destHost);
             if (allocatorStrategyType == null) {
                 continue;
             }

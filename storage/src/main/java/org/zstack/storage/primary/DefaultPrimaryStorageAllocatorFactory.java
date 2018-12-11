@@ -2,6 +2,7 @@ package org.zstack.storage.primary;
 
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.Component;
+import org.zstack.header.host.HostInventory;
 import org.zstack.header.storage.primary.*;
 
 import java.util.List;
@@ -54,7 +55,10 @@ public class DefaultPrimaryStorageAllocatorFactory implements PrimaryStorageAllo
     }
 
     @Override
-    public String getAllocatorStrategy() {
+    public String getAllocatorStrategy(HostInventory host) {
+        if (host != null && !"KVM".equals(host.getHypervisorType())) {
+            return null;
+        }
         return PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE;
     }
 }
