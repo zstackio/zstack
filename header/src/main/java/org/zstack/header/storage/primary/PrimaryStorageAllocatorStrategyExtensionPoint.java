@@ -1,5 +1,7 @@
 package org.zstack.header.storage.primary;
 
+import org.zstack.header.host.HostInventory;
+
 /**
  * Created by frank on 7/1/2015.
  */
@@ -15,5 +17,5 @@ public interface PrimaryStorageAllocatorStrategyExtensionPoint {
     /**
      * return the allocator rules
      */
-    String getAllocatorStrategy();
+    String getAllocatorStrategy(HostInventory host);
 }

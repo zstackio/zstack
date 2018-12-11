@@ -45,7 +45,7 @@
             <zstack:extension interface="org.zstack.header.storage.primary.PrimaryStorageAllocatorStrategyFactory"/>
             <zstack:extension interface="org.zstack.header.allocator.HostAllocatorFilterExtensionPoint"/>
             <zstack:extension
-                    interface="org.zstack.header.storage.primary.PrimaryStorageAllocatorStrategyExtensionPoint"/>
+                    interface="org.zstack.header.storage.primary.PrimaryStorageAllocatorStrategyExtensionPoint" order="100"/>
             <zstack:extension interface=" org.zstack.header.allocator.HostAllocatorStrategyExtensionPoint"/>
         </zstack:plugin>
 
