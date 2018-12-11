@@ -5216,6 +5216,16 @@ public class VmInstanceBase extends AbstractVmInstance {
                 if (l3Vo != null) {
                     l3Invs.add(L3NetworkInventory.valueOf(l3Vo));
                 }
+
+                List<String> secondaryNetworksList = new DualStackNicSecondaryNetworksOperator().getSecondaryNetworksByVmUuidNic(inv.getUuid(), nic.getL3NetworkUuid());
+                if (secondaryNetworksList != null && !secondaryNetworksList.isEmpty()) {
+                    for (String uuid : secondaryNetworksList) {
+                        l3Vo = dbf.findByUuid(uuid, L3NetworkVO.class);
+                        if (l3Vo != null) {
+                            l3Invs.add(L3NetworkInventory.valueOf(l3Vo));
+                        }
+                    }
+                }
             }
             nicSpecs.add(new VmNicSpec(l3Invs));
         }

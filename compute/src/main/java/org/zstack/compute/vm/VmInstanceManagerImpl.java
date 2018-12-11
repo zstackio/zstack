@@ -988,6 +988,36 @@ public class VmInstanceManagerImpl extends AbstractService implements
         });
     }
 
+    private List<VmNicSpec> getVmNicSpecsFromAPICreateVmInstanceMsg(APICreateVmInstanceMsg msg) {
+        List<VmNicSpec> nicSpecs = new ArrayList<>();
+        Map<String, List<String>> secondaryNetworksMap = new DualStackNicSecondaryNetworksOperator().getSecondaryNetworksFromSystemTags(msg.getSystemTags());
+
+        for (String l3Uuid : msg.getL3NetworkUuids()) {
+            List<L3NetworkInventory> l3Invs = new ArrayList<>();
+            L3NetworkInventory inv = L3NetworkInventory.valueOf(dbf.findByUuid(l3Uuid, L3NetworkVO.class));
+            l3Invs.add(inv);
+
+            List<String> secondaryNetworksList = secondaryNetworksMap.get(l3Uuid);
+            if (secondaryNetworksList == null || secondaryNetworksList.isEmpty()) {
+                nicSpecs.add(new VmNicSpec(l3Invs));
+                continue;
+            }
+
+            for (String secondaryL3Uuid : secondaryNetworksList) {
+                if (secondaryL3Uuid.equals(l3Uuid)) {
+                    continue;
+                }
+
+                L3NetworkInventory secInv = L3NetworkInventory.valueOf(dbf.findByUuid(secondaryL3Uuid, L3NetworkVO.class));
+                l3Invs.add(secInv);
+            }
+
+            nicSpecs.add(new VmNicSpec(l3Invs));
+        }
+
+        return nicSpecs;
+    }
+
     private CreateVmInstanceMsg fromAPICreateVmInstanceMsg(APICreateVmInstanceMsg msg) {
         CreateVmInstanceMsg cmsg = new CreateVmInstanceMsg();
 
@@ -1011,12 +1041,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         cmsg.setAccountUuid(msg.getSession().getAccountUuid());
         cmsg.setName(msg.getName());
         cmsg.setImageUuid(msg.getImageUuid());
-        List<VmNicSpec> nicSpecs = new ArrayList<>();
-        for (String l3Uuid : msg.getL3NetworkUuids()) {
-            L3NetworkInventory inv = L3NetworkInventory.valueOf(dbf.findByUuid(l3Uuid, L3NetworkVO.class));
-            nicSpecs.add(new VmNicSpec(inv));
-        }
-        cmsg.setL3NetworkUuids(nicSpecs);
+        cmsg.setL3NetworkUuids(getVmNicSpecsFromAPICreateVmInstanceMsg(msg));
         cmsg.setType(msg.getType());
         cmsg.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
         cmsg.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
@@ -1455,8 +1480,12 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         l3NetworkUuids.forEach(it->validateHostNameOnDefaultL3Network(sysTag, hostname, it));
                     } else if (VmSystemTags.STATIC_IP.isMatch(sysTag)) {
                         validateStaticIp(sysTag);
+                    } else if (VmSystemTags.DUAL_STACK_NIC.isMatch(sysTag)) {
+                        validateDualStackNic(sysTag);
                     }
                 }
+
+                validateDualStackNic(msg.getSystemTags(), msg.getL3NetworkUuids());
             }
 
             private void validateStaticIp(String sysTag) {
@@ -1494,6 +1523,84 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 CheckIpAvailabilityReply cr = r.castReply();
                 if (!cr.isAvailable()) {
                     throw new ApiMessageInterceptionException(operr("IP[%s] is not available on the L3 network[uuid:%s]", ip, l3Uuid));
+                }
+            }
+
+            private void validateDualStackNic(List<String> systemTags, List<String> l3Uuids) {
+                Map<String, List<String>> secondaryNetworksMap = new DualStackNicSecondaryNetworksOperator().getSecondaryNetworksFromSystemTags(systemTags);
+                Set<String> l3NetworkSet = new HashSet<>();
+                for (Map.Entry<String, List<String>> e : secondaryNetworksMap.entrySet()) {
+                    int ipv4Count = 0;
+                    int statefulIpv6Count = 0;
+                    String primaryL3 = e.getKey();
+                    List<String> secondaryNetworksList = e.getValue();
+
+                    for (String uuid : secondaryNetworksList) {
+                        if (!l3NetworkSet.contains(uuid)) {
+                            l3NetworkSet.add(uuid);
+                        } else {
+                            throw new ApiMessageInterceptionException(argerr("l3 network [uuid] is added to vm more than once", uuid));
+                        }
+
+                        L3NetworkVO l3Vo = dbf.findByUuid(uuid, L3NetworkVO.class);
+                        if (l3Vo.getIpVersion() == IPv6Constants.IPv4) {
+                            ipv4Count++;
+                        } else {
+                            L3NetworkInventory l3Inv = L3NetworkInventory.valueOf(l3Vo);
+                            if (l3Inv.getIpRanges().get(0).getAddressMode().equals(IPv6Constants.Stateful_DHCP)) {
+                                statefulIpv6Count++;
+                            }
+                        }
+                    }
+                    l3NetworkSet.remove(primaryL3);
+
+                    if (ipv4Count > 1) {
+                        throw new ApiMessageInterceptionException(argerr("there are %d ipv4 network on same nic", ipv4Count));
+                    }
+
+                    if (statefulIpv6Count > 1) {
+                        throw new ApiMessageInterceptionException(argerr("there are %d ipv6 stateful network on same nic", statefulIpv6Count));
+                    }
+                }
+
+                for (String uuid : l3Uuids) {
+                    if (l3NetworkSet.contains(uuid)) {
+                        throw new ApiMessageInterceptionException(argerr("l3 network [uuid: %s] is added to vm more than once", uuid));
+                    }
+                }
+            }
+
+            private void validateDualStackNic(String sysTag) {
+                Map<String, String> token = TagUtils.parse(VmSystemTags.DUAL_STACK_NIC.getTagFormat(), sysTag);
+                String primaryL3Uuid = token.get(VmSystemTags.DUAL_STACK_NIC_PRIMARY_L3_TOKEN);
+                L3NetworkVO primaryL3Vo = dbf.findByUuid(primaryL3Uuid, L3NetworkVO.class);
+                if (primaryL3Vo == null) {
+                    throw new ApiMessageInterceptionException(argerr("L3 network[uuid:%s] not found. Please correct your system tag[%s] of dualStackNic",
+                            primaryL3Uuid, sysTag));
+                }
+
+                String secondaryL3Uuid = token.get(VmSystemTags.DUAL_STACK_NIC_SECONDARY_L3_TOKEN);
+                L3NetworkVO secondaryL3Vo = dbf.findByUuid(secondaryL3Uuid, L3NetworkVO.class);
+                if (secondaryL3Vo == null) {
+                    throw new ApiMessageInterceptionException(argerr("L3 network[uuid:%s] not found. Please correct your system tag[%s] of dualStackNic",
+                            primaryL3Uuid, sysTag));
+                }
+
+                if (!primaryL3Vo.getL2NetworkUuid().equals(secondaryL3Vo.getL2NetworkUuid())) {
+                    throw new ApiMessageInterceptionException(operr("L3 networks[primaryL3Uuid:%s, secondaryL3Uuid:%s] of dualStackNic is not on same l2 network",
+                            primaryL3Uuid, secondaryL3Uuid));
+                }
+
+                L3NetworkInventory primaryL3 = L3NetworkInventory.valueOf(primaryL3Vo);
+                L3NetworkInventory secodaryL3 = L3NetworkInventory.valueOf(secondaryL3Vo);
+                if (primaryL3.getIpRanges().isEmpty()) {
+                    throw new ApiMessageInterceptionException(operr("L3 networks[uuid:%s] does not have ip range",
+                            primaryL3Uuid, secondaryL3Uuid));
+                }
+
+                if (secodaryL3.getIpRanges().isEmpty()) {
+                    throw new ApiMessageInterceptionException(operr("L3 networks[uuid:%s] does not have ip range",
+                            primaryL3Uuid, secondaryL3Uuid));
                 }
             }
 
@@ -1538,6 +1645,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     validateStaticIp(systemTag);
                 } else if (VmSystemTags.BOOT_ORDER.isMatch(systemTag)) {
                     validateBootOrder(systemTag);
+                }  else if (VmSystemTags.DUAL_STACK_NIC.isMatch(systemTag)) {
+                    validateDualStackNic(systemTag);
                 }
             }
 

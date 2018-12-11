@@ -68,6 +68,8 @@ public class VmNicAllocateIpFlow implements Flow {
                     }
 
                     data.put(VmInstanceConstant.Params.UsedIPInventory.toString(), ipInventory);
+                    VmNicInventory nicInv = VmNicInventory.valueOf(dbf.findByUuid(nic.getUuid(), VmNicVO.class));
+                    new DualStackNicSecondaryNetworksOperator().createSecondaryNetworksByVmNic(nicInv, l3.getUuid());
                     trigger.next();
                 } else {
                     trigger.fail(reply.getError());
@@ -96,6 +98,8 @@ public class VmNicAllocateIpFlow implements Flow {
                 for (VmNicExtensionPoint ext : pluginRgty.getExtensionList(VmNicExtensionPoint.class)) {
                     ext.afterDelIpAddress(nic.getUuid(), ipInventory.getUuid());
                 }
+                VmNicInventory nicInv = VmNicInventory.valueOf(dbf.findByUuid(nic.getUuid(), VmNicVO.class));
+                new DualStackNicSecondaryNetworksOperator().deleteSecondaryNetworksByVmNic(nicInv, l3.getUuid());
                 chain.rollback();
             }
         });
