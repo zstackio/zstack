@@ -89,6 +89,12 @@ public class GarbageCollectorManagerImpl extends AbstractService
     }
 
     void registerGC(GarbageCollector gc) {
+        if (managedGarbageCollectors.containsKey(gc.uuid)) {
+            logger.warn(String.format("[GC] job[id:%s] already registered, skip this registration. This largely happens" +
+                    " when a management node loads orphan jobs from a offline management node", gc.uuid));
+            return;
+        }
+
         managedGarbageCollectors.put(gc.uuid, gc);
     }
 
