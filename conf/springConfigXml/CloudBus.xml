@@ -16,6 +16,7 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component"/>
             <zstack:extension interface="org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint"/>
+            <zstack:extension interface="org.zstack.core.config.GlobalConfigInitExtensionPoint"/>
         </zstack:plugin>
     </bean>
 

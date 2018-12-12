@@ -3,6 +3,7 @@ package org.zstack.core.config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.GLock;
 import org.zstack.core.db.SQL;
@@ -29,6 +30,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 
@@ -41,13 +43,14 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
     private DatabaseFacade dbf;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     private JAXBContext context;
     private Map<String, GlobalConfig> allConfig = new ConcurrentHashMap<>();
 
     private static final String CONFIG_FOLDER = "globalConfig";
     private static final String OTHER_CATEGORY = "Others";
-    private static final String LOCK = "GlobalFacade.lock";
 
     @Override
     @MessageSafe
@@ -142,7 +145,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
             List<Field> globalConfigFields = new ArrayList<Field>();
 
             void init() {
-                GLock lock = new GLock(LOCK, 320);
+                GLock lock = new GLock(GlobalConfigConstant.LOCK, 320);
                 lock.lock();
                 try {
                     parseGlobalConfigFields();
@@ -314,6 +317,19 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                 if (!toSave.isEmpty()) {
                     dbf.persistCollection(toSave);
                 }
+
+                List<String> predefinedGlobalConfigCategories = new ArrayList<>();
+                for (GlobalConfigInitExtensionPoint ext : pluginRgty.getExtensionList(GlobalConfigInitExtensionPoint.class)) {
+                    List<String> tmp = ext.getPredefinedGlobalConfigCategories();
+
+                    if (tmp != null) {
+                        predefinedGlobalConfigCategories.addAll(tmp);
+                    }
+                }
+
+                toRemove = toRemove.stream()
+                        .filter(config -> !predefinedGlobalConfigCategories.contains(config.getCategory()))
+                        .collect(Collectors.toList());
 
                 for (GlobalConfig config : toRemove) {
                     SQL.New(GlobalConfigVO.class)
