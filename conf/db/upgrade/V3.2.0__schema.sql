@@ -115,8 +115,8 @@ CREATE TABLE IF NOT EXISTS `TagPatternVO` (
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE INDEX idxTagPatternVOName ON `TagPatternVO` (name);
 ALTER TABLE `zstack`.`UserTagVO` ADD COLUMN `tagPatternUuid` varchar(32) DEFAULT NULL;
-
 ALTER TABLE `zstack`.`UserTagVO` ADD CONSTRAINT fkUserTagVOTagPatternVO FOREIGN KEY (tagPatternUuid) REFERENCES TagPatternVO (uuid) ON DELETE CASCADE;
 
 DELIMITER $$

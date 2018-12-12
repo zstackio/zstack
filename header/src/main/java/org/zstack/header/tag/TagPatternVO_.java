@@ -9,7 +9,7 @@ import java.sql.Timestamp;
 @StaticMetamodel(TagPatternVO.class)
 public class TagPatternVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<TagPatternVO, String> name;
-    public static volatile SingularAttribute<TagPatternVO, String> format;
+    public static volatile SingularAttribute<TagPatternVO, String> value;
     public static volatile SingularAttribute<TagPatternVO, String> description;
     public static volatile SingularAttribute<TagPatternVO, String> color;
     public static volatile SingularAttribute<TagPatternVO, TagPatternType> type;
