@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
@@ -14,6 +15,7 @@ import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceState;
@@ -91,7 +93,7 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
         return ret;
     }
 
-    private List<EipTO> findEipOnThisRouter(final VirtualRouterVmInventory vr, Map<String, Object> data, boolean isNewCreated) {
+    private List<EipTO> findEipOnThisRouter(final VirtualRouterVmInventory vr, Map<String, Object> data, boolean isNewCreated) throws OperationFailureException {
         List<String> eipUuids;
         if (isNewCreated) {
             final List<VmNicInventory> guestNics = vr.getGuestNics();
@@ -117,6 +119,11 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
             if (!eipUuids.isEmpty()) {
                 List<VirtualRouterEipRefVO> refs = new ArrayList<VirtualRouterEipRefVO>();
                 for (String eipUuid : eipUuids) {
+                    VirtualRouterEipRefVO oldRef = Q.New(VirtualRouterEipRefVO.class)
+                            .eq(VirtualRouterEipRefVO_.eipUuid, eipUuid).notEq(VirtualRouterEipRefVO_.virtualRouterVmUuid, vr.getUuid()).find();
+                    if (oldRef != null) {
+                        throw new OperationFailureException(operr("Eip [uuid:%s] already bound to router [uuid:%s]", oldRef.getEipUuid(), oldRef.getVirtualRouterVmUuid()));
+                    }
                     VirtualRouterEipRefVO ref = new VirtualRouterEipRefVO();
                     ref.setEipUuid(eipUuid);
                     ref.setVirtualRouterVmUuid(vr.getUuid());
@@ -161,7 +168,14 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
         new VirtualRouterRoleManager().makeEipRole(vr.getUuid());
 
         boolean isNewCreated = data.containsKey(Param.IS_NEW_CREATED.toString());
-        List<EipTO> eips = findEipOnThisRouter(vr, data, isNewCreated);
+        List<EipTO> eips;
+        try {
+            eips = findEipOnThisRouter(vr, data, isNewCreated);
+        } catch (OperationFailureException e) {
+            trigger.fail(e.getErrorCode());
+            return;
+        }
+
         if (eips.isEmpty()) {
             trigger.next();
             return;
