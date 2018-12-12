@@ -4,10 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.config.GlobalConfigFacade;
-import org.zstack.core.config.GlobalConfigVO;
-import org.zstack.core.config.GlobalConfigVO_;
-import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
+import org.zstack.core.config.*;
+import org.zstack.core.db.GLock;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.header.Component;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -18,6 +16,7 @@ import org.zstack.utils.*;
 import org.zstack.utils.logging.CLogger;
 
 import java.text.DecimalFormat;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +28,8 @@ import static org.zstack.core.Platform.argerr;
  * Created by frank on 2/17/2016.
  */
 public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
-        BeforeDeliveryMessageInterceptor, PrepareDbInitialValueExtensionPoint {
+        BeforeDeliveryMessageInterceptor, PrepareDbInitialValueExtensionPoint,
+        GlobalConfigInitExtensionPoint {
     private static final CLogger logger = Utils.getLogger(ApiTimeoutManagerImpl.class);
 
     @Autowired
@@ -117,43 +117,53 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
 
     @Override
     public void prepareDbInitialValue() {
-        new SQLBatch() {
-            @Override
-            protected void scripts() {
-                List<String> apiClassNamesInGlobalConfig = q(GlobalConfigVO.class).select(GlobalConfigVO_.name)
-                        .eq(GlobalConfigVO_.category, APITIMEOUT_GLOBAL_CONFIG_TYPE).listValues();
+        GLock lock = new GLock(GlobalConfigConstant.LOCK, 60);
+        lock.lock();
+        try {
+            new SQLBatch() {
+                @Override
+                protected void scripts() {
+                    List<String> apiClassNamesInGlobalConfig = q(GlobalConfigVO.class).select(GlobalConfigVO_.name)
+                            .eq(GlobalConfigVO_.category, APITIMEOUT_GLOBAL_CONFIG_TYPE).listValues();
 
-                List<Class> apiClasses = BeanUtils.reflections.getSubTypesOf(APIMessage.class)
-                        .stream().filter(clz -> !APISyncCallMessage.class.isAssignableFrom(clz))
-                        .filter(clz -> !apiClassNamesInGlobalConfig.contains(clz.getName()))
-                        .collect(Collectors.toList());
+                    List<Class> apiClasses = BeanUtils.reflections.getSubTypesOf(APIMessage.class)
+                            .stream().filter(clz -> !APISyncCallMessage.class.isAssignableFrom(clz))
+                            .filter(clz -> !apiClassNamesInGlobalConfig.contains(clz.getName()))
+                            .collect(Collectors.toList());
 
 
-                apiClasses.forEach(clz -> {
-                    GlobalConfigVO vo = new GlobalConfigVO();
-                    vo.setCategory(APITIMEOUT_GLOBAL_CONFIG_TYPE);
-                    vo.setName(clz.getName());
-                    vo.setDescription(String.format("timeout for API %s", clz));
+                    apiClasses.forEach(clz -> {
+                        GlobalConfigVO vo = new GlobalConfigVO();
+                        vo.setCategory(APITIMEOUT_GLOBAL_CONFIG_TYPE);
+                        vo.setName(clz.getName());
+                        vo.setDescription(String.format("timeout for API %s", clz));
 
-                    APIDefaultTimeout at = (APIDefaultTimeout) clz.getAnnotation(APIDefaultTimeout.class);
-                    if (at == null) {
-                        vo.setDefaultValue("30m");
-                    } else {
-                        vo.setDefaultValue(String.valueOf(at.timeunit().toMillis(at.value())));
-                    }
+                        APIDefaultTimeout at = (APIDefaultTimeout) clz.getAnnotation(APIDefaultTimeout.class);
+                        if (at == null) {
+                            vo.setDefaultValue("30m");
+                        } else {
+                            vo.setDefaultValue(String.valueOf(at.timeunit().toMillis(at.value())));
+                        }
 
-                    Long timeout = getLegacyTimeout(clz);
-                    if (timeout != null) {
-                        vo.setValue(String.valueOf(timeout));
-                    } else {
-                        vo.setValue(vo.getDefaultValue());
-                    }
+                        Long timeout = getLegacyTimeout(clz);
+                        if (timeout != null) {
+                            vo.setValue(String.valueOf(timeout));
+                        } else {
+                            vo.setValue(vo.getDefaultValue());
+                        }
 
-                    gcf.createGlobalConfig(vo);
-                });
-            }
-        }.execute();
-        logger.debug("yyyyyyyyyy");
+                        gcf.createGlobalConfig(vo);
+                    });
+                }
+            }.execute();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public List<String> getPredefinedGlobalConfigCategories() {
+        return Arrays.asList(APITIMEOUT_GLOBAL_CONFIG_TYPE);
     }
 
     class Value {
