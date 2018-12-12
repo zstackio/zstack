@@ -49,6 +49,14 @@
     </message>
 
     <message>
+        <name>org.zstack.header.storage.backup.APIGetTrashOnBackupStorageMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.backup.APICleanUpTrashOnBackupStorageMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.header.storage.backup.APIGetBackupStorageCapacityMsg</name>
     </message>
 

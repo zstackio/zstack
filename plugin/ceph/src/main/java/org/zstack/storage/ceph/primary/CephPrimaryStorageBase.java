@@ -11,6 +11,7 @@ import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.jsonlabel.JsonLabelVO;
 import org.zstack.core.notification.N;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.ChainTask;
@@ -1454,6 +1455,126 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         });
     }
 
+    private void cleanUpTrash(final Completion completion) {
+        List<JsonLabelVO> labels = getTrashList();
+        if (labels.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        List<ErrorCode> errs = new ArrayList<>();
+        new While<>(labels).all((label, coml) -> {
+            StorageTrash trash = JSONObjectUtil.toObject(label.getLabelValue(), StorageTrash.class);
+
+            FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+            chain.setName(String.format("clean-trash-on-volume-%s", trash.getInstallPath()));
+            chain.then(new NoRollbackFlow() {
+                @Override
+                public void run(FlowTrigger trigger, Map data) {
+                    PurgeSnapshotOnPrimaryStorageMsg msg = new PurgeSnapshotOnPrimaryStorageMsg();
+                    msg.setPrimaryStorageUuid(self.getUuid());
+                    msg.setVolumePath(trash.getInstallPath());
+                    bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
+                    bus.send(msg, new CloudBusCallBack(trigger) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (reply.isSuccess()) {
+                                logger.info(String.format("Purged all snapshots of volume %s.", trash.getInstallPath()));
+                            } else {
+                                logger.warn(String.format("Failed to purge snapshots of volume %s.", trash.getInstallPath()));
+                            }
+                            trigger.next();
+                        }
+                    });
+                }
+            }).then(new NoRollbackFlow() {
+                @Override
+                public void run(FlowTrigger trigger, Map data) {
+                    DeleteVolumeBitsOnPrimaryStorageMsg msg = new DeleteVolumeBitsOnPrimaryStorageMsg();
+                    msg.setPrimaryStorageUuid(self.getUuid());
+                    msg.setInstallPath(trash.getInstallPath());
+                    bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
+                    bus.send(msg, new CloudBusCallBack(trigger) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (reply.isSuccess()) {
+                                logger.info(String.format("Deleted volume %s in Trash.", trash.getInstallPath()));
+                            } else {
+                                logger.warn(String.format("Failed to delete volume %s in Trash.", trash.getInstallPath()));
+                            }
+                            trigger.next();
+                        }
+                    });
+                }
+            });
+
+            chain.done(new FlowDoneHandler(coml) {
+                @Override
+                public void handle(Map data) {
+                    IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+                    imsg.setPrimaryStorageUuid(self.getUuid());
+                    imsg.setDiskSize(trash.getSize());
+                    bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
+                    bus.send(imsg);
+                    logger.info(String.format("Returned space[size:%s] to PS %s after volume migration", trash.getSize(), self.getUuid()));
+                    dbf.remove(label);
+                    coml.done();
+                }
+            }).error(new FlowErrorHandler(coml) {
+                @Override
+                public void handle(ErrorCode errCode, Map data) {
+                    errs.add(errCode);
+                    coml.done();
+                }
+            }).start();
+        }).run(new NoErrorCompletion() {
+            @Override
+            public void done() {
+                if (errs.isEmpty()) {
+                    completion.success();
+                } else {
+                    completion.fail(errs.get(0));
+                }
+            }
+        });
+    }
+
+    @Override
+    protected void handle(final APICleanUpTrashOnPrimaryStorageMsg msg) {
+        APICleanUpTrashOnPrimaryStorageEvent evt = new APICleanUpTrashOnPrimaryStorageEvent(msg.getId());
+        thdf.chainSubmit(new ChainTask(msg) {
+            private String name = String.format("cleanup-trash-on-%s", self.getUuid());
+
+            @Override
+            public String getSyncSignature() {
+                return name;
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                cleanUpTrash(new Completion(chain) {
+                    @Override
+                    public void success() {
+                        bus.publish(evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setError(errorCode);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return name;
+            }
+        });
+    }
+
     @Override
     protected void handle(APICleanUpImageCacheOnPrimaryStorageMsg msg) {
         APICleanUpImageCacheOnPrimaryStorageEvent evt = new APICleanUpImageCacheOnPrimaryStorageEvent(msg.getId());
@@ -2801,6 +2922,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((APIDeleteCephPrimaryStoragePoolMsg) msg);
         } else if (msg instanceof APIUpdateCephPrimaryStoragePoolMsg) {
             handle((APIUpdateCephPrimaryStoragePoolMsg) msg);
+        } else if (msg instanceof APICleanUpTrashOnPrimaryStorageMsg) {
+            handle((APICleanUpTrashOnPrimaryStorageMsg) msg);
         } else {
             super.handleApiMessage(msg);
         }
