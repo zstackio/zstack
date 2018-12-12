@@ -255,6 +255,7 @@ public class GarbageCollectorManagerImpl extends AbstractService
             public void run(SyncTaskChain chain) {
                 triggerGC(msg.getUuid());
                 bus.publish(evt);
+                chain.next();
             }
 
             @Override
