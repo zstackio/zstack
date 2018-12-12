@@ -2,9 +2,14 @@ package org.zstack.test.integration.kvm.vm
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.cloudbus.CloudBus
+import org.zstack.core.cloudbus.EventFacade
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.gc.GCStatus
 import org.zstack.core.gc.GarbageCollectorVO
+import org.zstack.header.host.HostCanonicalEvents
+import org.zstack.header.host.HostInventory
+import org.zstack.header.host.HostStatus
+import org.zstack.header.host.HostVO
 import org.zstack.header.message.MessageReply
 import org.zstack.header.vm.StopVmInstanceMsg
 import org.zstack.header.vm.VmInstanceConstant
@@ -127,6 +132,48 @@ class VmGCCase extends SubCase {
         }
     }
 
+    void testGCJobTriggeredByEventFromOtherManagementNode() {
+        VmInstanceInventory vm = createGCCandidateDestroyedVm()
+
+        recoverVmInstance {
+            uuid = vm.uuid
+        }
+
+        HostVO host = dbf.findByUuid(vm.hostUuid, HostVO.class)
+        HostCanonicalEvents.HostStatusChangedData data = new HostCanonicalEvents.HostStatusChangedData(
+                hostUuid: host.uuid,
+                oldStatus: HostStatus.Connecting.toString(),
+                newStatus: HostStatus.Connected.toString(),
+                inventory: HostInventory.valueOf(host)
+        )
+
+        EventFacade evtf = bean(EventFacade.class)
+        // mimic an event to trigger the GC
+        evtf.fire(HostCanonicalEvents.HOST_STATUS_CHANGED_PATH, data)
+
+        KVMAgentCommands.DestroyVmCmd cmd = null
+        env.afterSimulator(KVMConstant.KVM_DESTROY_VM_PATH) { rsp, HttpEntity<String> e ->
+            cmd = json(e.body, KVMAgentCommands.DestroyVmCmd.class)
+            return rsp
+        }
+
+        GarbageCollectorInventory inv = null
+
+        retryInSecs {
+            inv = queryGCJob {
+                conditions=["context~=%${vm.uuid}%"]
+            }[0]
+
+            // no destroy command sent beacuse the vm is recovered
+            assert cmd == null
+            assert inv.status == GCStatus.Done.toString()
+        }
+
+        deleteGCJob {
+            uuid = inv.uuid
+        }
+    }
+
     void testGCJobCancelAfterVmRecovered() {
         VmInstanceInventory vm = createGCCandidateDestroyedVm()
 
@@ -169,6 +216,7 @@ class VmGCCase extends SubCase {
 
         env.create {
             testDeleteVmWhenHostDisconnect()
+            testGCJobTriggeredByEventFromOtherManagementNode()
             testGCJobCancelAfterVmRecovered()
             testGCJobCancelAfterHostDelete()
 
