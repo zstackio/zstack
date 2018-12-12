@@ -70,7 +70,7 @@ public abstract class EventBasedGarbageCollector extends GarbageCollector {
                 NAME, getClass()));
 
         for (Map.Entry<String, EventCallback> e : eventCallbacks.entrySet()) {
-            evtf.onLocal(e.getKey(), e.getValue());
+            evtf.on(e.getKey(), e.getValue());
         }
 
 
