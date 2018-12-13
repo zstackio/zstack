@@ -25,4 +25,6 @@
             <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor"/>
         </zstack:plugin>
     </bean>
+
+    <bean id="StorageTrash" class="org.zstack.core.trash.StorageTrashImpl" />
 </beans>
