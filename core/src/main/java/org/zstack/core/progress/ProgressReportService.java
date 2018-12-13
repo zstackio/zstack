@@ -366,7 +366,7 @@ public class ProgressReportService extends AbstractService implements Management
             if (args != null) {
                 logger.warn(String.format("no task uuid found for:" + fmt, args));
             } else {
-                logger.warn("no task uuid found for:" + fmt);
+                logger.warn(String.format("no task uuid found for:" + fmt, args));
             }
             return;
         }
