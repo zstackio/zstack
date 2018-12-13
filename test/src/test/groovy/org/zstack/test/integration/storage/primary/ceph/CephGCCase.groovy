@@ -29,6 +29,8 @@ class CephGCCase extends SubCase {
 
     PrimaryStorageInventory ceph
     DiskOfferingInventory diskOffering
+    boolean deleteFail = false
+    boolean called = false
 
     @Override
     void clean() {
@@ -52,9 +54,7 @@ class CephGCCase extends SubCase {
             primaryStorageUuid = ceph.uuid
         }
 
-        env.afterSimulator(CephPrimaryStorageBase.DELETE_PATH) {
-            throw new HttpError(403, "on purpose")
-        }
+        deleteFail = true
 
         deleteDataVolume {
             uuid = vol.uuid
@@ -70,11 +70,16 @@ class CephGCCase extends SubCase {
             assert inv.status == GCStatus.Idle.toString()
         }
 
-        boolean called = false
-        env.afterSimulator(CephPrimaryStorageBase.DELETE_PATH) { rsp ->
-            called = true
-            return rsp
+        triggerGCJob {
+            uuid = inv.uuid
         }
+
+        assert queryGCJob {
+            conditions = ["context~=%${vol.getUuid()}%".toString()]
+        }.size == 1
+
+        deleteFail = false
+        called = false
 
         triggerGCJob {
             uuid = inv.uuid
@@ -97,9 +102,7 @@ class CephGCCase extends SubCase {
             primaryStorageUuid = ceph.uuid
         }
 
-        env.afterSimulator(CephPrimaryStorageBase.DELETE_PATH) {
-            throw new HttpError(403, "on purpose")
-        }
+        deleteFail = true
 
         deleteDataVolume {
             uuid = vol.uuid
@@ -137,6 +140,18 @@ class CephGCCase extends SubCase {
         }
     }
 
+    void prepareEnv() {
+        env.afterSimulator(CephPrimaryStorageBase.DELETE_PATH) { rsp ->
+            if (deleteFail) {
+                throw new HttpError(403, "on purpose")
+            }
+
+            called = true
+
+            return rsp
+        }
+    }
+
     @Override
     void test() {
         env.create {
@@ -147,6 +162,7 @@ class CephGCCase extends SubCase {
             CephGlobalConfig.GC_INTERVAL.updateValue(TimeUnit.DAYS.toSeconds(1))
             VolumeGlobalConfig.VOLUME_DELETION_POLICY.updateValue(VolumeDeletionPolicyManager.VolumeDeletionPolicy.Direct.toString())
 
+            prepareEnv()
             testVolumeGCSuccess()
             testVolumeGCCancelledAfterPrimaryStorageDeleted()
         }
