@@ -70,6 +70,9 @@ public class ConvertVmFromForeignHypervisorAction extends AbstractAction {
     @Param(required = false, validValues = {"InstantStart","JustConvert"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String strategy = "InstantStart";
 
+    @Param(required = false, validValues = {"CapacityOptimized","EfficiencyFirst"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String convertStrategy = "CapacityOptimized";
+
     @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String longJobName;
 
