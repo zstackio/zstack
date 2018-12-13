@@ -1,6 +1,7 @@
 package org.zstack.test.integration.storage.primary.nfs
 
 import org.springframework.http.HttpEntity
+import org.zstack.header.image.ImageConstant
 import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.GetPrimaryStorageCapacityResult
@@ -8,19 +9,15 @@ import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.PrimaryStorageInventory
+import org.zstack.storage.backup.sftp.SftpBackupStorageCommands
+import org.zstack.storage.backup.sftp.SftpBackupStorageConstant
 import org.zstack.test.integration.storage.Env
 import org.zstack.test.integration.storage.StorageTest
-import org.zstack.testlib.EnvSpec
-import org.zstack.testlib.LocalStorageSpec
-import org.zstack.testlib.PrimaryStorageSpec
-import org.zstack.testlib.SubCase
-import org.zstack.utils.gson.JSONObjectUtil
-import org.zstack.storage.backup.sftp.SftpBackupStorageConstant
-import org.zstack.header.image.ImageConstant
-import org.zstack.storage.backup.sftp.SftpBackupStorageCommands
 import org.zstack.testlib.BackupStorageSpec
+import org.zstack.testlib.EnvSpec
+import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
-
+import org.zstack.utils.gson.JSONObjectUtil
 /**
  * Created by SyZhao on 2017/4/17.
  */
@@ -127,18 +124,23 @@ class NfsDetachAttachClusterCapacityCase extends SubCase {
             clusterUuid = cluster.uuid
         }
 
-        GetPrimaryStorageCapacityResult capacityResult2 = getPrimaryStorageCapacity {
-            primaryStorageUuids = [ps.uuid]
+        retryInSecs(2) {
+            GetPrimaryStorageCapacityResult capacityResult2 = getPrimaryStorageCapacity {
+                primaryStorageUuids = [ps.uuid]
+            }
+            assert capacityResult.availableCapacity == capacityResult2.availableCapacity
         }
-        assert capacityResult.availableCapacity == capacityResult2.availableCapacity
 
         reconnectPrimaryStorage {
             uuid = ps.uuid
         }
-        GetPrimaryStorageCapacityResult capacityResult3 = getPrimaryStorageCapacity {
-            primaryStorageUuids = [ps.uuid]
+
+        retryInSecs(2) {
+            GetPrimaryStorageCapacityResult capacityResult3 = getPrimaryStorageCapacity {
+                primaryStorageUuids = [ps.uuid]
+            }
+            assert capacityResult.availableCapacity == capacityResult3.availableCapacity
+            assert capacityResult.availablePhysicalCapacity == capacityResult3.availablePhysicalCapacity
         }
-        assert capacityResult.availableCapacity == capacityResult3.availableCapacity
-        assert capacityResult.availablePhysicalCapacity == capacityResult3.availablePhysicalCapacity
     }
 }
