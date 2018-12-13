@@ -3,6 +3,10 @@ package org.zstack.compute.host;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
+import org.zstack.core.config.resourceconfig.BindResourceConfig;
+import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.zone.ZoneVO;
 
 /**
  */
@@ -29,6 +33,7 @@ public class HostGlobalConfig {
     @GlobalConfigValidation
     public static GlobalConfig IGNORE_ERROR_ON_MAINTENANCE_MODE = new GlobalConfig(CATEGORY, "maintenanceMode.ignoreError");
     @GlobalConfigValidation(numberGreaterThan = 1, numberLessThan = 1000)
+    @BindResourceConfig({HostVO.class, ClusterVO.class, ZoneVO.class})
     public static GlobalConfig HOST_CPU_OVER_PROVISIONING_RATIO = new GlobalConfig(CATEGORY, "cpu.overProvisioning.ratio");
     @GlobalConfigValidation
     public static GlobalConfig RECONNECT_ALL_ON_BOOT = new GlobalConfig(CATEGORY, "reconnectAllOnBoot");
