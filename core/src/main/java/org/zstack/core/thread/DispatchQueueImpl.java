@@ -48,21 +48,27 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
             ChainTaskQueueWrapper w = e.getValue();
             tb.append(String.format("\nRUNNING TASK NUMBER: %s", w.runningQueue.size()));
             tb.append(String.format("\nPENDING TASK NUMBER: %s", w.pendingQueue.size()));
+            sb.append(String.format("\nASYNC LEVEL: %s", w.maxThreadNum));
+
             int index = 0;
             for (Object obj : w.runningQueue) {
                 ChainFuture cf = (ChainFuture) obj;
-                tb.append(String.format("\nRUNNING TASK[NAME: %s, CLASS: %s EXECUTION TIME: %s secs, INDEX: %s] %s",
+                long execTime = TimeUnit.MILLISECONDS.toSeconds(now - cf.getStartExecutionTimeInMills());
+                long pendingTime = TimeUnit.MILLISECONDS.toSeconds(now - cf.getStartPendingTimeInMills()) - execTime;
+
+                tb.append(String.format("\nRUNNING TASK[NAME: %s, CLASS: %s, PENDING TIME: %s sec, EXECUTION TIME: %s secs, INDEX: %s] %s",
                         cf.getTask().getName(), cf.getTask().getClass(),
-                        TimeUnit.MILLISECONDS.toSeconds(now - cf.getTimestamp()), index++,
+                        pendingTime,
+                        execTime, index++,
                         getChainContext(cf.getTask())
                 ));
             }
 
             for (Object obj : w.pendingQueue) {
                 ChainFuture cf = (ChainFuture) obj;
-                tb.append(String.format("\nPENDING TASK[NAME: %s, CLASS: %s EXECUTION TIME: %s secs, INDEX: %s] %s",
+                tb.append(String.format("\nPENDING TASK[NAME: %s, CLASS: %s PENDING TIME: %s secs, INDEX: %s] %s",
                         cf.getTask().getName(), cf.getTask().getClass(),
-                        TimeUnit.MILLISECONDS.toSeconds(now - cf.getTimestamp()), index++,
+                        TimeUnit.MILLISECONDS.toSeconds(now - cf.getStartPendingTimeInMills()), index++,
                         getChainContext(cf.getTask())
                 ));
             }
@@ -224,12 +230,20 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
     class ChainFuture extends AbstractFuture {
         private AtomicBoolean isNextCalled = new AtomicBoolean(false);
-        // in running queue: means execution time
-        // in pending queue: means pending time
-        private long timestamp = System.currentTimeMillis();
 
-        public long getTimestamp() {
-            return timestamp;
+        private long startPendingTimeInMills = System.currentTimeMillis();
+        private Long startExecutionTimeInMills;
+
+        public long getStartPendingTimeInMills() {
+            return startPendingTimeInMills;
+        }
+
+        public Long getStartExecutionTimeInMills() {
+            return startExecutionTimeInMills;
+        }
+
+        public void setStartExecutionTimeInMills(Long startExecutionTimeInMills) {
+            this.startExecutionTimeInMills = startExecutionTimeInMills;
         }
 
         public ChainFuture(ChainTask task) {
@@ -261,14 +275,11 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
             }
 
             try {
-                getTask().run(new SyncTaskChain() {
-                    @Override
-                    public void next() {
-                        try {
-                            done();
-                        } finally {
-                            callNext(chain);
-                        }
+                getTask().run(() -> {
+                    try {
+                        done();
+                    } finally {
+                        callNext(chain);
                     }
                 });
             } catch (Throwable t) {
@@ -305,7 +316,11 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
             if (maxThreadNum == -1) {
                 maxThreadNum = task.getSyncLevel();
+            } else if (maxThreadNum < task.getSyncLevel()) {
+                logger.warn(String.format("task[name:%s] increases queue[name:%s]'s sync level from %s to %s", task.getTask().getName(), task.getSyncSignature(), maxThreadNum, task.getSyncLevel()));
+                maxThreadNum = task.getSyncLevel();
             }
+
             if (syncSignature == null) {
                 syncSignature = task.getSyncSignature();
             }
@@ -341,24 +356,22 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                     }
 
                     synchronized (runningQueue) {
+                        cf.startExecutionTimeInMills = System.currentTimeMillis();
                         // add to running queue
                         runningQueue.offer(cf);
                     }
 
-                    cf.run(new SyncTaskChain() {
-                        @Override
-                        public void next() {
-                            synchronized (runningQueue) {
-                                runningQueue.remove(cf);
-                            }
-
-                            runQueue();
+                    cf.run(() -> {
+                        synchronized (runningQueue) {
+                            runningQueue.remove(cf);
                         }
+
+                        runQueue();
                     });
                 }
 
                 @Override
-                public Void call() throws Exception {
+                public Void call() {
                     runQueue();
                     return null;
                 }

@@ -31,10 +31,7 @@ import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Constants;
-import org.zstack.header.core.AsyncLatch;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -75,6 +72,7 @@ import org.zstack.utils.ssh.SshShell;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
@@ -506,28 +504,66 @@ public class KVMHost extends HostBase implements Host {
         });
     }
 
-    private void handle(final VmDirectlyDestroyOnHypervisorMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public String getSyncSignature() {
-                return id;
-            }
+    protected class RunInKVMHostQueue {
+        private String name;
+        private List<AsyncBackup> asyncBackups = new ArrayList<>();
 
-            @Override
-            public void run(final SyncTaskChain chain) {
-                directlyDestroy(msg, new NoErrorCompletion(chain) {
+        public RunInKVMHostQueue name(String v) {
+            name = v;
+            return this;
+        }
+
+        public RunInKVMHostQueue asyncBackup(AsyncBackup v) {
+            asyncBackups.add(v);
+            return this;
+        }
+
+        public void run(Consumer<SyncTaskChain> consumer) {
+            DebugUtils.Assert(name != null, "name() must be called");
+            DebugUtils.Assert(!asyncBackups.isEmpty(), "asyncBackup must be called");
+
+            AsyncBackup one = asyncBackups.get(0);
+            AsyncBackup[] rest = asyncBackups.size() > 1 ?
+                    asyncBackups.subList(1, asyncBackups.size()).toArray(new AsyncBackup[asyncBackups.size()-1]) :
+                    new AsyncBackup[0];
+
+            thdf.chainSubmit(new ChainTask(one, rest) {
+                @Override
+                public String getSyncSignature() {
+                    return id;
+                }
+
+                @Override
+                public void run(SyncTaskChain chain) {
+                    consumer.accept(chain);
+                }
+
+                @Override
+                protected int getSyncLevel() {
+                    return getHostSyncLevel();
+                }
+
+                @Override
+                public String getName() {
+                    return name;
+                }
+            });
+        }
+    }
+
+    protected RunInKVMHostQueue inQueue() {
+        return new RunInKVMHostQueue();
+    }
+
+    private void handle(final VmDirectlyDestroyOnHypervisorMsg msg) {
+        inQueue().name(String.format("directly-delete-vm-%s-msg-on-kvm-%s", msg.getVmUuid(), self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> directlyDestroy(msg, new NoErrorCompletion(chain) {
                     @Override
                     public void done() {
                         chain.next();
                     }
-                });
-            }
-
-            @Override
-            public String getName() {
-                return String.format("directly-delete-vm-%s-msg-on-kvm-%s", msg.getVmUuid(), self.getUuid());
-            }
-        });
+                }));
     }
 
     private SshResult runShell(String script) {
@@ -623,32 +659,14 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handle(final DetachIsoOnHypervisorMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public String getSyncSignature() {
-                return id;
-            }
-
-            @Override
-            public void run(final SyncTaskChain chain) {
-                detachIso(msg, new NoErrorCompletion(msg, chain) {
+        inQueue().asyncBackup(msg)
+                .name(String.format("detach-iso-%s-on-host-%s", msg.getIsoUuid(), self.getUuid()))
+                .run(chain -> detachIso(msg, new NoErrorCompletion(msg, chain) {
                     @Override
                     public void done() {
                         chain.next();
                     }
-                });
-            }
-
-            @Override
-            public String getName() {
-                return String.format("detach-iso-%s-on-host-%s", msg.getIsoUuid(), self.getUuid());
-            }
-
-            @Override
-            protected int getSyncLevel() {
-                return getHostSyncLevel();
-            }
-        });
+                }));
     }
 
     private void detachIso(final DetachIsoOnHypervisorMsg msg, final NoErrorCompletion completion) {
@@ -684,32 +702,14 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handle(final AttachIsoOnHypervisorMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public String getSyncSignature() {
-                return id;
-            }
-
-            @Override
-            public void run(final SyncTaskChain chain) {
-                attachIso(msg, new NoErrorCompletion(chain) {
+        inQueue().asyncBackup(msg)
+                .name(String.format("attach-iso-%s-on-host-%s", msg.getIsoSpec().getImageUuid(), self.getUuid()))
+                .run(chain -> attachIso(msg, new NoErrorCompletion(msg, chain) {
                     @Override
                     public void done() {
                         chain.next();
                     }
-                });
-            }
-
-            @Override
-            public String getName() {
-                return String.format("attach-iso-%s-on-host-%s", msg.getIsoSpec().getImageUuid(), self.getUuid());
-            }
-
-            @Override
-            protected int getSyncLevel() {
-                return getHostSyncLevel();
-            }
-        });
+                }));
     }
 
     private void attachIso(final AttachIsoOnHypervisorMsg msg, final NoErrorCompletion completion) {
@@ -750,33 +750,14 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handle(final DetachNicFromVmOnHypervisorMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public String getSyncSignature() {
-                return id;
-            }
-
-            @Override
-            public void run(final SyncTaskChain chain) {
-                detachNic(msg, new NoErrorCompletion(chain) {
+        inQueue().name("detach-nic-on-kvm-host-" + self.getUuid())
+                .asyncBackup(msg)
+                .run(chain -> detachNic(msg, new NoErrorCompletion(chain) {
                     @Override
                     public void done() {
                         chain.next();
                     }
-                });
-            }
-
-            @Override
-            public String getName() {
-                return "detach-nic-on-kvm-host-" + self.getUuid();
-            }
-
-
-            @Override
-            protected int getSyncLevel() {
-                return getHostSyncLevel();
-            }
-        });
+                }));
     }
 
     private void detachNic(final DetachNicFromVmOnHypervisorMsg msg, final NoErrorCompletion completion) {
@@ -806,32 +787,14 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handle(final KVMHostSyncHttpCallMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public String getSyncSignature() {
-                return id;
-            }
-
-            @Override
-            public void run(final SyncTaskChain chain) {
-                executeSyncHttpCall(msg, new NoErrorCompletion(chain) {
+        inQueue().name(String.format("execute-sync-http-call-on-kvm-host-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> executeSyncHttpCall(msg, new NoErrorCompletion(chain) {
                     @Override
                     public void done() {
                         chain.next();
                     }
-                });
-            }
-
-            @Override
-            public String getName() {
-                return String.format("execute-sync-http-call-on-kvm-host-%s", self.getUuid());
-            }
-
-            @Override
-            protected int getSyncLevel() {
-                return getHostSyncLevel();
-            }
-        });
+                }));
     }
 
     private void executeSyncHttpCall(KVMHostSyncHttpCallMsg msg, NoErrorCompletion completion) {
@@ -850,32 +813,14 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handle(final KVMHostAsyncHttpCallMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public String getSyncSignature() {
-                return id;
-            }
-
-            @Override
-            public void run(final SyncTaskChain chain) {
-                executeAsyncHttpCall(msg, new NoErrorCompletion(chain) {
+        inQueue().name(String.format("execute-async-http-call-on-kvm-host-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> executeAsyncHttpCall(msg, new NoErrorCompletion(chain) {
                     @Override
                     public void done() {
                         chain.next();
                     }
-                });
-            }
-
-            @Override
-            public String getName() {
-                return String.format("execute-async-http-call-on-kvm-host-%s", self.getUuid());
-            }
-
-            @Override
-            protected int getSyncLevel() {
-                return getHostSyncLevel();
-            }
-        });
+                }));
     }
 
     private String buildUrl(String path) {
@@ -923,32 +868,14 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handle(final MergeVolumeSnapshotOnKvmMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public String getSyncSignature() {
-                return id;
-            }
-
-            @Override
-            public void run(final SyncTaskChain chain) {
-                mergeVolumeSnapshot(msg, new NoErrorCompletion(chain) {
+        inQueue().name(String.format("merge-volume-snapshot-on-kvm-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> mergeVolumeSnapshot(msg, new NoErrorCompletion(chain) {
                     @Override
                     public void done() {
                         chain.next();
                     }
-                });
-            }
-
-            @Override
-            public String getName() {
-                return String.format("merge-volume-snapshot-on-kvm-%s", self.getUuid());
-            }
-
-            @Override
-            protected int getSyncLevel() {
-                return getHostSyncLevel();
-            }
-        });
+                }));
     }
 
     private void mergeVolumeSnapshot(final MergeVolumeSnapshotOnKvmMsg msg, final NoErrorCompletion completion) {
@@ -1011,32 +938,14 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handle(final TakeSnapshotOnHypervisorMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public String getSyncSignature() {
-                return id;
-            }
-
-            @Override
-            public void run(final SyncTaskChain chain) {
-                takeSnapshot(msg, new NoErrorCompletion(chain) {
+        inQueue().name(String.format("take-snapshot-on-kvm-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> takeSnapshot(msg, new NoErrorCompletion(chain) {
                     @Override
                     public void done() {
                         chain.next();
                     }
-                });
-            }
-
-            @Override
-            public String getName() {
-                return String.format("take-snapshot-on-kvm-%s", self.getUuid());
-            }
-
-            @Override
-            protected int getSyncLevel() {
-                return getHostSyncLevel();
-            }
-        });
+                }));
     }
 
     private void takeSnapshot(final TakeSnapshotOnHypervisorMsg msg, final NoErrorCompletion completion) {
@@ -1302,32 +1211,14 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handle(final MigrateVmOnHypervisorMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public String getSyncSignature() {
-                return id;
-            }
-
-            @Override
-            public void run(final SyncTaskChain chain) {
-                migrateVm(msg, new NoErrorCompletion(chain) {
+        inQueue().name(String.format("migrate-vm-on-kvm-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> migrateVm(msg, new NoErrorCompletion(chain) {
                     @Override
                     public void done() {
                         chain.next();
                     }
-                });
-            }
-
-            @Override
-            public String getName() {
-                return String.format("migrate-vm-on-kvm-%s", self.getUuid());
-            }
-
-            @Override
-            protected int getSyncLevel() {
-                return getHostSyncLevel();
-            }
-        });
+                }));
     }
 
     class MigrateStruct {
@@ -1392,32 +1283,14 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handle(final VmUpdateNicOnHypervisorMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public String getSyncSignature() {
-                return id;
-            }
-
-            @Override
-            public void run(final SyncTaskChain chain) {
-                updateNic(msg, new NoErrorCompletion(chain) {
+        inQueue().name(String.format("update-nic-on-kvm-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> updateNic(msg, new NoErrorCompletion(chain) {
                     @Override
                     public void done() {
                         chain.next();
                     }
-                });
-            }
-
-            @Override
-            public String getName() {
-                return String.format("update-nic-on-kvm-%s", self.getUuid());
-            }
-
-            @Override
-            protected int getSyncLevel() {
-                return getHostSyncLevel();
-            }
-        });
+                }));
     }
 
     private void updateNic(VmUpdateNicOnHypervisorMsg msg, NoErrorCompletion completion) {
@@ -1457,32 +1330,14 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handle(final VmAttachNicOnHypervisorMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public String getSyncSignature() {
-                return id;
-            }
-
-            @Override
-            public void run(final SyncTaskChain chain) {
-                attachNic(msg, new NoErrorCompletion(chain) {
+        inQueue().name(String.format("attach-nic-on-kvm-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> attachNic(msg, new NoErrorCompletion(chain) {
                     @Override
                     public void done() {
                         chain.next();
                     }
-                });
-            }
-
-            @Override
-            public String getName() {
-                return String.format("attach-nic-on-kvm-%s", self.getUuid());
-            }
-
-            @Override
-            protected int getSyncLevel() {
-                return getHostSyncLevel();
-            }
-        });
+                }));
     }
 
     private void attachNic(final VmAttachNicOnHypervisorMsg msg, final NoErrorCompletion completion) {
@@ -1524,33 +1379,14 @@ public class KVMHost extends HostBase implements Host {
 
 
     private void handle(final DetachVolumeFromVmOnHypervisorMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public String getSyncSignature() {
-                return id;
-            }
-
-            @Override
-            public void run(final SyncTaskChain chain) {
-                detachVolume(msg, new NoErrorCompletion(chain) {
+        inQueue().name(String.format("detach-volume-on-kvm-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> detachVolume(msg, new NoErrorCompletion(chain) {
                     @Override
                     public void done() {
                         chain.next();
                     }
-                });
-            }
-
-            @Override
-            public String getName() {
-                return String.format("detach-volume-on-kvm-%s", self.getUuid());
-            }
-
-            @Override
-            protected int getSyncLevel() {
-                return getHostSyncLevel();
-            }
-        });
-
+                }));
     }
 
     private void detachVolume(final DetachVolumeFromVmOnHypervisorMsg msg, final NoErrorCompletion completion) {
@@ -1607,32 +1443,14 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handle(final AttachVolumeToVmOnHypervisorMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public String getSyncSignature() {
-                return id;
-            }
-
-            @Override
-            public void run(final SyncTaskChain chain) {
-                attachVolume(msg, new NoErrorCompletion(chain) {
+        inQueue().name(String.format("attach-volume-on-kvm-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> attachVolume(msg, new NoErrorCompletion(chain) {
                     @Override
                     public void done() {
                         chain.next();
                     }
-                });
-            }
-
-            @Override
-            public String getName() {
-                return String.format("attach-volume-on-kvm-%s", self.getUuid());
-            }
-
-            @Override
-            protected int getSyncLevel() {
-                return getHostSyncLevel();
-            }
-        });
+                }));
     }
 
     private String setVolumeWwn(String volumeUUid) {
@@ -1722,32 +1540,14 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handle(final DestroyVmOnHypervisorMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public String getSyncSignature() {
-                return id;
-            }
-
-            @Override
-            public void run(final SyncTaskChain chain) {
-                destroyVm(msg, new NoErrorCompletion(chain) {
+        inQueue().name(String.format("destroy-vm-on-kvm-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> destroyVm(msg, new NoErrorCompletion(chain) {
                     @Override
                     public void done() {
                         chain.next();
                     }
-                });
-            }
-
-            @Override
-            public String getName() {
-                return String.format("destroy-vm-on-kvm-%s", self.getUuid());
-            }
-
-            @Override
-            protected int getSyncLevel() {
-                return getHostSyncLevel();
-            }
-        });
+                }));
     }
 
     private void destroyVm(final DestroyVmOnHypervisorMsg msg, final NoErrorCompletion completion) {
@@ -1799,33 +1599,14 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handle(final RebootVmOnHypervisorMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public String getSyncSignature() {
-                return id;
-            }
-
-            @Override
-            public void run(final SyncTaskChain chain) {
-                rebootVm(msg, new NoErrorCompletion(chain) {
+        inQueue().name(String.format("reboot-vm-on-kvm-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> rebootVm(msg, new NoErrorCompletion(chain) {
                     @Override
                     public void done() {
                         chain.next();
                     }
-                });
-            }
-
-            @Override
-            public String getName() {
-                return String.format("reboot-vm-on-kvm-%s", self.getUuid());
-            }
-
-            @Override
-            protected int getSyncLevel() {
-                return getHostSyncLevel();
-            }
-        });
-
+                }));
     }
 
     private List<String> toKvmBootDev(List<String> order) {
@@ -1889,32 +1670,14 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handle(final StopVmOnHypervisorMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public String getSyncSignature() {
-                return id;
-            }
-
-            @Override
-            public void run(final SyncTaskChain chain) {
-                stopVm(msg, new NoErrorCompletion(chain) {
+        inQueue().name(String.format("stop-vm-on-kvm-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> stopVm(msg, new NoErrorCompletion(chain) {
                     @Override
                     public void done() {
                         chain.next();
                     }
-                });
-            }
-
-            @Override
-            public String getName() {
-                return String.format("stop-vm-on-kvm-%s", self.getUuid());
-            }
-
-            @Override
-            protected int getSyncLevel() {
-                return getHostSyncLevel();
-            }
-        });
+                }));
     }
 
     private void stopVm(final StopVmOnHypervisorMsg msg, final NoErrorCompletion completion) {
@@ -1992,33 +1755,17 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handle(final CreateVmOnHypervisorMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public String getSyncSignature() {
-                return id;
-            }
-
-            @Override
-            public void run(final SyncTaskChain chain) {
-                setDataVolumeUseVirtIOSCSI(msg.getVmSpec());
-                startVm(msg.getVmSpec(), msg, new NoErrorCompletion(chain) {
-                    @Override
-                    public void done() {
-                        chain.next();
-                    }
+        inQueue().name(String.format("start-vm-on-kvm-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> {
+                    setDataVolumeUseVirtIOSCSI(msg.getVmSpec());
+                    startVm(msg.getVmSpec(), msg, new NoErrorCompletion(chain) {
+                        @Override
+                        public void done() {
+                            chain.next();
+                        }
+                    });
                 });
-            }
-
-            @Override
-            public String getName() {
-                return String.format("start-vm-on-kvm-%s", self.getUuid());
-            }
-
-            @Override
-            protected int getSyncLevel() {
-                return getHostSyncLevel();
-            }
-        });
     }
 
     @Transactional
@@ -2245,25 +1992,32 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handle(final StartVmOnHypervisorMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
+        inQueue().name(String.format("start-vm-on-kvm-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> startVmInQueue(msg, chain));
+    }
+
+    private void startVmInQueue(StartVmOnHypervisorMsg msg, SyncTaskChain outterChain) {
+        thdf.chainSubmit(new ChainTask(msg, outterChain) {
             @Override
             public String getSyncSignature() {
-                return id;
+                return getName();
             }
 
             @Override
             public void run(final SyncTaskChain chain) {
-                startVm(msg.getVmSpec(), msg, new NoErrorCompletion(chain) {
+                startVm(msg.getVmSpec(), msg, new NoErrorCompletion(chain, outterChain) {
                     @Override
                     public void done() {
                         chain.next();
+                        outterChain.next();
                     }
                 });
             }
 
             @Override
             public String getName() {
-                return String.format("start-vm-on-kvm-%s", self.getUuid());
+                return String.format("start-vm-on-kvm-%s-inner-queue", self.getUuid());
             }
 
             @Override
@@ -2274,32 +2028,14 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handle(final CheckNetworkPhysicalInterfaceMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public String getSyncSignature() {
-                return id;
-            }
-
-            @Override
-            public void run(final SyncTaskChain chain) {
-                checkPhysicalInterface(msg, new NoErrorCompletion(chain) {
+        inQueue().name(String.format("check-network-physical-interface-on-host-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> checkPhysicalInterface(msg, new NoErrorCompletion(chain) {
                     @Override
                     public void done() {
                         chain.next();
                     }
-                });
-            }
-
-            @Override
-            public String getName() {
-                return String.format("check-network-physical-interface-on-host-%s", self.getUuid());
-            }
-
-            @Override
-            protected int getSyncLevel() {
-                return getHostSyncLevel();
-            }
-        });
+                }));
     }
 
     private void pauseVm(final PauseVmOnHypervisorMsg msg, final NoErrorCompletion completion) {
@@ -2332,61 +2068,25 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handle(final PauseVmOnHypervisorMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public String getSyncSignature() {
-                return id;
-            }
-
-            @Override
-            public void run(final SyncTaskChain chain) {
-                pauseVm(msg, new NoErrorCompletion(chain) {
+        inQueue().name(String.format("pause-vm-%s-on-host-%s", msg.getVmInventory().getUuid(), self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> pauseVm(msg, new NoErrorCompletion(chain) {
                     @Override
                     public void done() {
                         chain.next();
                     }
-                });
-            }
-
-            @Override
-            public String getName() {
-                return String.format("pause-vm-%s-on-host-%s", msg.getVmInventory().getUuid(), self.getUuid());
-            }
-
-            @Override
-            protected int getSyncLevel() {
-                return getHostSyncLevel();
-            }
-        });
+                }));
     }
 
     private void handle(final ResumeVmOnHypervisorMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public String getSyncSignature() {
-                return id;
-            }
-
-            @Override
-            public void run(final SyncTaskChain chain) {
-                resumeVm(msg, new NoErrorCompletion(chain) {
+        inQueue().name(String.format("resume-vm-%s-on-host-%s", msg.getVmInventory().getUuid(), self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> resumeVm(msg, new NoErrorCompletion(chain) {
                     @Override
                     public void done() {
                         chain.next();
                     }
-                });
-            }
-
-            @Override
-            public String getName() {
-                return String.format("resume-vm-%s-on-host-%s", msg.getVmInventory().getUuid(), self.getUuid());
-            }
-
-            @Override
-            protected int getSyncLevel() {
-                return getHostSyncLevel();
-            }
-        });
+                }));
     }
 
     private void resumeVm(final ResumeVmOnHypervisorMsg msg, final NoErrorCompletion completion) {

@@ -2,6 +2,7 @@ package org.zstack.test.core.thread;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusImpl2;
 import org.zstack.core.cloudbus.EventFacadeImpl;
 import org.zstack.core.componentloader.ComponentLoader;
@@ -60,7 +61,7 @@ public class TestChainTask5 {
     DatabaseFacade dbf;
     ThreadFacade thdf;
     EventFacadeImpl evtf;
-    CloudBusImpl2 bus;
+    CloudBus bus;
     Api api;
 
     @Before
@@ -71,7 +72,7 @@ public class TestChainTask5 {
         loader = deployer.getComponentLoader();
         dbf = loader.getComponent(DatabaseFacade.class);
         thdf = loader.getComponent(ThreadFacade.class);
-        bus = loader.getComponent(CloudBusImpl2.class);
+        bus = loader.getComponent(CloudBus.class);
         deployer.build();
         api = deployer.getApi();
     }
