@@ -15,7 +15,7 @@ import org.zstack.header.rest.RestRequest;
         method = HttpMethod.PUT
 )
 public class APICleanUpTrashOnBackupStorageMsg extends APIMessage implements BackupStorageMessage {
-    @APIParam(resourceType = BackupStorageVO.class)
+    @APIParam(resourceType = BackupStorageVO.class, checkAccount = true)
     private String uuid;
 
     public String getUuid() {

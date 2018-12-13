@@ -11,22 +11,22 @@ import static java.util.Arrays.asList;
 /**
  * Created by mingjian.deng on 2018/12/10.
  */
-@RestResponse(allTo = "storageTrashes")
+@RestResponse(allTo = "storageTrashSpecs")
 public class APIGetTrashOnBackupStorageReply extends APIReply {
-    private List<StorageTrash> storageTrashes = new ArrayList<>();
+    private List<StorageTrashSpec> storageTrashSpecs = new ArrayList<>();
 
-    public List<StorageTrash> getStorageTrashes() {
-        return storageTrashes;
+    public List<StorageTrashSpec> getStorageTrashSpecs() {
+        return storageTrashSpecs;
     }
 
-    public void setStorageTrashes(List<StorageTrash> storageTrashes) {
-        this.storageTrashes = storageTrashes;
+    public void setStorageTrashSpecs(List<StorageTrashSpec> storageTrashSpecs) {
+        this.storageTrashSpecs = storageTrashSpecs;
     }
 
     public static APIGetTrashOnBackupStorageReply __example__() {
         APIGetTrashOnBackupStorageReply reply = new APIGetTrashOnBackupStorageReply();
 
-        reply.setStorageTrashes(asList(new StorageTrash(uuid(), "ImageVO", uuid(), "BackupStorageVO", "/zstack_bs/installpath", 1024000L)));
+        reply.setStorageTrashSpecs(asList(new StorageTrashSpec(uuid(), "ImageVO", uuid(), "BackupStorageVO", "/zstack_bs/installpath", 1024000L)));
 
         return reply;
     }

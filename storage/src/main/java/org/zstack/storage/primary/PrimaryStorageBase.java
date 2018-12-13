@@ -15,11 +15,11 @@ import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.job.JobQueueFacade;
-import org.zstack.core.jsonlabel.JsonLabelVO;
-import org.zstack.core.jsonlabel.JsonLabelVO_;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.trash.StorageTrash;
+import org.zstack.core.trash.TrashType;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
@@ -35,7 +35,7 @@ import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.backup.StorageTrash;
+import org.zstack.header.storage.backup.StorageTrashSpec;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent.PrimaryStorageDeletedData;
 import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent.PrimaryStorageStatusChangedData;
@@ -51,7 +51,6 @@ import org.zstack.header.volume.VolumeReportPrimaryStorageCapacityUsageReply;
 import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.LockModeType;
@@ -89,6 +88,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     protected EventFacade evtf;
     @Autowired
     protected PrimaryStoragePingTracker tracker;
+    @Autowired
+    protected StorageTrash trash;
 
     public PrimaryStorageBase() {
     }
@@ -162,7 +163,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         return String.format("primaryStorage-%s", self.getUuid());
     }
 
-    protected static List<String> trashLists = CollectionDSL.list("migrateVolume-%", "migrateVolumeSnapshot-%");
+    protected static List<TrashType> trashLists = CollectionDSL.list(TrashType.MigrateVolume, TrashType.MigrateVolumeSnapshot);
 
     protected void fireDisconnectedCanonicalEvent(ErrorCode reason) {
         PrimaryStorageCanonicalEvent.DisconnectedData data = new PrimaryStorageCanonicalEvent.DisconnectedData();
@@ -664,53 +665,41 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         throw new OperationFailureException(operr("operation not supported"));
     }
 
-    protected List<JsonLabelVO> getTrashList() {
-        List<JsonLabelVO> labels = new ArrayList<>();
-        for (String trash: trashLists) {
-            labels.addAll(Q.New(JsonLabelVO.class).eq(JsonLabelVO_.resourceUuid, self.getUuid()).like(JsonLabelVO_.labelKey, trash).list());
-        }
-        return labels;
-    }
-
     private void handle(final APIGetTrashOnPrimaryStorageMsg msg) {
         APIGetTrashOnPrimaryStorageReply reply = new APIGetTrashOnPrimaryStorageReply();
-        List<JsonLabelVO> labels = getTrashList();
-        labels.forEach(label -> {
-            StorageTrash trash = JSONObjectUtil.toObject(label.getLabelValue(), StorageTrash.class);
-            reply.getStorageTrashes().add(trash);
-        });
+        reply.getStorageTrashSpecs().addAll(trash.getTrashList(self.getUuid(), trashLists).values());
         bus.reply(msg, reply);
     }
 
     private void cleanUpTrash(final Completion completion) {
-        List<JsonLabelVO> labels = getTrashList();
-        if (labels.isEmpty()) {
+        Map<String, StorageTrashSpec> trashs = trash.getTrashList(self.getUuid(), trashLists);
+        if (trashs.isEmpty()) {
             completion.success();
             return;
         }
 
         List<ErrorCode> errs = new ArrayList<>();
-        new While<>(labels).all((label, coml) -> {
-            StorageTrash trash = JSONObjectUtil.toObject(label.getLabelValue(), StorageTrash.class);
+        new While<>(trashs.entrySet()).all((t, coml) -> {
+            StorageTrashSpec spec = t.getValue();
 
             FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
-            chain.setName(String.format("delete-volume-%s", trash.getInstallPath()));
+            chain.setName(String.format("delete-volume-%s", spec.getInstallPath()));
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(FlowTrigger trigger, Map data) {
                     DeleteVolumeBitsOnPrimaryStorageMsg msg = new DeleteVolumeBitsOnPrimaryStorageMsg();
                     msg.setPrimaryStorageUuid(self.getUuid());
-                    msg.setInstallPath(trash.getInstallPath());
-                    msg.setHypervisorType(trash.getHypervisorType());
-                    msg.setFolder(true);
+                    msg.setInstallPath(spec.getInstallPath());
+                    msg.setHypervisorType(spec.getHypervisorType());
+                    msg.setFolder(spec.isFolder());
                     bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
                     bus.send(msg, new CloudBusCallBack(trigger) {
                         @Override
                         public void run(MessageReply reply) {
                             if (reply.isSuccess()) {
-                                logger.info(String.format("Deleted volume %s in Trash.", trash.getInstallPath()));
+                                logger.info(String.format("Deleted volume %s in Trash.", spec.getInstallPath()));
                             } else {
-                                logger.warn(String.format("Failed to delete volume %s in Trash.", trash.getInstallPath()));
+                                logger.warn(String.format("Failed to delete volume %s in Trash.", spec.getInstallPath()));
                             }
                             trigger.next();
                         }
@@ -723,11 +712,11 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                 public void handle(Map data) {
                     IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
                     imsg.setPrimaryStorageUuid(self.getUuid());
-                    imsg.setDiskSize(trash.getSize());
+                    imsg.setDiskSize(spec.getSize());
                     bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
                     bus.send(imsg);
-                    dbf.remove(label);
-                    logger.info(String.format("Returned space[size:%s] to PS %s after volume migration", trash.getSize(), self.getUuid()));
+                    trash.remove(t.getKey(), self.getUuid());
+                    logger.info(String.format("Returned space[size:%s] to PS %s after volume migration", spec.getSize(), self.getUuid()));
                     coml.done();
                 }
             }).error(new FlowErrorHandler(coml) {
