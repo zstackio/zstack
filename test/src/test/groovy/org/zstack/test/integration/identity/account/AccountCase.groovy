@@ -1,5 +1,6 @@
 package org.zstack.test.integration.identity.account
 
+import org.springframework.http.HttpEntity
 import org.zstack.compute.vm.VmQuotaGlobalConfig
 import org.zstack.core.config.GlobalConfig
 import org.zstack.core.db.Q
@@ -9,11 +10,18 @@ import org.zstack.header.identity.AccountType
 import org.zstack.header.identity.AccountVO
 import org.zstack.header.identity.QuotaVO
 import org.zstack.header.identity.QuotaVO_
+import org.zstack.header.identity.SessionVO
+import org.zstack.header.identity.SessionVO_
 import org.zstack.identity.QuotaGlobalConfig
+import org.zstack.kvm.KVMConstant
 import org.zstack.sdk.AccountInventory
 import org.zstack.sdk.CheckResourcePermissionAction
+import org.zstack.sdk.ImageInventory
+import org.zstack.sdk.InstanceOfferingInventory
+import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.SessionInventory
 import org.zstack.sdk.UpdateGlobalConfigAction
+import org.zstack.sdk.UserInventory
 import org.zstack.test.integration.ZStackTest
 import org.zstack.test.integration.identity.Env
 import org.zstack.testlib.EnvSpec
@@ -68,7 +76,60 @@ class AccountCase extends SubCase {
             testQuotaConfig()
             testUserReadApi()
             testCheckPermission()
+            testAPIOperationRenewSession()
         }
+    }
+
+    void testAPIOperationRenewSession() {
+        updateGlobalConfig {
+            category = QuotaGlobalConfig.CATEGORY
+            name = VmQuotaGlobalConfig.VM_TOTAL_NUM.name
+            value = 3
+        }
+
+        def instanceOffering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
+        def image = env.inventoryByName("image1" ) as ImageInventory
+        def l3 = env.inventoryByName("pubL3") as L3NetworkInventory
+
+        createUser {
+            name = "test1"
+            password = "password1"
+        } as UserInventory
+
+        SessionInventory s2 = logInByUser {
+            accountName = "admin"
+            userName = "test1"
+            password = "password1"
+        } as SessionInventory
+
+        env.afterSimulator(KVMConstant.KVM_START_VM_PATH) { rsp, HttpEntity<String> e ->
+            sleep(2000)
+            return rsp
+        }
+
+        createVmInstance {
+            name = "vm"
+            imageUuid = image.uuid
+            instanceOfferingUuid = instanceOffering.uuid
+            l3NetworkUuids = [l3.uuid]
+            sessionId = s2.uuid
+        }
+
+        createVmInstance {
+            name = "vm-2"
+            imageUuid = image.uuid
+            instanceOfferingUuid = instanceOffering.uuid
+            l3NetworkUuids = [l3.uuid]
+            sessionId = s2.uuid
+        }
+
+        def time1 = s2.expiredDate
+
+        def time2 = Q.New(SessionVO.class)
+                .eq(SessionVO_.uuid, s2.uuid)
+                .select(SessionVO_.expiredDate).findValue()
+
+        assert time1.before(time2)
     }
 
     void testCheckPermission() {
