@@ -282,16 +282,21 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                 List<GlobalConfigVO> toSave = new ArrayList<GlobalConfigVO>();  // new config options
                 List<GlobalConfig> toRemove = new ArrayList<>(); // obsolete config options
                 List<GlobalConfig> toUpdate = new ArrayList<>(); // configs with changed default value
+                List<GlobalConfig> toUpdate2 = new ArrayList<>(); // configs with changed default value
 
                 for (GlobalConfig config : configsFromXml.values()) {
                     GlobalConfig dbcfg = configsFromDatabase.get(config.getIdentity());
                     if (dbcfg != null) {
-                        if (dbcfg.getDefaultValue().equals(dbcfg.value()) && !dbcfg.value().equals(config.getDefaultValue())) {
+                        if (!dbcfg.getDefaultValue().equals(config.getDefaultValue())) {
                             if (logger.isTraceEnabled()) {
                                 logger.trace(String.format("Will update a global config to database: %s", config.toString()));
                             }
 
-                            toUpdate.add(config);
+                            if (dbcfg.getDefaultValue().equals(dbcfg.value())) {
+                                toUpdate.add(config);
+                            } else {
+                                toUpdate2.add(config);
+                            }
                         }
 
                         continue;
@@ -344,6 +349,14 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                             .eq(GlobalConfigVO_.name, config.getName())
                             .set(GlobalConfigVO_.defaultValue, config.getDefaultValue())
                             .set(GlobalConfigVO_.value, config.value())
+                            .update();
+                }
+
+                for (GlobalConfig config : toUpdate2) {
+                    SQL.New(GlobalConfigVO.class)
+                            .eq(GlobalConfigVO_.category, config.getCategory())
+                            .eq(GlobalConfigVO_.name, config.getName())
+                            .set(GlobalConfigVO_.defaultValue, config.getDefaultValue())
                             .update();
                 }
             }
