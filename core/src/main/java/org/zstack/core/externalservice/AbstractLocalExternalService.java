@@ -34,7 +34,7 @@ public abstract class AbstractLocalExternalService implements LocalExternalServi
     public void stop() {
         Integer pid = getPID();
         if (pid != null) {
-            Platform.killProcess(pid);
+            Platform.killProcess(pid, 30);
         }
 
         logger.debug(String.format("[External Service] stopped %s", getName()));
