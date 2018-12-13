@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class StorageTrash  {
+public class StorageTrashSpec  {
 
     public java.lang.String resourceUuid;
     public void setResourceUuid(java.lang.String resourceUuid) {
@@ -42,6 +42,14 @@ public class StorageTrash  {
     }
     public java.lang.String getInstallPath() {
         return this.installPath;
+    }
+
+    public boolean isFolder;
+    public void setIsFolder(boolean isFolder) {
+        this.isFolder = isFolder;
+    }
+    public boolean getIsFolder() {
+        return this.isFolder;
     }
 
     public java.lang.String hypervisorType;

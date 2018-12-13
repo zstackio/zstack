@@ -14,15 +14,14 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
 import org.zstack.core.db.TransactionalCallback;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.jsonlabel.JsonLabelVO;
-import org.zstack.core.jsonlabel.JsonLabelVO_;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.trash.StorageTrash;
+import org.zstack.core.trash.TrashType;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -42,14 +41,12 @@ import org.zstack.header.storage.backup.BackupStorageCanonicalEvents.BackupStora
 import org.zstack.header.storage.backup.BackupStorageErrors.Opaque;
 import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.Utils;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.LockModeType;
 import javax.persistence.Query;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -82,8 +79,10 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
     protected EventFacade evtf;
     @Autowired
     protected RESTFacade restf;
+    @Autowired
+    protected StorageTrash trash;
 
-    protected static List<String> trashLists = CollectionDSL.list("migrateImage-%");
+    protected static List<TrashType> trashLists = CollectionDSL.list(TrashType.MigrateImage);
 
     abstract protected void handle(DownloadImageMsg msg);
 
@@ -440,50 +439,38 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         }
     }
 
-    protected List<JsonLabelVO> getTrashList() {
-        List<JsonLabelVO> labels = new ArrayList<>();
-        for (String trashList: trashLists) {
-            labels.addAll(Q.New(JsonLabelVO.class).eq(JsonLabelVO_.resourceUuid, self.getUuid()).like(JsonLabelVO_.labelKey, trashList).list());
-        }
-        return labels;
-    }
-
     private void handle(final APIGetTrashOnBackupStorageMsg msg) {
         APIGetTrashOnBackupStorageReply reply = new APIGetTrashOnBackupStorageReply();
-        List<JsonLabelVO> labels = getTrashList();
-        labels.forEach(label -> {
-            StorageTrash trash = JSONObjectUtil.toObject(label.getLabelValue(), StorageTrash.class);
-            reply.getStorageTrashes().add(trash);
-        });
+        reply.getStorageTrashSpecs().addAll(trash.getTrashList(self.getUuid(), trashLists).values());
         bus.reply(msg, reply);
     }
 
     private void cleanUpTrash(Completion completion) {
-        List<JsonLabelVO> labels = getTrashList();
-        if (labels.isEmpty()) {
+        Map<String, StorageTrashSpec> trashs = trash.getTrashList(self.getUuid(), trashLists);
+        if (trashs.isEmpty()) {
             completion.success();
             return;
         }
 
-        new While<>(labels).all((label, coml) -> {
-            StorageTrash trash = JSONObjectUtil.toObject(label.getLabelValue(), StorageTrash.class);
-
+        new While<>(trashs.entrySet()).all((t, coml) -> {
+            StorageTrashSpec spec = t.getValue();
             DeleteBitsOnBackupStorageMsg msg = new DeleteBitsOnBackupStorageMsg();
-            msg.setInstallPath(trash.getInstallPath());
-            msg.setBackupStorageUuid(label.getResourceUuid());
-            bus.makeTargetServiceIdByResourceUuid(msg, BackupStorageConstant.SERVICE_ID, label.getResourceUuid());
+            msg.setInstallPath(spec.getInstallPath());
+            msg.setBackupStorageUuid(self.getUuid());
+            bus.makeTargetServiceIdByResourceUuid(msg, BackupStorageConstant.SERVICE_ID, self.getUuid());
             bus.send(msg, new CloudBusCallBack(coml) {
                 @Override
                 public void run(MessageReply reply) {
                     if (reply.isSuccess()) {
-                        BackupStorageVO srcBS = dbf.findByUuid(label.getResourceUuid(), BackupStorageVO.class);
-                        srcBS.setAvailableCapacity(srcBS.getAvailableCapacity() + trash.getSize());
+                        BackupStorageVO srcBS = dbf.findByUuid(self.getUuid(), BackupStorageVO.class);
+                        srcBS.setAvailableCapacity(srcBS.getAvailableCapacity() + spec.getSize());
                         dbf.update(srcBS);
                         logger.info(String.format("Deleted image %s and returned space[size:%s] to BS[uuid:%s] after image migration",
-                                trash.getInstallPath(), trash.getSize(), label.getResourceUuid()));
-                        dbf.remove(label);
+                                spec.getInstallPath(), spec.getSize(), self.getUuid()));
+
+                        trash.remove(t.getKey(), self.getUuid());
                     } else {
-                        logger.warn(String.format("Failed to delete image %s in image migration.", trash.getInstallPath()));
+                        logger.warn(String.format("Failed to delete image %s in image migration.", spec.getInstallPath()));
                     }
                     coml.done();
                 }
