@@ -5766,7 +5766,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("reset-root-volume-%s-from-image-%s", rootVolume.getUuid(), rootVolume.getRootImageUuid()));
         chain.then(new ShareFlow() {
-            String newVolumeInstallPath;
+            VolumeVO vo = rootVolume;
 
             @Override
             public void setup() {
@@ -5808,7 +5808,8 @@ public class VmInstanceBase extends AbstractVmInstance {
                             public void run(MessageReply reply) {
                                 if (reply.isSuccess()) {
                                     ReInitRootVolumeFromTemplateOnPrimaryStorageReply re = (ReInitRootVolumeFromTemplateOnPrimaryStorageReply) reply;
-                                    newVolumeInstallPath = re.getNewVolumeInstallPath();
+                                    vo.setInstallPath(re.getNewVolumeInstallPath());
+                                    vo = dbf.updateAndRefresh(vo);
                                     trigger.next();
                                 } else {
                                     trigger.fail(reply.getError());
@@ -5824,7 +5825,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
                         SyncVolumeSizeMsg smsg = new SyncVolumeSizeMsg();
-                        smsg.setVolumeUuid(rootVolumeInventory.getUuid());
+                        smsg.setVolumeUuid(vo.getUuid());
                         bus.makeTargetServiceIdByResourceUuid(smsg, VolumeConstant.SERVICE_ID, rootVolumeInventory.getUuid());
                         bus.send(smsg, new CloudBusCallBack(msg) {
                             @Override
@@ -5834,7 +5835,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                                     return;
                                 }
 
-                                rootVolumeInventory.setSize(((SyncVolumeSizeReply) reply).getSize());
+                                vo.setSize(((SyncVolumeSizeReply) reply).getSize());
                                 trigger.next();
                             }
                         });
@@ -5846,14 +5847,14 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        if (rootVolume.getSize() == rootVolumeInventory.getSize()) {
+                        if (vo.getSize() == rootVolumeInventory.getSize()) {
                             trigger.next();
                             return;
                         }
 
                         IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
                         imsg.setPrimaryStorageUuid(rootVolume.getPrimaryStorageUuid());
-                        imsg.setDiskSize(rootVolume.getSize() - rootVolumeInventory.getSize());
+                        imsg.setDiskSize(rootVolumeInventory.getSize() - vo.getSize());
                         bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, rootVolume.getPrimaryStorageUuid());
                         bus.send(imsg);
 
@@ -5864,9 +5865,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
-                        rootVolume.setInstallPath(newVolumeInstallPath);
-                        rootVolume.setSize(rootVolumeInventory.getSize());
-                        dbf.update(rootVolume);
+                        dbf.update(vo);
 
                         List<AfterReimageVmInstanceExtensionPoint> list = pluginRgty.getExtensionList(
                                 AfterReimageVmInstanceExtensionPoint.class);
