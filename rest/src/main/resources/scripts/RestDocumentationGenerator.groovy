@@ -1466,7 +1466,7 @@ ${fieldStr}
                 return ""
             }
 
-            return """header(Authorization: '${RestConstants.HEADER_OAUTH} the-session-uuid')"""
+            return "\t\t\t" + """header (Authorization: '${RestConstants.HEADER_OAUTH} the-session-uuid')"""
         }
 
         String getParamName() {
@@ -1518,7 +1518,7 @@ ${fieldStr}
                 }
 
                 def location
-                if (urlVars.contains(af.name) || (at.method() == HttpMethod.DELETE && af.name != "systemTags" && af.name != "userTags")) {
+                if (urlVars.contains(af.name)) {
                     location = LOCATION_URL
                 } else if (at.method() == HttpMethod.GET) {
                     location = LOCATION_QUERY
@@ -1613,7 +1613,6 @@ ${doc._rest._request._urls.collect { "\t\t\t" + it.toString() }.join("\n")}
 
 ${doc._rest._request._headers.collect { "\t\t\t" + it.toString() }.join("\n")}
 
-
             clz ${doc._rest._request._clz.simpleName}.class
 
             desc \"\"\"${doc._rest._request._desc}\"\"\"
@@ -1654,7 +1653,7 @@ doc {
         request {
 ${urls()}
 
-            ${headers()}
+${headers()}
 
             clz ${apiClass.simpleName}.class
 
