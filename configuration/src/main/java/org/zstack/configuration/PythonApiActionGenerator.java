@@ -15,6 +15,7 @@ import org.zstack.header.identity.APISessionMessage;
 import org.zstack.header.message.APIListMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.query.APIQueryMessage;
+import org.zstack.header.rest.RestRequest;
 import org.zstack.header.search.APIGetMessage;
 import org.zstack.header.search.APISearchMessage;
 import org.zstack.utils.TypeUtils;
@@ -43,6 +44,10 @@ public class PythonApiActionGenerator {
                 try {
                     Class<?> clazz = Class.forName(bd.getBeanClassName());
                     if (Modifier.isAbstract(clazz.getModifiers())) {
+                        continue;
+                    }
+
+                    if (!clazz.isAnnotationPresent(RestRequest.class)) {
                         continue;
                     }
 
