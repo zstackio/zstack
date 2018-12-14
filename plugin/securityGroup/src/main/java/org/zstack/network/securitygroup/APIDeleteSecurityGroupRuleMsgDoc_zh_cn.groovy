@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIDeleteSecurityGroupRuleMsg.class
 
             desc """删除安全组规则,这个命令是异步执行的, 在它返回后可能规则仍然没有对所有的主机上生效"""

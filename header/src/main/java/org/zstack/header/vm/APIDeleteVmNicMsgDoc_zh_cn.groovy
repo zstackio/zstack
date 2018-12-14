@@ -13,8 +13,7 @@ doc {
         request {
 			url "DELETE /v1/nics/{uuid}"
 
-
-            header(Authorization: 'OAuth the-session-uuid')
+			header (Authorization: 'OAuth the-session-uuid')
 
             clz APIDeleteVmNicMsg.class
 
@@ -36,7 +35,7 @@ doc {
 					name "deleteMode"
 					enclosedIn ""
 					desc ""
-					location "url"
+					location "body"
 					type "String"
 					optional true
 					since "0.6"

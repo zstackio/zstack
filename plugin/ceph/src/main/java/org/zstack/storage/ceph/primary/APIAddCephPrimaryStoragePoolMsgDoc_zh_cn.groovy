@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIAddCephPrimaryStoragePoolMsg.class
 
             desc """"""
@@ -108,7 +107,7 @@ doc {
 					desc "存储池类型"
 					location "body"
 					type "String"
-					optional true
+					optional false
 					since "0.6"
 					values ("Root","Data")
 				}

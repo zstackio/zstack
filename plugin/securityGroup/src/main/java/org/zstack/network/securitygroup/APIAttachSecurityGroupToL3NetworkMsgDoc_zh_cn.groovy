@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIAttachSecurityGroupToL3NetworkMsg.class
 
             desc """用户可以使用AttachSecurityGroupToL3Network来挂载一个安全组到L3网络"""

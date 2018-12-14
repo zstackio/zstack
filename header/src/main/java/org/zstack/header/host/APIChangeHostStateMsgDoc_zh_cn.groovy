@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIChangeHostStateMsg.class
 
             desc """更新物理机启用状态"""

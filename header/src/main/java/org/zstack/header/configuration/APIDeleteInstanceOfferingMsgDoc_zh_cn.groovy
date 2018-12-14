@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIDeleteInstanceOfferingMsg.class
 
             desc """删除云主机规格"""

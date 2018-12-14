@@ -2,6 +2,7 @@ package org.zstack.header.network.l3
 
 import org.zstack.header.network.l3.APIQueryIpAddressReply
 import org.zstack.header.query.APIQueryMessage
+import org.zstack.header.query.APIQueryMessage
 
 doc {
     title "QueryIpAddress"
@@ -13,11 +14,9 @@ doc {
     rest {
         request {
 			url "GET /v1/l3-networks/ip-address"
+			url "GET /v1/l3-networks/ip-address/{uuid}"
 
-			url "GET /v1/l3-networks/ip-address{uuid}"
-
-
-            header(Authorization: 'OAuth the-session-uuid')
+			header (Authorization: 'OAuth the-session-uuid')
 
             clz APIQueryIpAddressMsg.class
 

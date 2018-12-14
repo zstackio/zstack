@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APICreateLdapBindingMsg.class
 
             desc """创建LDAP绑定"""

@@ -15,7 +15,6 @@ doc {
 
 
 
-
             clz APIGetCurrentTimeMsg.class
 
             desc """获取当前时间"""

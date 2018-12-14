@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIGetHypervisorTypesMsg.class
 
             desc """获取云主机的虚拟化技术类型"""

@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIUpdateLdapServerMsg.class
 
             desc """更新LDAP服务器"""

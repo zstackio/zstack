@@ -13,8 +13,7 @@ doc {
         request {
 			url "GET /v1/primary-storage/trash"
 
-
-            header(Authorization: 'OAuth the-session-uuid')
+			header (Authorization: 'OAuth the-session-uuid')
 
             clz APIGetTrashOnPrimaryStorageMsg.class
 

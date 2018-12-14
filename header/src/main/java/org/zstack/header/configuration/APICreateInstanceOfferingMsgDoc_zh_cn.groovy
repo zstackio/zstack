@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APICreateInstanceOfferingMsg.class
 
             desc """创建云主机规格"""

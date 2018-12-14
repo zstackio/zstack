@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIAttachPortForwardingRuleMsg.class
 
             desc """用户可以使用AttachPortForwardingRule来挂载一个规则到虚拟机网卡上"""

@@ -15,7 +15,6 @@ doc {
 
 
 
-
             clz APILogOutMsg.class
 
             desc """退出当前登录状态"""

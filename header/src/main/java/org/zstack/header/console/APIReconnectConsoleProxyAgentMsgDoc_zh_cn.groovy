@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIReconnectConsoleProxyAgentMsg.class
 
             desc """重连控制台代理Agent"""

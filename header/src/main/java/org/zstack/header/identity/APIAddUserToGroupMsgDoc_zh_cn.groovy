@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIAddUserToGroupMsg.class
 
             desc """将用于添加到用户组"""

@@ -1,5 +1,7 @@
 package org.zstack.header.longjob
 
+import org.zstack.header.longjob.APIRerunLongJobEvent
+
 doc {
     title "RerunLongJob"
 
@@ -11,8 +13,7 @@ doc {
         request {
 			url "PUT /v1/longjobs/{uuid}/actions"
 
-
-            header(Authorization: 'OAuth the-session-uuid')
+			header (Authorization: 'OAuth the-session-uuid')
 
             clz APIRerunLongJobMsg.class
 

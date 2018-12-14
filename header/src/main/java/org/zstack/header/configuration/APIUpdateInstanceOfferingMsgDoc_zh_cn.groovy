@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIUpdateInstanceOfferingMsg.class
 
             desc """更新云主机规格"""

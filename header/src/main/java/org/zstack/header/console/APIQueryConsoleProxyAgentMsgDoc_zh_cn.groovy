@@ -18,7 +18,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIQueryConsoleProxyAgentMsg.class
 
             desc """查询控制台代理Agent"""
