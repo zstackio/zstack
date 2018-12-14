@@ -48,7 +48,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
             ChainTaskQueueWrapper w = e.getValue();
             tb.append(String.format("\nRUNNING TASK NUMBER: %s", w.runningQueue.size()));
             tb.append(String.format("\nPENDING TASK NUMBER: %s", w.pendingQueue.size()));
-            sb.append(String.format("\nASYNC LEVEL: %s", w.maxThreadNum));
+            tb.append(String.format("\nASYNC LEVEL: %s", w.maxThreadNum));
 
             int index = 0;
             for (Object obj : w.runningQueue) {
