@@ -48,6 +48,14 @@
 
     <config>
         <category>kvm</category>
+        <name>host.snapshot.syncLevel</name>
+        <description>The number of parallel commands of take snapshot call. A big number may put a host in heavy workload in a busy system. The value must be greater than zero</description>
+        <type>java.lang.Integer</type>
+        <defaultValue>10</defaultValue>
+    </config>
+
+    <config>
+        <category>kvm</category>
         <name>vm.createConcurrency</name>
         <description>The number of VMs that can be created concurrently on KVM host.</description>
         <type>java.lang.Integer</type>
