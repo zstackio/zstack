@@ -288,9 +288,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                     GlobalConfig dbcfg = configsFromDatabase.get(config.getIdentity());
                     if (dbcfg != null) {
                         if (!dbcfg.getDefaultValue().equals(config.getDefaultValue())) {
-                            if (logger.isTraceEnabled()) {
-                                logger.trace(String.format("Will update a global config to database: %s", config.toString()));
-                            }
+                            logger.debug(String.format("Will update a global config to database: %s", config.toString()));
 
                             if (dbcfg.getDefaultValue().equals(dbcfg.value())) {
                                 toUpdate.add(config);
@@ -302,19 +300,13 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                         continue;
                     }
 
-                    if (logger.isTraceEnabled()) {
-                        logger.trace(String.format("Add a new global config to database: %s", config.toString()));
-                    }
-
+                    logger.debug(String.format("Add a new global config to database: %s", config.toString()));
                     toSave.add(config.toVO());
                 }
 
                 for (GlobalConfig config : configsFromDatabase.values()) {
                     if (!configsFromXml.containsKey(config.getIdentity())) {
-                        if (logger.isTraceEnabled()) {
-                            logger.trace(String.format("Will remove an old global config from database: %s", config.toString()));
-                        }
-
+                        logger.debug(String.format("Will remove an old global config from database: %s", config.toString()));
                         toRemove.add(config);
                     }
                 }
