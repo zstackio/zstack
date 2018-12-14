@@ -31,6 +31,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.*;
 import org.zstack.header.rest.APINoSee;
+import org.zstack.header.rest.RestRequest;
 import org.zstack.header.search.APIGetMessage;
 import org.zstack.header.search.APISearchMessage;
 import org.zstack.header.search.Inventory;
@@ -644,6 +645,9 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
                         continue;
                     }
                     if (Modifier.isAbstract(clazz.getModifiers())) {
+                        continue;
+                    }
+                    if (!clazz.isAnnotationPresent(RestRequest.class)) {
                         continue;
                     }
                     if (isPythonClassGenerated(clazz)) {
