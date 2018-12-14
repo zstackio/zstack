@@ -940,15 +940,42 @@ public class KVMHost extends HostBase implements Host {
     private void handle(final TakeSnapshotOnHypervisorMsg msg) {
         inQueue().name(String.format("take-snapshot-on-kvm-%s", self.getUuid()))
                 .asyncBackup(msg)
-                .run(chain -> takeSnapshot(msg, new NoErrorCompletion(chain) {
+                .run(chain -> {
+                    takeSnapshot(msg);
+                    chain.next();
+                });
+    }
+
+    private void takeSnapshot(final TakeSnapshotOnHypervisorMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getName();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                doTakeSnapshot(msg, new NoErrorCompletion() {
                     @Override
                     public void done() {
                         chain.next();
                     }
-                }));
+                });
+            }
+
+            @Override
+            protected int getSyncLevel() {
+                return KVMGlobalConfig.HOST_SNAPSHOT_SYNC_LEVEL.value(Integer.class);
+            }
+
+            @Override
+            public String getName() {
+                return String.format("take-snapshot-on-kvm-%s", self.getUuid());
+            }
+        });
     }
 
-    private void takeSnapshot(final TakeSnapshotOnHypervisorMsg msg, final NoErrorCompletion completion) {
+    private void doTakeSnapshot(final TakeSnapshotOnHypervisorMsg msg, final NoErrorCompletion completion) {
         checkStateAndStatus();
 
         final TakeSnapshotOnHypervisorReply reply = new TakeSnapshotOnHypervisorReply();
