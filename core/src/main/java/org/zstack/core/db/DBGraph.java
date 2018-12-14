@@ -46,6 +46,27 @@ public class DBGraph {
         public EntityVertex next;
         public EntityVertex previous;
 
+        public String toSQL(String field) {
+            return makeSQL(this, field);
+        }
+
+        private String makeSQL(EntityVertex vertex, String field) {
+            if (vertex.next == null) {
+                String entity = String.format("%s_", vertex.entityClass.getSimpleName());
+                String vo = vertex.entityClass.getSimpleName();
+                String key = vertex.previous.dstKey;
+                return String.format("(SELECT %s.%s FROM %s %s WHERE %s.%s %%s %%s)",
+                        entity, key, vo, entity, entity, field);
+            }
+
+            String value = makeSQL(vertex.next, field);
+            String entity = String.format("%s_", vertex.entityClass.getSimpleName());
+            String vo = vertex.entityClass.getSimpleName();
+            String primaryKey = vertex.previous != null ? vertex.previous.dstKey : EntityMetadata.getPrimaryKeyField(vertex.entityClass).getName();
+            return String.format("(SELECT %s.%s FROM %s %s WHERE %s.%s IN %s)",
+                    entity, primaryKey, vo, entity, entity, vertex.srcKey, value);
+        }
+
         @Override
         public String toString() {
             return "EntityVertex{" +

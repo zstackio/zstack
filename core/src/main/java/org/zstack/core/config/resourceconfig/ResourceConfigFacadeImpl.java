@@ -6,6 +6,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigFacade;
+import org.zstack.core.db.DBGraph;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SQLBatchWithReturn;
@@ -18,6 +19,7 @@ import org.zstack.header.message.Message;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.vo.ResourceVO_;
 import org.zstack.utils.BeanUtils;
+import org.zstack.utils.TypeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -30,7 +32,7 @@ import java.util.*;
 public class ResourceConfigFacadeImpl extends AbstractService implements ResourceConfigFacade, PrepareDbInitialValueExtensionPoint {
     private static final CLogger logger = Utils.getLogger(ResourceConfigFacadeImpl.class);
 
-    private Map<String, Set<String>> boundResourceConfigTypes = new HashMap<>();
+    private Map<String, List<Class>> boundResourceConfigTypes = new HashMap<>();
 
     @Autowired
     private CloudBus bus;
@@ -67,10 +69,8 @@ public class ResourceConfigFacadeImpl extends AbstractService implements Resourc
     private void buildBoundTypes(Field field) throws Exception {
         BindResourceConfig at = field.getAnnotation(BindResourceConfig.class);
         GlobalConfig gc = (GlobalConfig) field.get(null);
-        Set<String> types = boundResourceConfigTypes.computeIfAbsent(gc.getCanonicalName(), x->new HashSet<>());
-        for (Class clz : at.value()) {
-            types.add(clz.getName());
-        }
+        List<Class> types = boundResourceConfigTypes.computeIfAbsent(gc.getCanonicalName(), x->new ArrayList<>());
+        Collections.addAll(types, at.value());
     }
 
     @Override
@@ -98,6 +98,17 @@ public class ResourceConfigFacadeImpl extends AbstractService implements Resourc
     }
 
     private void handle(APIDeleteResourceConfigMsg msg) {
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                sql(ResourceConfigVO.class).eq(ResourceConfigVO_.resourceUuid, msg.getResourceUuid())
+                        .eq(ResourceConfigVO_.category, msg.getCategory())
+                        .eq(ResourceConfigVO_.name, msg.getName())
+                        .delete();
+            }
+        }.execute();
+
+        bus.publish(new APIDeleteResourceConfigEvent(msg.getId()));
     }
 
     private void handle(APIUpdateResourceConfigMsg msg) {
@@ -161,5 +172,92 @@ public class ResourceConfigFacadeImpl extends AbstractService implements Resourc
     @Override
     public boolean stop() {
         return true;
+    }
+
+    @Override
+    public <T> T getResourceConfigValue(GlobalConfig gc, String resourceUuid, Class<T> clz) {
+        if (!boundResourceConfigTypes.containsKey(gc.getCanonicalName())) {
+            logger.debug(String.format("resource[uuid:%s] is not bound to global config[category:%s, name:%s], use global config instead", resourceUuid, gc.getCategory(), gc.getName()));
+            return gc.value(clz);
+        }
+
+        String value = new SQLBatchWithReturn<String>() {
+            @Override
+            protected String scripts() {
+                String v = q(ResourceConfigVO.class)
+                        .select(ResourceConfigVO_.value)
+                        .eq(ResourceConfigVO_.category, gc.getName())
+                        .eq(ResourceConfigVO_.category, gc.getCategory())
+                        .eq(ResourceConfigVO_.resourceUuid, resourceUuid)
+                        .findValue();
+
+                if (v != null) {
+                    return v;
+                }
+
+                String resourceType = q(ResourceVO.class).select(ResourceVO_.resourceType).eq(ResourceVO_.uuid, resourceUuid).findValue();
+                if (resourceType == null) {
+                    logger.warn(String.format("no resource[uuid:%s] found, cannot get it's resource config, use global config instead", resourceUuid));
+                    return null;
+                }
+
+                Class resourceClass;
+                try {
+                    resourceClass = Class.forName(resourceType);
+                } catch (ClassNotFoundException e) {
+                    throw new CloudRuntimeException(e);
+                }
+
+                List<Class> bindingTypes = boundResourceConfigTypes.get(gc.getCanonicalName());
+                int index = bindingTypes.indexOf(resourceClass);
+                if (index == -1) {
+                    logger.warn(String.format("resource[uuid:%s, type:%s] is not bound to global config[category:%s, name:%s], use global config instead", resourceUuid, resourceType, gc.getCategory(), gc.getName()));
+                    return null;
+                }
+
+                if (index + 1 == bindingTypes.size()) {
+                    // it's already the last bound type, no need to search
+                    return null;
+                }
+
+                List<Class> toFind = bindingTypes.subList(index+1, bindingTypes.size());
+                for (Class clz : toFind) {
+                    v = findResourceConfigFromParent(resourceClass, clz);
+                    if (v != null) {
+                        return v;
+                    }
+                }
+
+                return null;
+            }
+
+            private String findResourceConfigFromParent(Class resourceClass, Class parent) {
+                DBGraph.EntityVertex vertex = DBGraph.findVerticesWithSmallestWeight(resourceClass, parent);
+                if (vertex == null) {
+                    logger.debug(String.format("no relation between[%s, %s], use global config[category: %s, name:%s] instead", resourceClass, parent, gc.getCategory(), gc.getName()));
+                    return null;
+                }
+
+                String sqlText = vertex.toSQL("uuid");
+                String resUuid = sql(sqlText, String.class).find();
+                if (resUuid == null) {
+                    return null;
+                }
+
+                return q(ResourceConfigVO.class)
+                        .select(ResourceConfigVO_.value)
+                        .eq(ResourceConfigVO_.category, gc.getName())
+                        .eq(ResourceConfigVO_.category, gc.getCategory())
+                        .eq(ResourceConfigVO_.resourceUuid, resUuid)
+                        .findValue();
+            }
+        }.execute();
+
+        if (value == null) {
+            logger.debug(String.format("no bound resource config[category:%s, name:%s] found for resource[uuid:%s], use global config instead", gc.getCategory(), gc.getName(), resourceUuid));
+            value = gc.value();
+        }
+
+        return TypeUtils.stringToValue(value, clz);
     }
 }
