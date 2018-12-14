@@ -1564,9 +1564,7 @@ ${cols.join("\n")}
             }
 
             return paths.collect {
-                return """\
-\t\t\turl "${it}"
-"""
+                return "\t\t\t" + "url \"${it}\""
             }.join("\n")
         }
 
