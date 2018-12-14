@@ -378,7 +378,14 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
                 String.format("can not find virtual router[uuid: %s] for nic[uuid: %s, ip: %s, l3NetworkUuid: %s]",
                         nic.getVmInstanceUuid(), nic.getUuid(), nic.getIp(), nic.getL3NetworkUuid()));
 
-        List<EipTO> eips = findEipsOnVirtualRouter(nic, attach);
+        List<EipTO> eips;
+        try {
+            eips = findEipsOnVirtualRouter(nic, attach);
+        } catch (OperationFailureException e) {
+            completion.fail(e.getErrorCode());
+            return;
+        }
+
         if (attach && (eips == null || eips.isEmpty())) {
             completion.success();
             return;
@@ -419,7 +426,7 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
         });
     }
 
-    private List<EipTO> findEipsOnVirtualRouter(VmNicInventory nic, Boolean attach) {
+    private List<EipTO> findEipsOnVirtualRouter(VmNicInventory nic, Boolean attach) throws OperationFailureException {
         List<Tuple> eips = findEipOnVmNic(nic);
         if (attach && (eips == null || eips.isEmpty())) {
             return null;
@@ -485,19 +492,25 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
         return ret;
     }
 
-    private List<Tuple> findEipOnVmNic(VmNicInventory nic) {
+    private List<Tuple> findEipTuplesOnVmNic(VmNicInventory nic) {
         List<Tuple> eips = SQL.New("select eip.vipIp, eip.guestIp, nic.l3NetworkUuid, nic.mac, vip.l3NetworkUuid, eip.uuid " +
-                    "from EipVO eip, VmNicVO nic, VmInstanceVO vm, VipVO vip " +
-                    "where eip.vmNicUuid = nic.uuid " +
-                    "and nic.vmInstanceUuid = vm.uuid " +
-                    "and nic.l3NetworkUuid = :l3Uuid " +
-                    "and eip.vipUuid = vip.uuid " +
-                    "and vm.state in (:syncEipVmStates) " +
-                    "and eip.state = :enabledState", Tuple.class)
-                    .param("l3Uuid", nic.getL3NetworkUuid())
-                    .param("syncEipVmStates", SYNC_EIP_VM_STATES)
-                    .param("enabledState", EipState.Enabled)
-                    .list();
+                "from EipVO eip, VmNicVO nic, VmInstanceVO vm, VipVO vip " +
+                "where eip.vmNicUuid = nic.uuid " +
+                "and nic.vmInstanceUuid = vm.uuid " +
+                "and nic.l3NetworkUuid = :l3Uuid " +
+                "and eip.vipUuid = vip.uuid " +
+                "and vm.state in (:syncEipVmStates) " +
+                "and eip.state = :enabledState", Tuple.class)
+                .param("l3Uuid", nic.getL3NetworkUuid())
+                .param("syncEipVmStates", SYNC_EIP_VM_STATES)
+                .param("enabledState", EipState.Enabled)
+                .list();
+
+        return eips;
+    }
+
+    private List<Tuple> findEipOnVmNic(VmNicInventory nic) throws OperationFailureException {
+        List<Tuple> eips = findEipTuplesOnVmNic(nic);
 
         if (eips == null || eips.isEmpty()) {
             return new ArrayList<>();
@@ -505,6 +518,14 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
 
         List<VirtualRouterEipRefVO> refs = new ArrayList<VirtualRouterEipRefVO>();
         for (Tuple eipTuple : eips) {
+            /* eip can be bound to only 1 router */
+            VirtualRouterEipRefVO oldRef = Q.New(VirtualRouterEipRefVO.class).
+                    eq(VirtualRouterEipRefVO_.eipUuid, eipTuple.get(5, String.class))
+                    .notEq(VirtualRouterEipRefVO_.virtualRouterVmUuid, nic.getVmInstanceUuid()).find();
+            if (oldRef != null) {
+                throw new OperationFailureException(operr("Eip [uuid:%s] already bound to router [uuid:%s]", oldRef.getEipUuid(), oldRef.getVirtualRouterVmUuid()));
+            }
+
             if (!Q.New(VirtualRouterEipRefVO.class)
                     .eq(VirtualRouterEipRefVO_.eipUuid, eipTuple.get(5, String.class))
                     .eq(VirtualRouterEipRefVO_.virtualRouterVmUuid, nic.getVmInstanceUuid())
@@ -532,18 +553,17 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
         syncEipsOnVirtualRouter(nic, false, new Completion(completion) {
             @Override
             public void success() {
-                List<Tuple> eips = findEipOnVmNic(nic);
+
+                List<Tuple> eips = findEipTuplesOnVmNic(nic);;
                 if (eips == null || eips.isEmpty()) {
                     completion.success();
                 } else {
                     for (Tuple eipTuple : eips) {
-                        if (Q.New(VirtualRouterEipRefVO.class)
+                        VirtualRouterEipRefVO ref = Q.New(VirtualRouterEipRefVO.class)
                                 .eq(VirtualRouterEipRefVO_.eipUuid, eipTuple.get(5, String.class))
                                 .eq(VirtualRouterEipRefVO_.virtualRouterVmUuid, nic.getVmInstanceUuid())
-                                .isExists()) {
-                            VirtualRouterEipRefVO ref = new VirtualRouterEipRefVO();
-                            ref.setEipUuid(eipTuple.get(5, String.class));
-                            ref.setVirtualRouterVmUuid(nic.getVmInstanceUuid());
+                                .find();
+                        if (ref != null) {
                             dbf.remove(ref);
 
                             UpdateQuery q = UpdateQuery.New(EipVO.class);

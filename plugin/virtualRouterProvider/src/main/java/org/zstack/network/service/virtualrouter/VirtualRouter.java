@@ -269,6 +269,11 @@ public class VirtualRouter extends ApplianceVmBase {
                             self.getUuid(), getSelf().getStatus(), msg.getPath()));
                 }
 
+                if (vr.getManagementNic() == null) {
+                    throw new OperationFailureException(operr("virtual router[uuid:%s] has no management nic that cannot make http call to %s",
+                            self.getUuid(), msg.getPath()));
+                }
+
                 restf.asyncJsonPost(buildUrl(vr.getManagementNic().getIp(), msg.getPath()), msg.getCommand(), new JsonAsyncRESTCallback<LinkedHashMap>(msg, chain) {
                     @Override
                     public void fail(ErrorCode err) {
