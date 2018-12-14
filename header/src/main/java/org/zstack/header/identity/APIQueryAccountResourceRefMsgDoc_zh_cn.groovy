@@ -17,7 +17,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIQueryAccountResourceRefMsg.class
 
             desc """查询账户资源引用"""

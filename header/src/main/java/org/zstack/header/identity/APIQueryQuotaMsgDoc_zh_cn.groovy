@@ -17,7 +17,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIQueryQuotaMsg.class
 
             desc """查询配额"""

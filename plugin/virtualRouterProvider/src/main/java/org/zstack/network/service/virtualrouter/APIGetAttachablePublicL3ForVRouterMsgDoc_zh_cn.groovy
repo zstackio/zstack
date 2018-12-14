@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIGetAttachablePublicL3ForVRouterMsg.class
 
             desc """"""

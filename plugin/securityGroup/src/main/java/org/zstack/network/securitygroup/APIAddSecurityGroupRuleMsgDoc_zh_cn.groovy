@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIAddSecurityGroupRuleMsg.class
 
             desc """用户可以使用AddSecurityGroupRule添加规则到安全组"""

@@ -1,5 +1,7 @@
 package org.zstack.core.captcha
 
+import org.zstack.core.captcha.APIRefreshCaptchaReply
+
 doc {
     title "RefreshCaptcha"
 
@@ -12,7 +14,6 @@ doc {
 			url "GET /v1/captcha/refresh"
 
 
-            
 
             clz APIRefreshCaptchaMsg.class
 

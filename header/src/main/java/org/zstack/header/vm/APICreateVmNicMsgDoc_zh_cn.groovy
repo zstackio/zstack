@@ -13,8 +13,7 @@ doc {
         request {
 			url "POST /v1/nics"
 
-
-            header(Authorization: 'OAuth the-session-uuid')
+			header (Authorization: 'OAuth the-session-uuid')
 
             clz APICreateVmNicMsg.class
 

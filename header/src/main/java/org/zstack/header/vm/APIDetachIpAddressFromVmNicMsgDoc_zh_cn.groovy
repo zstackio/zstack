@@ -1,5 +1,7 @@
 package org.zstack.header.vm
 
+import org.zstack.header.vm.APIDetachIpAddressFromVmNicEvent
+
 doc {
     title "DetachIpAddressFromVmNic"
 
@@ -11,8 +13,7 @@ doc {
         request {
 			url "DELETE /v1/nics/{vmNicUuid}/usedIps/{usedIpUuid}"
 
-
-            header(Authorization: 'OAuth the-session-uuid')
+			header (Authorization: 'OAuth the-session-uuid')
 
             clz APIDetachIpAddressFromVmNicMsg.class
 

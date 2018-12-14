@@ -15,7 +15,6 @@ doc {
 
 
 
-
             clz APILogInByLdapMsg.class
 
             desc """使用LDAP身份登录"""
@@ -58,6 +57,26 @@ doc {
 					desc "用户标签"
 					location "body"
 					type "List"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "verifyCode"
+					enclosedIn "logInByLdap"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "captchaUuid"
+					enclosedIn "logInByLdap"
+					desc ""
+					location "body"
+					type "String"
 					optional true
 					since "0.6"
 					

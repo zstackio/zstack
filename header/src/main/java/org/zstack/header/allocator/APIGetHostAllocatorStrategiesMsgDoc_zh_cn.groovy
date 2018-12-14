@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIGetHostAllocatorStrategiesMsg.class
 
             desc """获取物理机分配策略"""

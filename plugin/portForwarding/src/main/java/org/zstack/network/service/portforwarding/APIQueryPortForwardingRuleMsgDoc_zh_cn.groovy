@@ -18,7 +18,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIQueryPortForwardingRuleMsg.class
 
             desc """用户可以使用QueryPortForwardingRule来查询规则"""

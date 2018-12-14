@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIGetPortForwardingAttachableVmNicsMsg.class
 
             desc """获取可应用端口转发规则的云主机网卡列表"""

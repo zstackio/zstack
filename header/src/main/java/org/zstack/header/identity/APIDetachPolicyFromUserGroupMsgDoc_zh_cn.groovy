@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIDetachPolicyFromUserGroupMsg.class
 
             desc """将策略从用户组解绑"""

@@ -15,7 +15,6 @@ doc {
 
 
 
-
             clz APIValidateSessionMsg.class
 
             desc """验证会话的有效性"""

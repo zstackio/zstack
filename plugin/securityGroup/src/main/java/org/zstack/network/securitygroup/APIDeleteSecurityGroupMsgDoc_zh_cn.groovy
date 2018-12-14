@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIDeleteSecurityGroupMsg.class
 
             desc """删除安全组"""

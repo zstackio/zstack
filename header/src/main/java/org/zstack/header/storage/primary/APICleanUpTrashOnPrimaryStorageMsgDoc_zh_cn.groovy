@@ -13,8 +13,7 @@ doc {
         request {
 			url "PUT /v1/primary-storage/{uuid}/trash/actions"
 
-
-            header(Authorization: 'OAuth the-session-uuid')
+			header (Authorization: 'OAuth the-session-uuid')
 
             clz APICleanUpTrashOnPrimaryStorageMsg.class
 

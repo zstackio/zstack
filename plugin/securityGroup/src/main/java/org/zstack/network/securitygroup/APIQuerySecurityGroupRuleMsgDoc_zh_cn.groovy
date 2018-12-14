@@ -18,7 +18,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIQuerySecurityGroupRuleMsg.class
 
             desc """查询安全组规则"""

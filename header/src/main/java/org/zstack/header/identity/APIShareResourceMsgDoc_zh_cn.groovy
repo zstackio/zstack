@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIShareResourceMsg.class
 
             desc """共享资源给账户"""

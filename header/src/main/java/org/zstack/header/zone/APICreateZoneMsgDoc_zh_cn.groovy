@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APICreateZoneMsg.class
 
             desc """创建一个新的区域"""

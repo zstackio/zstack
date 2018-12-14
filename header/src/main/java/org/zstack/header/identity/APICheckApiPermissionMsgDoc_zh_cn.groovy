@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APICheckApiPermissionMsg.class
 
             desc """检查API权限"""

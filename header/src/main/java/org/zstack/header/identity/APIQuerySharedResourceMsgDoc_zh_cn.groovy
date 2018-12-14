@@ -17,7 +17,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIQuerySharedResourceMsg.class
 
             desc """查询共享资源"""

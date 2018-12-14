@@ -15,7 +15,6 @@ doc {
 
 
 
-
             clz APIGetVersionMsg.class
 
             desc """获取当前版本"""

@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APICleanInvalidLdapBindingMsg.class
 
             desc """清理无效的LDAP绑定"""

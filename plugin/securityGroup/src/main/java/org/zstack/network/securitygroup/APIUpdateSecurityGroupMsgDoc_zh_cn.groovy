@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIUpdateSecurityGroupMsg.class
 
             desc """更新安全组"""

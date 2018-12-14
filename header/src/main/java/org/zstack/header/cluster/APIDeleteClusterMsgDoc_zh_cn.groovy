@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIDeleteClusterMsg.class
 
             desc """管理员可以使用DeleteCluster命令来删除一个集群"""

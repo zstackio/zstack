@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APICreateClusterMsg.class
 
             desc """管理员可以使用CreateCluster命令来创建一个集群"""
