@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIUpdateConsoleProxyAgentMsg.class
 
             desc """更新控制台代理"""

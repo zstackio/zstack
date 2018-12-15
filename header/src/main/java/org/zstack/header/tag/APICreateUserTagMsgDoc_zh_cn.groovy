@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APICreateUserTagMsg.class
 
             desc """创建用户标签"""

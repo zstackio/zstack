@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIDeleteLdapServerMsg.class
 
             desc """删除LDAP服务器"""

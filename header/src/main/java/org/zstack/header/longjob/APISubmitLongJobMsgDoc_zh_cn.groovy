@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APISubmitLongJobMsg.class
 
             desc """提交长任务"""

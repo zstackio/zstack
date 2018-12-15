@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIDeleteAccountMsg.class
 
             desc """删除账户"""

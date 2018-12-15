@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIRemoveUserFromGroupMsg.class
 
             desc """从用户组中移除用户"""

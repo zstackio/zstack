@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIUpdateGlobalConfigMsg.class
 
             desc """更新全局配置"""

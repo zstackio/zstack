@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIChangeInstanceOfferingStateMsg.class
 
             desc """更改云主机规格的启用状态"""

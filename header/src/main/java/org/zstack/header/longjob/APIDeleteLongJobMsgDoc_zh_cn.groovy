@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIDeleteLongJobMsg.class
 
             desc """删除长任务"""

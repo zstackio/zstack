@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIAddLdapServerMsg.class
 
             desc """添加LDAP服务器"""

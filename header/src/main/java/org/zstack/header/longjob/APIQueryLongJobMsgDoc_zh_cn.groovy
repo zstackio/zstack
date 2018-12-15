@@ -18,7 +18,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIQueryLongJobMsg.class
 
             desc """查询长任务"""

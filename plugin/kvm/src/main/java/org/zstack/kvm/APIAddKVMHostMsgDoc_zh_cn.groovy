@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIAddKVMHostMsg.class
 
             desc """添加KVM主机"""

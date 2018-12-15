@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APICreateSystemTagMsg.class
 
             desc """创建系统标签"""

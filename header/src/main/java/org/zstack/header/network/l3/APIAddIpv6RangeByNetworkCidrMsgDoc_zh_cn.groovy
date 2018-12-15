@@ -13,8 +13,7 @@ doc {
         request {
 			url "POST /v1/l3-networks/{l3NetworkUuid}/ipv6-ranges/by-cidr"
 
-
-            header(Authorization: 'OAuth the-session-uuid')
+			header (Authorization: 'OAuth the-session-uuid')
 
             clz APIAddIpv6RangeByNetworkCidrMsg.class
 

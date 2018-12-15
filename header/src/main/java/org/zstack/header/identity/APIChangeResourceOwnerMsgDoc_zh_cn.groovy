@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIChangeResourceOwnerMsg.class
 
             desc """变更资源所有者"""

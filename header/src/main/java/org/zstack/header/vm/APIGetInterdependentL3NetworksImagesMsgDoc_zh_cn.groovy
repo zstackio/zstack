@@ -20,7 +20,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIGetInterdependentL3NetworksImagesMsg.class
 
             desc """"""

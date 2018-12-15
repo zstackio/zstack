@@ -18,7 +18,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIQueryClusterMsg.class
 
             desc """管理员可以使用QueryCluster命令来查询集群"""

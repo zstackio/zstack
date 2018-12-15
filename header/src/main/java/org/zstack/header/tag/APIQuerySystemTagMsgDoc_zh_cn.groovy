@@ -18,7 +18,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIQuerySystemTagMsg.class
 
             desc """查询系统标签"""

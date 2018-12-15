@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIChangeVipStateMsg.class
 
             desc """更改VIP启用状态"""

@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APICreateSecurityGroupMsg.class
 
             desc """用户可以使用CreateSecurityGroup来创建一个安全组"""

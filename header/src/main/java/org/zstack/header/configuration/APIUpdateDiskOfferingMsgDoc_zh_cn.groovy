@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIUpdateDiskOfferingMsg.class
 
             desc """更新云盘规格"""

@@ -18,7 +18,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIQueryPolicyMsg.class
 
             desc """查询策略"""

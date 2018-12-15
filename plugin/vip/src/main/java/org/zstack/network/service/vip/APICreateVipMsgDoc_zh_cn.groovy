@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APICreateVipMsg.class
 
             desc """创建VIP"""

@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIChangeZoneStateMsg.class
 
             desc """改变区域的可用状态"""

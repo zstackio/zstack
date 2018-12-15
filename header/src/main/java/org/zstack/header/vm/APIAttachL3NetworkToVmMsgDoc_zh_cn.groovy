@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIAttachL3NetworkToVmMsg.class
 
             desc """"""

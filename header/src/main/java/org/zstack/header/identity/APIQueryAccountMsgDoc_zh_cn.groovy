@@ -18,7 +18,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIQueryAccountMsg.class
 
             desc """查询账户"""

@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIReconnectHostMsg.class
 
             desc """重新连接物理机"""
