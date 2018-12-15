@@ -2549,6 +2549,10 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APIGetVmConsoleAddressMsg) msg);
         } else if (msg instanceof APISetVmHostnameMsg) {
             handle((APISetVmHostnameMsg) msg);
+        } else if (msg instanceof APISetVmBootModeMsg) {
+            handle((APISetVmBootModeMsg) msg);
+        } else if (msg instanceof APIDeleteVmBootModeMsg) {
+            handle((APIDeleteVmBootModeMsg) msg);
         } else if (msg instanceof APIDeleteVmHostnameMsg) {
             handle((APIDeleteVmHostnameMsg) msg);
         } else if (msg instanceof APISetVmStaticIpMsg) {
@@ -2746,6 +2750,29 @@ public class VmInstanceBase extends AbstractVmInstance {
                 completion.done();
             }
         });
+    }
+
+    private void handle(APISetVmBootModeMsg msg) {
+        if (!VmSystemTags.BOOT_MODE.hasTag(self.getUuid())) {
+            SystemTagCreator creator = VmSystemTags.BOOT_MODE.newSystemTagCreator(self.getUuid());
+            creator.setTagByTokens(map(
+                    e(VmSystemTags.BOOT_MODE_TOKEN, msg.getBootMode())
+            ));
+            creator.create();
+        } else {
+            VmSystemTags.BOOT_MODE.update(self.getUuid(), VmSystemTags.BOOT_MODE.instantiateTag(
+                    map(e(VmSystemTags.BOOT_MODE_TOKEN, msg.getBootMode()))
+            ));
+        }
+
+        APISetVmBootModeEvent evt = new APISetVmBootModeEvent(msg.getId());
+        bus.publish(evt);
+    }
+
+    private void handle(APIDeleteVmBootModeMsg msg) {
+        APIDeleteVmBootModeEvent evt = new APIDeleteVmBootModeEvent(msg.getId());
+        VmSystemTags.BOOT_MODE.delete(self.getUuid());
+        bus.publish(evt);
     }
 
     private void handle(APIDeleteVmHostnameMsg msg) {

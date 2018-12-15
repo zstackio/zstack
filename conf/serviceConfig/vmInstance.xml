@@ -108,6 +108,12 @@
         <name>org.zstack.header.vm.APISetVmHostnameMsg</name>
     </message>
     <message>
+        <name>org.zstack.header.vm.APISetVmBootModeMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.vm.APIDeleteVmBootModeMsg</name>
+    </message>
+    <message>
         <name>org.zstack.header.vm.APISetVmStaticIpMsg</name>
     </message>
     <message>
