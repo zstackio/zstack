@@ -47,6 +47,7 @@ import javax.persistence.LockModeType;
 import javax.persistence.Query;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -445,13 +446,50 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         bus.reply(msg, reply);
     }
 
-    private void cleanUpTrash(Completion completion) {
+    private void cleanTrash(Long trashId, final Completion completion) {
+        StorageTrashSpec spec = trash.getTrash(self.getUuid(), trashId);
+        if (spec == null) {
+            completion.success();
+            return;
+        }
+
+        DeleteBitsOnBackupStorageMsg msg = new DeleteBitsOnBackupStorageMsg();
+        msg.setInstallPath(spec.getInstallPath());
+        msg.setBackupStorageUuid(self.getUuid());
+        bus.makeTargetServiceIdByResourceUuid(msg, BackupStorageConstant.SERVICE_ID, self.getUuid());
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    BackupStorageVO srcBS = dbf.findByUuid(self.getUuid(), BackupStorageVO.class);
+                    srcBS.setAvailableCapacity(srcBS.getAvailableCapacity() + spec.getSize());
+                    dbf.update(srcBS);
+                    logger.info(String.format("Deleted image %s and returned space[size:%s] to BS[uuid:%s] after image migration",
+                            spec.getInstallPath(), spec.getSize(), self.getUuid()));
+
+                    trash.remove(spec.getId());
+                    completion.success();
+                } else {
+                    logger.warn(String.format("Failed to delete image %s in image migration.", spec.getInstallPath()));
+                    completion.fail(reply.getError());
+                }
+            }
+        });
+    }
+
+    private void cleanUpTrash(Long trashId, Completion completion) {
+        if (trashId != null) {
+            cleanTrash(trashId, completion);
+            return;
+        }
+
         Map<String, StorageTrashSpec> trashs = trash.getTrashList(self.getUuid(), trashLists);
         if (trashs.isEmpty()) {
             completion.success();
             return;
         }
 
+        List<ErrorCode> errs = new ArrayList<>();
         new While<>(trashs.entrySet()).all((t, coml) -> {
             StorageTrashSpec spec = t.getValue();
             DeleteBitsOnBackupStorageMsg msg = new DeleteBitsOnBackupStorageMsg();
@@ -471,6 +509,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
                         trash.remove(t.getKey(), self.getUuid());
                     } else {
                         logger.warn(String.format("Failed to delete image %s in image migration.", spec.getInstallPath()));
+                        errs.add(reply.getError());
                     }
                     coml.done();
                 }
@@ -478,7 +517,11 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         }).run(new NoErrorCompletion() {
             @Override
             public void done() {
-                completion.success();
+                if (errs.isEmpty()) {
+                    completion.success();
+                } else {
+                    completion.fail(errs.get(0));
+                }
             }
         });
     }
@@ -495,7 +538,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
             @Override
             public void run(SyncTaskChain chain) {
-                cleanUpTrash(new Completion(chain) {
+                cleanUpTrash(msg.getTrashId(), new Completion(chain) {
                     @Override
                     public void success() {
                         bus.publish(evt);

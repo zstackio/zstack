@@ -3,12 +3,15 @@ package org.zstack.header.storage.backup;
 import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.rest.SDK;
 
+import java.sql.Timestamp;
+
 /**
  * Created by mingjian.deng on 2018/12/10.
  */
 @SDK
 @PythonClassInventory
 public class StorageTrashSpec {
+    private Long id; // for delete one record
     private String resourceUuid;
     private String resourceType;
     private String storageUuid;
@@ -17,6 +20,7 @@ public class StorageTrashSpec {
     private boolean isFolder = false;
     private String hypervisorType;
     private Long size;
+    private Timestamp createDate;
 
     public StorageTrashSpec(String resourceUuid, String storageUuid, String installPath, Long size) {
         this.resourceUuid = resourceUuid;
@@ -96,5 +100,21 @@ public class StorageTrashSpec {
 
     public void setFolder(boolean folder) {
         isFolder = folder;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Timestamp getCreateDate() {
+        return createDate;
+    }
+
+    public void setCreateDate(Timestamp createDate) {
+        this.createDate = createDate;
     }
 }

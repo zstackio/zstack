@@ -10,15 +10,17 @@ trait Retry {
         int count = 0
         def ret = false
 
-        while (count < total) {
+        while ((count / 1000) < total) {
             try {
                 def r = c()
                 ret = r == null || (r != null && r instanceof Boolean && r)
             } catch (StopTestSuiteException e) {
                 throw e
             } catch (Throwable t) {
-                Utils.getLogger(Retry.class).debug("[retryInSecs:${count + 1}/${total}]", t)
-                if (total - count == 1) {
+                if (count % 1000 == 0) {
+                    Utils.getLogger(Retry.class).debug("[retryInSecs:${(count / 1000) + 1}/${total}]", t)
+                }
+                if (total - (count / 1000) == 1) {
                     throw t
                 }
             }
@@ -26,8 +28,8 @@ trait Retry {
             if (ret) {
                 return ret
             }
-            TimeUnit.SECONDS.sleep(interval)
-            count ++
+            TimeUnit.MILLISECONDS.sleep(interval * 100)
+            count += 100
         }
 
         return false

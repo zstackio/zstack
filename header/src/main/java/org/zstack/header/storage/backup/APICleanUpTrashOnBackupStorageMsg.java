@@ -17,6 +17,8 @@ import org.zstack.header.rest.RestRequest;
 public class APICleanUpTrashOnBackupStorageMsg extends APIMessage implements BackupStorageMessage {
     @APIParam(resourceType = BackupStorageVO.class, checkAccount = true)
     private String uuid;
+    @APIParam(required = false)
+    private Long trashId;
 
     public String getUuid() {
         return uuid;
@@ -29,6 +31,14 @@ public class APICleanUpTrashOnBackupStorageMsg extends APIMessage implements Bac
     @Override
     public String getBackupStorageUuid() {
         return uuid;
+    }
+
+    public Long getTrashId() {
+        return trashId;
+    }
+
+    public void setTrashId(Long trashId) {
+        this.trashId = trashId;
     }
 
     public static APICleanUpTrashOnBackupStorageMsg __example__() {

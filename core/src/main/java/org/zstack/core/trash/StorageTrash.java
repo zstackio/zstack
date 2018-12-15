@@ -14,6 +14,8 @@ public interface StorageTrash {
 
     Map<String, StorageTrashSpec> getTrashList(String storageUuid);
     Map<String, StorageTrashSpec>  getTrashList(String storageUuid, List<TrashType> types);
+    StorageTrashSpec getTrash(String storageUuid, Long trashId);
 
     void remove(String trashKey, String storageUuid);  // only remove db, not storage data
+    void remove(Long trashId);
 }

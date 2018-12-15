@@ -671,7 +671,46 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         bus.reply(msg, reply);
     }
 
-    private void cleanUpTrash(final Completion completion) {
+    private void cleanTrash(Long trashId, final Completion completion) {
+        StorageTrashSpec spec = trash.getTrash(self.getUuid(), trashId);
+        if (spec == null) {
+            completion.success();
+            return;
+        }
+
+        DeleteVolumeBitsOnPrimaryStorageMsg msg = new DeleteVolumeBitsOnPrimaryStorageMsg();
+        msg.setPrimaryStorageUuid(self.getUuid());
+        msg.setInstallPath(spec.getInstallPath());
+        msg.setHypervisorType(spec.getHypervisorType());
+        msg.setFolder(spec.isFolder());
+        bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
+        bus.send(msg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    logger.info(String.format("Deleted volume %s in Trash.", spec.getInstallPath()));
+                    IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+                    imsg.setPrimaryStorageUuid(self.getUuid());
+                    imsg.setDiskSize(spec.getSize());
+                    bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
+                    bus.send(imsg);
+                    trash.remove(trashId);
+                    logger.info(String.format("Returned space[size:%s] to PS %s after volume migration", spec.getSize(), self.getUuid()));
+                    completion.success();
+                } else {
+                    logger.warn(String.format("Failed to delete volume %s in Trash.", spec.getInstallPath()));
+                    completion.fail(reply.getError());
+                }
+            }
+        });
+    }
+
+    private void cleanUpTrash(Long trashId, final Completion completion) {
+        if (trashId != null) {
+            cleanTrash(trashId, completion);
+            return;
+        }
+
         Map<String, StorageTrashSpec> trashs = trash.getTrashList(self.getUuid(), trashLists);
         if (trashs.isEmpty()) {
             completion.success();
@@ -682,50 +721,31 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         new While<>(trashs.entrySet()).all((t, coml) -> {
             StorageTrashSpec spec = t.getValue();
 
-            FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
-            chain.setName(String.format("delete-volume-%s", spec.getInstallPath()));
-            chain.then(new NoRollbackFlow() {
+            DeleteVolumeBitsOnPrimaryStorageMsg msg = new DeleteVolumeBitsOnPrimaryStorageMsg();
+            msg.setPrimaryStorageUuid(self.getUuid());
+            msg.setInstallPath(spec.getInstallPath());
+            msg.setHypervisorType(spec.getHypervisorType());
+            msg.setFolder(spec.isFolder());
+            bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
+            bus.send(msg, new CloudBusCallBack(coml) {
                 @Override
-                public void run(FlowTrigger trigger, Map data) {
-                    DeleteVolumeBitsOnPrimaryStorageMsg msg = new DeleteVolumeBitsOnPrimaryStorageMsg();
-                    msg.setPrimaryStorageUuid(self.getUuid());
-                    msg.setInstallPath(spec.getInstallPath());
-                    msg.setHypervisorType(spec.getHypervisorType());
-                    msg.setFolder(spec.isFolder());
-                    bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
-                    bus.send(msg, new CloudBusCallBack(trigger) {
-                        @Override
-                        public void run(MessageReply reply) {
-                            if (reply.isSuccess()) {
-                                logger.info(String.format("Deleted volume %s in Trash.", spec.getInstallPath()));
-                            } else {
-                                logger.warn(String.format("Failed to delete volume %s in Trash.", spec.getInstallPath()));
-                            }
-                            trigger.next();
-                        }
-                    });
+                public void run(MessageReply reply) {
+                    if (reply.isSuccess()) {
+                        logger.debug(String.format("Deleted volume %s in Trash.", spec.getInstallPath()));
+                        IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+                        imsg.setPrimaryStorageUuid(self.getUuid());
+                        imsg.setDiskSize(spec.getSize());
+                        bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
+                        bus.send(imsg);
+                        trash.remove(t.getKey(), self.getUuid());
+                        logger.debug(String.format("Returned space[size:%s] to PS %s after volume migration", spec.getSize(), self.getUuid()));
+                    } else {
+                        logger.warn(String.format("Failed to delete volume %s in Trash.", spec.getInstallPath()));
+                        errs.add(reply.getError());
+                    }
+                    coml.done();
                 }
             });
-
-            chain.done(new FlowDoneHandler(coml) {
-                @Override
-                public void handle(Map data) {
-                    IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
-                    imsg.setPrimaryStorageUuid(self.getUuid());
-                    imsg.setDiskSize(spec.getSize());
-                    bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
-                    bus.send(imsg);
-                    trash.remove(t.getKey(), self.getUuid());
-                    logger.info(String.format("Returned space[size:%s] to PS %s after volume migration", spec.getSize(), self.getUuid()));
-                    coml.done();
-                }
-            }).error(new FlowErrorHandler(coml) {
-                @Override
-                public void handle(ErrorCode errCode, Map data) {
-                    errs.add(errCode);
-                    coml.done();
-                }
-            }).start();
         }).run(new NoErrorCompletion() {
             @Override
             public void done() {
@@ -750,7 +770,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
             @Override
             public void run(SyncTaskChain chain) {
-                cleanUpTrash(new Completion(chain) {
+                cleanUpTrash(msg.getTrashId(), new Completion(chain) {
                     @Override
                     public void success() {
                         bus.publish(evt);
