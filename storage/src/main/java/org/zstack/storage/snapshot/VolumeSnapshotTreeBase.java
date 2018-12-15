@@ -12,6 +12,7 @@ import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -289,6 +290,13 @@ public class VolumeSnapshotTreeBase {
                 break;
             }
         }
+
+        String primaryStorageType = Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.type)
+                .eq(PrimaryStorageVO_.uuid, getSelfInventory().getPrimaryStorageUuid()).findValue();
+
+        pluginRgty.getExtensionList(VolumeSnapshotDeletionProtector.class).stream().filter(p -> p.getPrimaryStorageType().equals(primaryStorageType))
+                // TODO: force all primary storage to implement VolumeSnapshotDeletionProtector
+                .findFirst().ifPresent(protector -> currentLeaf.getDescendants().forEach(protector::protect));
 
         chain.then(new Flow() {
             String __name__ = String.format("change-volume-snapshot-status-%s", VolumeSnapshotStatus.Deleting);
