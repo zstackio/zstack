@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIRequestConsoleAccessMsg.class
 
             desc """请求控制台访问地址"""

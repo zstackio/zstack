@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APICreateVmInstanceMsg.class
 
             desc """"""
@@ -191,7 +190,6 @@ doc {
 					optional true
 					since "0.6"
 					values ("InstantStart","JustCreate","CreateStopped")
-					
 				}
 				column {
 					name "rootVolumeSystemTags"
@@ -201,6 +199,7 @@ doc {
 					type "List"
 					optional true
 					since "3.0"
+					
 				}
 				column {
 					name "dataVolumeSystemTags"
@@ -210,6 +209,7 @@ doc {
 					type "List"
 					optional true
 					since "3.0"
+					
 				}
 			}
         }

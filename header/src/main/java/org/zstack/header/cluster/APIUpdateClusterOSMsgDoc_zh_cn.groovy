@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIUpdateClusterOSMsg.class
 
             desc """升级集群内物理机的操作系统"""

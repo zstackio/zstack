@@ -18,7 +18,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIQueryL2VxlanNetworkMsg.class
 
             desc """"""

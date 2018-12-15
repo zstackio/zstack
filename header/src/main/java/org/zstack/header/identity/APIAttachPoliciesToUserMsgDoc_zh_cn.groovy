@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIAttachPoliciesToUserMsg.class
 
             desc """将策略绑定到用户"""

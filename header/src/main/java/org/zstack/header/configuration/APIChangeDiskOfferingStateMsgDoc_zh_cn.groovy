@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIChangeDiskOfferingStateMsg.class
 
             desc """更改云盘规格的启用状态"""

@@ -17,7 +17,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIQueryNetworkServiceL3NetworkRefMsg.class
 
             desc """"""

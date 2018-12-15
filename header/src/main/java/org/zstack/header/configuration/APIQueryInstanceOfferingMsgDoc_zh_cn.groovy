@@ -18,7 +18,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIQueryInstanceOfferingMsg.class
 
             desc """查询云主机规格"""

@@ -18,7 +18,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIQueryDiskOfferingMsg.class
 
             desc """查询云盘规格"""

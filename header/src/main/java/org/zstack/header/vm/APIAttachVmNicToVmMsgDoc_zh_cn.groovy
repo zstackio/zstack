@@ -13,8 +13,7 @@ doc {
         request {
 			url "POST /v1/vm-instances/{vmInstanceUuid}/nices/{vmNicUuid}"
 
-
-            header(Authorization: 'OAuth the-session-uuid')
+			header (Authorization: 'OAuth the-session-uuid')
 
             clz APIAttachVmNicToVmMsg.class
 

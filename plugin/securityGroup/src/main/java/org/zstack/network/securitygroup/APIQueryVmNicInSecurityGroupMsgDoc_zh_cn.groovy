@@ -17,7 +17,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIQueryVmNicInSecurityGroupMsg.class
 
             desc """查询应用了安全组的网卡列表"""

@@ -15,7 +15,6 @@ doc {
 
 
 
-
             clz APILogInByLdapMsg.class
 
             desc """使用LDAP身份登录"""

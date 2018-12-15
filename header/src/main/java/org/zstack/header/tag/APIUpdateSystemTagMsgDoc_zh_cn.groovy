@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIUpdateSystemTagMsg.class
 
             desc """更新系统标签"""

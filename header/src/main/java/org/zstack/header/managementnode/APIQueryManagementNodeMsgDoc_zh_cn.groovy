@@ -18,7 +18,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIQueryManagementNodeMsg.class
 
             desc """查询管理节点"""

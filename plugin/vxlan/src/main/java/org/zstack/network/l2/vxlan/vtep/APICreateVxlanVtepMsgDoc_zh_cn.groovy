@@ -13,8 +13,7 @@ doc {
         request {
 			url "POST /v1/l2-networks/vxlan/vteps"
 
-
-            header(Authorization: 'OAuth the-session-uuid')
+			header (Authorization: 'OAuth the-session-uuid')
 
             clz APICreateVxlanVtepMsg.class
 

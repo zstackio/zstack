@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIChangeSecurityGroupStateMsg.class
 
             desc """改变安全组状态"""

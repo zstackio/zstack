@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIDeletePortForwardingRuleMsg.class
 
             desc """删除端口转发规则"""

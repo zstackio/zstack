@@ -16,7 +16,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIGetCandidateBackupStorageForCreatingImageMsg.class
 
             desc """"""

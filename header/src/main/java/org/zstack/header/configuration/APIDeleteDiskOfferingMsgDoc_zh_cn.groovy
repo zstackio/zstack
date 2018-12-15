@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIDeleteDiskOfferingMsg.class
 
             desc """删除云盘规格"""

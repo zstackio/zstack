@@ -15,7 +15,6 @@ doc {
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-
             clz APIGetAccountQuotaUsageMsg.class
 
             desc """获取账户配额使用情况"""
