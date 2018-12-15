@@ -61,26 +61,6 @@ doc {
 					since "0.6"
 					
 				}
-				column {
-					name "verifyCode"
-					enclosedIn "logInByLdap"
-					desc ""
-					location "body"
-					type "String"
-					optional true
-					since "0.6"
-					
-				}
-				column {
-					name "captchaUuid"
-					enclosedIn "logInByLdap"
-					desc ""
-					location "body"
-					type "String"
-					optional true
-					since "0.6"
-					
-				}
 			}
         }
 
