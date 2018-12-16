@@ -715,6 +715,10 @@ public class NfsPrimaryStorageKVMBackendCommands {
     public static class NfsToNfsMigrateBitsCmd extends NfsPrimaryStorageAgentCommand implements HasThreadContext {
         public String srcFolderPath;
         public String dstFolderPath;
+        public boolean isMounted = false;
+        public String url;
+        public String options;
+        public String mountPath;
     }
 
     public static class NfsToNfsMigrateBitsRsp extends NfsPrimaryStorageAgentResponse {

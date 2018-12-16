@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
@@ -13,8 +14,11 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.TransactionalCallback;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.jsonlabel.JsonLabelVO;
+import org.zstack.core.jsonlabel.JsonLabelVO_;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -36,17 +40,21 @@ import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.backup.BackupStorageCanonicalEvents.BackupStorageStatusChangedData;
 import org.zstack.header.storage.backup.BackupStorageErrors.Opaque;
+import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
-import static org.zstack.core.Platform.*;
 
 import javax.persistence.LockModeType;
 import javax.persistence.Query;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
+import static org.zstack.core.Platform.operr;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public abstract class BackupStorageBase extends AbstractBackupStorage {
@@ -74,6 +82,8 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
     protected EventFacade evtf;
     @Autowired
     protected RESTFacade restf;
+
+    protected static List<String> trashLists = CollectionDSL.list("migrateImage-%");
 
     abstract protected void handle(DownloadImageMsg msg);
 
@@ -417,6 +427,10 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
                 handle((APIUpdateBackupStorageMsg) msg);
             } else if (msg instanceof APIReconnectBackupStorageMsg) {
                 handle((APIReconnectBackupStorageMsg) msg);
+            } else if (msg instanceof APICleanUpTrashOnBackupStorageMsg) {
+                handle((APICleanUpTrashOnBackupStorageMsg) msg);
+            } else if (msg instanceof APIGetTrashOnBackupStorageMsg) {
+                handle((APIGetTrashOnBackupStorageMsg) msg);
             } else {
                 bus.dealWithUnknownMessage(msg);
             }
@@ -424,6 +438,97 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
             bus.logExceptionWithMessageDump(msg, e);
             bus.replyErrorByMessageType(msg, e);
         }
+    }
+
+    protected List<JsonLabelVO> getTrashList() {
+        List<JsonLabelVO> labels = new ArrayList<>();
+        for (String trashList: trashLists) {
+            labels.addAll(Q.New(JsonLabelVO.class).eq(JsonLabelVO_.resourceUuid, self.getUuid()).like(JsonLabelVO_.labelKey, trashList).list());
+        }
+        return labels;
+    }
+
+    private void handle(final APIGetTrashOnBackupStorageMsg msg) {
+        APIGetTrashOnBackupStorageReply reply = new APIGetTrashOnBackupStorageReply();
+        List<JsonLabelVO> labels = getTrashList();
+        labels.forEach(label -> {
+            StorageTrash trash = JSONObjectUtil.toObject(label.getLabelValue(), StorageTrash.class);
+            reply.getStorageTrashes().add(trash);
+        });
+        bus.reply(msg, reply);
+    }
+
+    private void cleanUpTrash(Completion completion) {
+        List<JsonLabelVO> labels = getTrashList();
+        if (labels.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        new While<>(labels).all((label, coml) -> {
+            StorageTrash trash = JSONObjectUtil.toObject(label.getLabelValue(), StorageTrash.class);
+
+            DeleteBitsOnBackupStorageMsg msg = new DeleteBitsOnBackupStorageMsg();
+            msg.setInstallPath(trash.getInstallPath());
+            msg.setBackupStorageUuid(label.getResourceUuid());
+            bus.makeTargetServiceIdByResourceUuid(msg, BackupStorageConstant.SERVICE_ID, label.getResourceUuid());
+            bus.send(msg, new CloudBusCallBack(coml) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (reply.isSuccess()) {
+                        BackupStorageVO srcBS = dbf.findByUuid(label.getResourceUuid(), BackupStorageVO.class);
+                        srcBS.setAvailableCapacity(srcBS.getAvailableCapacity() + trash.getSize());
+                        dbf.update(srcBS);
+                        logger.info(String.format("Deleted image %s and returned space[size:%s] to BS[uuid:%s] after image migration",
+                                trash.getInstallPath(), trash.getSize(), label.getResourceUuid()));
+                        dbf.remove(label);
+                    } else {
+                        logger.warn(String.format("Failed to delete image %s in image migration.", trash.getInstallPath()));
+                    }
+                    coml.done();
+                }
+            });
+        }).run(new NoErrorCompletion() {
+            @Override
+            public void done() {
+                completion.success();
+            }
+        });
+    }
+
+    private void handle(final APICleanUpTrashOnBackupStorageMsg msg) {
+        APICleanUpTrashOnBackupStorageEvent evt = new APICleanUpTrashOnBackupStorageEvent(msg.getId());
+        thdf.chainSubmit(new ChainTask(msg) {
+            private String name = String.format("cleanup-trash-on-%s", self.getUuid());
+
+            @Override
+            public String getSyncSignature() {
+                return name;
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                cleanUpTrash(new Completion(chain) {
+                    @Override
+                    public void success() {
+                        bus.publish(evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setError(errorCode);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return name;
+            }
+        });
     }
 
     private void handle(APIReconnectBackupStorageMsg msg) {

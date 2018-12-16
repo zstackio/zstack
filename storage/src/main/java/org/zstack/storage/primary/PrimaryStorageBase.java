@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
@@ -14,6 +15,8 @@ import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.job.JobQueueFacade;
+import org.zstack.core.jsonlabel.JsonLabelVO;
+import org.zstack.core.jsonlabel.JsonLabelVO_;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
@@ -35,6 +38,7 @@ import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.storage.backup.StorageTrash;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent.PrimaryStorageDeletedData;
 import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent.PrimaryStorageStatusChangedData;
@@ -47,8 +51,10 @@ import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeReportPrimaryStorageCapacityUsageMsg;
 import org.zstack.header.volume.VolumeReportPrimaryStorageCapacityUsageReply;
+import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import static org.zstack.core.Platform.*;
 
@@ -154,6 +160,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     protected String getSyncId() {
         return String.format("primaryStorage-%s", self.getUuid());
     }
+
+    protected static List<String> trashLists = CollectionDSL.list("migrateVolume-%", "migrateVolumeSnapshot-%");
 
     protected void fireDisconnectedCanonicalEvent(ErrorCode reason) {
         PrimaryStorageCanonicalEvent.DisconnectedData data = new PrimaryStorageCanonicalEvent.DisconnectedData();
@@ -634,6 +642,10 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((APISyncPrimaryStorageCapacityMsg) msg);
         } else if (msg instanceof APICleanUpImageCacheOnPrimaryStorageMsg) {
             handle((APICleanUpImageCacheOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof APICleanUpTrashOnPrimaryStorageMsg) {
+            handle((APICleanUpTrashOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof APIGetTrashOnPrimaryStorageMsg) {
+            handle((APIGetTrashOnPrimaryStorageMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -641,6 +653,126 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     protected void handle(APICleanUpImageCacheOnPrimaryStorageMsg msg) {
         throw new OperationFailureException(operr("operation not supported"));
+    }
+
+    protected List<JsonLabelVO> getTrashList() {
+        List<JsonLabelVO> labels = new ArrayList<>();
+        for (String trash: trashLists) {
+            labels.addAll(Q.New(JsonLabelVO.class).eq(JsonLabelVO_.resourceUuid, self.getUuid()).like(JsonLabelVO_.labelKey, trash).list());
+        }
+        return labels;
+    }
+
+    private void handle(final APIGetTrashOnPrimaryStorageMsg msg) {
+        APIGetTrashOnPrimaryStorageReply reply = new APIGetTrashOnPrimaryStorageReply();
+        List<JsonLabelVO> labels = getTrashList();
+        labels.forEach(label -> {
+            StorageTrash trash = JSONObjectUtil.toObject(label.getLabelValue(), StorageTrash.class);
+            reply.getStorageTrashes().add(trash);
+        });
+        bus.reply(msg, reply);
+    }
+
+    private void cleanUpTrash(final Completion completion) {
+        List<JsonLabelVO> labels = getTrashList();
+        if (labels.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        List<ErrorCode> errs = new ArrayList<>();
+        new While<>(labels).all((label, coml) -> {
+            StorageTrash trash = JSONObjectUtil.toObject(label.getLabelValue(), StorageTrash.class);
+
+            FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+            chain.setName(String.format("delete-volume-%s", trash.getInstallPath()));
+            chain.then(new NoRollbackFlow() {
+                @Override
+                public void run(FlowTrigger trigger, Map data) {
+                    DeleteVolumeBitsOnPrimaryStorageMsg msg = new DeleteVolumeBitsOnPrimaryStorageMsg();
+                    msg.setPrimaryStorageUuid(self.getUuid());
+                    msg.setInstallPath(trash.getInstallPath());
+                    msg.setHypervisorType(trash.getHypervisorType());
+                    msg.setFolder(true);
+                    bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
+                    bus.send(msg, new CloudBusCallBack(trigger) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (reply.isSuccess()) {
+                                logger.info(String.format("Deleted volume %s in Trash.", trash.getInstallPath()));
+                            } else {
+                                logger.warn(String.format("Failed to delete volume %s in Trash.", trash.getInstallPath()));
+                            }
+                            trigger.next();
+                        }
+                    });
+                }
+            });
+
+            chain.done(new FlowDoneHandler(coml) {
+                @Override
+                public void handle(Map data) {
+                    IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+                    imsg.setPrimaryStorageUuid(self.getUuid());
+                    imsg.setDiskSize(trash.getSize());
+                    bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
+                    bus.send(imsg);
+                    dbf.remove(label);
+                    logger.info(String.format("Returned space[size:%s] to PS %s after volume migration", trash.getSize(), self.getUuid()));
+                    coml.done();
+                }
+            }).error(new FlowErrorHandler(coml) {
+                @Override
+                public void handle(ErrorCode errCode, Map data) {
+                    errs.add(errCode);
+                    coml.done();
+                }
+            }).start();
+        }).run(new NoErrorCompletion() {
+            @Override
+            public void done() {
+                if (errs.isEmpty()) {
+                    completion.success();
+                } else {
+                    completion.fail(errs.get(0));
+                }
+            }
+        });
+    }
+
+    protected void handle(final APICleanUpTrashOnPrimaryStorageMsg msg) {
+        APICleanUpTrashOnPrimaryStorageEvent evt = new APICleanUpTrashOnPrimaryStorageEvent(msg.getId());
+        thdf.chainSubmit(new ChainTask(msg) {
+            private String name = String.format("cleanup-trash-on-%s", self.getUuid());
+
+            @Override
+            public String getSyncSignature() {
+                return name;
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                cleanUpTrash(new Completion(chain) {
+                    @Override
+                    public void success() {
+                        bus.publish(evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setError(errorCode);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return name;
+            }
+        });
     }
 
     private void handle(final APISyncPrimaryStorageCapacityMsg msg) {

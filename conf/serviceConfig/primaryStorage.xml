@@ -73,4 +73,12 @@
         <name>org.zstack.header.storage.primary.APIQueryImageCacheMsg</name>
         <serviceId>query</serviceId>
     </message>
+
+    <message>
+        <name>org.zstack.header.storage.primary.APICleanUpTrashOnPrimaryStorageMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.primary.APIGetTrashOnPrimaryStorageMsg</name>
+    </message>
 </service>
