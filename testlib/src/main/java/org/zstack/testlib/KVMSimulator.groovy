@@ -1,6 +1,7 @@
 package org.zstack.testlib
 
 import org.springframework.http.HttpEntity
+import org.zstack.core.Platform
 import org.zstack.core.db.Q
 import org.zstack.header.Constants
 import org.zstack.header.vm.VmInstanceState
@@ -12,6 +13,7 @@ import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 
 import javax.persistence.Tuple
+import java.nio.file.Paths
 
 /**
  * Created by xing5 on 2017/6/6.
@@ -93,10 +95,11 @@ class KVMSimulator implements Simulator {
             return new KVMAgentCommands.MergeSnapshotRsp()
         }
 
-        spec.simulator(KVMConstant.KVM_TAKE_VOLUME_SNAPSHOT_PATH) {
+        spec.simulator(KVMConstant.KVM_TAKE_VOLUME_SNAPSHOT_PATH) { HttpEntity<String> e, EnvSpec espec ->
+            KVMAgentCommands.TakeSnapshotCmd cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.TakeSnapshotCmd.class)
             def rsp = new KVMAgentCommands.TakeSnapshotResponse()
-            rsp.newVolumeInstallPath = "/new/volume/install/path"
-            rsp.snapshotInstallPath = "/snapshot/install/path"
+            rsp.newVolumeInstallPath = Paths.get(cmd.installPath).getParent().resolve("snapshots").resolve(Platform.uuid).toString()
+            rsp.snapshotInstallPath = cmd.installPath
             rsp.size = 1
             return rsp
         }

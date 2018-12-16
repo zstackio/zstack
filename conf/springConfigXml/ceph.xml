@@ -73,4 +73,10 @@
             <zstack:extension interface="org.zstack.header.vm.ChangeVmImageExtensionPoint" />
         </zstack:plugin>
     </bean>
+
+    <bean id="CephSnapshotProtector" class="org.zstack.storage.ceph.primary.CephSnapshotProtector">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.storage.snapshot.VolumeSnapshotDeletionProtector"/>
+        </zstack:plugin>
+    </bean>
 </beans>

@@ -56,6 +56,13 @@
         </property>
     </bean>
 
+    <bean id="LocalStorageSnapshotDeletionProtector"
+          class="org.zstack.storage.primary.local.LocalStorageSnapshotDeletionProtector">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.storage.snapshot.VolumeSnapshotDeletionProtector"/>
+        </zstack:plugin>
+    </bean>
+
     <bean id="LocalStorageKvmSftpBackupStorageMediatorImpl"
           class="org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl">
         <zstack:plugin>
