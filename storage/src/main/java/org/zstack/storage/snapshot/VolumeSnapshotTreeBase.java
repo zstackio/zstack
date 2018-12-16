@@ -259,6 +259,9 @@ public class VolumeSnapshotTreeBase {
         });
     }
 
+    // TODO: BUG FIX, when deleting a volume the cascade extension will send messages to all snapshots
+    // of this volume, which the oldest snapshot will delete descendant snapshots and set the volumeUuid
+    // to NULL for all snapshots, so the after messages are useless
     private void deletion(final VolumeSnapshotDeletionMsg msg, final NoErrorCompletion completion) {
         final VolumeSnapshotDeletionReply reply = new VolumeSnapshotDeletionReply();
 
@@ -296,7 +299,11 @@ public class VolumeSnapshotTreeBase {
 
         pluginRgty.getExtensionList(VolumeSnapshotDeletionProtector.class).stream().filter(p -> p.getPrimaryStorageType().equals(primaryStorageType))
                 // TODO: force all primary storage to implement VolumeSnapshotDeletionProtector
-                .findFirst().ifPresent(protector -> currentLeaf.getDescendants().forEach(protector::protect));
+                .findFirst().ifPresent(protector -> currentLeaf.getDescendants().forEach(sp -> {
+            if (sp.getVolumeUuid() != null) {
+                protector.protect(sp);
+            }
+        }));
 
         chain.then(new Flow() {
             String __name__ = String.format("change-volume-snapshot-status-%s", VolumeSnapshotStatus.Deleting);
