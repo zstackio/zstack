@@ -252,7 +252,7 @@ public class ProgressReportService extends AbstractService implements Management
 
         // sort by time with ASC
         for (Map.Entry<String, List<TaskProgressInventory>> e : map.entrySet()) {
-            e.getValue().sort((o1, o2) -> (int) (o1.getTime() - o2.getTime()));
+            e.getValue().sort(Comparator.comparingLong(TaskProgressInventory::getTime));
         }
 
         for (Map.Entry<String, List<TaskProgressInventory>> e : map.entrySet()) {
