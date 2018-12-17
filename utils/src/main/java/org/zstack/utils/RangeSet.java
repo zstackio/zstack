@@ -117,7 +117,7 @@ public class RangeSet {
         Collections.sort(ranges, new Comparator<Range>() {
             @Override
             public int compare(Range o1, Range o2) {
-                return (int)(o1.start - o2.start);
+                return Long.compare(o1.start, o2.start);
             }
         });
     }
