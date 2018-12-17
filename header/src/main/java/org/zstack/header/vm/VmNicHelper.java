@@ -53,7 +53,7 @@ public class VmNicHelper {
     public static List<String> getIpAddresses(VmNicVO nic) {
         List<String> ret = new ArrayList<>();
         for (UsedIpVO ip : nic.getUsedIps()) {
-            ret.add(ip.getL3NetworkUuid());
+            ret.add(ip.getIp());
         }
 
         return ret;
