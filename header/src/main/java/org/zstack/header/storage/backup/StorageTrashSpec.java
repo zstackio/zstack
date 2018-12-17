@@ -8,35 +8,30 @@ import org.zstack.header.rest.SDK;
  */
 @SDK
 @PythonClassInventory
-public class StorageTrash {
+public class StorageTrashSpec {
     private String resourceUuid;
     private String resourceType;
     private String storageUuid;
     private String storageType;
     private String installPath;
+    private boolean isFolder = false;
     private String hypervisorType;
     private Long size;
 
-    public StorageTrash() {
+    public StorageTrashSpec(String resourceUuid, String storageUuid, String installPath, Long size) {
+        this.resourceUuid = resourceUuid;
+        this.storageUuid = storageUuid;
+        this.installPath = installPath;
+        this.size = size;
     }
 
-    public StorageTrash(String resourceUuid, String resourceType, String storageUuid, String storageType, String installPath, Long size) {
+    public StorageTrashSpec(String resourceUuid, String resourceType, String storageUuid, String storageType, String installPath, Long size) {
         this.resourceUuid = resourceUuid;
         this.resourceType = resourceType;
         this.storageUuid = storageUuid;
         this.storageType = storageType;
         this.installPath = installPath;
         this.size = size;
-    }
-
-    public StorageTrash(String resourceUuid, String resourceType, String storageUuid, String storageType, String installPath, String hypervisorType, Long size) {
-        this.resourceUuid = resourceUuid;
-        this.resourceType = resourceType;
-        this.storageUuid = storageUuid;
-        this.storageType = storageType;
-        this.installPath = installPath;
-        this.size = size;
-        this.hypervisorType = hypervisorType;
     }
 
     public String getResourceUuid() {
@@ -93,5 +88,13 @@ public class StorageTrash {
 
     public void setHypervisorType(String hypervisorType) {
         this.hypervisorType = hypervisorType;
+    }
+
+    public boolean isFolder() {
+        return isFolder;
+    }
+
+    public void setFolder(boolean folder) {
+        isFolder = folder;
     }
 }
