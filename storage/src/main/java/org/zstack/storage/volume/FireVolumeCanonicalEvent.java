@@ -40,4 +40,15 @@ public class FireVolumeCanonicalEvent {
         d.setAccountUuid(accountUuid);
         evtf.fire(VolumeCanonicalEvents.VOLUME_STATUS_CHANGED_PATH, d);
     }
+
+    public void fireVolumeStatusChangedEvent(VolumeStatus oldStatus, VolumeInventory vol, String accountUuid) {
+        VolumeCanonicalEvents.VolumeStatusChangedData d = new VolumeCanonicalEvents.VolumeStatusChangedData();
+        d.setInventory(vol);
+        d.setDate(new Date());
+        d.setNewStatus(vol.getStatus());
+        d.setOldStatus(oldStatus == null ? null : oldStatus.toString());
+        d.setVolumeUuid(vol.getUuid());
+        d.setAccountUuid(accountUuid);
+        evtf.fire(VolumeCanonicalEvents.VOLUME_STATUS_CHANGED_PATH, d);
+    }
 }

@@ -545,9 +545,11 @@ public class VolumeBase implements Volume {
                                         arg.volumeAfterExpunge(inv);
                                     }
                                 });
-
+                        VolumeInventory volumeInventory = getSelfInventory();
+                        String accountUuid = acntMgr.getOwnerAccountUuidOfResource(self.getUuid());
                         dbf.remove(self);
                         completion.success();
+                        new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(VolumeStatus.Deleted, volumeInventory, accountUuid);
                     }
                 }
             });
@@ -560,8 +562,11 @@ public class VolumeBase implements Volume {
                         }
                     });
 
+            VolumeInventory volumeInventory = getSelfInventory();
+            String accountUuid = acntMgr.getOwnerAccountUuidOfResource(self.getUuid());
             dbf.remove(self);
             completion.success();
+            new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(VolumeStatus.Deleted, volumeInventory, accountUuid);
         }
     }
 
@@ -806,8 +811,10 @@ public class VolumeBase implements Volume {
                                     if (deletionPolicy == VolumeDeletionPolicy.Direct) {
                                         self.setStatus(VolumeStatus.Deleted);
                                         self = dbf.updateAndRefresh(self);
-                                        new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(oldStatus, getSelfInventory());
+                                        String accountUuid = acntMgr.getOwnerAccountUuidOfResource(self.getUuid());
+                                        VolumeInventory volumeInventory = getSelfInventory();
                                         dbf.remove(self);
+                                        new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(oldStatus, volumeInventory, accountUuid);
                                     } else if (deletionPolicy == VolumeDeletionPolicy.Delay) {
                                         self.setStatus(VolumeStatus.Deleted);
                                         self = dbf.updateAndRefresh(self);
@@ -820,8 +827,9 @@ public class VolumeBase implements Volume {
                                         callVmJustBeforeDeleteFromDbExtensionPoint();
                                         VolumeInventory inventory = getSelfInventory();
                                         inventory.setStatus(VolumeStatus.Deleted.toString());
-                                        new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(oldStatus, inventory);
+                                        String accountUuid = acntMgr.getOwnerAccountUuidOfResource(self.getUuid());
                                         dbf.remove(self);
+                                        new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(oldStatus, inventory, accountUuid);
                                     } else {
                                         throw new CloudRuntimeException(String.format("Invalid deletionPolicy:%s", deletionPolicy));
                                     }
