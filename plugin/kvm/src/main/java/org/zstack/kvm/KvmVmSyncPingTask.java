@@ -72,12 +72,12 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
                     vmsToSkip.putIfAbsent(vmUuid, true);
                 }
             }
-        }, StartVmInstanceMsg.class, MigrateVmMsg.class, StopVmInstanceMsg.class, APIPauseVmInstanceMsg.class);
+        }, StartVmInstanceMsg.class, MigrateVmMsg.class, StopVmInstanceMsg.class, APIPauseVmInstanceMsg.class, APIMigrateVmMsg.class);
     }
 
     @Override
     public List<Class> getReplyMessageClassForPreSendingExtensionPoint() {
-        return Arrays.asList(StartVmInstanceReply.class, MigrateVmReply.class, StopVmInstanceReply.class, APIPauseVmInstanceEvent.class);
+        return Arrays.asList(StartVmInstanceReply.class, MigrateVmReply.class, StopVmInstanceReply.class, APIPauseVmInstanceEvent.class, APIMigrateVmEvent.class);
     }
 
     @Override
@@ -87,6 +87,8 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
             vmUuid = ((VmInstanceMessage) msg).getVmInstanceUuid();
         } else if (replyOrEvent instanceof APIPauseVmInstanceEvent) {
             vmUuid = ((APIPauseVmInstanceEvent) replyOrEvent).getInventory().getUuid();
+        } else if (replyOrEvent instanceof APIMigrateVmEvent) {
+            vmUuid = ((APIMigrateVmEvent) replyOrEvent).getInventory().getUuid();
         }
 
         if (vmUuid != null) {
