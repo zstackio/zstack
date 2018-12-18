@@ -832,6 +832,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                 callVmJustBeforeDeleteFromDbExtensionPoint();
 
+                dbf.reload(self);
                 dbf.removeCollection(self.getVmNics(), VmNicVO.class);
                 dbf.remove(self);
                 logger.debug(String.format("successfully expunged the vm[uuid:%s]", self.getUuid()));
