@@ -1573,7 +1573,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     protected void handle(final InitPrimaryStorageOnHostConnectedMsg msg) {
         final InitPrimaryStorageOnHostConnectedReply reply = new InitPrimaryStorageOnHostConnectedReply();
-        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getHostUuid());
+        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getHostUuid(), false);
         final LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
 
         bkd.handle(msg, new ReturnValueCompletion<PhysicalCapacityUsage>(msg) {
@@ -2484,10 +2484,21 @@ public class LocalStorageBase extends PrimaryStorageBase {
     }
 
     protected LocalStorageHypervisorFactory getHypervisorBackendFactoryByHostUuid(String hostUuid) {
+        return getHypervisorBackendFactoryByHostUuid(hostUuid, true);
+    }
+
+    protected LocalStorageHypervisorFactory getHypervisorBackendFactoryByHostUuid(String hostUuid, boolean checkPsRef) {
+        if (checkPsRef && !Q.New(LocalStorageHostRefVO.class)
+                .eq(LocalStorageHostRefVO_.hostUuid, hostUuid)
+                .eq(LocalStorageHostRefVO_.primaryStorageUuid, self.getUuid()).isExists()) {
+            throw new OperationFailureException(operr("host[uuid:%s] cannot access local storage[uuid:%s], maybe it is detached", hostUuid, self.getUuid()));
+        }
+
         SimpleQuery<HostVO> q = dbf.createQuery(HostVO.class);
         q.select(HostVO_.hypervisorType);
         q.add(HostVO_.uuid, Op.EQ, hostUuid);
         String hvType = q.findValue();
+
         return getHypervisorBackendFactory(hvType);
     }
 
