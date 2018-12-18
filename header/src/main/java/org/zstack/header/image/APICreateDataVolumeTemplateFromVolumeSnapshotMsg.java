@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
         method = HttpMethod.POST,
         parameterName = "params"
 )
-@APIDefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)
+@APIDefaultTimeout(timeunit = TimeUnit.HOURS, value = 72)
 public class APICreateDataVolumeTemplateFromVolumeSnapshotMsg extends APICreateMessage implements APIAuditor {
     @APIParam(resourceType = VolumeSnapshotVO.class, checkAccount = true, operationTarget = true)
     private String snapshotUuid;
