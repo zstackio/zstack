@@ -1,11 +1,9 @@
 package org.zstack.utils;
 
 import okhttp3.*;
-import okhttp3.internal.http.HttpMethod;
 import okhttp3.logging.HttpLoggingInterceptor;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
-import sun.net.www.http.HttpClient;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -217,8 +215,7 @@ public class HTTP {
         public <T> T call(Class<T> clz) {
             build();
 
-            try {
-                Response rsp = call();
+            try (Response rsp = call()) {
                 String body = rsp.body().string();
                 if (rsp.isSuccessful()) {
                     throw new HTTPFailureException(rsp.code(), body);
