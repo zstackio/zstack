@@ -1,5 +1,6 @@
 package org.zstack.storage.primary.smp;
 
+import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.storage.snapshot.VolumeSnapshotDeletionProtector;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
@@ -15,11 +16,13 @@ public class SMPSnapshotDeletionProtector implements VolumeSnapshotDeletionProte
     }
 
     @Override
-    public void protect(VolumeSnapshotInventory snapshot) {
+    public void protect(VolumeSnapshotInventory snapshot, Completion completion) {
         Path path = Paths.get(snapshot.getPrimaryStorageInstallPath());
         if (!path.getParent().toString().contains(snapshot.getVolumeUuid())) {
-            throw new OperationFailureException(inerr("the snapshot[name:%s, uuid:%s, path: %s] seems not belong to the volume[uuid:%s]",
+            completion.fail(inerr("the snapshot[name:%s, uuid:%s, path: %s] seems not belong to the volume[uuid:%s]",
                     snapshot.getName(), snapshot.getUuid(), snapshot.getPrimaryStorageInstallPath(), snapshot.getVolumeUuid()));
+            return;
         }
+        completion.success();
     }
 }
