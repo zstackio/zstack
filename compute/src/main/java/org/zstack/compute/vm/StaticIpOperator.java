@@ -13,6 +13,7 @@ import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.TagUtils;
 import org.zstack.utils.network.IPv6NetworkUtils;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +36,28 @@ public class StaticIpOperator {
         for (Map<String, String> tokens : tokenList) {
             String l3Uuid = tokens.get(VmSystemTags.STATIC_IP_L3_UUID_TOKEN);
             String ip = tokens.get(VmSystemTags.STATIC_IP_TOKEN);
+            ip = IPv6NetworkUtils.ipv6TagValueToAddress(ip);
+            ret.put(l3Uuid, ip);
+        }
+
+        return ret;
+    }
+
+    public Map<String, String> getStaticIpbySystemTag(List<String> systemTags) {
+        Map<String, String> ret = new HashMap<>();
+
+        if (systemTags == null) {
+            return ret;
+        }
+
+        for (String sysTag : systemTags) {
+            if(!VmSystemTags.STATIC_IP.isMatch(sysTag)) {
+                continue;
+            }
+
+            Map<String, String> token = TagUtils.parse(VmSystemTags.STATIC_IP.getTagFormat(), sysTag);
+            String l3Uuid = token.get(VmSystemTags.STATIC_IP_L3_UUID_TOKEN);
+            String ip = token.get(VmSystemTags.STATIC_IP_TOKEN);
             ip = IPv6NetworkUtils.ipv6TagValueToAddress(ip);
             ret.put(l3Uuid, ip);
         }

@@ -1163,7 +1163,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         return String.format("vmNic-%s", nicUuid);
     }
 
-    private void doAttachL3ToNic(final VmNicInventory nic, final String l3Uuid, final Completion completion) {
+    private void doAttachL3ToNic(final VmNicInventory nic, final String l3Uuid, boolean attachedToHypervisor, final Completion completion) {
         thdf.chainSubmit(new ChainTask(completion) {
             @Override
             public String getSyncSignature() {
@@ -1188,7 +1188,11 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 if (vmVo != null) {
                     flowChain.then(new VmChangeDefaultL3NetworkFlow());
                 }
-                flowChain.then(new AddL3NetworkToVmNicFlow());
+                /* when doAttachL3ToNic is called from APIMsg, it need to update nic to hypervisor,
+                * or the the outer caller will update nic to hypervisor */
+                if (attachedToHypervisor) {
+                    flowChain.then(new AddL3NetworkToVmNicFlow());
+                }
                 flowChain.done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
@@ -1215,7 +1219,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         final AttachL3NetworkToVmNicReply reply = new AttachL3NetworkToVmNicReply();
         VmNicVO vmNicVO = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find();
 
-        doAttachL3ToNic(VmNicInventory.valueOf(vmNicVO), msg.getL3NetworkUuid(), new Completion(msg) {
+        doAttachL3ToNic(VmNicInventory.valueOf(vmNicVO), msg.getL3NetworkUuid(), false, new Completion(msg) {
             @Override
             public void success() {
                 bus.reply(msg, reply);
@@ -1236,7 +1240,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         if (msg.getStaticIp() != null) {
             new StaticIpOperator().setStaticIp(vmNicVO.getVmInstanceUuid(), msg.getL3NetworkUuid(), msg.getStaticIp());
         }
-        doAttachL3ToNic(VmNicInventory.valueOf(vmNicVO), msg.getL3NetworkUuid(), new Completion(msg) {
+        doAttachL3ToNic(VmNicInventory.valueOf(vmNicVO), msg.getL3NetworkUuid(), true, new Completion(msg) {
             @Override
             public void success() {
                 VmNicVO vmNicVO = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find();
@@ -1521,7 +1525,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                             ipv4Count++;
                         } else {
                             L3NetworkInventory l3Inv = L3NetworkInventory.valueOf(l3Vo);
-                            if (l3Inv.getIpRanges().get(0).getAddressMode().equals(IPv6Constants.Stateful_DHCP)) {
+                            if (!l3Inv.getIpRanges().get(0).getAddressMode().equals(IPv6Constants.SLAAC)) {
                                 statefulIpv6Count++;
                             }
                         }
@@ -1568,13 +1572,11 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 L3NetworkInventory primaryL3 = L3NetworkInventory.valueOf(primaryL3Vo);
                 L3NetworkInventory secodaryL3 = L3NetworkInventory.valueOf(secondaryL3Vo);
                 if (primaryL3.getIpRanges().isEmpty()) {
-                    throw new ApiMessageInterceptionException(operr("L3 networks[uuid:%s] does not have ip range",
-                            primaryL3Uuid, secondaryL3Uuid));
+                    throw new ApiMessageInterceptionException(operr("L3 networks[uuid:%s] does not have ip range", primaryL3Uuid));
                 }
 
                 if (secodaryL3.getIpRanges().isEmpty()) {
-                    throw new ApiMessageInterceptionException(operr("L3 networks[uuid:%s] does not have ip range",
-                            primaryL3Uuid, secondaryL3Uuid));
+                    throw new ApiMessageInterceptionException(operr("L3 networks[uuid:%s] does not have ip range", secondaryL3Uuid));
                 }
             }
 

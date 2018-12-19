@@ -7,6 +7,7 @@ import org.zstack.test.integration.network.NetworkTest
 import org.zstack.test.integration.network.l3network.Env
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
+import org.zstack.utils.network.IPv6NetworkUtils
 
 import java.util.stream.Collectors
 
@@ -43,7 +44,7 @@ class RecoverDualStackVmInstanceCase extends SubCase {
     }
 
     void testCreateDualStackNicFail() {
-        L3NetworkInventory l3_Stateless_DHCP = env.inventoryByName("l3-Stateless-DHCP")
+        L3NetworkInventory l3_Slaac = env.inventoryByName("l3-SLAAC")
         L3NetworkInventory l3_Statefull_DHCP = env.inventoryByName("l3-Statefull-DHCP")
         L3NetworkInventory l3_Statefull_DHCP_1 = env.inventoryByName("l3-Statefull-DHCP-1")
         L3NetworkInventory l3_vlan_ipv6 = env.inventoryByName("l3-vlan-ipv6")
@@ -58,9 +59,9 @@ class RecoverDualStackVmInstanceCase extends SubCase {
                 name = "vm-1"
                 instanceOfferingUuid = offering.uuid
                 imageUuid = image.uuid
-                l3NetworkUuids = asList(l3_Stateless_DHCP.uuid)
-                systemTags = [String.format("%s::%s::%s", VmSystemTags.DUAL_STACK_NIC_TOKEN, l3_Stateless_DHCP.uuid, l3_Statefull_DHCP.uuid),
-                              String.format("%s::%s::%s", VmSystemTags.DUAL_STACK_NIC_TOKEN, l3_Stateless_DHCP.uuid, l3_Statefull_DHCP_1.uuid)]
+                l3NetworkUuids = asList(l3_Slaac.uuid)
+                systemTags = [String.format("%s::%s::%s", VmSystemTags.DUAL_STACK_NIC_TOKEN, l3_Slaac.uuid, l3_Statefull_DHCP.uuid),
+                              String.format("%s::%s::%s", VmSystemTags.DUAL_STACK_NIC_TOKEN, l3_Slaac.uuid, l3_Statefull_DHCP_1.uuid)]
             }
         }
 
@@ -70,9 +71,9 @@ class RecoverDualStackVmInstanceCase extends SubCase {
                 name = "vm-2"
                 instanceOfferingUuid = offering.uuid
                 imageUuid = image.uuid
-                l3NetworkUuids = asList(l3_Stateless_DHCP.uuid)
-                systemTags = [String.format("%s::%s::%s", VmSystemTags.DUAL_STACK_NIC_TOKEN, l3_Stateless_DHCP.uuid, l3.uuid),
-                              String.format("%s::%s::%s", VmSystemTags.DUAL_STACK_NIC_TOKEN, l3_Stateless_DHCP.uuid, l3_1.uuid)]
+                l3NetworkUuids = asList(l3_Slaac.uuid)
+                systemTags = [String.format("%s::%s::%s", VmSystemTags.DUAL_STACK_NIC_TOKEN, l3_Slaac.uuid, l3.uuid),
+                              String.format("%s::%s::%s", VmSystemTags.DUAL_STACK_NIC_TOKEN, l3_Slaac.uuid, l3_1.uuid)]
             }
         }
 
@@ -82,9 +83,9 @@ class RecoverDualStackVmInstanceCase extends SubCase {
                 name = "vm-3"
                 instanceOfferingUuid = offering.uuid
                 imageUuid = image.uuid
-                l3NetworkUuids = asList(l3_Stateless_DHCP.uuid)
-                systemTags = [String.format("%s::%s::%s", VmSystemTags.DUAL_STACK_NIC_TOKEN, l3_Stateless_DHCP.uuid, l3_Statefull_DHCP.uuid),
-                              String.format("%s::%s::%s", VmSystemTags.DUAL_STACK_NIC_TOKEN, l3_Stateless_DHCP.uuid, l3_vlan_ipv6.uuid)]
+                l3NetworkUuids = asList(l3_Slaac.uuid)
+                systemTags = [String.format("%s::%s::%s", VmSystemTags.DUAL_STACK_NIC_TOKEN, l3_Slaac.uuid, l3_Statefull_DHCP.uuid),
+                              String.format("%s::%s::%s", VmSystemTags.DUAL_STACK_NIC_TOKEN, l3_Slaac.uuid, l3_vlan_ipv6.uuid)]
             }
         }
 
@@ -94,9 +95,9 @@ class RecoverDualStackVmInstanceCase extends SubCase {
                 name = "vm-2"
                 instanceOfferingUuid = offering.uuid
                 imageUuid = image.uuid
-                l3NetworkUuids = asList(l3_Stateless_DHCP.uuid, l3.uuid)
-                defaultL3NetworkUuid = l3_Stateless_DHCP.uuid
-                systemTags = [String.format("%s::%s::%s", VmSystemTags.DUAL_STACK_NIC_TOKEN, l3_Stateless_DHCP.uuid, l3.uuid)]
+                l3NetworkUuids = asList(l3_Slaac.uuid, l3.uuid)
+                defaultL3NetworkUuid = l3_Slaac.uuid
+                systemTags = [String.format("%s::%s::%s", VmSystemTags.DUAL_STACK_NIC_TOKEN, l3_Slaac.uuid, l3.uuid)]
             }
         }
 
@@ -106,16 +107,16 @@ class RecoverDualStackVmInstanceCase extends SubCase {
                 name = "vm-2"
                 instanceOfferingUuid = offering.uuid
                 imageUuid = image.uuid
-                l3NetworkUuids = asList(l3_Stateless_DHCP.uuid, l3_Statefull_DHCP_1.uuid)
-                defaultL3NetworkUuid = l3_Stateless_DHCP.uuid
-                systemTags = [String.format("%s::%s::%s", VmSystemTags.DUAL_STACK_NIC_TOKEN, l3_Stateless_DHCP.uuid, l3.uuid),
+                l3NetworkUuids = asList(l3_Slaac.uuid, l3_Statefull_DHCP_1.uuid)
+                defaultL3NetworkUuid = l3_Slaac.uuid
+                systemTags = [String.format("%s::%s::%s", VmSystemTags.DUAL_STACK_NIC_TOKEN, l3_Slaac.uuid, l3.uuid),
                               String.format("%s::%s::%s", VmSystemTags.DUAL_STACK_NIC_TOKEN, l3_Statefull_DHCP_1.uuid, l3.uuid)]
             }
         }
     }
 
     void testCreateDualStackNic() {
-        L3NetworkInventory l3_Stateless_DHCP = env.inventoryByName("l3-Stateless-DHCP")
+        L3NetworkInventory l3_Slaac = env.inventoryByName("l3-SLAAC")
         L3NetworkInventory l3_Statefull_DHCP = env.inventoryByName("l3-Statefull-DHCP")
         L3NetworkInventory l3 = env.inventoryByName("l3")
         InstanceOfferingInventory offering = env.inventoryByName("instanceOffering")
@@ -123,15 +124,20 @@ class RecoverDualStackVmInstanceCase extends SubCase {
         HostInventory h1 = env.inventoryByName("kvm-1")
         HostInventory h2 = env.inventoryByName("kvm-2")
 
+        String stateful_ip = "2001:2003::101"
+        String ipv4_ip = "192.168.100.15"
         /* create a vm with dual stack, then destroy vm, recover vm, migrate vm */
         VmInstanceInventory vm = createVmInstance {
             name = "vm"
             instanceOfferingUuid = offering.uuid
             imageUuid = image.uuid
-            l3NetworkUuids = asList(l3_Stateless_DHCP.uuid)
+            l3NetworkUuids = asList(l3_Slaac.uuid)
             hostUuid = h1.uuid
-            systemTags = [String.format("%s::%s::%s", VmSystemTags.DUAL_STACK_NIC_TOKEN, l3_Stateless_DHCP.uuid, l3_Statefull_DHCP.uuid),
-                          String.format("%s::%s::%s", VmSystemTags.DUAL_STACK_NIC_TOKEN, l3_Stateless_DHCP.uuid, l3.uuid)]
+            systemTags = [String.format("%s::%s::%s", VmSystemTags.DUAL_STACK_NIC_TOKEN, l3_Slaac.uuid, l3_Statefull_DHCP.uuid),
+                          String.format("%s::%s::%s", VmSystemTags.DUAL_STACK_NIC_TOKEN, l3_Slaac.uuid, l3.uuid),
+                          String.format("%s::%s::%s", VmSystemTags.STATIC_IP_TOKEN, l3_Statefull_DHCP.uuid, IPv6NetworkUtils.ipv6AddessToTagValue(stateful_ip)),
+                          String.format("%s::%s::%s", VmSystemTags.STATIC_IP_TOKEN, l3.uuid, ipv4_ip)
+            ]
         }
         assert vm.defaultL3NetworkUuid == l3.uuid
         VmNicInventory nic = vm.getVmNics()[0]
@@ -149,8 +155,17 @@ class RecoverDualStackVmInstanceCase extends SubCase {
             assert primaryL3Uuid == l3.uuid
         }
         assert secondaryL3Uuids.size() == 2
-        assert secondaryL3Uuids.contains(l3_Stateless_DHCP.uuid)
+        assert secondaryL3Uuids.contains(l3_Slaac.uuid)
         assert secondaryL3Uuids.contains(l3_Statefull_DHCP.uuid)
+        List<Map<String, String>> ipMapList = VmSystemTags.STATIC_IP.getTokensOfTagsByResourceUuid(vm.uuid)
+        assert ipMapList.size() == 2
+        for (UsedIpInventory ip : nic.getUsedIps()) {
+            if (ip.l3NetworkUuid == l3_Statefull_DHCP.uuid) {
+                assert ip.ip == stateful_ip
+            } else if (ip.l3NetworkUuid == l3.uuid){
+                assert ip.ip == ipv4_ip
+            }
+        }
 
         destroyVmInstance {
             uuid = vm.uuid
