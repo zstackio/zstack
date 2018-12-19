@@ -9,6 +9,7 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.tag.TagResourceType;
 
 /**
  * @api add a ip range to l3Network
@@ -48,6 +49,7 @@ import org.zstack.header.rest.RestRequest;
  * @result see :ref:`APIAddIpRangeEvent`
  * @since 0.1.0
  */
+@TagResourceType(L3NetworkVO.class)
 @Action(category = L3NetworkConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/l3-networks/{l3NetworkUuid}/ip-ranges",

@@ -3418,6 +3418,78 @@
     "fileName": "src/zstack/./plugin/flatNetworkProvider/src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
   },
   {
+    "raw": "L3 network[uuid:%s] does not have any iprange",
+    "en_US": "L3 network[{0}] does not have any iprange",
+    "zh_CN": "三层网络[{0}]没有配置ip段",
+    "arguments": [
+      "msg.getL3NetworkUuid()"
+    ],
+    "line": 352,
+    "fileName": "src/zstack/./plugin/flatNetworkProvider/src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
+  },
+  {
+    "raw": "DHCP server ip [%s] is not a IPv6 address",
+    "en_US": "DHCP server ip [{0}] is not a IPv6 address",
+    "zh_CN": "DHCP服务器地址[{0}]不是一个正确的IPv6地址",
+    "arguments": [
+      "dhcpServerIp"
+    ],
+    "line": 1462,
+    "fileName": "src/zstack/./plugin/flatNetworkProvider/src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
+  },
+  {
+    "raw": "DHCP server ip [%s] is not in the cidr [%s]",
+    "en_US": "DHCP server ip [{0}] is not in the cidr [{1}]",
+    "zh_CN": "DHCP服务器地址[{0}]不在网络段[{1}]的范围内",
+    "arguments": [
+      "dhcpServerIp",
+      "inv.getNetworkCidr()"
+    ],
+    "line": 1458,
+    "fileName": "src/zstack/./plugin/flatNetworkProvider/src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
+  },
+  {
+    "raw": "DHCP server ip [%s] is not a IPv4 address",
+    "en_US": "DHCP server ip [{0}] is not a IPv4 address",
+    "zh_CN": "DHCP服务器地址[{0}]不是一个正确的IPv4地址",
+    "arguments": [
+      "dhcpServerIp"
+    ],
+    "line": 1454,
+    "fileName": "src/zstack/./plugin/flatNetworkProvider/src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
+  },
+  {
+    "raw": "DHCP server ip [%s] is already existed in l3 network [%s]",
+    "en_US": "DHCP server ip [{0}] is already existed in l3 network [{1}]",
+    "zh_CN": "三层网络[{1}]已经配置了DHCP服务器地址[{0}]",
+    "arguments": [
+      "IPv6NetworkUtils.ipv6TagValueToAddress(oldDhcpServer)",
+      "inv.getL3NetworkUuid()"
+    ],
+    "line": 1473,
+    "fileName": "src/zstack/./plugin/flatNetworkProvider/src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
+  },
+  {
+    "raw": "DHCP server ip [%s] can not be equaled to gateway ip",
+    "en_US": "DHCP server ip [{0}] can not be equaled to gateway ip",
+    "zh_CN": "DHCP服务器地址[{0}]不能等于网关地址",
+    "arguments": [
+      "dhcpServerIp"
+    ],
+    "line": 1478,
+    "fileName": "src/zstack/./plugin/flatNetworkProvider/src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
+  },
+  {
+    "raw": "DHCP server ip [%s] can not be configured to system l3",
+    "en_US": "DHCP server ip [{0}] can not be configured to system l3",
+    "zh_CN": "系统网络不能配置DHCP服务器地址[{0}]",
+    "arguments": [
+      "dhcpServerIp"
+    ],
+    "line": 1484,
+    "fileName": "src/zstack/./plugin/flatNetworkProvider/src/main/java/org/zstack/network/service/flat/FlatDhcpBackend.java"
+  },
+  {
     "raw": "failed to re-apply DHCP configuration of the vm[uuid:%s] to the host[uuid:%s], %s. You may need to reboot the VM to make the DHCP works",
     "en_US": "failed to re-apply DHCP configuration of the vm[uuid:{0}] to the host[uuid:{1}], {2}. You may need to reboot the VM to make the DHCP works",
     "zh_CN": "未能向物理机[uuid:{1}]重新应用云主机[uuid:{0}]的DHCP配置，错误细节: {2}。您可能需要重启该云主机以解决问题",
@@ -3742,7 +3814,7 @@
   {
     "raw": "the host\u0027 ssh port[%s] not open after %s seconds, connect timeout",
     "en_US": "the host\u0027 ssh port[{0}] not open after {1} seconds, connect timeout",
-    "zh_CN": "物理机的ssh端口[{0}]在{1}后仍未开启，连接超时",
+    "zh_CN": "物理机的ssh端口[{0}]在{1}秒后仍未开启，连接超时",
     "arguments": [
       "getSelf().getPort()",
       "KVMGlobalConfig.TEST_SSH_PORT_ON_OPEN_TIMEOUT.value(Long.class)"

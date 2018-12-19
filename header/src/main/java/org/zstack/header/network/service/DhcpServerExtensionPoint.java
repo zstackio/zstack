@@ -14,6 +14,6 @@ import java.util.Map;
  * To change this template use File | Settings | File Templates.
  */
 public interface DhcpServerExtensionPoint {
-    void afterAllocateDhcpServerIP(String L3NetworkUuid, UsedIpInventory dhcpSererIp);
-    void afterRemoveDhcpServerIP(String L3NetworkUuid, UsedIpInventory dhcpSererIp);
+    void afterAllocateDhcpServerIP(String L3NetworkUuid, String dhcpSererIp);
+    void afterRemoveDhcpServerIP(String L3NetworkUuid, String dhcpSererIp);
 }
