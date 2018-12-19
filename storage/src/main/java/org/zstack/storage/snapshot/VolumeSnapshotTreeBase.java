@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
@@ -27,6 +28,7 @@ import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -297,13 +299,56 @@ public class VolumeSnapshotTreeBase {
         String primaryStorageType = Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.type)
                 .eq(PrimaryStorageVO_.uuid, getSelfInventory().getPrimaryStorageUuid()).findValue();
 
-        pluginRgty.getExtensionList(VolumeSnapshotDeletionProtector.class).stream().filter(p -> p.getPrimaryStorageType().equals(primaryStorageType))
-                // TODO: force all primary storage to implement VolumeSnapshotDeletionProtector
-                .findFirst().ifPresent(protector -> currentLeaf.getDescendants().forEach(sp -> {
-            if (sp.getVolumeUuid() != null) {
-                protector.protect(sp);
+        chain.then(new NoRollbackFlow() {
+            String __name__ = String.format("run snapshot protector");
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                ErrorCodeList errList = new ErrorCodeList();
+                new While<>(currentLeaf.getDescendants()).all((sp, whileCompletion) -> {
+                    Optional<VolumeSnapshotDeletionProtector> protector = pluginRgty.getExtensionList(VolumeSnapshotDeletionProtector.class).stream().filter(p -> p.getPrimaryStorageType().equals(primaryStorageType))
+                            .findFirst();
+                    if (!protector.isPresent()) {
+                        logger.warn(String.format("there are no protector for primary storage: %s", primaryStorageType));
+                        whileCompletion.done();
+                        return;
+                    }
+
+                    if (sp == null)  {
+                        logger.warn(String.format("skip protector, got null descendant"));
+                        whileCompletion.done();
+                        return;
+                    }
+                    if (sp.getPrimaryStorageInstallPath() == null || sp.getVolumeUuid() == null) {
+                        logger.warn(String.format("skip protector, descendant[%s] primary storage install path or volume uuid is null"));
+                        whileCompletion.done();
+                        return;
+                    }
+
+                    protector.get().protect(sp, new Completion(whileCompletion) {
+                        @Override
+                        public void success() {
+                            whileCompletion.done();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            errList.getCauses().add(errorCode);
+                            whileCompletion.done();
+                        }
+                    });
+                }).run(new NoErrorCompletion() {
+                    @Override
+                    public void done() {
+                        if (errList.getCauses().isEmpty()) {
+                            trigger.next();
+                            return;
+                        }
+                        trigger.fail(errList.getCauses().get(0));
+                    }
+                });
             }
-        }));
+        });
 
         chain.then(new Flow() {
             String __name__ = String.format("change-volume-snapshot-status-%s", VolumeSnapshotStatus.Deleting);
