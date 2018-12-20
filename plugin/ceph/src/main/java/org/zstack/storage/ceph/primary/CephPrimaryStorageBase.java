@@ -1454,7 +1454,81 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         });
     }
 
-    private void cleanUpTrash(final Completion completion) {
+    private void cleanTrash(Long trashId, final Completion completion) {
+        StorageTrashSpec spec = trash.getTrash(self.getUuid(), trashId);
+        if (spec == null) {
+            completion.success();
+            return;
+        }
+
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("clean-trash-on-volume-%s", spec.getInstallPath()));
+        chain.then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                PurgeSnapshotOnPrimaryStorageMsg msg = new PurgeSnapshotOnPrimaryStorageMsg();
+                msg.setPrimaryStorageUuid(self.getUuid());
+                msg.setVolumePath(spec.getInstallPath());
+                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
+                bus.send(msg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (reply.isSuccess()) {
+                            logger.info(String.format("Purged all snapshots of volume %s.", spec.getInstallPath()));
+                        } else {
+                            logger.warn(String.format("Failed to purge snapshots of volume %s.", spec.getInstallPath()));
+                        }
+                        trigger.next();
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                DeleteVolumeBitsOnPrimaryStorageMsg msg = new DeleteVolumeBitsOnPrimaryStorageMsg();
+                msg.setPrimaryStorageUuid(self.getUuid());
+                msg.setInstallPath(spec.getInstallPath());
+                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
+                bus.send(msg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (reply.isSuccess()) {
+                            logger.info(String.format("Deleted volume %s in Trash.", spec.getInstallPath()));
+                        } else {
+                            logger.warn(String.format("Failed to delete volume %s in Trash.", spec.getInstallPath()));
+                        }
+                        trigger.next();
+                    }
+                });
+            }
+        });
+
+        chain.done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+                imsg.setPrimaryStorageUuid(self.getUuid());
+                imsg.setDiskSize(spec.getSize());
+                bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
+                bus.send(imsg);
+                logger.info(String.format("Returned space[size:%s] to PS %s after volume migration", spec.getSize(), self.getUuid()));
+                trash.remove(trashId);
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
+    }
+
+    private void cleanUpTrash(Long trashId, final Completion completion) {
+        if (trashId != null) {
+            cleanTrash(trashId, completion);
+            return;
+        }
+
         Map<String, StorageTrashSpec> trashs = trash.getTrashList(self.getUuid(), trashLists);
         if (trashs.isEmpty()) {
             completion.success();
@@ -1551,7 +1625,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
             @Override
             public void run(SyncTaskChain chain) {
-                cleanUpTrash(new Completion(chain) {
+                cleanUpTrash(msg.getTrashId(), new Completion(chain) {
                     @Override
                     public void success() {
                         bus.publish(evt);
