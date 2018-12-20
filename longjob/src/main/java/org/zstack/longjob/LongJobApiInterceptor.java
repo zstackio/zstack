@@ -14,6 +14,7 @@ import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.longjob.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.identity.AccountManager;
+import org.zstack.portal.apimediator.ApiMediator;
 import org.zstack.portal.apimediator.ApiMessageProcessor;
 import org.zstack.portal.apimediator.ApiMessageProcessorImpl;
 import org.zstack.tag.TagManager;
@@ -40,6 +41,8 @@ public class LongJobApiInterceptor implements ApiMessageInterceptor, Component {
     private DatabaseFacade dbf;
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private ApiMediator apiMediator;
 
     /**
      * Key:LongJobName
@@ -66,17 +69,11 @@ public class LongJobApiInterceptor implements ApiMessageInterceptor, Component {
         if (null == apiClass) {
             throw new ApiMessageInterceptionException(argerr("%s is not an API", msg.getJobName()));
         }
-        // validate msg.jobData
-        Map<String, Object> config = new HashMap<>();
-        List<String> serviceConfigFolders = new ArrayList<>();
-        serviceConfigFolders.add("serviceConfig");
-        config.put("serviceConfigFolders", serviceConfigFolders);
-        ApiMessageProcessor processor = new ApiMessageProcessorImpl(config);
         APIMessage jobMsg = JSONObjectUtil.toObject(msg.getJobData(), apiClass);
         jobMsg.setSession(msg.getSession());
 
         try {
-            jobMsg = processor.process(jobMsg);                     // may throw ApiMessageInterceptionException
+            jobMsg = apiMediator.getProcesser().process(jobMsg);                     // may throw ApiMessageInterceptionException
         } catch (StopRoutingException e) {
             // if got stop routing exception persist a success long job and return event success
             LongJobVO vo = createSuccessLongJob(msg);
@@ -149,14 +146,32 @@ public class LongJobApiInterceptor implements ApiMessageInterceptor, Component {
     }
 
     private void validate(APIRerunLongJobMsg msg) {
-        LongJobState state = Q.New(LongJobVO.class)
-                .select(LongJobVO_.state)
+        LongJobVO vo = Q.New(LongJobVO.class)
                 .eq(LongJobVO_.uuid, msg.getUuid())
-                .findValue();
+                .find();
 
+        LongJobState state = vo.getState();
         if (state != LongJobState.Succeeded && state != LongJobState.Canceled && state != LongJobState.Failed) {
             throw new ApiMessageInterceptionException(argerr("rerun longjob only when it's succeeded, canceled, or failed"));
         }
+
+        Class<APIMessage> apiClass = apiMsgOfLongJob.get(vo.getJobName());
+
+        APIMessage jobMsg = JSONObjectUtil.toObject(vo.getJobData(), apiClass);
+        jobMsg.setSession(msg.getSession());
+
+        try {
+            jobMsg = apiMediator.getProcesser().process(jobMsg);                     // may throw ApiMessageInterceptionException
+        } catch (StopRoutingException e) {
+            APISubmitLongJobEvent evt = new APISubmitLongJobEvent(msg.getId());
+            evt.setInventory(LongJobInventory.valueOf(vo));
+            bus.publish(evt);
+
+            throw e;
+        }
+
+        vo.setJobData(JSONObjectUtil.toJsonString(jobMsg));    // msg may be changed during validation
+        dbf.updateAndRefresh(vo);
     }
 
     @Override
