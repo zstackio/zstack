@@ -43,10 +43,10 @@ class PrimaryStorageTrashCase extends SubCase {
             prepare()
             createTrash()
             testGetTrash()
-            testDeleteTrashSingle()
 
             createTrash()
             createTrash()
+            testDeleteTrashSingle()
             testCleanUpTrash()
         }
     }
@@ -88,16 +88,21 @@ class PrimaryStorageTrashCase extends SubCase {
     }
 
     void testDeleteTrashSingle() {
+        def trashs = getTrashOnPrimaryStorage {
+            uuid = ps.uuid
+        } as GetTrashOnPrimaryStorageResult
+        def count = trashs.storageTrashSpecs.size()
+
         cleanUpTrashOnPrimaryStorage {
             uuid = ps.uuid
             trashId = label.id
         }
 
-        def trashs = getTrashOnPrimaryStorage {
+        trashs = getTrashOnPrimaryStorage {
             uuid = ps.uuid
         } as GetTrashOnPrimaryStorageResult
 
-        assert trashs.storageTrashSpecs.size() == 0
+        assert trashs.storageTrashSpecs.size() == count - 1
     }
 
     void testCleanUpTrash() {
