@@ -17,10 +17,7 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
-import org.zstack.header.core.AsyncLatch;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -1628,8 +1625,17 @@ public class LocalStorageBase extends PrimaryStorageBase {
         });
     }
 
-    @Transactional
+    @ExceptionSafe
+    protected void reserveCapaciryOnHostIgnoreError(String hostUuid, long size, String psUuid) {
+        reserveCapacityOnHost(hostUuid, size, psUuid, true);
+    }
+
     protected void reserveCapacityOnHost(String hostUuid, long size, String psUuid) {
+        reserveCapacityOnHost(hostUuid, size, psUuid, false);
+    }
+
+    @Transactional
+    protected void reserveCapacityOnHost(String hostUuid, long size, String psUuid, boolean ignoreError) {
         String sql = "select ref" +
                 " from LocalStorageHostRefVO ref" +
                 " where ref.hostUuid = :huuid" +
@@ -1641,8 +1647,13 @@ public class LocalStorageBase extends PrimaryStorageBase {
         List<LocalStorageHostRefVO> refs = q.getResultList();
 
         if (refs.isEmpty()) {
-            throw new CloudRuntimeException(String.format("cannot find host[uuid: %s] of local primary storage[uuid: %s]",
-                    hostUuid, self.getUuid()));
+            String errInfo = String.format("cannot find host[uuid: %s] of local primary storage[uuid: %s]",
+                    hostUuid, self.getUuid());
+            if (ignoreError) {
+                logger.error(errInfo);
+            } else {
+                throw new CloudRuntimeException(errInfo);
+            }
         }
 
 
@@ -1667,8 +1678,13 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
         long avail = ref.getAvailableCapacity() - s.getSize();
         if (avail < 0) {
-            throw new OperationFailureException(operr("host[uuid: %s] of local primary storage[uuid: %s] doesn't have enough capacity" +
-                                    "[current: %s bytes, needed: %s]", hostUuid, self.getUuid(), ref.getAvailableCapacity(), size));
+            if (ignoreError) {
+                avail = 0;
+            } else {
+                throw new OperationFailureException(operr("host[uuid: %s] of local primary storage[uuid: %s] doesn't have enough capacity" +
+                        "[current: %s bytes, needed: %s]", hostUuid, self.getUuid(), ref.getAvailableCapacity(), size));
+            }
+
         }
 
         ref.setAvailableCapacity(avail);

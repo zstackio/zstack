@@ -1,11 +1,19 @@
 package org.zstack.test.integration.storage.primary.local
 
+import org.zstack.core.db.Q
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO_
+import org.zstack.header.volume.VolumeVO
+import org.zstack.header.volume.VolumeVO_
+import org.zstack.kvm.KVMAgentCommands
+import org.zstack.kvm.KVMConstant
 import org.zstack.sdk.VmInstanceInventory
+import org.zstack.storage.primary.local.LocalStorageHostRefVO
+import org.zstack.storage.primary.local.LocalStorageHostRefVO_
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
-
 /**
  * Created by lining on 2018/01/24.
  */
@@ -116,10 +124,28 @@ class CreateDataVolumeSnapshotCase extends SubCase {
                 name = "data-volume-snapshot"
                 volumeUuid = dataVolume2
             }
+
+            // for data safe, over capacity should success too.
+            env.simulator(KVMConstant.KVM_TAKE_VOLUME_SNAPSHOT_PATH) {
+                def rsp = new KVMAgentCommands.TakeSnapshotResponse()
+                rsp.newVolumeInstallPath = "/new/volume/install/path1"
+                rsp.snapshotInstallPath = "/snapshot/install/path1"
+                rsp.size = SizeUnit.TERABYTE.toByte(1000)
+                return rsp
+            }
+
             createVolumeSnapshot {
                 name = "data-volume-snapshot"
                 volumeUuid = dataVolume2
             }
+
+            assert Q.New(LocalStorageHostRefVO.class).select(LocalStorageHostRefVO_.availableCapacity).findValue() == 0
+            assert Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.volumeUuid, dataVolume2)
+                    .eq(VolumeSnapshotVO_.latest, true)
+                    .select(VolumeSnapshotVO_.primaryStorageInstallPath)
+                    .findValue() == "/snapshot/install/path1"
+
+            assert Q.New(VolumeVO.class).eq(VolumeVO_.uuid, dataVolume2).select(VolumeVO_.installPath).findValue() == "/new/volume/install/path1"
         }
     }
 
