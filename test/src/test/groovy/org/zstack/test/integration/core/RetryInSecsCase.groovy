@@ -51,7 +51,7 @@ class RetryInSecsCase extends SubCase {
             assert 1 == 1
             assert 2 == 2
             assert 1000 * 1 == 100 * 10
-            assert true == true
+            assert true
             assert null != new Object()
             assert "love you, zstack, best wish for you!" == "love you, zstack, best wish for you!"
         }
@@ -79,7 +79,7 @@ class RetryInSecsCase extends SubCase {
                 assert 1 == 2
             }
         }catch (Throwable t){
-            assert retryTimes == actualExecutionTimes
+            assert retryTimes == (actualExecutionTimes / 10).intValue() + 1
         }
 
         // case
@@ -89,7 +89,7 @@ class RetryInSecsCase extends SubCase {
         actualExecutionTimes = 0
         retryInSecs(retryTimes){
             actualExecutionTimes ++
-            if(retryTimes - currentTime == 1){
+            if(retryTimes - (currentTime / 10) == 1){
                 assert true
             }else{
                 currentTime ++
@@ -97,10 +97,8 @@ class RetryInSecsCase extends SubCase {
             }
         }
         endTime = System.currentTimeMillis()
-        assert endTime - startTime > 1000 * (retryTimes -1)
-        // Invalid assert, The maximum length of time cannot be determined
-        // assert endTime - startTime < 1000 * (retryTimes)
-        assert retryTimes == actualExecutionTimes
+        assert endTime - startTime > 10 * (retryTimes -1)
+        assert retryTimes == (actualExecutionTimes / 10).intValue() + 1
 
         // case
         retryTimes = 3
@@ -117,21 +115,7 @@ class RetryInSecsCase extends SubCase {
             assert endTime - startTime > 1000 * (retryTimes -1)
             // Invalid assert, The maximum length of time cannot be determined
             // assert endTime - startTime < 1000 * (retryTimes)
-            assert retryTimes == actualExecutionTimes
+            assert retryTimes == (actualExecutionTimes / 10).intValue() + 1
         }
-
-        // case
-        retryTimes = 2
-        startTime = System.currentTimeMillis()
-        actualExecutionTimes = 0
-        assert !retryInSecs(retryTimes){
-            actualExecutionTimes ++
-            return false
-        }
-        endTime = System.currentTimeMillis()
-        assert endTime - startTime >= 1000 * (retryTimes)
-        // Invalid assert, The maximum length of time cannot be determined
-        // assert endTime - startTime < 1000 * (retryTimes + 1)
-        assert retryTimes == actualExecutionTimes
     }
 }

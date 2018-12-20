@@ -32,6 +32,16 @@ doc {
 					
 				}
 				column {
+					name "id"
+					enclosedIn "cleanUpTrashOnBackupStorage"
+					desc "单独清理的id"
+					location "url"
+					type "Long"
+					optional true
+					since "3.3.0"
+
+				}
+				column {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"

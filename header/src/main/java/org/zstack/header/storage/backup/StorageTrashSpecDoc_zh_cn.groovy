@@ -5,6 +5,12 @@ doc {
 	title "回收数据清单"
 
 	field {
+		name "id"
+		desc "回收数据的ID"
+		type "Long"
+		since "3.3.0"
+	}
+	field {
 		name "resourceUuid"
 		desc "回收数据对应的原资源UUID"
 		type "String"
@@ -51,5 +57,11 @@ doc {
 		desc "回收数据的大小"
 		type "Long"
 		since "3.2.0"
+	}
+	field {
+		name "createDate"
+		desc "数据进入回收站的时间"
+		type "Timestamp"
+		since "3.3.0"
 	}
 }

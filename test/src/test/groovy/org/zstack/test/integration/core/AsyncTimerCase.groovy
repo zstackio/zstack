@@ -23,7 +23,7 @@ class AsyncTimerCase extends SubCase {
         int count = 0
         int total = 3
 
-        def timer = new AsyncTimer(TimeUnit.SECONDS, 1L) {
+        def timer = new AsyncTimer(TimeUnit.MILLISECONDS, 100L) {
             @Override
             protected void execute() {
                 count ++
@@ -35,12 +35,12 @@ class AsyncTimerCase extends SubCase {
 
         timer.start()
 
-        TimeUnit.SECONDS.sleep(total)
+        TimeUnit.MILLISECONDS.sleep(total * 100)
         retryInSecs {
             assert total == count
         }
 
-        TimeUnit.SECONDS.sleep(2L)
+        TimeUnit.MILLISECONDS.sleep(2L * 100)
 
         assert total == count
     }
@@ -48,7 +48,7 @@ class AsyncTimerCase extends SubCase {
     void testCancel() {
         int count = 0
 
-        def timer = new AsyncTimer(TimeUnit.SECONDS, 1L) {
+        def timer = new AsyncTimer(TimeUnit.MILLISECONDS, 1L * 100) {
             @Override
             protected void execute() {
                 count ++
@@ -57,11 +57,11 @@ class AsyncTimerCase extends SubCase {
         }
 
         timer.start()
-        TimeUnit.SECONDS.sleep(2L)
+        TimeUnit.MILLISECONDS.sleep(2L * 100)
         timer.cancel()
-        TimeUnit.SECONDS.sleep(2L)
+        TimeUnit.MILLISECONDS.sleep(2L * 100)
         int now = count
-        TimeUnit.SECONDS.sleep(2L)
+        TimeUnit.MILLISECONDS.sleep(2L * 100)
         assert now == count
     }
 

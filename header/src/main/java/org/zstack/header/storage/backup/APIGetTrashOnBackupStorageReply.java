@@ -3,6 +3,7 @@ package org.zstack.header.storage.backup;
 import org.zstack.header.message.APIReply;
 import org.zstack.header.rest.RestResponse;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,7 +27,10 @@ public class APIGetTrashOnBackupStorageReply extends APIReply {
     public static APIGetTrashOnBackupStorageReply __example__() {
         APIGetTrashOnBackupStorageReply reply = new APIGetTrashOnBackupStorageReply();
 
-        reply.setStorageTrashSpecs(asList(new StorageTrashSpec(uuid(), "ImageVO", uuid(), "BackupStorageVO", "/zstack_bs/installpath", 1024000L)));
+        StorageTrashSpec spec = new StorageTrashSpec(uuid(), "ImageVO", uuid(), "BackupStorageVO", "/zstack_bs/installpath", 1024000L);
+        spec.setId(1L);
+        spec.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        reply.setStorageTrashSpecs(asList(spec));
 
         return reply;
     }

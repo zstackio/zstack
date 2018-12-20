@@ -13,6 +13,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.storage.backup.StorageTrashSpec;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.utils.CollectionDSL;
+import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -71,7 +72,10 @@ public class StorageTrashImpl implements StorageTrash {
         for (TrashType type: types) {
             List<JsonLabelVO> labels = Q.New(JsonLabelVO.class).eq(JsonLabelVO_.resourceUuid, storageUuid).like(JsonLabelVO_.labelKey, type.toString() + "-%").list();
             labels.forEach(l -> {
-                specs.put(l.getLabelKey(), JSONObjectUtil.toObject(l.getLabelValue(), StorageTrashSpec.class));
+                StorageTrashSpec spec = JSONObjectUtil.toObject(l.getLabelValue(), StorageTrashSpec.class);
+                spec.setId(l.getId());
+                spec.setCreateDate(l.getCreateDate());
+                specs.put(l.getLabelKey(), spec);
             });
         }
         return specs;
@@ -80,5 +84,23 @@ public class StorageTrashImpl implements StorageTrash {
     @Override
     public void remove(String trashKey, String storageUuid) {
         UpdateQuery.New(JsonLabelVO.class).eq(JsonLabelVO_.labelKey, trashKey).eq(JsonLabelVO_.resourceUuid, storageUuid).delete();
+    }
+
+    @Override
+    public StorageTrashSpec getTrash(String storageUuid, Long trashId) {
+        JsonLabelVO lable = Q.New(JsonLabelVO.class).eq(JsonLabelVO_.resourceUuid, storageUuid).eq(JsonLabelVO_.id, trashId).find();
+        if (lable == null) {
+            return null;
+        }
+        StorageTrashSpec spec = JSONObjectUtil.toObject(lable.getLabelValue(), StorageTrashSpec.class);
+        spec.setId(trashId);
+        spec.setCreateDate(lable.getCreateDate());
+        return spec;
+    }
+
+    @Override
+    public void remove(Long trashId) {
+        DebugUtils.Assert(trashId != null, "trashId is not allowed null here");
+        UpdateQuery.New(JsonLabelVO.class).eq(JsonLabelVO_.id, trashId).delete();
     }
 }
