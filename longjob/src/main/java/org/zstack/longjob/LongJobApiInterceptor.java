@@ -149,13 +149,34 @@ public class LongJobApiInterceptor implements ApiMessageInterceptor, Component {
     }
 
     private void validate(APIRerunLongJobMsg msg) {
-        LongJobState state = Q.New(LongJobVO.class)
-                .select(LongJobVO_.state)
+        LongJobVO vo = Q.New(LongJobVO.class)
                 .eq(LongJobVO_.uuid, msg.getUuid())
-                .findValue();
+                .find();
 
+        LongJobState state = vo.getState();
         if (state != LongJobState.Succeeded && state != LongJobState.Canceled && state != LongJobState.Failed) {
             throw new ApiMessageInterceptionException(argerr("rerun longjob only when it's succeeded, canceled, or failed"));
+        }
+
+        Class<APIMessage> apiClass = apiMsgOfLongJob.get(vo.getJobName());
+
+        // validate msg.jobData
+        Map<String, Object> config = new HashMap<>();
+        List<String> serviceConfigFolders = new ArrayList<>();
+        serviceConfigFolders.add("serviceConfig");
+        config.put("serviceConfigFolders", serviceConfigFolders);
+        ApiMessageProcessor processor = new ApiMessageProcessorImpl(config);
+        APIMessage jobMsg = JSONObjectUtil.toObject(vo.getJobData(), apiClass);
+        jobMsg.setSession(msg.getSession());
+
+        try {
+            processor.process(jobMsg);                     // may throw ApiMessageInterceptionException
+        } catch (StopRoutingException e) {
+            APISubmitLongJobEvent evt = new APISubmitLongJobEvent(msg.getId());
+            evt.setInventory(LongJobInventory.valueOf(vo));
+            bus.publish(evt);
+
+            throw e;
         }
     }
 

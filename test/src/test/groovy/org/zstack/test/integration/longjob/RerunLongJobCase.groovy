@@ -4,6 +4,7 @@ import com.google.gson.Gson
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.Q
 import org.zstack.core.errorcode.ErrorFacade
+import org.zstack.header.errorcode.SysErrors
 import org.zstack.header.image.*
 import org.zstack.header.longjob.LongJobState
 import org.zstack.header.longjob.LongJobVO
@@ -11,6 +12,7 @@ import org.zstack.header.message.MessageReply
 import org.zstack.header.storage.backup.DownloadImageMsg
 import org.zstack.sdk.BackupStorageInventory
 import org.zstack.sdk.LongJobInventory
+import org.zstack.sdk.RerunLongJobAction
 import org.zstack.test.integration.ZStackTest
 import org.zstack.test.integration.storage.Env
 import org.zstack.testlib.EnvSpec
@@ -88,5 +90,15 @@ class RerunLongJobCase extends SubCase {
         }
 
         assert Q.New(ImageVO.class).eq(ImageVO_.name, "TinyLinux").count() == 1
+
+        deleteBackupStorage {
+            uuid = bs.uuid
+        }
+
+        RerunLongJobAction action = new RerunLongJobAction()
+        action.uuid = jobInv.uuid
+        action.sessionId = adminSession()
+        RerunLongJobAction.Result ret = action.call()
+        ret.error.code == SysErrors.INVALID_ARGUMENT_ERROR.toString()
     }
 }
