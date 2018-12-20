@@ -2156,7 +2156,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                 cmd.dstPassword = password;
                                 cmd.dstPort = port;
                                 cmd.paths = list(context.baseImageCachePath);
-                                cmd.uuid = context.rootVolumeUuid;
+                                cmd.volumeUuid = context.rootVolumeUuid;
                                 cmd.stage = PrimaryStorageConstant.MIGRATE_VOLUME_BACKING_FILE_COPY_STAGE;
 
                                 httpCall(LocalStorageKvmMigrateVmFlow.COPY_TO_REMOTE_BITS_PATH, struct.getSrcHostUuid(), cmd, false,
@@ -2411,7 +2411,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         return arg.getPath();
                     }
                 });
-                cmd.uuid = struct.getInfos().get(0).getResourceRef().getResourceUuid();
+                cmd.volumeUuid = struct.getInfos().get(0).getResourceRef().getResourceUuid();
 
                 httpCall(LocalStorageKvmMigrateVmFlow.COPY_TO_REMOTE_BITS_PATH, struct.getSrcHostUuid(), cmd, false,
                         AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
