@@ -20,6 +20,7 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.progress.TaskProgressRange;
@@ -1515,7 +1516,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 ret.setNewVolumeInstallPath(treply.getNewVolumeInstallPath());
                 ret.setInventory(sp);
 
-                reserveCapacityOnHost(hostUuid, sp.getSize(), self.getUuid());
+                reserveCapaciryOnHostIgnoreError(hostUuid, sp.getSize(), self.getUuid());
                 completion.success(ret);
             }
         });
