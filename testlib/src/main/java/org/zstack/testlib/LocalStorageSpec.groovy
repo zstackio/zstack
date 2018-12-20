@@ -65,8 +65,13 @@ class LocalStorageSpec extends PrimaryStorageSpec {
                 return rsp
             }
 
-            simulator(LocalStorageKvmMigrateVmFlow.COPY_TO_REMOTE_BITS_PATH) {
-                return new LocalStorageKvmBackend.AgentResponse()
+            simulator(LocalStorageKvmMigrateVmFlow.COPY_TO_REMOTE_BITS_PATH) { HttpEntity<String> e ->
+                def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmMigrateVmFlow.CopyBitsFromRemoteCmd.class)
+                def rsp = new LocalStorageKvmBackend.AgentResponse()
+                if (cmd.volumeUuid == null || cmd.uuid == cmd.volumeUuid) {
+                    rsp.success = false
+                }
+                return rsp
             }
 
             simulator(LocalStorageKvmMigrateVmFlow.REBASE_ROOT_VOLUME_TO_BACKING_FILE_PATH) {
