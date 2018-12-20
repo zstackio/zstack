@@ -246,4 +246,9 @@ public class ApiMediatorImpl extends AbstractService implements ApiMediator, Glo
         }
         return msg;
     }
+
+    @Override
+    public ApiMessageProcessor getProcesser() {
+        return processor;
+    }
 }
