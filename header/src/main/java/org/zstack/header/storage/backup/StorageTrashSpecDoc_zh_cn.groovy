@@ -5,7 +5,7 @@ doc {
 	title "回收数据清单"
 
 	field {
-		name "id"
+		name "trashId"
 		desc "回收数据的ID"
 		type "Long"
 		since "3.3.0"
