@@ -306,7 +306,6 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
 
                 for (GlobalConfig config : configsFromDatabase.values()) {
                     if (!configsFromXml.containsKey(config.getIdentity())) {
-                        logger.debug(String.format("Will remove an old global config from database: %s", config.toString()));
                         toRemove.add(config);
                     }
                 }
@@ -329,6 +328,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                         .collect(Collectors.toList());
 
                 for (GlobalConfig config : toRemove) {
+                    logger.debug(String.format("Will remove an old global config from database: %s", config.toString()));
                     SQL.New(GlobalConfigVO.class)
                             .eq(GlobalConfigVO_.category, config.getCategory())
                             .eq(GlobalConfigVO_.name, config.getName())
