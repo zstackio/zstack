@@ -17,14 +17,13 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
-
-import static org.zstack.core.Platform.err;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import static org.zstack.core.Platform.err;
 
 public class AuthorizationManager implements GlobalApiMessageInterceptor, Component {
     private static final CLogger logger = Utils.getLogger(AuthorizationManager.class);
