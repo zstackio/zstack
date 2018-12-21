@@ -4,12 +4,12 @@ package org.zstack.sdk;
 
 public class StorageTrashSpec  {
 
-    public java.lang.Long id;
-    public void setId(java.lang.Long id) {
-        this.id = id;
+    public java.lang.Long trashId;
+    public void setTrashId(java.lang.Long trashId) {
+        this.trashId = trashId;
     }
-    public java.lang.Long getId() {
-        return this.id;
+    public java.lang.Long getTrashId() {
+        return this.trashId;
     }
 
     public java.lang.String resourceUuid;
@@ -83,4 +83,5 @@ public class StorageTrashSpec  {
     public java.sql.Timestamp getCreateDate() {
         return this.createDate;
     }
+
 }

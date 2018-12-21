@@ -29,11 +29,11 @@ public class APIGetTrashOnPrimaryStorageReply extends APIReply {
         APIGetTrashOnPrimaryStorageReply reply = new APIGetTrashOnPrimaryStorageReply();
 
         StorageTrashSpec spec1 = new StorageTrashSpec(uuid(), "VolumeVO", uuid(), "PrimaryStorageVO", "/zstack_ps/installpath", 1024000L);
-        spec1.setId(1L);
+        spec1.setTrashId(1L);
         spec1.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
 
         StorageTrashSpec spec2 = new StorageTrashSpec(uuid(), "VolumeSnapshotVO", uuid(), "PrimaryStorageVO", "/zstack_ps/installpath/snapshot", 1024000L);
-        spec2.setId(2L);
+        spec2.setTrashId(2L);
         spec2.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         reply.setStorageTrashSpecs(asList(spec1, spec2));
 

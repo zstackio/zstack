@@ -82,7 +82,7 @@ class BackupStorageTrashCase extends SubCase {
         assert trashs.storageTrashSpecs.get(0).storageUuid == bs.uuid
         assert trashs.storageTrashSpecs.get(0).storageType == "BackupStorageVO"
         assert trashs.storageTrashSpecs.get(0).resourceType == "ImageVO"
-        assert trashs.storageTrashSpecs.get(0).id > 0
+        assert trashs.storageTrashSpecs.get(0).trashId > 0
         assert trashs.storageTrashSpecs.get(0).createDate == label.createDate
     }
 
