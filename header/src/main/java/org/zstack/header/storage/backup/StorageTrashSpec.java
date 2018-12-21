@@ -11,7 +11,7 @@ import java.sql.Timestamp;
 @SDK
 @PythonClassInventory
 public class StorageTrashSpec {
-    private Long id; // for delete one record
+    private Long trashId; // for delete one record
     private String resourceUuid;
     private String resourceType;
     private String storageUuid;
@@ -102,12 +102,12 @@ public class StorageTrashSpec {
         isFolder = folder;
     }
 
-    public Long getId() {
-        return id;
+    public Long getTrashId() {
+        return trashId;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void setTrashId(Long trashId) {
+        this.trashId = trashId;
     }
 
     public Timestamp getCreateDate() {

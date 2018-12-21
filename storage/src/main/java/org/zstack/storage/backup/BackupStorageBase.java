@@ -467,7 +467,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
                     logger.info(String.format("Deleted image %s and returned space[size:%s] to BS[uuid:%s] after image migration",
                             spec.getInstallPath(), spec.getSize(), self.getUuid()));
 
-                    trash.remove(spec.getId());
+                    trash.remove(spec.getTrashId());
                     completion.success();
                 } else {
                     logger.warn(String.format("Failed to delete image %s in image migration.", spec.getInstallPath()));

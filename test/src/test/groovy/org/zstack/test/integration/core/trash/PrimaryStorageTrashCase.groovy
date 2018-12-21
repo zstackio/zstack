@@ -83,7 +83,7 @@ class PrimaryStorageTrashCase extends SubCase {
         assert trashs.storageTrashSpecs.get(0).storageUuid == ps.uuid
         assert trashs.storageTrashSpecs.get(0).storageType == "PrimaryStorageVO"
         assert trashs.storageTrashSpecs.get(0).resourceType == "VolumeVO"
-        assert trashs.storageTrashSpecs.get(0).id > 0
+        assert trashs.storageTrashSpecs.get(0).trashId > 0
         assert trashs.storageTrashSpecs.get(0).createDate == label.createDate
     }
 

@@ -73,7 +73,7 @@ public class StorageTrashImpl implements StorageTrash {
             List<JsonLabelVO> labels = Q.New(JsonLabelVO.class).eq(JsonLabelVO_.resourceUuid, storageUuid).like(JsonLabelVO_.labelKey, type.toString() + "-%").list();
             labels.forEach(l -> {
                 StorageTrashSpec spec = JSONObjectUtil.toObject(l.getLabelValue(), StorageTrashSpec.class);
-                spec.setId(l.getId());
+                spec.setTrashId(l.getId());
                 spec.setCreateDate(l.getCreateDate());
                 specs.put(l.getLabelKey(), spec);
             });
@@ -93,7 +93,7 @@ public class StorageTrashImpl implements StorageTrash {
             return null;
         }
         StorageTrashSpec spec = JSONObjectUtil.toObject(lable.getLabelValue(), StorageTrashSpec.class);
-        spec.setId(trashId);
+        spec.setTrashId(trashId);
         spec.setCreateDate(lable.getCreateDate());
         return spec;
     }
