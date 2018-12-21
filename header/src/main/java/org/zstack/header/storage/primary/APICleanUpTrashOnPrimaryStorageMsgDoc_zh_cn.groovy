@@ -32,10 +32,10 @@ doc {
 					
 				}
 				column {
-					name "id"
+					name "trashId"
 					enclosedIn "cleanUpTrashOnPrimaryStorage"
 					desc "单独清理的id"
-					location "url"
+					location "body"
 					type "Long"
 					optional true
 					since "3.3.0"
