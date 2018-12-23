@@ -158,3 +158,49 @@ DELIMITER ;
 
 call migrateUserTagVO();
 DROP PROCEDURE IF EXISTS migrateUserTagVO;
+
+# create missing Shared resource for IAM2ProjectVO
+DROP PROCEDURE IF EXISTS getLinkedAccountUUid;
+DELIMITER $$
+CREATE PROCEDURE getLinkedAccountUUid(OUT linkedAccountUuid VARCHAR(32), IN projectUuid VARCHAR(32))
+    BEGIN
+        SELECT accountUuid INTO linkedAccountUuid from zstack.IAM2ProjectAccountRefVO where `projectUuid` = projectUuid LIMIT 1,1;
+    END $$
+DELIMITER ;
+
+DROP PROCEDURE IF EXISTS fixMissingShareResourceVO;
+DELIMITER $$
+CREATE PROCEDURE fixMissingShareResourceVO()
+    BEGIN
+        DECLARE done INT DEFAULT FALSE;
+        DECLARE count_shared INT DEFAULT 0;
+        DECLARE projectUuid varchar(32);
+        DECLARE linkedAccountUuid varchar(32);
+        DECLARE cur CURSOR FOR SELECT uuid FROM zstack.IAM2ProjectVO;
+        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+        OPEN cur;
+        read_loop: LOOP
+            FETCH cur INTO projectUuid;
+            IF done THEN
+                LEAVE read_loop;
+            END IF;
+
+            SELECT count(*) into count_shared from SharedResourceVO s where
+             s.receiverAccountUuid in (SELECT `accountUuid` from `IAM2ProjectAccountRefVO` where `projectUuid` = projectUuid)
+            and s.ownerAccountUuid='36c27e8ff05c4780bf6d2fa65700f22e' and s.resourceType='IAM2ProjectVO' and s.resourceUuid = projectUuid;
+            IF (count_shared = 0) THEN
+               CALL getLinkedAccountUUid(linkedAccountUuid, projectUuid);
+               INSERT INTO SharedResourceVO (`ownerAccountUuid`, `receiverAccountUuid`, `resourceType`, `permission`, `resourceUuid`,
+               `lastOpDate`, `createDate`)
+               values ('36c27e8ff05c4780bf6d2fa65700f22e', linkedAccountUuid, 'IAM2ProjectVO', 2, projectUuid, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
+            END IF;
+
+
+        END LOOP;
+        CLOSE cur;
+        SELECT CURTIME();
+    END $$
+DELIMITER ;
+
+call fixMissingShareResourceVO();
