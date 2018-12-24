@@ -337,7 +337,7 @@ public class VolumeSnapshotTreeBase {
                             whileCompletion.done();
                         }
                     });
-                }).run(new NoErrorCompletion() {
+                }).run(new NoErrorCompletion(completion) {
                     @Override
                     public void done() {
                         if (errList.getCauses().isEmpty()) {
