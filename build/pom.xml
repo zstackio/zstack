@@ -33,6 +33,7 @@
                                 WEB-INF/lib/reflections-0.9.8.jar,
                                 WEB-INF/lib/groovy-2.4.7.jar,
                                 WEB-INF/lib/okhttp-2.7.5.jar,
+                                WEB-INF/lib/sisu-guava-0.9.9.jar,
                             </packagingExcludes>
                             <webResources>
                                 <resource>
