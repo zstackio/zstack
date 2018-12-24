@@ -36,6 +36,8 @@ public class VxlanPoolApiInterceptor implements ApiMessageInterceptor {
             validate((APICreateL2VxlanNetworkMsg) msg);
         } else if (msg instanceof  APIDeleteVniRangeMsg) {
             validate((APIDeleteVniRangeMsg) msg);
+        } else if (msg instanceof  APIUpdateVniRangeMsg) {
+            validate((APIUpdateVniRangeMsg) msg);
         } else if (msg instanceof APICreateVxlanVtepMsg) {
             validate((APICreateVxlanVtepMsg) msg);
         }
@@ -52,6 +54,11 @@ public class VxlanPoolApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIDeleteVniRangeMsg msg) {
+        VniRangeVO vo = Q.New(VniRangeVO.class).eq(VniRangeVO_.uuid, msg.getUuid()).find();
+        msg.setL2NetworkUuid(vo.getL2NetworkUuid());
+    }
+
+    private void validate(APIUpdateVniRangeMsg msg) {
         VniRangeVO vo = Q.New(VniRangeVO.class).eq(VniRangeVO_.uuid, msg.getUuid()).find();
         msg.setL2NetworkUuid(vo.getL2NetworkUuid());
     }
