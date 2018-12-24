@@ -2648,9 +2648,16 @@ public class KVMHost extends HostBase implements Host {
                             chronyChecker.setPassword(getSelf().getPassword());
                             chronyChecker.setSshPort(getSelf().getPort());
 
+                            SshYumRepoChecker repoChecker = new SshYumRepoChecker();
+                            repoChecker.setTargetIp(getSelf().getManagementIp());
+                            repoChecker.setUsername(getSelf().getUsername());
+                            repoChecker.setPassword(getSelf().getPassword());
+                            repoChecker.setSshPort(getSelf().getPort());
+
                             AnsibleRunner runner = new AnsibleRunner();
                             runner.installChecker(checker);
                             runner.installChecker(chronyChecker);
+                            runner.installChecker(repoChecker);
                             runner.setAgentPort(KVMGlobalProperty.AGENT_PORT);
                             runner.setTargetIp(getSelf().getManagementIp());
                             runner.setPlayBookName(KVMConstant.ANSIBLE_PLAYBOOK_NAME);

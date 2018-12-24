@@ -2,10 +2,7 @@ package org.zstack.storage.ceph.primary;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
-import org.zstack.core.ansible.AnsibleGlobalProperty;
-import org.zstack.core.ansible.AnsibleRunner;
-import org.zstack.core.ansible.SshChronyConfigChecker;
-import org.zstack.core.ansible.SshFileMd5Checker;
+import org.zstack.core.ansible.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
@@ -177,9 +174,16 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
                             chronyChecker.setPassword(getSelf().getSshPassword());
                             chronyChecker.setSshPort(getSelf().getSshPort());
 
+                            SshYumRepoChecker repoChecker = new SshYumRepoChecker();
+                            repoChecker.setTargetIp(self.getHostname());
+                            repoChecker.setUsername(self.getSshUsername());
+                            repoChecker.setPassword(self.getSshPassword());
+                            repoChecker.setSshPort(self.getSshPort());
+
                             AnsibleRunner runner = new AnsibleRunner();
                             runner.installChecker(checker);
                             runner.installChecker(chronyChecker);
+                            runner.installChecker(repoChecker);
                             runner.setPassword(getSelf().getSshPassword());
                             runner.setUsername(getSelf().getSshUsername());
                             runner.setSshPort(getSelf().getSshPort());
