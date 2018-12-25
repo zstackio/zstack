@@ -340,9 +340,16 @@ public class SftpBackupStorage extends BackupStorageBase {
         chronyChecker.setPassword(getSelf().getPassword());
         chronyChecker.setSshPort(getSelf().getSshPort());
 
+        SshYumRepoChecker repoChecker = new SshYumRepoChecker();
+        repoChecker.setTargetIp(getSelf().getHostname());
+        repoChecker.setUsername(getSelf().getUsername());
+        repoChecker.setPassword(getSelf().getPassword());
+        repoChecker.setSshPort(getSelf().getSshPort());
+
         AnsibleRunner runner = new AnsibleRunner();
         runner.installChecker(checker);
         runner.installChecker(chronyChecker);
+        runner.installChecker(repoChecker);
         runner.setPassword(getSelf().getPassword());
         runner.setUsername(getSelf().getUsername());
         runner.setTargetIp(getSelf().getHostname());
