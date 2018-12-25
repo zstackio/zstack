@@ -15,7 +15,10 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 
@@ -117,7 +120,9 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
     }
 
     private ErrorCode testAddLdapServerConnection(LdapServerInventory inv) {
-        LdapTemplateContextSource ldapTemplateContextSource = new LdapUtil().loadLdap(inv);
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("com.sun.jndi.ldap.connect.timeout", Integer.toString(LdapConstant.CONNECT_TIMEOUT));
+        LdapTemplateContextSource ldapTemplateContextSource = new LdapUtil().loadLdap(inv, properties);
 
         try {
             AndFilter filter = new AndFilter();
