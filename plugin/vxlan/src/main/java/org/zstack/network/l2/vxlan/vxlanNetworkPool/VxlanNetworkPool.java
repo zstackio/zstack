@@ -288,6 +288,8 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
             handle((APIDetachL2NetworkFromClusterMsg) msg);
         } else if (msg instanceof APIDeleteVniRangeMsg) {
             handle((APIDeleteVniRangeMsg) msg);
+        } else if (msg instanceof APIUpdateVniRangeMsg) {
+            handle((APIUpdateVniRangeMsg) msg);
         } else if (msg instanceof APICreateVxlanVtepMsg) {
             handle((APICreateVxlanVtepMsg) msg);
         } else if (msg instanceof L2NetworkMessage) {
@@ -566,6 +568,18 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
                 bus.publish(evt);
             }
         });
+    }
+
+    private void handle(final APIUpdateVniRangeMsg msg) {
+        VniRangeVO vo = Q.New(VniRangeVO.class).eq(VniRangeVO_.uuid, msg.getUuid()).find();
+        vo.setName(msg.getName());
+        vo = dbf.updateAndRefresh(vo);
+
+        APIUpdateVniRangeEvent event = new APIUpdateVniRangeEvent(msg.getId());
+        event.setInventory(new VniRangeInventory(vo));
+        bus.publish(event);
+
+        logger.info(String.format("update l2 vxlan vni range[%s] name[%s]", msg.getUuid(), msg.getName()));
     }
 
     private void prepareL2NetworkOnHosts(final String l2NetworkUuid, final List<HostInventory> hosts, final Completion completion) {

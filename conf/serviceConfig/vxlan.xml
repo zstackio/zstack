@@ -39,6 +39,10 @@
     </message>
 
     <message>
+        <name>org.zstack.network.l2.vxlan.vxlanNetworkPool.APIUpdateVniRangeMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.network.l2.vxlan.vtep.APIQueryVtepMsg</name>
         <serviceId>query</serviceId>
     </message>
