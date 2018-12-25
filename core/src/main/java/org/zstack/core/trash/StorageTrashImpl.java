@@ -103,4 +103,19 @@ public class StorageTrashImpl implements StorageTrash {
         DebugUtils.Assert(trashId != null, "trashId is not allowed null here");
         UpdateQuery.New(JsonLabelVO.class).eq(JsonLabelVO_.id, trashId).delete();
     }
+
+    @Override
+    public Long getTrashId(String storageUuid, String installPath) {
+        DebugUtils.Assert(installPath != null, "installPath is not allowed null here");
+        List<JsonLabelVO> lables = Q.New(JsonLabelVO.class).eq(JsonLabelVO_.resourceUuid, storageUuid).like(JsonLabelVO_.labelValue, String.format("%%%s%%", installPath)).list();
+        if (!lables.isEmpty()) {
+            for (JsonLabelVO lable: lables) {
+                StorageTrashSpec spec = JSONObjectUtil.toObject(lable.getLabelValue(), StorageTrashSpec.class);
+                if (spec.getInstallPath().equals(installPath)) {
+                    return lable.getId();
+                }
+            }
+        }
+        return null;
+    }
 }
