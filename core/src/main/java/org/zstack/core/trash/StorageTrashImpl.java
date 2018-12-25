@@ -13,6 +13,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.storage.backup.StorageTrashSpec;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.utils.CollectionDSL;
+import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -80,5 +81,20 @@ public class StorageTrashImpl implements StorageTrash {
     @Override
     public void remove(String trashKey, String storageUuid) {
         UpdateQuery.New(JsonLabelVO.class).eq(JsonLabelVO_.labelKey, trashKey).eq(JsonLabelVO_.resourceUuid, storageUuid).delete();
+    }
+
+    @Override
+    public Long getTrashId(String storageUuid, String installPath) {
+        DebugUtils.Assert(installPath != null, "installPath is not allowed null here");
+        List<JsonLabelVO> lables = Q.New(JsonLabelVO.class).eq(JsonLabelVO_.resourceUuid, storageUuid).like(JsonLabelVO_.labelValue, String.format("%%%s%%", installPath)).list();
+        if (!lables.isEmpty()) {
+            for (JsonLabelVO lable: lables) {
+                StorageTrashSpec spec = JSONObjectUtil.toObject(lable.getLabelValue(), StorageTrashSpec.class);
+                if (spec.getInstallPath().equals(installPath)) {
+                    return lable.getId();
+                }
+            }
+        }
+        return null;
     }
 }

@@ -341,10 +341,17 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((SyncPrimaryStorageCapacityMsg) msg);
         } else if ((msg instanceof DetachIsoOnPrimaryStorageMsg)) {
             handle((DetachIsoOnPrimaryStorageMsg) msg);
+        } else if ((msg instanceof CheckInstallPathMsg)) {
+            handle((CheckInstallPathMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
 
+    protected void handle(final CheckInstallPathMsg msg) {
+        CheckInstallPathReply reply = new CheckInstallPathReply();
+        reply.setTrashId(trash.getTrashId(self.getUuid(), msg.getInstallPath()));
+        bus.reply(msg, reply);
     }
 
     protected void handle(final DetachIsoOnPrimaryStorageMsg msg) {

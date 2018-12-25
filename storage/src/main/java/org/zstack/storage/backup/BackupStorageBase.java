@@ -216,9 +216,17 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
             handle((GetImageSizeOnBackupStorageMsg) msg);
         } else if (msg instanceof GetLocalFileSizeOnBackupStorageMsg) {
             handle((GetLocalFileSizeOnBackupStorageMsg) msg);
+        } else if (msg instanceof CheckInstallPathOnBSMsg) {
+            handle((CheckInstallPathOnBSMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    protected void handle(final CheckInstallPathOnBSMsg msg) {
+        CheckInstallPathOnBSReply reply = new CheckInstallPathOnBSReply();
+        reply.setTrashId(trash.getTrashId(self.getUuid(), msg.getInstallPath()));
+        bus.reply(msg, reply);
     }
 
     private void handle(final PingBackupStorageMsg msg) {
