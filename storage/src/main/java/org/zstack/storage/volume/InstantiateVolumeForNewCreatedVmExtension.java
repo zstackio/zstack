@@ -97,7 +97,7 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
 
     @Override
     public void preInstantiateVmResource(VmInstanceSpec spec, Completion completion) {
-        if (!spec.getVmInventory().getState().equals(VmInstanceState.Created.toString())
+        if (!(VmInstanceConstant.VmOperation.NewCreate == spec.getCurrentVmOperation())
                 && VmInstanceConstant.VmOperation.ChangeImage != spec.getCurrentVmOperation()) {
             completion.success();
             return;
