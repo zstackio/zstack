@@ -1842,6 +1842,7 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private String getVolumeTOType(VolumeInventory vol) {
+        DebugUtils.Assert(vol.getInstallPath() != null, String.format("volume [%s] installPath is null, it has not been initialized", vol.getUuid()));
         return vol.getInstallPath().startsWith("iscsi") ? VolumeTO.ISCSI : VolumeTO.FILE;
     }
 
