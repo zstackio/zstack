@@ -358,12 +358,14 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                     synchronized (runningQueue) {
                         cf.startExecutionTimeInMills = System.currentTimeMillis();
                         // add to running queue
+                        logger.debug(String.format("Start executing runningQueue: %s, task name: %s", syncSignature, cf.getTask().getName()));
                         runningQueue.offer(cf);
                     }
 
                     cf.run(() -> {
                         synchronized (runningQueue) {
                             runningQueue.remove(cf);
+                            logger.debug(String.format("Finish executing runningQueue: %s, task name: %s", syncSignature, cf.getTask().getName()));
                         }
 
                         runQueue();
