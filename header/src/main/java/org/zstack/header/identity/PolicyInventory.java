@@ -1,5 +1,6 @@
 package org.zstack.header.identity;
 
+import org.apache.commons.lang.StringUtils;
 import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
@@ -32,7 +33,9 @@ public class PolicyInventory {
         PolicyInventory inv = new PolicyInventory();
         inv.setName(vo.getName());
         inv.setUuid(vo.getUuid());
-        inv.setStatements(JSONObjectUtil.toCollection(vo.getData(), ArrayList.class, PolicyStatement.class));
+        if (!StringUtils.isEmpty(vo.getData())) {
+            inv.setStatements(JSONObjectUtil.toCollection(vo.getData(), ArrayList.class, PolicyStatement.class));
+        }
         inv.setAccountUuid(vo.getAccountUuid());
         return inv;
     }
