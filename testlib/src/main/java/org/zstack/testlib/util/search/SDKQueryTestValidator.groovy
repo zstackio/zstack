@@ -20,7 +20,7 @@ class SDKQueryTestValidator {
     private static final CLogger logger = Utils.getLogger(SDKQueryTestValidator.class) 
 
     private static List<Field> getFieldToTest(Object inventory) {
-        List<Field> fs = FieldUtils.getAllFields(inventory.getClass()) 
+        List<Field> fs = FieldUtils.getAllFields(inventory.getClass()).findAll { !it.name.contains("\$") } // '$' usually means field injected by a proxy
 
         List<Field> ret = new ArrayList<Field>() 
         for (Field f : fs) {
