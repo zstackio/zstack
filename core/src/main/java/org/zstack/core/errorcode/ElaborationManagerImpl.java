@@ -4,6 +4,7 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.math.NumberUtils;
+import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
@@ -23,8 +24,10 @@ import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.*;
 import org.zstack.header.message.Message;
+import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.TimeUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.string.ErrorCodeElaboration;
@@ -71,16 +74,25 @@ public class ElaborationManagerImpl extends AbstractService {
     private void preCheckElaborationContent(String filename, ReturnValueCompletion<List<ElaborationCheckResult>> completion) {
         List<ElaborationCheckResult> results = new ArrayList<>();
         List<String> files = new ArrayList<>();
-        Map<String, String> contents = new HashMap<>();
+        Map<String, List<ErrorCodeElaboration>> contents = new HashMap<>();
 
         try {
             File folder = new File(filename);
-            PathUtil.scanFolder(files, folder.getAbsolutePath());
+            if (folder.isFile()) {
+                files.add(folder.getAbsolutePath());
+            } else {
+                PathUtil.scanFolder(files, folder.getAbsolutePath());
+            }
         } catch (Exception e) {
             throw new RuntimeException("Unable to scan folder", e);
         }
 
-        final boolean isClassPathFolder = (StringSimilarity.classPathFolder != null && StringSimilarity.classPathFolder.getAbsolutePath().equals(filename));
+        if (files.isEmpty()) {
+            completion.fail(argerr("%s is not existed or is empty folder", filename));
+            return;
+        }
+
+        final boolean isClassPathFolder = (StringSimilarity.classPathFolder != null && StringSimilarity.classPathFolder.getAbsolutePath().equalsIgnoreCase(filename));
 
         List<String> errorTemplates = PathUtil.scanFolderOnClassPath(StringSimilarity.elaborateFolder);
         List<String> errTemplates = new ArrayList<>();
@@ -120,53 +132,112 @@ public class ElaborationManagerImpl extends AbstractService {
                 trigger.next();
             }
         }).then(new NoRollbackFlow() {
-            String __name__ = "InValidJsonSchema";
+            String __name__ = "InValidJsonArraySchema";
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                for (String file: files) {
+                List<String> checks = CollectionDSL.list();
+                checks.addAll(files);
+                for (String file: checks) {
                     File templateFile = new File(file);
                     try {
                         String content = FileUtils.readFileToString(templateFile);
                         new JsonParser().parse(content);
-                        contents.put(file, content);
+                        List<ErrorCodeElaboration> errs = JSONObjectUtil.toCollection(content, ArrayList.class, ErrorCodeElaboration.class);
+                        contents.put(file, errs);
                     } catch (IOException e) {
-                        trigger.fail(Platform.operr(String.format("read error elaboration template files failed, due to: %s", e.getMessage())));
+                        trigger.fail(Platform.operr(String.format("read error elaboration template files [%s] failed, due to: %s", templateFile, e.getMessage())));
                         return;
                     } catch (JsonSyntaxException e) {
                         results.add(new ElaborationCheckResult(file, null, ElaborationFailedReason.InValidJsonSchema.toString()));
+                        files.remove(file);
+                    } catch (JSONException e) {
+                        results.add(new ElaborationCheckResult(file, null, ElaborationFailedReason.InValidJsonArraySchema.toString()));
+                        files.remove(file);
+                    } catch (Exception e) {
+                        logger.debug(e.getMessage());
+                        results.add(new ElaborationCheckResult(file, null, ElaborationFailedReason.InValidJsonArraySchema.toString()));
+                        files.remove(file);
                     }
                 }
                 trigger.next();
             }
         }).then(new NoRollbackFlow() {
-            String __name__ = "RegexAlreadyExisted and DuplicatedRegex";
+            String __name__ = "RegexAlreadyExisted, DuplicatedRegex, MessageNotFound and RegexNotFound";
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 HashSet<String> sets = new HashSet<>();
                 contents.forEach((f, c) -> {
-                    if (!isClassPathFolder && StringSimilarity.regexContained(c)) {
-                        results.add(new ElaborationCheckResult(f, null, ElaborationFailedReason.RegexAlreadyExisted.toString()));
+                    for (ErrorCodeElaboration err: c) {
+                        if (err.getRegex() == null || err.getRegex().isEmpty()) {
+                            results.add(new ElaborationCheckResult(f, null, ElaborationFailedReason.RegexNotFound.toString()));
+                            continue;
+                        }
+
+                        if (err.getMessage_cn() == null || err.getMessage_cn().isEmpty()) {
+                            results.add(new ElaborationCheckResult(f, null, ElaborationFailedReason.MessageNotFound.toString()));
+                        }
+
+                        if (!isClassPathFolder && StringSimilarity.regexContained(err.getRegex())) {
+                            results.add(new ElaborationCheckResult(f, err.getRegex(), ElaborationFailedReason.RegexAlreadyExisted.toString()));
+                        }
+
+                        if (sets.contains(err.getRegex())) {
+                            results.add(new ElaborationCheckResult(f, err.getRegex(), ElaborationFailedReason.DuplicatedRegex.toString()));
+                        } else {
+                            sets.add(err.getRegex());
+                        }
                     }
 
-                    if (sets.contains(c)) {
-                        results.add(new ElaborationCheckResult(f, null, ElaborationFailedReason.DuplicatedRegex.toString()));
-                    } else {
-                        sets.add(c);
+                });
+                trigger.next();
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "CategoryNotFound and NotSameCategoriesInFile";
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                Map<String, String> categories = new HashMap<>();
+                contents.forEach((f, c) -> {
+                    for (ErrorCodeElaboration err: c) {
+                        if (err.getCategory() == null || err.getCategory().isEmpty()) {
+                            results.add(new ElaborationCheckResult(f, err.getRegex(), ElaborationFailedReason.CategoryNotFound.toString()));
+                            continue;
+                        }
+
+                        if (categories.get(f) == null) {
+                            categories.put(f, err.getCategory());
+                        } else {
+                            if (!categories.get(f).equals(err.getCategory())) {
+                                results.add(new ElaborationCheckResult(f, null, ElaborationFailedReason.NotSameCategoriesInFile.toString()));
+                            }
+                        }
                     }
                 });
                 trigger.next();
             }
         }).then(new NoRollbackFlow() {
-            String __name__ = "MessageNotFound and RegexNotFound";
+            String __name__ = "DuplicatedErrorCode and ErrorCodeAlreadyExisted";
             @Override
             public void run(FlowTrigger trigger, Map data) {
+                HashSet<String> sets = new HashSet<>();
+                contents.forEach((f, c) -> {
+                    for (ErrorCodeElaboration err: c) {
+                        if (err.getCode() == null || err.getCode().isEmpty() || err.getCategory() == null || err.getCategory().isEmpty()) {
+                            continue;
+                        }
+                        String code = err.getCategory() + "." + err.getCode();
 
-                trigger.next();
-            }
-        }).then(new NoRollbackFlow() {
-            String __name__ = "NotSameCategoriesInFile";
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
+                        if (!isClassPathFolder && StringSimilarity.errorCodeContained(code)) {
+                            results.add(new ElaborationCheckResult(f, err.getRegex(), ElaborationFailedReason.ErrorCodeAlreadyExisted.toString()));
+                        }
+
+                        if (sets.contains(code)) {
+                            results.add(new ElaborationCheckResult(f, err.getRegex(), ElaborationFailedReason.DuplicatedErrorCode.toString()));
+                        } else {
+                            sets.add(code);
+                        }
+                    }
+
+                });
                 trigger.next();
             }
         }).done(new FlowDoneHandler(completion) {
@@ -187,6 +258,7 @@ public class ElaborationManagerImpl extends AbstractService {
         preCheckElaborationContent(msg.getElaborateFile(), new ReturnValueCompletion<List<ElaborationCheckResult>>(msg) {
             @Override
             public void success(List<ElaborationCheckResult> returnValue) {
+                returnValue.sort(Comparator.comparing(ElaborationCheckResult::getReason));
                 reply.setResults(returnValue);
                 bus.reply(msg, reply);
             }
@@ -209,17 +281,21 @@ public class ElaborationManagerImpl extends AbstractService {
                 return Q.New(ElaborationVO.class).eq(ElaborationVO_.matched, false).gte(ElaborationVO_.repeats, times).
                         gte(ElaborationVO_.lastOpDate, new Timestamp(start)).list();
             } else if (NumberUtils.isNumber(from)) {
-                return Q.New(ElaborationVO.class).eq(ElaborationVO_.matched, false).gte(ElaborationVO_.repeats, times).
-                        gte(ElaborationVO_.lastOpDate, new Timestamp(Long.valueOf(from))).list();
+                try {
+                    return Q.New(ElaborationVO.class).eq(ElaborationVO_.matched, false).gte(ElaborationVO_.repeats, times).
+                            gte(ElaborationVO_.lastOpDate, new Timestamp(Long.valueOf(from))).list();
+                } catch (NumberFormatException e) {
+                    throw new OperationFailureException(argerr("%s is not a Long value Number", from));
+                }
             } else {
-                throw new OperationFailureException(argerr("arg 'from' should format like 'yyyy-MM-dd HH:mm:ss' or '1545380003000'"));
+                throw new OperationFailureException(argerr("arg 'startTime' should format like 'yyyy-MM-dd HH:mm:ss' or '1545380003000'"));
             }
         }
     }
 
     private void handle(final APIGetMissedElaborationMsg msg) {
         APIGetMissedElaborationReply reply = new APIGetMissedElaborationReply();
-        List<ElaborationVO> vos = getMissedElatorations(msg.getRepeats(), msg.getFrom());
+        List<ElaborationVO> vos = getMissedElatorations(msg.getRepeats(), msg.getStartTime());
 
         vos.forEach(vo -> {
             ErrorCodeElaboration e = StringSimilarity.findSimilary(vo.getErrorInfo());
@@ -252,8 +328,7 @@ public class ElaborationManagerImpl extends AbstractService {
                         if (returnValue.isEmpty()) {
                             trigger.next();
                         } else {
-                            trigger.fail(operr("reason: %s, file: %s",
-                                    returnValue.get(0).getReason(), returnValue.get(0).getFileName()));
+                            trigger.fail(operr(returnValue.get(0).getReason()));
                         }
                     }
 
@@ -351,7 +426,7 @@ public class ElaborationManagerImpl extends AbstractService {
 
 
         if (msg.getCategory() == null && msg.getRegex() == null){
-            throw new OperationFailureException(Platform.argerr("regex or category must be set"));
+            throw new OperationFailureException(Platform.argerr("input args 'regex' or 'category' must be set"));
         }
 
         bus.reply(msg, reply);

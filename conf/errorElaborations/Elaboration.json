@@ -1,0 +1,37 @@
+[
+  {
+    "category": "Elaboration",
+    "code": "1000",
+    "regex": "%s is not existed or is empty folder",
+    "message_cn": "不存在的文件: %1$s, 或文件夹为空",
+    "message_en": "%1$s is not existed or is empty folder"
+  },
+  {
+    "category": "Elaboration",
+    "code": "1001",
+    "regex": "read error elaboration template files [%s] failed, due to: %s",
+    "message_cn": "无法读取错误码文件: %1$s",
+    "message_en": "read error elaboration template files [%1$s] failed"
+  },
+  {
+    "category": "Elaboration",
+    "code": "1002",
+    "regex": "input args 'regex' or 'category' must be set",
+    "message_cn": "输入参数中'regex'或'category'必须设置",
+    "message_en": "input args 'regex' or 'category' must be set"
+  },
+  {
+    "category": "Elaboration",
+    "code": "1003",
+    "regex": "%s is not a Long value Number",
+    "message_cn": "输入参数中'%1$s'不是有效的Long字段",
+    "message_en": "%1$s is not a Long value Number"
+  },
+  {
+    "category": "Elaboration",
+    "code": "1004",
+    "regex": "arg 'startTime' should format like 'yyyy-MM-dd HH:mm:ss' or '1545380003000'",
+    "message_cn": "输入参数中'startTime'的格式应该类似'yyyy-MM-dd HH:mm:ss' 或者 '1545380003000'",
+    "message_en": "arg 'startTime' should format like 'yyyy-MM-dd HH:mm:ss' or '1545380003000'"
+  }
+]

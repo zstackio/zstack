@@ -698,13 +698,13 @@ public class Platform {
         }
     }
 
-    private static String elaborate(String details,  Object...args) {
-        ErrorCodeElaboration elaboration = StringSimilarity.findSimilary(details);
+    private static String elaborate(String description) {
+        ErrorCodeElaboration elaboration = StringSimilarity.findSimilary(description);
         if (elaboration != null) {
             String formatStr = elaboration.getFormatSrcError();
-            if (StringSimilarity.matched(elaboration, details)) {
+            if (StringSimilarity.matched(elaboration, description)) {
                 insertLogError(formatStr, elaboration, true);
-                return StringSimilarity.formatElaboration(elaboration, args);
+                return StringSimilarity.formatElaboration(elaboration);
             } else {
                 insertLogError(formatStr, elaboration, false);
                 return null;
@@ -713,17 +713,41 @@ public class Platform {
         return null;
     }
 
+    private static List<Enum> excludeCode = CollectionDSL.list(SysErrors.INTERNAL, SysErrors.OPERATION_ERROR, SysErrors.INVALID_ARGUMENT_ERROR, SysErrors.TIMEOUT);
+
+    private static String elaborate(Enum errCode, String description,  String details, Object...args) {
+        ErrorCodeElaboration elaboration = StringSimilarity.findSimilary(details);
+        if (elaboration != null) {
+            String formatStr = elaboration.getFormatSrcError();
+            if (StringSimilarity.matched(elaboration, details)) {
+                insertLogError(formatStr, elaboration, true);
+                return StringSimilarity.formatElaboration(elaboration, args);
+            } else {
+                if (excludeCode.contains(errCode)) {
+                    insertLogError(formatStr, elaboration, false);
+                    return null;
+                }
+            }
+        }
+
+        if (!excludeCode.contains(errCode)) {
+            return elaborate(description);
+        } else {
+            return null;
+        }
+    }
+
     public static ErrorCode err(Enum errCode, String fmt, Object...args) {
         ErrorFacade errf = getComponentLoader().getComponent(ErrorFacade.class);
         ErrorCode result = errf.instantiateErrorCode(errCode, String.format(fmt, args));
-        result.setElaboration(elaborate(fmt, args));
+        result.setElaboration(elaborate(errCode, result.getDescription(), fmt, args));
         return result;
     }
 
     public static ErrorCode err(Enum errCode, ErrorCode cause, String fmt, Object...args) {
         ErrorFacade errf = getComponentLoader().getComponent(ErrorFacade.class);
         ErrorCode result = errf.instantiateErrorCode(errCode, String.format(fmt, args), cause);
-        result.setElaboration(elaborate(fmt, args));
+        result.setElaboration(elaborate(errCode, result.getDescription(), fmt, args));
         return result;
     }
 

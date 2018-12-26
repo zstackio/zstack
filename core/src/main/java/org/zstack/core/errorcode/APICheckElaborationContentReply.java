@@ -27,7 +27,7 @@ public class APICheckElaborationContentReply extends APIReply {
         APICheckElaborationContentReply reply = new APICheckElaborationContentReply();
         ElaborationCheckResult result = new ElaborationCheckResult();
         result.setFileName("/tmp/Host1.json");
-        result.setReason(ElaborationFailedReason.InValidJsonSchema.toString());
+        result.setReason(ElaborationFailedReason.InValidJsonArraySchema.toString());
 
         reply.setResults(asList(result));
         return reply;

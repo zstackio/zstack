@@ -114,6 +114,16 @@ public class StringSimilarity {
         return false;
     }
 
+    public static boolean errorCodeContained(String code) {
+        for (ErrorCodeElaboration e: elaborations) {
+            String errCode = e.getCategory() + "." + e.getCode();
+            if (errCode.equals(code)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static double levenshtein(String str, String sub) {
         Levenshtein l = new Levenshtein();
         return l.distance(str, sub);

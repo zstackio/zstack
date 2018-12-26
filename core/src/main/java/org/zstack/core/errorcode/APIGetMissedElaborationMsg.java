@@ -18,7 +18,7 @@ public class APIGetMissedElaborationMsg extends APISyncCallMessage {
     @APIParam(required = false, numberRange = {1, Long.MAX_VALUE})
     private Long repeats;
     @APIParam(required = false)
-    private String from;
+    private String startTime;
 
     public Long getRepeats() {
         return repeats;
@@ -28,18 +28,18 @@ public class APIGetMissedElaborationMsg extends APISyncCallMessage {
         this.repeats = repeats;
     }
 
-    public String getFrom() {
-        return from;
+    public String getStartTime() {
+        return startTime;
     }
 
-    public void setFrom(String from) {
-        this.from = from;
+    public void setStartTime(String startTime) {
+        this.startTime = startTime;
     }
 
     public static APIGetMissedElaborationMsg __example__() {
         APIGetMissedElaborationMsg msg = new APIGetMissedElaborationMsg();
         msg.setRepeats(1L);
-        msg.setFrom("2018-12-12 00:00:00");
+        msg.setStartTime("2018-12-12 00:00:00");
 
         return msg;
     }
