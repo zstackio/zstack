@@ -1,12 +1,17 @@
 package org.zstack.header.volume;
 
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.message.ConfigurableTimeoutMessage;
+import org.zstack.header.message.DefaultTimeout;
 import org.zstack.header.message.NeedReplyMessage;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * Create by weiwang at 2018/6/19
  */
-public class CreateDataVolumeFromVolumeTemplateMsg extends NeedReplyMessage {
+@DefaultTimeout(timeunit = TimeUnit.HOURS, value = 72)
+public class CreateDataVolumeFromVolumeTemplateMsg extends NeedReplyMessage implements ConfigurableTimeoutMessage {
     private String imageUuid;
     private String name;
     private String description;

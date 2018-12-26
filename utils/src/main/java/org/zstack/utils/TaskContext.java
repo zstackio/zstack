@@ -18,6 +18,15 @@ public class TaskContext {
         taskContexts.put(Thread.currentThread().getId(), ctx);
     }
 
+    public static boolean containsTaskContext(Object key) {
+        Map<Object, Object> ctx = getTaskContext();
+        if (ctx != null) {
+            return ctx.containsKey(key);
+        }
+
+        return false;
+    }
+
     public static void removeTaskContext(long threadID) {
         taskContexts.remove(threadID);
     }
