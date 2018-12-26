@@ -58,6 +58,7 @@ import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.SystemTagUtils;
+import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.Utils;
@@ -5035,7 +5036,12 @@ public class VmInstanceBase extends AbstractVmInstance {
                 dbf.remove(self);
                 // clean up EO, otherwise API-retry may cause conflict if
                 // the resource uuid is set
-                dbf.eoCleanup(VmInstanceVO.class, Collections.singletonList(self.getUuid()));
+                try {
+                    dbf.eoCleanup(VmInstanceVO.class, CollectionDSL.list(self.getUuid()));
+                } catch (Exception e) {
+                    logger.warn(e.getMessage());
+                }
+
                 completion.fail(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR, errCode));
             }
         }).start();
