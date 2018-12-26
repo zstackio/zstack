@@ -7,13 +7,13 @@ import org.zstack.core.trash.TrashType
 import org.zstack.header.storage.backup.StorageTrashSpec
 import org.zstack.header.storage.primary.PrimaryStorageVO
 import org.zstack.header.volume.VolumeVO
+import org.zstack.sdk.CleanUpTrashOnPrimaryStorageResult
 import org.zstack.sdk.GetTrashOnPrimaryStorageResult
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.gson.JSONObjectUtil
-
 /**
  * Created by mingjian.deng on 2018/12/18.*/
 class PrimaryStorageTrashCase extends SubCase {
@@ -106,9 +106,13 @@ class PrimaryStorageTrashCase extends SubCase {
     }
 
     void testCleanUpTrash() {
-        cleanUpTrashOnPrimaryStorage {
+        def result = cleanUpTrashOnPrimaryStorage {
             uuid = ps.uuid
-        }
+        } as CleanUpTrashOnPrimaryStorageResult
+
+        assert result.result != null
+        assert result.result.size == 246912L
+        assert result.result.resourceUuids.size() == 2
 
         def trashs = getTrashOnPrimaryStorage {
             uuid = ps.uuid

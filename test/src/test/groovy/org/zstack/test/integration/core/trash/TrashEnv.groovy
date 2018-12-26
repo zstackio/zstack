@@ -1,17 +1,25 @@
 package org.zstack.test.integration.core.trash
 
-import org.zstack.header.network.service.NetworkServiceType
-import org.zstack.network.securitygroup.SecurityGroupConstant
-import org.zstack.network.service.virtualrouter.VirtualRouterConstant
+
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.Test
 import org.zstack.utils.data.SizeUnit
-
 /**
  * Created by mingjian.deng on 2018/12/18.*/
 class TrashEnv {
     static EnvSpec psbs() {
         return Test.makeEnv {
+            instanceOffering {
+                name = "instanceOffering"
+                memory = SizeUnit.GIGABYTE.toByte(1)
+                cpu = 1
+            }
+
+            diskOffering {
+                name = "diskOffering"
+                diskSize = SizeUnit.GIGABYTE.toByte(20)
+            }
+
             cephBackupStorage {
                 name="ceph-bs"
                 url = "/bk"
@@ -65,16 +73,6 @@ class TrashEnv {
                     l3Network {
                         name = "l3"
 
-                        service {
-                            provider = VirtualRouterConstant.PROVIDER_TYPE
-                            types = [NetworkServiceType.DHCP.toString(), NetworkServiceType.DNS.toString()]
-                        }
-
-                        service {
-                            provider = SecurityGroupConstant.SECURITY_GROUP_PROVIDER_TYPE
-                            types = [SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE]
-                        }
-
                         ip {
                             startIp = "192.168.100.10"
                             endIp = "192.168.100.100"
@@ -85,6 +83,15 @@ class TrashEnv {
                 }
 
                 attachBackupStorage("ceph-bs")
+            }
+
+            vm {
+                name = "vm"
+                useInstanceOffering("instanceOffering")
+                useImage("ceph-image")
+                useL3Networks("l3")
+                useCluster("cluster")
+                useDiskOfferings("diskOffering")
             }
         }
     }

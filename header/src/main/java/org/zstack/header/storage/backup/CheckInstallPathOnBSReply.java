@@ -7,6 +7,7 @@ import org.zstack.header.message.MessageReply;
  */
 public class CheckInstallPathOnBSReply extends MessageReply {
     private Long trashId;
+    private String resourceUuid;
 
     public Long getTrashId() {
         return trashId;
@@ -14,5 +15,13 @@ public class CheckInstallPathOnBSReply extends MessageReply {
 
     public void setTrashId(Long trashId) {
         this.trashId = trashId;
+    }
+
+    public String getResourceUuid() {
+        return resourceUuid;
+    }
+
+    public void setResourceUuid(String resourceUuid) {
+        this.resourceUuid = resourceUuid;
     }
 }
