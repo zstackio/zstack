@@ -46,8 +46,9 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
     private List<ApiTimeoutExtensionPoint> apiTimeoutExts;
 
     public static final String APITIMEOUT_GLOBAL_CONFIG_TYPE = "apiTimeout";
+    public static final String CONFIGURABLE_TIMEOUT_GLOBAL_CONFIG_TYPE = "configurableTimeout";
     private long SYNCALL_TIMEOUT = -1;
-    public static final String TASK_CONTEXT_API_TIMEOUT = "__apitimeout__";
+    public static final String TASK_CONTEXT_MESSAGE_TIMEOUT = "__messagetimeout__";
 
     void init() {
         SYNCALL_TIMEOUT = parseTimeout(ApiTimeoutGlobalProperty.SYNCCALL_API_TIMEOUT);
@@ -90,6 +91,19 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
         return 100;
     }
 
+    private long getMessageTimeout(ConfigurableTimeoutMessage msg) {
+        if (msg instanceof APIMessage) {
+            return getAPIMessageTimeout((APIMessage) msg);
+        } else {
+            return getNotApiMessageTimeout(msg);
+        }
+    }
+
+    private long getNotApiMessageTimeout(ConfigurableTimeoutMessage msg) {
+        String s = gcf.getConfigValue(CONFIGURABLE_TIMEOUT_GLOBAL_CONFIG_TYPE, msg.getClass().getName(), String.class);
+        return parseTimeout(s);
+    }
+
     private long getAPIMessageTimeout(APIMessage msg) {
         if (msg.getTimeout() != -1) {
             // the timeout is set somewhere, use it
@@ -106,8 +120,8 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
 
     @Override
     public void beforeDeliveryMessage(Message msg) {
-        if (msg instanceof APIMessage) {
-            TaskContext.putTaskContextItem(TASK_CONTEXT_API_TIMEOUT, getAPIMessageTimeout((APIMessage) msg));
+        if (msg instanceof ConfigurableTimeoutMessage && !TaskContext.containsTaskContext(TASK_CONTEXT_MESSAGE_TIMEOUT)) {
+            TaskContext.putTaskContextItem(TASK_CONTEXT_MESSAGE_TIMEOUT, getMessageTimeout((ConfigurableTimeoutMessage) msg));
         }
     }
 
@@ -126,19 +140,29 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
                     List<String> apiClassNamesInGlobalConfig = q(GlobalConfigVO.class).select(GlobalConfigVO_.name)
                             .eq(GlobalConfigVO_.category, APITIMEOUT_GLOBAL_CONFIG_TYPE).listValues();
 
-                    List<Class> apiClasses = BeanUtils.reflections.getSubTypesOf(APIMessage.class)
+                    List<String> configurationLocalMessageClassNamesInGlobalConfig = q(GlobalConfigVO.class).select(GlobalConfigVO_.name)
+                            .eq(GlobalConfigVO_.category, CONFIGURABLE_TIMEOUT_GLOBAL_CONFIG_TYPE).listValues();
+
+                    List<Class> configurableMessageClasses = BeanUtils.reflections.getSubTypesOf(ConfigurableTimeoutMessage.class)
                             .stream().filter(clz -> !APISyncCallMessage.class.isAssignableFrom(clz))
-                            .filter(clz -> !apiClassNamesInGlobalConfig.contains(clz.getName()))
+                            .filter(clz -> !apiClassNamesInGlobalConfig.contains(clz.getName())
+                                    && !configurationLocalMessageClassNamesInGlobalConfig.contains(clz.getName()))
                             .collect(Collectors.toList());
 
 
-                    apiClasses.forEach(clz -> {
+                    configurableMessageClasses.forEach(clz -> {
                         GlobalConfigVO vo = new GlobalConfigVO();
-                        vo.setCategory(APITIMEOUT_GLOBAL_CONFIG_TYPE);
-                        vo.setName(clz.getName());
-                        vo.setDescription(String.format("timeout for API %s", clz));
 
-                        APIDefaultTimeout at = (APIDefaultTimeout) clz.getAnnotation(APIDefaultTimeout.class);
+                        if (APIMessage.class.isAssignableFrom(clz)) {
+                            vo.setCategory(APITIMEOUT_GLOBAL_CONFIG_TYPE);
+                        } else {
+                            vo.setCategory(CONFIGURABLE_TIMEOUT_GLOBAL_CONFIG_TYPE);
+                        }
+
+                        vo.setName(clz.getName());
+                        vo.setDescription(String.format("timeout for message %s", clz));
+
+                        DefaultTimeout at = (DefaultTimeout) clz.getAnnotation(DefaultTimeout.class);
                         if (at == null) {
                             vo.setDefaultValue("30m");
                         } else {
@@ -245,7 +269,7 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
             }
         }
 
-        Long apiTimeout = parseObjectToLong(TaskContext.getTaskContextItem(TASK_CONTEXT_API_TIMEOUT));
+        Long apiTimeout = parseObjectToLong(TaskContext.getTaskContextItem(TASK_CONTEXT_MESSAGE_TIMEOUT));
         if (apiTimeout != null) {
             return apiTimeout;
         } else {
