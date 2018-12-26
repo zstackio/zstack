@@ -49,7 +49,7 @@ import java.util.concurrent.TimeUnit;
         responseClass = APICreateVolumeSnapshotEvent.class,
         parameterName = "params"
 )
-@APIDefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)
+@DefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)
 public class APICreateVolumeSnapshotMsg extends APICreateMessage implements VolumeMessage, APIAuditor {
     /**
      * @desc volume uuid. See :ref:`VolumeInventory`

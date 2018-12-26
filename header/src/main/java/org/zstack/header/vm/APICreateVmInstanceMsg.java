@@ -77,7 +77,7 @@ import static java.util.Arrays.asList;
         responseClass = APICreateVmInstanceEvent.class,
         parameterName = "params"
 )
-@APIDefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)
+@DefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)
 public class APICreateVmInstanceMsg extends APICreateMessage implements APIAuditor, NewVmInstanceMessage {
     /**
      * @desc max length of 255 characters

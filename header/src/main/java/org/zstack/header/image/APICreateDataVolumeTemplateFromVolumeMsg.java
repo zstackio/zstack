@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
         parameterName = "params",
         responseClass = APICreateDataVolumeTemplateFromVolumeEvent.class
 )
-@APIDefaultTimeout(timeunit = TimeUnit.HOURS, value = 72)
+@DefaultTimeout(timeunit = TimeUnit.HOURS, value = 72)
 public class APICreateDataVolumeTemplateFromVolumeMsg extends APICreateMessage implements APIAuditor {
     @APIParam(maxLength = 255)
     private String name;
