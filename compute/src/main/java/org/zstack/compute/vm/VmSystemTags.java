@@ -29,8 +29,11 @@ public class VmSystemTags {
     public static String ROOT_PASSWORD_TOKEN = "rootPassword";
     public static PatternedSystemTag ROOT_PASSWORD = new PatternedSystemTag(String.format("rootPassword::{%s}", ROOT_PASSWORD_TOKEN), VmInstanceVO.class);
 
+    @Deprecated
     public static String ISO_DEVICEID_TOKEN = "deviceId";
+    @Deprecated
     public static String ISO_TOKEN = "iso";
+    @Deprecated
     public static PatternedSystemTag ISO = new PatternedSystemTag(String.format("iso::{%s}::{%s}", ISO_TOKEN, ISO_DEVICEID_TOKEN), VmInstanceVO.class);
 
     public static String BOOT_ORDER_TOKEN = "bootOrder";
@@ -92,4 +95,25 @@ public class VmSystemTags {
     public static String DUAL_STACK_NIC_SECONDARY_L3_TOKEN = "secondaryL3NetworkUuid";
     public static String DUAL_STACK_NIC_TOKEN = "dualStackNic";
     public static PatternedSystemTag DUAL_STACK_NIC = new PatternedSystemTag(String.format("dualStackNic::{%s}::{%s}", DUAL_STACK_NIC_PRIMARY_L3_TOKEN, DUAL_STACK_NIC_SECONDARY_L3_TOKEN), VmInstanceVO.class);
+
+    // only use by create vm
+    public static String CD_ROM_LIST_TOKEN = "cdroms";
+    public static String CD_ROM_0 = "cdrom0";
+    public static String CD_ROM_1 = "cdrom1";
+    public static String CD_ROM_2 = "cdrom2";
+    public static PatternedSystemTag CREATE_VM_CD_ROM_LIST = new PatternedSystemTag(String.format("cdroms::{%s}::{%s}::{%s}", CD_ROM_0, CD_ROM_1, CD_ROM_2), VmInstanceVO.class);
+
+    public static String CREATE_WITHOUT_CD_ROM_TOKEN = "createWithoutCdRom";
+    public static PatternedSystemTag CREATE_WITHOUT_CD_ROM = new PatternedSystemTag(String.format("createWithoutCdRom::{%s}", CREATE_WITHOUT_CD_ROM_TOKEN), VmInstanceVO.class);
+
+    public static String CD_ROM_UUID_TOKEN = "cdromUuid";
+    public static PatternedSystemTag CD_ROM = new PatternedSystemTag(String.format("cdromUuid::{%s}", CD_ROM_UUID_TOKEN), VmInstanceVO.class);
+
+    @Deprecated
+    public static final String V2V_VM_CDROMS_TOKEN = "v2vVmCdroms";
+    @Deprecated
+    public static PatternedSystemTag V2V_VM_CDROMS = new PatternedSystemTag(
+            String.format("v2vVmCdroms::{%s}", V2V_VM_CDROMS_TOKEN),
+            VmInstanceVO.class
+    );
 }

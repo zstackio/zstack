@@ -321,7 +321,7 @@ public class ImageBase implements Image {
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                List<String> vmUuids = IsoOperator.getVmUuidByIsoUuid(msg.getImageUuid());
+                List<String> vmUuids = IsoOperator.getVmUuidByIsoUuid2(msg.getImageUuid());
                 if (vmUuids.isEmpty()) {
                     trigger.next();
                     return;

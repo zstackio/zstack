@@ -3,6 +3,7 @@ package org.zstack.compute.vm;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
+import org.zstack.header.vm.VmInstanceConstant;
 
 @GlobalConfigDefinition
 public class VmGlobalConfig {
@@ -36,4 +37,10 @@ public class VmGlobalConfig {
     public static GlobalConfig EMULATE_HYPERV = new GlobalConfig(CATEGORY, "emulateHyperV");
     @GlobalConfigValidation(validValues = {"true", "false"})
     public static GlobalConfig ADDITIONAL_QMP = new GlobalConfig(CATEGORY, "additionalQmp");
+
+    @GlobalConfigValidation(numberGreaterThan = 1, numberLessThan = VmInstanceConstant.MAXIMUM_CDROM_NUMBER)
+    public static GlobalConfig VM_DEFAULT_CD_ROM_NUM = new GlobalConfig(CATEGORY, "vmDefaultCdRomNum");
+
+    @GlobalConfigValidation(numberGreaterThan = 1, numberLessThan = VmInstanceConstant.MAXIMUM_CDROM_NUMBER)
+    public static GlobalConfig MAXIMUM_CD_ROM_NUM = new GlobalConfig(CATEGORY, "maximumCdRomNum");
 }

@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.allocator.HostAllocatorManager;
+import org.zstack.core.Platform;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.*;
@@ -38,6 +39,8 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
+import org.zstack.header.identity.PolicyVO;
+import org.zstack.header.identity.PolicyVO_;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.*;
 import org.zstack.header.message.*;
@@ -54,7 +57,10 @@ import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.vm.VmInstanceSpec.HostName;
 import org.zstack.header.vm.VmInstanceSpec.IsoSpec;
+import org.zstack.header.vm.VmInstanceSpec.CdRomSpec;
+import org.zstack.header.vm.cdrom.*;
 import org.zstack.header.volume.*;
+import org.zstack.identity.Account;
 import org.zstack.identity.AccountManager;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.SystemTagUtils;
@@ -74,6 +80,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.Platform.err;
+import static org.zstack.header.vm.VmInstanceConstant.MAXIMUM_CDROM_NUMBER;
 import static org.zstack.utils.CollectionDSL.*;
 
 
@@ -409,6 +416,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((DeleteL3NetworkFromVmNicMsg) msg);
         } else if (msg instanceof DetachIsoFromVmInstanceMsg) {
             handle((DetachIsoFromVmInstanceMsg) msg);
+        } else if (msg instanceof DeleteVmCdRomMsg) {
+            handle((DeleteVmCdRomMsg) msg);
         } else {
             VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
             if (ext != null) {
@@ -836,6 +845,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                 dbf.reload(self);
                 dbf.removeCollection(self.getVmNics(), VmNicVO.class);
+                dbf.removeCollection(self.getVmCdRoms(), VmCdRomVO.class);
                 dbf.remove(self);
                 logger.debug(String.format("successfully expunged the vm[uuid:%s]", self.getUuid()));
                 dbf.eoCleanup(VmInstanceVO.class, Collections.singletonList(self.getUuid()));
@@ -1982,6 +1992,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 if (deletionPolicy == VmInstanceDeletionPolicy.Direct) {
                     changeVmStateInDb(VmInstanceStateEvent.destroyed);
                     callVmJustBeforeDeleteFromDbExtensionPoint();
+                    dbf.removeCollection(self.getVmCdRoms(), VmCdRomVO.class);
                     dbf.remove(getSelf());
                 } else if (deletionPolicy == VmInstanceDeletionPolicy.DBOnly || deletionPolicy == VmInstanceDeletionPolicy.KeepVolume) {
                     new SQLBatch() {
@@ -1993,6 +2004,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                             sql(VolumeVO.class).eq(VolumeVO_.vmInstanceUuid, self.getUuid())
                                     .eq(VolumeVO_.type, VolumeType.Root)
                                     .hardDelete();
+                            sql(VmCdRomVO.class).eq(VmCdRomVO_.vmInstanceUuid, self.getUuid()).hardDelete();
                             sql(VmInstanceVO.class).eq(VmInstanceVO_.uuid, self.getUuid()).hardDelete();
                         }
                     }.execute();
@@ -2581,6 +2593,14 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APIResumeVmInstanceMsg) msg);
         } else if (msg instanceof APIReimageVmInstanceMsg) {
             handle((APIReimageVmInstanceMsg) msg);
+        } else if (msg instanceof APIDeleteVmCdRomMsg) {
+            handle((APIDeleteVmCdRomMsg) msg);
+        } else if (msg instanceof APICreateVmCdRomMsg) {
+            handle((APICreateVmCdRomMsg) msg);
+        } else if (msg instanceof APIUpdateVmCdRomMsg) {
+            handle((APIUpdateVmCdRomMsg) msg);
+        } else if (msg instanceof  APISetVmInstanceDefaultCdRomMsg) {
+            handle((APISetVmInstanceDefaultCdRomMsg) msg);
         } else {
             VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
             if (ext != null) {
@@ -2601,7 +2621,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         List<ImageInventory> result = getImageCandidatesForVm(ImageMediaType.ISO);
-        List<String> vmIsoList = IsoOperator.getIsoUuidByVmUuid(msg.getVmInstanceUuid());
+        List<String> vmIsoList = IsoOperator.getIsoUuidByVmUuid2(msg.getVmInstanceUuid());
         result = result.stream()
                 .filter(iso -> !vmIsoList.contains(iso.getUuid()))
                 .collect(Collectors.toList());
@@ -2834,7 +2854,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         String order = VmSystemTags.BOOT_ORDER.getTokenByResourceUuid(self.getUuid(), VmSystemTags.BOOT_ORDER_TOKEN);
         if (order != null) {
             reply.setOrder(list(order.split(",")));
-        } else if (order == null && !VmSystemTags.ISO.hasTag(self.getUuid())) {
+        } else if (order == null && !IsoOperator.isIsoAttachedToVm2(msg.getUuid())) {
             reply.setOrder(list(VmBootDevice.HardDisk.toString()));
         } else {
             reply.setOrder(list(VmBootDevice.HardDisk.toString(), VmBootDevice.CdRom.toString()));
@@ -3170,18 +3190,26 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void detachIso(final String isoUuid, final Completion completion) {
-        if (!IsoOperator.isIsoAttachedToVm(self.getUuid())) {
+        if (!IsoOperator.isIsoAttachedToVm2(self.getUuid())) {
             completion.success();
             return;
         }
 
-        if (!IsoOperator.getIsoUuidByVmUuid(self.getUuid()).contains(isoUuid)) {
+        if (!IsoOperator.getIsoUuidByVmUuid2(self.getUuid()).contains(isoUuid)) {
             completion.success();
             return;
         }
+
+        VmCdRomVO targetVmCdRomVO = Q.New(VmCdRomVO.class)
+                .eq(VmCdRomVO_.vmInstanceUuid, self.getUuid())
+                .eq(VmCdRomVO_.isoUuid, isoUuid)
+                .find();
+        assert targetVmCdRomVO != null;
 
         if (self.getState() == VmInstanceState.Stopped || self.getState() == VmInstanceState.Destroyed) {
-            IsoOperator.detachIsoFromVm(self.getUuid(), isoUuid);
+            targetVmCdRomVO.setIsoUuid(null);
+            targetVmCdRomVO.setIsoInstallPath(null);
+            dbf.update(targetVmCdRomVO);
             completion.success();
             return;
         }
@@ -3208,7 +3236,10 @@ public class VmInstanceBase extends AbstractVmInstance {
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
-                IsoOperator.detachIsoFromVm(self.getUuid(), isoUuid);
+                //IsoOperator.detachIsoFromVm(self.getUuid(), isoUuid);
+                targetVmCdRomVO.setIsoUuid(null);
+                targetVmCdRomVO.setIsoInstallPath(null);
+                dbf.update(targetVmCdRomVO);
                 completion.success();
             }
         }).error(new FlowErrorHandler(completion) {
@@ -3405,7 +3436,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     return;
                 }
 
-                attachIso(msg.getIsoUuid(), new Completion(msg, chain) {
+                attachIso(msg.getIsoUuid(), msg.getCdRomUuid(), new Completion(msg, chain) {
                     @Override
                     public void success() {
                         self = dbf.reload(self);
@@ -3430,9 +3461,9 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    private void attachIso(final String isoUuid, final Completion completion) {
+    private void attachIso(final String isoUuid, String specifiedCdRomUuid, final Completion completion) {
         checkIfIsoAttachable(isoUuid);
-        IsoOperator.checkAttachIsoToVm(self.getUuid(), isoUuid);
+        IsoOperator.checkAttachIsoToVm2(self.getUuid(), isoUuid);
 
         List<VmInstanceInventory> vms = list(VmInstanceInventory.valueOf(self));
         for (VmAttachIsoExtensionPoint ext : pluginRgty.getExtensionList(VmAttachIsoExtensionPoint.class)) {
@@ -3443,8 +3474,19 @@ public class VmInstanceBase extends AbstractVmInstance {
             }
         }
 
+        VmCdRomVO vmCdRomVO = null;
+        if (StringUtils.isNotEmpty(specifiedCdRomUuid)) {
+            vmCdRomVO = dbf.findByUuid(specifiedCdRomUuid, VmCdRomVO.class);
+        } else {
+            vmCdRomVO = IsoOperator.getEmptyCdRom(self.getUuid());
+        }
+
+        final VmCdRomVO targetVmCdRomVO = vmCdRomVO;
+
         if (self.getState() == VmInstanceState.Stopped) {
-            new IsoOperator().attachIsoToVm(self.getUuid(), isoUuid);
+            // new IsoOperator().attachIsoToVm(self.getUuid(), isoUuid);
+            targetVmCdRomVO.setIsoUuid(isoUuid);
+            dbf.update(targetVmCdRomVO);
             completion.success();
             return;
         }
@@ -3454,8 +3496,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         IsoSpec isoSpec = new IsoSpec();
         isoSpec.setImageUuid(isoUuid);
-        int isoDeviceId = IsoOperator.getNextVolumeDeviceId(self.getUuid());
-        isoSpec.setDeviceId(isoDeviceId);
+        isoSpec.setDeviceId(targetVmCdRomVO.getDeviceId());
         spec.getDestIsoList().add(isoSpec);
 
         FlowChain chain = getAttachIsoWorkFlowChain(spec.getVmInventory());
@@ -3468,15 +3509,16 @@ public class VmInstanceBase extends AbstractVmInstance {
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
-                // ISO anomaly check, you can cancel this check if there is no dirty data for a long time
-                int currentIsoDeviceId = IsoOperator.getNextVolumeDeviceId(self.getUuid());
-                if(isoDeviceId != currentIsoDeviceId) {
-                    completion.fail(operr("Iso[uuid:%s] deviceId exception occurs when vm[uuid:%s] is attached to iso. Expected to be %s, actually %s",
-                            isoUuid, self.getUuid(), isoDeviceId, currentIsoDeviceId));
-                    return;
-                }
+                // new IsoOperator().attachIsoToVm(self.getUuid(), isoUuid);
+                final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+                final VmInstanceSpec.IsoSpec isoSpec = spec.getDestIsoList().stream()
+                        .filter(s -> s.getImageUuid().equals(isoUuid))
+                        .findAny()
+                        .get();
+                targetVmCdRomVO.setIsoUuid(isoUuid);
+                targetVmCdRomVO.setIsoInstallPath(isoSpec.getInstallPath());
+                dbf.update(targetVmCdRomVO);
 
-                new IsoOperator().attachIsoToVm(self.getUuid(), isoUuid);
                 completion.success();
             }
         }).error(new FlowErrorHandler(completion) {
@@ -4119,40 +4161,44 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         String vmUuid = self.getUuid();
-        List<String> isoList = IsoOperator.getIsoUuidByVmUuid(vmUuid);
+        List<String> isoList = IsoOperator.getIsoUuidByVmUuid2(vmUuid);
         if (!isoList.contains(isoUuid)) {
             throw new OperationFailureException(operr("ISO[uuid:%s] is not attached to VM[uuid:%s]", isoUuid , self.getUuid()));
         }
 
-        if (IsoOperator.getIsoDeviceId(vmUuid, isoUuid) == 0) {
+        List<VmCdRomVO> cdRomVOS = Q.New(VmCdRomVO.class)
+                .eq(VmCdRomVO_.vmInstanceUuid, self.getUuid())
+                .orderBy(VmCdRomVO_.deviceId, SimpleQuery.Od.ASC)
+                .list();
+        if (cdRomVOS.size() <= 1) {
             return;
         }
 
-        Map<Integer, String> isoDeviceIdMap = new HashMap<>();
-        for (String iso : isoList) {
-            if (iso.equals(isoUuid)) {
-                isoDeviceIdMap.put(0, iso);
-                IsoOperator.detachIsoFromVm(vmUuid, iso);
-                continue;
-            }
-
-            int isoDeviceId = IsoOperator.getIsoDeviceId(vmUuid, iso) + 1;
-            int maxIsoDeviceId = VmInstanceConstant.MAXIMUM_MOUNT_ISO_NUMBER - 1;
-            isoDeviceId = isoDeviceId > maxIsoDeviceId ? maxIsoDeviceId : isoDeviceId;
-            isoDeviceIdMap.put(isoDeviceId, iso);
-
-            IsoOperator.detachIsoFromVm(vmUuid, iso);
+        if (isoUuid.equals(cdRomVOS.get(0).getIsoUuid())) {
+            return;
         }
 
-        for (int deviceId = 0; deviceId < VmInstanceConstant.MAXIMUM_MOUNT_ISO_NUMBER; deviceId ++ ) {
-            String iso = isoDeviceIdMap.get(deviceId);
-
-            if (iso == null) {
-                continue;
-            }
-
-            new IsoOperator().attachIsoToVm(vmUuid, iso);
+        Optional<VmCdRomVO> opt = cdRomVOS.stream().filter(v -> v.getIsoUuid().equals(isoUuid)).findAny();
+        if (!opt.isPresent()) {
+            return;
         }
+
+        VmCdRomVO sourceCdRomVO = opt.get();
+        VmCdRomVO targetCdRomVO = cdRomVOS.get(0);
+        String targetCdRomIsoUuid = targetCdRomVO.getIsoUuid();
+        String path = targetCdRomVO.getIsoInstallPath();
+        targetCdRomVO.setIsoUuid(sourceCdRomVO.getIsoUuid());
+        targetCdRomVO.setIsoInstallPath(sourceCdRomVO.getIsoInstallPath());
+        sourceCdRomVO.setIsoUuid(targetCdRomIsoUuid);
+        sourceCdRomVO.setIsoInstallPath(path);
+
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                merge(targetCdRomVO);
+                merge(sourceCdRomVO);
+            }
+        }.execute();
     }
 
     @Transactional(readOnly = true)
@@ -4746,8 +4792,6 @@ public class VmInstanceBase extends AbstractVmInstance {
             completion.fail(allowed);
             return;
         }
-        // ISO anomaly check, you can cancel this check if there is no dirty data for a long time
-        IsoOperator.checkIsoSystemTag(self.getUuid());
 
         if (self.getState() == VmInstanceState.Created) {
             InstantiateVmFromNewCreatedStruct struct = new JsonLabel().get(
@@ -4931,12 +4975,8 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         ImageVO imvo = dbf.findByUuid(spec.getVmInventory().getImageUuid(), ImageVO.class);
-        if (imvo.getMediaType() == ImageMediaType.ISO) {
-            new IsoOperator().attachIsoToVm(self.getUuid(), imvo.getUuid());
-            IsoSpec isoSpec = new IsoSpec();
-            isoSpec.setImageUuid(imvo.getUuid());
-            spec.getDestIsoList().add(isoSpec);
-        }
+        List<CdRomSpec> cdRomSpecs = buildVmCdRomSpecsForNewCreated(spec);
+        spec.setCdRomSpecs(cdRomSpecs);
 
         spec.getImageSpec().setInventory(ImageInventory.valueOf(imvo));
         spec.setCurrentVmOperation(VmOperation.NewCreate);
@@ -4955,6 +4995,70 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         return spec;
+    }
+
+    private List<CdRomSpec> buildVmCdRomSpecsForNewCreated(VmInstanceSpec vmSpec) {
+        List<VmInstanceSpec.CdRomSpec> cdRomSpecs = new ArrayList<>();
+
+        VmInstanceInventory vmInventory = vmSpec.getVmInventory();
+        String vmUuid = vmInventory.getUuid();
+
+        // vm image is iso
+        ImageVO imvo = dbf.findByUuid(vmInventory.getImageUuid(), ImageVO.class);
+        if (imvo.getMediaType() == ImageMediaType.ISO) {
+            CdRomSpec cdRomSpec = new CdRomSpec();
+            cdRomSpec.setDeviceId(cdRomSpecs.size());
+            cdRomSpec.setImageUuid(imvo.getUuid());
+            cdRomSpecs.add(cdRomSpec);
+        }
+
+        // createWithoutCdRom
+        boolean hasTag = VmSystemTags.CREATE_WITHOUT_CD_ROM.hasTag(vmUuid);
+        boolean flagWithoutCdRom = false;
+        if (hasTag) {
+            String withoutCdRom = VmSystemTags.CREATE_WITHOUT_CD_ROM.getTokenByResourceUuid(vmUuid, VmSystemTags.CREATE_WITHOUT_CD_ROM_TOKEN);
+            flagWithoutCdRom = Boolean.parseBoolean(withoutCdRom);
+        }
+        if (flagWithoutCdRom) {
+            return cdRomSpecs;
+        }
+
+        // cdroms
+        hasTag = VmSystemTags.CREATE_VM_CD_ROM_LIST.hasTag(vmUuid);
+        if (hasTag) {
+            Map<String, String> tokens = VmSystemTags.CREATE_VM_CD_ROM_LIST.getTokensByResourceUuid(vmUuid);
+            List<String> cdRoms = new ArrayList<>();
+            cdRoms.add(tokens.get(VmSystemTags.CD_ROM_0));
+            cdRoms.add(tokens.get(VmSystemTags.CD_ROM_1));
+            cdRoms.add(tokens.get(VmSystemTags.CD_ROM_2));
+
+            for (String cdRom : cdRoms) {
+                if (cdRom == null || VmInstanceConstant.NONE_CDROM.equalsIgnoreCase(cdRom)) {
+                    continue;
+                }
+
+                CdRomSpec cdRomSpec = new CdRomSpec();
+                cdRomSpec.setDeviceId(cdRomSpecs.size());
+                String imageUuid = VmInstanceConstant.EMPTY_CDROM.equalsIgnoreCase(cdRom) ? null : cdRom;
+                cdRomSpec.setImageUuid(imageUuid);
+                cdRomSpecs.add(cdRomSpec);
+            }
+        } else {
+            int defaultCdRomNum = VmGlobalConfig.VM_DEFAULT_CD_ROM_NUM.value(Integer.class);
+
+            while (defaultCdRomNum > cdRomSpecs.size()) {
+                CdRomSpec cdRomSpec = new CdRomSpec();
+                cdRomSpec.setDeviceId(cdRomSpecs.size());
+                cdRomSpecs.add(cdRomSpec);
+            }
+        }
+
+        int max = VmGlobalConfig.MAXIMUM_CD_ROM_NUM.value(Integer.class);
+        if (cdRomSpecs.size() > max) {
+            throw new OperationFailureException(operr("One vm cannot create %s CDROMs, vm can only add %s CDROMs", cdRomSpecs.size(), max));
+        }
+
+        return cdRomSpecs;
     }
 
     private void instantiateVmFromNewCreate(InstantiateVmFromNewCreatedStruct struct, Completion completion) {
@@ -5307,18 +5411,29 @@ public class VmInstanceBase extends AbstractVmInstance {
         spec.setVmInventory(inv);
         buildHostname(spec);
 
-        List<String> isoUuids = IsoOperator.getIsoUuidByVmUuid(inv.getUuid());
-        isoUuids.forEach(isoUuid -> {
-            if (dbf.isExist(isoUuid, ImageVO.class)) {
-                IsoSpec isoSpec = new IsoSpec();
-                isoSpec.setImageUuid(isoUuid);
-                spec.getDestIsoList().add(isoSpec);
-            } else {
-                //TODO
-                logger.warn(String.format("iso[uuid:%s] is deleted, however, the VM[uuid:%s] still has it attached",
-                        isoUuid, self.getUuid()));
+        List<VmCdRomVO> cdRomVOS = Q.New(VmCdRomVO.class)
+                .eq(VmCdRomVO_.vmInstanceUuid, vmUuid)
+                .orderBy(VmCdRomVO_.deviceId, SimpleQuery.Od.ASC)
+                .list();
+        for (VmCdRomVO cdRomVO : cdRomVOS) {
+            CdRomSpec cdRomSpec = new CdRomSpec();
+            cdRomSpec.setUuid(cdRomVO.getUuid());
+
+            String isoUuid = cdRomVO.getIsoUuid();
+            if (isoUuid != null) {
+                if(dbf.isExist(isoUuid, ImageVO.class)) {
+                    cdRomSpec.setImageUuid(isoUuid);
+                    cdRomSpec.setInstallPath(cdRomVO.getIsoInstallPath());
+                } else {
+                    //TODO
+                    logger.warn(String.format("iso[uuid:%s] is deleted, however, the VM[uuid:%s] still has it attached",
+                            isoUuid, self.getUuid()));
+                }
             }
-        });
+
+            cdRomSpec.setDeviceId(cdRomVO.getDeviceId());
+            spec.getCdRomSpecs().add(cdRomSpec);
+        }
 
         spec.setCurrentVmOperation(operation);
         selectBootOrder(spec);
@@ -5334,9 +5449,6 @@ public class VmInstanceBase extends AbstractVmInstance {
             completion.fail(allowed);
             return;
         }
-
-        // ISO anomaly check, you can cancel this check if there is no dirty data for a long time
-        IsoOperator.checkIsoSystemTag(self.getUuid());
 
         VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
         ErrorCode preReboot = extEmitter.preRebootVm(inv);
@@ -5730,6 +5842,268 @@ public class VmInstanceBase extends AbstractVmInstance {
                 return "reimage-vminstance";
             }
         });
+    }
+
+    private void handle(final APIDeleteVmCdRomMsg msg) {
+        APIDeleteVmCdRomEvent event = new APIDeleteVmCdRomEvent(msg.getId());
+
+        DeleteVmCdRomMsg deleteVmCdRomMsg = new DeleteVmCdRomMsg();
+        deleteVmCdRomMsg.setVmInstanceUuid(msg.getVmInstanceUuid());
+        deleteVmCdRomMsg.setCdRomUuid(msg.getUuid());
+        bus.makeLocalServiceId(deleteVmCdRomMsg, VmInstanceConstant.SERVICE_ID);
+
+        bus.send(deleteVmCdRomMsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    event.setInventory(VmInstanceInventory.valueOf(self));
+                } else {
+                    event.setError(reply.getError());
+                }
+
+                bus.publish(event);
+            }
+        });
+    }
+
+    private void handle(final DeleteVmCdRomMsg msg) {
+        DeleteVmCdRomReply reply = new DeleteVmCdRomReply();
+
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
+                if (allowed != null) {
+                    reply.setError(allowed);
+                    bus.reply(msg, reply);
+                    chain.next();
+                    return;
+                }
+
+                deleteVmCdRom(msg.getCdRomUuid(), new Completion(chain) {
+                    @Override
+                    public void success() {
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("delete-vm-cdRom-%s", msg.getCdRomUuid());
+            }
+        });
+    }
+
+    private void deleteVmCdRom(String cdRomUuid, Completion completion) {
+        boolean exist = dbf.isExist(cdRomUuid, VmCdRomVO.class);
+        if (!exist) {
+            completion.success();
+            return;
+        }
+
+        dbf.removeByPrimaryKey(cdRomUuid, VmCdRomVO.class);
+        completion.success();
+    }
+
+    private void handle(final APICreateVmCdRomMsg msg) {
+        APICreateVmCdRomEvent event = new APICreateVmCdRomEvent(msg.getId());
+
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                long vmCdRomNum = Q.New(VmCdRomVO.class)
+                        .eq(VmCdRomVO_.vmInstanceUuid, msg.getVmInstanceUuid())
+                        .count();
+                int max = VmGlobalConfig.MAXIMUM_CD_ROM_NUM.value(Integer.class);
+                if (max <= vmCdRomNum) {
+                    event.setError(operr("VM[uuid:%s] can only add %s CDROMs", msg.getVmInstanceUuid(), max));
+                    bus.publish(event);
+                    chain.next();
+                    return;
+                }
+
+                if (msg.getIsoUuid() != null) {
+                    boolean targetIsoUsed = Q.New(VmCdRomVO.class)
+                            .eq(VmCdRomVO_.vmInstanceUuid, msg.getVmInstanceUuid())
+                            .eq(VmCdRomVO_.isoUuid, msg.getIsoUuid())
+                            .isExists();
+                    if (targetIsoUsed) {
+                        event.setError(operr("VM[uuid:%s] already has an ISO[uuid:%s] attached", msg.getVmInstanceUuid(), msg.getIsoUuid()));
+                        bus.publish(event);
+                        chain.next();
+                        return;
+                    }
+                }
+
+                ErrorCode error = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
+                if (error != null) {
+                    event.setError(error);
+                    bus.publish(event);
+                    chain.next();
+                    return;
+                }
+
+                List<Integer> deviceIds = Q.New(VmCdRomVO.class)
+                        .select(VmCdRomVO_.deviceId)
+                        .eq(VmCdRomVO_.vmInstanceUuid, msg.getVmInstanceUuid())
+                        .listValues();
+                BitSet full = new BitSet(deviceIds.size() + 1);
+                deviceIds.forEach(full::set);
+                int targetDeviceId = full.nextClearBit(0);
+                if (targetDeviceId >= max) {
+                    event.setError(operr("VM[uuid:%s] can only add %s CDROMs", msg.getVmInstanceUuid(), max));
+                    bus.publish(event);
+                    chain.next();
+                    return;
+                }
+
+                VmCdRomVO cdRomVO = new VmCdRomVO();
+                String cdRomUuid = msg.getResourceUuid() != null ? msg.getResourceUuid() : Platform.getUuid();
+                cdRomVO.setUuid(cdRomUuid);
+                cdRomVO.setDeviceId(targetDeviceId);
+                cdRomVO.setIsoUuid(msg.getIsoUuid());
+                cdRomVO.setVmInstanceUuid(msg.getVmInstanceUuid());
+                cdRomVO.setName(msg.getName());
+                String acntUuid = Account.getAccountUuidOfResource(msg.getVmInstanceUuid());
+                cdRomVO.setAccountUuid(acntUuid);
+                cdRomVO.setDescription(msg.getDescription());
+                cdRomVO = dbf.persistAndRefresh(cdRomVO);
+
+                event.setInventory(VmCdRomInventory.valueOf(cdRomVO));
+                bus.publish(event);
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return String.format("create-vm-%s-cd-rom", msg.getVmInstanceUuid());
+            }
+        });
+    }
+
+    private void handle(APIUpdateVmCdRomMsg msg) {
+        APIUpdateVmCdRomEvent event = new APIUpdateVmCdRomEvent(msg.getId());
+
+        VmCdRomVO vmCdRomVO = dbf.findByUuid(msg.getUuid(), VmCdRomVO.class);
+        boolean update = false;
+
+        if (msg.getName() != null) {
+            vmCdRomVO.setName(msg.getName());
+            update = true;
+        }
+
+        if (msg.getDescription() != null ) {
+            vmCdRomVO.setDescription(msg.getDescription());
+            update = true;
+        }
+
+        if (update) {
+            vmCdRomVO = dbf.updateAndRefresh(vmCdRomVO);
+        }
+
+        event.setInventory(VmCdRomInventory.valueOf(vmCdRomVO));
+        bus.publish(event);
+    }
+
+    private void handle(APISetVmInstanceDefaultCdRomMsg msg) {
+        APISetVmInstanceDefaultCdRomEvent event = new APISetVmInstanceDefaultCdRomEvent(msg.getId());
+
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                setVmInstanceDefaultCdRom(msg.getUuid(), new Completion(chain) {
+                    @Override
+                    public void success() {
+                        VmCdRomVO cdRomVO = dbf.findByUuid(msg.getUuid(), VmCdRomVO.class);
+                        event.setInventory(VmCdRomInventory.valueOf(cdRomVO));
+                        bus.publish(event);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        event.setError(errorCode);
+                        bus.publish(event);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("set-vmInstance-%s-default-cdRom-%s", msg.getVmInstanceUuid(), msg.getUuid());
+            }
+        });
+    }
+
+    private void setVmInstanceDefaultCdRom(String vmCdRomUuid, Completion completion) {
+        // update target cdRom deviceId
+        // update the source cdRom deviceId
+        new SQLBatch(){
+            @Override
+            protected void scripts() {
+                List<VmCdRomVO> cdRomVOS = q(VmCdRomVO.class)
+                        .eq(VmCdRomVO_.vmInstanceUuid, self.getUuid())
+                        .orderBy(VmCdRomVO_.deviceId, SimpleQuery.Od.ASC)
+                        .list();
+
+                Map<String, Integer> cdRomUUidDeviceIdMap = cdRomVOS.stream().collect(Collectors.toMap(VmCdRomVO::getUuid, i -> i.getDeviceId()));
+                int deviceId = cdRomUUidDeviceIdMap.get(vmCdRomUuid);
+
+                VmCdRomVO beforeDefaultCdRomVO = null;
+                for (VmCdRomVO vmCdRomVO : cdRomVOS) {
+                    if (vmCdRomVO.getDeviceId() == 0) {
+                        beforeDefaultCdRomVO = vmCdRomVO;
+                        sql(VmCdRomVO.class)
+                                .eq(VmCdRomVO_.uuid, vmCdRomVO.getUuid())
+                                .set(VmCdRomVO_.deviceId, VmInstanceConstant.MAXIMUM_CDROM_NUMBER)
+                                .update();
+                        continue;
+                    }
+
+                    if (vmCdRomUuid.equals(vmCdRomVO.getUuid())) {
+                        sql(VmCdRomVO.class)
+                                .eq(VmCdRomVO_.uuid, vmCdRomVO.getUuid())
+                                .set(VmCdRomVO_.deviceId, 0)
+                                .update();
+                        continue;
+                    }
+                }
+
+                if (beforeDefaultCdRomVO != null) {
+                    sql(VmCdRomVO.class)
+                            .eq(VmCdRomVO_.uuid, beforeDefaultCdRomVO.getUuid())
+                            .set(VmCdRomVO_.deviceId, deviceId)
+                            .update();
+                }
+            }
+        }.execute();
+
+        completion.success();
     }
 
     private void reimageVmInstance(final APIReimageVmInstanceMsg msg, NoErrorCompletion completion) {

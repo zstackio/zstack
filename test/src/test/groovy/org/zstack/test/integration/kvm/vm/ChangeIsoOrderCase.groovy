@@ -2,6 +2,7 @@ package org.zstack.test.integration.kvm.vm
 
 import org.springframework.http.HttpEntity
 import org.zstack.compute.vm.IsoOperator
+import org.zstack.compute.vm.VmGlobalConfig
 import org.zstack.compute.vm.VmSystemTags
 import org.zstack.header.image.ImageConstant
 import org.zstack.kvm.KVMAgentCommands
@@ -152,7 +153,7 @@ class ChangeIsoOrderCase extends SubCase {
             systemTags = [VmSystemTags.ISO.instantiateTag([(VmSystemTags.ISO_TOKEN): iso0.uuid, (VmSystemTags.ISO_DEVICEID_TOKEN) : 0])]
         }
         checkIsoSystemTag(newVm.uuid, iso0.uuid, 0)
-        IsoOperator.checkIsoSystemTag(newVm.uuid)
+        checkVmIsoSystemTags(newVm.uuid)
         checkVmIsoNum(newVm.uuid, 1)
 
         rebootVmInstance {
@@ -182,7 +183,7 @@ class ChangeIsoOrderCase extends SubCase {
         }
         checkIsoSystemTag(newVm.uuid, iso1.uuid, 0)
         checkIsoSystemTag(newVm.uuid, iso0.uuid, 1)
-        IsoOperator.checkIsoSystemTag(newVm.uuid)
+        checkVmIsoSystemTags(newVm.uuid)
         checkVmIsoNum(newVm.uuid, 2)
 
         rebootVmInstance {
@@ -213,7 +214,7 @@ class ChangeIsoOrderCase extends SubCase {
             systemTags = [VmSystemTags.ISO.instantiateTag([(VmSystemTags.ISO_TOKEN): iso2.uuid, (VmSystemTags.ISO_DEVICEID_TOKEN) : 0])]
         }
         checkIsoSystemTag(newVm.uuid, iso2.uuid, 0)
-        IsoOperator.checkIsoSystemTag(newVm.uuid)
+        checkVmIsoSystemTags(newVm.uuid)
         checkVmIsoNum(newVm.uuid, 3)
 
         rebootVmInstance {
@@ -243,11 +244,26 @@ class ChangeIsoOrderCase extends SubCase {
     }
 
     void checkIsoSystemTag(String vmUuid, String isoUuid, int expectIsoDeviceId) {
-        assert expectIsoDeviceId == IsoOperator.getIsoDeviceId(vmUuid, isoUuid)
+        assert expectIsoDeviceId == IsoOperator.getIsoDeviceId2(vmUuid, isoUuid)
     }
 
     void checkVmIsoNum(String vmUuid, int expectIsoNum) {
-        assert expectIsoNum == IsoOperator.getIsoUuidByVmUuid(vmUuid).size()
+        assert expectIsoNum == IsoOperator.getIsoUuidByVmUuid2(vmUuid).size()
+    }
+
+    void checkVmIsoSystemTags(String vmUuid) {
+        if (!IsoOperator.isIsoAttachedToVm2(vmUuid)) {
+            return
+        }
+
+        List<String> isoUuids = IsoOperator.getIsoUuidByVmUuid2(vmUuid)
+
+        int max = VmGlobalConfig.MAXIMUM_CD_ROM_NUM.value(Integer.class)
+        assert isoUuids.size() <= max
+
+        List<String> repeatedIsoUuids = []
+
+        assert repeatedIsoUuids.isEmpty()
     }
 
 }

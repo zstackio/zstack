@@ -182,7 +182,7 @@ class DeleteIsoCase extends SubCase {
             uuid = iso2.uuid
         }
 
-        assert 0 == IsoOperator.getIsoUuidByVmUuid(newVm.uuid).size()
-        assert 0 == IsoOperator.getIsoUuidByVmUuid(newVm2.uuid).size()
+        assert 0 == IsoOperator.getIsoUuidByVmUuid2(newVm.uuid).size()
+        assert 0 == IsoOperator.getIsoUuidByVmUuid2(newVm2.uuid).size()
     }
 }

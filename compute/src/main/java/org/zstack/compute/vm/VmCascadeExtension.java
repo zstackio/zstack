@@ -33,6 +33,8 @@ import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.*;
+import org.zstack.header.vm.cdrom.VmCdRomInventory;
+import org.zstack.header.vm.cdrom.VmCdRomVO;
 import org.zstack.header.volume.*;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.header.zone.ZoneVO;
@@ -450,6 +452,10 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                                         .flatMap(List::stream).map(VmNicInventory::getUuid)
                                         .collect(Collectors.toList()),
                                 VmNicVO.class);
+                        List<String> cdRomUuids = vminvs.stream().map(vm -> vm.getInventory().getVmCdRoms())
+                                .flatMap(List::stream).map(VmCdRomInventory::getUuid)
+                                .collect(Collectors.toList());
+                        dbf.removeByPrimaryKeys(cdRomUuids, VmCdRomVO.class);
                         dbf.removeByPrimaryKeys(vminvs.stream().map(p -> p.getInventory().getUuid())
                                         .collect(Collectors.toList()),
                                 VmInstanceVO.class);

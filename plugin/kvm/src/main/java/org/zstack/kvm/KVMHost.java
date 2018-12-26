@@ -676,7 +676,9 @@ public class KVMHost extends HostBase implements Host {
         DetachIsoCmd cmd = new DetachIsoCmd();
         cmd.isoUuid = msg.getIsoUuid();
         cmd.vmUuid = msg.getVmInstanceUuid();
-        cmd.deviceId = IsoOperator.getIsoDeviceId(msg.getVmInstanceUuid(), msg.getIsoUuid());
+        Integer deviceId = IsoOperator.getIsoDeviceId2(msg.getVmInstanceUuid(), msg.getIsoUuid());
+        assert deviceId != null;
+        cmd.deviceId = deviceId;
 
         KVMHostInventory inv = (KVMHostInventory) getSelfInventory();
         for (KVMPreDetachIsoExtensionPoint ext : pluginRgty.getExtensionList(KVMPreDetachIsoExtensionPoint.class)) {
@@ -1942,12 +1944,13 @@ public class KVMHost extends HostBase implements Host {
         nics = nics.stream().sorted(Comparator.comparing(NicTO::getDeviceId)).collect(Collectors.toList());
         cmd.setNics(nics);
 
-        for (VmInstanceSpec.IsoSpec isoSpec : spec.getDestIsoList()) {
-            IsoTO bootIso = new IsoTO();
-            bootIso.setPath(isoSpec.getInstallPath());
-            bootIso.setImageUuid(isoSpec.getImageUuid());
-            bootIso.setDeviceId(IsoOperator.getIsoDeviceId(spec.getVmInventory().getUuid(), isoSpec.getImageUuid()));
-            cmd.getBootIso().add(bootIso);
+        for (VmInstanceSpec.CdRomSpec cdRomSpec : spec.getCdRomSpecs()) {
+            CdRomTO cdRomTO = new CdRomTO();
+            cdRomTO.setPath(cdRomSpec.getInstallPath());
+            cdRomTO.setImageUuid(cdRomSpec.getImageUuid());
+            cdRomTO.setDeviceId(cdRomSpec.getDeviceId());
+            cdRomTO.setEmpty(cdRomSpec.getImageUuid() == null);
+            cmd.getCdRoms().add(cdRomTO);
         }
 
         String bootMode = VmSystemTags.BOOT_MODE.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmSystemTags.BOOT_MODE_TOKEN);

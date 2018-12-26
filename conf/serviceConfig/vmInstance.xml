@@ -164,4 +164,20 @@
     <message>
         <name>org.zstack.header.vm.APIAttachL3NetworkToVmNicMsg</name>
     </message>
+    <message>
+        <name>org.zstack.header.vm.cdrom.APIQueryVmCdRomMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+    <message>
+        <name>org.zstack.header.vm.cdrom.APICreateVmCdRomMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.vm.cdrom.APIDeleteVmCdRomMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.vm.cdrom.APIUpdateVmCdRomMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.vm.cdrom.APISetVmInstanceDefaultCdRomMsg</name>
+    </message>
 </service>

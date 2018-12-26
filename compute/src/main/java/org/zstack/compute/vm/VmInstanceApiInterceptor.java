@@ -26,9 +26,14 @@ import org.zstack.header.image.ImageVO_;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.vm.*;
+import org.zstack.header.vm.cdrom.APIDeleteVmCdRomMsg;
+import org.zstack.header.vm.cdrom.APISetVmInstanceDefaultCdRomMsg;
+import org.zstack.header.vm.cdrom.APIUpdateVmCdRomMsg;
+import org.zstack.header.vm.cdrom.VmCdRomVO;
 import org.zstack.header.zone.ZoneState;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
+import org.zstack.tag.SystemTagUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -106,6 +111,12 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APIGetCandidatePrimaryStoragesForCreatingVmMsg) msg);
         } else if (msg instanceof APIAttachL3NetworkToVmNicMsg) {
             validate((APIAttachL3NetworkToVmNicMsg) msg);
+        } else if (msg instanceof APIDeleteVmCdRomMsg) {
+            validate((APIDeleteVmCdRomMsg) msg);
+        } else if (msg instanceof APIUpdateVmCdRomMsg) {
+            validate((APIUpdateVmCdRomMsg) msg);
+        } else if (msg instanceof APISetVmInstanceDefaultCdRomMsg) {
+            validate((APISetVmInstanceDefaultCdRomMsg) msg);
         }
 
         setServiceId(msg);
@@ -311,21 +322,43 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIAttachIsoToVmInstanceMsg msg) {
-        List<String> isoUuids = IsoOperator.getIsoUuidByVmUuid(msg.getVmInstanceUuid());
+        List<String> isoUuids = IsoOperator.getIsoUuidByVmUuid2(msg.getVmInstanceUuid());
         if (isoUuids.contains(msg.getIsoUuid())) {
             throw new ApiMessageInterceptionException(operr("VM[uuid:%s] already has an ISO[uuid:%s] attached", msg.getVmInstanceUuid(), msg.getIsoUuid()));
+        }
+
+        validateCdRomUuid(msg);
+    }
+
+    private void validateCdRomUuid(APIAttachIsoToVmInstanceMsg msg) {
+        if (msg.getSystemTags() == null || msg.getSystemTags().isEmpty()) {
+            return;
+        }
+
+        String cdRomUuid = SystemTagUtils.findTagValue(msg.getSystemTags(), VmSystemTags.CD_ROM, VmSystemTags.CD_ROM_UUID_TOKEN);
+        if (cdRomUuid != null) {
+            VmCdRomVO cdRomVO = dbf.findByUuid(cdRomUuid, VmCdRomVO.class);
+            if (cdRomVO == null) {
+                throw new ApiMessageInterceptionException(operr("The cdRom[uuid:%s] does not exist", cdRomUuid));
+            }
+
+            if (StringUtils.isNotEmpty(cdRomVO.getIsoUuid())){
+                throw new ApiMessageInterceptionException(operr("VM[uuid:%s] cdRom[uuid:%s] has mounted the ISO", msg.getVmInstanceUuid(), cdRomUuid));
+            }
+
+            msg.setCdRomUuid(cdRomUuid);
         }
     }
 
     private void fillIsoUuid(APIDetachIsoFromVmInstanceMsg msg) {
-        List<String> isoUuids = IsoOperator.getIsoUuidByVmUuid(msg.getVmInstanceUuid());
+        List<String> isoUuids = IsoOperator.getIsoUuidByVmUuid2(msg.getVmInstanceUuid());
         if(isoUuids.size() == 1) {
             msg.setIsoUuid(isoUuids.get(0));
         }
     }
 
     private void validate(APIDetachIsoFromVmInstanceMsg msg) {
-        List<String> isoUuids = IsoOperator.getIsoUuidByVmUuid(msg.getVmInstanceUuid());
+        List<String> isoUuids = IsoOperator.getIsoUuidByVmUuid2(msg.getVmInstanceUuid());
 
         if (isoUuids.size() > 1 && msg.getIsoUuid() == null) {
             throw new ApiMessageInterceptionException(operr("VM[uuid:%s] has multiple ISOs attached, specify the isoUuid when detaching", msg.getVmInstanceUuid()));
@@ -737,4 +770,23 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                     "l2Network [uuid:%s] of the nic", l3Vo.getL2NetworkUuid(), oldL3.getL2NetworkUuid()));
         }
     }
+
+    private void validate(APIDeleteVmCdRomMsg msg) {
+        VmCdRomVO vmCdRomVO = dbf.findByUuid(msg.getUuid(), VmCdRomVO.class);
+        msg.setVmInstanceUuid(vmCdRomVO.getVmInstanceUuid());
+    }
+
+    private void validate(APIUpdateVmCdRomMsg msg) {
+        VmCdRomVO vmCdRomVO = dbf.findByUuid(msg.getUuid(), VmCdRomVO.class);
+        msg.setVmInstanceUuid(vmCdRomVO.getVmInstanceUuid());
+    }
+
+    private void validate(APISetVmInstanceDefaultCdRomMsg msg) {
+        VmCdRomVO vmCdRomVO = dbf.findByUuid(msg.getUuid(), VmCdRomVO.class);
+
+        if (vmCdRomVO.getDeviceId() == 0) {
+            throw new ApiMessageInterceptionException(argerr("The CdRom[%s] Already the default", vmCdRomVO.getUuid()));
+        }
+    }
+
 }

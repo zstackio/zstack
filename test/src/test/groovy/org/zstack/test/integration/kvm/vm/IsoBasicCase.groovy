@@ -154,11 +154,11 @@ class IsoBasicCase extends SubCase {
         KVMAgentCommands.StartVmCmd cmd
         env.afterSimulator(KVMConstant.KVM_START_VM_PATH) { rsp, HttpEntity<String> e ->
             cmd = json(e.body, KVMAgentCommands.StartVmCmd.class)
-            assert 1 == cmd.bootIso.size()
-            KVMAgentCommands.IsoTO isoTO = cmd.bootIso.get(0)
-            assert iso0.uuid == isoTO.imageUuid
-            assert 0 == isoTO.deviceId
-            assert null != isoTO.path
+            assert 3 == cmd.getCdRoms().size()
+            KVMAgentCommands.CdRomTO cdRomTO = cmd.getCdRoms().get(0)
+            assert iso0.uuid == cdRomTO.imageUuid
+            assert 0 == cdRomTO.deviceId
+            assert null != cdRomTO.path
 
             return rsp
         }
@@ -189,16 +189,19 @@ class IsoBasicCase extends SubCase {
         detachIso(newVm.uuid, iso1.uuid, 1)
         checkVmIsoNum(newVm.uuid, 2)
 
-        Map<String, KVMAgentCommands.IsoTO> expectIsoMap = new HashMap<>()
-        KVMAgentCommands.IsoTO isoTO = new KVMAgentCommands.IsoTO()
-        isoTO.imageUuid = iso0.uuid
-        isoTO.setDeviceId(0)
-        expectIsoMap.put(isoTO.imageUuid, isoTO)
-        isoTO = new KVMAgentCommands.IsoTO()
-        isoTO.imageUuid = iso2.uuid
-        isoTO.setDeviceId(2)
-        expectIsoMap.put(isoTO.imageUuid, isoTO)
-        rebootVm(newVm.uuid, expectIsoMap)
+        Map<String, KVMAgentCommands.IsoTO> expectCdRomMap = new HashMap<>()
+        KVMAgentCommands.CdRomTO cdRomTO = new KVMAgentCommands.CdRomTO()
+        cdRomTO.imageUuid = iso0.uuid
+        cdRomTO.setDeviceId(0)
+        expectCdRomMap.put(cdRomTO.imageUuid, cdRomTO)
+        cdRomTO = new KVMAgentCommands.CdRomTO()
+        cdRomTO.setDeviceId(1)
+        expectCdRomMap.put("empty", cdRomTO)
+        cdRomTO = new KVMAgentCommands.CdRomTO()
+        cdRomTO.imageUuid = iso2.uuid
+        cdRomTO.setDeviceId(2)
+        expectCdRomMap.put(cdRomTO.imageUuid, cdRomTO)
+        rebootVm(newVm.uuid, expectCdRomMap)
         checkVmIsoNum(newVm.uuid, 2)
 
         attachIso(newVm.uuid, iso3.uuid, 1)
@@ -209,7 +212,7 @@ class IsoBasicCase extends SubCase {
         detachIso(newVm.uuid, iso2.uuid, 2)
         checkVmIsoNum(newVm.uuid, 0)
 
-        rebootVm(newVm.uuid, new HashMap<String, KVMAgentCommands.IsoTO>())
+        rebootVm(newVm.uuid, new HashMap<String, KVMAgentCommands.CdRomTO>())
         checkVmIsoNum(newVm.uuid, 0)
 
         attachIso(newVm.uuid, iso3.uuid, 0)
@@ -261,20 +264,23 @@ class IsoBasicCase extends SubCase {
             isoUuid = iso
         }
         assert null != cmd
-        assert !IsoOperator.getIsoUuidByVmUuid(vmUuid).contains(iso)
+        assert !IsoOperator.getIsoUuidByVmUuid2(vmUuid).contains(iso)
     }
 
-    void rebootVm(String vmUuid, Map<String, KVMAgentCommands.IsoTO> expectIsoMap) {
+    void rebootVm(String vmUuid, Map<String, KVMAgentCommands.CdRomTO> expectIsoMap) {
         KVMAgentCommands.StartVmCmd cmd
         env.afterSimulator(KVMConstant.KVM_START_VM_PATH) { rsp, HttpEntity<String> e ->
             cmd = json(e.body, KVMAgentCommands.StartVmCmd.class)
-            assert expectIsoMap.keySet().size() == cmd.bootIso.size()
+            assert 3 == cmd.cdRoms.size()
 
-            for (KVMAgentCommands.IsoTO isoTO : cmd.bootIso) {
-                KVMAgentCommands.IsoTO expect = expectIsoMap.get(isoTO.getImageUuid())
+            for (KVMAgentCommands.CdRomTO cdRomTO : cmd.cdRoms) {
+                if (cdRomTO.empty) {
+                    continue
+                }
+                KVMAgentCommands.CdRomTO expect = expectIsoMap.get(cdRomTO.getImageUuid())
                 assert null != expect
-                assert expect.deviceId == isoTO.deviceId
-                assert null != isoTO.path
+                assert expect.deviceId == cdRomTO.deviceId
+                assert null != cdRomTO.path
             }
 
             return rsp
@@ -287,11 +293,11 @@ class IsoBasicCase extends SubCase {
     }
 
     void checkIsoSystemTag(String vmUuid, String isoUuid, int expectIsoDeviceId) {
-        assert expectIsoDeviceId == IsoOperator.getIsoDeviceId(vmUuid, isoUuid)
+        assert expectIsoDeviceId == IsoOperator.getIsoDeviceId2(vmUuid, isoUuid)
     }
 
     void checkVmIsoNum(String vmUuid, int expectIsoNum) {
-        assert expectIsoNum == IsoOperator.getIsoUuidByVmUuid(vmUuid).size()
+        assert expectIsoNum == IsoOperator.getIsoUuidByVmUuid2(vmUuid).size()
     }
 
 }

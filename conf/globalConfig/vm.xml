@@ -157,4 +157,20 @@
 		<category>quota</category>
 		<type>java.lang.Long</type>
 	</config>
+
+	<config>
+		<name>vmDefaultCdRomNum</name>
+		<description>create vm default CDROM number</description>
+		<defaultValue>3</defaultValue>
+		<category>vm</category>
+		<type>java.lang.Long</type>
+	</config>
+
+	<config>
+		<name>maximumCdRomNum</name>
+		<description>the maximum number of CDROM in a vm</description>
+		<defaultValue>3</defaultValue>
+		<category>vm</category>
+		<type>java.lang.Long</type>
+	</config>
 </globalConfig>

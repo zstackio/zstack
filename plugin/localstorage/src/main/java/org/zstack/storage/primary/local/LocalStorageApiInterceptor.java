@@ -148,7 +148,7 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
                                 " has %s data volumes attached, please detach them before migration", vol.getUuid(), vol.getVmInstanceUuid(), count));
                     }
 
-                    if (IsoOperator.isIsoAttachedToVm(vol.getVmInstanceUuid())) {
+                    if (IsoOperator.isIsoAttachedToVm2(vol.getVmInstanceUuid())) {
                         throw new ApiMessageInterceptionException(operr("the volume[uuid:%s] is the root volume of the vm[uuid:%s]. Currently the vm still" +
                                 " has ISO attached, please detach it before migration", vol.getUuid(), vol.getVmInstanceUuid()));
 

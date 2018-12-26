@@ -234,6 +234,51 @@ public class FusionstorPrimaryStorageFactory implements PrimaryStorageFactory, F
         return cto;
     }
 
+    private CdRomTO convertCdRomToFusionstorIfNeeded(final CdRomTO to) {
+        if (to == null || to.isEmpty()) {
+            return to;
+        }
+
+        if (!to.getPath().startsWith(VolumeTO.FUSIONSTOR)) {
+            return to;
+        }
+
+        FusionstorPrimaryStorageVO pri = new Callable<FusionstorPrimaryStorageVO>() {
+            @Override
+            @Transactional(readOnly = true)
+            public FusionstorPrimaryStorageVO call() {
+                String sql = "select pri from FusionstorPrimaryStorageVO pri, ImageCacheVO c where pri.uuid = c.primaryStorageUuid" +
+                        " and c.imageUuid = :imgUuid";
+                TypedQuery<FusionstorPrimaryStorageVO> q = dbf.getEntityManager().createQuery(sql, FusionstorPrimaryStorageVO.class);
+                q.setParameter("imgUuid", to.getImageUuid());
+                return q.getSingleResult();
+            }
+        }.call();
+
+        KvmFusionstorCdRomTO cto = new KvmFusionstorCdRomTO(to);
+        cto.setMonInfo(CollectionUtils.transformToList(pri.getMons(), new Function<KvmFusionstorCdRomTO.MonInfo, FusionstorPrimaryStorageMonVO>() {
+            @Override
+            public KvmFusionstorCdRomTO.MonInfo call(FusionstorPrimaryStorageMonVO arg) {
+                if (MonStatus.Connected != arg.getStatus()) {
+                    return null;
+                }
+
+                KvmFusionstorCdRomTO.MonInfo info = new KvmFusionstorCdRomTO.MonInfo();
+                info.setHostname(arg.getHostname());
+                info.setPort(arg.getMonPort());
+                return info;
+            }
+        }));
+
+        if (cto.getMonInfo().isEmpty()) {
+            throw new OperationFailureException(operr(
+                    "cannot find any Connected fusionstor mon for the primary storage[uuid:%s]", pri.getUuid()
+            ));
+        }
+
+        return cto;
+    }
+
     private VolumeTO convertVolumeToFusionstorIfNeeded(VolumeInventory vol, VolumeTO to) {
         if (!vol.getInstallPath().startsWith(VolumeTO.FUSIONSTOR)) {
             return to;
@@ -325,14 +370,13 @@ public class FusionstorPrimaryStorageFactory implements PrimaryStorageFactory, F
 
         cmd.setDataVolumes(dtos);
 
-        List<IsoTO> isoTOList = CollectionUtils.transformToList(cmd.getBootIso(), new Function<IsoTO, IsoTO>() {
+        List<CdRomTO> cdRomTOS = CollectionUtils.transformToList(cmd.getCdRoms(), new Function<CdRomTO, CdRomTO>() {
             @Override
-            public IsoTO call(IsoTO arg) {
-                return convertIsoToFusionstorIfNeeded(arg);
+            public CdRomTO call(CdRomTO arg) {
+                return convertCdRomToFusionstorIfNeeded(arg);
             }
         });
-        cmd.setBootIso(isoTOList);
-
+        cmd.setCdRoms(cdRomTOS);
     }
 
     @Override
