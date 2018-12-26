@@ -8,6 +8,7 @@ import org.zstack.header.image.ImageVO
 import org.zstack.header.storage.backup.BackupStorageVO
 import org.zstack.header.storage.backup.StorageTrashSpec
 import org.zstack.sdk.BackupStorageInventory
+import org.zstack.sdk.CleanUpTrashOnBackupStorageResult
 import org.zstack.sdk.GetTrashOnBackupStorageResult
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
@@ -105,9 +106,13 @@ class BackupStorageTrashCase extends SubCase {
     }
 
     void testCleanUpTrash() {
-        cleanUpTrashOnBackupStorage {
+        def result = cleanUpTrashOnBackupStorage {
             uuid = bs.uuid
-        }
+        } as CleanUpTrashOnBackupStorageResult
+
+        assert result.result != null
+        assert result.result.size == 246912L
+        assert result.result.resourceUuids.size() == 2
 
         def trashs = getTrashOnBackupStorage {
             uuid = bs.uuid
