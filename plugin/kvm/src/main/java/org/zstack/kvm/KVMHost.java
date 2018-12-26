@@ -33,7 +33,6 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Constants;
 import org.zstack.header.core.*;
-import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.core.AsyncLatch;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -1936,8 +1935,8 @@ public class KVMHost extends HostBase implements Host {
         cmd.setApplianceVm(spec.getVmInventory().getType().equals("ApplianceVm"));
         cmd.setSystemSerialNumber(makeAndSaveVmSystemSerialNumber(spec.getVmInventory().getUuid()));
 
-        String machineType = VmSystemTags.VM_MACHINE_TYPE.getTokenByResourceUuid(cmd.getVmInstanceUuid(),
-                VmInstanceVO.class, VmSystemTags.VM_MACHINE_TYPE_TOKEN);
+        String machineType = VmSystemTags.MACHINE_TYPE.getTokenByResourceUuid(cmd.getVmInstanceUuid(),
+                VmInstanceVO.class, VmSystemTags.MACHINE_TYPE_TOKEN);
         cmd.setMachineType(StringUtils.isNotEmpty(machineType) ? machineType : "pc");
 
         VolumeTO rootVolume = new VolumeTO();

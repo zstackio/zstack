@@ -73,9 +73,6 @@ public class CreateVmInstanceAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List dataVolumeSystemTags;
 
-    @Param(required = false, validValues = {"pc","q35"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String machineType = "pc";
-
     @Param(required = false)
     public java.lang.String resourceUuid;
 
