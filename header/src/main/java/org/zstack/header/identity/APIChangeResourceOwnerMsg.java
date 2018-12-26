@@ -6,6 +6,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.vo.ResourceVO;
 
 /**
  * Created by xing5 on 2016/4/16.
@@ -19,7 +20,7 @@ import org.zstack.header.rest.RestRequest;
 public class APIChangeResourceOwnerMsg extends APIMessage {
     @APIParam(resourceType = AccountVO.class)
     private String accountUuid;
-    @APIParam
+    @APIParam(resourceType = ResourceVO.class, nonempty = true, checkAccount = true, operationTarget = true)
     private String resourceUuid;
 
     public String getAccountUuid() {
