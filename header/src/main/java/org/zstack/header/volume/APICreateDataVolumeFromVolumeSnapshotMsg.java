@@ -47,7 +47,7 @@ import java.util.concurrent.TimeUnit;
         method = HttpMethod.POST,
         parameterName = "params"
 )
-@APIDefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)
+@DefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)
 public class APICreateDataVolumeFromVolumeSnapshotMsg extends APICreateMessage implements APIAuditor {
     /**
      * @desc max length of 255 characters

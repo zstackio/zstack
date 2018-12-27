@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 import static java.util.Arrays.asList;
 
 
-public abstract class APIMessage extends NeedReplyMessage {
+public abstract class APIMessage extends NeedReplyMessage implements ConfigurableTimeoutMessage {
     /**
      * @ignore
      */

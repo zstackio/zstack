@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit;
 
 @Target(ElementType.TYPE)
 @Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
-public @interface APIDefaultTimeout {
+public @interface DefaultTimeout {
     TimeUnit timeunit();
 
     long value();

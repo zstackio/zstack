@@ -1,9 +1,14 @@
 package org.zstack.header.storage.snapshot;
 
+import org.zstack.header.message.ConfigurableTimeoutMessage;
+import org.zstack.header.message.DefaultTimeout;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.volume.VolumeInventory;
 
-public class CreateDataVolumeFromVolumeSnapshotMsg extends NeedReplyMessage implements VolumeSnapshotMessage {
+import java.util.concurrent.TimeUnit;
+
+@DefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)
+public class CreateDataVolumeFromVolumeSnapshotMsg extends NeedReplyMessage implements VolumeSnapshotMessage, ConfigurableTimeoutMessage {
     private String uuid;
     private VolumeInventory volume;
     private String primaryStorageUuid;
