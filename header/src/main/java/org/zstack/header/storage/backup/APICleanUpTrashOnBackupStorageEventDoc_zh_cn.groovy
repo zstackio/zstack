@@ -1,10 +1,11 @@
 package org.zstack.header.storage.backup
 
 import org.zstack.header.errorcode.ErrorCode
+import org.zstack.header.core.trash.CleanTrashResult
 
 doc {
 
-	title "清理备份存储上的回收数据结果"
+	title "清理备份存储上的回收数据结"
 
 	ref {
 		name "error"
@@ -13,5 +14,13 @@ doc {
 		type "ErrorCode"
 		since "3.2.0"
 		clz ErrorCode.class
+	}
+	ref {
+		name "result"
+		path "org.zstack.header.storage.backup.APICleanUpTrashOnBackupStorageEvent.result"
+		desc "清理数据的返回信息"
+		type "CleanTrashResult"
+		since "3.3.0"
+		clz CleanTrashResult.class
 	}
 }

@@ -1,6 +1,7 @@
 package org.zstack.header.storage.primary
 
 import org.zstack.header.errorcode.ErrorCode
+import org.zstack.header.core.trash.CleanTrashResult
 
 doc {
 
@@ -13,5 +14,13 @@ doc {
 		type "ErrorCode"
 		since "3.2.0"
 		clz ErrorCode.class
+	}
+	ref {
+		name "result"
+		path "org.zstack.header.storage.primary.APICleanUpTrashOnPrimaryStorageEvent.result"
+		desc "清理数据返回信息"
+		type "CleanTrashResult"
+		since "3.3.0"
+		clz CleanTrashResult.class
 	}
 }
