@@ -289,9 +289,8 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
 
     @Override
     public void setMessageTimeout(Message msg) {
-        if (msg instanceof APIMessage) {
-            APIMessage amsg = (APIMessage) msg;
-            amsg.setTimeout(getAPIMessageTimeout(amsg));
+        if (msg instanceof ConfigurableTimeoutMessage) {
+            ((ConfigurableTimeoutMessage) msg).setTimeout(getMessageTimeout((ConfigurableTimeoutMessage) msg));
         } else if (msg instanceof NeedReplyMessage) {
             NeedReplyMessage nmsg = (NeedReplyMessage) msg;
             if (nmsg.getTimeout() == -1) {
