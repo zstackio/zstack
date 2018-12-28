@@ -29,6 +29,8 @@ import org.zstack.utils.Utils
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.logging.CLogger
 import org.zstack.utils.path.PathUtil
+import org.zstack.utils.string.ErrorCodeElaboration
+import org.zstack.utils.string.StringSimilarity
 
 import java.lang.reflect.Field
 import java.lang.reflect.Method
@@ -202,6 +204,86 @@ class RestDocumentationGenerator implements DocumentGenerator {
         URL url = Resources.getResource("doc/RestIntroduction_zh_cn.md")
         String context = Resources.toString(url, Charsets.UTF_8)
         new File(PathUtil.join(dir.absolutePath, "RestIntroduction_zh_cn.md")).write(context)
+    }
+
+    @Override
+    void generateErrorCodeDoc(String scanPath, String resultDir) {
+        rootPath = scanPath
+
+        File dir = new File(resultDir)
+        if (!dir.exists()) {
+            dir.mkdirs()
+        } else {
+            if (!dir.deleteDir()) {
+                throw new RuntimeException(String.format("dir %s deleted failed by us, please delete it first", dir.path))
+            }
+            dir.mkdirs()
+        }
+
+        StringSimilarity.refreshErrorTemplates()
+        def appends = [:]
+        StringSimilarity.elaborations.each {
+            def codeFilePath = PathUtil.join(resultDir, it.category, it.category + ".md")
+            File f = new File(codeFilePath)
+            if (!f.parentFile.exists()) {
+                f.parentFile.mkdirs()
+            }
+
+            if (appends.get(f) == null) {
+                def markdown = new ElaborationMarkDown()
+                f.write(markdown.initialMd5(it))
+                markdown.generateErrorCodeMd5(it)
+                appends.put(f, markdown)
+            } else {
+                def markdown = appends.get(f) as ElaborationMarkDown
+                markdown.generateErrorCodeMd5(it)
+                appends.put(f, markdown)
+            }
+        }
+
+        appends.each {k,v ->
+            def f = k as File
+            def t = v as ElaborationMarkDown
+            f.append(t.table.join("\n"))
+        }
+    }
+
+    class ElaborationMarkDown {
+        private def table = ["|编号|描述|原因|操作建议|更多|"]
+
+        String category(ErrorCodeElaboration err) {
+            return err.category
+        }
+
+        String process(String msg) {
+            if (msg == null || msg.isEmpty()) {
+                return ""
+            }
+            def result = msg.trim().replaceAll("\\|","*")
+            return result
+        }
+
+        String initialMd5(ErrorCodeElaboration err) {
+            table.add("|---|---|---|---|---|")
+            try {
+                return """
+###类别\n
+${category(err)}
+\n
+###错误码列表\n
+"""
+            } catch (Exception e) {
+                logger.warn(e.message)
+            }
+        }
+
+        void generateErrorCodeMd5(ErrorCodeElaboration err) {
+            try {
+                table.add("|${err.code}|${process(err.message_cn)}|${process(err.causes_cn)}|${process(err.operation_cn)}||")
+            } catch (Exception e) {
+                logger.warn(e.message)
+            }
+        }
     }
 
     class RequestParamColumn {

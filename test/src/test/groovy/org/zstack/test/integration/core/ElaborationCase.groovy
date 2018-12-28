@@ -46,7 +46,7 @@ class ElaborationCase extends SubCase {
     void testElaborationWithLongName() {
         def err = Platform.operr("host[uuid:%s, name:%s] is in status[%s], cannot perform required operation", Platform.uuid, "long long long long long long long long long host name", "Connecting") as ErrorCode
         assert err.elaboration != null
-        assert err.elaboration.trim() == "错误信息: 物理机不能进行该操作\n可能原因: 物理机正处于连接中[Connecting]状态\n操作建议: 请等待物理机退出连接中[Connecting]状态"
+        assert err.elaboration.trim() == "错误信息: 物理机不能进行该操作\n可能原因: 物理机正处于[Connecting]状态,当前状态不允许进行该操作\n操作建议: 请等待物理机退出[Connecting]状态"
     }
 
     void testElaboration() {

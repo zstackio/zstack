@@ -84,7 +84,7 @@ public class ElaborationManagerImpl extends AbstractService {
                 PathUtil.scanFolder(files, folder.getAbsolutePath());
             }
         } catch (Exception e) {
-            throw new RuntimeException("Unable to scan folder", e);
+            throw new RuntimeException(String.format("Unable to scan folder: %s", e.getMessage()), e);
         }
 
         if (files.isEmpty()) {
@@ -223,6 +223,11 @@ public class ElaborationManagerImpl extends AbstractService {
                     for (ErrorCodeElaboration err: c) {
                         if (err.getCode() == null || err.getCode().isEmpty() || err.getCategory() == null || err.getCategory().isEmpty()) {
                             continue;
+                        }
+
+                        if (!NumberUtils.isNumber(err.getCode())) {
+                            trigger.fail(operr("elaboration code must be number!"));
+                            return;
                         }
                         String code = err.getCategory() + "." + err.getCode();
 

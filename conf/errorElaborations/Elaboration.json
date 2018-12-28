@@ -33,5 +33,12 @@
     "regex": "arg 'startTime' should format like 'yyyy-MM-dd HH:mm:ss' or '1545380003000'",
     "message_cn": "输入参数中'startTime'的格式应该类似'yyyy-MM-dd HH:mm:ss' 或者 '1545380003000'",
     "message_en": "arg 'startTime' should format like 'yyyy-MM-dd HH:mm:ss' or '1545380003000'"
+  },
+  {
+    "category": "Elaboration",
+    "code": "1005",
+    "regex": "elaboration code must be number!",
+    "message_cn": "错误码必须是个数字",
+    "message_en": "elaboration code must be number"
   }
 ]
