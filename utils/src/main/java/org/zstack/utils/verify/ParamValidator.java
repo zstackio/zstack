@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static java.util.Arrays.asList;
+
 public class ParamValidator {
     private static Set<Class<? extends Verifiable>> verifiableClasses = BeanUtils.reflections.getSubTypesOf(Verifiable.class);
     private static Map<Class<? extends Verifiable>, Map<Field, Param>> verifiableParams = verifiableClasses.stream()
@@ -61,6 +63,21 @@ public class ParamValidator {
 
             if (value != null && value instanceof String && param.resourceType() != Object.class && !StringDSL.isZStackUuid(((String) value).trim())) {
                 errors.add(String.format("field[%s] is not a valid uuid.", f.getName()));
+            }
+
+            if (value != null && param.validValues().length > 0) {
+                boolean found = false;
+                for (String val : param.validValues()) {
+                    if (val.equals(value.toString())) {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found) {
+                    errors.add(String.format("valid value for field[%s] of message[%s] are %s, but %s found",
+                            f.getName(), verifiable.getClass().getName(), asList(param.validValues()), value));
+                }
             }
         }
 

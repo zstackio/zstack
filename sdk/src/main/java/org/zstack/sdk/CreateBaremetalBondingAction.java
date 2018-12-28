@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateBaremetalInstanceAction extends AbstractAction {
+public class CreateBaremetalBondingAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateBaremetalInstanceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateBaremetalInstanceResult value;
+        public org.zstack.sdk.CreateBaremetalBondingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,38 +25,20 @@ public class CreateBaremetalInstanceAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String chassisUuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String imageUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String templateUuid;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String username = "root";
-
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String password;
+    public java.lang.String name;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.Map nicCfgs;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,6L}, noTrim = false)
+    public java.lang.Integer mode;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.Map bondingCfgs;
+    @Param(required = true, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String slaves;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.Map customConfigurations;
-
-    @Param(required = false, validValues = {"InstantStart","JustCreate"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String strategy = "InstantStart";
+    @Param(required = false, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String opts;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
@@ -90,8 +72,8 @@ public class CreateBaremetalInstanceAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateBaremetalInstanceResult value = res.getResult(org.zstack.sdk.CreateBaremetalInstanceResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateBaremetalInstanceResult() : value; 
+        org.zstack.sdk.CreateBaremetalBondingResult value = res.getResult(org.zstack.sdk.CreateBaremetalBondingResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateBaremetalBondingResult() : value; 
 
         return ret;
     }
@@ -121,7 +103,7 @@ public class CreateBaremetalInstanceAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/baremetal/instances";
+        info.path = "/baremetal/network/bondings";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
