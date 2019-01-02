@@ -320,7 +320,7 @@ public class VolumeSnapshotTreeBase {
                         return;
                     }
                     if (sp.getPrimaryStorageInstallPath() == null || sp.getVolumeUuid() == null) {
-                        logger.warn(String.format("skip protector, descendant[%s] primary storage install path or volume uuid is null"));
+                        logger.warn(String.format("skip protector, descendant primary storage install path or volume uuid is null"));
                         whileCompletion.done();
                         return;
                     }

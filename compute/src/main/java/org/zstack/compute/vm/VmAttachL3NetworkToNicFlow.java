@@ -16,6 +16,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.*;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
@@ -37,9 +38,18 @@ public class VmAttachL3NetworkToNicFlow implements Flow {
 
     @Override
     public void run(final FlowTrigger trigger, final Map data) {
-        taskProgress("create nics");
-
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+        final VmInstanceInventory vm = spec.getVmInventory();
+
+        /* VRouter guest nic ip is not allocated in UsedIpVO, VPC guest nic ip is allocated in UsedIpVO.
+         * skip following code to avoid to allocate ip for VRouter guest nic  */
+        if (!VmInstanceConstant.USER_VM_TYPE.equals(vm.getType())) {
+            trigger.next();
+            return;
+        }
+
+        taskProgress("creating secondary ip on nic");
+
         List<AttachL3NetworkToVmNicMsg> msgs = new ArrayList<>();
         Map<String, String> vmStaticIps = new StaticIpOperator().getStaticIpbyVmUuid(spec.getVmInventory().getUuid());
         /* reload vmnic */
