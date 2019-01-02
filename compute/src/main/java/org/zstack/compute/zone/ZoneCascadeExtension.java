@@ -16,6 +16,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.zstack.core.Platform.inerr;
+
 /**
  */
 public class ZoneCascadeExtension extends AbstractAsyncCascadeExtension {
@@ -95,7 +97,7 @@ public class ZoneCascadeExtension extends AbstractAsyncCascadeExtension {
 
             completion.success();
         } catch (ZoneException e) {
-            completion.fail(errf.throwableToInternalError(e));
+            completion.fail(inerr(e.getMessage()));
         }
     }
 

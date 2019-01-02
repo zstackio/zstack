@@ -2,6 +2,9 @@ package org.zstack.utils;
 
 import org.zstack.utils.logging.CLogger;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
@@ -35,6 +38,15 @@ public class TimeUtils {
     public static void loopExecuteUntilTimeoutIgnoreException(long period, long interval, TimeUnit unit, Callable<Boolean> runnable) {
         if (!loopExecuteUntilTimeoutIgnoreExceptionAndReturn(period, interval, unit, runnable)) {
             throw new RuntimeException(String.format("timeout after %s seconds", period));
+        }
+    }
+
+    public static boolean isValidTimeFormat(String time) {
+        try {
+            parseTimeInMillis(time);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
         }
     }
 
@@ -92,5 +104,23 @@ public class TimeUtils {
             return TimeUnit.DAYS.toSeconds(30);
         }
         return TimeUnit.valueOf(time).toSeconds((long) 1);
+    }
+
+    private static DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    public static boolean isValidTimestampFormat(String timestamp) {
+        try {
+            df.parse(timestamp);
+            return true;
+        } catch (ParseException e) {
+            return false;
+        }
+    }
+
+    public static long parseFormatStringToTimeStamp(String timestamp) {
+        try {
+            return df.parse(timestamp).getTime();
+        } catch (ParseException e) {
+            return 0;
+        }
     }
 }

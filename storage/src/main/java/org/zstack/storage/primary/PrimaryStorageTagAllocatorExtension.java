@@ -18,11 +18,12 @@ import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
-import static org.zstack.core.Platform.operr;
-
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.zstack.core.Platform.err;
+import static org.zstack.core.Platform.operr;
 
 /**
  */
@@ -49,8 +50,8 @@ public class PrimaryStorageTagAllocatorExtension implements InstanceOfferingTagA
         candidates = q.getResultList();
 
         if (candidates.isEmpty()) {
-            throw new OperationFailureException(errf.instantiateErrorCode(HostAllocatorError.NO_AVAILABLE_HOST,
-                    String.format("cannot find host whose cluster has attached to primary storage[uuid:%s]. The primary storage uuid is specified in instance offering tag", psUuid)
+            throw new OperationFailureException(err(HostAllocatorError.NO_AVAILABLE_HOST,
+                    "cannot find host whose cluster has attached to primary storage[uuid:%s]. The primary storage uuid is specified in instance offering tag", psUuid
             ));
         }
 
@@ -100,8 +101,8 @@ public class PrimaryStorageTagAllocatorExtension implements InstanceOfferingTagA
         List<HostVO> vos = q.getResultList();
 
         if (vos.isEmpty() && required) {
-            throw new OperationFailureException(errf.instantiateErrorCode(HostAllocatorError.NO_AVAILABLE_HOST,
-                    String.format("cannot find host whose cluster has attached to primary storage having user tag[%s]. The user tag is specified in instance offering tag", tag)
+            throw new OperationFailureException(err(HostAllocatorError.NO_AVAILABLE_HOST,
+                    "cannot find host whose cluster has attached to primary storage having user tag[%s]. The user tag is specified in instance offering tag", tag
             ));
         } else if (vos.isEmpty()) {
             return candidates;

@@ -49,7 +49,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.*;
 import static org.zstack.utils.BeanUtils.getProperty;
 import static org.zstack.utils.BeanUtils.setProperty;
 import static org.zstack.utils.CollectionDSL.e;
@@ -184,8 +184,8 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                                                 msg.getServiceId(), wire.dumpMessage(msg)));
                                     } else {
                                         MessageReply reply = new MessageReply();
-                                        reply.setError(errf.instantiateErrorCode(SysErrors.UNDELIVERABLE_ERROR,
-                                                String.format("unable to deliver the message; the destination service[%s] is dead; please use rabbitmqctl to check if the queue is existing and if any consumers on that queue", msg.getServiceId())));
+                                        reply.setError(err(SysErrors.UNDELIVERABLE_ERROR,
+                                                "unable to deliver the message; the destination service[%s] is dead; please use rabbitmqctl to check if the queue is existing and if any consumers on that queue", msg.getServiceId()));
                                         e.ack(reply);
                                     }
                                 } else {
@@ -297,22 +297,19 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                     if (msg instanceof APIIsReadyToGoMsg) {
                         APIIsReadyToGoReply reply = new APIIsReadyToGoReply();
                         reply.setManagementNodeId(Platform.getManagementServerId());
-                        String details = String.format("management node[uuid:%s] is no ready", Platform.getManagementServerId());
-                        reply.setError(errf.instantiateErrorCode(SysErrors.NOT_READY_ERROR, details));
+                        reply.setError(err(SysErrors.NOT_READY_ERROR, "management node[uuid:%s] is no ready", Platform.getManagementServerId()));
                         reply(msg, reply);
                         return;
                     }
 
                     String err = null;
                     if (msg instanceof MessageReply) {
-                        err = String.format("No route found for the reply[%s], the service[id:%s] waiting for this reply may have been quit. %s",
-                                msg.getClass().getName(), msg.getServiceId(), wire.dumpMessage(msg));
+                        replyErrorByMessageType(msg, err(SysErrors.NO_ROUTE_ERROR, "No route found for the reply[%s], the service[id:%s] waiting for this reply may have been quit. %s",
+                                msg.getClass().getName(), msg.getServiceId(), wire.dumpMessage(msg)));
                     } else {
-                        err = String.format("No route found for the message[%s], the service[id:%s] may not be running. Checking Spring xml to make sure you have loaded it. Message dump:\n %s",
-                                msg.getClass().getName(), msg.getServiceId(), wire.dumpMessage(msg));
+                        replyErrorByMessageType(msg, err(SysErrors.NO_ROUTE_ERROR, "No route found for the message[%s], the service[id:%s] may not be running. Checking Spring xml to make sure you have loaded it. Message dump:\n %s",
+                                msg.getClass().getName(), msg.getServiceId(), wire.dumpMessage(msg)));
                     }
-                    logger.warn(err);
-                    replyErrorByMessageType(msg, errf.instantiateErrorCode(SysErrors.NO_ROUTE_ERROR, err));
                 }
 
                 private void handleDeadLetter(Message msg) {
@@ -321,9 +318,9 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                                 CloudBusGlobalProperty.MESSAGE_TTL, wire.dumpMessage(msg));
                         logger.warn(err);
                     } else {
-                        String err = String.format("the message becomes a dead letter; the possible reason is the service[%s] it sends to has been dead", msg.getServiceId());
-                        logger.warn(String.format("%s; message dump:%s", err, wire.dumpMessage(msg)));
-                        replyErrorByMessageType(msg, errf.instantiateErrorCode(SysErrors.NO_ROUTE_ERROR, err));
+                        ErrorCode err = err(SysErrors.NO_ROUTE_ERROR, "the message becomes a dead letter; the possible reason is the service[%s] it sends to has been dead", msg.getServiceId());
+                        logger.warn(String.format("%s; message dump:%s", err.getDetails(), wire.dumpMessage(msg)));
+                        replyErrorByMessageType(msg, err);
                     }
                 }
             });
@@ -1116,8 +1113,8 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                             return;
                         }
 
-                        ErrorCode err = errf.instantiateErrorCode(SysErrors.MANAGEMENT_NODE_UNAVAILABLE_ERROR,
-                                String.format("management node[uuid:%s] is unavailable", mgmtNodeId));
+                        ErrorCode err = err(SysErrors.MANAGEMENT_NODE_UNAVAILABLE_ERROR,
+                                "management node[uuid:%s] is unavailable", mgmtNodeId);
 
                         logger.warn(String.format("management node[uuid:%s] becomes unavailable, reply %s to message[%s]. Message metadata dump: %s",
                                 mgmtNodeId, err, rmeta.messageName, JSONObjectUtil.toJsonString(rmeta)));
@@ -1410,7 +1407,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         r.putHeaderEntry(CloudBus.HEADER_CORRELATION_ID, m.getId());
         AMQP.BasicProperties.Builder builder = new AMQP.BasicProperties.Builder();
         r.setAMQPProperties(builder.deliveryMode(1).build());
-        r.setError(errf.stringToTimeoutError(m.toErrorString()));
+        r.setError(touterr(m.toErrorString()));
         return r;
     }
 
@@ -2051,7 +2048,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                                         if (t instanceof OperationFailureException) {
                                             replyErrorByMessageType(msg, ((OperationFailureException) t).getErrorCode());
                                         } else {
-                                            replyErrorByMessageType(msg, errf.stringToInternalError(t.getMessage()));
+                                            replyErrorByMessageType(msg, inerr(t.getMessage()));
                                         }
                                     }
 
@@ -2181,16 +2178,16 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         String details = String.format("No service deals with message: %s", wire.dumpMessage(msg));
         if (msg instanceof APISyncCallMessage) {
             APIReply reply = new APIReply();
-            reply.setError(errf.instantiateErrorCode(SysErrors.UNKNOWN_MESSAGE_ERROR, details));
+            reply.setError(err(SysErrors.UNKNOWN_MESSAGE_ERROR, details));
             reply.setSuccess(false);
             this.reply(msg, reply);
         } else if (msg instanceof APIMessage) {
             APIEvent evt = new APIEvent(msg.getId());
-            evt.setError(errf.instantiateErrorCode(SysErrors.UNKNOWN_MESSAGE_ERROR, details));
+            evt.setError(err(SysErrors.UNKNOWN_MESSAGE_ERROR, details));
             this.publish(evt);
         } else if (msg instanceof NeedReplyMessage) {
             MessageReply reply = new MessageReply();
-            reply.setError(errf.instantiateErrorCode(SysErrors.UNKNOWN_MESSAGE_ERROR, details));
+            reply.setError(err(SysErrors.UNKNOWN_MESSAGE_ERROR, details));
             reply.setSuccess(false);
             this.reply(msg, reply);
         }
@@ -2200,7 +2197,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
 
     private void replyErrorIfMessageNeedReply(Message msg, String errStr) {
         if (msg instanceof NeedReplyMessage) {
-            ErrorCode err = errf.stringToInternalError(errStr);
+            ErrorCode err = inerr(errStr);
             replyErrorIfMessageNeedReply(msg, err);
         } else {
             DebugUtils.dumpStackTrace(String.format("An error happened when dealing with message[%s], because this message doesn't need a reply, we call it out loudly\nerror: %s\nmessage dump: %s", msg.getClass().getName(), errStr, wire.dumpMessage(msg)));
@@ -2217,7 +2214,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     }
 
     private void replyErrorToApiMessage(APIMessage msg, String err) {
-        replyErrorToApiMessage(msg, errf.stringToInternalError(err));
+        replyErrorToApiMessage(msg, inerr(err));
     }
 
     private void replyErrorToApiMessage(APIMessage msg, ErrorCode err) {

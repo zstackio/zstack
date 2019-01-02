@@ -52,6 +52,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.err;
 
 /**
  * Created by xing5 on 2016/3/26.
@@ -437,9 +438,9 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
                 hookToKVMHostConnectedEventToChangeStatusToConnected();
             }
 
-            completion.fail(errf.instantiateErrorCode(PrimaryStorageErrors.DISCONNECTED,
-                    String.format("the SMP primary storage[uuid:%s, name:%s] has not attached to any clusters, " +
-                            "or no hosts in the attached clusters are connected", self.getUuid(), self.getName())
+            completion.fail(err(PrimaryStorageErrors.DISCONNECTED,
+                    "the SMP primary storage[uuid:%s, name:%s] has not attached to any clusters, " +
+                            "or no hosts in the attached clusters are connected", self.getUuid(), self.getName()
             ));
             return;
         }

@@ -28,6 +28,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
 
+import static org.zstack.core.Platform.inerr;
+
 /**
  */
 public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
@@ -147,7 +149,7 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
 
             completion.success();
         } catch (L2NetworkException e) {
-            completion.fail(errf.throwableToInternalError(e));
+            completion.fail(inerr(e.getMessage()));
         }
     }
 

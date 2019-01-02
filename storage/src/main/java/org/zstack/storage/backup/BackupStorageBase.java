@@ -59,6 +59,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.err;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public abstract class BackupStorageBase extends AbstractBackupStorage {
@@ -648,7 +649,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         try {
             extpEmitter.preDetach(self, msg.getZoneUuid());
         } catch (BackupStorageException e) {
-            evt.setError(errf.instantiateErrorCode(BackupStorageErrors.DETACH_ERROR, e.getMessage()));
+            evt.setError(err(BackupStorageErrors.DETACH_ERROR, e.getMessage()));
             bus.publish(evt);
             return;
         }
@@ -679,9 +680,9 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                logger.warn(errorCode.toString());
+                logger.warn(errorCode.getDetails());
                 extpEmitter.failToDetach(self, msg.getZoneUuid());
-                evt.setError(errf.instantiateErrorCode(BackupStorageErrors.DETACH_ERROR, errorCode));
+                evt.setError(err(BackupStorageErrors.DETACH_ERROR, errorCode, errorCode.getDetails()));
                 bus.publish(evt);
             }
         });
@@ -691,9 +692,9 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         final APIAttachBackupStorageToZoneEvent evt = new APIAttachBackupStorageToZoneEvent(msg.getId());
         final BackupStorageVO svo = dbf.findByUuid(msg.getBackupStorageUuid(), BackupStorageVO.class);
 
-        String err = extpEmitter.preAttach(svo, msg.getZoneUuid());
-        if (err != null) {
-            evt.setError(errf.instantiateErrorCode(BackupStorageErrors.ATTACH_ERROR, err));
+        String errStr = extpEmitter.preAttach(svo, msg.getZoneUuid());
+        if (errStr != null) {
+            evt.setError(err(BackupStorageErrors.ATTACH_ERROR, errStr));
             bus.publish(evt);
             return;
         }
@@ -719,7 +720,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
             public void fail(ErrorCode errorCode) {
                 logger.warn(errorCode.toString());
                 extpEmitter.failToAttach(svo, msg.getZoneUuid());
-                evt.setError(errf.instantiateErrorCode(BackupStorageErrors.ATTACH_ERROR, errorCode));
+                evt.setError(err(BackupStorageErrors.ATTACH_ERROR, errorCode, errorCode.getDetails()));
                 bus.publish(evt);
             }
         });
@@ -735,7 +736,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         try {
             extpEmitter.preChange(self, event);
         } catch (BackupStorageException e) {
-            evt.setError(errf.instantiateErrorCode(SysErrors.CHANGE_RESOURCE_STATE_ERROR, e.getMessage()));
+            evt.setError(err(SysErrors.CHANGE_RESOURCE_STATE_ERROR, e.getMessage()));
             bus.publish(evt);
             return;
         }
@@ -816,7 +817,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                evt.setError(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, errCode));
+                evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
                 bus.publish(evt);
             }
         }).start();

@@ -17,6 +17,7 @@ import org.zstack.header.message.Message;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.inerr;
 /**
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -50,7 +51,7 @@ public class With {
             logger.warn(String.format("unhandled exception happened"), t);
         }
 
-        ErrorCode err = errf.throwableToInternalError(t);
+        ErrorCode err = inerr(t.getMessage());
         if (backup instanceof Completion) {
             ((Completion)backup).fail(err);
         } else if (backup instanceof ReturnValueCompletion) {

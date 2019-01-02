@@ -1,10 +1,8 @@
 package org.zstack.core.rest;
 
 import org.apache.http.HttpStatus;
-import org.apache.poi.ss.formula.functions.T;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.client.*;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.core.CoreGlobalProperty;
@@ -25,7 +23,6 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.rest.*;
-import org.zstack.utils.DebugUtils;
 import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.IptablesUtils;
 import org.zstack.utils.Utils;
@@ -43,7 +40,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 
 public class RESTFacadeImpl implements RESTFacade {
     private static final CLogger logger = Utils.getLogger(RESTFacadeImpl.class);
@@ -274,9 +271,9 @@ public class RESTFacadeImpl implements RESTFacade {
             TimeoutTaskReceipt timeoutTaskReceipt = thdf.submitTimeoutTask(new Runnable() {
                 @Override
                 public void run() {
-                    self.fail(errf.stringToTimeoutError(
-                            String.format("[Async Http Timeout] url: %s, timeout after %s[%s], command: %s",
-                                    url, timeout, unit.toString(), body)
+                    self.fail(touterr(
+                            "[Async Http Timeout] url: %s, timeout after %s[%s], command: %s",
+                            url, timeout, unit.toString(), body
                     ));
                 }
             }, unit, timeout);
@@ -341,7 +338,7 @@ public class RESTFacadeImpl implements RESTFacade {
                         }
                     } catch (Throwable t) {
                         logger.warn(t.getMessage(), t);
-                        callback.fail(errf.throwableToInternalError(t));
+                        callback.fail(inerr(t.getMessage()));
                     }
                 } else {
                     callback.success(responseEntity);
@@ -365,19 +362,18 @@ public class RESTFacadeImpl implements RESTFacade {
                     rsp = retry.run();
                 }
             } catch (HttpClientErrorException e) {
-                String err = String.format("http status: %s, response body:%s", e.getStatusCode(), e.getResponseBodyAsString());
-                wrapper.fail(errf.instantiateErrorCode(SysErrors.HTTP_ERROR, err));
+                wrapper.fail(err(SysErrors.HTTP_ERROR, "http status: %s, response body:%s", e.getStatusCode(), e.getResponseBodyAsString()));
                 return;
             }
 
             if (rsp.getStatusCode() != org.springframework.http.HttpStatus.OK) {
                 String err = String.format("http status: %s, response body:%s", rsp.getStatusCode().toString(), rsp.getBody());
                 logger.warn(err);
-                wrapper.fail(errf.instantiateErrorCode(SysErrors.HTTP_ERROR, err));
+                wrapper.fail(err(SysErrors.HTTP_ERROR, "http status: %s, response body:%s", rsp.getStatusCode().toString(), rsp.getBody()));
             }
         } catch (Throwable e) {
             logger.warn(String.format("Unable to post to %s", url), e);
-            wrapper.fail(ExceptionDSL.isCausedBy(e, ResourceAccessException.class) ? errf.instantiateErrorCode(SysErrors.IO_ERROR, e.getMessage()) : errf.throwableToInternalError(e));
+            wrapper.fail(ExceptionDSL.isCausedBy(e, ResourceAccessException.class) ? err(SysErrors.IO_ERROR, e.getMessage()) : inerr(e.getMessage()));
         }
     }
 

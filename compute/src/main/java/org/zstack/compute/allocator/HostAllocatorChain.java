@@ -23,6 +23,9 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
 
+import static org.zstack.core.Platform.err;
+import static org.zstack.core.Platform.inerr;
+
 /**
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -122,10 +125,10 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
         // in case a wrong flow returns an empty result set
         if (result.isEmpty()) {
             if (isDryRun) {
-                dryRunCompletion.fail(errf.instantiateErrorCode(HostAllocatorError.NO_AVAILABLE_HOST,
+                dryRunCompletion.fail(err(HostAllocatorError.NO_AVAILABLE_HOST,
                         "host allocation flow doesn't indicate any details"));
             } else {
-                completion.fail(errf.instantiateErrorCode(HostAllocatorError.NO_AVAILABLE_HOST,
+                completion.fail(err(HostAllocatorError.NO_AVAILABLE_HOST,
                         "host allocation flow doesn't indicate any details"));
             }
             return;
@@ -165,7 +168,7 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
             }
         } catch (Throwable t) {
             logger.warn("unhandled throwable", t);
-            completion.fail(errf.throwableToInternalError(t));
+            completion.fail(inerr(t.getMessage()));
         }
     }
 
@@ -245,11 +248,10 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
                     lastFlow.getClass().getName(), errorCode.getDetails()));
             this.errorCode = errorCode;
         } else {
-            String err = String.format("unable to allocate hosts; due to pagination is enabled, " +
+            this.errorCode = err(HostAllocatorError.NO_AVAILABLE_HOST, "unable to allocate hosts; due to pagination is enabled, " +
                     "there might be several allocation failures happened before;" +
                     " the error list is %s", seriesErrorWhenPagination);
-            logger.debug(err);
-            this.errorCode = errf.instantiateErrorCode(HostAllocatorError.NO_AVAILABLE_HOST, err);
+            logger.debug(this.errorCode.getDetails());
         }
 
         done();

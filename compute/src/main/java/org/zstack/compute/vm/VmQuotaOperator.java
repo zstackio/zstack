@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.err;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmQuotaOperator implements Quota.QuotaOperator {
@@ -322,9 +323,9 @@ public class VmQuotaOperator implements Quota.QuotaOperator {
                     && !vmInstanceVO.getState().equals(VmInstanceState.Running)
                     && !vmInstanceVO.getState().equals(VmInstanceState.Paused)
                     && !vmInstanceVO.getState().equals(VmInstanceState.Starting)) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(VmErrors.NOT_IN_CORRECT_STATE,
-                        String.format("Incorrect VM State.VM[uuid:%s] current state:%s. ",
-                                msg.getResourceUuid(), vmInstanceVO.getState())
+                throw new ApiMessageInterceptionException(err(VmErrors.NOT_IN_CORRECT_STATE,
+                        "Incorrect VM State.VM[uuid:%s] current state:%s. ",
+                        msg.getResourceUuid(), vmInstanceVO.getState()
                 ));
             }
 

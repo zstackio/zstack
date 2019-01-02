@@ -58,6 +58,7 @@ import java.util.*;
 import java.util.concurrent.Callable;
 
 import static org.zstack.core.Platform.err;
+import static org.zstack.core.Platform.inerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.createSubTaskProgress;
 import static org.zstack.utils.CollectionDSL.list;
@@ -1001,10 +1002,9 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 HostStatus status = Q.New(HostVO.class).select(HostVO_.status)
                         .eq(HostVO_.uuid, msg.getHostUuid()).findValue();
                 if (status == HostStatus.Connected) {
-                    reply.setError(errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND,
-                            String.format(
-                                    "local primary storage[uuid:%s] doesn't have the host[uuid:%s]",
-                                    self.getUuid(), msg.getHostUuid())));
+                    reply.setError(err(SysErrors.RESOURCE_NOT_FOUND,
+                            "local primary storage[uuid:%s] doesn't have the host[uuid:%s]",
+                            self.getUuid(), msg.getHostUuid()));
                     bus.reply(msg, reply);
                     return;
                 }
@@ -1187,9 +1187,9 @@ public class LocalStorageBase extends PrimaryStorageBase {
         final VolumeSnapshotInventory sinv = msg.getSnapshot();
         final String hostUuid = getHostUuidByResourceUuid(sinv.getUuid());
         if (hostUuid == null) {
-            throw new OperationFailureException(errf.stringToInternalError(
-                    String.format("the volume snapshot[uuid:%s] is not on the local primary storage[uuid: %s]; the local primary storage" +
-                            " doesn't support the manner of downloading snapshots and creating the volume", sinv.getUuid(), self.getUuid())
+            throw new OperationFailureException(inerr(
+                    "the volume snapshot[uuid:%s] is not on the local primary storage[uuid: %s]; the local primary storage" +
+                            " doesn't support the manner of downloading snapshots and creating the volume", sinv.getUuid(), self.getUuid()
             ));
         }
 
@@ -2581,9 +2581,9 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 .like(ImageCacheVO_.installUrl, String.format("%%hostUuid://%s%%", msg.getDestHostUuid()))
                 .isExists()){
 
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("cannot attach ISO to a primary storage[uuid:%s] which is disabled",
-                            self.getUuid())));
+            throw new OperationFailureException(operr(
+                    "cannot attach ISO to a primary storage[uuid:%s] which is disabled",
+                    self.getUuid()));
         }
     }
 

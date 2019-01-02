@@ -17,6 +17,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
+import static org.zstack.core.Platform.touterr;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class ApiSender {
@@ -81,8 +82,7 @@ public class ApiSender {
                 bus.send(dmsg);
                 TimeUnit.SECONDS.sleep(2);
 
-                String errStr = String.format("%s[uuid:%s] timeout after %s seconds", msg.getMessageName(), msg.getId(), timeout);
-                throw new ApiSenderException(errf.stringToTimeoutError(errStr));
+                throw new ApiSenderException(touterr("%s[uuid:%s] timeout after %s seconds", msg.getMessageName(), msg.getId(), timeout));
             }
         } catch (InterruptedException e1) {
             throw new CloudRuntimeException("", e1);

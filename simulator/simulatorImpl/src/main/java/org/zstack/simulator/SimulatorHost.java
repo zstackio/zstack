@@ -22,6 +22,8 @@ import org.zstack.utils.logging.CLogger;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.zstack.core.Platform.operr;
+
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 class SimulatorHost extends HostBase {
     private static final CLogger logger = Utils.getLogger(SimulatorHost.class);
@@ -57,7 +59,7 @@ class SimulatorHost extends HostBase {
             String err = sc.connect(conn);
             if (err != null) {
                 logger.warn(err);
-                complete.fail(errf.stringToOperationError(err));
+                complete.fail(operr(err));
                 return;
             }
         }
@@ -86,7 +88,7 @@ class SimulatorHost extends HostBase {
         if (!isDisconnected) {
             completion.success();
         } else {
-            completion.fail(errf.stringToOperationError("set to disconnected"));
+            completion.fail(operr("set to disconnected"));
         }
     }
 
@@ -140,7 +142,7 @@ class SimulatorHost extends HostBase {
     private void handle(MigrateVmOnHypervisorMsg msg) {
         MigrateVmOnHypervisorReply reply = new MigrateVmOnHypervisorReply();
         if (!config.migrateSuccess) {
-            reply.setError(errf.stringToOperationError("on purpose"));
+            reply.setError(operr("on purpose"));
         } else {
             logger.debug(String.format("Successfully migrate vm[uuid:%s] on simulator host[uuid:%s] to host[uuid:%s]", msg.getVmInventory().getUuid(), self.getUuid(), msg.getDestHostInventory().getUuid()));
             config.removeVm(msg.getSrcHostUuid(), msg.getVmInventory().getUuid());
@@ -161,7 +163,7 @@ class SimulatorHost extends HostBase {
     private void handle(TakeSnapshotOnHypervisorMsg msg) {
         TakeSnapshotOnHypervisorReply reply = new TakeSnapshotOnHypervisorReply();
         if (!config.snapshotSuccess) {
-            reply.setError(errf.stringToOperationError("on purpose"));
+            reply.setError(operr("on purpose"));
             bus.reply(msg, reply);
             return;
         }

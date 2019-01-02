@@ -18,7 +18,6 @@ import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.network.service.virtualrouter.VirtualRouterGlobalConfig;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -30,6 +29,7 @@ import org.zstack.utils.ssh.Ssh;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 
 /**
@@ -98,8 +98,8 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
                 try {
                     long now = System.currentTimeMillis();
                     if (now > timeout) {
-                        trigger.fail(errf.instantiateErrorCode(ApplianceVmErrors.UNABLE_TO_START, String.format("the SSH port is not" +
-                                " open after %s seconds. Failed to login the vyos router[ip:%s]", timeoutInSeconds, mgmtNicIp)));
+                        trigger.fail(err(ApplianceVmErrors.UNABLE_TO_START, "the SSH port is not" +
+                                " open after %s seconds. Failed to login the vyos router[ip:%s]", timeoutInSeconds, mgmtNicIp));
                         return true;
                     }
 

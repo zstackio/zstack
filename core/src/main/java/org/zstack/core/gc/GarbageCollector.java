@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.zstack.core.Platform.inerr;
+
 /**
  * Created by xing5 on 2017/3/3.
  */
@@ -192,7 +194,7 @@ public abstract class GarbageCollector {
         } catch (Throwable t) {
             logger.warn(String.format("[GC] unhandled exception happened when" +
                     " running a GC job[name:%s, id:%s]", NAME, uuid), t);
-            fail(errf.stringToInternalError(t.getMessage()));
+            fail(inerr(t.getMessage()));
         }
     }
 }

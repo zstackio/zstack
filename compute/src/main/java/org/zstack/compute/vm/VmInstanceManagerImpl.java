@@ -92,6 +92,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.inerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -1517,7 +1518,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 bus.makeLocalServiceId(cmsg, L3NetworkConstant.SERVICE_ID);
                 MessageReply r = bus.call(cmsg);
                 if (!r.isSuccess()) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.INTERNAL, r.getError()));
+                    throw new ApiMessageInterceptionException(inerr(r.getError().getDetails()));
                 }
 
                 CheckIpAvailabilityReply cr = r.castReply();

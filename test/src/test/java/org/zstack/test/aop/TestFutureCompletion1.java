@@ -13,6 +13,8 @@ import org.zstack.test.BeanConstructor;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 /**
  */
 public class TestFutureCompletion1 {
@@ -29,7 +31,7 @@ public class TestFutureCompletion1 {
     }
 
     private void complete(Completion completion) {
-        completion.fail(errf.stringToOperationError("on purpose"));
+        completion.fail(operr("on purpose"));
     }
 
     @Test

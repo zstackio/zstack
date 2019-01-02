@@ -55,6 +55,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static org.zstack.core.Platform.operr;
+
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -224,8 +226,8 @@ public class FusionstorPrimaryStorageFactory implements PrimaryStorageFactory, F
         }));
 
         if (cto.getMonInfo().isEmpty()) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("cannot find any Connected fusionstor mon for the primary storage[uuid:%s]", pri.getUuid())
+            throw new OperationFailureException(operr(
+                    "cannot find any Connected fusionstor mon for the primary storage[uuid:%s]", pri.getUuid()
             ));
         }
 
@@ -244,8 +246,8 @@ public class FusionstorPrimaryStorageFactory implements PrimaryStorageFactory, F
         List<Tuple> ts = q.listTuple();
 
         if (ts.isEmpty()) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("cannot find any Connected fusionstor mon for the primary storage[uuid:%s]", vol.getPrimaryStorageUuid())
+            throw new OperationFailureException(operr(
+                    "cannot find any Connected fusionstor mon for the primary storage[uuid:%s]", vol.getPrimaryStorageUuid()
             ));
         }
 
@@ -560,6 +562,6 @@ public class FusionstorPrimaryStorageFactory implements PrimaryStorageFactory, F
 
     @Override
     public void kvmCancelSelfFencer(KvmCancelSelfFencerParam param, Completion completion) {
-        completion.fail(errf.stringToOperationError("this has not been supported by fusionstor"));
+        completion.fail(operr("this has not been supported by fusionstor"));
     }
 }

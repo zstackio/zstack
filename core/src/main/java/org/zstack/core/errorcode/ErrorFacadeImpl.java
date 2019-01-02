@@ -1,5 +1,6 @@
 package org.zstack.core.errorcode;
 
+import org.zstack.core.Platform;
 import org.zstack.core.errorcode.schema.Error;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -7,6 +8,7 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
@@ -51,6 +53,19 @@ public class ErrorFacadeImpl implements ErrorFacade {
         return instantiateErrorCode(code.toString(), details);
     }
 
+    private void replaceSystemError(ErrorCodeList err, String details) {
+        try {
+            ErrorCode subErr = JSONObjectUtil.toObject(details.substring(details.indexOf("{\"code\":")), ErrorCode.class);
+            err.setCode(subErr.getCode());
+            err.setElaboration(subErr.getElaboration());
+            err.setDescription(subErr.getDescription());
+            err.setDetails(subErr.getDetails());
+            err.setCause(subErr.getCause());
+        } catch (Exception e) {
+            logger.warn(String.format("%s cannot be cast to ErrorCode type", details));
+        }
+    }
+
     private ErrorCode doInstantiateErrorCode(String code, String details, List<ErrorCode> causes) {
         ErrorCodeInfo info = codes.get(code);
         if (info == null) {
@@ -61,7 +76,16 @@ public class ErrorFacadeImpl implements ErrorFacade {
             details = details.substring(0, 4093) + "...";
         }
         ErrorCodeList err = (ErrorCodeList) info.code.copy();
-        err.setDetails(details);
+        if (SysErrors.INTERNAL.toString().equals(code)) {
+            if (details != null && details.trim().contains(", {\"code\":") && details.trim().endsWith("}")) {
+                replaceSystemError(err, details);
+            } else {
+                err.setDetails(details);
+            }
+        } else {
+            err.setDetails(Platform.toI18nString(details));
+        }
+
         err.setCauses(causes);
 
         if (dumpOnError) {

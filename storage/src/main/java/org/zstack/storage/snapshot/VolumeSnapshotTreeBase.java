@@ -65,6 +65,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.err;
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.utils.CollectionDSL.e;
 
@@ -126,9 +127,9 @@ public class VolumeSnapshotTreeBase {
         if (allowedStatus.isOperationAllowed(msg.getClass().getName(), currentRoot.getStatus().toString())) {
             return null;
         } else {
-            return errf.instantiateErrorCode(VolumeSnapshotErrors.NOT_IN_CORRECT_STATE,
-                    String.format("snapshot[uuid:%s, name:%s]'s status[%s] is not allowed for message[%s], allowed status%s",
-                            currentRoot.getUuid(), currentRoot.getName(), currentRoot.getStatus(), msg.getClass().getName(), allowedStatus.getStatesForOperation(msg.getClass().getName())));
+            return err(VolumeSnapshotErrors.NOT_IN_CORRECT_STATE,
+                    "snapshot[uuid:%s, name:%s]'s status[%s] is not allowed for message[%s], allowed status%s",
+                    currentRoot.getUuid(), currentRoot.getName(), currentRoot.getStatus(), msg.getClass().getName(), allowedStatus.getStatesForOperation(msg.getClass().getName()));
         }
     }
 
@@ -1495,7 +1496,7 @@ public class VolumeSnapshotTreeBase {
         }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                completion.fail(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, errCode));
+                completion.fail(err(SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
             }
         }).start();
     }

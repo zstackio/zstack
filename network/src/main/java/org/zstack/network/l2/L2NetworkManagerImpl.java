@@ -8,14 +8,14 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.DbEntityLister;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.AbstractService;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
-import org.zstack.header.network.*;
+import org.zstack.header.network.NetworkException;
 import org.zstack.header.network.l2.*;
 import org.zstack.search.GetQuery;
 import org.zstack.search.SearchQuery;
@@ -25,6 +25,8 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
+
+import static org.zstack.core.Platform.err;
 
 public class L2NetworkManagerImpl extends AbstractService implements L2NetworkManager {
     private static final CLogger logger = Utils.getLogger(L2NetworkManagerImpl.class);
@@ -141,7 +143,7 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
         }
 
         if (vo == null) {
-            ErrorCode errCode = errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND, String.format("unable to find L2Network[uuid:%s], it may have been deleted", msg.getL2NetworkUuid()));
+            ErrorCode errCode = err(SysErrors.RESOURCE_NOT_FOUND, "unable to find L2Network[uuid:%s], it may have been deleted", msg.getL2NetworkUuid());
             bus.replyErrorByMessageType((Message)msg, errCode);
             return;
         }
@@ -164,10 +166,9 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
     		try {
 				extp.beforeCreateL2Network(msg);
 			} catch (NetworkException e) {
-				String err = String.format("unable to create l2network[name:%s, type:%s], %s", msg.getName(), msg.getType(), e.getMessage());
-				logger.warn(err, e);
 				APICreateL2NetworkEvent evt = new APICreateL2NetworkEvent(msg.getId());
-                evt.setError(errf.instantiateErrorCode(SysErrors.CREATE_RESOURCE_ERROR, err));
+                evt.setError(err(SysErrors.CREATE_RESOURCE_ERROR, "unable to create l2network[name:%s, type:%s], %s", msg.getName(), msg.getType(), e.getMessage()));
+                logger.warn(evt.getError().getDetails(), e);
 				bus.publish(evt);
 				return;
 			}

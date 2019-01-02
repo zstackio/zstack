@@ -73,6 +73,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.err;
 import static org.zstack.utils.CollectionDSL.*;
 
 
@@ -2108,7 +2109,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void fail(ErrorCode errorCode) {
                 RebootVmInstanceReply reply = new RebootVmInstanceReply();
-                reply.setError(errf.instantiateErrorCode(VmErrors.REBOOT_ERROR, errorCode));
+                reply.setError(err(VmErrors.REBOOT_ERROR, errorCode, errorCode.getDetails()));
                 bus.reply(msg, reply);
                 chain.next();
             }
@@ -2148,7 +2149,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void fail(ErrorCode errorCode) {
                 StopVmInstanceReply reply = new StopVmInstanceReply();
-                reply.setError(errf.instantiateErrorCode(VmErrors.STOP_ERROR, errorCode));
+                reply.setError(err(VmErrors.STOP_ERROR, errorCode, errorCode.getDetails()));
                 bus.reply(msg, reply);
                 chain.next();
             }
@@ -2194,10 +2195,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                     msg.getRootVolumeInventory().getPrimaryStorageUuid());
             bus.send(cmsg, new CloudBusCallBack(chain) {
                 private void fail(ErrorCode errorCode) {
-                    String err = String.format("failed to create template from root volume[uuid:%s] on primary storage[uuid:%s]",
-                            msg.getRootVolumeInventory().getUuid(), msg.getRootVolumeInventory().getPrimaryStorageUuid());
-                    logger.warn(err);
-                    reply.setError(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR, err, errorCode));
+                    reply.setError(operr(errorCode, "failed to create template from root volume[uuid:%s] on primary storage[uuid:%s]",
+                            msg.getRootVolumeInventory().getUuid(), msg.getRootVolumeInventory().getPrimaryStorageUuid()));
+                    logger.warn(reply.getError().getDetails());
                     bus.reply(msg, reply);
                 }
 
@@ -2266,7 +2266,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                 AttachNicToVmReply r = new AttachNicToVmReply();
                 if (!reply.isSuccess()) {
-                    r.setError(errf.instantiateErrorCode(VmErrors.ATTACH_NETWORK_ERROR, r.getError()));
+                    r.setError(err(VmErrors.ATTACH_NETWORK_ERROR, r.getError(), r.getError().getDetails()));
                 }
                 bus.reply(msg, r);
             }
@@ -4635,7 +4635,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void handle(final ErrorCode errCode, Map data) {
                 extEmitter.failedToAttachVolume(getSelfInventory(), volume, errCode, data);
-                reply.setError(errf.instantiateErrorCode(VmErrors.ATTACH_VOLUME_ERROR, errCode));
+                reply.setError(err(VmErrors.ATTACH_VOLUME_ERROR, errCode, errCode.getDetails()));
                 bus.reply(msg, reply);
                 completion.done();
             }
@@ -5042,7 +5042,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     logger.warn(e.getMessage());
                 }
 
-                completion.fail(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR, errCode));
+                completion.fail(err(SysErrors.OPERATION_ERROR, errCode, errCode.getDetails()));
             }
         }).start();
     }
@@ -5061,7 +5061,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void fail(ErrorCode errorCode) {
                 StartVmInstanceReply reply = new StartVmInstanceReply();
-                reply.setError(errf.instantiateErrorCode(VmErrors.START_ERROR, errorCode));
+                reply.setError(err(VmErrors.START_ERROR, errorCode, errorCode.getDetails()));
                 bus.reply(msg, reply);
                 taskChain.next();
             }
@@ -5082,7 +5082,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void fail(ErrorCode errorCode) {
                 APIStartVmInstanceEvent evt = new APIStartVmInstanceEvent(msg.getId());
-                evt.setError(errf.instantiateErrorCode(VmErrors.START_ERROR, errorCode));
+                evt.setError(err(VmErrors.START_ERROR, errorCode, errorCode.getDetails()));
                 bus.publish(evt);
                 taskChain.next();
             }
@@ -5194,7 +5194,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                completion.fail(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, errCode));
+                completion.fail(err(SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
             }
         }).start();
     }
@@ -5402,7 +5402,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void fail(ErrorCode errorCode) {
                 APIRebootVmInstanceEvent evt = new APIRebootVmInstanceEvent(msg.getId());
-                evt.setError(errf.instantiateErrorCode(VmErrors.REBOOT_ERROR, errorCode));
+                evt.setError(err(VmErrors.REBOOT_ERROR, errorCode, errorCode.getDetails()));
                 bus.publish(evt);
                 taskChain.next();
             }
@@ -5442,7 +5442,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void fail(ErrorCode errorCode) {
                 APIStopVmInstanceEvent evt = new APIStopVmInstanceEvent(msg.getId());
-                evt.setError(errf.instantiateErrorCode(VmErrors.STOP_ERROR, errorCode));
+                evt.setError(err(VmErrors.STOP_ERROR, errorCode, errorCode.getDetails()));
                 bus.publish(evt);
                 taskChain.next();
             }
@@ -5554,7 +5554,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void fail(ErrorCode errorCode) {
                 APIPauseVmInstanceEvent evt = new APIPauseVmInstanceEvent(msg.getId());
-                evt.setError(errf.instantiateErrorCode(VmErrors.SUSPEND_ERROR, errorCode));
+                evt.setError(err(VmErrors.SUSPEND_ERROR, errorCode, errorCode.getDetails()));
                 bus.publish(evt);
                 taskChain.next();
             }
@@ -5633,7 +5633,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void fail(ErrorCode errorCode) {
                 APIResumeVmInstanceEvent evt = new APIResumeVmInstanceEvent(msg.getId());
-                evt.setError(errf.instantiateErrorCode(VmErrors.RESUME_ERROR, errorCode));
+                evt.setError(err(VmErrors.RESUME_ERROR, errorCode, errorCode.getDetails()));
                 bus.publish(evt);
                 taskChain.next();
             }
@@ -5761,12 +5761,12 @@ public class VmInstanceBase extends AbstractVmInstance {
         // check vm stopped
         {
             if (self.getState() != VmInstanceState.Stopped) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(
+                throw new ApiMessageInterceptionException(err(
                         VmErrors.RE_IMAGE_VM_NOT_IN_STOPPED_STATE,
-                        String.format("unable to reset volume[uuid:%s] to origin image[uuid:%s]," +
-                                        " the vm[uuid:%s] volume attached to is not in Stopped state, current state is %s",
-                                rootVolume.getUuid(), rootVolume.getRootImageUuid(),
-                                rootVolume.getVmInstanceUuid(), self.getState())
+                        "unable to reset volume[uuid:%s] to origin image[uuid:%s]," +
+                                " the vm[uuid:%s] volume attached to is not in Stopped state, current state is %s",
+                        rootVolume.getUuid(), rootVolume.getRootImageUuid(),
+                        rootVolume.getVmInstanceUuid(), self.getState()
                 ));
             }
         }
@@ -5779,19 +5779,19 @@ public class VmInstanceBase extends AbstractVmInstance {
             q.setLimit(1);
             ImageMediaType imageMediaType = q.findValue();
             if (imageMediaType == null) {
-                throw new OperationFailureException(errf.instantiateErrorCode(
+                throw new OperationFailureException(err(
                         VmErrors.RE_IMAGE_CANNOT_FIND_IMAGE_CACHE,
-                        String.format("unable to reset volume[uuid:%s] to origin image[uuid:%s]," +
-                                        " cannot find image cache.",
-                                rootVolume.getUuid(), rootVolume.getRootImageUuid())
+                        "unable to reset volume[uuid:%s] to origin image[uuid:%s]," +
+                                " cannot find image cache.",
+                        rootVolume.getUuid(), rootVolume.getRootImageUuid()
                 ));
             }
             if (imageMediaType.toString().equals("ISO")) {
-                throw new OperationFailureException(errf.instantiateErrorCode(
+                throw new OperationFailureException(err(
                         VmErrors.RE_IMAGE_IMAGE_MEDIA_TYPE_SHOULD_NOT_BE_ISO,
-                        String.format("unable to reset volume[uuid:%s] to origin image[uuid:%s]," +
-                                        " for image type is ISO",
-                                rootVolume.getUuid(), rootVolume.getRootImageUuid())
+                        "unable to reset volume[uuid:%s] to origin image[uuid:%s]," +
+                                " for image type is ISO",
+                        rootVolume.getUuid(), rootVolume.getRootImageUuid()
                 ));
             }
         }

@@ -9,6 +9,8 @@ import org.zstack.header.message.Message;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
+
 public class ManInTheMiddleService extends AbstractService {
     private static final CLogger logger = Utils.getLogger(ManInTheMiddleService.class);
 
@@ -35,7 +37,7 @@ public class ManInTheMiddleService extends AbstractService {
     public void handleMessage(Message msg) {
         String behavior = msg.getHeaderEntry(CloudBusAopProxy.MESSAGE_BEHAVIOR);
         if (CloudBusAopProxy.Behavior.FAIL.toString().equals(behavior)) {
-            ErrorCode err = errf.stringToOperationError("unit test asks it to fail");
+            ErrorCode err = operr("unit test asks it to fail");
             bus.replyErrorByMessageType(msg, err);
         } else if (CloudBusAopProxy.Behavior.TIMEOUT.toString().equals(behavior)) {
             logger.debug(String.format("drop message[%s, %s] as unit test ask it to time out", msg.getMessageName(), msg.getId()));

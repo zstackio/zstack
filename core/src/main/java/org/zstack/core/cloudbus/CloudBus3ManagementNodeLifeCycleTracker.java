@@ -18,6 +18,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+import static org.zstack.core.Platform.err;
+
 public class CloudBus3ManagementNodeLifeCycleTracker implements BeforeSendMessageInterceptor, BeforeDeliveryMessageInterceptor,
         ManagementNodeChangeListener, Component {
 
@@ -97,8 +99,8 @@ public class CloudBus3ManagementNodeLifeCycleTracker implements BeforeSendMessag
                 return false;
             }
 
-            ErrorCode err = errf.instantiateErrorCode(SysErrors.MANAGEMENT_NODE_UNAVAILABLE_ERROR,
-                    String.format("management node[uuid:%s] is unavailable", nodeUUID));
+            ErrorCode err = err(SysErrors.MANAGEMENT_NODE_UNAVAILABLE_ERROR,
+                    "management node[uuid:%s] is unavailable", nodeUUID);
 
             if (message instanceof APISyncCallMessage) {
                 APIReply reply = new APIReply();

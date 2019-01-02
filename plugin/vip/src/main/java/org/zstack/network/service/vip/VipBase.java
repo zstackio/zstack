@@ -45,6 +45,7 @@ import org.zstack.utils.logging.CLogger;
 import java.util.*;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.err;
 
 /**
  * Created by xing5 on 2016/11/19.
@@ -91,9 +92,9 @@ public class VipBase {
     protected void refresh() {
         VipVO vo = dbf.reload(self);
         if (vo == null) {
-            throw new OperationFailureException(errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND,
-                    String.format("cannot find the vip[name:%s, uuid:%s, ip:%s], it may have been deleted",
-                            self.getName(), self.getUuid(), self.getIp())
+            throw new OperationFailureException(err(SysErrors.RESOURCE_NOT_FOUND,
+                    "cannot find the vip[name:%s, uuid:%s, ip:%s], it may have been deleted",
+                    self.getName(), self.getUuid(), self.getIp()
             ));
         }
 
@@ -672,7 +673,7 @@ public class VipBase {
                 error(new FlowErrorHandler(msg) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        evt.setError(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, errCode));
+                        evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
                         bus.publish(evt);
                     }
                 });

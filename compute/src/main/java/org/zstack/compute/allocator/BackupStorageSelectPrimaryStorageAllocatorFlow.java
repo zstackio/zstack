@@ -21,6 +21,7 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.TypedQuery;
 import java.util.List;
 
+import static org.zstack.core.Platform.inerr;
 import static org.zstack.core.Platform.operr;
 
 /**
@@ -57,10 +58,10 @@ public class BackupStorageSelectPrimaryStorageAllocatorFlow extends AbstractHost
         if (psUuids == null) {
             List<String> possiblePrimaryStorageTypes = spec.getBackupStoragePrimaryStorageMetrics().get(type);
             if (possiblePrimaryStorageTypes == null) {
-                throw new OperationFailureException(errf.stringToInternalError(
-                        String.format("the image[uuid:%s] is on the backup storage[uuid:%s, type:%s] that doesn't have metrics defined" +
-                                        " in conf/springConfigXml/HostAllocatorManager.xml. The developer should add its primary storage metrics",
-                                spec.getImage().getUuid(), spec.getRequiredBackupStorageUuid(), type)
+                throw new OperationFailureException(inerr(
+                        "the image[uuid:%s] is on the backup storage[uuid:%s, type:%s] that doesn't have metrics defined" +
+                                " in conf/springConfigXml/HostAllocatorManager.xml. The developer should add its primary storage metrics",
+                        spec.getImage().getUuid(), spec.getRequiredBackupStorageUuid(), type
                 ));
             }
 

@@ -7,10 +7,10 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
@@ -22,12 +22,11 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.NetworkUtils;
 
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.operr;
-
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.zstack.core.Platform.*;
 
 /**
  */
@@ -142,8 +141,8 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
         List<String> uuids = q.listValue();
         if (!uuids.containsAll(msg.getVmNicUuids())) {
             msg.getVmNicUuids().removeAll(uuids);
-            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND,
-                    String.format("cannot find vm nics[uuids:%s]", msg.getVmNicUuids())
+            throw new ApiMessageInterceptionException(err(SysErrors.RESOURCE_NOT_FOUND,
+                    "cannot find vm nics[uuids:%s]", msg.getVmNicUuids()
             ));
         }
 

@@ -53,6 +53,7 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.err;
 import static org.zstack.utils.CollectionDSL.*;
 
 public class L3NetworkManagerImpl extends AbstractService implements L3NetworkManager, ReportQuotaExtensionPoint,
@@ -287,8 +288,8 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         }
 
         if (vo == null) {
-            ErrorCode err = errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND,
-                    String.format("Unable to find L3Network[uuid:%s], it may have been deleted", l3NetworkUuid));
+            ErrorCode err = err(SysErrors.RESOURCE_NOT_FOUND,
+                    "Unable to find L3Network[uuid:%s], it may have been deleted", l3NetworkUuid);
             bus.replyErrorByMessageType(msg, err);
             return;
         }

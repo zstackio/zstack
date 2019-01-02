@@ -32,11 +32,12 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
-import static org.zstack.core.Platform.*;
 
 import java.util.*;
 
 import static java.util.Arrays.asList;
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.err;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class L2NoVlanNetwork implements L2Network {
@@ -193,7 +194,7 @@ public class L2NoVlanNetwork implements L2Network {
         }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                reply.setError(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, errCode));
+                reply.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
                 bus.reply(msg, reply);
             }
         }).start();
@@ -492,7 +493,7 @@ public class L2NoVlanNetwork implements L2Network {
         }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                evt.setError(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, errCode));
+                evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
                 bus.publish(evt);
             }
         }).start();
@@ -581,7 +582,7 @@ public class L2NoVlanNetwork implements L2Network {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                evt.setError(errf.instantiateErrorCode(L2Errors.ATTACH_ERROR, errorCode));
+                evt.setError(err(L2Errors.ATTACH_ERROR, errorCode, errorCode.getDetails()));
                 bus.publish(evt);
                 completion.done();
             }

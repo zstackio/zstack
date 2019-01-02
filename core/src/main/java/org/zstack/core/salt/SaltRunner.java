@@ -23,13 +23,12 @@ import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.ssh.Ssh;
 import org.zstack.utils.ssh.SshResult;
 
-import static org.zstack.core.Platform.operr;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.DebugUtils.Assert;
 
 /**
@@ -302,7 +301,7 @@ public class SaltRunner {
                     completion.success();
                 } catch (Exception e) {
                     logger.warn(String.format("failed to run salt state[%s] on system[%s], %s", stateName, targetIp, e.getMessage()));
-                    completion.fail(errf.throwableToOperationError(e));
+                    completion.fail(operr(e.getMessage()));
                 }
             }
 

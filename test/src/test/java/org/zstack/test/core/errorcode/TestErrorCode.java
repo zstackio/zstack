@@ -9,6 +9,9 @@ import org.zstack.test.BeanConstructor;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.inerr;
+import static org.zstack.core.Platform.touterr;
+
 public class TestErrorCode {
     CLogger logger = Utils.getLogger(TestErrorCode.class);
     ComponentLoader loader;
@@ -23,9 +26,9 @@ public class TestErrorCode {
 
     @Test
     public void test() {
-        ErrorCode err = errf.stringToInternalError("on purpose");
+        ErrorCode err = inerr("on purpose");
         logger.debug(err.toString());
-        err = errf.stringToTimeoutError("on purpose");
+        err = touterr("on purpose");
         logger.debug(err.toString());
     }
 }

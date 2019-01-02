@@ -23,6 +23,7 @@ import org.zstack.utils.logging.CLogger;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import static org.zstack.core.Platform.inerr;
 import static org.zstack.core.Platform.operr;
 
 /**
@@ -86,7 +87,7 @@ public class KVMConsoleHypervisorBackend implements ConsoleHypervisorBackend {
                     URI uri = new URI(String.format("http://%s:%s/", mgmtIp, rsp.getPort()));
                     complete.success(uri);
                 } catch (URISyntaxException e) {
-                    complete.fail(errf.throwableToInternalError(e));
+                    complete.fail(inerr(e.getMessage()));
                 }
             }
         });

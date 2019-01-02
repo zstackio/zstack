@@ -7,9 +7,10 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusEventListener;
 import org.zstack.core.cloudbus.EventSubscriberReceipt;
-import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.GLock;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
@@ -17,6 +18,7 @@ import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.NopeReturnValueCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
 import org.zstack.header.managementnode.ManagementNodeInventory;
@@ -33,6 +35,9 @@ import javax.persistence.TypedQuery;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.*;
+
+import static org.zstack.core.Platform.err;
+import static org.zstack.core.Platform.inerr;
 
 /**
  */
@@ -118,8 +123,8 @@ public class JobQueueFacadeImpl2 implements JobQueueFacade, CloudBusEventListene
             if (e.getState() == JobState.Processing && !e.isRestartable()) {
                 dbf.remove(e);
                 JobEvent evt = new JobEvent();
-                evt.setErrorCode(errf.instantiateErrorCode(SysErrors.MANAGEMENT_NODE_UNAVAILABLE_ERROR,
-                        String.format("management node[id:%s] becomes unavailable, job[name:%s, id:%s] is not restartable", mgmtId, e.getName(), e.getId())));
+                evt.setErrorCode(err(SysErrors.MANAGEMENT_NODE_UNAVAILABLE_ERROR,
+                        "management node[id:%s] becomes unavailable, job[name:%s, id:%s] is not restartable", mgmtId, e.getName(), e.getId()));
                 bus.publish(evt);
                 logger.debug(String.format("[Job Removed]: job[id:%s, name:%s] because it's not restartable",
                         e.getId(), e.getName()));
@@ -284,10 +289,10 @@ public class JobQueueFacadeImpl2 implements JobQueueFacade, CloudBusEventListene
                             jobe = dbf.updateAndRefresh(jobe);
                             return Bucket.newBucket(jobe, theJob);
                         } catch (Exception e1) {
-                            String err = String.format("[Job de-serialize failed, the job will be marked as Error] queue name: %s, job id: %s, %s", qvo.getName(),
+                            ErrorCode ierr = inerr("[Job de-serialize failed, the job will be marked as Error] queue name: %s, job id: %s, %s", qvo.getName(),
                                     jobe.getId(), e1.getMessage());
-                            logger.warn(err, e1);
-                            jobFail(jobe, errf.stringToInternalError(err));
+                            jobFail(jobe, ierr);
+                            logger.warn(ierr.getDetails(), e1);
                             jobe = findJob(qvo);
                         }
                     }
@@ -320,7 +325,7 @@ public class JobQueueFacadeImpl2 implements JobQueueFacade, CloudBusEventListene
                             logger.debug(String.format("[Job Success] job[id:%s, name:%s] succeed", e.getId(), e.getName()));
                         } catch (Throwable t){
                             logger.warn(String.format("unhandled exception happened when calling %s", job.getClass().getName()), t);
-                            jobFail(e, errf.stringToInternalError(t.getMessage()));
+                            jobFail(e, inerr(t.getMessage()));
                         } finally {
                             process(qvo);
                         }
@@ -333,7 +338,7 @@ public class JobQueueFacadeImpl2 implements JobQueueFacade, CloudBusEventListene
                             logger.debug(String.format("[Job Failure] job[id:%s, name:%s] failed", e.getId(), e.getName()));
                         } catch (Throwable t){
                             logger.warn(String.format("unhandled exception happened when calling %s", job.getClass().getName()), t);
-                            jobFail(e, errf.stringToInternalError(t.getMessage()));
+                            jobFail(e, inerr(t.getMessage()));
                         } finally {
                             process(qvo);
                         }

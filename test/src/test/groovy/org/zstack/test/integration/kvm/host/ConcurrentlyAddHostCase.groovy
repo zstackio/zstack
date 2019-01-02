@@ -2,16 +2,12 @@ package org.zstack.test.integration.kvm.host
 
 import org.zstack.core.db.Q
 import org.zstack.core.thread.ThreadGlobalProperty
-import org.zstack.header.host.HostState
-import org.zstack.header.host.HostStatus
 import org.zstack.header.host.HostVO
-import org.zstack.header.host.HostVO_
 import org.zstack.header.image.ImageConstant
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
-
 /**
  * Created by kayo on 2018/1/24.
  */
@@ -124,7 +120,7 @@ class ConcurrentlyAddHostCase extends SubCase{
             it.join()
         }
 
-        retryInSecs(25, 5) {
+        retryInSecs(25, 1) {
             assert Q.New(HostVO.class).count() == 200
         }
     }

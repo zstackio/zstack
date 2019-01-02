@@ -1,0 +1,9 @@
+[
+  {
+    "category": "MN",
+    "code": "1000",
+    "regex": "management node[uuid:%s] is unavailable",
+    "message_cn": "管理节点暂时不可访问",
+    "message_en": "management node is unavailable"
+  }
+]

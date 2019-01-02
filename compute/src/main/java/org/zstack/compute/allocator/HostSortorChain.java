@@ -1,6 +1,5 @@
 package org.zstack.compute.allocator;
 
-import org.apache.commons.collections.ArrayStack;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -16,7 +15,6 @@ import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.host.HostInventory;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -26,6 +24,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created by mingjian.deng on 2017/11/6.
@@ -122,8 +122,8 @@ public class HostSortorChain implements HostSortorStrategy {
                         } catch (UnableToReserveHostCapacityException e) {
                             logger.debug(String.format("[Host Allocation]: %s on host[uuid:%s]. try next one",
                                     e.getMessage(), host.getUuid()), e);
-                            trigger.fail(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
-                                    String.format("[Host Allocation]: %s on host[uuid:%s]. try next one", e.getMessage(), host.getUuid(), e)));
+                            trigger.fail(operr(
+                                    "[Host Allocation]: %s on host[uuid:%s]. try next one. %s", e.getMessage(), host.getUuid(), e.getMessage()));
                         }
                     }
 

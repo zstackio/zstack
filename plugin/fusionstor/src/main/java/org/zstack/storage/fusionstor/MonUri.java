@@ -2,20 +2,15 @@ package org.zstack.storage.fusionstor;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
-import org.zstack.core.Platform;
-import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.keyvalue.Op;
-import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.List;
 
+import static org.zstack.core.Platform.argerr;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -60,8 +55,7 @@ public class MonUri {
     private static final String MON_URL_FORMAT = "sshUsername:sshPassword@hostname:[sshPort]/?[monPort=]";
 
     private ErrorCode errorCode(String err) {
-        ErrorFacade errf = Platform.getComponentLoader().getComponent(ErrorFacade.class);
-        return errf.stringToInvalidArgumentError(err);
+        return argerr(err);
     }
 
     public MonUri(String url) {

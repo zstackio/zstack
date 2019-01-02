@@ -44,9 +44,7 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
 
-import static org.zstack.core.Platform.New;
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 
 public class BackupStorageManagerImpl extends AbstractService implements BackupStorageManager,
         ManagementNodeChangeListener, ManagementNodeReadyExtensionPoint {
@@ -232,7 +230,7 @@ public class BackupStorageManagerImpl extends AbstractService implements BackupS
 
                 } else {
                     dbf.removeByPrimaryKey(inv.getUuid(), BackupStorageVO.class);
-                    evt.setError(errf.instantiateErrorCode(SysErrors.CREATE_RESOURCE_ERROR, reply.getError()));
+                    evt.setError(err(SysErrors.CREATE_RESOURCE_ERROR, reply.getError(), reply.getError().getDetails()));
                     bus.publish(evt);
                 }
             }

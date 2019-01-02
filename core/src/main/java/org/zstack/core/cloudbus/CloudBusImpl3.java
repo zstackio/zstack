@@ -49,6 +49,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
+import static org.zstack.core.Platform.*;
 import static org.zstack.utils.BeanUtils.getProperty;
 import static org.zstack.utils.BeanUtils.setProperty;
 
@@ -282,7 +283,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
     }
 
     private MessageReply createTimeoutReply(NeedReplyMessage m) {
-        return createErrorReply(m, errf.stringToTimeoutError(m.toErrorString()));
+        return createErrorReply(m, touterr(m.toErrorString()));
     }
 
     @Override
@@ -478,7 +479,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
             try {
                 doSend();
             } catch (Throwable th) {
-                replyErrorIfNeeded(errf.throwableToOperationError(th));
+                replyErrorIfNeeded(operr(th.getMessage()));
             }
         }
 
@@ -523,12 +524,12 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
                 }.run();
 
                 if (!rsp.getStatusCode().is2xxSuccessful()) {
-                    replyErrorIfNeeded(errf.stringToOperationError(String.format("HTTP ERROR, status code: %s, body: %s", rsp.getStatusCode(), rsp.getBody())));
+                    replyErrorIfNeeded(operr("HTTP ERROR, status code: %s, body: %s", rsp.getStatusCode(), rsp.getBody()));
                 }
             } catch (OperationFailureException e) {
                 replyErrorIfNeeded(e.getErrorCode());
             } catch (Throwable e) {
-                replyErrorIfNeeded(errf.throwableToOperationError(e));
+                replyErrorIfNeeded(operr(e.getMessage()));
             }
         }
 
@@ -698,7 +699,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
                                 if (t instanceof OperationFailureException) {
                                     replyErrorByMessageType(msg, ((OperationFailureException) t).getErrorCode());
                                 } else {
-                                    replyErrorByMessageType(msg, errf.stringToInternalError(t.getMessage()));
+                                    replyErrorByMessageType(msg, inerr(t.getMessage()));
                                 }
                             }
 
@@ -775,16 +776,16 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
         String details = String.format("No service deals with message: %s", dumpMessage(msg));
         if (msg instanceof APISyncCallMessage) {
             APIReply reply = new APIReply();
-            reply.setError(errf.instantiateErrorCode(SysErrors.UNKNOWN_MESSAGE_ERROR, details));
+            reply.setError(err(SysErrors.UNKNOWN_MESSAGE_ERROR, details));
             reply.setSuccess(false);
             reply(msg, reply);
         } else if (msg instanceof APIMessage) {
             APIEvent evt = new APIEvent(msg.getId());
-            evt.setError(errf.instantiateErrorCode(SysErrors.UNKNOWN_MESSAGE_ERROR, details));
+            evt.setError(err(SysErrors.UNKNOWN_MESSAGE_ERROR, details));
             publish(evt);
         } else if (msg instanceof NeedReplyMessage) {
             MessageReply reply = new MessageReply();
-            reply.setError(errf.instantiateErrorCode(SysErrors.UNKNOWN_MESSAGE_ERROR, details));
+            reply.setError(err(SysErrors.UNKNOWN_MESSAGE_ERROR, details));
             reply.setSuccess(false);
             reply(msg, reply);
         }
@@ -812,7 +813,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
 
     private void replyErrorIfMessageNeedReply(Message msg, String errStr) {
         if (msg instanceof NeedReplyMessage) {
-            ErrorCode err = errf.stringToInternalError(errStr);
+            ErrorCode err = inerr(errStr);
             replyErrorIfMessageNeedReply(msg, err);
         } else {
             DebugUtils.dumpStackTrace(String.format("An error happened when dealing with message[%s], because this message doesn't need a reply, we call it out loudly\nerror: %s\nmessage dump: %s", msg.getClass().getName(), errStr, dumpMessage(msg)));
@@ -839,7 +840,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
     }
 
     private void replyErrorToApiMessage(APIMessage msg, String err) {
-        replyErrorToApiMessage(msg, errf.stringToInternalError(err));
+        replyErrorToApiMessage(msg, inerr(err));
     }
 
     @Override

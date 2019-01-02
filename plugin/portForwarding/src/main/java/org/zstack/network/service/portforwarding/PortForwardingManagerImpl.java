@@ -52,7 +52,9 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.err;
 import static java.util.Arrays.asList;
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.VipUseForList.SNAT_NETWORK_SERVICE_TYPE;
 
@@ -499,7 +501,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
             } catch (PortForwardingException e) {
                 String err = String.format("unable to revoke port forwarding rule[uuid:%s]", inv.getUuid());
                 logger.warn(err, e);
-                complete.fail(errf.throwableToOperationError(e));
+                complete.fail(operr(e.getMessage()));
                 return;
             }
         }
@@ -740,9 +742,9 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                             try {
                                 extp.preAttachPortForwardingRule(ruleInv, providerType);
                             } catch (PortForwardingException e) {
-                                String err = String.format("unable to create port forwarding rule, extension[%s] refused it because %s", extp.getClass().getName(), e.getMessage());
-                                logger.warn(err, e);
-                                trigger.fail(errf.instantiateErrorCode(SysErrors.CREATE_RESOURCE_ERROR, err));
+                                ErrorCode err = err(SysErrors.CREATE_RESOURCE_ERROR, "unable to create port forwarding rule, extension[%s] refused it because %s", extp.getClass().getName(), e.getMessage());
+                                logger.warn(err.getDetails(), e);
+                                trigger.fail(err);
                                 return;
                             }
                         }
@@ -794,7 +796,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                                 Vip v = new Vip(struct.getVip().getUuid());
                                 v.setStruct(vipStruct);
                                 v.release(new NopeCompletion());
-                                trigger.fail(errf.instantiateErrorCode(SysErrors.CREATE_RESOURCE_ERROR, errorCode));
+                                trigger.fail(err(SysErrors.CREATE_RESOURCE_ERROR, errorCode, errorCode.getDetails()));
                             }
                         });
                     }

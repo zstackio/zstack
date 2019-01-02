@@ -17,6 +17,7 @@ import org.zstack.core.notification.NotificationVO
 import org.zstack.header.core.NoErrorCompletion
 import org.zstack.header.core.progress.TaskProgressVO
 import org.zstack.header.core.workflow.WhileCompletion
+import org.zstack.header.errorcode.ElaborationVO
 import org.zstack.header.identity.AccountConstant
 import org.zstack.header.identity.SessionVO
 import org.zstack.header.image.ImageDeletionPolicyManager
@@ -594,7 +595,7 @@ class EnvSpec implements Node, ApiHelper {
                               "TaskProgressVO", "NotificationVO", "TaskStepVO",
                               "DataVolumeUsageVO", "RootVolumeUsageVO", "VmUsageVO", "GpuUsageVO",
                               "ResourceVO","SecurityGroupSequenceNumberVO","SnapShotUsageVO", "MediaVO",
-                              "CaptchaVO", "LoginAttemptsVO"]) {
+                              "CaptchaVO", "LoginAttemptsVO", "ElaborationVO"]) {
                 // those tables will continue having entries during running a test suite
                 return
             }
@@ -741,6 +742,7 @@ class EnvSpec implements Node, ApiHelper {
             SQL.New(NotificationVO.class).hardDelete()
             SQL.New(TaskProgressVO.class).hardDelete()
             SQL.New(SessionVO.class).hardDelete()
+            SQL.New(ElaborationVO.class).hardDelete()
 
             if (GLOBAL_DELETE_HOOK != null) {
                 GLOBAL_DELETE_HOOK()

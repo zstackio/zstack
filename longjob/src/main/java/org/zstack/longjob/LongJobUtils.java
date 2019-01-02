@@ -6,18 +6,21 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatchWithReturn;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.progress.ProgressReportService;
 import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.longjob.*;
-import org.zstack.utils.BeanUtils;
+import org.zstack.header.longjob.LongJobErrors;
+import org.zstack.header.longjob.LongJobState;
+import org.zstack.header.longjob.LongJobVO;
+import org.zstack.header.longjob.LongJobVO_;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.Arrays;
 import java.util.List;
+
+import static org.zstack.core.Platform.err;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class LongJobUtils {
@@ -34,9 +37,8 @@ public class LongJobUtils {
     }
 
     public static ErrorCode cancelErr(String longJobUuid, ErrorCode cause) {
-        ErrorFacade errf = Platform.getComponentLoader().getComponent(ErrorFacade.class);
-        return errf.instantiateErrorCode(LongJobErrors.CANCELED,
-                Platform.i18n("long job[uuid:%s] has been canceled", longJobUuid), cause);
+        return err(LongJobErrors.CANCELED, cause,
+                "long job[uuid:%s] has been canceled", longJobUuid);
     }
 
 

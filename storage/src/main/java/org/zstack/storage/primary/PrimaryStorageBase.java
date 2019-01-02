@@ -64,6 +64,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE, dependencyCheck = true)
@@ -218,9 +219,9 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                 .eq(ImageCacheVO_.imageUuid, msg.getIsoSpec().getInventory().getUuid())
                 .isExists()){
 
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("cannot attach ISO to a primary storage[uuid:%s] which is disabled",
-                            self.getUuid())));
+            throw new OperationFailureException(operr(
+                    "cannot attach ISO to a primary storage[uuid:%s] which is disabled",
+                    self.getUuid()));
         }
     }
 
@@ -611,7 +612,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                     public void fail(ErrorCode errorCode) {
                         extpEmitter.failToDetach(self, msg.getClusterUuid());
                         logger.warn(errorCode.toString());
-                        reply.setError(errf.instantiateErrorCode(PrimaryStorageErrors.DETACH_ERROR, errorCode));
+                        reply.setError(err(PrimaryStorageErrors.DETACH_ERROR, errorCode, errorCode.getDetails()));
                         bus.reply(msg, reply);
                         chain.next();
                     }
@@ -1070,7 +1071,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         try {
             extpEmitter.preDetach(self, msg.getClusterUuid());
         } catch (PrimaryStorageException e) {
-            throw new OperationFailureException(errf.instantiateErrorCode(PrimaryStorageErrors.DETACH_ERROR, e.getMessage()));
+            throw new OperationFailureException(err(PrimaryStorageErrors.DETACH_ERROR, e.getMessage()));
         }
 
         // if not, HA will allocate wrong host, rollback when API fail
@@ -1135,7 +1136,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         try {
             extpEmitter.preAttach(self, msg.getClusterUuid());
         } catch (PrimaryStorageException pe) {
-            evt.setError(errf.instantiateErrorCode(PrimaryStorageErrors.ATTACH_ERROR, pe.getMessage()));
+            evt.setError(err(PrimaryStorageErrors.ATTACH_ERROR, pe.getMessage()));
             bus.publish(evt);
             completion.done();
             return;
@@ -1164,7 +1165,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             @Override
             public void fail(ErrorCode errorCode) {
                 extpEmitter.failToAttach(self, msg.getClusterUuid());
-                evt.setError(errf.instantiateErrorCode(PrimaryStorageErrors.ATTACH_ERROR, errorCode));
+                evt.setError(err(PrimaryStorageErrors.ATTACH_ERROR, errorCode, errorCode.getDetails()));
                 bus.publish(evt);
                 completion.done();
             }
@@ -1214,7 +1215,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         try {
             extpEmitter.preChange(self, event);
         } catch (PrimaryStorageException e) {
-            evt.setError(errf.instantiateErrorCode(SysErrors.CHANGE_RESOURCE_STATE_ERROR, e.getMessage()));
+            evt.setError(err(SysErrors.CHANGE_RESOURCE_STATE_ERROR, e.getMessage()));
             bus.publish(evt);
             return;
         }
@@ -1337,7 +1338,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                evt.setError(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, errCode));
+                evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
                 bus.publish(evt);
             }
         }).start();

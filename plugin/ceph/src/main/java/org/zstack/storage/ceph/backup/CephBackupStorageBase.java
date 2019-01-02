@@ -804,9 +804,9 @@ public class CephBackupStorageBase extends BackupStorageBase {
                 .eq(CephBackupStorageMonVO_.hostname, msg.getHostname())
                 .find();
         if (monvo == null) {
-            r.setError(errf.stringToOperationError(
-                    String.format("CephMon[hostname:%s] not found on backup storage[uuid:%s]",
-                            msg.getHostname(), msg.getBackupStorageUuid())));
+            r.setError(operr(
+                    "CephMon[hostname:%s] not found on backup storage[uuid:%s]",
+                    msg.getHostname(), msg.getBackupStorageUuid()));
             bus.reply(msg, r);
             return;
         }

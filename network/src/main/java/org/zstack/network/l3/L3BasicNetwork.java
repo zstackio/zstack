@@ -43,6 +43,7 @@ import org.zstack.utils.network.NetworkUtils;
 import javax.persistence.Tuple;
 import java.util.*;
 
+import static org.zstack.core.Platform.err;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -283,8 +284,8 @@ public class L3BasicNetwork implements L3Network {
             String reason = msg.getRequiredIp() == null ?
                     String.format("no ip is available in this l3Network[name:%s, uuid:%s]", self.getName(), self.getUuid()) :
                     String.format("IP[%s] is not available", msg.getRequiredIp());
-            reply.setError(errf.instantiateErrorCode(L3Errors.ALLOCATE_IP_ERROR,
-                    String.format("IP allocator strategy[%s] failed, because %s", strategyType, reason)));
+            reply.setError(err(L3Errors.ALLOCATE_IP_ERROR,
+                    "IP allocator strategy[%s] failed, because %s", strategyType, reason));
         } else {
             logger.debug(String.format("Ip allocator strategy[%s] successfully allocates an ip[%s]", strategyType, printer.print(ip)));
             reply.setIpInventory(ip);
@@ -831,7 +832,7 @@ public class L3BasicNetwork implements L3Network {
         }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                evt.setError(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, errCode));
+                evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
                 bus.publish(evt);
             }
         }).start();
@@ -903,7 +904,7 @@ public class L3BasicNetwork implements L3Network {
         }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                evt.setError(errf.instantiateErrorCode(SysErrors.DELETE_RESOURCE_ERROR, errCode));
+                evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
                 bus.publish(evt);
             }
         }).start();

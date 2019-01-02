@@ -1,0 +1,62 @@
+[
+  {
+    "category": "HOST",
+    "code": "1000",
+    "regex": "shell command[sudo PYTHONPATH=/usr/local/zstack/ansible/files/zstacklib timeout 1800 python /usr/local/zstack/ansible/kvm.py -i /usr/local/zstack/ansible/hosts --private-key /usr/local/zstack/apache-tomcat-7.0.35/webapps/zstack/WEB-INF/classes/ansible/rsaKeys/id_rsa -e '{\"chrony_servers\":\"\",\"trusted_host\":\"\",\"remote_port\":\"22\",\"update_packages\":\"false\",\"zstack_root\":\"/var/lib/zstack\",\"remote_user\":\"root\",\"hostname\":\"10-0-121-175.zstack.org\",\"pkg_kvmagent\":\"kvmagent-3.2.0.tar.gz\",\"post_url\":\"http://%s:8080/zstack/kvm/ansiblelog/%s\\n\",\"remote_pass\":\"******\",\"host\":\"%s\",\"pip_url\":\"http://%s:8080/zstack/static/pypi/simple\",\"zstack_repo\":\"\\\"zstack-mn,qemu-kvm-ev-mn\\\"\",\"yum_server\":\"%s:8080\",\"pkg_zstacklib\":\"zstacklib-3.2.0.tar.gz\"}'] failed\n ret code: 1",
+    "message_cn": "pip安装失败",
+    "message_en": "pip install failed",
+    "operation_cn": "检查pip版本是否正确",
+    "operation_en": "check pip version",
+    "causes_cn": "pip安装文件不完整，或者pip版本不正确",
+    "causes_en": "pip install file broken"
+  },
+  {
+    "category": "HOST",
+    "code": "1001",
+    "regex": "host is connecting, ping failed",
+    "message_cn": "物理机正在连接, 不能进行ping操作",
+    "message_en": "host is connecting, cannot ping",
+    "operation_cn": "请等待物理机退出连接中状态",
+    "operation_en": "please wait until quit connecting status"
+  },
+  {
+    "category": "HOST",
+    "code": "1002",
+    "regex": "User name or password or port number may be problematic",
+    "message_cn": "用户名、密码或者端口可能是错误的",
+    "message_en": "User name or password or port number may be problematic"
+  },
+  {
+    "category": "HOST",
+    "code": "1003",
+    "regex": "host[uuid:%s, name:%s] is in status[%s], cannot perform required operation",
+    "message_cn": "物理机不能进行该操作",
+    "message_en": "Host cannot perform required operation",
+    "causes_cn": "物理机正处于连接中[%3$s]状态",
+    "causes_en": "Host is in status [%3$s]",
+    "operation_cn": "请等待物理机退出连接中[%3$s]状态",
+    "operation_en": "please wait until quit Connecting status"
+  },
+  {
+    "category": "HOST",
+    "code": "1004",
+    "regex": "unable to do the operation because the host is in status of Disconnected",
+    "message_cn": "物理机不能进行该操作",
+    "message_en": "unable to do the operation",
+    "causes_cn": "物理机正处于己失联[Disconnected]状态",
+    "causes_en": "Host is in status [Disconnected]",
+    "operation_cn": "请等待物理机进入己连接[Connected]状态",
+    "operation_en": "please wait until quit Connected status"
+  },
+  {
+    "category": "HOST",
+    "code": "1005",
+    "regex": "unable to connect to KVM[ip:%s, username:root, sshPort:%s] to check the management node connectivity,please check if username/password is wrong; null",
+    "message_cn": "不能连接物理机",
+    "message_en": "unable to connect host",
+    "causes_cn": "物理机的ssh端口与管理节点不通",
+    "causes_en": "ssh port on host unable to connect to management node",
+    "operation_cn": "请检查ssh端口的用户名或密码是否有误",
+    "operation_en": "please check if username/password is wrong on the ssh port"
+  }
+]

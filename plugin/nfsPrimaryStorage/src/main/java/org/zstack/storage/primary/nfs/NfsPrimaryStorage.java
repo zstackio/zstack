@@ -67,6 +67,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.*;
 
@@ -651,7 +652,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             backend.detachFromCluster(PrimaryStorageInventory.valueOf(self), clusterUuid);
             completion.success();
         } catch (NfsPrimaryStorageException e) {
-            completion.fail(errf.throwableToOperationError(e));
+            completion.fail(operr(e.getMessage()));
         }
     }
 
@@ -816,7 +817,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         } catch (PrimaryStorageException e) {
             logger.warn(e.getMessage(), e);
             InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
-            reply.setError(errf.throwableToOperationError(e));
+            reply.setError(operr(e.getMessage()));
             bus.reply(msg, reply);
         }
     }
@@ -1229,9 +1230,9 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         final NfsPrimaryStorageBackend backend = getUsableBackend();
         if (backend == null) {
             // the nfs primary storage has not been attached to any clusters, or no connected hosts
-            completion.fail(errf.instantiateErrorCode(PrimaryStorageErrors.DISCONNECTED,
-                    String.format("the NFS primary storage[uuid:%s, name:%s] has not attached to any clusters, or no hosts in the" +
-                            " attached clusters are connected", self.getUuid(), self.getName())
+            completion.fail(err(PrimaryStorageErrors.DISCONNECTED,
+                    "the NFS primary storage[uuid:%s, name:%s] has not attached to any clusters, or no hosts in the" +
+                            " attached clusters are connected", self.getUuid(), self.getName()
             ));
 
             return;

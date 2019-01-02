@@ -62,6 +62,7 @@ import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.inerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.utils.CollectionDSL.list;
@@ -1940,8 +1941,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                 if (rsp.referencePaths == null || rsp.referencePaths.isEmpty()) {
                                     trigger.next();
                                 } else {
-                                    trigger.fail(errf.stringToInternalError(String.format("[THIS IS A BUG NEEDED TO BE FIXED RIGHT NOW, PLEASE REPORT TO US ASAP] the image cache file[%s] is still referenced by" +
-                                            " below QCOW2 files:\n%s", msg.getInstallPath(), StringUtils.join(rsp.referencePaths, "\n"))));
+                                    trigger.fail(inerr("[THIS IS A BUG NEEDED TO BE FIXED RIGHT NOW, PLEASE REPORT TO US ASAP] the image cache file[%s] is still referenced by" +
+                                            " below QCOW2 files:\n%s", msg.getInstallPath(), StringUtils.join(rsp.referencePaths, "\n")));
                                 }
                             }
 

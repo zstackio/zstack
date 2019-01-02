@@ -1,0 +1,11 @@
+[
+  {
+    "category": "LICENSE",
+    "code": "1000",
+    "regex": "the license has been expired, please renew it",
+    "message_cn": "证书己过期",
+    "message_en": "the license has been expired",
+    "operation_cn": "请更新证书",
+    "operation_en": "please renew it"
+  }
+]

@@ -174,7 +174,7 @@ public class PathUtil {
             }
             return ret;
         } catch (Exception e) {
-            throw new RuntimeException(String.format("Unable to locate service portal configure files"), e);
+            throw new RuntimeException("Unable to locate service portal configure files", e);
         }
     }
 

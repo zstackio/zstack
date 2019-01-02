@@ -35,6 +35,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 
+import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 
 public class SftpBackupStorage extends BackupStorageBase {
@@ -548,7 +549,7 @@ public class SftpBackupStorage extends BackupStorageBase {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                evt.setError(errf.instantiateErrorCode(SftpBackupStorageErrors.RECONNECT_ERROR, errorCode));
+                evt.setError(err(SftpBackupStorageErrors.RECONNECT_ERROR, errorCode, errorCode.getDetails()));
                 bus.publish(evt);
             }
         });

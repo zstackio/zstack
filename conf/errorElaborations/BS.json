@@ -1,0 +1,16 @@
+[
+  {
+    "category": "BS",
+    "code": "1009",
+    "regex": "certificate has expired or is not yet valid",
+    "message_cn": "当前系统时间不在镜像仓库证书有效期内",
+    "message_en": "current System time has expired for imagestore certification",
+    "operation_cn": "检查镜像服务器系统时间，或重置镜像仓库证书",
+    "operation_en": "check System time on imagestore server or reset imagestore certifaction",
+    "extension_cn": "可能需要把 /var/lib/zstack/imagestorebackupstorage/package/certs/ 清空，并修改数据库",
+    "extension_en": null,
+    "causes_cn": "调整过镜像仓库服务器的系统时间，或者证书被修改",
+    "causes_en": "adjust system time on imagestore server, or modified certification",
+    "source": "imagestore"
+  }
+]

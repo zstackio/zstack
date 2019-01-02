@@ -126,6 +126,11 @@
             <artifactId>java-ipv6</artifactId>
             <version>0.17</version>
         </dependency>
+        <dependency>
+            <groupId>info.debatty</groupId>
+            <artifactId>java-string-similarity</artifactId>
+            <version>RELEASE</version>
+        </dependency>
     </dependencies>
 
     <build>

@@ -20,6 +20,8 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
 
+import static org.zstack.core.Platform.operr;
+
 
 public class SimulatorSecurityGroupBackend implements
 		SecurityGroupHypervisorBackend, VmInstanceStateChangeNotifyPoint {
@@ -40,7 +42,7 @@ public class SimulatorSecurityGroupBackend implements
 	public void applyRules(HostRuleTO hto, Completion complete) {
 		logger.debug(String.format("apply security rules to simulator host[uuid:%s]:\n%s", hto.getHostUuid(), JSONObjectUtil.toJsonString(hto.getRules())));
 		if (!securityGroupSuccess) {
-		    ErrorCode errorCode = errf.stringToOperationError("on purpose");
+		    ErrorCode errorCode = operr("on purpose");
 		    complete.fail(errorCode);
 		    return;
 		}

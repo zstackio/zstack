@@ -1,7 +1,6 @@
 package org.zstack.identity;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
@@ -246,8 +245,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     private void passThrough(AccountMessage msg) {
         AccountVO vo = dbf.findByUuid(msg.getAccountUuid(), AccountVO.class);
         if (vo == null) {
-            String err = String.format("unable to find account[uuid=%s]", msg.getAccountUuid());
-            bus.replyErrorByMessageType((Message) msg, errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND, err));
+            bus.replyErrorByMessageType((Message) msg, err(SysErrors.RESOURCE_NOT_FOUND, "unable to find account[uuid=%s]", msg.getAccountUuid()));
             return;
         }
 
@@ -493,7 +491,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         UserVO user = q.find();
 
         if (user == null) {
-            reply.setError(errf.instantiateErrorCode(IdentityErrors.AUTHENTICATION_ERROR,
+            reply.setError(err(IdentityErrors.AUTHENTICATION_ERROR,
                     "wrong account or username or password"
             ));
             bus.reply(msg, reply);
@@ -512,14 +510,14 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         q.add(AccountVO_.password, Op.EQ, msg.getPassword());
         AccountVO vo = q.find();
         if (vo == null) {
-            reply.setError(errf.instantiateErrorCode(IdentityErrors.AUTHENTICATION_ERROR, "wrong account name or password"));
+            reply.setError(err(IdentityErrors.AUTHENTICATION_ERROR, "wrong account name or password"));
             bus.reply(msg, reply);
             return;
         }
 
         for (AdditionalLoginExtensionPoint exp : pluginRgty.getExtensionList(AdditionalLoginExtensionPoint.class)){
             if (!exp.authenticate(msg, vo.getUuid(), AccountVO.class.getSimpleName())) {
-                reply.setError(errf.instantiateErrorCode(IdentityErrors.AUTHENTICATION_ERROR, "additional authentication failed"));
+                reply.setError(err(IdentityErrors.AUTHENTICATION_ERROR, "additional authentication failed"));
                 bus.reply(msg, reply);
                 return;
             }
@@ -1377,9 +1375,9 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 String resourceUuid = t.get(2, String.class);
                 String resourceType = t.get(3, String.class);
                 if (!session.getAccountUuid().equals(resourceOwnerAccountUuid)) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.PERMISSION_DENIED,
-                            String.format("operation denied. The resource[uuid: %s, type: %s,ownerAccountName:%s, ownerAccountUuid:%s] doesn't belong to the account[uuid: %s]",
-                                    resourceUuid, resourceType, resourceOwnerName, resourceOwnerAccountUuid, session.getAccountUuid())
+                    throw new ApiMessageInterceptionException(err(IdentityErrors.PERMISSION_DENIED,
+                            "operation denied. The resource[uuid: %s, type: %s,ownerAccountName:%s, ownerAccountUuid:%s] doesn't belong to the account[uuid: %s]",
+                            resourceUuid, resourceType, resourceOwnerName, resourceOwnerAccountUuid, session.getAccountUuid()
                     ));
                 } else {
                     if (logger.isTraceEnabled()) {
@@ -1402,9 +1400,9 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                                 " statement[name: %s, action: %s]", msg.getClass().getSimpleName(), d.action,
                         policyCategory, d.policy.getName(), d.policy.getUuid(), d.statement.getName(), d.actionRule));
 
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.PERMISSION_DENIED,
-                        String.format("%s denied. user[name: %s, uuid: %s] is denied to execute API[%s]",
-                                policyCategory, username, session.getUuid(), msg.getClass().getSimpleName())
+                throw new ApiMessageInterceptionException(err(IdentityErrors.PERMISSION_DENIED,
+                        "%s denied. user[name: %s, uuid: %s] is denied to execute API[%s]",
+                        policyCategory, username, session.getUuid(), msg.getClass().getSimpleName()
                 ));
             }
         }
@@ -1415,14 +1413,14 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             }
 
             if (action.adminOnly) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.PERMISSION_DENIED,
-                        String.format("API[%s] is admin only", msg.getClass().getSimpleName())));
+                throw new ApiMessageInterceptionException(err(IdentityErrors.PERMISSION_DENIED,
+                        "API[%s] is admin only", msg.getClass().getSimpleName()));
             }
 
             if (action.accountOnly && !session.isAccountSession()) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.PERMISSION_DENIED,
-                        String.format("API[%s] can only be called by an account, the current session is a user session[user uuid:%s]",
-                                msg.getClass().getSimpleName(), session.getUserUuid())
+                throw new ApiMessageInterceptionException(err(IdentityErrors.PERMISSION_DENIED,
+                        "API[%s] can only be called by an account, the current session is a user session[user uuid:%s]",
+                        msg.getClass().getSimpleName(), session.getUserUuid()
                 ));
             }
 
@@ -1455,8 +1453,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 }
 
                 if (!allow) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.PERMISSION_DENIED,
-                            String.format("the API[%s] is not allowed for normal accounts", msg.getClass())
+                    throw new ApiMessageInterceptionException(err(IdentityErrors.PERMISSION_DENIED,
+                            "the API[%s] is not allowed for normal accounts", msg.getClass()
                     ));
                 }
             }
@@ -1484,9 +1482,9 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 return;
             }
 
-            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.PERMISSION_DENIED,
-                    String.format("user[name: %s, uuid: %s] has no policy set for this operation, API[%s] is denied by default. You may either create policies for this user" +
-                            " or add the user into a group with polices set", username, session.getUserUuid(), msg.getClass().getSimpleName())
+            throw new ApiMessageInterceptionException(err(IdentityErrors.PERMISSION_DENIED,
+                    "user[name: %s, uuid: %s] has no policy set for this operation, API[%s] is denied by default. You may either create policies for this user" +
+                            " or add the user into a group with polices set", username, session.getUserUuid(), msg.getClass().getSimpleName()
             ));
         }
 
@@ -1552,12 +1550,12 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
         private void sessionCheck() {
             if (msg.getSession() == null) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.INVALID_SESSION,
-                        String.format("session of message[%s] is null", msg.getMessageName())));
+                throw new ApiMessageInterceptionException(err(IdentityErrors.INVALID_SESSION,
+                        "session of message[%s] is null", msg.getMessageName()));
             }
 
             if (msg.getSession().getUuid() == null) {
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.INVALID_SESSION,
+                throw new ApiMessageInterceptionException(err(IdentityErrors.INVALID_SESSION,
                         "session uuid is null"));
             }
 
@@ -1565,7 +1563,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             if (session == null) {
                 SessionVO svo = dbf.findByUuid(msg.getSession().getUuid(), SessionVO.class);
                 if (svo == null) {
-                    throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.INVALID_SESSION,
+                    throw new ApiMessageInterceptionException(err(IdentityErrors.INVALID_SESSION,
                             "Session expired"));
                 }
                 session = SessionInventory.valueOf(svo);
@@ -1577,7 +1575,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 logger.debug(String.format("session expired[%s < %s] for account[uuid:%s]", curr,
                         session.getExpiredDate(), session.getAccountUuid()));
                 logOutSession(session.getUuid());
-                throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.INVALID_SESSION, "Session expired"));
+                throw new ApiMessageInterceptionException(err(IdentityErrors.INVALID_SESSION, "Session expired"));
             }
 
             this.session = session;
@@ -1641,13 +1639,13 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         AccountResourceRefVO accResRefVO = queryAccResRefVO.find();
         String resourceOriginalOwnerAccountUuid = accResRefVO.getOwnerAccountUuid();
         if (resourceTargetOwnerAccountUuid.equals(resourceOriginalOwnerAccountUuid)) {
-            throw new ApiMessageInterceptionException(errf.instantiateErrorCode(IdentityErrors.QUOTA_INVALID_OP,
-                    String.format("Invalid ChangeResourceOwner operation." +
-                                    "Original owner is the same as target owner." +
-                                    "Current account is [uuid: %s]." +
-                                    "The resource target owner account[uuid: %s]." +
-                                    "The resource original owner account[uuid:%s].",
-                            currentAccountUuid, resourceTargetOwnerAccountUuid, resourceOriginalOwnerAccountUuid)
+            throw new ApiMessageInterceptionException(err(IdentityErrors.QUOTA_INVALID_OP,
+                    "Invalid ChangeResourceOwner operation." +
+                            "Original owner is the same as target owner." +
+                            "Current account is [uuid: %s]." +
+                            "The resource target owner account[uuid: %s]." +
+                            "The resource original owner account[uuid:%s].",
+                    currentAccountUuid, resourceTargetOwnerAccountUuid, resourceOriginalOwnerAccountUuid
             ));
         }
         // check quota

@@ -882,10 +882,10 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
             q.add(FusionstorBackupStorageVO_.uuid, Op.EQ, backupStorage.getUuid());
             String bsFsid = q.findValue();
             if (!getSelf().getFsid().equals(bsFsid)) {
-                throw new OperationFailureException(errf.stringToOperationError(
-                        String.format("the backup storage[uuid:%s, name:%s, fsid:%s] is not in the same fusionstor cluster" +
-                                        " with the primary storage[uuid:%s, name:%s, fsid:%s]", backupStorage.getUuid(),
-                                backupStorage.getName(), bsFsid, self.getUuid(), self.getName(), getSelf().getFsid())
+                throw new OperationFailureException(operr(
+                        "the backup storage[uuid:%s, name:%s, fsid:%s] is not in the same fusionstor cluster" +
+                                " with the primary storage[uuid:%s, name:%s, fsid:%s]", backupStorage.getUuid(),
+                        backupStorage.getName(), bsFsid, self.getUuid(), self.getName(), getSelf().getFsid()
                 ));
             }
         }
@@ -1619,8 +1619,8 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
         }
 
         if (mons.isEmpty()) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("all fusionstor mons of primary storage[uuid:%s] are not in Connected state", self.getUuid())
+            throw new OperationFailureException(operr(
+                    "all fusionstor mons of primary storage[uuid:%s] are not in Connected state", self.getUuid()
             ));
         }
 
@@ -1632,8 +1632,8 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
 
             void call() {
                 if (!it.hasNext()) {
-                    callback.fail(errf.stringToOperationError(
-                            String.format("all mons failed to execute http call[%s], errors are %s", path, JSONObjectUtil.toJsonString(errorCodes))
+                    callback.fail(operr(
+                            "all mons failed to execute http call[%s], errors are %s", path, JSONObjectUtil.toJsonString(errorCodes)
                     ));
 
                     return;
@@ -1645,7 +1645,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                     @Override
                     public void success(T ret) {
                         if (!ret.success) {
-                            callback.fail(errf.stringToOperationError(ret.error));
+                            callback.fail(operr(ret.error));
                             return;
                         }
 
@@ -1688,9 +1688,9 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
             void connect(final FlowTrigger trigger) {
                 if (!it.hasNext()) {
                     if (errorCodes.size() == mons.size()) {
-                        trigger.fail(errf.stringToOperationError(
-                                String.format("unable to connect to the fusionstor primary storage[uuid:%s]. Failed to connect all fusionstor mons. Errors are %s",
-                                        self.getUuid(), JSONObjectUtil.toJsonString(errorCodes))
+                        trigger.fail(operr(
+                                "unable to connect to the fusionstor primary storage[uuid:%s]. Failed to connect all fusionstor mons. Errors are %s",
+                                self.getUuid(), JSONObjectUtil.toJsonString(errorCodes)
                         ));
                     } else {
                         // reload because mon status changed
@@ -1776,7 +1776,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                                         sb.append(String.format("%s (mon ip) --> %s (fsid)\n", mon.getSelf().getHostname(), fsid));
                                     }
 
-                                    throw new OperationFailureException(errf.stringToOperationError(sb.toString()));
+                                    throw new OperationFailureException(operr(sb.toString()));
                                 }
 
                                 // check if there is another fusionstor setup having the same fsid
@@ -1787,10 +1787,10 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                                 q.add(FusionstorPrimaryStorageVO_.uuid, Op.NOT_EQ, self.getUuid());
                                 FusionstorPrimaryStorageVO otherFusion = q.find();
                                 if (otherFusion != null) {
-                                    throw new OperationFailureException(errf.stringToOperationError(
-                                            String.format("there is another Fusionstor primary storage[name:%s, uuid:%s] with the same" +
-                                                            " FSID[%s], you cannot add the same Fusionstor setup as two different primary storage",
-                                                    otherFusion.getName(), otherFusion.getUuid(), fsId)
+                                    throw new OperationFailureException(operr(
+                                            "there is another Fusionstor primary storage[name:%s, uuid:%s] with the same" +
+                                                    " FSID[%s], you cannot add the same Fusionstor setup as two different primary storage",
+                                            otherFusion.getName(), otherFusion.getUuid(), fsId
                                     ));
                                 }
 
@@ -1807,7 +1807,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                                 public void success(GetFactsRsp rsp) {
                                     if (!rsp.success) {
                                         // one mon cannot get the facts, directly error out
-                                        trigger.fail(errf.stringToOperationError(rsp.error));
+                                        trigger.fail(operr(rsp.error));
                                         return;
                                     }
 
@@ -2033,12 +2033,12 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                                 // as long as there is one mon saying the fusionstor not working, the primary storage goes down
                                 logger.warn(String.format("the fusionstor primary storage[uuid:%s, name:%s] is down, as one mon[uuid:%s] reports" +
                                         " an operation failure[%s]", self.getUuid(), self.getName(), mon.getSelf().getUuid(), res.error));
-                                ErrorCode errorCode = errf.stringToOperationError(res.error);
+                                ErrorCode errorCode = operr(res.error);
                                 errors.add(errorCode);
                                 primaryStorageDown();
                             } else {
                                 // this mon is down(success == false, operationFailure == false), but the primary storage may still work as other mons may work
-                                ErrorCode errorCode = errf.stringToOperationError(res.error);
+                                ErrorCode errorCode = operr(res.error);
                                 thisMonIsDown(errorCode);
                             }
                         }
@@ -2288,13 +2288,13 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
                                 @Override
                                 public void success(GetFactsRsp rsp) {
                                     if (!rsp.isSuccess()) {
-                                        errors.add(errf.stringToOperationError(rsp.getError()));
+                                        errors.add(operr(rsp.getError()));
                                     } else {
                                         String fsid = rsp.fsid;
                                         if (!getSelf().getFsid().equals(fsid)) {
-                                            errors.add(errf.stringToOperationError(
-                                                    String.format("the mon[ip:%s] returns a fsid[%s] different from the current fsid[%s] of the cep cluster," +
-                                                            "are you adding a mon not belonging to current cluster mistakenly?", base.getSelf().getHostname(), fsid, getSelf().getFsid())
+                                            errors.add(operr(
+                                                    "the mon[ip:%s] returns a fsid[%s] different from the current fsid[%s] of the cep cluster," +
+                                                            "are you adding a mon not belonging to current cluster mistakenly?", base.getSelf().getHostname(), fsid, getSelf().getFsid()
                                             ));
                                         }
                                     }
@@ -2373,7 +2373,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
             @Override
             public ErrorCode getError(KvmResponseWrapper wrapper) {
                 AgentResponse rsp = wrapper.getResponse(AgentResponse.class);
-                return rsp.isSuccess() ? null : errf.stringToOperationError(rsp.getError());
+                return rsp.isSuccess() ? null : operr(rsp.getError());
             }
         }, new ReturnValueCompletion<KvmResponseWrapper>(msg) {
             @Override
@@ -2397,8 +2397,8 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
         String bsType = q.findValue();
 
         if (!FusionstorConstants.FUSIONSTOR_BACKUP_STORAGE_TYPE.equals(bsType)) {
-            throw new OperationFailureException(errf.stringToOperationError(
-                    String.format("unable to upload bits to the backup storage[type:%s], we only support FUSIONSTOR", bsType)
+            throw new OperationFailureException(operr(
+                    "unable to upload bits to the backup storage[type:%s], we only support FUSIONSTOR", bsType
             ));
         }
 
@@ -2440,7 +2440,7 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
 
     private void handle(BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg msg) {
         BackupVolumeSnapshotFromPrimaryStorageToBackupStorageReply reply = new BackupVolumeSnapshotFromPrimaryStorageToBackupStorageReply();
-        reply.setError(errf.stringToOperationError("backing up snapshots to backup storage is a depreciated feature, which will be removed in future version"));
+        reply.setError(operr("backing up snapshots to backup storage is a depreciated feature, which will be removed in future version"));
         bus.reply(msg, reply);
     }
 
