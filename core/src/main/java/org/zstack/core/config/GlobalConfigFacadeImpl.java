@@ -283,6 +283,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                 List<GlobalConfig> toRemove = new ArrayList<>(); // obsolete config options
                 List<GlobalConfig> toUpdate = new ArrayList<>(); // configs with changed default value
                 List<GlobalConfig> toUpdate2 = new ArrayList<>(); // configs with changed default value
+                List<GlobalConfig> toUpdate3 = new ArrayList<>(); // configs' value is not match type (normally the values were from an old zstack version)
 
                 for (GlobalConfig config : configsFromXml.values()) {
                     GlobalConfig dbcfg = configsFromDatabase.get(config.getIdentity());
@@ -307,6 +308,15 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                 for (GlobalConfig config : configsFromDatabase.values()) {
                     if (!configsFromXml.containsKey(config.getIdentity())) {
                         toRemove.add(config);
+                    } else {
+                        config.setType(configsFromXml.get(config.getIdentity()).getType());
+                        String oldValue = config.value();
+                        config.normalize();
+                        if (!oldValue.equals(config.value())) {
+                            logger.warn(String.format("[%s] found value: [%s] not matched the type: [%s], update to: [%s]",
+                                    config.getIdentity(), oldValue, config.getType(), config.value()));
+                            toUpdate3.add(config);
+                        }
                     }
                 }
 
@@ -349,6 +359,14 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                             .eq(GlobalConfigVO_.category, config.getCategory())
                             .eq(GlobalConfigVO_.name, config.getName())
                             .set(GlobalConfigVO_.defaultValue, config.getDefaultValue())
+                            .update();
+                }
+
+                for (GlobalConfig config : toUpdate3) {
+                    SQL.New(GlobalConfigVO.class)
+                            .eq(GlobalConfigVO_.category, config.getCategory())
+                            .eq(GlobalConfigVO_.name, config.getName())
+                            .set(GlobalConfigVO_.value, config.value())
                             .update();
                 }
             }
