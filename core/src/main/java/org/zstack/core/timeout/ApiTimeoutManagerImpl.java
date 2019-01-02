@@ -6,6 +6,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.*;
 import org.zstack.core.db.GLock;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.header.Component;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -16,10 +17,7 @@ import org.zstack.utils.*;
 import org.zstack.utils.logging.CLogger;
 
 import java.text.DecimalFormat;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
@@ -143,14 +141,16 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
                     List<String> configurationLocalMessageClassNamesInGlobalConfig = q(GlobalConfigVO.class).select(GlobalConfigVO_.name)
                             .eq(GlobalConfigVO_.category, CONFIGURABLE_TIMEOUT_GLOBAL_CONFIG_TYPE).listValues();
 
-                    List<Class> configurableMessageClasses = BeanUtils.reflections.getSubTypesOf(ConfigurableTimeoutMessage.class)
-                            .stream().filter(clz -> !APISyncCallMessage.class.isAssignableFrom(clz))
-                            .filter(clz -> !apiClassNamesInGlobalConfig.contains(clz.getName())
+                    Set<Class<? extends ConfigurableTimeoutMessage>> allConfigurableMessageClasses = BeanUtils.reflections.getSubTypesOf(ConfigurableTimeoutMessage.class)
+                            .stream()
+                            .filter(clz -> !APISyncCallMessage.class.isAssignableFrom(clz))
+                            .collect(Collectors.toSet());
+                    List<Class> newConfigurableMessageClasses = allConfigurableMessageClasses
+                            .stream().filter(clz -> !apiClassNamesInGlobalConfig.contains(clz.getName())
                                     && !configurationLocalMessageClassNamesInGlobalConfig.contains(clz.getName()))
                             .collect(Collectors.toList());
 
-
-                    configurableMessageClasses.forEach(clz -> {
+                    newConfigurableMessageClasses.forEach(clz -> {
                         GlobalConfigVO vo = new GlobalConfigVO();
 
                         if (APIMessage.class.isAssignableFrom(clz)) {
@@ -177,6 +177,35 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
                         }
 
                         gcf.createGlobalConfig(vo);
+                    });
+
+                    // update global config when default value changed
+                    allConfigurableMessageClasses.removeAll(newConfigurableMessageClasses);
+                    allConfigurableMessageClasses.forEach(clz -> {
+                        String category = null;
+                        if (APIMessage.class.isAssignableFrom(clz)) {
+                            category = APITIMEOUT_GLOBAL_CONFIG_TYPE;
+                        } else {
+                            category = CONFIGURABLE_TIMEOUT_GLOBAL_CONFIG_TYPE;
+                        }
+
+                        GlobalConfigVO vo = q(GlobalConfigVO.class)
+                                .eq(GlobalConfigVO_.category, category)
+                                .eq(GlobalConfigVO_.name, clz.getName()).find();
+
+                        DefaultTimeout at = clz.getAnnotation(DefaultTimeout.class);
+                        String defaultTimeout = null;
+                        if (at == null) {
+                            defaultTimeout = "30m";
+                        } else {
+                            defaultTimeout = String.valueOf(at.timeunit().toMillis(at.value()));
+                        }
+
+                        // if default value updated
+                        if (!vo.getDefaultValue().equals(defaultTimeout)) {
+                            vo.setDefaultValue(defaultTimeout);
+                            merge(vo);
+                        }
                     });
                 }
             }.execute();
