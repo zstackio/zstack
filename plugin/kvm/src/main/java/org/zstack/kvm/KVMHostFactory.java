@@ -38,6 +38,7 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.IpRangeSet;
 import org.zstack.utils.SizeUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.form.Form;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.function.ValidateFunction;
@@ -285,6 +286,21 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
                 throw new OperationFailureException(operr("there are still hosts not have the same cpu model, details: %s", str));
             }
         }));
+
+        KVMGlobalConfig.IVSHMEM_SIZE.installValidateExtension((category, name, oldValue, newValue) -> {
+            try {
+                long value = Long.valueOf(newValue);
+                if (value < 0  || (value > 0 && value < SizeUnit.MEGABYTE.toByte(1))) {
+                    throw new GlobalConfigException("size must greater than or equals 1 MiB, or 0 means disable");
+                }
+
+                if ((value & (value << 1)) != 0) {
+                    throw new GlobalConfigException("size must be power of 2");
+                }
+            } catch (NumberFormatException e) {
+                throw new GlobalConfigException(String.format("invalid size, [%s] is not a number", newValue));
+            }
+        });
 
         return true;
     }

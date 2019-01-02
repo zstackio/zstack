@@ -927,6 +927,7 @@ public class KVMAgentCommands {
         private String systemSerialNumber;
         private String bootMode;
         private boolean fromForeignHypervisor;
+        private IvshmemTO ivshmem;
 
         public boolean isFromForeignHypervisor() {
             return fromForeignHypervisor;
@@ -1236,9 +1237,46 @@ public class KVMAgentCommands {
         public void setAddons(Map<String, Object> addons) {
             this.addons = addons;
         }
+
+        public void setIvshmem(IvshmemTO ivshmem) {
+            this.ivshmem = ivshmem;
+        }
+
+        public IvshmemTO getIvshmem() {
+            return ivshmem;
+        }
     }
 
     public static class StartVmResponse extends AgentResponse {
+    }
+
+    public static class IvshmemTO {
+        private long size;
+        private String namePrefix;
+
+
+        public static IvshmemTO fromConfig() {
+            IvshmemTO result = new IvshmemTO();
+            result.size = KVMGlobalConfig.IVSHMEM_SIZE.value(Long.class);
+            result.namePrefix = KVMGlobalProperty.VM_IVSHMEM_DEV_PREFIX;
+            return result;
+        }
+
+        public String getNamePrefix() {
+            return namePrefix;
+        }
+
+        public void setNamePrefix(String namePrefix) {
+            this.namePrefix = namePrefix;
+        }
+
+        public long getSize() {
+            return size;
+        }
+
+        public void setSize(long size) {
+            this.size = size;
+        }
     }
 
     public static class ChangeCpuMemoryCmd extends AgentCommand{

@@ -21,4 +21,6 @@ public class KVMGlobalProperty {
     public static int AGENT_SERVER_PORT;
     @GlobalProperty(name="KvmHost.iptables.rule.", defaultValue = "")
     public static List<String> IPTABLES_RULES;
+    @GlobalProperty(name = "Kvm.ivshmem.dev.prefix", defaultValue = "nu_fsec-")
+    public static String VM_IVSHMEM_DEV_PREFIX;
 }

@@ -145,4 +145,12 @@
         <type>java.lang.Integer</type>
         <defaultValue>2</defaultValue>
     </config>
+
+    <config>
+        <category>kvm</category>
+        <name>ivshmem.size</name>
+        <description>VM shared memory PCI device size in Byte, it take effect when a positive number is set and must be power of 2 and greater than or equal to 1 MiB.</description>
+        <type>java.lang.Long</type>
+        <defaultValue>0</defaultValue>
+    </config>
 </globalConfig>
