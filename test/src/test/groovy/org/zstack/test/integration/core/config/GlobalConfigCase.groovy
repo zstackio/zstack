@@ -5,7 +5,11 @@ import org.zstack.core.cloudbus.EventFacade
 import org.zstack.core.config.GlobalConfigCanonicalEvents
 import org.zstack.core.config.GlobalConfigFacadeImpl
 import org.zstack.core.config.GlobalConfigVO
+import org.zstack.core.config.GlobalConfigVO_
 import org.zstack.core.db.DatabaseFacade
+import org.zstack.core.db.Q
+import org.zstack.core.db.SimpleQuery
+import org.zstack.core.db.UpdateQuery
 import org.zstack.image.ImageGlobalConfig
 import org.zstack.kvm.KVMGlobalConfig
 import org.zstack.sdk.GlobalConfigInventory
@@ -17,7 +21,6 @@ import org.zstack.testlib.SubCase
 import static org.zstack.utils.CollectionDSL.e
 import static org.zstack.utils.CollectionDSL.map
 import static org.zstack.utils.StringDSL.s
-
 /**
  * Created by miao on 17-5-4.
  */
@@ -54,6 +57,7 @@ class GlobalConfigCase extends SubCase {
             testImageGlobalConfig()
             testResetGlobalConfig()
             testSyncConfigUponEvent()
+            testNormalized()
         }
     }
 
@@ -181,5 +185,17 @@ class GlobalConfigCase extends SubCase {
         retryInSecs {
             assert KVMGlobalConfig.LIBVIRT_CACHE_MODE.value() == d.newValue
         }
+    }
+
+    void testNormalized() {
+        UpdateQuery.New(GlobalConfigVO.class).condAnd(GlobalConfigVO_.category, SimpleQuery.Op.EQ, "quota").
+                condAnd(GlobalConfigVO_.name, SimpleQuery.Op.EQ, "snapshot.volume.num").set(GlobalConfigVO_.value, "200.0").update()
+
+        GlobalConfigFacadeImpl gcf = bean(GlobalConfigFacadeImpl.class)
+        gcf.start()
+
+        assert gcf.getConfigValue("quota", "snapshot.volume.num", Long.class) == 200L
+        assert Q.New(GlobalConfigVO.class).eq(GlobalConfigVO_.category, "quota").
+                eq(GlobalConfigVO_.name, "snapshot.volume.num").select(GlobalConfigVO_.value).findValue() == "200"
     }
 }
