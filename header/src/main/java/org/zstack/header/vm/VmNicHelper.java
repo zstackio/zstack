@@ -14,13 +14,15 @@ import java.util.stream.Collectors;
 public class VmNicHelper {
     private static final CLogger logger = Utils.getLogger(VmNicHelper.class);
 
+    /* for some vm, it nic has l3 network, but there is no ip address */
     public static List<String> getL3Uuids(VmNicInventory nic) {
         List<String> ret = new ArrayList<>();
         for (UsedIpInventory ip : nic.getUsedIps()) {
             ret.add(ip.getL3NetworkUuid());
         }
+        ret.add(nic.getL3NetworkUuid());
 
-        return ret;
+        return ret.stream().distinct().collect(Collectors.toList());
     }
 
     public static List<String> getL3Uuids(VmNicVO nic) {
@@ -28,8 +30,9 @@ public class VmNicHelper {
         for (UsedIpVO ip : nic.getUsedIps()) {
             ret.add(ip.getL3NetworkUuid());
         }
+        ret.add(nic.getL3NetworkUuid());
 
-        return ret;
+        return ret.stream().distinct().collect(Collectors.toList());
     }
 
     public static List<String> getL3Uuids(List<VmNicInventory> nics) {
@@ -65,6 +68,11 @@ public class VmNicHelper {
                 return true;
             }
         }
+
+        if (nic.getL3NetworkUuid().equals(l3Uuid)) {
+            return true;
+        }
+
         return false;
     }
 
@@ -77,6 +85,7 @@ public class VmNicHelper {
     /* where input l3 include all nic l3 uuids */
     public static boolean includeAllNicL3s(VmNicInventory nic, List<String> l3Uuids) {
         List<String> l3s = nic.getUsedIps().stream().map(ip -> ip.getL3NetworkUuid()).collect(Collectors.toList());
+        l3s.add(nic.getL3NetworkUuid());
         return l3Uuids.containsAll(l3s);
     }
 
@@ -87,6 +96,7 @@ public class VmNicHelper {
             if (l3s.contains(nic.getL3NetworkUuid())) {
                 /* remove all ready attached l3 */
                 l3s.removeAll(nic.getUsedIps().stream().map(UsedIpInventory::getL3NetworkUuid).collect(Collectors.toList()));
+                l3s.remove(nic.getL3NetworkUuid());
                 res.addAll(l3s);
                 break;
             }
