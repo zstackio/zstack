@@ -53,9 +53,7 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.vm.*;
-import org.zstack.header.volume.VolumeInventory;
-import org.zstack.header.volume.VolumeType;
-import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.KVMConstant.KvmVmState;
 import org.zstack.network.l3.NetworkGlobalProperty;
@@ -945,7 +943,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setDestPath(volume.getInstallPath());
         cmd.setSrcPath(snapshot.getPrimaryStorageInstallPath());
         cmd.setVmUuid(volume.getVmInstanceUuid());
-        cmd.setDeviceId(volume.getDeviceId());
+        cmd.setVolume(VolumeTO.valueOf(volume));
 
         extEmitter.beforeMergeSnapshot((KVMHostInventory) getSelfInventory(), msg, cmd);
         new Http<>(mergeSnapshotPath, cmd, MergeSnapshotRsp.class)
@@ -1035,7 +1033,7 @@ public class KVMHost extends HostBase implements Host {
 
             cmd.setVolumeUuid(msg.getVolume().getUuid());
             cmd.setVmUuid(msg.getVmUuid());
-            cmd.setDeviceId(msg.getVolume().getDeviceId());
+            cmd.setVolume(VolumeTO.valueOf(msg.getVolume()));
         }
 
         cmd.setVolumeInstallPath(msg.getVolume().getInstallPath());
@@ -1453,22 +1451,9 @@ public class KVMHost extends HostBase implements Host {
     private void detachVolume(final DetachVolumeFromVmOnHypervisorMsg msg, final NoErrorCompletion completion) {
         checkStateAndStatus();
 
-        VolumeTO to = new VolumeTO();
         final VolumeInventory vol = msg.getInventory();
         final VmInstanceInventory vm = msg.getVmInventory();
-        to.setInstallPath(vol.getInstallPath());
-        if (vol.getDeviceId() != null) {
-            to.setDeviceId(vol.getDeviceId());
-        }
-        to.setDeviceType(getVolumeTOType(vol));
-        to.setVolumeUuid(vol.getUuid());
-        // volumes can only be attached on Windows if the virtio is enabled
-        // so for Windows, use virtio as well
-        to.setUseVirtio(ImagePlatform.Windows.toString().equals(vm.getPlatform()) ||
-                ImagePlatform.valueOf(vm.getPlatform()).isParaVirtualization());
-        to.setUseVirtioSCSI(KVMSystemTags.VOLUME_VIRTIO_SCSI.hasTag(vol.getUuid()));
-        to.setWwn(setVolumeWwn(vol.getUuid()));
-        to.setShareable(vol.isShareable());
+        VolumeTO to = VolumeTO.valueOf(vol);
 
         final DetachVolumeFromVmOnHypervisorReply reply = new DetachVolumeFromVmOnHypervisorReply();
         final DetachDataVolumeCmd cmd = new DetachDataVolumeCmd();
@@ -1514,18 +1499,17 @@ public class KVMHost extends HostBase implements Host {
                 }));
     }
 
-    private String setVolumeWwn(String volumeUUid) {
+    static String computeWwnIfAbsent(String volumeUUid) {
         String wwn;
         String tag = KVMSystemTags.VOLUME_WWN.getTag(volumeUUid);
         if (tag != null) {
             wwn = KVMSystemTags.VOLUME_WWN.getTokenByTag(tag, KVMSystemTags.VOLUME_WWN_TOKEN);
         } else {
+            wwn = new WwnUtils().getRandomWwn();
             SystemTagCreator creator = KVMSystemTags.VOLUME_WWN.newSystemTagCreator(volumeUUid);
-            creator.ignoreIfExisting = true;
             creator.inherent = true;
-            creator.setTagByTokens(map(e(KVMSystemTags.VOLUME_WWN_TOKEN, new WwnUtils().getRandomWwn())));
-            SystemTagInventory inv = creator.create();
-            wwn = KVMSystemTags.VOLUME_WWN.getTokenByTag(inv.getTag(), KVMSystemTags.VOLUME_WWN_TOKEN);
+            creator.setTagByTokens(Collections.singletonMap(KVMSystemTags.VOLUME_WWN_TOKEN, wwn));
+            creator.create();
         }
 
         DebugUtils.Assert(new WwnUtils().isValidWwn(wwn), String.format("Not a valid wwn[%s] for volume[uuid:%s]", wwn, volumeUUid));
@@ -1552,27 +1536,15 @@ public class KVMHost extends HostBase implements Host {
     private void attachVolume(final AttachVolumeToVmOnHypervisorMsg msg, final NoErrorCompletion completion) {
         checkStateAndStatus();
 
-        VolumeTO to = new VolumeTO();
         final VolumeInventory vol = msg.getInventory();
         final VmInstanceInventory vm = msg.getVmInventory();
-        to.setInstallPath(vol.getInstallPath());
-        to.setDeviceId(vol.getDeviceId());
-        to.setDeviceType(getVolumeTOType(vol));
-        to.setVolumeUuid(vol.getUuid());
-        // volumes can only be attached on Windows if the virtio is enabled
-        // so for Windows, use virtio as well
-        to.setUseVirtio(ImagePlatform.Windows.toString().equals(vm.getPlatform()) ||
-                ImagePlatform.valueOf(vm.getPlatform()).isParaVirtualization());
-        to.setUseVirtioSCSI(KVMSystemTags.VOLUME_VIRTIO_SCSI.hasTag(vol.getUuid()));
-        to.setWwn(setVolumeWwn(vol.getUuid()));
-        to.setShareable(vol.isShareable());
-        to.setCacheMode(KVMGlobalConfig.LIBVIRT_CACHE_MODE.value());
+        VolumeTO to = VolumeTO.valueOf(vol, vm.getPlatform());
 
         final AttachVolumeToVmOnHypervisorReply reply = new AttachVolumeToVmOnHypervisorReply();
         final AttachDataVolumeCmd cmd = new AttachDataVolumeCmd();
         cmd.setVolume(to);
         cmd.setVmUuid(msg.getVmInventory().getUuid());
-
+        cmd.getAddons().put("attachedDataVolumes", VolumeTO.valueOf(msg.getAttachedDataVolumes()));
         Map data = new HashMap();
         extEmitter.beforeAttachVolume((KVMHostInventory) getSelfInventory(), vm, vol, cmd, data);
         new Http<>(attachDataVolumePath, cmd, AttachDataVolumeResponse.class).call(new ReturnValueCompletion<AttachDataVolumeResponse>(msg, completion) {
@@ -1872,7 +1844,7 @@ public class KVMHost extends HostBase implements Host {
         return null;
     }
 
-    private String getVolumeTOType(VolumeInventory vol) {
+    static String getVolumeTOType(VolumeInventory vol) {
         DebugUtils.Assert(vol.getInstallPath() != null, String.format("volume [%s] installPath is null, it has not been initialized", vol.getUuid()));
         return vol.getInstallPath().startsWith("iscsi") ? VolumeTO.ISCSI : VolumeTO.FILE;
     }
@@ -1946,7 +1918,7 @@ public class KVMHost extends HostBase implements Host {
         rootVolume.setVolumeUuid(spec.getDestRootVolume().getUuid());
         rootVolume.setUseVirtio(virtio);
         rootVolume.setUseVirtioSCSI(KVMSystemTags.VOLUME_VIRTIO_SCSI.hasTag(spec.getDestRootVolume().getUuid()));
-        rootVolume.setWwn(setVolumeWwn(spec.getDestRootVolume().getUuid()));
+        rootVolume.setWwn(computeWwnIfAbsent(spec.getDestRootVolume().getUuid()));
         rootVolume.setCacheMode(KVMGlobalConfig.LIBVIRT_CACHE_MODE.value());
 
         nestedVirtualization = KVMGlobalConfig.NESTED_VIRTUALIZATION.value(String.class);
@@ -1956,18 +1928,10 @@ public class KVMHost extends HostBase implements Host {
 
         List<VolumeTO> dataVolumes = new ArrayList<>(spec.getDestDataVolumes().size());
         for (VolumeInventory data : spec.getDestDataVolumes()) {
-            VolumeTO v = new VolumeTO();
-            v.setInstallPath(data.getInstallPath());
-            v.setDeviceId(data.getDeviceId());
-            v.setDeviceType(getVolumeTOType(data));
-            v.setVolumeUuid(data.getUuid());
+            VolumeTO v = VolumeTO.valueOf(data, spec.getVmInventory().getPlatform());
             // always use virtio driver for data volume
             // set bug https://github.com/zxwing/premium/issues/1050
             v.setUseVirtio(true);
-            v.setUseVirtioSCSI(KVMSystemTags.VOLUME_VIRTIO_SCSI.hasTag(data.getUuid()));
-            v.setWwn(setVolumeWwn(data.getUuid()));
-            v.setShareable(data.isShareable());
-            v.setCacheMode(KVMGlobalConfig.LIBVIRT_CACHE_MODE.value());
             dataVolumes.add(v);
         }
         dataVolumes.sort(Comparator.comparing(VolumeTO::getDeviceId));

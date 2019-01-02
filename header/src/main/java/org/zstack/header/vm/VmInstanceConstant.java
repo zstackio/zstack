@@ -18,6 +18,7 @@ public interface VmInstanceConstant {
     enum Params {
         VmInstanceSpec,
         AttachingVolumeInventory,
+        AttachedDataVolumeInventories,
         DestPrimaryStorageInventoryForAttachingVolume,
         AttachNicInventory,
         AbnormalLifeCycleStruct,
