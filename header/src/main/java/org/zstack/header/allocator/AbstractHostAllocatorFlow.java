@@ -57,14 +57,11 @@ public abstract class AbstractHostAllocatorFlow {
     }
 
     protected void skip() {
-        if (usePagination()) {
-            paginationInfo.setOffset(paginationInfo.getOffset() + paginationInfo.getLimit());
-        }
         trigger.skip();
     }
 
     protected void fail(String reason) {
-        if (paginationInfo != null && trigger.indexOfFlow(this) != 0) {
+        if (paginationInfo != null && !trigger.isFirstFlow(this)) {
             // in pagination, and a middle flow fails, we can continue
             ErrorCode errorCode = new ErrorCode();
             errorCode.setCode(HostAllocatorConstant.PAGINATION_INTERMEDIATE_ERROR.getCode());
@@ -81,7 +78,7 @@ public abstract class AbstractHostAllocatorFlow {
     }
 
     protected boolean usePagination() {
-        return paginationInfo != null && trigger.indexOfFlow(this) == 0;
+        return paginationInfo != null && trigger.isFirstFlow(this);
     }
 
     protected void throwExceptionIfIAmTheFirstFlow() {
