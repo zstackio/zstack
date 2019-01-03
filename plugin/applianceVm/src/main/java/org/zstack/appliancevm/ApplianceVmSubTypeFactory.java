@@ -8,4 +8,6 @@ public interface ApplianceVmSubTypeFactory {
     ApplianceVm getSubApplianceVm(ApplianceVmVO apvm);
 
     ApplianceVmVO persistApplianceVm(ApplianceVmSpec spec, ApplianceVmVO apvm);
+
+    void removeApplianceVm(ApplianceVmSpec spec, ApplianceVmVO apvm);
 }
