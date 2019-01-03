@@ -105,6 +105,53 @@ class Ipv6RangeCase extends SubCase {
                 addressMode = IPv6Constants.Stateful_DHCP
             }
         }
+
+        expect(AssertionError.class) {
+            addIpv6Range {
+                name = "ipr-6"
+                l3NetworkUuid = l3_pub_ipv6.getUuid()
+                startIp = "2002:2001::fe"
+                endIp = "2002:2001::02"
+                gateway = "2002:2001::01"
+                prefixLen = 120
+                addressMode = IPv6Constants.Stateful_DHCP
+            }
+        }
+
+        expect(AssertionError.class) {
+            addIpv6Range {
+                name = "ipr-6"
+                l3NetworkUuid = l3_pub_ipv6.getUuid()
+                startIp = "2002:2001::01"
+                endIp = "2002:2001::fe"
+                gateway = "2002:2001::01"
+                prefixLen = 120
+                addressMode = IPv6Constants.Stateful_DHCP
+            }
+        }
+        expect(AssertionError.class) {
+            addIpv6Range {
+                name = "ipr-6"
+                l3NetworkUuid = l3_pub_ipv6.getUuid()
+                startIp = "2002:2001::02"
+                endIp = "2002:2001::ff"
+                gateway = "2002:2001::01"
+                prefixLen = 120
+                addressMode = IPv6Constants.Stateful_DHCP
+            }
+        }
+
+        expect(AssertionError.class) {
+            addIpv6Range {
+                name = "ipr-6"
+                l3NetworkUuid = l3_pub_ipv6.getUuid()
+                startIp = "2002:2001::02"
+                endIp = "2002:2001::fe"
+                gateway = "2002:2001::fe"
+                prefixLen = 120
+                addressMode = IPv6Constants.Stateful_DHCP
+            }
+        }
     }
 
     void testAttachIpv6CidrOverLap(){

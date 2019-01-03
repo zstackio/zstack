@@ -148,12 +148,29 @@ public class IPv6NetworkUtils {
         try {
             IPv6Address start = IPv6Address.fromString(startIp);
             IPv6Address end = IPv6Address.fromString(endIp);
+            if (end.compareTo(start) < 0) {
+                return false;
+            }
+
             IPv6Address gateway = IPv6Address.fromString(gatewayIp);
+            /* gateway can not equals to the first or last */
+            if (gateway.compareTo(start) == 0 || gateway.compareTo(end) == 0) {
+                return false;
+            }
+
             IPv6Network network = IPv6Network.fromAddressAndMask(start, IPv6NetworkMask.fromPrefixLength(prefixLen));
             if (!network.contains(end)) {
                 return false;
             }
             if (!network.contains(gateway)) {
+                return false;
+            }
+            /* start can not be first of the cidr */
+            if (network.getFirst().compareTo(start) == 0) {
+                return false;
+            }
+            /* end can not be last of the cidr */
+            if (network.getLast().compareTo(end) == 0) {
                 return false;
             }
             return true;
