@@ -6,7 +6,6 @@ import org.zstack.header.host.ConnectHostMsg
 import org.zstack.header.host.ConnectHostReply
 import org.zstack.header.host.HostVO
 import org.zstack.sdk.ClusterInventory
-import org.zstack.test.integration.kvm.Env
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -23,7 +22,7 @@ class BatchAddHostCase extends SubCase {
 
     @Override
     void environment() {
-        env = Env.noHostBasicEnv()
+        env = HostEnv.noHostBasicEnv()
     }
 
     @Override

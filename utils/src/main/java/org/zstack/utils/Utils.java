@@ -12,6 +12,8 @@ import org.zstack.utils.path.PathUtilImpl;
 import org.zstack.utils.path.PathUtils;
 import org.zstack.utils.stopwatch.StopWatch;
 import org.zstack.utils.stopwatch.StopWatchImpl;
+import org.zstack.utils.tester.ZTester;
+import org.zstack.utils.tester.ZTesterImpl;
 
 public class Utils {
 	private static ArraySpliter arraySpliter = null;
@@ -50,5 +52,9 @@ public class Utils {
     
     public static PathUtils getPathUtil() {
     	return pathUtil;
+    }
+
+    public static ZTester getTester() {
+        return ZTesterImpl.getTester();
     }
 }

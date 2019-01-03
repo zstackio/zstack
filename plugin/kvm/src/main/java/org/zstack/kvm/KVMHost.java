@@ -68,6 +68,7 @@ import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.ssh.Ssh;
 import org.zstack.utils.ssh.SshResult;
 import org.zstack.utils.ssh.SshShell;
+import org.zstack.utils.tester.ZTester;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
@@ -81,6 +82,7 @@ import static org.zstack.utils.CollectionDSL.map;
 
 public class KVMHost extends HostBase implements Host {
     private static final CLogger logger = Utils.getLogger(KVMHost.class);
+    private static final ZTester tester = Utils.getTester();
 
     @Autowired
     @Qualifier("KVMHostFactory")
@@ -2425,9 +2427,16 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void createHostVersionSystemTags(String distro, String release, String version) {
-        recreateInherentTag(HostSystemTags.OS_DISTRIBUTION, HostSystemTags.OS_DISTRIBUTION_TOKEN, distro);
-        recreateInherentTag(HostSystemTags.OS_RELEASE, HostSystemTags.OS_RELEASE_TOKEN, release);
-        recreateInherentTag(HostSystemTags.OS_VERSION, HostSystemTags.OS_VERSION_TOKEN, version);
+        createTagWithoutNonValue(HostSystemTags.OS_DISTRIBUTION, HostSystemTags.OS_DISTRIBUTION_TOKEN, distro, true);
+        createTagWithoutNonValue(HostSystemTags.OS_RELEASE, HostSystemTags.OS_RELEASE_TOKEN, release, true);
+        createTagWithoutNonValue(HostSystemTags.OS_VERSION, HostSystemTags.OS_VERSION_TOKEN, version, true);
+    }
+
+    private void createTagWithoutNonValue(SystemTag tag, String token, String value, boolean inherent) {
+        if (value == null) {
+            return;
+        }
+        recreateTag(tag, token, value, inherent);
     }
 
     private void recreateNonInherentTag(SystemTag tag, String token, String value) {
@@ -2454,16 +2463,16 @@ public class KVMHost extends HostBase implements Host {
     public void connectHook(final ConnectHostInfo info, final Completion complete) {
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             if (info.isNewAdded()) {
-                createHostVersionSystemTags("zstack", "kvmSimulator", "0.1");
+                createHostVersionSystemTags("zstack", "kvmSimulator", tester.get(ZTester.KVM_HostVersion, "0.1", String.class));
                 if (null == KVMSystemTags.LIBVIRT_VERSION.getTokenByResourceUuid(self.getUuid(), KVMSystemTags.LIBVIRT_VERSION_TOKEN)) {
-                    recreateInherentTag(KVMSystemTags.LIBVIRT_VERSION, KVMSystemTags.LIBVIRT_VERSION_TOKEN, "1.2.9");
+                    createTagWithoutNonValue(KVMSystemTags.LIBVIRT_VERSION, KVMSystemTags.LIBVIRT_VERSION_TOKEN, tester.get(ZTester.KVM_LibvirtVersion, "1.2.9", String.class), true);
                 }
                 if (null == KVMSystemTags.QEMU_IMG_VERSION.getTokenByResourceUuid(self.getUuid(), KVMSystemTags.QEMU_IMG_VERSION_TOKEN)) {
-                    recreateInherentTag(KVMSystemTags.QEMU_IMG_VERSION, KVMSystemTags.QEMU_IMG_VERSION_TOKEN, "2.0.0");
+                    createTagWithoutNonValue(KVMSystemTags.QEMU_IMG_VERSION, KVMSystemTags.QEMU_IMG_VERSION_TOKEN, tester.get(ZTester.KVM_QemuImageVersion, "2.0.0", String.class), true);
 
                 }
                 if (null == KVMSystemTags.CPU_MODEL_NAME.getTokenByResourceUuid(self.getUuid(), KVMSystemTags.CPU_MODEL_NAME_TOKEN)) {
-                    recreateInherentTag(KVMSystemTags.CPU_MODEL_NAME, KVMSystemTags.CPU_MODEL_NAME_TOKEN, "Broadwell");
+                    createTagWithoutNonValue(KVMSystemTags.CPU_MODEL_NAME, KVMSystemTags.CPU_MODEL_NAME_TOKEN, tester.get(ZTester.KVM_CpuModelName, "Broadwell", String.class), true);
                 }
 
                 if (!checkQemuLibvirtVersionOfHost()) {
@@ -2765,13 +2774,13 @@ public class KVMHost extends HostBase implements Host {
                                     // create system tags of os::version etc
                                     createHostVersionSystemTags(ret.getOsDistribution(), ret.getOsRelease(), ret.getOsVersion());
 
-                                    recreateNonInherentTag(KVMSystemTags.QEMU_IMG_VERSION, KVMSystemTags.QEMU_IMG_VERSION_TOKEN, ret.getQemuImgVersion());
-                                    recreateNonInherentTag(KVMSystemTags.LIBVIRT_VERSION, KVMSystemTags.LIBVIRT_VERSION_TOKEN, ret.getLibvirtVersion());
-                                    recreateNonInherentTag(KVMSystemTags.HVM_CPU_FLAG, KVMSystemTags.HVM_CPU_FLAG_TOKEN, ret.getHvmCpuFlag());
-                                    recreateNonInherentTag(KVMSystemTags.CPU_MODEL_NAME, KVMSystemTags.CPU_MODEL_NAME_TOKEN, ret.getCpuModelName());
-                                    recreateInherentTag(HostSystemTags.HOST_CPU_MODEL_NAME, HostSystemTags.HOST_CPU_MODEL_NAME_TOKEN, ret.getHostCpuModelName());
-                                    recreateInherentTag(HostSystemTags.CPU_GHZ, HostSystemTags.CPU_GHZ_TOKEN, ret.getCpuGHz());
-                                    recreateInherentTag(HostSystemTags.SYSTEM_PRODUCT_NAME, HostSystemTags.SYSTEM_PRODUCT_NAME_TOKEN, ret.getSystemProductName());
+                                    createTagWithoutNonValue(KVMSystemTags.QEMU_IMG_VERSION, KVMSystemTags.QEMU_IMG_VERSION_TOKEN, ret.getQemuImgVersion(), false);
+                                    createTagWithoutNonValue(KVMSystemTags.LIBVIRT_VERSION, KVMSystemTags.LIBVIRT_VERSION_TOKEN, ret.getLibvirtVersion(), false);
+                                    createTagWithoutNonValue(KVMSystemTags.HVM_CPU_FLAG, KVMSystemTags.HVM_CPU_FLAG_TOKEN, ret.getHvmCpuFlag(), false);
+                                    createTagWithoutNonValue(KVMSystemTags.CPU_MODEL_NAME, KVMSystemTags.CPU_MODEL_NAME_TOKEN, ret.getCpuModelName(), false);
+                                    createTagWithoutNonValue(HostSystemTags.HOST_CPU_MODEL_NAME, HostSystemTags.HOST_CPU_MODEL_NAME_TOKEN, ret.getHostCpuModelName(), true);
+                                    createTagWithoutNonValue(HostSystemTags.CPU_GHZ, HostSystemTags.CPU_GHZ_TOKEN, ret.getCpuGHz(), true);
+                                    createTagWithoutNonValue(HostSystemTags.SYSTEM_PRODUCT_NAME, HostSystemTags.SYSTEM_PRODUCT_NAME_TOKEN, ret.getSystemProductName(), true);
 
                                     if (ret.getLibvirtVersion().compareTo(KVMConstant.MIN_LIBVIRT_VIRTIO_SCSI_VERSION) >= 0) {
                                         recreateNonInherentTag(KVMSystemTags.VIRTIO_SCSI);

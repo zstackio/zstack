@@ -2,12 +2,14 @@ package org.zstack.testlib
 
 import org.zstack.utils.Utils
 import org.zstack.utils.logging.CLogger
+import org.zstack.utils.tester.ZTester
 
 /**
  * Created by xing5 on 2017/2/12.
  */
 trait Node {
     final CLogger logger = Utils.getLogger(this.getClass())
+    final ZTester testter = Utils.getTester()
 
     Node parent
     List<Object> children = []
