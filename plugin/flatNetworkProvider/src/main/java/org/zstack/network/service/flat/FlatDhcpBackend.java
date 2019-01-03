@@ -8,10 +8,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.GLock;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.notification.N;
@@ -20,6 +17,8 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -67,7 +66,7 @@ import static org.zstack.utils.CollectionDSL.*;
  */
 public class FlatDhcpBackend extends AbstractService implements NetworkServiceDhcpBackend, KVMHostConnectExtensionPoint,
         L3NetworkDeleteExtensionPoint, VmInstanceMigrateExtensionPoint, VmAbnormalLifeCycleExtensionPoint, IpRangeDeletionExtensionPoint,
-        BeforeStartNewCreatedVmExtensionPoint {
+        BeforeStartNewCreatedVmExtensionPoint, GlobalApiMessageInterceptor, AfterAddIpRangeExtensionPoint {
     private static final CLogger logger = Utils.getLogger(FlatDhcpBackend.class);
 
     @Autowired
@@ -256,26 +255,24 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         String tag = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTag(msg.getL3NetworkUuid());
         if (tag != null) {
             Map<String, String> tokens = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTokensByTag(tag);
-            String ipUuid = tokens.get(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_UUID_TOKEN);
-            UsedIpVO vo = dbf.findByUuid(ipUuid, UsedIpVO.class);
-            if (vo == null) {
-                throw new CloudRuntimeException(String.format("cannot find used ip [uuid:%s]", ipUuid));
+            String dhcpServerIp = tokens.get(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN);
+            if (dhcpServerIp != null) {
+                reply.setIp(IPv6NetworkUtils.ipv6TagValueToAddress(dhcpServerIp));
+                bus.reply(msg, reply);
+                return;
             }
-
-            UsedIpInventory ip = UsedIpInventory.valueOf(vo);
-            reply.setIp(ip.getIp());
-            bus.reply(msg, reply);
-            logger.debug(String.format("APIGetL3NetworkDhcpIpAddressMsg[ip:%s, uuid:%s] for l3 network[uuid:%s]",
-                    ip.getIp(), ip.getUuid(), ip.getL3NetworkUuid()));
-            return;
         }
 
         reply.setError(operr("Cannot find DhcpIp for l3 network[uuid:%s]", msg.getL3NetworkUuid()));
         bus.reply(msg, reply);
     }
 
+    String allocateDhcpIp(String l3Uuid) {
+        return allocateDhcpIp(l3Uuid, true, null);
+    }
+
     @Deferred
-    UsedIpInventory allocateDhcpIp(String l3Uuid) {
+    private String allocateDhcpIp(String l3Uuid, boolean allocate_ip, String requiredIp) {
         L3NetworkVO l3 = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3Uuid).find();
 
         if (!isProvidedByMe(L3NetworkInventory.valueOf(l3))) {
@@ -287,45 +284,54 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         lock.lock();
         Defer.defer(lock::unlock);
 
+        String dhcpServerIp;
         String tag = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTag(l3Uuid);
         if (tag != null) {
             Map<String, String> tokens = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTokensByTag(tag);
-            String ipUuid = tokens.get(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_UUID_TOKEN);
-            UsedIpVO vo = dbf.findByUuid(ipUuid, UsedIpVO.class);
-            if (vo == null) {
-                throw new CloudRuntimeException(String.format("cannot find used ip [uuid:%s]", ipUuid));
+            dhcpServerIp = tokens.get(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN);
+            if (dhcpServerIp != null) {
+                dhcpServerIp = IPv6NetworkUtils.ipv6TagValueToAddress(dhcpServerIp);
+            }
+            return dhcpServerIp;
+        }
+
+        dhcpServerIp = requiredIp;
+        /* dhcp server IP uuid in L3_NETWORK_DHCP_IP is not used any more, to be compatible with old version,
+         * keep the format of L3_NETWORK_DHCP_IP unchanged, so set it be null temporary, it will be optimized later */
+        String dhcpServerIpUuid = "null";
+        if (allocate_ip) {
+            AllocateIpMsg amsg = new AllocateIpMsg();
+            amsg.setL3NetworkUuid(l3Uuid);
+            if (requiredIp != null) {
+                amsg.setRequiredIp(requiredIp);
+            }
+            bus.makeTargetServiceIdByResourceUuid(amsg, L3NetworkConstant.SERVICE_ID, l3Uuid);
+            MessageReply reply = bus.call(amsg);
+            if (!reply.isSuccess()) {
+                throw new OperationFailureException(reply.getError());
             }
 
-            UsedIpInventory ip = UsedIpInventory.valueOf(vo);
-            return ip;
+            AllocateIpReply r = reply.castReply();
+            UsedIpInventory ip = r.getIpInventory();
+            dhcpServerIp = ip.getIp();
+            dhcpServerIpUuid = ip.getUuid();
         }
-
-        AllocateIpMsg amsg = new AllocateIpMsg();
-        amsg.setL3NetworkUuid(l3Uuid);
-        bus.makeTargetServiceIdByResourceUuid(amsg, L3NetworkConstant.SERVICE_ID, l3Uuid);
-        MessageReply reply = bus.call(amsg);
-        if (!reply.isSuccess()) {
-            throw new OperationFailureException(reply.getError());
-        }
-
-        AllocateIpReply r = reply.castReply();
-        UsedIpInventory ip = r.getIpInventory();
 
         SystemTagCreator creator = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.newSystemTagCreator(l3Uuid);
         creator.inherent = true;
         creator.setTagByTokens(
                 map(
-                        e(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN, IPv6NetworkUtils.ipv6AddessToTagValue(ip.getIp())),
-                        e(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_UUID_TOKEN, ip.getUuid())
+                        e(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN, IPv6NetworkUtils.ipv6AddessToTagValue(dhcpServerIp)),
+                        e(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_UUID_TOKEN, dhcpServerIpUuid)
                 )
         );
         creator.create();
 
-        logger.debug(String.format("allocate DHCP server IP[ip:%s, uuid:%s] for l3 network[uuid:%s]", ip.getIp(), ip.getUuid(), ip.getL3NetworkUuid()));
+        logger.debug(String.format("allocate DHCP server IP[ip:%s, uuid:%s] for l3 network[uuid:%s]", dhcpServerIp, dhcpServerIpUuid, l3Uuid));
         for (DhcpServerExtensionPoint exp : pluginRgty.getExtensionList(DhcpServerExtensionPoint.class)) {
-            exp.afterAllocateDhcpServerIP(l3Uuid, ip);
+            exp.afterAllocateDhcpServerIP(l3Uuid, dhcpServerIp);
         }
-        return ip;
+        return dhcpServerIp;
     }
 
     private void handle(final FlatDhcpAcquireDhcpServerIpMsg msg) {
@@ -339,14 +345,17 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             @MessageSafe
             private void dealMessage(FlatDhcpAcquireDhcpServerIpMsg msg) {
                 FlatDhcpAcquireDhcpServerIpReply reply = new FlatDhcpAcquireDhcpServerIpReply();
-                UsedIpInventory ip = allocateDhcpIp(msg.getL3NetworkUuid());
+                String ip = allocateDhcpIp(msg.getL3NetworkUuid());
                 if (ip != null) {
-                    reply.setIp(ip.getIp());
-                    reply.setNetmask(ip.getNetmask());
-                    reply.setUsedIpUuid(ip.getUuid());
-                    IpRangeVO ipr = dbf.findByUuid(ip.getIpRangeUuid(), IpRangeVO.class);
-                    reply.setIpr(IpRangeInventory.valueOf(ipr));
-                    reply.setUsedIp(ip);
+                    List<IpRangeVO> iprs = Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid()).list();
+                    if (iprs == null || iprs.isEmpty()) {
+                        reply.setError(operr("L3 network[uuid:%s] does not have any iprange", msg.getL3NetworkUuid()));
+                        bus.reply(msg, reply);
+                        return;
+                    }
+                    reply.setIp(ip);
+                    reply.setNetmask(iprs.get(0).getNetmask());
+                    reply.setIpr(IpRangeInventory.valueOf(iprs.get(0)));
                 }
                 bus.reply(msg, reply);
             }
@@ -403,11 +412,11 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             return;
         }
 
-        UsedIpInventory dhchip = getDHCPServerIP(inventory.getUuid());
+        String dhchip = getDHCPServerIP(inventory.getUuid());
         if (dhchip != null) {
-            deleteDhcpServerIp(dhchip);
+            deleteDhcpServerIp(inventory.getUuid(), dhchip);
             logger.debug(String.format("delete DHCP IP[%s] of the flat network[uuid:%s] as the L3 network is deleted",
-                    dhchip.getIp(), dhchip.getL3NetworkUuid()));
+                    dhchip, inventory.getUuid()));
         }
 
         deleteNameSpace(inventory);
@@ -801,23 +810,23 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
     }
 
-    private void deleteDhcpServerIp(UsedIpInventory ip) {
-        FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.deleteInherentTag(ip.getL3NetworkUuid());
-        dbf.removeByPrimaryKey(ip.getUuid(), UsedIpVO.class);
+    private void deleteDhcpServerIp(String l3Uuid, String dhcpServerIp) {
+        FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.deleteInherentTag(l3Uuid);
         for (DhcpServerExtensionPoint exp : pluginRgty.getExtensionList(DhcpServerExtensionPoint.class)) {
-            exp.afterRemoveDhcpServerIP(ip.getL3NetworkUuid(), ip);
+            exp.afterRemoveDhcpServerIP(l3Uuid, dhcpServerIp);
         }
     }
 
-    private UsedIpInventory getDHCPServerIP(String l3Uuid) {
+    private String getDHCPServerIP(String l3Uuid) {
         String tag = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTag(l3Uuid);
         if (tag != null) {
             Map<String, String> tokens = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTokensByTag(tag);
-            String ipUuid = tokens.get(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_UUID_TOKEN);
-            UsedIpVO vo = dbf.findByUuid(ipUuid, UsedIpVO.class);
-            if (vo != null) {
-                return UsedIpInventory.valueOf(vo);
+            String dhcpServerIp = tokens.get(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN);
+            if (dhcpServerIp != null) {
+                dhcpServerIp = IPv6NetworkUtils.ipv6TagValueToAddress(dhcpServerIp);
             }
+
+            return dhcpServerIp;
         }
 
         return null;
@@ -825,12 +834,13 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
     @Override
     public void afterDeleteIpRange(IpRangeInventory ipRange) {
-        UsedIpInventory dhcpIp = getDHCPServerIP(ipRange.getL3NetworkUuid());
+        String dhcpServerIp = getDHCPServerIP(ipRange.getL3NetworkUuid());
 
-        if (dhcpIp != null && NetworkUtils.isInRange(dhcpIp.getIp(), ipRange.getStartIp(), ipRange.getEndIp())) {
-            deleteDhcpServerIp(dhcpIp);
+        boolean ipRangeExisted = Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, ipRange.getL3NetworkUuid()).isExists();
+        if (!ipRangeExisted && dhcpServerIp != null) {
+            deleteDhcpServerIp(ipRange.getL3NetworkUuid(), dhcpServerIp);
             logger.debug(String.format("delete DHCP IP[%s] of the flat network[uuid:%s] as the IP range[uuid:%s] is deleted",
-                    dhcpIp.getIp(), ipRange.getL3NetworkUuid(), ipRange.getUuid()));
+                    dhcpServerIp, ipRange.getL3NetworkUuid(), ipRange.getUuid()));
         }
     }
 
@@ -995,9 +1005,9 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
         L3NetworkVO l3VO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3NetworkUuid).find();
         if (FlatNetwordProviderGlobalConfig.ALLOW_DEFAULT_DNS.value(Boolean.class) && l3VO.getIpVersion() == IPv6Constants.IPv4) {
-            UsedIpInventory dhcpIp = getDHCPServerIP(l3NetworkUuid);
+            String dhcpIp = getDHCPServerIP(l3NetworkUuid);
             if (dhcpIp != null) {
-                dns.add(dhcpIp.getIp());
+                dns.add(dhcpIp);
             }
         }
 
@@ -1406,5 +1416,148 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    @Override
+    public List<Class> getMessageClassToIntercept() {
+        List<Class> ret = new ArrayList<Class>();
+        ret.add(APIAddIpRangeMsg.class);
+        ret.add(APIAddIpRangeByNetworkCidrMsg.class);
+        ret.add(APIAddIpv6RangeMsg.class);
+        ret.add(APIAddIpv6RangeByNetworkCidrMsg.class);
+        ret.add(APIDeleteIpRangeMsg.class);
+
+        return ret;
+    }
+
+    @Override
+    public InterceptorPosition getPosition() {
+        return InterceptorPosition.END;
+    }
+
+    private void validateDhcpServerIp(IpRangeInventory inv, List<String> systemTags) {
+        if (systemTags == null || systemTags.isEmpty()) {
+            return;
+        }
+
+        for (String systemTag : systemTags) {
+            if (!FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.isMatch(systemTag)) {
+                continue;
+            }
+
+            Map<String, String> token = TagUtils.parse(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTagFormat(), systemTag);
+            String dhcpServerIp = token.get(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN);
+            dhcpServerIp = IPv6NetworkUtils.ipv6TagValueToAddress(dhcpServerIp);
+
+            if (inv.getIpVersion() == IPv6Constants.IPv4) {
+                if (!NetworkUtils.isIpv4Address(dhcpServerIp)) {
+                    throw new ApiMessageInterceptionException(argerr("DHCP server ip [%s] is not a IPv4 address", dhcpServerIp));
+                }
+
+                if (!NetworkUtils.isIpv4InCidr(dhcpServerIp, inv.getNetworkCidr())) {
+                    throw new ApiMessageInterceptionException(argerr("DHCP server ip [%s] is not in the cidr [%s]", dhcpServerIp, inv.getNetworkCidr()));
+                }
+            } else {
+                if (!IPv6NetworkUtils.isIpv6Address(dhcpServerIp)) {
+                    throw new ApiMessageInterceptionException(argerr("DHCP server ip [%s] is not a IPv6 address", dhcpServerIp));
+                }
+
+                if (!IPv6NetworkUtils.isIpv6InCidrRange(dhcpServerIp, inv.getNetworkCidr())) {
+                    throw new ApiMessageInterceptionException(argerr("DHCP server ip [%s] is not in the cidr [%s]", dhcpServerIp, inv.getNetworkCidr()));
+                }
+            }
+
+            String oldDhcpServer = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTokenByResourceUuid(inv.getL3NetworkUuid(),
+                    FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN);
+            if (oldDhcpServer != null) {
+                throw new ApiMessageInterceptionException(argerr("DHCP server ip [%s] is already existed in l3 network [%s]",
+                        IPv6NetworkUtils.ipv6TagValueToAddress(oldDhcpServer), inv.getL3NetworkUuid()));
+            }
+
+            if (dhcpServerIp.equals(inv.getGateway())) {
+                throw new ApiMessageInterceptionException(argerr("DHCP server ip [%s] can not be equaled to gateway ip",
+                        dhcpServerIp));
+            }
+
+            L3NetworkVO l3Vo = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, inv.getL3NetworkUuid()).find();
+            if (l3Vo.isSystem()) {
+                throw new ApiMessageInterceptionException(argerr("DHCP server ip [%s] can not be configured to system l3",
+                        dhcpServerIp));
+            }
+        }
+    }
+
+    @Override
+    public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
+        if (msg instanceof APIAddIpRangeMsg) {
+            IpRangeInventory inv = IpRangeInventory.fromMessage((APIAddIpRangeMsg)msg);
+            validateDhcpServerIp(inv, msg.getSystemTags());
+        } else if (msg instanceof APIAddIpRangeByNetworkCidrMsg) {
+            IpRangeInventory inv = IpRangeInventory.fromMessage((APIAddIpRangeByNetworkCidrMsg)msg);
+            validateDhcpServerIp(inv, msg.getSystemTags());
+        } else if (msg instanceof APIAddIpv6RangeMsg) {
+            IpRangeInventory inv = IpRangeInventory.fromMessage((APIAddIpv6RangeMsg)msg);
+            validateDhcpServerIp(inv, msg.getSystemTags());
+        } else if (msg instanceof APIAddIpv6RangeByNetworkCidrMsg) {
+            IpRangeInventory inv = IpRangeInventory.fromMessage((APIAddIpv6RangeByNetworkCidrMsg)msg);
+            validateDhcpServerIp(inv, msg.getSystemTags());
+        }
+
+        return msg;
+    }
+
+    /* when add an iprage, there are 2 cases:
+     *  #1  include dhcp server ip, it means there is no dhcp server yet. and it include 2 sub-cases:
+     *      $1.1 dhcp server ip is in this range, actions:
+     *          a) allocate dhcp server ip in db
+     *          b) create systemtag L3_NETWORK_DHCP_IP
+     *      $1.2 dhcp server ip is not in this range, actions:
+     *          b) create systemtag L3_NETWORK_DHCP_IP, but usedIp set to null
+     *
+     *  #2  doesn't include dhcp server ip, it include 2 sub-cases:
+     *      $2.1 dhcp server ip is not config, actions: NONE
+     *      $2.2 dhcp server ip is configured, but no in this range, actions: None
+     *      $2.3 dhcp server ip is configured and in this range, actions:
+     *          a) allocate dhcp server ip in db
+     *      */
+    @Override
+    public void afterAddIpRange(IpRangeInventory ipr, List<String> systemTags) {
+        String dhcpTag = null;
+        String dhcpServerIp = null;
+        if (systemTags != null) {
+            for (String sysTag : systemTags) {
+                if (!FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.isMatch(sysTag)) {
+                    continue;
+                }
+
+                Map<String, String> token = TagUtils.parse(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTagFormat(), sysTag);
+                dhcpServerIp = token.get(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN);
+                if (dhcpServerIp == null) {
+                    continue;
+                }
+
+                dhcpServerIp = IPv6NetworkUtils.ipv6TagValueToAddress(dhcpServerIp);
+                dhcpTag = sysTag;
+                break;
+            }
+        }
+
+        if (dhcpServerIp != null) {
+            if (NetworkUtils.isInRange(dhcpServerIp, ipr.getStartIp(), ipr.getEndIp())) {
+                /* case #1.1 */
+                allocateDhcpIp(ipr.getL3NetworkUuid(), true, dhcpServerIp);
+            } else {
+                /* case #1.2 */
+                allocateDhcpIp(ipr.getL3NetworkUuid(), false, dhcpServerIp);
+            }
+            systemTags.remove(dhcpTag);
+        } else {
+            String oldDhcpServerIp = getDHCPServerIP(ipr.getL3NetworkUuid());
+            if (oldDhcpServerIp != null && NetworkUtils.isInRange(oldDhcpServerIp, ipr.getStartIp(), ipr.getEndIp())) {
+                /* case #2.3 */
+                deleteDhcpServerIp(ipr.getL3NetworkUuid(), oldDhcpServerIp);
+                allocateDhcpIp(ipr.getL3NetworkUuid(), true, oldDhcpServerIp);
+            }
+        }
     }
 }

@@ -159,9 +159,9 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                 Map<String, List<String>> userdata = new UserdataBuilder().buildByVmUuids(vmUuids);
                 Set<String> l3Uuids = new HashSet<String>();
                 for (VmIpL3Uuid l : vmipl3.values()) {
-                    UsedIpInventory dhcpIpInv = dhcpBackend.allocateDhcpIp(l.l3Uuid);
-                    if (dhcpIpInv != null) {
-                        l.dhcpServerIp = dhcpIpInv.getIp();
+                    String dhcpIp = dhcpBackend.allocateDhcpIp(l.l3Uuid);
+                    if (dhcpIp != null) {
+                        l.dhcpServerIp = dhcpIp;
                     }
                     l3Uuids.add(l.l3Uuid);
                 }

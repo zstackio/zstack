@@ -73,7 +73,7 @@ public class FlatHostRouteBackend implements NetworkServiceHostRouteBackend, Dhc
     }
 
     @Override
-    public void afterAllocateDhcpServerIP(String L3NetworkUuid, UsedIpInventory dhcpSererIp) {
+    public void afterAllocateDhcpServerIP(String L3NetworkUuid, String dhcpSererIp) {
         /* skip adding host route for network without host route service */
         NetworkServiceL3NetworkRefVO ref = Q.New(NetworkServiceL3NetworkRefVO.class).eq(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, L3NetworkUuid)
                 .eq(NetworkServiceL3NetworkRefVO_.networkServiceType, NetworkServiceType.HostRoute.toString()).find();
@@ -87,7 +87,7 @@ public class FlatHostRouteBackend implements NetworkServiceHostRouteBackend, Dhc
             return;
         }
 
-        updateMetadataRoute(L3NetworkUuid, dhcpSererIp.getIp());
+        updateMetadataRoute(L3NetworkUuid, dhcpSererIp);
     }
 
     private void updateMetadataRoute(String L3NetworkUuid, String dhcpSererIp) {
@@ -110,7 +110,7 @@ public class FlatHostRouteBackend implements NetworkServiceHostRouteBackend, Dhc
     }
 
     @Override
-    public void afterRemoveDhcpServerIP(String L3NetworkUuid, UsedIpInventory dhcpSererIp) {
+    public void afterRemoveDhcpServerIP(String L3NetworkUuid, String dhcpSererIp) {
         SQL.New(L3NetworkHostRouteVO.class).eq(L3NetworkHostRouteVO_.l3NetworkUuid, L3NetworkUuid)
                 .eq(L3NetworkHostRouteVO_.prefix, NetworkServiceConstants.METADATA_HOST_PREFIX).delete();
     }

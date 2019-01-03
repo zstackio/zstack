@@ -8,9 +8,11 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.tag.TagResourceType;
 
 /**
  */
+@TagResourceType(L3NetworkVO.class)
 @Action(category = L3NetworkConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/l3-networks/{l3NetworkUuid}/ip-ranges/by-cidr",
