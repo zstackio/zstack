@@ -1,8 +1,6 @@
 package org.zstack.ldap;
 
 public interface LdapConstant {
-    int CONNECT_TIMEOUT = 5000;
-
     String SERVICE_ID = "ldap";
 
     String LDAP_UID_KEY = "cn";

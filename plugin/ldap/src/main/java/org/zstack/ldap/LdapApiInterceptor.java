@@ -121,7 +121,8 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
 
     private ErrorCode testAddLdapServerConnection(LdapServerInventory inv) {
         Map<String, Object> properties = new HashMap<>();
-        properties.put("com.sun.jndi.ldap.connect.timeout", Integer.toString(LdapConstant.CONNECT_TIMEOUT));
+        String timeout = Integer.toString(LdapGlobalProperty.LDAP_ADD_SERVER_CONNECT_TIMEOUT);
+        properties.put("com.sun.jndi.ldap.connect.timeout", timeout);
         LdapTemplateContextSource ldapTemplateContextSource = new LdapUtil().loadLdap(inv, properties);
 
         try {
