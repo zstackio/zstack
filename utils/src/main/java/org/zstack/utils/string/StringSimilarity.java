@@ -95,7 +95,12 @@ public class StringSimilarity {
                         ArrayList.class,
                         ErrorCodeElaboration.class
                 ));
-
+                Collections.sort(els, new Comparator<ErrorCodeElaboration>() {
+                    @Override
+                    public int compare(ErrorCodeElaboration o1, ErrorCodeElaboration o2) {
+                        return Integer.valueOf(o1.getCode()) - Integer.valueOf(o2.getCode());
+                    }
+                });
             } catch (IOException e) {
                 throw new RuntimeException(String.format("read error elaboration template files failed, due to: %s", e.getMessage()));
             }

@@ -1,7 +1,7 @@
 #!/bin/sh
 
 usage() {
-    echo "usage:$0 [deploydb|deploy|xml-java-schema|premium|sdk|doc|docpremium|md|mdpremium|openapi]"
+    echo "usage:$0 [deploydb|deploy|xml-java-schema|premium|sdk|doc|docpremium|md|mdpremium|openapi|errorcode]"
 }
 
 MVNTest="mvn test -Djacoco.skip=true"
@@ -98,6 +98,12 @@ mdpremium() {
     fi
 
     $MVNTest -Dtest=TestGenerateMarkDownDoc
+    cd - > /dev/null
+}
+
+errorcode() {
+    cd test
+    mvn test -Dtest=TestGenerateErrorCodeDoc
     cd - > /dev/null
 }
 
@@ -267,6 +273,8 @@ run_profile() {
 	    zwatchzql
     elif test x$1 = x'openapi'; then
         openapi
+    elif test x$1 = x'errorcode'; then
+        errorcode
     else
         mvn -pl build -P $1 exec:exec -D$1
     fi

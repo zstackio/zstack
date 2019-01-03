@@ -32,10 +32,10 @@
     "regex": "host[uuid:%s, name:%s] is in status[%s], cannot perform required operation",
     "message_cn": "物理机不能进行该操作",
     "message_en": "Host cannot perform required operation",
-    "causes_cn": "物理机正处于连接中[%3$s]状态",
+    "causes_cn": "物理机正处于[%3$s]状态,当前状态不允许进行该操作",
     "causes_en": "Host is in status [%3$s]",
-    "operation_cn": "请等待物理机退出连接中[%3$s]状态",
-    "operation_en": "please wait until quit Connecting status"
+    "operation_cn": "请等待物理机退出[%3$s]状态",
+    "operation_en": "please wait until quit [%3$s] status"
   },
   {
     "category": "HOST",

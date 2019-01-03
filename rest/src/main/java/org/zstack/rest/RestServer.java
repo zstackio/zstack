@@ -144,6 +144,11 @@ public class RestServer implements Component, CloudBusEventListener {
         rg.generateDocTemplates(path, mode);
     }
 
+    public static void generateErrorCodeDoc(String path) {
+        DocumentGenerator rg =  GroovyUtils.newInstance("scripts/RestDocumentationGenerator.groovy");
+        rg.generateErrorCodeDoc(path, PathUtil.join(System.getProperty("user.home"), "zstack-errorcodes"));
+    }
+
     public static void generateMarkdownDoc(String path) {
         System.setProperty(Constants.UUID_FOR_EXAMPLE, "true");
         DocumentGenerator rg =  GroovyUtils.newInstance("scripts/RestDocumentationGenerator.groovy");
