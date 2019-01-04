@@ -12,3 +12,5 @@ CREATE TABLE IF NOT EXISTS `ElaborationVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE INDEX idxElaborationVOmd5sum ON ElaborationVO (md5sum);
+ALTER TABLE AlarmVO ADD COLUMN `repeatCount` int DEFAULT NULL;
+UPDATE `AlarmVO` SET `repeatCount` = -1;
