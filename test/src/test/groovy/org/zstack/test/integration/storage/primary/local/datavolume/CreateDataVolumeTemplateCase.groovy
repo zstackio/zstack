@@ -1,22 +1,20 @@
 package org.zstack.test.integration.storage.primary.local.datavolume
 
 import org.springframework.http.HttpEntity
+import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.Q
 import org.zstack.header.identity.AccountResourceRefVO
 import org.zstack.header.identity.AccountResourceRefVO_
+import org.zstack.header.image.ImageConstant
 import org.zstack.header.image.ImageVO
+import org.zstack.header.storage.backup.BackupStorageStateEvent
+import org.zstack.header.storage.primary.AllocatePrimaryStorageMsg
+import org.zstack.header.storage.primary.DownloadDataVolumeToPrimaryStorageMsg
+import org.zstack.header.storage.primary.GetInstallPathForDataVolumeDownloadMsg
 import org.zstack.image.ImageQuotaConstant
-import org.zstack.sdk.AccountInventory
-import org.zstack.sdk.BackupStorageInventory
-import org.zstack.sdk.DiskOfferingInventory
-import org.zstack.sdk.ImageInventory
-import org.zstack.sdk.InstanceOfferingInventory
-import org.zstack.sdk.KVMHostInventory
-import org.zstack.sdk.L3NetworkInventory
-import org.zstack.sdk.PrimaryStorageInventory
-import org.zstack.sdk.SessionInventory
-import org.zstack.sdk.VmInstanceInventory
-import org.zstack.sdk.VolumeInventory
+import org.zstack.sdk.*
+import org.zstack.storage.backup.sftp.SftpBackupStorageCommands
+import org.zstack.storage.backup.sftp.SftpBackupStorageConstant
 import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl
 import org.zstack.test.integration.storage.Env
 import org.zstack.test.integration.storage.StorageTest
@@ -24,7 +22,6 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
-
 /**
  * Created by mingjian.deng on 2017/10/19.
  */
@@ -51,6 +48,7 @@ class CreateDataVolumeTemplateCase extends SubCase {
         env.create {
             testCreateDataVolumeTemplate()
             testCreateDataVolumeTemplateQuota()
+            testCreateDataVolumeTemplateUponFailure()
         }
     }
 
@@ -69,7 +67,6 @@ class CreateDataVolumeTemplateCase extends SubCase {
         def disk = env.inventoryByName("diskOffering") as DiskOfferingInventory
         def bs = env.inventoryByName("sftp") as BackupStorageInventory
         def kvm = env.inventoryByName("kvm") as KVMHostInventory
-        def vm = env.inventoryByName("test-vm") as VmInstanceInventory
         def image = env.inventoryByName("test-iso") as ImageInventory
         def offer = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
         def l3 = env.inventoryByName("pubL3") as L3NetworkInventory
@@ -228,5 +225,136 @@ class CreateDataVolumeTemplateCase extends SubCase {
         assert cmd != null
         assert vol.installPath == cmd.primaryStorageInstallPath :
                 "you change the create data volume from template logic, make sure the imageCacheVO will be created correctly after volume migrated!!!"
+    }
+
+    /**
+     * Negative tests for CreateDataVolumeFromVolumeTemplate
+     *
+     * We inject the following failure conditions, and check that
+     * the capacity is not changed.
+     *
+     * 1. Image is deleted
+     * 2. BS is disabled
+     * 3. AllocatePrimaryStorageMsg failed
+     * 4. GetInstallPathForDataVolumeDownloadMsg failed
+     * 5. DownloadDataVolumeToPrimaryStorageMsg failed
+     */
+    void testCreateDataVolumeTemplateUponFailure() {
+        def bs = env.inventoryByName("sftp") as BackupStorageInventory
+        def ps = env.inventoryByName("local") as PrimaryStorageInventory
+        def kvm = env.inventoryByName("kvm") as KVMHostInventory
+
+        env.simulator(SftpBackupStorageConstant.DOWNLOAD_IMAGE_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            def rsp = new SftpBackupStorageCommands.DownloadResponse()
+            rsp.size = 10240
+            rsp.actualSize = 1024
+            return rsp
+        }
+
+        def image = addImage {
+            name = "test-image"
+            url = "http://my-site/test.qcow2"
+            backupStorageUuids = [bs.uuid]
+            format = ImageConstant.QCOW2_FORMAT_STRING
+            mediaType = ImageConstant.ImageMediaType.DataVolumeTemplate.toString()
+        } as ImageInventory
+
+        assert image.size == 10240
+        assert image.actualSize == 1024
+
+        // disable BS and check capacity
+        changeBackupStorageState {
+            uuid = bs.uuid
+            stateEvent = BackupStorageStateEvent.disable.toString()
+        }
+
+        GetPrimaryStorageCapacityResult originPsCapacity = getPrimaryStorageCapacity {
+            primaryStorageUuids = [ps.uuid]
+        } as GetPrimaryStorageCapacityResult
+
+        createVolumeTemplateFailAndCheckCapacity(originPsCapacity, ps.uuid, kvm.uuid, image.uuid)
+
+        // pretend allocate PS failed and check capacity
+        changeBackupStorageState {
+            uuid = bs.uuid
+            stateEvent = BackupStorageStateEvent.enable.toString()
+        }
+
+        env.message(AllocatePrimaryStorageMsg.class) { AllocatePrimaryStorageMsg msg, CloudBus bus ->
+            bus.replyErrorByMessageType(msg, "on purpose")
+        }
+
+        createVolumeTemplateFailAndCheckCapacity(originPsCapacity, ps.uuid, kvm.uuid, image.uuid)
+        env.cleanMessageHandlers()
+
+        // pretend GetInstallPathForDataVolumeDownloadMsg failed
+        env.message(GetInstallPathForDataVolumeDownloadMsg.class) {
+            GetInstallPathForDataVolumeDownloadMsg msg, CloudBus bus ->
+                bus.replyErrorByMessageType(msg, "on purpose")
+        }
+
+        createVolumeTemplateFailAndCheckCapacity(originPsCapacity, ps.uuid, kvm.uuid, image.uuid)
+        env.cleanMessageHandlers()
+
+        // pretend DownloadDataVolumeToPrimaryStorageMsg failed
+        env.message(DownloadDataVolumeToPrimaryStorageMsg.class) {
+            DownloadDataVolumeToPrimaryStorageMsg msg, CloudBus bus ->
+                bus.replyErrorByMessageType(msg, "on purpose")
+        }
+
+        createVolumeTemplateFailAndCheckCapacity(originPsCapacity, ps.uuid, kvm.uuid, image.uuid)
+        env.cleanMessageHandlers()
+
+        // nothing wrong, we check that capacity has been reserved
+        def volume = createDataVolumeFromVolumeTemplate {
+            primaryStorageUuid = ps.uuid
+            delegate.imageUuid = image.uuid
+            hostUuid = kvm.uuid
+            name = "test-pass"
+        } as VolumeInventory
+
+        assert volume.size == image.size
+        assert volume.actualSize == image.actualSize
+
+        GetPrimaryStorageCapacityResult currentPsCapacity = getPrimaryStorageCapacity {
+            primaryStorageUuids = [ps.uuid]
+        } as GetPrimaryStorageCapacityResult
+
+        assert originPsCapacity.availableCapacity > currentPsCapacity.availableCapacity
+        assert originPsCapacity.availableCapacity - currentPsCapacity.availableCapacity == volume.size
+
+        // clean-up temporarily generated resources
+        deleteDataVolume {
+            uuid = volume.uuid
+        }
+
+        expungeDataVolume {
+            uuid = volume.uuid
+        }
+
+        deleteImage {
+            uuid = image.uuid
+        }
+
+        expungeImage {
+            imageUuid = image.uuid
+        }
+    }
+
+    void createVolumeTemplateFailAndCheckCapacity(GetPrimaryStorageCapacityResult old, String psUuid, String hostUuid, String imageUuid) {
+        expect(AssertionError.class) {
+            createDataVolumeFromVolumeTemplate {
+                primaryStorageUuid = psUuid
+                delegate.imageUuid = imageUuid
+                delegate.hostUuid = hostUuid
+                name = "test-failure"
+            }
+        }
+
+        GetPrimaryStorageCapacityResult currentPsCapacity = getPrimaryStorageCapacity {
+            primaryStorageUuids = [psUuid]
+        } as GetPrimaryStorageCapacityResult
+
+        assert old.availableCapacity == currentPsCapacity.availableCapacity
     }
 }
