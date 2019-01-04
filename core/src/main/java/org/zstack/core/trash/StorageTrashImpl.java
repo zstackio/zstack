@@ -54,10 +54,10 @@ public class StorageTrashImpl implements StorageTrash {
             spec.setStorageType(getResourceType(spec.getStorageUuid()));
         }
 
-        return new JsonLabel().create(makeTrashType(type), spec, spec.getStorageUuid());
+        return new JsonLabel().create(makeTrashKey(type), spec, spec.getStorageUuid());
     }
 
-    private String makeTrashType(TrashType type) {
+    private String makeTrashKey(TrashType type) {
         return String.format("%s-%s", type.toString(), Platform.getUuid());
     }
 
