@@ -12,3 +12,5 @@ CREATE TABLE IF NOT EXISTS `ElaborationVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE INDEX idxElaborationVOmd5sum ON ElaborationVO (md5sum);
+ALTER TABLE `V2VConversionCacheVO` ADD COLUMN `downloadTime` VARCHAR(32);
+ALTER TABLE `V2VConversionCacheVO` ADD COLUMN `uploadTime` VARCHAR(32);
