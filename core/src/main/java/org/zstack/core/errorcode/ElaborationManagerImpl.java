@@ -415,16 +415,16 @@ public class ElaborationManagerImpl extends AbstractService {
             ErrorCodeElaboration e = StringSimilarity.findSimilary(msg.getRegex());
             if (StringSimilarity.matched(e, msg.getRegex())) {
                 if (msg.getCategory() != null && msg.getCategory().equals(e.getCategory())) {
-                    reply.getErrorCodes().add(e);
+                    reply.getContents().add(new ElaborationContent(e));
                 } else if (msg.getCategory() == null){
-                    reply.getErrorCodes().add(e);
+                    reply.getContents().add(new ElaborationContent(e));
                 }
             }
         } else if (msg.getCategory() != null) {
             List<ErrorCodeElaboration> elaborations = StringSimilarity.getElaborations();
             elaborations.forEach(e -> {
                 if (e.getCategory().equals(msg.getCategory())) {
-                    reply.getErrorCodes().add(e);
+                    reply.getContents().add(new ElaborationContent(e));
                 }
             });
         }

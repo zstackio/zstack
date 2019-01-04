@@ -92,19 +92,19 @@ class ElaborationCase extends SubCase {
             category = "ACCOUNT"
         } as GetElaborationsResult
 
-        assert result.errorCodes.size() > 0
+        assert result.contents.size() > 0
 
         result = getElaborations {
             regex = "certificate has expired or is not yet valid"
         } as GetElaborationsResult
 
-        assert result.errorCodes.size() == 1
+        assert result.contents.size() == 1
 
         result = getElaborations {
             regex = "certificate"
         } as GetElaborationsResult
 
-        assert result.errorCodes.size() == 0
+        assert result.contents.size() == 0
     }
 
     void testGetMissedElaboration() {
