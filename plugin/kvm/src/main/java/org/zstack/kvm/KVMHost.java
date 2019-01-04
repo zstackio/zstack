@@ -1,6 +1,7 @@
 package org.zstack.kvm;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,6 +58,7 @@ import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.KVMConstant.KvmVmState;
+import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.SystemTag;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
@@ -421,11 +423,39 @@ public class KVMHost extends HostBase implements Host {
         final GetKVMHostDownloadCredentialReply reply = new GetKVMHostDownloadCredentialReply();
 
         String key = asf.getPrivateKey();
-        reply.setHostname(getSelf().getManagementIp());
+
+        String hostname = null;
+        if (Strings.isNotEmpty(msg.getDataNetworkCidr())) {
+            String dataNetworkAddress = getDataNetworkAddress(self.getUuid(), msg.getDataNetworkCidr());
+
+            if (dataNetworkAddress != null) {
+                hostname = dataNetworkAddress;
+            }
+        }
+
+        reply.setHostname(hostname == null ? getSelf().getManagementIp() : hostname);
         reply.setUsername(getSelf().getUsername());
         reply.setSshPort(getSelf().getPort());
         reply.setSshKey(key);
         bus.reply(msg, reply);
+    }
+
+    protected static String getDataNetworkAddress(String hostUuid, String cidr) {
+        final String extraIps = HostSystemTags.EXTRA_IPS.getTokenByResourceUuid(
+                hostUuid, HostSystemTags.EXTRA_IPS_TOKEN);
+        if (extraIps == null) {
+            logger.debug(String.format("Host [uuid:%s] has no IPs in data network", hostUuid));
+            return null;
+        }
+
+        final String[] ips = extraIps.split(",");
+        for (String ip: ips) {
+            if (NetworkUtils.isIpv4InCidr(ip, cidr)) {
+                return ip;
+            }
+        }
+
+        return null;
     }
 
     private void handle(final IncreaseVmCpuMsg msg) {
