@@ -40,6 +40,7 @@ class ElaborationCase extends SubCase {
             testGetMissedElaboration()
             testRefreshElaboration()
             testElaborationWithLongName()
+            testElaborationWithUnknownFormatConversion()
         }
     }
 
@@ -160,5 +161,13 @@ class ElaborationCase extends SubCase {
         } as GetElaborationCategoriesResult
 
         assert size == result.categories.size()
+    }
+
+    void testElaborationWithUnknownFormatConversion() {
+        def err = Platform.operr("%!s(int=0) %!s(bytes.readOp=0)", "nowadays") as ErrorCode
+        assert err.elaboration == null
+        assert err.details == "%!s(int=0) %!s(bytes.readOp=0)"
+        def missed = Q.New(ElaborationVO.class).eq(ElaborationVO_.errorInfo, "%!s(int=0) %!s(bytes.readOp=0)").find() as ElaborationVO
+        assert !missed.matched
     }
 }

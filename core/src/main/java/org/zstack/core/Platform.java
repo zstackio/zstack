@@ -738,15 +738,18 @@ public class Platform {
     }
 
     public static ErrorCode err(Enum errCode, String fmt, Object...args) {
-        ErrorFacade errf = getComponentLoader().getComponent(ErrorFacade.class);
-        ErrorCode result = errf.instantiateErrorCode(errCode, String.format(fmt, args));
-        result.setElaboration(elaborate(errCode, result.getDescription(), fmt, args));
-        return result;
+        return err(errCode, null, fmt, args);
     }
 
     public static ErrorCode err(Enum errCode, ErrorCode cause, String fmt, Object...args) {
         ErrorFacade errf = getComponentLoader().getComponent(ErrorFacade.class);
-        ErrorCode result = errf.instantiateErrorCode(errCode, String.format(fmt, args), cause);
+        String details = null;
+        try {
+            details = String.format(fmt, args);
+        } catch (Exception e) {
+            details = fmt;
+        }
+        ErrorCode result = errf.instantiateErrorCode(errCode, details, cause);
         result.setElaboration(elaborate(errCode, result.getDescription(), fmt, args));
         return result;
     }
