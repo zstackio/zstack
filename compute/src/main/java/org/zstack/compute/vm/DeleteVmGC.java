@@ -2,12 +2,16 @@ package org.zstack.compute.vm;
 
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.Q;
-import org.zstack.core.gc.EventBasedGarbageCollector;
-import org.zstack.core.gc.GC;
-import org.zstack.core.gc.GCCompletion;
+import org.zstack.core.gc.*;
 import org.zstack.header.host.*;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.*;
+
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import static org.zstack.core.Platform.operr;
 
 /**
@@ -49,8 +53,9 @@ public class DeleteVmGC extends EventBasedGarbageCollector {
 
         VmInstanceState vmstate = Q.New(VmInstanceVO.class).select(VmInstanceVO_.state)
                 .eq(VmInstanceVO_.uuid, inventory.getUuid()).findValue();
-
-        if (vmstate != null && (vmstate != VmInstanceState.Destroyed && vmstate != VmInstanceState.Destroying)) {
+        //zhanyong.miao, GC will be executed with the case in ZSTAC-17639.
+        if (vmstate != null && (vmstate != VmInstanceState.Destroyed && vmstate != VmInstanceState.Destroying
+                &&vmstate != VmInstanceState.Stopped)) {
             // the vm has been recovered
             completion.cancel();
             return;
@@ -70,5 +75,18 @@ public class DeleteVmGC extends EventBasedGarbageCollector {
                 }
             }
         });
+    }
+
+    public static Collection<String> queryVmInGC(final String hostUuid, final Collection<String> vmUuids) {
+        Collection<String> vmUuidsInGC = new HashSet<>();
+        List<String> gcNames = Q.New(GarbageCollectorVO.class).select(GarbageCollectorVO_.name)
+                                        .eq(GarbageCollectorVO_.runnerClass, DeleteVmGC.class.getName())
+                                        .like(GarbageCollectorVO_.name, String.format("%%on-host-%s%%", hostUuid))
+                                        .notEq(GarbageCollectorVO_.status, GCStatus.Done).listValues();
+        if (gcNames != null && !gcNames.isEmpty()) {
+            vmUuidsInGC = vmUuids.stream().filter(uuid ->
+                    gcNames.contains(String.format("gc-vm-%s-on-host-%s", uuid, hostUuid))).collect(Collectors.toSet());
+        }
+        return vmUuidsInGC;
     }
 }
