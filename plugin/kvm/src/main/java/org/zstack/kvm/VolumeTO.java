@@ -1,5 +1,7 @@
 package org.zstack.kvm;
 
+import org.zstack.core.Platform;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.vm.VmInstanceVO;
@@ -17,6 +19,7 @@ public class VolumeTO {
     public static final String SHAREDBLOCK = "sharedblock";
     public static final String SCSILUN = "scsilun";
     public static final String BLOCK = "block";
+    public static List<KVMConvertVolumeExtensionPoint> exts;
 
     private String installPath;
     private int deviceId;
@@ -27,6 +30,7 @@ public class VolumeTO {
     private boolean shareable;
     private String cacheMode = "none";
     private String wwn;
+
     public VolumeTO() {
     }
 
@@ -42,15 +46,19 @@ public class VolumeTO {
         this.shareable = other.shareable;
     }
 
-    public static List<VolumeTO> valueOf(List<VolumeInventory> vols) {
-        return vols.stream().map(VolumeTO::valueOf).collect(Collectors.toList());
+    public static List<VolumeTO> valueOf(List<VolumeInventory> vols, KVMHostInventory host) {
+        return vols.stream().map(it -> valueOf(it, host)).collect(Collectors.toList());
     }
 
-    public static VolumeTO valueOf(VolumeInventory vol) {
-        return valueOf(vol, null);
+    public static VolumeTO valueOf(VolumeInventory vol, KVMHostInventory host) {
+        return valueOf(vol, host, null, true);
     }
 
-    public static VolumeTO valueOf(VolumeInventory vol, String platform) {
+    public static VolumeTO valueOfWithOutExtension(VolumeInventory vol, KVMHostInventory host, String platform) {
+        return valueOf(vol, host, platform, false);
+    }
+
+    public static VolumeTO valueOf(VolumeInventory vol, KVMHostInventory host, String platform, boolean withExtension) {
         VolumeTO to = new VolumeTO();
         to.setInstallPath(vol.getInstallPath());
         if (vol.getDeviceId() != null) {
@@ -71,7 +79,24 @@ public class VolumeTO {
         to.setWwn(KVMHost.computeWwnIfAbsent(vol.getUuid()));
         to.setShareable(vol.isShareable());
         to.setCacheMode(KVMGlobalConfig.LIBVIRT_CACHE_MODE.value());
-        return to;
+
+        if (!withExtension) {
+            return to;
+        }
+
+        if (exts == null) {
+            prepareExts();
+        }
+        for (KVMConvertVolumeExtensionPoint ext : exts) {
+            to = ext.convertVolumeIfNeed(host, vol, to);
+        }
+        return  to;
+    }
+
+    private synchronized static void prepareExts() {
+        if (exts == null) {
+            exts = Platform.getComponentLoader().getComponent(PluginRegistry.class).getExtensionList(KVMConvertVolumeExtensionPoint.class);
+        }
     }
 
     public boolean isShareable() {

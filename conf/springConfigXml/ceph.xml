@@ -35,6 +35,7 @@
             <zstack:extension interface="org.zstack.kvm.KVMAttachVolumeExtensionPoint" />
             <zstack:extension interface="org.zstack.kvm.KVMDetachVolumeExtensionPoint" />
             <zstack:extension interface="org.zstack.kvm.KVMPreAttachIsoExtensionPoint" />
+            <zstack:extension interface="org.zstack.kvm.KVMConvertVolumeExtensionPoint" />
             <zstack:extension interface="org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint" />
             <zstack:extension interface="org.zstack.kvm.KvmSetupSelfFencerExtensionPoint" />
             <zstack:extension interface="org.zstack.header.Component" />

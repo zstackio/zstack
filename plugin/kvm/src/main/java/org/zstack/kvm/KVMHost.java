@@ -943,7 +943,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setDestPath(volume.getInstallPath());
         cmd.setSrcPath(snapshot.getPrimaryStorageInstallPath());
         cmd.setVmUuid(volume.getVmInstanceUuid());
-        cmd.setVolume(VolumeTO.valueOf(volume));
+        cmd.setVolume(VolumeTO.valueOf(volume, (KVMHostInventory) getSelfInventory()));
 
         extEmitter.beforeMergeSnapshot((KVMHostInventory) getSelfInventory(), msg, cmd);
         new Http<>(mergeSnapshotPath, cmd, MergeSnapshotRsp.class)
@@ -1033,7 +1033,7 @@ public class KVMHost extends HostBase implements Host {
 
             cmd.setVolumeUuid(msg.getVolume().getUuid());
             cmd.setVmUuid(msg.getVmUuid());
-            cmd.setVolume(VolumeTO.valueOf(msg.getVolume()));
+            cmd.setVolume(VolumeTO.valueOf(msg.getVolume(), (KVMHostInventory) getSelfInventory()));
         }
 
         cmd.setVolumeInstallPath(msg.getVolume().getInstallPath());
@@ -1453,7 +1453,7 @@ public class KVMHost extends HostBase implements Host {
 
         final VolumeInventory vol = msg.getInventory();
         final VmInstanceInventory vm = msg.getVmInventory();
-        VolumeTO to = VolumeTO.valueOf(vol);
+        VolumeTO to = VolumeTO.valueOfWithOutExtension(vol, (KVMHostInventory) getSelfInventory(), vm.getPlatform());
 
         final DetachVolumeFromVmOnHypervisorReply reply = new DetachVolumeFromVmOnHypervisorReply();
         final DetachDataVolumeCmd cmd = new DetachDataVolumeCmd();
@@ -1535,16 +1535,17 @@ public class KVMHost extends HostBase implements Host {
 
     private void attachVolume(final AttachVolumeToVmOnHypervisorMsg msg, final NoErrorCompletion completion) {
         checkStateAndStatus();
+        KVMHostInventory host = (KVMHostInventory) getSelfInventory();
 
         final VolumeInventory vol = msg.getInventory();
         final VmInstanceInventory vm = msg.getVmInventory();
-        VolumeTO to = VolumeTO.valueOf(vol, vm.getPlatform());
+        VolumeTO to = VolumeTO.valueOfWithOutExtension(vol, host, vm.getPlatform());
 
         final AttachVolumeToVmOnHypervisorReply reply = new AttachVolumeToVmOnHypervisorReply();
         final AttachDataVolumeCmd cmd = new AttachDataVolumeCmd();
         cmd.setVolume(to);
         cmd.setVmUuid(msg.getVmInventory().getUuid());
-        cmd.getAddons().put("attachedDataVolumes", VolumeTO.valueOf(msg.getAttachedDataVolumes()));
+        cmd.getAddons().put("attachedDataVolumes", VolumeTO.valueOf(msg.getAttachedDataVolumes(), host));
         Map data = new HashMap();
         extEmitter.beforeAttachVolume((KVMHostInventory) getSelfInventory(), vm, vol, cmd, data);
         new Http<>(attachDataVolumePath, cmd, AttachDataVolumeResponse.class).call(new ReturnValueCompletion<AttachDataVolumeResponse>(msg, completion) {
@@ -1928,7 +1929,7 @@ public class KVMHost extends HostBase implements Host {
 
         List<VolumeTO> dataVolumes = new ArrayList<>(spec.getDestDataVolumes().size());
         for (VolumeInventory data : spec.getDestDataVolumes()) {
-            VolumeTO v = VolumeTO.valueOf(data, spec.getVmInventory().getPlatform());
+            VolumeTO v = VolumeTO.valueOfWithOutExtension(data, (KVMHostInventory) getSelfInventory(), spec.getVmInventory().getPlatform());
             // always use virtio driver for data volume
             // set bug https://github.com/zxwing/premium/issues/1050
             v.setUseVirtio(true);

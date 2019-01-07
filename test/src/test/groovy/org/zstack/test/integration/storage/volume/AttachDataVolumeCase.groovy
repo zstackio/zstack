@@ -1,10 +1,13 @@
 package org.zstack.test.integration.storage.volume
 
+import org.zstack.core.componentloader.PluginRegistry
 import org.zstack.core.db.Q
 import org.zstack.header.image.ImageConstant
 import org.zstack.header.volume.VolumeFormat
 import org.zstack.header.volume.VolumeVO
 import org.zstack.header.volume.VolumeVO_
+import org.zstack.kvm.KVMAttachVolumeExtensionPoint
+import org.zstack.kvm.KVMConvertVolumeExtensionPoint
 import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.PriceInventory
 import org.zstack.sdk.PrimaryStorageInventory
@@ -20,7 +23,7 @@ import org.zstack.testlib.SubCase
  */
 class AttachDataVolumeCase extends SubCase{
     EnvSpec env
-    VolumeInventory dataVolume
+    VolumeInventory dataVolume, dataVolume2
 
     @Override
     void setup() {
@@ -35,6 +38,11 @@ class AttachDataVolumeCase extends SubCase{
     @Override
     void test() {
         env.create {
+            PluginRegistry pluginRegistry = bean(PluginRegistry.class)
+            def convertExts = pluginRegistry.getExtensionList(KVMConvertVolumeExtensionPoint.class)
+            def attachExts = pluginRegistry.getExtensionList(KVMAttachVolumeExtensionPoint.class)
+            assert convertExts.containsAll(attachExts) :
+                    "when implement convert volume before attach volume, ConvertVolumeExtensionPoint is needed too"
             testCreateDataVolume()
             testAttachDataVolume()
         }
@@ -55,6 +63,12 @@ class AttachDataVolumeCase extends SubCase{
         } as VolumeInventory
 
         assert dataVolume.format == ImageConstant.RAW_FORMAT_STRING
+
+        dataVolume2 = createDataVolume{
+            name = "test2"
+            diskOfferingUuid = diskOffering.uuid
+            primaryStorageUuid = ps.uuid
+        } as VolumeInventory
     }
 
     void testAttachDataVolume(){
@@ -67,6 +81,11 @@ class AttachDataVolumeCase extends SubCase{
                 .eq(VolumeVO_.uuid, dataVolume.uuid)
                 .select(VolumeVO_.format)
                 .findValue() == ImageConstant.RAW_FORMAT_STRING
+
+        attachDataVolumeToVm {
+            volumeUuid = dataVolume2.uuid
+            vmInstanceUuid = vm.uuid
+        }
     }
 
 }

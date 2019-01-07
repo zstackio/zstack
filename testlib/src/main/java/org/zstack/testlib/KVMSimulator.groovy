@@ -4,11 +4,14 @@ import org.springframework.http.HttpEntity
 import org.zstack.core.Platform
 import org.zstack.core.db.Q
 import org.zstack.header.Constants
+import org.zstack.header.storage.primary.PrimaryStorageVO
+import org.zstack.header.storage.primary.PrimaryStorageVO_
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmInstanceVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
+import org.zstack.kvm.VolumeTO
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 
@@ -158,7 +161,13 @@ class KVMSimulator implements Simulator {
             return rsp
         }
 
-        spec.simulator(KVMConstant.KVM_ATTACH_VOLUME) {
+        spec.simulator(KVMConstant.KVM_ATTACH_VOLUME) { HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.AttachDataVolumeCmd.class)
+            // assume all data volumes has same deviceType.
+            if (Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.type).listValues().stream().distinct().count() == 1) {
+                assert (cmd.addons["attachedDataVolumes"] as List<VolumeTO>).stream()
+                        .allMatch({vol -> vol.deviceType == cmd.volume.deviceType})
+            }
             return new KVMAgentCommands.AttachDataVolumeResponse()
         }
 
