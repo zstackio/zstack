@@ -16875,5 +16875,15 @@
     "arguments": [],
     "line": 29,
     "fileName": "src/main/java/org/zstack/zwatch/ruleengine/ComparisonOperator.java"
+  },
+  {
+    "raw": "there is no available ipRange on L3 network [%s]",
+    "en_US": "there is no available ipRange on L3 network [{0}]",
+    "zh_CN": "L3网络[{0}]中没有可用的网络段",
+    "arguments": [
+      "v.getUuid()"
+    ],
+    "line": 79,
+    "fileName": "# at: src/main/java/org/zstack/compute/vm/VmAllocateNicFlow.java"
   }
 ]
