@@ -48,4 +48,6 @@ public class KVMGlobalConfig {
     public static GlobalConfig TEST_SSH_PORT_ON_OPEN_TIMEOUT = new GlobalConfig(CATEGORY, "testSshPortOpenTimeout");
     @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 300)
     public static GlobalConfig TEST_SSH_PORT_ON_CONNECT_TIMEOUT = new GlobalConfig(CATEGORY, "testSshPortOnConnectTimeout");
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    public static GlobalConfig IVSHMEM_SIZE = new GlobalConfig(CATEGORY, "ivshmem.size");
 }

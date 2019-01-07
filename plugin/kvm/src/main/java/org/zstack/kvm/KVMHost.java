@@ -1899,6 +1899,12 @@ public class KVMHost extends HostBase implements Host {
         cmd.setApplianceVm(spec.getVmInventory().getType().equals("ApplianceVm"));
         cmd.setSystemSerialNumber(makeAndSaveVmSystemSerialNumber(spec.getVmInventory().getUuid()));
 
+        String libvirtVersion = KVMSystemTags.LIBVIRT_VERSION.getTokenByResourceUuid(self.getUuid(), KVMSystemTags.LIBVIRT_VERSION_TOKEN);
+        if (libvirtVersion != null && new VersionComparator(libvirtVersion).compare("3.0.0") > 0
+                && KVMGlobalConfig.IVSHMEM_SIZE.value(Long.class) > 0) {
+            cmd.setIvshmem(IvshmemTO.fromConfig());
+        }
+
         VolumeTO rootVolume = new VolumeTO();
         rootVolume.setInstallPath(spec.getDestRootVolume().getInstallPath());
         rootVolume.setDeviceId(spec.getDestRootVolume().getDeviceId());
