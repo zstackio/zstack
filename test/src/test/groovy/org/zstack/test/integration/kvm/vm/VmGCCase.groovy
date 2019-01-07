@@ -139,6 +139,12 @@ class VmGCCase extends SubCase {
             uuid = vm.uuid
         }
 
+        KVMAgentCommands.DestroyVmCmd cmd = null
+        env.afterSimulator(KVMConstant.KVM_DESTROY_VM_PATH) { rsp, HttpEntity<String> e ->
+            cmd = json(e.body, KVMAgentCommands.DestroyVmCmd.class)
+            return rsp
+        }
+
         HostVO host = dbf.findByUuid(vm.hostUuid, HostVO.class)
         HostCanonicalEvents.HostStatusChangedData data = new HostCanonicalEvents.HostStatusChangedData(
                 hostUuid: host.uuid,
@@ -151,12 +157,6 @@ class VmGCCase extends SubCase {
         // mimic an event to trigger the GC
         evtf.fire(HostCanonicalEvents.HOST_STATUS_CHANGED_PATH, data)
 
-        KVMAgentCommands.DestroyVmCmd cmd = null
-        env.afterSimulator(KVMConstant.KVM_DESTROY_VM_PATH) { rsp, HttpEntity<String> e ->
-            cmd = json(e.body, KVMAgentCommands.DestroyVmCmd.class)
-            return rsp
-        }
-
         GarbageCollectorInventory inv = null
 
         retryInSecs {
@@ -164,8 +164,8 @@ class VmGCCase extends SubCase {
                 conditions=["context~=%${vm.uuid}%"]
             }[0]
 
-            // no destroy command sent beacuse the vm is recovered
-            assert cmd == null
+            // still destroy command sent even if the vm is recovered
+            assert cmd != null
             assert inv.status == GCStatus.Done.toString()
         }
 
@@ -174,22 +174,22 @@ class VmGCCase extends SubCase {
         }
     }
 
-    void testGCJobCancelAfterVmRecovered() {
+    void testGCJobTriggeredAfterVmRecovered() {
         VmInstanceInventory vm = createGCCandidateDestroyedVm()
 
         recoverVmInstance {
             uuid = vm.uuid
         }
 
-        // the host reconnecting will trigger the GC
-        reconnectHost {
-            uuid = vm.hostUuid
-        }
-
         KVMAgentCommands.DestroyVmCmd cmd = null
         env.afterSimulator(KVMConstant.KVM_DESTROY_VM_PATH) { rsp, HttpEntity<String> e ->
             cmd = json(e.body, KVMAgentCommands.DestroyVmCmd.class)
             return rsp
+        }
+
+        // the host reconnecting will trigger the GC
+        reconnectHost {
+            uuid = vm.hostUuid
         }
 
         GarbageCollectorInventory inv = null
@@ -199,8 +199,8 @@ class VmGCCase extends SubCase {
                 conditions=["context~=%${vm.uuid}%"]
             }[0]
 
-            // no destroy command sent beacuse the vm is recovered
-            assert cmd == null
+            //destroy command still sent even if the vm is recovered because of some resource of vm released
+            assert cmd != null
             assert inv.status == GCStatus.Done.toString()
         }
 
@@ -217,7 +217,7 @@ class VmGCCase extends SubCase {
         env.create {
             testDeleteVmWhenHostDisconnect()
             testGCJobTriggeredByEventFromOtherManagementNode()
-            testGCJobCancelAfterVmRecovered()
+            testGCJobTriggeredAfterVmRecovered()
             testGCJobCancelAfterHostDelete()
 
             // recreate the host
