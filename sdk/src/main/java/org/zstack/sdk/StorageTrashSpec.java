@@ -76,6 +76,14 @@ public class StorageTrashSpec  {
         return this.size;
     }
 
+    public java.lang.String trashType;
+    public void setTrashType(java.lang.String trashType) {
+        this.trashType = trashType;
+    }
+    public java.lang.String getTrashType() {
+        return this.trashType;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

@@ -303,6 +303,11 @@ use:
                     name = "image"
                     url  = "http://zstack.org/download/image.qcow2"
                 }
+
+                image {
+                    name = "image1"
+                    url  = "http://zstack.org/download/image1.qcow2"
+                }
             }
 
             vm {

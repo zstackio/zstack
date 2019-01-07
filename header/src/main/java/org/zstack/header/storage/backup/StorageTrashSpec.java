@@ -20,6 +20,7 @@ public class StorageTrashSpec {
     private boolean isFolder = false;
     private String hypervisorType;
     private Long size;
+    private String trashType;
     private Timestamp createDate;
 
     public StorageTrashSpec(String resourceUuid, String storageUuid, String installPath, Long size) {
@@ -108,6 +109,14 @@ public class StorageTrashSpec {
 
     public void setTrashId(Long trashId) {
         this.trashId = trashId;
+    }
+
+    public String getTrashType() {
+        return trashType;
+    }
+
+    public void setTrashType(String trashType) {
+        this.trashType = trashType;
     }
 
     public Timestamp getCreateDate() {

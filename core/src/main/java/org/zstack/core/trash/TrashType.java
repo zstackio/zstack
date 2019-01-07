@@ -6,5 +6,6 @@ package org.zstack.core.trash;
 public enum TrashType {
     MigrateVolume,
     MigrateImage,
-    MigrateVolumeSnapshot
+    MigrateVolumeSnapshot,
+    RevertVolume
 }

@@ -59,6 +59,12 @@ doc {
 		since "3.2.0"
 	}
 	field {
+		name "trashType"
+		desc "回收数据的来源"
+		type "String"
+		since "3.4.0"
+	}
+	field {
 		name "createDate"
 		desc "数据进入回收站的时间"
 		type "Timestamp"

@@ -13,12 +13,12 @@ public interface StorageTrash {
     JsonLabelInventory createTrash(TrashType type, StorageTrashSpec spec);
 
     Map<String, StorageTrashSpec> getTrashList(String storageUuid);
-    Map<String, StorageTrashSpec>  getTrashList(String storageUuid, List<TrashType> types);
-    Long getTrashId(String storageUuid, String installPath);
+    Map<String, StorageTrashSpec> getTrashList(String storageUuid, List<TrashType> types);
     StorageTrashSpec getTrash(String storageUuid, Long trashId);
 
-    void remove(String trashKey, String storageUuid);  // only remove db, not storage data
-    void remove(Long trashId);
-
     boolean makeSureInstallPathNotUsed(StorageTrashSpec spec);
+    Long getTrashId(String storageUuid, String installPath);
+
+    void removeFromDb(String trashKey, String storageUuid);  // only remove db, not storage data
+    void removeFromDb(Long trashId);
 }

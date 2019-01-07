@@ -61,6 +61,7 @@ public class StorageTrashImpl implements StorageTrash {
             spec.setStorageType(getResourceType(spec.getStorageUuid()));
         }
 
+        spec.setTrashType(type.toString());
         return new JsonLabel().create(makeTrashKey(type), spec, spec.getStorageUuid());
     }
 
@@ -82,6 +83,9 @@ public class StorageTrashImpl implements StorageTrash {
                 StorageTrashSpec spec = JSONObjectUtil.toObject(l.getLabelValue(), StorageTrashSpec.class);
                 spec.setTrashId(l.getId());
                 spec.setCreateDate(l.getCreateDate());
+                if (spec.getTrashType() == null) {
+                    spec.setTrashType(type.toString());
+                }
                 specs.put(l.getLabelKey(), spec);
             });
         }
@@ -89,7 +93,7 @@ public class StorageTrashImpl implements StorageTrash {
     }
 
     @Override
-    public void remove(String trashKey, String storageUuid) {
+    public void removeFromDb(String trashKey, String storageUuid) {
         UpdateQuery.New(JsonLabelVO.class).eq(JsonLabelVO_.labelKey, trashKey).eq(JsonLabelVO_.resourceUuid, storageUuid).delete();
     }
 
@@ -102,11 +106,14 @@ public class StorageTrashImpl implements StorageTrash {
         StorageTrashSpec spec = JSONObjectUtil.toObject(lable.getLabelValue(), StorageTrashSpec.class);
         spec.setTrashId(trashId);
         spec.setCreateDate(lable.getCreateDate());
+        if (spec.getTrashType() == null) {
+            spec.setTrashType(lable.getLabelKey().split("-")[0]);
+        }
         return spec;
     }
 
     @Override
-    public void remove(Long trashId) {
+    public void removeFromDb(Long trashId) {
         DebugUtils.Assert(trashId != null, "trashId is not allowed null here");
         UpdateQuery.New(JsonLabelVO.class).eq(JsonLabelVO_.id, trashId).delete();
     }

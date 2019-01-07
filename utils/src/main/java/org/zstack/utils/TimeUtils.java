@@ -5,6 +5,7 @@ import org.zstack.utils.logging.CLogger;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
@@ -116,11 +117,39 @@ public class TimeUtils {
         }
     }
 
+    public static boolean isValidTimestampFormat(String timestamp, String dformat) {
+        try {
+            DateFormat dateFormat = new SimpleDateFormat(dformat);
+            dateFormat.parse(timestamp);
+            return true;
+        } catch (ParseException e) {
+            return false;
+        }
+    }
+
+    public static long parseFormatStringToTimeStamp(String timestamp, String dformat) {
+        try {
+            DateFormat dateFormat = new SimpleDateFormat(dformat);
+            return dateFormat.parse(timestamp).getTime();
+        } catch (ParseException e) {
+            return 0;
+        }
+    }
+
     public static long parseFormatStringToTimeStamp(String timestamp) {
         try {
             return df.parse(timestamp).getTime();
         } catch (ParseException e) {
             return 0;
         }
+    }
+
+    public static String getCurrentTimeStamp() {
+        return df.format(new Date(System.currentTimeMillis()));
+    }
+
+    public static String getCurrentTimeStamp(String dformat) {
+        DateFormat dateFormat = new SimpleDateFormat(dformat);
+        return dateFormat.format(new Date(System.currentTimeMillis()));
     }
 }

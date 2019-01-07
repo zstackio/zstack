@@ -165,7 +165,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         return String.format("primaryStorage-%s", self.getUuid());
     }
 
-    protected static List<TrashType> trashLists = CollectionDSL.list(TrashType.MigrateVolume, TrashType.MigrateVolumeSnapshot);
+    protected static List<TrashType> trashLists = CollectionDSL.list(TrashType.MigrateVolume, TrashType.MigrateVolumeSnapshot, TrashType.RevertVolume);
 
     protected void fireDisconnectedCanonicalEvent(ErrorCode reason) {
         PrimaryStorageCanonicalEvent.DisconnectedData data = new PrimaryStorageCanonicalEvent.DisconnectedData();
@@ -700,7 +700,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
         if (!trash.makeSureInstallPathNotUsed(spec)) {
             logger.warn(String.format("%s is still in using by %s, only remove it from trash...", spec.getInstallPath(), spec.getResourceType()));
-            trash.remove(spec.getTrashId());
+            trash.removeFromDb(spec.getTrashId());
             completion.success(result);
             return;
         }
@@ -720,7 +720,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                     imsg.setDiskSize(spec.getSize());
                     bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
                     bus.send(imsg);
-                    trash.remove(trashId);
+                    trash.removeFromDb(trashId);
                     logger.info(String.format("Returned space[size:%s] to PS %s after volume migration", spec.getSize(), self.getUuid()));
 
                     result.setSize(spec.getSize());
@@ -753,7 +753,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
             if (!trash.makeSureInstallPathNotUsed(spec)) {
                 logger.warn(String.format("%s is still in using by %s, only remove it from trash...", spec.getInstallPath(), spec.getResourceType()));
-                trash.remove(spec.getTrashId());
+                trash.removeFromDb(spec.getTrashId());
                 coml.done();
                 return;
             }
@@ -773,7 +773,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                         imsg.setDiskSize(spec.getSize());
                         bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
                         bus.send(imsg);
-                        trash.remove(t.getKey(), self.getUuid());
+                        trash.removeFromDb(t.getKey(), self.getUuid());
 
                         result.getResourceUuids().add(spec.getResourceUuid());
                         updateTrashSize(result, spec.getSize());
