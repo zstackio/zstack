@@ -8347,7 +8347,7 @@
   {
     "raw": "oss bucket is not empty!",
     "en_US": "oss bucket is not empty!",
-    "zh_CN": "oss Bucket不能为空",
+    "zh_CN": "oss Bucket不为空",
     "arguments": [],
     "line": 164,
     "fileName": "src/zstack/./premium/hybrid/src/main/java/org/zstack/aliyun/oss/EcsOssManagerImpl.java"
