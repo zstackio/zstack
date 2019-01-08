@@ -1460,6 +1460,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             return;
         }
 
+        if (!trash.makeSureInstallPathNotUsed(spec)) {
+            logger.warn(String.format("%s is still in using by %s, only remove it from trash...", spec.getInstallPath(), spec.getResourceType()));
+            trash.remove(spec.getTrashId());
+            completion.success(result);
+            return;
+        }
+
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("clean-trash-on-volume-%s", spec.getInstallPath()));
         chain.then(new NoRollbackFlow() {
@@ -1541,6 +1548,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         List<ErrorCode> errs = new ArrayList<>();
         new While<>(trashs.entrySet()).all((t, coml) -> {
             StorageTrashSpec spec = t.getValue();
+
+            if (!trash.makeSureInstallPathNotUsed(spec)) {
+                logger.warn(String.format("%s is still in using by %s, only remove it from trash...", spec.getInstallPath(), spec.getResourceType()));
+                trash.remove(spec.getTrashId());
+                coml.done();
+                return;
+            }
 
             FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
             chain.setName(String.format("clean-trash-on-volume-%s", spec.getInstallPath()));
