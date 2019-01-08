@@ -161,7 +161,7 @@
 	<config>
 		<name>vmDefaultCdRomNum</name>
 		<description>create vm default CDROM number</description>
-		<defaultValue>3</defaultValue>
+		<defaultValue>1</defaultValue>
 		<category>vm</category>
 		<type>java.lang.Long</type>
 	</config>

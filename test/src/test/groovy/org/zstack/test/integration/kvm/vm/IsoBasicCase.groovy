@@ -2,6 +2,7 @@ package org.zstack.test.integration.kvm.vm
 
 import org.springframework.http.HttpEntity
 import org.zstack.compute.vm.IsoOperator
+import org.zstack.compute.vm.VmGlobalConfig
 import org.zstack.header.image.ImageConstant
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
@@ -143,6 +144,8 @@ class IsoBasicCase extends SubCase {
     }
 
     void testAttach3Iso() {
+        VmGlobalConfig.VM_DEFAULT_CD_ROM_NUM.updateValue(3)
+
         ImageInventory iso0 = env.inventoryByName("iso_0")
         ImageInventory iso1 = env.inventoryByName("iso_1")
         ImageInventory iso2 = env.inventoryByName("iso_2")

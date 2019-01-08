@@ -1,4 +1,4 @@
-package org.zstack.test.integration.kvm.vm
+package org.zstack.test.integration.kvm.vm.cdrom
 
 import org.springframework.http.HttpEntity
 import org.zstack.compute.vm.IsoOperator
@@ -6,6 +6,7 @@ import org.zstack.compute.vm.VmSystemTags
 import org.zstack.core.db.Q
 import org.zstack.core.db.SimpleQuery
 import org.zstack.header.image.ImageConstant
+import org.zstack.header.vm.VmInstanceConstant
 import org.zstack.header.vm.cdrom.VmCdRomVO
 import org.zstack.header.vm.cdrom.VmCdRomVO_
 import org.zstack.kvm.KVMAgentCommands
@@ -135,6 +136,9 @@ class VmCdRomBasicCase extends SubCase {
                 useInstanceOffering("instanceOffering")
                 useRootDiskOffering("diskOffering")
                 useImage("iso_1")
+                systemTags = [
+                        "${VmSystemTags.CD_ROM_LIST_TOKEN}::${VmInstanceConstant.EMPTY_CDROM}::${VmInstanceConstant.EMPTY_CDROM}::${VmInstanceConstant.NONE_CDROM}".toString()
+                ]
             }
         }
 

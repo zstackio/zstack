@@ -43,6 +43,10 @@ public class VmCdRomUpgradeExtension implements ManagementNodeReadyExtensionPoin
         }
 
         List<String> vmUuids = getTargetVmUuids();
+        if (vmUuids.isEmpty()){
+            return;
+        }
+
         List<Tuple> vmUuidPlatforms = Q.New(VmInstanceVO.class)
                 .select(VmInstanceVO_.uuid, VmInstanceVO_.platform)
                 .in(VmInstanceVO_.uuid, vmUuids)
