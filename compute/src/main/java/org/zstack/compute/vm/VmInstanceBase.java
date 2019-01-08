@@ -5042,7 +5042,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     logger.warn(e.getMessage());
                 }
 
-                completion.fail(err(SysErrors.OPERATION_ERROR, errCode, errCode.getDetails()));
+                completion.fail(operr(errCode, errCode.getDetails()));
             }
         }).start();
     }
