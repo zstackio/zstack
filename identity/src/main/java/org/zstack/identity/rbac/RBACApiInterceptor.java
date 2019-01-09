@@ -7,6 +7,7 @@ import org.zstack.header.identity.role.RoleType;
 import org.zstack.header.identity.role.RoleVO;
 import org.zstack.header.identity.role.RoleVO_;
 import org.zstack.header.identity.role.api.APIDeleteRoleMsg;
+import org.zstack.header.identity.role.api.APIUpdateRoleMsg;
 import org.zstack.header.message.APIMessage;
 
 import static org.zstack.core.Platform.argerr;
@@ -18,10 +19,19 @@ public class RBACApiInterceptor implements ApiMessageInterceptor {
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         if (msg instanceof APIDeleteRoleMsg) {
             validate((APIDeleteRoleMsg) msg);
+        } else if (msg instanceof APIUpdateRoleMsg) {
+            validate((APIUpdateRoleMsg) msg);
         }
 
         return msg;
     }
+
+    private void validate(APIUpdateRoleMsg msg) {
+        if (Q.New(RoleVO.class).in(RoleVO_.type, list(RoleType.Predefined, RoleType.System)).eq(RoleVO_.uuid, msg.getUuid()).isExists()) {
+            throw new ApiMessageInterceptionException(argerr("cannot update a system or predefined role"));
+        }
+    }
+
 
     private void validate(APIDeleteRoleMsg msg) {
         if (Q.New(RoleVO.class).in(RoleVO_.type, list(RoleType.Predefined, RoleType.System)).eq(RoleVO_.uuid, msg.getUuid()).isExists()) {
