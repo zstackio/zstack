@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.header.AbstractService;
@@ -38,6 +39,8 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
     private CloudBus bus;
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     @Override
     public boolean start() {
@@ -175,6 +178,8 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
         new SQLBatch() {
             @Override
             protected void scripts() {
+                List<NewPredefinedRoleExtensionPoint> exts = pluginRgty.getExtensionList(NewPredefinedRoleExtensionPoint.class);
+
                 RBAC.roles.stream().filter(RBAC.Role::isPredefine).forEach(role -> {
                     if (!q(SystemRoleVO.class).eq(SystemRoleVO_.uuid, role.getUuid()).isExists()) {
                         SystemRoleVO rvo = new SystemRoleVO();
@@ -199,6 +204,10 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
                             rp.setStatement(JSONObjectUtil.toJsonString(s));
                             persist(rp);
                         });
+
+                        for (NewPredefinedRoleExtensionPoint ext : exts) {
+                            ext.predefinedNewRole(reload(rvo));
+                        }
                     } else {
                         role.toStatements().forEach(s -> {
                             String statementString = JSONObjectUtil.toJsonString(s);
