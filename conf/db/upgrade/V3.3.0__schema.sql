@@ -47,3 +47,87 @@ CREATE TABLE  `zstack`.`VCenterResourcePoolUsageVO` (
      UNIQUE KEY `VCenterResourcePoolUsageVO` (`vCenterResourcePoolUuid`, `resourceUuid`) USING BTREE,
      CONSTRAINT `fkVCenterResourcePoolUsageVOVCenterResourcePoolVO` FOREIGN KEY (`vCenterResourcePoolUuid`) REFERENCES `VCenterResourcePoolVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+# create missing tag2 role for IAM2ProjectVO
+DELIMITER $$
+CREATE PROCEDURE getRoleUuid(OUT targetRoleUuid VARCHAR(32))
+    BEGIN
+        SELECT uuid into targetRoleUuid from RoleVO role where role.name = 'predefined: tag2' and role.type = 'Predefined' LIMIT 0,1;
+    END $$
+DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE getRolePolicyStatement(OUT policyStatement text, IN targetRoleUuid VARCHAR(32))
+    BEGIN
+        SELECT statement into policyStatement from RolePolicyStatementVO where roleUuid = targetRoleUuid LIMIT 0,1;
+    END $$
+DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE getMaxAccountResourceRefVO(OUT refId bigint(20) unsigned)
+    BEGIN
+        SELECT max(id) INTO refId from zstack.AccountResourceRefVO;
+    END $$
+DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE fixMissingTag2RoleInProjects()
+    BEGIN
+        DECLARE done INT DEFAULT FALSE;
+        DECLARE count_tag_role INT DEFAULT 0;
+        DECLARE count_tag_role_for_project INT DEFAULT 0;
+        DECLARE targetAccountUuid varchar(32);
+        DECLARE targetRoleUuid varchar(32);
+        DECLARE new_role_uuid VARCHAR(32);
+        DECLARE new_statement_uuid VARCHAR(32);
+        DECLARE refId bigint(20) unsigned;
+        DECLARE policyStatement text;
+        DECLARE cur CURSOR FOR SELECT accountUuid FROM zstack.IAM2ProjectAccountRefVO;
+        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+        OPEN cur;
+        CALL getRoleUuid(targetRoleUuid);
+
+        read_loop: LOOP
+            FETCH cur INTO targetAccountUuid;
+            IF done THEN
+                LEAVE read_loop;
+            END IF;
+
+            SELECT count(*) into count_tag_role from RoleVO role where role.name = 'predefined: tag2' and role.type = 'Predefined';
+            IF (count_tag_role != 0) THEN
+               SELECT count(*) into count_tag_role_for_project from RoleVO role, AccountResourceRefVO ref
+               where role.name = 'predefined: tag2' and role.type = 'CreatedBySystem'
+               and ref.resourceUuid = role.uuid and ref.accountUuid = targetAccountUuid;
+
+               IF (count_tag_role_for_project < 1) THEN
+                   SET new_role_uuid = REPLACE(UUID(), '-', '');
+
+                   INSERT INTO ResourceVO (`uuid`, `resourceName`, `resourceType`, `concreteResourceType`)
+                   values (new_role_uuid, 'predefined: tag2', 'RoleVO', 'org.zstack.header.identity.role.RoleVO');
+
+                   INSERT INTO RoleVO (`uuid`, `name`, `type`, `state`, `description`, `lastOpDate`, `createDate`)
+                   values (new_role_uuid, 'predefined: tag2', 'CreatedBySystem', 'Enabled', NULL, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
+
+                   CALL getMaxAccountResourceRefVO(refId);
+                   INSERT INTO AccountResourceRefVO (`id`, `accountUuid`, `ownerAccountUuid`, `resourceUuid`, `resourceType`, `permission`, `isShared`, `lastOpDate`, `createDate`)
+                   values (refId + 1, targetAccountUuid, targetAccountUuid, new_role_uuid, 'RoleVO', 2, 0, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
+
+                   SET new_statement_uuid = REPLACE(UUID(), '-', '');
+                   CALL getRandomUuid(new_statement_uuid);
+                   CALL getRolePolicyStatement(policyStatement, targetRoleUuid);
+                   INSERT INTO RolePolicyStatementVO (`uuid`, `statement`, `roleUuid`, `lastOpDate`, `createDate`)
+                   values (new_statement_uuid, policyStatement, new_role_uuid, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
+               END IF;
+            END IF;
+        END LOOP;
+        CLOSE cur;
+        SELECT CURTIME();
+    END $$
+DELIMITER ;
+
+call fixMissingTag2RoleInProjects();
+DROP PROCEDURE IF EXISTS fixMissingTag2RoleInProjects;
+DROP PROCEDURE IF EXISTS getMaxAccountResourceRefVO;
+DROP PROCEDURE IF EXISTS getRolePolicyStatement;
+DROP PROCEDURE IF EXISTS getRoleUuid;
