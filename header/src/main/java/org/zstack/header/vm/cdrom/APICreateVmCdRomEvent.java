@@ -3,6 +3,8 @@ package org.zstack.header.vm.cdrom;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
 
+import java.sql.Timestamp;
+
 @RestResponse(allTo = "inventory")
 public class APICreateVmCdRomEvent extends APIEvent {
     private VmCdRomInventory inventory;
@@ -31,6 +33,9 @@ public class APICreateVmCdRomEvent extends APIEvent {
         inventory.setVmInstanceUuid(uuid());
         inventory.setIsoUuid(uuid());
         inventory.setDeviceId(0);
+        inventory.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        inventory.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+
         evt.setInventory(inventory);
 
         return evt;

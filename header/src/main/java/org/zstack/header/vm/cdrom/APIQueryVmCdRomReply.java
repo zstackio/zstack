@@ -21,14 +21,16 @@ public class APIQueryVmCdRomReply extends APIQueryReply {
     public static APIQueryVmCdRomReply __example__() {
         APIQueryVmCdRomReply reply = new APIQueryVmCdRomReply();
 
-        VmCdRomInventory vm = new VmCdRomInventory();
-        vm.setName("Test-VM");
-        vm.setUuid(uuid());
-        vm.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
-        vm.setDescription("web server VM");
-        vm.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        VmCdRomInventory inventory = new VmCdRomInventory();
+        inventory.setName("cd-1");
+        inventory.setUuid(uuid());
+        inventory.setDescription("desc");
+        inventory.setIsoUuid(uuid());
+        inventory.setDeviceId(0);
+        inventory.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        inventory.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
 
-        reply.setInventories(asList(vm));
+        reply.setInventories(asList(inventory));
         return reply;
     }
 }

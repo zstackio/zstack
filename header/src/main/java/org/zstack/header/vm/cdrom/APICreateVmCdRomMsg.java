@@ -58,7 +58,7 @@ public class APICreateVmCdRomMsg extends APICreateMessage implements APIAuditor,
 
     @Override
     public Result audit(APIMessage msg, APIEvent rsp) {
-        return new Result(rsp.isSuccess() ? ((APICreateVmInstanceEvent)rsp).getInventory().getUuid() : "", VmInstanceVO.class);
+        return new Result(rsp.isSuccess() ? ((APICreateVmCdRomEvent)rsp).getInventory().getVmInstanceUuid() : "", VmInstanceVO.class);
     }
 
     @Override

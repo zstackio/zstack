@@ -54,6 +54,6 @@ public class APISetVmInstanceDefaultCdRomMsg extends APIMessage implements VmIns
 
     @Override
     public Result audit(APIMessage msg, APIEvent rsp) {
-        return new Result(rsp.isSuccess() ? ((APISetVmInstanceDefaultCdRomEvent)rsp).getInventory().getUuid() : "", VmCdRomVO.class);
+        return new Result(rsp.isSuccess() ? ((APISetVmInstanceDefaultCdRomEvent)rsp).getInventory().getVmInstanceUuid() : "", VmInstanceVO.class);
     }
 }

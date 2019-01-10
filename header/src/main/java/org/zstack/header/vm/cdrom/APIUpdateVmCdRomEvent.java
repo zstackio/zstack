@@ -3,6 +3,8 @@ package org.zstack.header.vm.cdrom;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
 
+import java.sql.Timestamp;
+
 /**
  * Created by lining on 2019/1/1.
  */
@@ -34,6 +36,8 @@ public class APIUpdateVmCdRomEvent extends APIEvent {
         inv.setName("cd-1");
         inv.setDescription("desc");
         inv.setIsoUuid(uuid());
+        inv.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        inv.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         event.setInventory(inv);
         return event;
     }

@@ -22,7 +22,7 @@ import org.zstack.header.vm.VmInstanceVO;
         isAction = true,
         responseClass = APIUpdateVmCdRomEvent.class
 )
-public class APIUpdateVmCdRomMsg extends APIMessage implements VmInstanceMessage, APIAuditor {
+public class APIUpdateVmCdRomMsg extends APIMessage implements VmInstanceMessage {
     @APIParam(resourceType = VmCdRomVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
 
@@ -73,10 +73,5 @@ public class APIUpdateVmCdRomMsg extends APIMessage implements VmInstanceMessage
         msg.uuid = uuid();
         msg.setName("cd-2");
         return msg;
-    }
-
-    @Override
-    public Result audit(APIMessage msg, APIEvent rsp) {
-        return new Result(rsp.isSuccess() ? ((APIUpdateVmCdRomEvent)rsp).getInventory().getUuid() : "", VmCdRomVO.class);
     }
 }

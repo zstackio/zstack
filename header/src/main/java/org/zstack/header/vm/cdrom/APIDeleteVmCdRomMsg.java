@@ -7,10 +7,12 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
+import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceMessage;
+import org.zstack.header.vm.VmInstanceVO;
 
 /**
  * Create by lining at 2018/12/27
@@ -21,7 +23,7 @@ import org.zstack.header.vm.VmInstanceMessage;
         method = HttpMethod.DELETE,
         responseClass = APIDeleteVmCdRomEvent.class
 )
-public class APIDeleteVmCdRomMsg extends APIDeleteMessage implements VmInstanceMessage {
+public class APIDeleteVmCdRomMsg extends APIDeleteMessage implements VmInstanceMessage, APIAuditor {
     @APIParam(resourceType = VmCdRomVO.class, checkAccount = true, operationTarget = true, successIfResourceNotExisting = true)
     private String uuid;
 
@@ -51,14 +53,8 @@ public class APIDeleteVmCdRomMsg extends APIDeleteMessage implements VmInstanceM
         return msg;
     }
 
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                ntfy("Deleted").resource(uuid, VmCdRomVO.class.getSimpleName())
-                        .messageAndEvent(that, evt).done();
-            }
-        };
+    @Override
+    public Result audit(APIMessage msg, APIEvent rsp) {
+        return new Result(rsp.isSuccess() ? ((APIDeleteVmCdRomMsg) msg).getVmInstanceUuid() : "", VmInstanceVO.class);
     }
 }
