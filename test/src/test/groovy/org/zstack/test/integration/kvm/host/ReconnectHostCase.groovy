@@ -1,6 +1,9 @@
 package org.zstack.test.integration.kvm.host
 
+import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
+import org.zstack.header.host.*
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
@@ -18,7 +21,7 @@ import org.zstack.utils.logging.CLogger
 /**
  * Created by MaJin on 2017-05-01.
  */
-class ReconnectHostCase extends SubCase{
+class ReconnectHostCase extends SubCase {
     EnvSpec env
     HostInventory host
     private final static CLogger logger = Utils.getLogger(ReconnectHostCase.class)
@@ -41,6 +44,7 @@ class ReconnectHostCase extends SubCase{
             testReconnectHostVmState()
             testReconnectFailureHostVmState()
             testUpdateHostDuringConnecting()
+            testChangeHostConnectionState()
         }
     }
 
@@ -49,7 +53,7 @@ class ReconnectHostCase extends SubCase{
         env.delete()
     }
 
-    void testUpdateHostDuringConnecting(){
+    void testUpdateHostDuringConnecting() {
         boolean called
         env.simulator(KVMConstant.KVM_CONNECT_PATH) {
             def rsp = new KVMAgentCommands.ConnectResponse()
@@ -118,7 +122,7 @@ class ReconnectHostCase extends SubCase{
     }
 
     // Reconnect host will not change VM's state, this test confirm VMs are always Running after host reconnecting
-    void testReconnectHostVmState(){
+    void testReconnectHostVmState() {
         VmInstanceInventory vmInv = env.inventoryByName("vm") as VmInstanceInventory
 
         for (int i = 0; i < RECONNECT_TIME; i++) {
@@ -127,13 +131,35 @@ class ReconnectHostCase extends SubCase{
                 sessionId = currentEnvSpec.session.uuid
             }
 
-            retryInSecs(){
+            retryInSecs() {
                 List<VmInstanceInventory> vmInvs = queryVmInstance {
-                    conditions=["state=${VmInstanceState.Running}"]
+                    conditions = ["state=${VmInstanceState.Running}"]
                 } as List<VmInstanceInventory>
 
                 assert vmInvs.size() == 2
             }
         }
+    }
+
+    void testChangeHostConnectionState() {
+        HostInventory host = env.inventoryByName("kvm")
+
+        // set host to disconnected
+        SQL.New(HostVO.class)
+                .eq(HostVO_.uuid, host.uuid)
+                .set(HostVO_.status, HostStatus.Disconnected)
+                .update()
+
+        // extpEmitter.connectionReestablished()
+        CloudBus bus = bean(CloudBus.class)
+        ChangeHostConnectionStateMsg msg = new ChangeHostConnectionStateMsg()
+        msg.hostUuid = host.uuid
+        msg.connectionStateEvent = HostStatusEvent.connected.toString()
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.uuid)
+        assert bus.call(msg).success
+        assert Q.New(HostVO.class)
+                .eq(HostVO_.uuid, host.uuid)
+                .select(HostVO_.status)
+                .findValue() == HostStatus.Connected
     }
 }
