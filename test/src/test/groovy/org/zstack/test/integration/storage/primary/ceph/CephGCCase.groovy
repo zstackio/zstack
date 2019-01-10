@@ -68,18 +68,15 @@ class CephGCCase extends SubCase {
             }[0]
 
             assert inv.status == GCStatus.Idle.toString()
-        }
-
-        triggerGCJob {
-            uuid = inv.uuid
+            assert called == true
         }
 
         assert queryGCJob {
             conditions = ["context~=%${vol.getUuid()}%".toString()]
         }.size == 1
 
-        deleteFail = false
         called = false
+        deleteFail = false
 
         triggerGCJob {
             uuid = inv.uuid
@@ -142,11 +139,11 @@ class CephGCCase extends SubCase {
 
     void prepareEnv() {
         env.afterSimulator(CephPrimaryStorageBase.DELETE_PATH) { rsp ->
+            called = true
+
             if (deleteFail) {
                 throw new HttpError(403, "on purpose")
             }
-
-            called = true
 
             return rsp
         }
