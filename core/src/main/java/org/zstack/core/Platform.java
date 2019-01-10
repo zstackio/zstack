@@ -747,10 +747,18 @@ public class Platform {
         try {
             details = String.format(fmt, args);
         } catch (Exception e) {
+            logger.warn("exception happened when format error message");
+            logger.warn(e.getMessage());
             details = fmt;
         }
         ErrorCode result = errf.instantiateErrorCode(errCode, details, cause);
-        result.setElaboration(elaborate(errCode, result.getDescription(), fmt, args));
+        try {
+            result.setElaboration(elaborate(errCode, result.getDescription(), fmt, args));
+        } catch (Exception e) {
+            logger.warn("exception happened when found elaboration");
+            logger.warn(e.getMessage());
+        }
+
         return result;
     }
 
