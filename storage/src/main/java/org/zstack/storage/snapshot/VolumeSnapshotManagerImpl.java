@@ -16,6 +16,7 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -494,7 +495,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("mark-rootVolume-%s-as-snapshot", vol.getUuid()));
         chain.then(new ShareFlow() {
-            final VolumeSnapshotVO vo = new VolumeSnapshotVO();
+            VolumeSnapshotVO vo = new VolumeSnapshotVO();
             VolumeSnapshotCapability capability;
             @Override
             public void setup() {
@@ -534,6 +535,31 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                     String __name__ = "mark-rootVolume-as-snapshot";
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
+                        String psType = Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.type).eq(PrimaryStorageVO_.uuid, vol.getPrimaryStorageUuid()).findValue();
+                        if (psType == null) {
+                            trigger.fail(operr("cannot find type for primaryStorage [%s]", vol.getPrimaryStorageUuid()));
+                            return;
+                        }
+                        // mark volume installPath as snapshot installPath, or other extentions...
+                        List<MarkRootVolumeAsSnapshotExtension> extensions = pluginRgty.getExtensionList(MarkRootVolumeAsSnapshotExtension.class);
+                        for(MarkRootVolumeAsSnapshotExtension extension : extensions){
+                            if (psType.equals(extension.getExtensionPrimaryStorageType())) {
+                                extension.markRootVolumeAsSnapshot(vol, msg.getAccountUuid(), new ReturnValueCompletion<String>(trigger) {
+                                    @Override
+                                    public void success(String snapshotUuid) {
+                                        vo.setUuid(snapshotUuid);
+                                        trigger.next();
+                                    }
+
+                                    @Override
+                                    public void fail(ErrorCode errorCode) {
+                                        trigger.fail(errorCode);
+                                    }
+                                });
+                                return;
+                            }
+                        }
+
                         vo.setUuid(Platform.getUuid());
                         vo.setName(vol.getName());
                         vo.setDescription(vol.getDescription());
@@ -563,6 +589,12 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
+                        String uuid = vo.getUuid();
+                        vo = dbf.findByUuid(uuid, VolumeSnapshotVO.class);
+                        if (vo == null) {
+                            trigger.fail(operr("cannot find snapshot: %s", uuid));
+                            return;
+                        }
                         List<PostMarkRootVolumeAsSnapshotExtension> extensions = pluginRgty.getExtensionList(PostMarkRootVolumeAsSnapshotExtension.class);
                         for(PostMarkRootVolumeAsSnapshotExtension extension : extensions){
                             extension.afterMarkRootVolumeAsSnapshot(VolumeSnapshotInventory.valueOf(vo));
@@ -576,7 +608,9 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                     @Override
                     public void handle(Map data) {
                         VolumeSnapshotVO svo = dbf.findByUuid(vo.getUuid(), VolumeSnapshotVO.class);
-                        svo.setPrimaryStorageInstallPath(vol.getInstallPath());
+                        if (svo.getPrimaryStorageInstallPath() == null) {
+                            svo.setPrimaryStorageInstallPath(vol.getInstallPath());
+                        }
                         svo.setStatus(VolumeSnapshotStatus.Ready);
                         if (vol.getFormat() != null) {
                             svo.setFormat(vol.getFormat());

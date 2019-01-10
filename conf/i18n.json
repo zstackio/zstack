@@ -7569,8 +7569,8 @@
     "fileName": "src/zstack/./premium/cloudformation/src/main/java/org/zstack/cloudformation/template/CloudFormationDecoder.java"
   },
   {
-    "raw": "cannot found such msg: %s for create",
-    "en_US": "cannot found such msg: {0} for create",
+    "raw": "cannot find such msg: %s for create",
+    "en_US": "cannot find such msg: {0} for create",
     "zh_CN": "",
     "arguments": [
       "msg"
