@@ -153,6 +153,13 @@ class Env {
                     url = "http://zstack.org/download/test.qcow2"
                 }
             }
+            sftpBackupStorage {
+                name = "sftp2"
+                url = "/sftp2"
+                username = "root"
+                password = "password"
+                hostname = "kvm-2"
+            }
 
             zone {
                 name = "zone"
@@ -375,6 +382,7 @@ class Env {
                 }
 
                 attachBackupStorage("sftp")
+                attachBackupStorage("sftp2")
             }
         }
     }

@@ -7,6 +7,7 @@ import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.flat.FlatDhcpBackend
 import org.zstack.network.service.flat.FlatNetworkServiceConstant
 import org.zstack.network.service.userdata.UserdataConstant
+import org.zstack.sdk.GetVmHostnameResult
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.VmInstanceInventory
@@ -121,15 +122,12 @@ class GetDhcpInfoForConnectedKvmHostCase extends SubCase {
 
         setVmHostname {
             uuid = vm.uuid
-            hostname = vm.vmNics[0].ip.replaceAll("\\.", "-")
+            hostname = vm.vmNics[0].ip.replaceAll("\\.", "--")
         }
 
         FlatDhcpBackend.ApplyDhcpCmd cmd = null
         env.afterSimulator(FlatDhcpBackend.APPLY_DHCP_PATH) { rsp, HttpEntity<String> e ->
             cmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.ApplyDhcpCmd.class)
-
-            assert 1 == cmd.dhcp.size()
-            assert cmd.dhcp.get(0).hostname == VmSystemTags.HOSTNAME.getTokenByResourceUuid(vm.uuid, VmSystemTags.HOSTNAME_TOKEN)
             return rsp
         }
 
@@ -137,6 +135,27 @@ class GetDhcpInfoForConnectedKvmHostCase extends SubCase {
             uuid = host.uuid
         }
         assert null != cmd
+        assert 1 == cmd.dhcp.size()
+        assert cmd.dhcp.get(0).hostname == VmSystemTags.HOSTNAME.getTokenByResourceUuid(vm.uuid, VmSystemTags.HOSTNAME_TOKEN)
+
+        GetVmHostnameResult result = getVmHostname {
+            uuid = vm.uuid
+        }
+        assert result != null
+        assert result.getHostname() == vm.vmNics[0].ip.replaceAll("\\.", "--")
+
+        cmd = null
+        deleteVmHostname {
+            uuid = vm.uuid
+        }
+        assert VmSystemTags.HOSTNAME.getTokenByResourceUuid(vm.uuid, VmSystemTags.HOSTNAME_TOKEN) == null
+
+        reconnectHost {
+            uuid = host.uuid
+        }
+        assert null != cmd
+        assert 1 == cmd.dhcp.size()
+        assert cmd.dhcp.get(0).hostname == vm.vmNics[0].ip.replaceAll("\\.", "-")
     }
 
     @Override

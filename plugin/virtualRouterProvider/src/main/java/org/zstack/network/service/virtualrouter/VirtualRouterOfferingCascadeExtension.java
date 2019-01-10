@@ -94,11 +94,12 @@ public class VirtualRouterOfferingCascadeExtension extends AbstractAsyncCascadeE
                             return arg.getDeleteAll() ? arg.getImage().getUuid() : null;
                         }
                     });
-
-            SimpleQuery<VirtualRouterOfferingVO> q = dbf.createQuery(VirtualRouterOfferingVO.class);
-            q.add(VirtualRouterOfferingVO_.imageUuid, Op.IN, imgUuids);
-            List<VirtualRouterOfferingVO> offeringVOs = q.list();
-            ret = VirtualRouterOfferingInventory.valueOf1(offeringVOs);
+            if (imgUuids != null && !imgUuids.isEmpty()) {
+                SimpleQuery<VirtualRouterOfferingVO> q = dbf.createQuery(VirtualRouterOfferingVO.class);
+                q.add(VirtualRouterOfferingVO_.imageUuid, Op.IN, imgUuids);
+                List<VirtualRouterOfferingVO> offeringVOs = q.list();
+                ret = VirtualRouterOfferingInventory.valueOf1(offeringVOs);
+            }
         }
 
         if (ret != null && !ret.isEmpty()) {

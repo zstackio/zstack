@@ -13,7 +13,6 @@ import org.zstack.testlib.SubCase
 import java.util.stream.Collectors
 
 import static java.util.Arrays.asList
-
 /**
  * Created by shixin on 2018/09/10.
  */
@@ -70,6 +69,21 @@ class AddIpv6RangeToVmNicsCase extends SubCase {
         assert l3s.contains(l3_statefull_1.uuid)
         assert l3s.contains(l3.uuid)
 
+        //no or invalid l3NetworkUuid
+        expect(ApiException.class) {
+            attachL3NetworkToVmNic {
+                vmNicUuid = nic.uuid
+            }
+        }
+
+        expect(AssertionError.class) {
+            attachL3NetworkToVmNic {
+                vmNicUuid = nic.uuid
+                l3NetworkUuid = "invalid uuid"
+            }
+        }
+
+        //re-attach
         expect(AssertionError.class) {
             attachL3NetworkToVmNic {
                 vmNicUuid = nic.uuid
@@ -77,6 +91,7 @@ class AddIpv6RangeToVmNicsCase extends SubCase {
             }
         }
 
+        // there is no more than one ipv4 in a nic
         expect(AssertionError.class) {
             attachL3NetworkToVmNic {
                 vmNicUuid = nic.uuid
