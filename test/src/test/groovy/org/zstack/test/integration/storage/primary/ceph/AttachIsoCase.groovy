@@ -3,42 +3,18 @@ package org.zstack.test.integration.storage.primary.ceph
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
-import org.zstack.core.db.SimpleQuery
-import org.zstack.header.host.HostConstant
-import org.zstack.header.storage.backup.BackupStorageStatus
 import org.zstack.header.storage.primary.ImageCacheVO
 import org.zstack.header.storage.primary.ImageCacheVO_
-import org.zstack.header.storage.primary.PrimaryStorageVO_
-import org.zstack.header.vm.VmBootDevice
-import org.zstack.kvm.KVMAgentCommands
-import org.zstack.kvm.KVMConstant
-import org.zstack.kvm.KVMHost
-import org.zstack.sdk.AttachIsoToVmInstanceAction
-import org.zstack.sdk.GetVmBootOrderResult
-import org.zstack.storage.backup.BackupStorageBase
-import org.zstack.storage.ceph.backup.CephBackupStorageBase
-import org.zstack.storage.ceph.backup.CephBackupStorageMonBase
-import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
 import org.zstack.header.storage.primary.PrimaryStorageState
 import org.zstack.header.storage.primary.PrimaryStorageVO
-import org.zstack.header.storage.backup.BackupStorageVO
-import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase
-import org.zstack.storage.ceph.primary.CephPrimaryStorageMonVO
-import org.zstack.storage.ceph.primary.CephPrimaryStorageMonVO_
-import org.zstack.storage.primary.PrimaryStorageBase
-import org.zstack.testlib.BackupStorageSpec
-import org.zstack.testlib.ImageSpec
-import org.zstack.testlib.EnvSpec
-import org.zstack.testlib.PrimaryStorageSpec
-import org.zstack.testlib.CephPrimaryStorageSpec
-import org.zstack.testlib.SubCase
-import org.zstack.testlib.Test
-import org.zstack.testlib.VmSpec
+import org.zstack.header.vm.VmBootDevice
+import org.zstack.sdk.AttachIsoToVmInstanceAction
+import org.zstack.sdk.GetVmBootOrderResult
+import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
 import org.zstack.test.integration.storage.CephEnv
 import org.zstack.test.integration.storage.StorageTest
-
+import org.zstack.testlib.*
 import org.zstack.utils.gson.JSONObjectUtil
-import sun.awt.image.ImageCache;
 /**
  * Created by xing5 on 2017/2/27.
  */
@@ -110,6 +86,15 @@ class AttachIsoCase extends SubCase {
         assert res.orders.size() == 2
         assert res.orders[0] == VmBootDevice.HardDisk.toString()
         assert res.orders[1] == VmBootDevice.CdRom.toString()
+
+        // attach the iso again and will be throw exception
+        expect(AssertionError.class) {
+            attachIsoToVmInstance {
+                isoUuid = imageUuid
+                vmInstanceUuid = vmUuid
+                sessionId = currentEnvSpec.session.uuid
+            }
+        }
 
         detachIsoFromVmInstance {
             vmInstanceUuid = vmUuid
