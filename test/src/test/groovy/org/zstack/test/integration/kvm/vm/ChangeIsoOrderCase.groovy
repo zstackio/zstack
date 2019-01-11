@@ -135,6 +135,8 @@ class ChangeIsoOrderCase extends SubCase {
     }
 
     void testAttach1Iso() {
+        VmGlobalConfig.VM_DEFAULT_CD_ROM_NUM.updateValue(3)
+
         ImageInventory iso0 = env.inventoryByName("iso_0")
         DiskOfferingInventory diskOffering = env.inventoryByName("diskOffering")
         InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering")

@@ -380,6 +380,46 @@ class VmCdRomBasicCase extends SubCase {
         VmInstanceInventory vm = env.inventoryByName("vm")
         ImageInventory iso = env.inventoryByName("iso_2")
         ImageInventory image = env.inventoryByName("image")
+        DiskOfferingInventory diskOfferingInventory = env.inventoryByName("diskOffering")
+
+        VmInstanceInventory newVm = createVmInstance {
+            name = "vm"
+            instanceOfferingUuid = vm.instanceOfferingUuid
+            imageUuid = iso.uuid
+            l3NetworkUuids = [vm.defaultL3NetworkUuid]
+            rootDiskOfferingUuid = diskOfferingInventory.uuid
+            systemTags = [
+                    "${VmSystemTags.CD_ROM_LIST_TOKEN}::${iso.uuid}::${VmInstanceConstant.EMPTY_CDROM}::${VmInstanceConstant.EMPTY_CDROM}".toString()
+            ]
+        }
+        assert 3 == newVm.vmCdRoms.size()
+
+
+        expect(AssertionError.class) {
+            createVmInstance {
+                name = "vmWithDuplicateIso"
+                instanceOfferingUuid = vm.instanceOfferingUuid
+                imageUuid = iso.uuid
+                l3NetworkUuids = [vm.defaultL3NetworkUuid]
+                rootDiskOfferingUuid = diskOfferingInventory.uuid
+                systemTags = [
+                        "${VmSystemTags.CD_ROM_LIST_TOKEN}::${iso.uuid}::${iso.uuid}::${VmInstanceConstant.EMPTY_CDROM}".toString()
+                ]
+            }
+        }
+
+        expect(AssertionError.class) {
+            createVmInstance {
+                name = "vmWithErrorISO"
+                instanceOfferingUuid = vm.instanceOfferingUuid
+                imageUuid = iso.uuid
+                l3NetworkUuids = [vm.defaultL3NetworkUuid]
+                rootDiskOfferingUuid = diskOfferingInventory.uuid
+                systemTags = [
+                        "${VmSystemTags.CD_ROM_LIST_TOKEN}::errorImageUuid::${iso.uuid}::${VmInstanceConstant.EMPTY_CDROM}".toString()
+                ]
+            }
+        }
 
 
         KVMAgentCommands.StartVmCmd cmd

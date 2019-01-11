@@ -1,7 +1,10 @@
 package org.zstack.test.integration.image
 
 import org.zstack.compute.vm.IsoOperator
+import org.zstack.compute.vm.VmGlobalConfig
+import org.zstack.compute.vm.VmSystemTags
 import org.zstack.header.image.ImageConstant
+import org.zstack.header.vm.VmInstanceConstant
 import org.zstack.sdk.*
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
@@ -136,6 +139,8 @@ class DeleteIsoCase extends SubCase {
     }
 
     void testDeleteIso() {
+        VmGlobalConfig.VM_DEFAULT_CD_ROM_NUM.updateValue(3)
+
         ImageInventory image = env.inventoryByName("image")
         ImageInventory iso1 = env.inventoryByName("iso_1")
         ImageInventory iso2 = env.inventoryByName("iso_2")

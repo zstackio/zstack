@@ -5031,6 +5031,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             cdRoms.add(tokens.get(VmSystemTags.CD_ROM_0));
             cdRoms.add(tokens.get(VmSystemTags.CD_ROM_1));
             cdRoms.add(tokens.get(VmSystemTags.CD_ROM_2));
+            // remove vm image iso, image iso has been added
+            cdRoms.removeAll(cdRomSpecs.stream().map(CdRomSpec::getImageUuid).collect(Collectors.toList()));
 
             for (String cdRom : cdRoms) {
                 if (cdRom == null || VmInstanceConstant.NONE_CDROM.equalsIgnoreCase(cdRom)) {

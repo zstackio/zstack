@@ -33,6 +33,8 @@ import org.zstack.header.vm.cdrom.VmCdRomVO;
 import org.zstack.header.zone.ZoneState;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
+import org.zstack.tag.PatternedSystemTag;
+import org.zstack.tag.SystemTag;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -44,6 +46,7 @@ import org.zstack.utils.network.NetworkUtils;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -697,6 +700,40 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             } else if (msg.getDefaultL3NetworkUuid() != null && !msg.getL3NetworkUuids().contains(msg.getDefaultL3NetworkUuid())) {
                 throw new ApiMessageInterceptionException(argerr("defaultL3NetworkUuid[uuid:%s] is not in l3NetworkUuids%s", msg.getDefaultL3NetworkUuid(), msg.getL3NetworkUuids()));
             }
+        }
+
+        validateCdRomsTag(msg);
+    }
+
+    private void validateCdRomsTag(APICreateVmInstanceMsg msg) {
+        if (msg.getSystemTags() == null || msg.getSystemTags().isEmpty()) {
+            return;
+        }
+
+        String tagValue = SystemTagUtils.findTagValue(msg.getSystemTags(), VmSystemTags.CREATE_VM_CD_ROM_LIST);
+        if (tagValue == null) {
+            return;
+        }
+
+        Map<String, String> tokens = VmSystemTags.CREATE_VM_CD_ROM_LIST.getTokensByTag(tagValue);
+        List<String> cdRoms = new ArrayList<>();
+        cdRoms.add(tokens.get(VmSystemTags.CD_ROM_0));
+        cdRoms.add(tokens.get(VmSystemTags.CD_ROM_1));
+        cdRoms.add(tokens.get(VmSystemTags.CD_ROM_2));
+        cdRoms = cdRoms.stream().filter(i -> i != null && !VmInstanceConstant.NONE_CDROM.equalsIgnoreCase(i) && !VmInstanceConstant.EMPTY_CDROM.equalsIgnoreCase(i)).collect(Collectors.toList());
+        if (cdRoms == null || cdRoms.isEmpty()) {
+            return;
+        }
+
+        for (String cdRomIsoUuid : cdRoms) {
+            ImageVO imageVO = dbf.findByUuid(cdRomIsoUuid, ImageVO.class);
+            if (imageVO == null) {
+                throw new ApiMessageInterceptionException(argerr("The image[uuid=%s] does not exist", cdRomIsoUuid));
+            }
+        }
+
+        if (cdRoms.size() != new HashSet<>(cdRoms).size()) {
+            throw new ApiMessageInterceptionException(argerr("Do not allow to mount duplicate ISO"));
         }
     }
 
