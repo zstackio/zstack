@@ -698,6 +698,12 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             return;
         }
 
+        if (!trash.makeSureInstallPathNotUsed(spec)) {
+            logger.warn(String.format("%s is still in using by %s, only remove it from trash...", spec.getInstallPath(), spec.getResourceType()));
+            trash.remove(spec.getTrashId());
+            completion.success(result);
+            return;
+        }
         DeleteVolumeBitsOnPrimaryStorageMsg msg = new DeleteVolumeBitsOnPrimaryStorageMsg();
         msg.setPrimaryStorageUuid(self.getUuid());
         msg.setInstallPath(spec.getInstallPath());
@@ -745,6 +751,12 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         new While<>(trashs.entrySet()).all((t, coml) -> {
             StorageTrashSpec spec = t.getValue();
 
+            if (!trash.makeSureInstallPathNotUsed(spec)) {
+                logger.warn(String.format("%s is still in using by %s, only remove it from trash...", spec.getInstallPath(), spec.getResourceType()));
+                trash.remove(spec.getTrashId());
+                coml.done();
+                return;
+            }
             DeleteVolumeBitsOnPrimaryStorageMsg msg = new DeleteVolumeBitsOnPrimaryStorageMsg();
             msg.setPrimaryStorageUuid(self.getUuid());
             msg.setInstallPath(spec.getInstallPath());

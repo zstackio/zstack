@@ -471,6 +471,12 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
             return;
         }
 
+        if (!trash.makeSureInstallPathNotUsed(spec)) {
+            logger.warn(String.format("%s is still in using by %s, only remove it from trash...", spec.getInstallPath(), spec.getResourceType()));
+            trash.remove(spec.getTrashId());
+            completion.success(result);
+            return;
+        }
         DeleteBitsOnBackupStorageMsg msg = new DeleteBitsOnBackupStorageMsg();
         msg.setInstallPath(spec.getInstallPath());
         msg.setBackupStorageUuid(self.getUuid());
@@ -517,6 +523,13 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         List<ErrorCode> errs = new ArrayList<>();
         new While<>(trashs.entrySet()).all((t, coml) -> {
             StorageTrashSpec spec = t.getValue();
+            if (!trash.makeSureInstallPathNotUsed(spec)) {
+                logger.warn(String.format("%s is still in using by %s, only remove it from trash...", spec.getInstallPath(), spec.getResourceType()));
+                trash.remove(spec.getTrashId());
+                coml.done();
+                return;
+            }
+
             DeleteBitsOnBackupStorageMsg msg = new DeleteBitsOnBackupStorageMsg();
             msg.setInstallPath(spec.getInstallPath());
             msg.setBackupStorageUuid(self.getUuid());

@@ -1,15 +1,20 @@
 package org.zstack.test.integration.core.trash
 
 import org.zstack.core.Platform
+import org.zstack.core.db.UpdateQuery
 import org.zstack.core.jsonlabel.JsonLabelInventory
 import org.zstack.core.trash.StorageTrashImpl
 import org.zstack.core.trash.TrashType
+import org.zstack.header.image.ImageBackupStorageRefVO
+import org.zstack.header.image.ImageBackupStorageRefVO_
+import org.zstack.header.image.ImageConstant
 import org.zstack.header.image.ImageVO
 import org.zstack.header.storage.backup.BackupStorageVO
 import org.zstack.header.storage.backup.StorageTrashSpec
 import org.zstack.sdk.BackupStorageInventory
 import org.zstack.sdk.CleanUpTrashOnBackupStorageResult
 import org.zstack.sdk.GetTrashOnBackupStorageResult
+import org.zstack.sdk.ImageInventory
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -19,6 +24,7 @@ import org.zstack.utils.gson.JSONObjectUtil
 class BackupStorageTrashCase extends SubCase {
     EnvSpec env
     BackupStorageInventory bs
+    ImageInventory image
     StorageTrashImpl trashMrg
     JsonLabelInventory label
 
@@ -48,6 +54,15 @@ class BackupStorageTrashCase extends SubCase {
             createTrash()
             testDeleteTrashSingle()
             testCleanUpTrash()
+
+            createTrash()
+            image = addImage {
+                name = "image-for-test"
+                url = "http://my-site/foo.qcow2"
+                backupStorageUuids = [bs.uuid]
+                format = ImageConstant.QCOW2_FORMAT_STRING
+            } as ImageInventory
+            testCleanUpTrashOnlyDB()
         }
     }
 
@@ -119,5 +134,35 @@ class BackupStorageTrashCase extends SubCase {
         } as GetTrashOnBackupStorageResult
 
         assert trashs.storageTrashSpecs.size() == 0
+    }
+
+    void testCleanUpTrashOnlyDB() {
+        def trashs = getTrashOnBackupStorage {
+            uuid = bs.uuid
+        } as GetTrashOnBackupStorageResult
+        def count = trashs.storageTrashSpecs.size()
+
+        trashs.storageTrashSpecs.each {
+            def trash = it as org.zstack.sdk.StorageTrashSpec
+            if (trash.resourceType == "ImageVO") {
+                UpdateQuery.New(ImageBackupStorageRefVO.class).eq(ImageBackupStorageRefVO_.imageUuid, image.uuid).
+                        set(ImageBackupStorageRefVO_.installPath, trash.installPath).update()
+            }
+        }
+
+        def result = cleanUpTrashOnBackupStorage {
+            uuid = bs.uuid
+            trashId = label.id
+        } as CleanUpTrashOnBackupStorageResult
+
+        assert result.result != null
+        assert result.result.size == 0
+        assert result.result.resourceUuids.size() == 0
+
+        trashs = getTrashOnBackupStorage {
+            uuid = bs.uuid
+        } as GetTrashOnBackupStorageResult
+
+        assert trashs.storageTrashSpecs.size() == count - 1
     }
 }
