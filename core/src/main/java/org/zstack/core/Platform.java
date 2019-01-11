@@ -754,7 +754,7 @@ public class Platform {
         ErrorCode result = errf.instantiateErrorCode(errCode, details, cause);
         try {
             result.setElaboration(elaborate(errCode, result.getDescription(), fmt, args));
-        } catch (Exception e) {
+        } catch (Throwable e) {
             logger.warn("exception happened when found elaboration");
             logger.warn(e.getMessage());
         }
