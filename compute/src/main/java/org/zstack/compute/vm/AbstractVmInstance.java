@@ -7,6 +7,8 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.Message;
 import org.zstack.header.vm.*;
+import org.zstack.header.vm.cdrom.APICreateVmCdRomMsg;
+import org.zstack.header.vm.cdrom.DeleteVmCdRomMsg;
 import org.zstack.utils.message.OperationChecker;
 
 import static org.zstack.core.Platform.err;
@@ -80,7 +82,9 @@ public abstract class AbstractVmInstance implements VmInstance {
                 StartVmInstanceMsg.class.getName(),
                 HaStartVmInstanceMsg.class.getName(),
                 APIGetVmStartingCandidateClustersHostsMsg.class.getName(),
-                GetVmStartingCandidateClustersHostsMsg.class.getName()
+                GetVmStartingCandidateClustersHostsMsg.class.getName(),
+                DeleteVmCdRomMsg.class.getName(),
+                APICreateVmCdRomMsg.class.getName()
         );
 
         allowedOperations.addState(VmInstanceState.Unknown,

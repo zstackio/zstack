@@ -40,6 +40,9 @@ public class GetEventDataAction extends AbstractAction {
     @Param(required = false)
     public java.util.List conditions;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public boolean count = false;
+
     @Param(required = false)
     public java.util.List systemTags;
 

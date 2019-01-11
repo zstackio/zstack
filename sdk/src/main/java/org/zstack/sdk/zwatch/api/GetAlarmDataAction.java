@@ -37,6 +37,12 @@ public class GetAlarmDataAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List conditions;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public boolean count = false;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public boolean excludeOtherAccount = false;
+
     @Param(required = false)
     public java.util.List systemTags;
 

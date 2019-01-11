@@ -188,4 +188,12 @@ public class VmInstanceInventory  {
         return this.allVolumes;
     }
 
+    public java.util.List vmCdRoms;
+    public void setVmCdRoms(java.util.List vmCdRoms) {
+        this.vmCdRoms = vmCdRoms;
+    }
+    public java.util.List getVmCdRoms() {
+        return this.vmCdRoms;
+    }
+
 }

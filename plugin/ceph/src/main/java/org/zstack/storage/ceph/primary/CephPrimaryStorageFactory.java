@@ -371,6 +371,53 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         return cto;
     }
 
+    private CdRomTO convertCdRomToCephIfNeeded(final CdRomTO to) {
+        if (to == null || to.isEmpty()) {
+            return to;
+        }
+
+        if (!to.getPath().startsWith(VolumeTO.CEPH)) {
+            return to;
+        }
+
+        CephPrimaryStorageVO pri = new Callable<CephPrimaryStorageVO>() {
+            @Override
+            @Transactional(readOnly = true)
+            public CephPrimaryStorageVO call() {
+                String sql = "select pri from CephPrimaryStorageVO pri, ImageCacheVO c where pri.uuid = c.primaryStorageUuid" +
+                        " and c.imageUuid = :imgUuid and c.installUrl = :path";
+                TypedQuery<CephPrimaryStorageVO> q = dbf.getEntityManager().createQuery(sql, CephPrimaryStorageVO.class);
+                q.setParameter("imgUuid", to.getImageUuid());
+                q.setParameter("path", to.getPath());
+                return q.getSingleResult();
+            }
+        }.call();
+
+        KvmCephCdRomTO cto = new KvmCephCdRomTO(to);
+        cto.setMonInfo(CollectionUtils.transformToList(pri.getMons(), new Function<KvmCephCdRomTO.MonInfo, CephPrimaryStorageMonVO>() {
+            @Override
+            public KvmCephCdRomTO.MonInfo call(CephPrimaryStorageMonVO arg) {
+                if (MonStatus.Connected != arg.getStatus()) {
+                    return null;
+                }
+
+                KvmCephCdRomTO.MonInfo info = new KvmCephCdRomTO.MonInfo();
+                info.setHostname(arg.getMonAddr());
+                info.setPort(arg.getMonPort());
+                return info;
+            }
+        }));
+
+        if (cto.getMonInfo().isEmpty()) {
+            throw new OperationFailureException(operr(
+                    "cannot find any Connected ceph mon for the primary storage[uuid:%s]", pri.getUuid()
+            ));
+        }
+
+        cto.setSecretUuid(getCephSecretUuid(pri.getUuid()));
+        return cto;
+    }
+
     private VolumeTO convertVolumeToCephIfNeeded(VolumeInventory vol, VolumeTO to) {
         if (!vol.getInstallPath().startsWith(VolumeTO.CEPH)) {
             return to;
@@ -472,13 +519,13 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
 
         cmd.setDataVolumes(dtos);
 
-        List<IsoTO> isoTOList = CollectionUtils.transformToList(cmd.getBootIso(), new Function<IsoTO, IsoTO>() {
+        List<CdRomTO> cdRomTOS = CollectionUtils.transformToList(cmd.getCdRoms(), new Function<CdRomTO, CdRomTO>() {
             @Override
-            public IsoTO call(IsoTO arg) {
-                return convertIsoToCephIfNeeded(arg);
+            public CdRomTO call(CdRomTO arg) {
+                return convertCdRomToCephIfNeeded(arg);
             }
         });
-        cmd.setBootIso(isoTOList);
+        cmd.setCdRoms(cdRomTOS);
 
         CephPrimaryStorageVO cephPrimaryStorageVO = dbf.findByUuid(spec.getDestRootVolume().getPrimaryStorageUuid(), CephPrimaryStorageVO.class);
         if (cephPrimaryStorageVO != null && !CephSystemTags.NO_CEPHX.hasTag(cephPrimaryStorageVO.getUuid())) {

@@ -9,7 +9,11 @@ public interface VmInstanceConstant {
     @PythonClass
     String USER_VM_TYPE = "UserVm";
     Integer VM_MONITOR_NUMBER = 1;
-    int MAXIMUM_MOUNT_ISO_NUMBER = 3;
+
+    // System limit
+    int MAXIMUM_CDROM_NUMBER = 3;
+
+    String KVM_HYPERVISOR_TYPE = "KVM";
 
     enum Params {
         VmInstanceSpec,
@@ -54,4 +58,7 @@ public interface VmInstanceConstant {
         VolumeMigration,
         Reimage
     }
+
+    String EMPTY_CDROM = "empty";
+    String NONE_CDROM = "none";
 }

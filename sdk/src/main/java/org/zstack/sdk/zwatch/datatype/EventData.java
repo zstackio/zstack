@@ -92,4 +92,20 @@ public class EventData  {
         return this.time;
     }
 
+    public java.lang.String dataUuid;
+    public void setDataUuid(java.lang.String dataUuid) {
+        this.dataUuid = dataUuid;
+    }
+    public java.lang.String getDataUuid() {
+        return this.dataUuid;
+    }
+
+    public java.lang.String accountUuid;
+    public void setAccountUuid(java.lang.String accountUuid) {
+        this.accountUuid = accountUuid;
+    }
+    public java.lang.String getAccountUuid() {
+        return this.accountUuid;
+    }
+
 }

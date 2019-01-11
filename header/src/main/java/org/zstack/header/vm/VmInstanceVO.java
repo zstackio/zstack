@@ -5,6 +5,7 @@ import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.image.ImageVO;
+import org.zstack.header.vm.cdrom.VmCdRomVO;
 import org.zstack.header.vo.*;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.volume.VolumeVO;
@@ -43,6 +44,11 @@ public class VmInstanceVO extends VmInstanceAO implements OwnedByAccount, ToInve
     @JoinColumn(name = "vmInstanceUuid", insertable = false, updatable = false)
     @NoView
     private Set<VolumeVO> allVolumes = new HashSet<VolumeVO>();
+
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinColumn(name = "vmInstanceUuid", insertable = false, updatable = false)
+    @NoView
+    private Set<VmCdRomVO> vmCdRoms = new HashSet<VmCdRomVO>();
 
     @Transient
     private String accountUuid;
@@ -90,5 +96,13 @@ public class VmInstanceVO extends VmInstanceAO implements OwnedByAccount, ToInve
 
         Optional<VolumeVO> opt = allVolumes.stream().filter(v -> v.getUuid().equals(getRootVolumeUuid())).findAny();
         return opt.isPresent() ? opt.get() : null;
+    }
+
+    public Set<VmCdRomVO> getVmCdRoms() {
+        return vmCdRoms;
+    }
+
+    public void setVmCdRoms(Set<VmCdRomVO> vmCdRoms) {
+        this.vmCdRoms = vmCdRoms;
     }
 }
