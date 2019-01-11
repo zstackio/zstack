@@ -6,9 +6,12 @@ import org.zstack.core.cloudbus.EventCallback
 import org.zstack.core.cloudbus.EventFacade
 import org.zstack.core.cloudbus.EventFacadeImpl
 import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
+import org.zstack.header.errorcode.SysErrors
 import org.zstack.header.host.*
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
+import org.zstack.sdk.ChangeHostStateAction
 import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.HostInventory
 import org.zstack.test.integration.kvm.Env
@@ -23,7 +26,7 @@ import java.util.concurrent.TimeUnit
 /**
  * Created by lining on 02/03/2017.
  */
-class HostStateCase extends SubCase{
+class HostStateCase extends SubCase {
 
     EnvSpec env
 
@@ -50,6 +53,7 @@ class HostStateCase extends SubCase{
             testChangeHostStateByRealizeHost()
             testPingMaximumFailure()
             testAddMultipleHostConcurrently()
+            testChangeHostStateNotConnected()
         }
     }
 
@@ -130,9 +134,28 @@ class HostStateCase extends SubCase{
             threads.add(thread)
         })
 
-        threads.each{it.join()}
+        threads.each { it.join() }
 
         assert Q.New(HostVO.class).eq(HostVO_.managementIp, ipAddr).count() == 1L
+    }
+
+    void testChangeHostStateNotConnected() {
+        HostSpec spec = env.specByName("kvm")
+
+        // set host to disconnected
+        SQL.New(HostVO.class)
+                .eq(HostVO_.uuid, spec.inventory.uuid)
+                .set(HostVO_.status, HostStatus.Disconnected)
+                .update()
+
+        def action = new ChangeHostStateAction()
+        action.sessionId = Test.currentEnvSpec.session.uuid
+        action.uuid = spec.inventory.uuid
+        action.stateEvent = HostStateEvent.maintain
+        def res = action.call()
+
+        assert res.error != null
+        assert res.error.code == SysErrors.OPERATION_ERROR.toString()
     }
 
     @Override
